@@ -1,0 +1,156 @@
+import datetime
+from collections.abc import Mapping
+from typing import Any, TypeVar, cast
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+from dateutil.parser import isoparse
+
+from ..models.data_type_options import DataTypeOptions
+
+T = TypeVar("T", bound="CreateUpdateRegisteredScorerResponse")
+
+
+@_attrs_define
+class CreateUpdateRegisteredScorerResponse:
+    """
+    Attributes
+    ----------
+        id (str):
+        name (str):
+        score_type (Union[None, str]):
+        created_at (datetime.datetime):
+        updated_at (datetime.datetime):
+        created_by (str):
+        data_type (Union[DataTypeOptions, None]):
+        scoreable_node_types (Union[None, list[str]]):
+    """
+
+    id: str
+    name: str
+    score_type: None | str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    created_by: str
+    data_type: DataTypeOptions | None
+    scoreable_node_types: None | list[str]
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        id = self.id
+
+        name = self.name
+
+        score_type: None | str
+        score_type = self.score_type
+
+        created_at = self.created_at.isoformat()
+
+        updated_at = self.updated_at.isoformat()
+
+        created_by = self.created_by
+
+        data_type: None | str
+        data_type = self.data_type.value if isinstance(self.data_type, DataTypeOptions) else self.data_type
+
+        scoreable_node_types: None | list[str]
+        if isinstance(self.scoreable_node_types, list):
+            scoreable_node_types = self.scoreable_node_types
+
+        else:
+            scoreable_node_types = self.scoreable_node_types
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "id": id,
+                "name": name,
+                "score_type": score_type,
+                "created_at": created_at,
+                "updated_at": updated_at,
+                "created_by": created_by,
+                "data_type": data_type,
+                "scoreable_node_types": scoreable_node_types,
+            }
+        )
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        id = d.pop("id")
+
+        name = d.pop("name")
+
+        def _parse_score_type(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        score_type = _parse_score_type(d.pop("score_type"))
+
+        created_at = isoparse(d.pop("created_at"))
+
+        updated_at = isoparse(d.pop("updated_at"))
+
+        created_by = d.pop("created_by")
+
+        def _parse_data_type(data: object) -> DataTypeOptions | None:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return DataTypeOptions(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(DataTypeOptions | None, data)
+
+        data_type = _parse_data_type(d.pop("data_type"))
+
+        def _parse_scoreable_node_types(data: object) -> None | list[str]:
+            if data is None:
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                return cast(list[str], data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | list[str], data)
+
+        scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types"))
+
+        create_update_registered_scorer_response = cls(
+            id=id,
+            name=name,
+            score_type=score_type,
+            created_at=created_at,
+            updated_at=updated_at,
+            created_by=created_by,
+            data_type=data_type,
+            scoreable_node_types=scoreable_node_types,
+        )
+
+        create_update_registered_scorer_response.additional_properties = d
+        return create_update_registered_scorer_response
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

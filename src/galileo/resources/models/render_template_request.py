@@ -1,0 +1,83 @@
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, TypeVar, Union
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+if TYPE_CHECKING:
+    from ..models.dataset_data import DatasetData
+    from ..models.string_data import StringData
+
+
+T = TypeVar("T", bound="RenderTemplateRequest")
+
+
+@_attrs_define
+class RenderTemplateRequest:
+    """
+    Attributes
+    ----------
+        template (str):
+        data (Union['DatasetData', 'StringData']):
+    """
+
+    template: str
+    data: Union["DatasetData", "StringData"]
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        from ..models.dataset_data import DatasetData
+
+        template = self.template
+
+        data: dict[str, Any]
+        data = self.data.to_dict() if isinstance(self.data, DatasetData) else self.data.to_dict()
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({"template": template, "data": data})
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.dataset_data import DatasetData
+        from ..models.string_data import StringData
+
+        d = dict(src_dict)
+        template = d.pop("template")
+
+        def _parse_data(data: object) -> Union["DatasetData", "StringData"]:
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                return DatasetData.from_dict(data)
+
+            except:  # noqa: E722
+                pass
+            if not isinstance(data, dict):
+                raise TypeError()
+            return StringData.from_dict(data)
+
+        data = _parse_data(d.pop("data"))
+
+        render_template_request = cls(template=template, data=data)
+
+        render_template_request.additional_properties = d
+        return render_template_request
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

@@ -1,0 +1,113 @@
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.chain_poll_template import ChainPollTemplate
+
+
+T = TypeVar("T", bound="BaseGeneratedScorerDB")
+
+
+@_attrs_define
+class BaseGeneratedScorerDB:
+    """
+    Attributes
+    ----------
+        id (str):
+        name (str):
+        chain_poll_template (ChainPollTemplate): Template for a chainpoll metric prompt,
+            containing all the info necessary to send a chainpoll prompt.
+        instructions (Union[None, Unset, str]):
+        user_prompt (Union[None, Unset, str]):
+    """
+
+    id: str
+    name: str
+    chain_poll_template: "ChainPollTemplate"
+    instructions: None | Unset | str = UNSET
+    user_prompt: None | Unset | str = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        id = self.id
+
+        name = self.name
+
+        chain_poll_template = self.chain_poll_template.to_dict()
+
+        instructions: None | Unset | str
+        instructions = UNSET if isinstance(self.instructions, Unset) else self.instructions
+
+        user_prompt: None | Unset | str
+        user_prompt = UNSET if isinstance(self.user_prompt, Unset) else self.user_prompt
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({"id": id, "name": name, "chain_poll_template": chain_poll_template})
+        if instructions is not UNSET:
+            field_dict["instructions"] = instructions
+        if user_prompt is not UNSET:
+            field_dict["user_prompt"] = user_prompt
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.chain_poll_template import ChainPollTemplate
+
+        d = dict(src_dict)
+        id = d.pop("id")
+
+        name = d.pop("name")
+
+        chain_poll_template = ChainPollTemplate.from_dict(d.pop("chain_poll_template"))
+
+        def _parse_instructions(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        instructions = _parse_instructions(d.pop("instructions", UNSET))
+
+        def _parse_user_prompt(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        user_prompt = _parse_user_prompt(d.pop("user_prompt", UNSET))
+
+        base_generated_scorer_db = cls(
+            id=id,
+            name=name,
+            chain_poll_template=chain_poll_template,
+            instructions=instructions,
+            user_prompt=user_prompt,
+        )
+
+        base_generated_scorer_db.additional_properties = d
+        return base_generated_scorer_db
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

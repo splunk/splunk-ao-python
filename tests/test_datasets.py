@@ -1,0 +1,1760 @@
+import json
+from http import HTTPStatus
+from unittest.mock import ANY, Mock, patch
+from uuid import uuid4
+
+import pytest
+
+from galileo.datasets import (
+    DEFAULT_EXTEND_MODEL_ALIAS,
+    Dataset,
+    DatasetAPIException,
+    DatasetAppendRow,
+    DatasetAppendRowValues,
+    Datasets,
+    UpdateDatasetContentRequest,
+    convert_dataset_row_to_record,
+    create_dataset,
+    extend_dataset,
+    get_dataset_version,
+    get_dataset_version_history,
+    list_dataset_projects,
+)
+from galileo.resources.models import (
+    BodyCreateDatasetDatasetsPost,
+    DatasetContent,
+    DatasetDB,
+    DatasetFormat,
+    DatasetNameFilter,
+    DatasetNameFilterOperator,
+    DatasetUpdatedAtSort,
+    JobProgress,
+    ListDatasetParams,
+    ListDatasetResponse,
+    ListDatasetVersionParams,
+    ListDatasetVersionResponse,
+    SyntheticDatasetExtensionResponse,
+)
+from galileo.resources.models.dataset_row import DatasetRow
+from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
+from galileo.resources.models.http_validation_error import HTTPValidationError
+from galileo.resources.types import UNSET, Response
+from galileo.schema.datasets import DatasetRecord
+
+
+def dataset_content():
+    row = DatasetRow(
+        index=0,
+        values=["Which continent is Spain in?", "Europe"],
+        metadata=None,
+        row_id="",
+        values_dict={"input": "Which continent is Spain in?", "expected": "Europe"},
+    )
+    column_names = ["input", "expected"]
+    return DatasetContent(column_names=column_names, rows=[row])
+
+
+def dataset_db():
+    return DatasetDB.from_dict(
+        {
+            "draft": False,
+            "column_names": ["input", "output", "metadata"],
+            "created_at": "2025-03-10T15:25:03.088471+00:00",
+            "created_by_user": {
+                # "email": "andriisoldatenko@galileo.ai",
+                "id": "01ce18ac-3960-46e1-bb79-0e4965069add",
+                "first_name": "",
+                "last_name": "",
+            },
+            "current_version_index": 2,
+            "id": "78e8035d-c429-47f2-8971-68f10e7e91c9",
+            "name": "storyteller-dataset",
+            "num_rows": 2,
+            "project_count": 2,
+            "updated_at": "2025-03-26T12:00:44.558105+00:00",
+            "permissions": [],
+        }
+    )
+
+
+def dataset_response():
+    return ListDatasetResponse.from_dict(
+        {
+            "datasets": [
+                {
+                    "draft": False,
+                    "column_names": ["input", "output", "metadata"],
+                    "created_at": "2025-03-10T15:25:03.088471+00:00",
+                    "created_by_user": {
+                        # "email": "andriisoldatenko@galileo.ai",
+                        "id": "01ce18ac-3960-46e1-bb79-0e4965069add",
+                        "first_name": "",
+                        "last_name": "",
+                    },
+                    "current_version_index": 2,
+                    "id": "78e8035d-c429-47f2-8971-68f10e7e91c9",
+                    "name": "storyteller-dataset",
+                    "num_rows": 2,
+                    "project_count": 2,
+                    "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                    "permissions": [],
+                }
+            ],
+            "limit": 1,
+            "next_starting_token": 1,
+            "paginated": True,
+            "starting_token": 0,
+        }
+    )
+
+
+def list_dataset_versions():
+    return ListDatasetVersionResponse.from_dict(
+        {
+            "versions": [
+                {
+                    "column_names": ["input", "output", "metadata"],
+                    "columns_added": 2,
+                    "columns_removed": 1,
+                    "columns_renamed": 0,
+                    "created_at": "2025-03-26T12:00:44.553576+00:00",
+                    "created_by_user": None,
+                    "name": "JSON column migration",
+                    "num_rows": 2,
+                    "rows_added": 0,
+                    "rows_edited": 2,
+                    "rows_removed": 0,
+                    "version_index": 2,
+                },
+                {
+                    "column_names": ["input", "expected"],
+                    "columns_added": 2,
+                    "columns_removed": 0,
+                    "columns_renamed": 0,
+                    "created_at": "2025-03-10T15:25:03.582730+00:00",
+                    "created_by_user": {
+                        "email": "andriisoldatenko@galileo.ai",
+                        "id": "01ce18ac-3960-46e1-bb79-0e4965069add",
+                        "first_name": "",
+                        "last_name": "",
+                    },
+                    "name": None,
+                    "num_rows": 2,
+                    "rows_added": 2,
+                    "rows_edited": 0,
+                    "rows_removed": 0,
+                    "version_index": 1,
+                },
+            ],
+            "limit": 100,
+            "next_starting_token": None,
+            "paginated": False,
+            "starting_token": 0,
+        }
+    )
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_validation_error(create_dataset_datasets_post_mock: Mock) -> None:
+    with pytest.raises(ValueError) as exc_info:
+        create_dataset(name="my_dataset_name", content=None)
+    assert "Invalid dataset type: '<class 'NoneType'>'." in str(exc_info.value), str(exc_info)
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_with_empty_list(create_dataset_datasets_post_mock: Mock) -> None:
+    create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
+        content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0060","permissions":[],"name":"my_dataset_name","created_at":"2025-05-16T16:26:41.76451","email":"user.test@galileo.ai","first_name":"","last_name":""},"current_version_index":1,"draft":false}',
+        status_code=HTTPStatus.OK,
+        headers={},
+        parsed=DatasetDB.from_dict(
+            {
+                "draft": False,
+                "column_names": ["input", "output", "metadata"],
+                "created_at": "2025-03-10T15:25:03.088471+00:00",
+                "created_by_user": {"id": "01ce18ac-3960-46e1-bb79-0e4965069add"},
+                "current_version_index": 1,
+                "id": "bb830fae-99d3-4ce7-bef9-300d528e0060",
+                "name": "my_dataset_name",
+                "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                "num_rows": 1,
+                "project_count": 0,
+                "permissions": [],
+            }
+        ),
+    )
+
+    create_dataset(name="my_dataset_name", content=[])
+    create_dataset_datasets_post_mock.sync_detailed.assert_called_once_with(
+        client=ANY,
+        body=BodyCreateDatasetDatasetsPost(draft=False, file=ANY, name="my_dataset_name", project_id=UNSET),
+        format_=DatasetFormat.JSONL,
+    )
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_with_empty_dict(create_dataset_datasets_post_mock: Mock) -> None:
+    create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
+        content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0060","permissions":[],"name":"my_dataset_name","created_at":"2025-05-16T16:26:41.76451","email":"user.test@galileo.ai","first_name":"","last_name":""},"current_version_index":1,"draft":false}',
+        status_code=HTTPStatus.OK,
+        headers={},
+        parsed=DatasetDB.from_dict(
+            {
+                "draft": False,
+                "column_names": ["input", "output", "metadata"],
+                "created_at": "2025-03-10T15:25:03.088471+00:00",
+                "created_by_user": {"id": "01ce18ac-3960-46e1-bb79-0e4965069add"},
+                "current_version_index": 1,
+                "id": "bb830fae-99d3-4ce7-bef9-300d528e0060",
+                "name": "my_dataset_name",
+                "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                "num_rows": 1,
+                "project_count": 0,
+                "permissions": [],
+            }
+        ),
+    )
+
+    create_dataset(name="my_dataset_name", content={})
+    create_dataset_datasets_post_mock.sync_detailed.assert_called_once_with(
+        client=ANY,
+        body=BodyCreateDatasetDatasetsPost(draft=False, file=ANY, name="my_dataset_name", project_id=UNSET),
+        format_=DatasetFormat.JSONL,
+    )
+
+
+@patch("galileo.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+def test_get_dataset_version_using_dataset_id(
+    get_dataset_datasets_dataset_id_get: Mock, get_dataset_version_mock: Mock
+) -> None:
+    get_dataset_datasets_dataset_id_get.sync.return_value = dataset_db()
+    get_dataset_version_mock.sync.return_value = dataset_content()
+
+    result = get_dataset_version(version_index=1, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9")
+    assert result == dataset_content()
+
+    get_dataset_datasets_dataset_id_get.sync.assert_called_once_with(
+        client=ANY, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9"
+    )
+    get_dataset_version_mock.sync.assert_called_once_with(
+        client=ANY, version_index=1, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9"
+    )
+
+
+@patch("galileo.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+def test_get_dataset_version_using_dataset_name(
+    query_datasets_datasets_query_post: Mock, get_dataset_version_mock: Mock
+) -> None:
+    query_datasets_datasets_query_post.sync.return_value = dataset_response()
+    get_dataset_version_mock.sync.return_value = dataset_content()
+
+    result = get_dataset_version(version_index=1, dataset_name="test")
+    assert result == dataset_content()
+
+    ds_name_filter = DatasetNameFilter(operator=DatasetNameFilterOperator.EQ, value="test")
+    body = ListDatasetParams(filters=[ds_name_filter], sort=DatasetUpdatedAtSort(ascending=False))
+    query_datasets_datasets_query_post.sync.assert_called_once_with(client=ANY, body=body, limit=1)
+    # load dataset always by dataset_id
+    get_dataset_version_mock.sync.assert_called_once_with(
+        client=ANY, version_index=1, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9"
+    )
+
+
+def test_get_dataset_version_wo_dataset_name_or_dataset_id() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        get_dataset_version(version_index=1)
+    assert "Either dataset_name or dataset_id must be provided." in str(exc_info.value), str(exc_info)
+
+
+@patch("galileo.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+def test_get_dataset_version_history_using_dataset_id(
+    get_dataset_datasets_dataset_id_get: Mock, get_dataset_versions_mock: Mock
+) -> None:
+    get_dataset_datasets_dataset_id_get.sync.return_value = dataset_db()
+    get_dataset_versions_mock.sync.return_value = list_dataset_versions()
+
+    ds_history = get_dataset_version_history(dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9")
+
+    assert ds_history == list_dataset_versions()
+    get_dataset_datasets_dataset_id_get.sync.assert_called_once_with(
+        client=ANY, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9"
+    )
+
+    get_dataset_versions_mock.sync.assert_called_once_with(
+        client=ANY, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9", body=ListDatasetVersionParams()
+    )
+
+
+@patch("galileo.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+def test_get_dataset_version_history_using_dataset_name(
+    query_datasets_datasets_query_post: Mock, get_dataset_version_mock: Mock
+) -> None:
+    query_datasets_datasets_query_post.sync.return_value = dataset_response()
+    get_dataset_version_mock.sync.return_value = list_dataset_versions()
+
+    ds_history = get_dataset_version_history(dataset_name="test")
+
+    assert ds_history == list_dataset_versions()
+    ds_name_filter = DatasetNameFilter(operator=DatasetNameFilterOperator.EQ, value="test")
+    body = ListDatasetParams(filters=[ds_name_filter], sort=DatasetUpdatedAtSort(ascending=False))
+    query_datasets_datasets_query_post.sync.assert_called_once_with(client=ANY, body=body, limit=1)
+
+    # load dataset always by dataset_id
+    get_dataset_version_mock.sync.assert_called_once_with(
+        client=ANY, dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9", body=ListDatasetVersionParams()
+    )
+
+
+def test_get_dataset_version_history_wo_dataset_name_or_dataset_id() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        get_dataset_version_history()
+    assert "Either dataset_name or dataset_id must be provided." in str(exc_info.value), str(exc_info)
+
+
+def test_convert_dataset_row_to_record() -> None:
+    """Test the convert_dataset_row_to_record function with various inputs."""
+
+    # Case 1: Normal case with input, output, and metadata
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = "Which continent is Spain in?"
+    values_dict["output"] = "Europe"
+    values_dict["metadata"] = json.dumps({"confidence": "high"})
+    row = DatasetRow(
+        index=0,
+        values=["Which continent is Spain in?", "Europe", json.dumps({"confidence": "high"})],
+        metadata=None,
+        row_id="row1",
+        values_dict=values_dict,
+    )
+    record = convert_dataset_row_to_record(row)
+    assert isinstance(record, DatasetRecord)
+    assert record.id == "row1"
+    assert record.input == "Which continent is Spain in?"
+    assert record.output == "Europe"
+    assert record.metadata == {"confidence": "high"}
+
+    # Case 2: With input but no output
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = "Which continent is Spain in?"
+    row = DatasetRow(
+        index=0, values=["Which continent is Spain in?"], metadata=None, row_id="row2", values_dict=values_dict
+    )
+    record = convert_dataset_row_to_record(row)
+    assert record.id == "row2"
+    assert record.input == "Which continent is Spain in?"
+    assert record.output is None
+    assert record.metadata is None
+
+    # Case 3: With input and metadata but no output
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = "Which continent is Spain in?"
+    values_dict["metadata"] = json.dumps({"source": "geography"})
+    row = DatasetRow(
+        index=0,
+        values=["Which continent is Spain in?", None, json.dumps({"source": "geography"})],
+        metadata=None,
+        row_id="row3",
+        values_dict=values_dict,
+    )
+    record = convert_dataset_row_to_record(row)
+    assert record.id == "row3"
+    assert record.input == "Which continent is Spain in?"
+    assert record.output is None
+    assert record.metadata == {"source": "geography"}
+
+    # Case 4: With input that is not a string (should be converted to string)
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = {"question": "Which continent is Spain in?"}
+    row = DatasetRow(
+        index=0,
+        values=[{"question": "Which continent is Spain in?"}],
+        metadata=None,
+        row_id="row4",
+        values_dict=values_dict,
+    )
+    record = convert_dataset_row_to_record(row)
+    assert record.id == "row4"
+    assert record.input == json.dumps({"question": "Which continent is Spain in?"})
+    assert record.output is None
+    assert record.metadata is None
+
+    # Case 5: Missing input (should raise ValueError)
+    values_dict = DatasetRowValuesDict()
+    row = DatasetRow(index=0, values=[], metadata=None, row_id="row5", values_dict=values_dict)
+    with pytest.raises(ValueError, match="Dataset row must have input field"):
+        convert_dataset_row_to_record(row)
+
+    # Case 6: Empty input (should raise ValueError)
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = ""
+    row = DatasetRow(index=0, values=[""], metadata=None, row_id="row6", values_dict=values_dict)
+    with pytest.raises(ValueError, match="Dataset row must have input field"):
+        convert_dataset_row_to_record(row)
+
+    # Case 7: With ground_truth in values_dict (should be converted to output)
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = "What is 2+2?"
+    values_dict["ground_truth"] = "4"  # API might return this instead of output
+    values_dict["generated_output"] = "The answer is 4"
+    row = DatasetRow(
+        index=0,
+        values=["What is 2+2?", "4", None, "The answer is 4"],
+        metadata=None,
+        row_id="row7",
+        values_dict=values_dict,
+    )
+    record = convert_dataset_row_to_record(row)
+    assert record.id == "row7"
+    assert record.input == "What is 2+2?"
+    assert record.output == "4"  # Converted from ground_truth
+    assert record.ground_truth == "4"  # Property accessor works
+    assert record.generated_output == "The answer is 4"  # Separate field preserved
+
+    # Case 8: With both output and ground_truth in values_dict (output takes precedence)
+    values_dict = DatasetRowValuesDict()
+    values_dict["input"] = "What is 2+2?"
+    values_dict["output"] = "4"
+    values_dict["ground_truth"] = "5"  # Should be ignored, output takes precedence
+    row = DatasetRow(index=0, values=["What is 2+2?", "4"], metadata=None, row_id="row8", values_dict=values_dict)
+    record = convert_dataset_row_to_record(row)
+    assert record.output == "4"  # output value used (not ground_truth)
+    assert record.ground_truth == "4"  # Property reflects output value
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test__get_etag(get_dataset_content_by_id_patch: Mock) -> None:
+    dataset = Dataset(dataset_db=dataset_db())
+
+    expected_etag: str = str(uuid4())
+    mock_response = Mock()
+    mock_response.headers = {"ETag": expected_etag}
+    get_dataset_content_by_id_patch.sync_detailed.return_value = mock_response
+
+    assert expected_etag == dataset._get_etag()
+    get_dataset_content_by_id_patch.sync_detailed.assert_called_once_with(
+        client=dataset.config.api_client, dataset_id=dataset.dataset.id
+    )
+
+
+@patch("galileo.datasets.Dataset._get_etag", return_value="test_etag")
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+def test_dataset_add_rows_success(
+    update_dataset_patch: Mock, get_dataset_content_patch: Mock, etag_patch: Mock
+) -> None:
+    update_dataset_patch.sync_detailed.return_value = Mock(status_code=204)
+
+    dataset = Dataset(dataset_db=dataset_db())
+
+    dataset.add_rows([{"input": "b"}, {"input": "c"}])
+
+    expected_append_row_b = DatasetAppendRowValues()
+    expected_append_row_b.additional_properties = {"input": "b"}
+    expected_append_row_c = DatasetAppendRowValues()
+    expected_append_row_c.additional_properties = {"input": "c"}
+    update_dataset_patch.sync_detailed.assert_called_once_with(
+        client=dataset.config.api_client,
+        dataset_id="78e8035d-c429-47f2-8971-68f10e7e91c9",
+        body=UpdateDatasetContentRequest(
+            edits=[
+                DatasetAppendRow(values=expected_append_row_b, edit_type="append_row"),
+                DatasetAppendRow(values=expected_append_row_c, edit_type="append_row"),
+            ]
+        ),
+        if_match="test_etag",
+    )
+    etag_patch.assert_called_once()
+    get_dataset_content_patch.sync.assert_called_once()
+
+
+@patch("galileo.datasets.Dataset._get_etag", return_value="test_etag")
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+def test_dataset_add_rows_failure(
+    update_dataset_patch: Mock, get_dataset_content_patch: Mock, etag_patch: Mock
+) -> None:
+    """Test that add_rows raises DatasetAPIException when API returns an error."""
+    update_dataset_patch.sync_detailed.return_value = Mock(status_code=422, content=b"Validation error")
+
+    dataset = Dataset(dataset_db=dataset_db())
+
+    with pytest.raises(DatasetAPIException) as exc_info:
+        dataset.add_rows([{"input": "b"}, {"input": "c"}])
+
+    assert "Request to add new rows to dataset failed" in str(exc_info.value)
+    assert "422" in str(exc_info.value)
+    update_dataset_patch.sync_detailed.assert_called_once()
+    etag_patch.assert_called_once()
+    get_dataset_content_patch.sync.assert_not_called()
+
+
+def test_delete_dataset_validation_errors() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().delete()
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().delete(id=None)
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().delete(name=None)
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+
+def test_get_dataset_validation_errors() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().get()
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().get(id=None)
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+    with pytest.raises(ValueError) as exc_info:
+        Datasets().get(name=None)
+    assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("galileo.datasets.time.sleep")  # Mock sleep to avoid actual delays
+def test_extend_dataset_success(
+    sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
+) -> None:
+    """Test the extend_dataset function with successful completion."""
+
+    # Setup test data
+    extended_dataset_id = "a8b3d8e0-5e0b-4b0f-8b3a-3b9f4b3d3b3a"
+
+    # Mock the initial extend request response
+    extend_response = SyntheticDatasetExtensionResponse(dataset_id=extended_dataset_id)
+    extend_dataset_mock.sync.return_value = extend_response
+
+    # Mock job progress responses - first incomplete, then complete
+    progress_responses = [
+        JobProgress(steps_completed=1, steps_total=3, progress_message="Processing"),
+        JobProgress(steps_completed=2, steps_total=3, progress_message="Still processing"),
+        JobProgress(steps_completed=3, steps_total=3, progress_message="Done"),
+    ]
+    get_extend_status_mock.sync.side_effect = progress_responses
+
+    # Mock the final dataset content
+    extended_row = DatasetRow(
+        index=0,
+        row_id="be4dcadf-a0a2-475e-91e4-7bd03fdf5de8",
+        values=["Extended", "Row"],
+        values_dict={"col1": "Extended", "col2": "Row"},
+        metadata=None,
+    )
+    dataset_content = DatasetContent(column_names=["col1", "col2"], rows=[extended_row])
+    get_dataset_content_mock.sync.return_value = dataset_content
+
+    # Call the function
+    result = extend_dataset(
+        prompt_settings={"model_alias": "GPT-4o mini"},
+        prompt="Financial planning assistant that helps clients design an investment strategy.",
+        instructions="You are a financial planning assistant that helps clients design an investment strategy.",
+        examples=["I want to invest $1000 per month."],
+        data_types=["Prompt Injection"],
+        count=3,
+    )
+
+    # Verify the result
+    assert result == [extended_row]
+
+    # Verify the API calls
+    extend_dataset_mock.sync.assert_called_once()
+    assert get_extend_status_mock.sync.call_count == 3  # Called 3 times before completion
+    get_dataset_content_mock.sync.assert_called_once_with(client=ANY, dataset_id=extended_dataset_id)
+
+    # Verify sleep was called between status checks
+    assert sleep_mock.call_count == 2  # Called 2 times (between the 3 status checks)
+
+
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+def test_extend_dataset_uses_default_model_alias_when_prompt_settings_is_none(extend_dataset_mock: Mock) -> None:
+    # Given: no prompt_settings provided
+    extend_dataset_mock.sync.return_value = HTTPValidationError()
+
+    # When: extend_dataset is called without prompt_settings
+    with pytest.raises(DatasetAPIException):
+        extend_dataset(prompt="Test prompt", count=1)
+
+    # Then: the request is built with the DEFAULT_EXTEND_MODEL_ALIAS
+    call_body = extend_dataset_mock.sync.call_args.kwargs["body"]
+    assert call_body.prompt_settings.model_alias == DEFAULT_EXTEND_MODEL_ALIAS
+
+
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+def test_extend_dataset_uses_default_model_alias_when_model_alias_key_missing(extend_dataset_mock: Mock) -> None:
+    # Given: prompt_settings provided but without a "model_alias" key
+    extend_dataset_mock.sync.return_value = HTTPValidationError()
+
+    # When: extend_dataset is called with prompt_settings that omit "model_alias"
+    with pytest.raises(DatasetAPIException):
+        extend_dataset(prompt_settings={"temperature": 0.7}, prompt="Test prompt", count=1)
+
+    # Then: the request falls back to DEFAULT_EXTEND_MODEL_ALIAS
+    call_body = extend_dataset_mock.sync.call_args.kwargs["body"]
+    assert call_body.prompt_settings.model_alias == DEFAULT_EXTEND_MODEL_ALIAS
+
+
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+def test_extend_dataset_preserves_non_model_alias_prompt_settings(extend_dataset_mock: Mock) -> None:
+    """Regression for sc-61766: extend_dataset must forward all prompt_settings fields,
+    not just model_alias."""
+    # Given: prompt_settings with model_alias plus extra fields
+    extend_dataset_mock.sync.return_value = HTTPValidationError()
+
+    # When: extend_dataset is called with multiple prompt_settings fields
+    with pytest.raises(DatasetAPIException):
+        extend_dataset(
+            prompt_settings={"model_alias": "GPT-4o mini", "temperature": 0.2, "max_tokens": 256, "top_p": 0.9},
+            prompt="Test prompt",
+            count=1,
+        )
+
+    # Then: every caller-provided field reaches the API request body
+    call_body = extend_dataset_mock.sync.call_args.kwargs["body"]
+    assert call_body.prompt_settings.model_alias == "GPT-4o mini"
+    assert call_body.prompt_settings.temperature == 0.2
+    assert call_body.prompt_settings.max_tokens == 256
+    assert call_body.prompt_settings.top_p == 0.9
+
+
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+def test_extend_dataset_does_not_mutate_caller_prompt_settings(extend_dataset_mock: Mock) -> None:
+    """extend_dataset must not mutate the caller's prompt_settings dict (e.g. inject model_alias)."""
+    # Given: a caller dict without model_alias
+    extend_dataset_mock.sync.return_value = HTTPValidationError()
+    caller_settings = {"temperature": 0.5}
+
+    # When: extend_dataset is called
+    with pytest.raises(DatasetAPIException):
+        extend_dataset(prompt_settings=caller_settings, prompt="Test prompt", count=1)
+
+    # Then: the caller dict is untouched
+    assert caller_settings == {"temperature": 0.5}
+
+
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+def test_extend_dataset_api_failure(extend_dataset_mock: Mock) -> None:
+    """Test extend_dataset when the initial API call fails."""
+
+    # Mock API failure
+    extend_dataset_mock.sync.return_value = HTTPValidationError()
+
+    # Call should raise DatasetAPIException
+    with pytest.raises(DatasetAPIException, match="Request to extend dataset failed."):
+        extend_dataset(prompt_settings={"model_alias": "GPT-4o mini"}, prompt="Test prompt", count=1)
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("galileo.datasets.time.sleep")
+def test_extend_dataset_unexpected_error_in_progress_message(
+    sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
+) -> None:
+    """Test that extend_dataset raises DatasetAPIException when the job completes with an unexpected error message."""
+
+    # Given: the API returns a completed job whose progress_message signals failure
+    extended_dataset_id = "abc-123"
+    extend_dataset_mock.sync.return_value = SyntheticDatasetExtensionResponse(dataset_id=extended_dataset_id)
+    get_extend_status_mock.sync.return_value = JobProgress(
+        steps_completed=3, steps_total=3, progress_message="Unexpected error"
+    )
+
+    # When/Then: calling extend_dataset raises DatasetAPIException with the error message
+    with pytest.raises(DatasetAPIException, match="Unexpected error"):
+        extend_dataset(prompt_settings={"model_alias": "GPT-4o mini"}, prompt="Test prompt", count=3)
+
+    # Then: the content fetch is never attempted
+    get_dataset_content_mock.sync.assert_not_called()
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("galileo.datasets.time.sleep")
+def test_extend_dataset_unexpected_error_case_insensitive(
+    sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
+) -> None:
+    """Test that the unexpected error check is case-insensitive."""
+
+    # Given: the API returns a completed job whose progress_message is uppercase
+    extended_dataset_id = "abc-123"
+    extend_dataset_mock.sync.return_value = SyntheticDatasetExtensionResponse(dataset_id=extended_dataset_id)
+    get_extend_status_mock.sync.return_value = JobProgress(
+        steps_completed=3, steps_total=3, progress_message="UNEXPECTED ERROR"
+    )
+
+    # When/Then: calling extend_dataset raises DatasetAPIException regardless of case
+    with pytest.raises(DatasetAPIException, match="UNEXPECTED ERROR"):
+        extend_dataset(prompt_settings={"model_alias": "GPT-4o mini"}, prompt="Test prompt", count=3)
+
+    # Then: the content fetch is never attempted
+    get_dataset_content_mock.sync.assert_not_called()
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("galileo.datasets.time.sleep")
+def test_dataset_generate_propagates_unexpected_error(
+    sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
+) -> None:
+    """Test that Dataset.generate propagates DatasetAPIException from extend when a job fails."""
+    from galileo.dataset import Dataset as FutureDataset
+
+    # Given: the underlying extend job signals failure via progress_message
+    extended_dataset_id = "abc-123"
+    extend_dataset_mock.sync.return_value = SyntheticDatasetExtensionResponse(dataset_id=extended_dataset_id)
+    get_extend_status_mock.sync.return_value = JobProgress(
+        steps_completed=3, steps_total=3, progress_message="Unexpected error occurred during generation"
+    )
+
+    # When: calling Dataset.generate, which delegates to Datasets.extend
+    # Then: DatasetAPIException propagates to the caller
+    with pytest.raises(DatasetAPIException, match="Unexpected error occurred during generation"):
+        FutureDataset.generate(prompt="Test prompt", count=3)
+
+    # Then: the content fetch is never attempted
+    get_dataset_content_mock.sync.assert_not_called()
+
+
+# ===================================================================
+# Project Association Tests for Dataset CRUD Operations
+# ===================================================================
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+def test_list_datasets_with_project_id(query_datasets_mock: Mock, get_project_mock: Mock) -> None:
+    """Test listing datasets filtered by project_id."""
+    from galileo.datasets import list_datasets
+
+    project_id = "test-project-id"
+    dataset_db = DatasetDB(
+        id="dataset-1",
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+
+    # Mock project retrieval - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset query response
+    query_datasets_mock.sync.return_value = ListDatasetResponse(datasets=[dataset_db])
+
+    # Call the function
+    result = list_datasets(project_id=project_id, limit=100)
+
+    # Verify results
+    assert len(result) == 1
+    assert result[0].id == "dataset-1"
+    assert result[0].name == "Test Dataset"
+
+    # Verify the API was called with project filter
+    query_datasets_mock.sync.assert_called_once()
+    call_args = query_datasets_mock.sync.call_args
+    assert call_args.kwargs["body"].filters[0].value == project_id
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+def test_list_datasets_with_project_name(query_datasets_mock: Mock, get_project_mock: Mock) -> None:
+    """Test listing datasets filtered by project_name."""
+    from galileo.datasets import list_datasets
+
+    project_name = "Test Project"
+    project_id = "test-project-id"
+    dataset_db = DatasetDB(
+        id="dataset-1",
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+
+    # Mock project retrieval by name - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset query response
+    query_datasets_mock.sync.return_value = ListDatasetResponse(datasets=[dataset_db])
+
+    # Call the function
+    result = list_datasets(project_name=project_name, limit=100)
+
+    # Verify results
+    assert len(result) == 1
+    assert result[0].id == "dataset-1"
+
+    # Verify the API was called with resolved project_id
+    query_datasets_mock.sync.assert_called_once()
+    call_args = query_datasets_mock.sync.call_args
+    assert call_args.kwargs["body"].filters[0].value == project_id
+
+
+def test_list_datasets_with_both_project_params() -> None:
+    """Test that providing both project_id and project_name raises an error."""
+    from galileo.datasets import list_datasets
+
+    with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
+        list_datasets(project_id="id-123", project_name="My Project")
+
+
+@patch("galileo.projects.Projects.get")
+def test_list_datasets_with_nonexistent_project_name(get_project_mock: Mock) -> None:
+    """Test listing datasets with a project name that doesn't exist."""
+    from galileo.datasets import list_datasets
+
+    # Mock project not found
+    get_project_mock.return_value = None
+
+    with pytest.raises(ValueError, match="Project 'Nonexistent Project' does not exist"):
+        list_datasets(project_name="Nonexistent Project")
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_get_dataset_with_project_id(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
+    """Test getting a dataset with project_id validation."""
+    from galileo.datasets import get_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_id = "dataset-1"
+    project_id = "test-project-id"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock project retrieval - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset projects list - use Mock objects for projects
+    mock_proj = Mock()
+    mock_proj.id = project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[mock_proj])
+
+    # Call the function
+    result = get_dataset(id=dataset_id, project_id=project_id)
+
+    # Verify results
+    assert result is not None
+    assert result.id == dataset_id
+
+    # Verify the project validation was called
+    list_projects_mock.assert_called_once()
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_get_dataset_with_project_name(
+    list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
+) -> None:
+    """Test getting a dataset with project_name validation."""
+    from galileo.datasets import get_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_name = "Test Dataset"
+    dataset_id = "dataset-1"
+    project_name = "Test Project"
+    project_id = "test-project-id"
+
+    # Mock dataset retrieval by name
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name=dataset_name,
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    query_datasets_mock.sync.return_value = ListDatasetResponse(datasets=[dataset_db])
+
+    # Mock project retrieval by name - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset projects list - use Mock objects for projects
+    mock_proj = Mock()
+    mock_proj.id = project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[mock_proj])
+
+    # Call the function
+    result = get_dataset(name=dataset_name, project_name=project_name)
+
+    # Verify results
+    assert result is not None
+    assert result.name == dataset_name
+
+    # Verify the project validation was called
+    list_projects_mock.assert_called_once()
+
+
+def test_get_dataset_with_both_project_params() -> None:
+    """Test that providing both project_id and project_name raises an error."""
+    from galileo.datasets import get_dataset
+
+    with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
+        get_dataset(name="my-dataset", project_id="id-123", project_name="My Project")
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+def test_get_dataset_with_nonexistent_project(get_dataset_mock: Mock, get_project_mock: Mock) -> None:
+    """Test getting a dataset with a project that doesn't exist."""
+    from galileo.datasets import get_dataset
+
+    dataset_id = "dataset-1"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock project not found
+    get_project_mock.return_value = None
+
+    with pytest.raises(ValueError, match="Project 'nonexistent-project' does not exist"):
+        get_dataset(id=dataset_id, project_id="nonexistent-project")
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_get_dataset_not_in_project(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
+    """Test getting a dataset that is not used in the specified project."""
+    from galileo.datasets import get_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_id = "dataset-1"
+    project_id = "test-project-id"
+    other_project_id = "other-project-id"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock project retrieval - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset is used in a different project - use Mock objects
+    other_mock_proj = Mock()
+    other_mock_proj.id = other_project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[other_mock_proj])
+
+    with pytest.raises(ValueError, match="Dataset 'dataset-1' is not used in project 'test-project-id'"):
+        get_dataset(id=dataset_id, project_id=project_id)
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("galileo.datasets.delete_dataset_datasets_dataset_id_delete")
+def test_delete_dataset_with_project_id(
+    delete_dataset_mock: Mock, list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
+) -> None:
+    """Test deleting a dataset with project_id validation."""
+    from galileo.datasets import delete_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_id = "dataset-1"
+    project_id = "test-project-id"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock project retrieval - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset projects list - use Mock objects for projects
+    mock_proj = Mock()
+    mock_proj.id = project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[mock_proj])
+
+    # Mock deletion
+    delete_dataset_mock.sync.return_value = None
+
+    # Call the function
+    delete_dataset(id=dataset_id, project_id=project_id)
+
+    # Verify deletion was called
+    delete_dataset_mock.sync.assert_called_once_with(client=ANY, dataset_id=dataset_id)
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("galileo.datasets.delete_dataset_datasets_dataset_id_delete")
+def test_delete_dataset_with_project_name(
+    delete_dataset_mock: Mock, list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
+) -> None:
+    """Test deleting a dataset with project_name validation."""
+    from galileo.datasets import delete_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_name = "Test Dataset"
+    dataset_id = "dataset-1"
+    project_name = "Test Project"
+    project_id = "test-project-id"
+
+    # Mock dataset retrieval by name
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name=dataset_name,
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    query_datasets_mock.sync.return_value = ListDatasetResponse(datasets=[dataset_db])
+
+    # Mock project retrieval by name - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset projects list - use Mock objects for projects
+    mock_proj = Mock()
+    mock_proj.id = project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[mock_proj])
+
+    # Mock deletion
+    delete_dataset_mock.sync.return_value = None
+
+    # Call the function
+    delete_dataset(name=dataset_name, project_name=project_name)
+
+    # Verify deletion was called
+    delete_dataset_mock.sync.assert_called_once_with(client=ANY, dataset_id=dataset_id)
+
+
+def test_delete_dataset_with_both_project_params() -> None:
+    """Test that providing both project_id and project_name raises an error."""
+    from galileo.datasets import delete_dataset
+
+    with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
+        delete_dataset(name="my-dataset", project_id="id-123", project_name="My Project")
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_delete_dataset_not_in_project(
+    list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
+) -> None:
+    """Test deleting a dataset that is not used in the specified project."""
+    from galileo.datasets import delete_dataset
+    from galileo.resources.models import ListDatasetProjectsResponse
+
+    dataset_id = "dataset-1"
+    project_id = "test-project-id"
+    other_project_id = "other-project-id"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        created_at="2024-01-01T00:00:00Z",
+        updated_at="2024-01-01T00:00:00Z",
+        column_names=["input", "output"],
+        current_version_index=0,
+        draft=False,
+        num_rows=10,
+        project_count=1,
+        created_by_user=None,
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock project retrieval - return a mock Project with id attribute
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset is used in a different project - use Mock objects
+    other_mock_proj = Mock()
+    other_mock_proj.id = other_project_id
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[other_mock_proj])
+
+    with pytest.raises(ValueError, match="Dataset 'dataset-1' is not used in project 'test-project-id'"):
+        delete_dataset(id=dataset_id, project_id=project_id)
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_with_project_id(create_dataset_mock: Mock, get_project_mock: Mock) -> None:
+    """Test creating a dataset with project_id association."""
+    from galileo.datasets import create_dataset
+
+    project_id = "test-project-id"
+    dataset_name = "Test Dataset"
+
+    # Mock project retrieval
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset creation
+    dataset_db = DatasetDB(
+        id="dataset-1",
+        name=dataset_name,
+        column_names=["input", "output"],
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        current_version_index=1,
+        draft=False,
+        num_rows=1,
+        project_count=1,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    mock_response = Mock()
+    mock_response.parsed = dataset_db
+    create_dataset_mock.sync_detailed.return_value = mock_response
+
+    # Call the function
+    result = create_dataset(name=dataset_name, content=[{"input": "test", "output": "result"}], project_id=project_id)
+
+    # Verify results
+    assert result is not None
+    assert result.id == "dataset-1"
+    assert result.name == dataset_name
+
+    # Verify the API was called with project_id in body
+    create_dataset_mock.sync_detailed.assert_called_once()
+    call_args = create_dataset_mock.sync_detailed.call_args
+    assert call_args.kwargs["body"].project_id == project_id
+
+
+@patch("galileo.projects.Projects.get")
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_with_project_name(create_dataset_mock: Mock, get_project_mock: Mock) -> None:
+    """Test creating a dataset with project_name association."""
+    from galileo.datasets import create_dataset
+
+    project_name = "Test Project"
+    project_id = "test-project-id"
+    dataset_name = "Test Dataset"
+
+    # Mock project retrieval by name
+    mock_project = Mock()
+    mock_project.id = project_id
+    get_project_mock.return_value = mock_project
+
+    # Mock dataset creation
+    dataset_db = DatasetDB(
+        id="dataset-1",
+        name=dataset_name,
+        column_names=["input", "output"],
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        current_version_index=1,
+        draft=False,
+        num_rows=1,
+        project_count=1,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    mock_response = Mock()
+    mock_response.parsed = dataset_db
+    create_dataset_mock.sync_detailed.return_value = mock_response
+
+    # Call the function
+    result = create_dataset(
+        name=dataset_name, content=[{"input": "test", "output": "result"}], project_name=project_name
+    )
+
+    # Verify results
+    assert result is not None
+    assert result.id == "dataset-1"
+    assert result.name == dataset_name
+
+    # Verify the API was called with resolved project_id in body
+    create_dataset_mock.sync_detailed.assert_called_once()
+    call_args = create_dataset_mock.sync_detailed.call_args
+    assert call_args.kwargs["body"].project_id == project_id
+
+    # Verify project was looked up by name
+    get_project_mock.assert_called_once_with(name=project_name)
+
+
+def test_create_dataset_with_both_project_params() -> None:
+    """Test that providing both project_id and project_name raises an error."""
+    from galileo.datasets import create_dataset
+
+    with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
+        create_dataset(name="test-dataset", content=[{"input": "test"}], project_id="id-123", project_name="My Project")
+
+
+@patch("galileo.projects.Projects.get")
+def test_create_dataset_with_nonexistent_project(get_project_mock: Mock) -> None:
+    """Test creating a dataset with a project that doesn't exist."""
+    from galileo.datasets import create_dataset
+
+    # Mock project retrieval - return None to simulate nonexistent project
+    get_project_mock.return_value = None
+
+    with pytest.raises(ValueError, match="Project 'nonexistent-project' does not exist"):
+        create_dataset(name="test-dataset", content=[{"input": "test"}], project_id="nonexistent-project")
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_without_project_uses_unset(create_dataset_mock: Mock) -> None:
+    """Test that creating a dataset without project_id uses UNSET, not None.
+
+    This prevents the string 'None' from being sent to the API which would
+    cause a 422 validation error.
+    """
+    from galileo.datasets import create_dataset
+
+    # Mock successful dataset creation
+    create_dataset_mock.sync_detailed.return_value = Response(
+        content=b'{"id":"test-id","name":"test-dataset","draft":false}',
+        status_code=HTTPStatus.OK,
+        headers={},
+        parsed=DatasetDB.from_dict(
+            {
+                "draft": False,
+                "column_names": ["input", "output"],
+                "created_at": "2025-03-10T15:25:03.088471+00:00",
+                "created_by_user": {"id": "test-user-id"},
+                "current_version_index": 1,
+                "id": "test-id",
+                "name": "test-dataset",
+                "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                "num_rows": 1,
+                "project_count": 0,
+                "permissions": [],
+            }
+        ),
+    )
+
+    # Create dataset without project_id
+    create_dataset(name="test-dataset", content=[{"input": "test", "output": "result"}])
+
+    # Verify that UNSET is used for project_id, not None
+    call_args = create_dataset_mock.sync_detailed.call_args
+    body_arg = call_args.kwargs["body"]
+
+    # The body should have project_id=UNSET (not None)
+    assert body_arg.project_id is UNSET, f"Expected UNSET, got {body_arg.project_id}"
+
+    # Verify multipart form data doesn't include "None" string
+    multipart_data = body_arg.to_multipart()
+    for field_name, field_value in multipart_data:
+        if field_name == "project_id":
+            pytest.fail("project_id should not be in multipart form data when UNSET")
+        # Also check that no field contains the string "None"
+        if isinstance(field_value, tuple) and len(field_value) >= 2:
+            field_content = field_value[1]
+            if isinstance(field_content, bytes) and field_content == b"None":
+                pytest.fail(f"Field {field_name} contains string 'None' which would cause 422 error")
+
+
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_dataset_list_projects(list_projects_mock: Mock) -> None:
+    """Test Dataset.list_projects() method."""
+    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+
+    # Create a dataset instance
+    dataset_db = DatasetDB(
+        id="dataset-1",
+        name="Test Dataset",
+        column_names=["input", "output"],
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        current_version_index=1,
+        draft=False,
+        num_rows=1,
+        project_count=2,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    dataset = Dataset(dataset_db)
+
+    # Mock list_projects API call
+    project1 = DatasetProject(
+        id="project-1",
+        name="Project 1",
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    project2 = DatasetProject(
+        id="project-2",
+        name="Project 2",
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[project1, project2])
+
+    # Call the method
+    projects = dataset.list_projects()
+
+    # Verify results
+    assert len(projects) == 2
+    assert projects[0].id == "project-1"
+    assert projects[0].name == "Project 1"
+    assert projects[1].id == "project-2"
+    assert projects[1].name == "Project 2"
+
+    # Verify API was called correctly
+    list_projects_mock.assert_called_once_with(dataset_id="dataset-1", client=ANY, limit=100)
+
+
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_list_dataset_projects_by_id(list_projects_mock: Mock, get_dataset_mock: Mock) -> None:
+    """Test list_dataset_projects() convenience function with dataset_id."""
+    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+
+    dataset_id = "dataset-1"
+
+    # Mock dataset retrieval
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name="Test Dataset",
+        column_names=["input", "output"],
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        current_version_index=1,
+        draft=False,
+        num_rows=1,
+        project_count=1,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    get_dataset_mock.sync.return_value = dataset_db
+
+    # Mock list_projects API call
+    project = DatasetProject(
+        id="project-1",
+        name="Project 1",
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[project])
+
+    # Call the function
+    projects = list_dataset_projects(dataset_id=dataset_id)
+
+    # Verify results
+    assert len(projects) == 1
+    assert projects[0].id == "project-1"
+    assert projects[0].name == "Project 1"
+
+    # Verify dataset was retrieved
+    get_dataset_mock.sync.assert_called_once_with(client=ANY, dataset_id=dataset_id)
+
+
+@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+def test_list_dataset_projects_by_name(list_projects_mock: Mock, query_datasets_mock: Mock) -> None:
+    """Test list_dataset_projects() convenience function with dataset_name."""
+    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+
+    dataset_name = "Test Dataset"
+    dataset_id = "dataset-1"
+
+    # Mock dataset retrieval by name
+    dataset_db = DatasetDB(
+        id=dataset_id,
+        name=dataset_name,
+        column_names=["input", "output"],
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        current_version_index=1,
+        draft=False,
+        num_rows=1,
+        project_count=1,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    query_datasets_mock.sync.return_value = ListDatasetResponse(datasets=[dataset_db])
+
+    # Mock list_projects API call
+    project = DatasetProject(
+        id="project-1",
+        name="Project 1",
+        created_at="2024-01-01T00:00:00Z",
+        created_by_user=None,
+        updated_at="2024-01-01T00:00:00Z",
+    )
+    list_projects_mock.return_value = ListDatasetProjectsResponse(projects=[project])
+
+    # Call the function
+    projects = list_dataset_projects(dataset_name=dataset_name)
+
+    # Verify results
+    assert len(projects) == 1
+    assert projects[0].id == "project-1"
+    assert projects[0].name == "Project 1"
+
+
+def test_list_dataset_projects_with_both_params() -> None:
+    """Test that providing both dataset_id and dataset_name raises an error."""
+    with pytest.raises(ValueError, match="Exactly one of 'dataset_id' or 'dataset_name' must be provided"):
+        list_dataset_projects(dataset_id="id-123", dataset_name="My Dataset")
+
+
+def test_list_dataset_projects_with_no_params() -> None:
+    """Test that providing neither dataset_id nor dataset_name raises an error."""
+    with pytest.raises(ValueError, match="Exactly one of 'dataset_id' or 'dataset_name' must be provided"):
+        list_dataset_projects()
+
+
+@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+def test_list_dataset_projects_with_nonexistent_dataset(get_dataset_mock: Mock) -> None:
+    """Test list_dataset_projects with a dataset that doesn't exist."""
+    # Mock dataset retrieval - return None to simulate nonexistent dataset
+    get_dataset_mock.sync.return_value = None
+
+    with pytest.raises(ValueError, match="Dataset 'nonexistent-dataset' not found"):
+        list_dataset_projects(dataset_id="nonexistent-dataset")
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_normalizes_ground_truth_to_output(create_dataset_datasets_post_mock: Mock) -> None:
+    """Test that create_dataset normalizes ground_truth field to output before sending to API."""
+    # Given: a dataset with ground_truth fields
+    test_data = [
+        {"input": "Which continent is Spain in?", "ground_truth": "Europe"},
+        {"input": "Which continent is Japan in?", "ground_truth": "Asia"},
+    ]
+
+    create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
+        content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0060","draft":false}',
+        status_code=HTTPStatus.OK,
+        headers={},
+        parsed=DatasetDB.from_dict(
+            {
+                "draft": False,
+                "column_names": ["input", "output"],
+                "created_at": "2025-03-10T15:25:03.088471+00:00",
+                "created_by_user": {"id": "01ce18ac-3960-46e1-bb79-0e4965069add"},
+                "current_version_index": 1,
+                "id": "bb830fae-99d3-4ce7-bef9-300d528e0060",
+                "name": "countries-dataset",
+                "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                "num_rows": 2,
+                "project_count": 0,
+                "permissions": [],
+            }
+        ),
+    )
+
+    # When: creating the dataset
+    create_dataset(name="countries-dataset", content=test_data)
+
+    # Then: the API call should be made with normalized data (ground_truth -> output)
+    create_dataset_datasets_post_mock.sync_detailed.assert_called_once()
+    call_args = create_dataset_datasets_post_mock.sync_detailed.call_args
+
+    # Extract the file from the body and verify contents
+    body = call_args.kwargs["body"]
+    file_content = body.file.payload.read().decode("utf-8")
+
+    # Verify each line in the JSONL file has 'output' instead of 'ground_truth'
+    lines = file_content.strip().split("\n")
+    assert len(lines) == 2
+
+    for line in lines:
+        row = json.loads(line)
+        assert "output" in row, "Expected 'output' field in normalized data"
+        assert "ground_truth" not in row, "Expected 'ground_truth' to be converted to 'output'"
+        assert row["output"] in ["Europe", "Asia"], f"Expected output value, got {row['output']}"
+
+
+@patch("galileo.datasets.create_dataset_datasets_post")
+def test_create_dataset_does_not_mutate_caller_dicts(create_dataset_datasets_post_mock: Mock) -> None:
+    """Test that create_dataset does not mutate the caller's input dicts."""
+    # Given: a dataset with ground_truth in caller-owned dicts
+    row = {"input": "What is 2+2?", "ground_truth": "4"}
+    content = [row]
+
+    create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
+        content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0062","draft":false}',
+        status_code=HTTPStatus.OK,
+        headers={},
+        parsed=DatasetDB.from_dict(
+            {
+                "draft": False,
+                "column_names": ["input", "output"],
+                "created_at": "2025-03-10T15:25:03.088471+00:00",
+                "created_by_user": {"id": "01ce18ac-3960-46e1-bb79-0e4965069add"},
+                "current_version_index": 1,
+                "id": "bb830fae-99d3-4ce7-bef9-300d528e0062",
+                "name": "no-mutation-dataset",
+                "updated_at": "2025-03-26T12:00:44.558105+00:00",
+                "num_rows": 1,
+                "project_count": 0,
+                "permissions": [],
+            }
+        ),
+    )
+
+    # When: creating the dataset
+    create_dataset(name="no-mutation-dataset", content=content)
+
+    # Then: the original dict is not mutated
+    assert row == {"input": "What is 2+2?", "ground_truth": "4"}, "Caller's dict should not be mutated"
+
+
+# ---------------------------------------------------------------------------
+# normalize_dataset_rows unit tests
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_dataset_rows_renames_ground_truth_to_output() -> None:
+    from galileo.utils.datasets import normalize_dataset_rows
+
+    # Given: rows with ground_truth
+    rows = [{"input": "Q1", "ground_truth": "A1"}, {"input": "Q2", "ground_truth": "A2"}]
+
+    # When: normalizing
+    result = normalize_dataset_rows(rows)
+
+    # Then: ground_truth is renamed to output
+    assert result == [{"input": "Q1", "output": "A1"}, {"input": "Q2", "output": "A2"}]
+
+
+def test_normalize_dataset_rows_output_takes_precedence() -> None:
+    from galileo.utils.datasets import normalize_dataset_rows
+
+    # Given: a row with both output and ground_truth
+    rows = [{"input": "Q1", "output": "correct", "ground_truth": "ignored"}]
+
+    # When: normalizing
+    result = normalize_dataset_rows(rows)
+
+    # Then: output is preserved and ground_truth is dropped
+    assert result == [{"input": "Q1", "output": "correct"}]
+
+
+def test_normalize_dataset_rows_does_not_mutate_caller_dicts() -> None:
+    from galileo.utils.datasets import normalize_dataset_rows
+
+    # Given: caller-owned dicts
+    original = {"input": "Q1", "ground_truth": "A1"}
+    rows = [original]
+
+    # When: normalizing
+    normalize_dataset_rows(rows)
+
+    # Then: original dict is untouched
+    assert original == {"input": "Q1", "ground_truth": "A1"}
+
+
+def test_normalize_dataset_rows_passes_through_rows_without_ground_truth() -> None:
+    from galileo.utils.datasets import normalize_dataset_rows
+
+    # Given: rows that already use output
+    rows = [{"input": "Q1", "output": "A1"}, {"input": "Q2", "custom_col": "val"}]
+
+    # When: normalizing
+    result = normalize_dataset_rows(rows)
+
+    # Then: rows are returned unchanged
+    assert result == rows
+
+
+# ---------------------------------------------------------------------------
+# add_rows ground_truth normalization tests
+# ---------------------------------------------------------------------------
+
+
+@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test_add_rows_normalizes_ground_truth_to_output(get_content_mock: Mock, patch_mock: Mock) -> None:
+    """Test that add_rows normalizes ground_truth to output before sending to the API."""
+    from http import HTTPStatus
+
+    # Given: a dataset and rows using ground_truth
+    dataset_id = str(uuid4())
+    patch_mock.sync_detailed.return_value = Mock(status_code=HTTPStatus.NO_CONTENT)
+    get_content_mock.sync_detailed.return_value = Mock(headers={"ETag": "etag-value"})
+    get_content_mock.sync.return_value = DatasetContent(column_names=[], rows=[])
+
+    dataset_db = Mock()
+    dataset_db.id = dataset_id
+    ds = Dataset(dataset_db=dataset_db)
+
+    rows = [{"input": "Which continent is Morocco in?", "ground_truth": "Africa"}]
+
+    # When: adding rows
+    ds.add_rows(rows)
+
+    # Then: the API receives output, not ground_truth
+    patch_mock.sync_detailed.assert_called_once()
+    body: UpdateDatasetContentRequest = patch_mock.sync_detailed.call_args.kwargs["body"]
+    sent_values = body.edits[0].values.additional_properties
+    assert sent_values == {"input": "Which continent is Morocco in?", "output": "Africa"}
+
+
+@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test_add_rows_does_not_mutate_caller_dicts(get_content_mock: Mock, patch_mock: Mock) -> None:
+    """Test that add_rows does not mutate the caller's input dicts."""
+    from http import HTTPStatus
+
+    # Given: a caller-owned dict with ground_truth
+    dataset_id = str(uuid4())
+    patch_mock.sync_detailed.return_value = Mock(status_code=HTTPStatus.NO_CONTENT)
+    get_content_mock.sync_detailed.return_value = Mock(headers={"ETag": "etag-value"})
+    get_content_mock.sync.return_value = DatasetContent(column_names=[], rows=[])
+
+    dataset_db = Mock()
+    dataset_db.id = dataset_id
+    ds = Dataset(dataset_db=dataset_db)
+
+    original = {"input": "Q1", "ground_truth": "A1"}
+    ds.add_rows([original])
+
+    # Then: the original dict is not mutated
+    assert original == {"input": "Q1", "ground_truth": "A1"}
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test_get_content_returns_none_when_api_returns_none(get_content_mock: Mock) -> None:
+    """Test that get_content() handles None API response without crashing."""
+    # Given: the API returns None
+    get_content_mock.sync.return_value = None
+    dataset_db = Mock()
+    dataset_db.id = str(uuid4())
+    ds = Dataset(dataset_db=dataset_db)
+
+    # When: getting content
+    content = ds.get_content()
+
+    # Then: None is returned without raising
+    assert content is None
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test_get_content_syncs_dataset_column_names_after_remap(get_content_mock: Mock) -> None:
+    """Test that get_content() updates dataset.column_names to the remapped names."""
+    # Given: the API returns content with 'output' as a column name
+    get_content_mock.sync.return_value = DatasetContent(column_names=["input", "output", "generated_output"], rows=[])
+    dataset_db = Mock()
+    dataset_db.id = str(uuid4())
+    dataset_db.column_names = ["input", "output", "generated_output"]
+    ds = Dataset(dataset_db=dataset_db)
+
+    # When: getting content
+    ds.get_content()
+
+    # Then: dataset.column_names is updated to the remapped names
+    assert ds.dataset.column_names == ["input", "ground_truth", "generated_output"]
+
+
+@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+def test_get_content_remaps_output_to_ground_truth(get_content_mock: Mock) -> None:
+    """Test that get_content() remaps 'output' to 'ground_truth' in column_names and row values."""
+    # Given: the API returns content with 'output' as the column name
+    row = DatasetRow(
+        index=0,
+        values=["Spain", "Europe"],
+        metadata=None,
+        row_id="row-1",
+        values_dict=DatasetRowValuesDict.from_dict({"input": "Spain", "output": "Europe"}),
+    )
+    get_content_mock.sync.return_value = DatasetContent(
+        column_names=["input", "output", "generated_output", "metadata"], rows=[row]
+    )
+    dataset_db = Mock()
+    dataset_db.id = str(uuid4())
+    ds = Dataset(dataset_db=dataset_db)
+
+    # When: getting content
+    content = ds.get_content()
+
+    # Then: 'output' is renamed to 'ground_truth' in column_names
+    assert content.column_names == ["input", "ground_truth", "generated_output", "metadata"]
+    # Then: 'output' is renamed to 'ground_truth' in row values_dict
+    row_values = content.rows[0].values_dict.additional_properties
+    assert "ground_truth" in row_values
+    assert "output" not in row_values
+    assert row_values["ground_truth"] == "Europe"
