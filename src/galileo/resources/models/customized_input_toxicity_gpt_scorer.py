@@ -1,0 +1,988 @@
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..models.categorical_roll_up_method import CategoricalRollUpMethod
+from ..models.input_type_enum import InputTypeEnum
+from ..models.luna_input_type_enum import LunaInputTypeEnum
+from ..models.luna_output_type_enum import LunaOutputTypeEnum
+from ..models.multimodal_capability import MultimodalCapability
+from ..models.node_type import NodeType
+from ..models.numeric_roll_up_method import NumericRollUpMethod
+from ..models.output_type_enum import OutputTypeEnum
+from ..models.roll_up_strategy import RollUpStrategy
+from ..models.scorer_name import ScorerName
+from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.customized_input_toxicity_gpt_scorer_aggregates_type_0 import (
+        CustomizedInputToxicityGPTScorerAggregatesType0,
+    )
+    from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_0 import (
+        CustomizedInputToxicityGPTScorerClassNameToVocabIxType0,
+    )
+    from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_1 import (
+        CustomizedInputToxicityGPTScorerClassNameToVocabIxType1,
+    )
+    from ..models.customized_input_toxicity_gpt_scorer_extra_type_0 import CustomizedInputToxicityGPTScorerExtraType0
+    from ..models.input_toxicity_template import InputToxicityTemplate
+    from ..models.metadata_filter import MetadataFilter
+    from ..models.modality_filter import ModalityFilter
+    from ..models.node_name_filter import NodeNameFilter
+
+
+T = TypeVar("T", bound="CustomizedInputToxicityGPTScorer")
+
+
+@_attrs_define
+class CustomizedInputToxicityGPTScorer:
+    """
+    Attributes
+    ----------
+        scorer_name (Union[Literal['_customized_input_toxicity_gpt'], Unset]):  Default:
+            '_customized_input_toxicity_gpt'.
+        model_alias (Union[Unset, str]):  Default: 'gpt-4.1-mini'.
+        num_judges (Union[Unset, int]):  Default: 3.
+        name (Union[Literal['input_toxicity'], Unset]):  Default: 'input_toxicity'.
+        scores (Union[None, Unset, list[Any]]):
+        indices (Union[None, Unset, list[int]]):
+        aggregates (Union['CustomizedInputToxicityGPTScorerAggregatesType0', None, Unset]):
+        aggregate_keys (Union[Unset, list[str]]):
+        extra (Union['CustomizedInputToxicityGPTScorerExtraType0', None, Unset]):
+        sub_scorers (Union[Unset, list[ScorerName]]):
+        filters (Union[None, Unset, list[Union['MetadataFilter', 'ModalityFilter', 'NodeNameFilter']]]):
+        metric_name (Union[None, Unset, str]):
+        description (Union[None, Unset, str]):
+        chainpoll_template (Union[Unset, InputToxicityTemplate]): Template for the toxicity metric,
+            containing all the info necessary to send the toxicity prompt.
+        default_model_alias (Union[None, Unset, str]):
+        ground_truth (Union[None, Unset, bool]):
+        regex_field (Union[Unset, str]):  Default: ''.
+        registered_scorer_id (Union[None, Unset, str]):
+        generated_scorer_id (Union[None, Unset, str]):
+        scorer_version_id (Union[None, Unset, str]):
+        user_code (Union[None, Unset, str]):
+        can_copy_to_llm (Union[None, Unset, bool]):
+        scoreable_node_types (Union[None, Unset, list[NodeType]]):
+        cot_enabled (Union[None, Unset, bool]):
+        output_type (Union[None, OutputTypeEnum, Unset]):
+        input_type (Union[InputTypeEnum, None, Unset]):
+        multimodal_capabilities (Union[None, Unset, list[MultimodalCapability]]):
+        required_scorers (Union[None, Unset, list[str]]):
+        roll_up_strategy (Union[None, RollUpStrategy, Unset]):
+        roll_up_methods (Union[None, Unset, list[CategoricalRollUpMethod], list[NumericRollUpMethod]]):
+        prompt (Union[None, Unset, str]):
+        lora_task_id (Union[None, Unset, int]):
+        lora_weights_path (Union[None, Unset, str]):
+        luna_input_type (Union[LunaInputTypeEnum, None, Unset]):
+        luna_output_type (Union[LunaOutputTypeEnum, None, Unset]):
+        class_name_to_vocab_ix (Union['CustomizedInputToxicityGPTScorerClassNameToVocabIxType0',
+            'CustomizedInputToxicityGPTScorerClassNameToVocabIxType1', None, Unset]):
+    """
+
+    scorer_name: Literal["_customized_input_toxicity_gpt"] | Unset = "_customized_input_toxicity_gpt"
+    model_alias: Unset | str = "gpt-4.1-mini"
+    num_judges: Unset | int = 3
+    name: Literal["input_toxicity"] | Unset = "input_toxicity"
+    scores: None | Unset | list[Any] = UNSET
+    indices: None | Unset | list[int] = UNSET
+    aggregates: Union["CustomizedInputToxicityGPTScorerAggregatesType0", None, Unset] = UNSET
+    aggregate_keys: Unset | list[str] = UNSET
+    extra: Union["CustomizedInputToxicityGPTScorerExtraType0", None, Unset] = UNSET
+    sub_scorers: Unset | list[ScorerName] = UNSET
+    filters: None | Unset | list[Union["MetadataFilter", "ModalityFilter", "NodeNameFilter"]] = UNSET
+    metric_name: None | Unset | str = UNSET
+    description: None | Unset | str = UNSET
+    chainpoll_template: Union[Unset, "InputToxicityTemplate"] = UNSET
+    default_model_alias: None | Unset | str = UNSET
+    ground_truth: None | Unset | bool = UNSET
+    regex_field: Unset | str = ""
+    registered_scorer_id: None | Unset | str = UNSET
+    generated_scorer_id: None | Unset | str = UNSET
+    scorer_version_id: None | Unset | str = UNSET
+    user_code: None | Unset | str = UNSET
+    can_copy_to_llm: None | Unset | bool = UNSET
+    scoreable_node_types: None | Unset | list[NodeType] = UNSET
+    cot_enabled: None | Unset | bool = UNSET
+    output_type: None | OutputTypeEnum | Unset = UNSET
+    input_type: InputTypeEnum | None | Unset = UNSET
+    multimodal_capabilities: None | Unset | list[MultimodalCapability] = UNSET
+    required_scorers: None | Unset | list[str] = UNSET
+    roll_up_strategy: None | RollUpStrategy | Unset = UNSET
+    roll_up_methods: None | Unset | list[CategoricalRollUpMethod] | list[NumericRollUpMethod] = UNSET
+    prompt: None | Unset | str = UNSET
+    lora_task_id: None | Unset | int = UNSET
+    lora_weights_path: None | Unset | str = UNSET
+    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    class_name_to_vocab_ix: Union[
+        "CustomizedInputToxicityGPTScorerClassNameToVocabIxType0",
+        "CustomizedInputToxicityGPTScorerClassNameToVocabIxType1",
+        None,
+        Unset,
+    ] = UNSET
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        from ..models.customized_input_toxicity_gpt_scorer_aggregates_type_0 import (
+            CustomizedInputToxicityGPTScorerAggregatesType0,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_0 import (
+            CustomizedInputToxicityGPTScorerClassNameToVocabIxType0,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_1 import (
+            CustomizedInputToxicityGPTScorerClassNameToVocabIxType1,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_extra_type_0 import (
+            CustomizedInputToxicityGPTScorerExtraType0,
+        )
+        from ..models.metadata_filter import MetadataFilter
+        from ..models.node_name_filter import NodeNameFilter
+
+        scorer_name = self.scorer_name
+
+        model_alias = self.model_alias
+
+        num_judges = self.num_judges
+
+        name = self.name
+
+        scores: None | Unset | list[Any]
+        if isinstance(self.scores, Unset):
+            scores = UNSET
+        elif isinstance(self.scores, list):
+            scores = self.scores
+
+        else:
+            scores = self.scores
+
+        indices: None | Unset | list[int]
+        if isinstance(self.indices, Unset):
+            indices = UNSET
+        elif isinstance(self.indices, list):
+            indices = self.indices
+
+        else:
+            indices = self.indices
+
+        aggregates: None | Unset | dict[str, Any]
+        if isinstance(self.aggregates, Unset):
+            aggregates = UNSET
+        elif isinstance(self.aggregates, CustomizedInputToxicityGPTScorerAggregatesType0):
+            aggregates = self.aggregates.to_dict()
+        else:
+            aggregates = self.aggregates
+
+        aggregate_keys: Unset | list[str] = UNSET
+        if not isinstance(self.aggregate_keys, Unset):
+            aggregate_keys = self.aggregate_keys
+
+        extra: None | Unset | dict[str, Any]
+        if isinstance(self.extra, Unset):
+            extra = UNSET
+        elif isinstance(self.extra, CustomizedInputToxicityGPTScorerExtraType0):
+            extra = self.extra.to_dict()
+        else:
+            extra = self.extra
+
+        sub_scorers: Unset | list[str] = UNSET
+        if not isinstance(self.sub_scorers, Unset):
+            sub_scorers = []
+            for sub_scorers_item_data in self.sub_scorers:
+                sub_scorers_item = sub_scorers_item_data.value
+                sub_scorers.append(sub_scorers_item)
+
+        filters: None | Unset | list[dict[str, Any]]
+        if isinstance(self.filters, Unset):
+            filters = UNSET
+        elif isinstance(self.filters, list):
+            filters = []
+            for filters_type_0_item_data in self.filters:
+                filters_type_0_item: dict[str, Any]
+                if isinstance(filters_type_0_item_data, NodeNameFilter | MetadataFilter):
+                    filters_type_0_item = filters_type_0_item_data.to_dict()
+                else:
+                    filters_type_0_item = filters_type_0_item_data.to_dict()
+
+                filters.append(filters_type_0_item)
+
+        else:
+            filters = self.filters
+
+        metric_name: None | Unset | str
+        metric_name = UNSET if isinstance(self.metric_name, Unset) else self.metric_name
+
+        description: None | Unset | str
+        description = UNSET if isinstance(self.description, Unset) else self.description
+
+        chainpoll_template: Unset | dict[str, Any] = UNSET
+        if not isinstance(self.chainpoll_template, Unset):
+            chainpoll_template = self.chainpoll_template.to_dict()
+
+        default_model_alias: None | Unset | str
+        default_model_alias = UNSET if isinstance(self.default_model_alias, Unset) else self.default_model_alias
+
+        ground_truth: None | Unset | bool
+        ground_truth = UNSET if isinstance(self.ground_truth, Unset) else self.ground_truth
+
+        regex_field = self.regex_field
+
+        registered_scorer_id: None | Unset | str
+        registered_scorer_id = UNSET if isinstance(self.registered_scorer_id, Unset) else self.registered_scorer_id
+
+        generated_scorer_id: None | Unset | str
+        generated_scorer_id = UNSET if isinstance(self.generated_scorer_id, Unset) else self.generated_scorer_id
+
+        scorer_version_id: None | Unset | str
+        scorer_version_id = UNSET if isinstance(self.scorer_version_id, Unset) else self.scorer_version_id
+
+        user_code: None | Unset | str
+        user_code = UNSET if isinstance(self.user_code, Unset) else self.user_code
+
+        can_copy_to_llm: None | Unset | bool
+        can_copy_to_llm = UNSET if isinstance(self.can_copy_to_llm, Unset) else self.can_copy_to_llm
+
+        scoreable_node_types: None | Unset | list[str]
+        if isinstance(self.scoreable_node_types, Unset):
+            scoreable_node_types = UNSET
+        elif isinstance(self.scoreable_node_types, list):
+            scoreable_node_types = []
+            for scoreable_node_types_type_0_item_data in self.scoreable_node_types:
+                scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                scoreable_node_types.append(scoreable_node_types_type_0_item)
+
+        else:
+            scoreable_node_types = self.scoreable_node_types
+
+        cot_enabled: None | Unset | bool
+        cot_enabled = UNSET if isinstance(self.cot_enabled, Unset) else self.cot_enabled
+
+        output_type: None | Unset | str
+        if isinstance(self.output_type, Unset):
+            output_type = UNSET
+        elif isinstance(self.output_type, OutputTypeEnum):
+            output_type = self.output_type.value
+        else:
+            output_type = self.output_type
+
+        input_type: None | Unset | str
+        if isinstance(self.input_type, Unset):
+            input_type = UNSET
+        elif isinstance(self.input_type, InputTypeEnum):
+            input_type = self.input_type.value
+        else:
+            input_type = self.input_type
+
+        multimodal_capabilities: None | Unset | list[str]
+        if isinstance(self.multimodal_capabilities, Unset):
+            multimodal_capabilities = UNSET
+        elif isinstance(self.multimodal_capabilities, list):
+            multimodal_capabilities = []
+            for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
+                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities.append(multimodal_capabilities_type_0_item)
+
+        else:
+            multimodal_capabilities = self.multimodal_capabilities
+
+        required_scorers: None | Unset | list[str]
+        if isinstance(self.required_scorers, Unset):
+            required_scorers = UNSET
+        elif isinstance(self.required_scorers, list):
+            required_scorers = self.required_scorers
+
+        else:
+            required_scorers = self.required_scorers
+
+        roll_up_strategy: None | Unset | str
+        if isinstance(self.roll_up_strategy, Unset):
+            roll_up_strategy = UNSET
+        elif isinstance(self.roll_up_strategy, RollUpStrategy):
+            roll_up_strategy = self.roll_up_strategy.value
+        else:
+            roll_up_strategy = self.roll_up_strategy
+
+        roll_up_methods: None | Unset | list[str]
+        if isinstance(self.roll_up_methods, Unset):
+            roll_up_methods = UNSET
+        elif isinstance(self.roll_up_methods, list):
+            roll_up_methods = []
+            for roll_up_methods_type_0_item_data in self.roll_up_methods:
+                roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                roll_up_methods.append(roll_up_methods_type_0_item)
+
+        elif isinstance(self.roll_up_methods, list):
+            roll_up_methods = []
+            for roll_up_methods_type_1_item_data in self.roll_up_methods:
+                roll_up_methods_type_1_item = roll_up_methods_type_1_item_data.value
+                roll_up_methods.append(roll_up_methods_type_1_item)
+
+        else:
+            roll_up_methods = self.roll_up_methods
+
+        prompt: None | Unset | str
+        prompt = UNSET if isinstance(self.prompt, Unset) else self.prompt
+
+        lora_task_id: None | Unset | int
+        lora_task_id = UNSET if isinstance(self.lora_task_id, Unset) else self.lora_task_id
+
+        lora_weights_path: None | Unset | str
+        lora_weights_path = UNSET if isinstance(self.lora_weights_path, Unset) else self.lora_weights_path
+
+        luna_input_type: None | Unset | str
+        if isinstance(self.luna_input_type, Unset):
+            luna_input_type = UNSET
+        elif isinstance(self.luna_input_type, LunaInputTypeEnum):
+            luna_input_type = self.luna_input_type.value
+        else:
+            luna_input_type = self.luna_input_type
+
+        luna_output_type: None | Unset | str
+        if isinstance(self.luna_output_type, Unset):
+            luna_output_type = UNSET
+        elif isinstance(self.luna_output_type, LunaOutputTypeEnum):
+            luna_output_type = self.luna_output_type.value
+        else:
+            luna_output_type = self.luna_output_type
+
+        class_name_to_vocab_ix: None | Unset | dict[str, Any]
+        if isinstance(self.class_name_to_vocab_ix, Unset):
+            class_name_to_vocab_ix = UNSET
+        elif isinstance(
+            self.class_name_to_vocab_ix,
+            CustomizedInputToxicityGPTScorerClassNameToVocabIxType0
+            | CustomizedInputToxicityGPTScorerClassNameToVocabIxType1,
+        ):
+            class_name_to_vocab_ix = self.class_name_to_vocab_ix.to_dict()
+        else:
+            class_name_to_vocab_ix = self.class_name_to_vocab_ix
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({})
+        if scorer_name is not UNSET:
+            field_dict["scorer_name"] = scorer_name
+        if model_alias is not UNSET:
+            field_dict["model_alias"] = model_alias
+        if num_judges is not UNSET:
+            field_dict["num_judges"] = num_judges
+        if name is not UNSET:
+            field_dict["name"] = name
+        if scores is not UNSET:
+            field_dict["scores"] = scores
+        if indices is not UNSET:
+            field_dict["indices"] = indices
+        if aggregates is not UNSET:
+            field_dict["aggregates"] = aggregates
+        if aggregate_keys is not UNSET:
+            field_dict["aggregate_keys"] = aggregate_keys
+        if extra is not UNSET:
+            field_dict["extra"] = extra
+        if sub_scorers is not UNSET:
+            field_dict["sub_scorers"] = sub_scorers
+        if filters is not UNSET:
+            field_dict["filters"] = filters
+        if metric_name is not UNSET:
+            field_dict["metric_name"] = metric_name
+        if description is not UNSET:
+            field_dict["description"] = description
+        if chainpoll_template is not UNSET:
+            field_dict["chainpoll_template"] = chainpoll_template
+        if default_model_alias is not UNSET:
+            field_dict["default_model_alias"] = default_model_alias
+        if ground_truth is not UNSET:
+            field_dict["ground_truth"] = ground_truth
+        if regex_field is not UNSET:
+            field_dict["regex_field"] = regex_field
+        if registered_scorer_id is not UNSET:
+            field_dict["registered_scorer_id"] = registered_scorer_id
+        if generated_scorer_id is not UNSET:
+            field_dict["generated_scorer_id"] = generated_scorer_id
+        if scorer_version_id is not UNSET:
+            field_dict["scorer_version_id"] = scorer_version_id
+        if user_code is not UNSET:
+            field_dict["user_code"] = user_code
+        if can_copy_to_llm is not UNSET:
+            field_dict["can_copy_to_llm"] = can_copy_to_llm
+        if scoreable_node_types is not UNSET:
+            field_dict["scoreable_node_types"] = scoreable_node_types
+        if cot_enabled is not UNSET:
+            field_dict["cot_enabled"] = cot_enabled
+        if output_type is not UNSET:
+            field_dict["output_type"] = output_type
+        if input_type is not UNSET:
+            field_dict["input_type"] = input_type
+        if multimodal_capabilities is not UNSET:
+            field_dict["multimodal_capabilities"] = multimodal_capabilities
+        if required_scorers is not UNSET:
+            field_dict["required_scorers"] = required_scorers
+        if roll_up_strategy is not UNSET:
+            field_dict["roll_up_strategy"] = roll_up_strategy
+        if roll_up_methods is not UNSET:
+            field_dict["roll_up_methods"] = roll_up_methods
+        if prompt is not UNSET:
+            field_dict["prompt"] = prompt
+        if lora_task_id is not UNSET:
+            field_dict["lora_task_id"] = lora_task_id
+        if lora_weights_path is not UNSET:
+            field_dict["lora_weights_path"] = lora_weights_path
+        if luna_input_type is not UNSET:
+            field_dict["luna_input_type"] = luna_input_type
+        if luna_output_type is not UNSET:
+            field_dict["luna_output_type"] = luna_output_type
+        if class_name_to_vocab_ix is not UNSET:
+            field_dict["class_name_to_vocab_ix"] = class_name_to_vocab_ix
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.customized_input_toxicity_gpt_scorer_aggregates_type_0 import (
+            CustomizedInputToxicityGPTScorerAggregatesType0,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_0 import (
+            CustomizedInputToxicityGPTScorerClassNameToVocabIxType0,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_class_name_to_vocab_ix_type_1 import (
+            CustomizedInputToxicityGPTScorerClassNameToVocabIxType1,
+        )
+        from ..models.customized_input_toxicity_gpt_scorer_extra_type_0 import (
+            CustomizedInputToxicityGPTScorerExtraType0,
+        )
+        from ..models.input_toxicity_template import InputToxicityTemplate
+        from ..models.metadata_filter import MetadataFilter
+        from ..models.modality_filter import ModalityFilter
+        from ..models.node_name_filter import NodeNameFilter
+
+        d = dict(src_dict)
+        scorer_name = cast(Literal["_customized_input_toxicity_gpt"] | Unset, d.pop("scorer_name", UNSET))
+        if scorer_name != "_customized_input_toxicity_gpt" and not isinstance(scorer_name, Unset):
+            raise ValueError(f"scorer_name must match const '_customized_input_toxicity_gpt', got '{scorer_name}'")
+
+        model_alias = d.pop("model_alias", UNSET)
+
+        num_judges = d.pop("num_judges", UNSET)
+
+        name = cast(Literal["input_toxicity"] | Unset, d.pop("name", UNSET))
+        if name != "input_toxicity" and not isinstance(name, Unset):
+            raise ValueError(f"name must match const 'input_toxicity', got '{name}'")
+
+        def _parse_scores(data: object) -> None | Unset | list[Any]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                return cast(list[Any], data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[Any], data)
+
+        scores = _parse_scores(d.pop("scores", UNSET))
+
+        def _parse_indices(data: object) -> None | Unset | list[int]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                return cast(list[int], data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[int], data)
+
+        indices = _parse_indices(d.pop("indices", UNSET))
+
+        def _parse_aggregates(data: object) -> Union["CustomizedInputToxicityGPTScorerAggregatesType0", None, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                return CustomizedInputToxicityGPTScorerAggregatesType0.from_dict(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(Union["CustomizedInputToxicityGPTScorerAggregatesType0", None, Unset], data)
+
+        aggregates = _parse_aggregates(d.pop("aggregates", UNSET))
+
+        aggregate_keys = cast(list[str], d.pop("aggregate_keys", UNSET))
+
+        def _parse_extra(data: object) -> Union["CustomizedInputToxicityGPTScorerExtraType0", None, Unset]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                return CustomizedInputToxicityGPTScorerExtraType0.from_dict(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(Union["CustomizedInputToxicityGPTScorerExtraType0", None, Unset], data)
+
+        extra = _parse_extra(d.pop("extra", UNSET))
+
+        sub_scorers = []
+        _sub_scorers = d.pop("sub_scorers", UNSET)
+        for sub_scorers_item_data in _sub_scorers or []:
+            sub_scorers_item = ScorerName(sub_scorers_item_data)
+
+            sub_scorers.append(sub_scorers_item)
+
+        def _parse_filters(
+            data: object,
+        ) -> None | Unset | list[Union["MetadataFilter", "ModalityFilter", "NodeNameFilter"]]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                filters_type_0 = []
+                _filters_type_0 = data
+                for filters_type_0_item_data in _filters_type_0:
+
+                    def _parse_filters_type_0_item(
+                        data: object,
+                    ) -> Union["MetadataFilter", "ModalityFilter", "NodeNameFilter"]:
+                        try:
+                            if not isinstance(data, dict):
+                                raise TypeError()
+                            return NodeNameFilter.from_dict(data)
+
+                        except:  # noqa: E722
+                            pass
+                        try:
+                            if not isinstance(data, dict):
+                                raise TypeError()
+                            return MetadataFilter.from_dict(data)
+
+                        except:  # noqa: E722
+                            pass
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        return ModalityFilter.from_dict(data)
+
+                    filters_type_0_item = _parse_filters_type_0_item(filters_type_0_item_data)
+
+                    filters_type_0.append(filters_type_0_item)
+
+                return filters_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[Union["MetadataFilter", "ModalityFilter", "NodeNameFilter"]], data)
+
+        filters = _parse_filters(d.pop("filters", UNSET))
+
+        def _parse_metric_name(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        metric_name = _parse_metric_name(d.pop("metric_name", UNSET))
+
+        def _parse_description(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        description = _parse_description(d.pop("description", UNSET))
+
+        _chainpoll_template = d.pop("chainpoll_template", UNSET)
+        chainpoll_template: Unset | InputToxicityTemplate
+        if isinstance(_chainpoll_template, Unset):
+            chainpoll_template = UNSET
+        else:
+            chainpoll_template = InputToxicityTemplate.from_dict(_chainpoll_template)
+
+        def _parse_default_model_alias(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        default_model_alias = _parse_default_model_alias(d.pop("default_model_alias", UNSET))
+
+        def _parse_ground_truth(data: object) -> None | Unset | bool:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | bool, data)
+
+        ground_truth = _parse_ground_truth(d.pop("ground_truth", UNSET))
+
+        regex_field = d.pop("regex_field", UNSET)
+
+        def _parse_registered_scorer_id(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        registered_scorer_id = _parse_registered_scorer_id(d.pop("registered_scorer_id", UNSET))
+
+        def _parse_generated_scorer_id(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        generated_scorer_id = _parse_generated_scorer_id(d.pop("generated_scorer_id", UNSET))
+
+        def _parse_scorer_version_id(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        scorer_version_id = _parse_scorer_version_id(d.pop("scorer_version_id", UNSET))
+
+        def _parse_user_code(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        user_code = _parse_user_code(d.pop("user_code", UNSET))
+
+        def _parse_can_copy_to_llm(data: object) -> None | Unset | bool:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | bool, data)
+
+        can_copy_to_llm = _parse_can_copy_to_llm(d.pop("can_copy_to_llm", UNSET))
+
+        def _parse_scoreable_node_types(data: object) -> None | Unset | list[NodeType]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                scoreable_node_types_type_0 = []
+                _scoreable_node_types_type_0 = data
+                for scoreable_node_types_type_0_item_data in _scoreable_node_types_type_0:
+                    scoreable_node_types_type_0_item = NodeType(scoreable_node_types_type_0_item_data)
+
+                    scoreable_node_types_type_0.append(scoreable_node_types_type_0_item)
+
+                return scoreable_node_types_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[NodeType], data)
+
+        scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
+
+        def _parse_cot_enabled(data: object) -> None | Unset | bool:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | bool, data)
+
+        cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
+
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return OutputTypeEnum(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | OutputTypeEnum | Unset, data)
+
+        output_type = _parse_output_type(d.pop("output_type", UNSET))
+
+        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return InputTypeEnum(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(InputTypeEnum | None | Unset, data)
+
+        input_type = _parse_input_type(d.pop("input_type", UNSET))
+
+        def _parse_multimodal_capabilities(data: object) -> None | Unset | list[MultimodalCapability]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                multimodal_capabilities_type_0 = []
+                _multimodal_capabilities_type_0 = data
+                for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
+                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
+
+                return multimodal_capabilities_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[MultimodalCapability], data)
+
+        multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
+
+        def _parse_required_scorers(data: object) -> None | Unset | list[str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                return cast(list[str], data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[str], data)
+
+        required_scorers = _parse_required_scorers(d.pop("required_scorers", UNSET))
+
+        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return RollUpStrategy(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(None | RollUpStrategy | Unset, data)
+
+        roll_up_strategy = _parse_roll_up_strategy(d.pop("roll_up_strategy", UNSET))
+
+        def _parse_roll_up_methods(
+            data: object,
+        ) -> None | Unset | list[CategoricalRollUpMethod] | list[NumericRollUpMethod]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                roll_up_methods_type_0 = []
+                _roll_up_methods_type_0 = data
+                for roll_up_methods_type_0_item_data in _roll_up_methods_type_0:
+                    roll_up_methods_type_0_item = NumericRollUpMethod(roll_up_methods_type_0_item_data)
+
+                    roll_up_methods_type_0.append(roll_up_methods_type_0_item)
+
+                return roll_up_methods_type_0
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                roll_up_methods_type_1 = []
+                _roll_up_methods_type_1 = data
+                for roll_up_methods_type_1_item_data in _roll_up_methods_type_1:
+                    roll_up_methods_type_1_item = CategoricalRollUpMethod(roll_up_methods_type_1_item_data)
+
+                    roll_up_methods_type_1.append(roll_up_methods_type_1_item)
+
+                return roll_up_methods_type_1
+            except:  # noqa: E722
+                pass
+            return cast(None | Unset | list[CategoricalRollUpMethod] | list[NumericRollUpMethod], data)
+
+        roll_up_methods = _parse_roll_up_methods(d.pop("roll_up_methods", UNSET))
+
+        def _parse_prompt(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        prompt = _parse_prompt(d.pop("prompt", UNSET))
+
+        def _parse_lora_task_id(data: object) -> None | Unset | int:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | int, data)
+
+        lora_task_id = _parse_lora_task_id(d.pop("lora_task_id", UNSET))
+
+        def _parse_lora_weights_path(data: object) -> None | Unset | str:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | Unset | str, data)
+
+        lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
+
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return LunaInputTypeEnum(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(LunaInputTypeEnum | None | Unset, data)
+
+        luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
+
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                return LunaOutputTypeEnum(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(LunaOutputTypeEnum | None | Unset, data)
+
+        luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
+
+        def _parse_class_name_to_vocab_ix(
+            data: object,
+        ) -> Union[
+            "CustomizedInputToxicityGPTScorerClassNameToVocabIxType0",
+            "CustomizedInputToxicityGPTScorerClassNameToVocabIxType1",
+            None,
+            Unset,
+        ]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                return CustomizedInputToxicityGPTScorerClassNameToVocabIxType0.from_dict(data)
+
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                return CustomizedInputToxicityGPTScorerClassNameToVocabIxType1.from_dict(data)
+
+            except:  # noqa: E722
+                pass
+            return cast(
+                Union[
+                    "CustomizedInputToxicityGPTScorerClassNameToVocabIxType0",
+                    "CustomizedInputToxicityGPTScorerClassNameToVocabIxType1",
+                    None,
+                    Unset,
+                ],
+                data,
+            )
+
+        class_name_to_vocab_ix = _parse_class_name_to_vocab_ix(d.pop("class_name_to_vocab_ix", UNSET))
+
+        customized_input_toxicity_gpt_scorer = cls(
+            scorer_name=scorer_name,
+            model_alias=model_alias,
+            num_judges=num_judges,
+            name=name,
+            scores=scores,
+            indices=indices,
+            aggregates=aggregates,
+            aggregate_keys=aggregate_keys,
+            extra=extra,
+            sub_scorers=sub_scorers,
+            filters=filters,
+            metric_name=metric_name,
+            description=description,
+            chainpoll_template=chainpoll_template,
+            default_model_alias=default_model_alias,
+            ground_truth=ground_truth,
+            regex_field=regex_field,
+            registered_scorer_id=registered_scorer_id,
+            generated_scorer_id=generated_scorer_id,
+            scorer_version_id=scorer_version_id,
+            user_code=user_code,
+            can_copy_to_llm=can_copy_to_llm,
+            scoreable_node_types=scoreable_node_types,
+            cot_enabled=cot_enabled,
+            output_type=output_type,
+            input_type=input_type,
+            multimodal_capabilities=multimodal_capabilities,
+            required_scorers=required_scorers,
+            roll_up_strategy=roll_up_strategy,
+            roll_up_methods=roll_up_methods,
+            prompt=prompt,
+            lora_task_id=lora_task_id,
+            lora_weights_path=lora_weights_path,
+            luna_input_type=luna_input_type,
+            luna_output_type=luna_output_type,
+            class_name_to_vocab_ix=class_name_to_vocab_ix,
+        )
+
+        customized_input_toxicity_gpt_scorer.additional_properties = d
+        return customized_input_toxicity_gpt_scorer
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

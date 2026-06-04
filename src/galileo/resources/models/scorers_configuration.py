@@ -1,0 +1,433 @@
+from collections.abc import Mapping
+from typing import Any, TypeVar
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="ScorersConfiguration")
+
+
+@_attrs_define
+class ScorersConfiguration:
+    """Configure which scorers to enable for a particular prompt run.
+
+    The keys here are sorted by their approximate execution time to execute the scorers that we anticipate will be the
+    fastest first, and the slowest last.
+
+    Attributes
+    ----------
+            latency (Union[Unset, bool]):  Default: True.
+            cost (Union[Unset, bool]):  Default: True.
+            pii (Union[Unset, bool]):  Default: False.
+            input_pii (Union[Unset, bool]):  Default: False.
+            bleu (Union[Unset, bool]):  Default: True.
+            rouge (Union[Unset, bool]):  Default: True.
+            protect_status (Union[Unset, bool]):  Default: True.
+            context_relevance (Union[Unset, bool]):  Default: False.
+            toxicity (Union[Unset, bool]):  Default: False.
+            input_toxicity (Union[Unset, bool]):  Default: False.
+            tone (Union[Unset, bool]):  Default: False.
+            input_tone (Union[Unset, bool]):  Default: False.
+            sexist (Union[Unset, bool]):  Default: False.
+            input_sexist (Union[Unset, bool]):  Default: False.
+            prompt_injection (Union[Unset, bool]):  Default: False.
+            adherence_nli (Union[Unset, bool]):  Default: False.
+            chunk_attribution_utilization_nli (Union[Unset, bool]):  Default: False.
+            context_adherence_luna (Union[Unset, bool]):  Default: False.
+            context_relevance_luna (Union[Unset, bool]):  Default: False.
+            chunk_relevance_luna (Union[Unset, bool]):  Default: False.
+            completeness_nli (Union[Unset, bool]):  Default: False.
+            tool_error_rate_luna (Union[Unset, bool]):  Default: False.
+            tool_selection_quality_luna (Union[Unset, bool]):  Default: False.
+            action_completion_luna (Union[Unset, bool]):  Default: False.
+            action_advancement_luna (Union[Unset, bool]):  Default: False.
+            uncertainty (Union[Unset, bool]):  Default: False.
+            factuality (Union[Unset, bool]):  Default: False.
+            groundedness (Union[Unset, bool]):  Default: False.
+            prompt_perplexity (Union[Unset, bool]):  Default: False.
+            chunk_attribution_utilization_gpt (Union[Unset, bool]):  Default: False.
+            completeness_gpt (Union[Unset, bool]):  Default: False.
+            instruction_adherence (Union[Unset, bool]):  Default: False.
+            ground_truth_adherence (Union[Unset, bool]):  Default: False.
+            tool_selection_quality (Union[Unset, bool]):  Default: False.
+            tool_error_rate (Union[Unset, bool]):  Default: False.
+            agentic_session_success (Union[Unset, bool]):  Default: False.
+            agentic_workflow_success (Union[Unset, bool]):  Default: False.
+            prompt_injection_gpt (Union[Unset, bool]):  Default: False.
+            sexist_gpt (Union[Unset, bool]):  Default: False.
+            input_sexist_gpt (Union[Unset, bool]):  Default: False.
+            toxicity_gpt (Union[Unset, bool]):  Default: False.
+            input_toxicity_gpt (Union[Unset, bool]):  Default: False.
+    """
+
+    latency: Unset | bool = True
+    cost: Unset | bool = True
+    pii: Unset | bool = False
+    input_pii: Unset | bool = False
+    bleu: Unset | bool = True
+    rouge: Unset | bool = True
+    protect_status: Unset | bool = True
+    context_relevance: Unset | bool = False
+    toxicity: Unset | bool = False
+    input_toxicity: Unset | bool = False
+    tone: Unset | bool = False
+    input_tone: Unset | bool = False
+    sexist: Unset | bool = False
+    input_sexist: Unset | bool = False
+    prompt_injection: Unset | bool = False
+    adherence_nli: Unset | bool = False
+    chunk_attribution_utilization_nli: Unset | bool = False
+    context_adherence_luna: Unset | bool = False
+    context_relevance_luna: Unset | bool = False
+    chunk_relevance_luna: Unset | bool = False
+    completeness_nli: Unset | bool = False
+    tool_error_rate_luna: Unset | bool = False
+    tool_selection_quality_luna: Unset | bool = False
+    action_completion_luna: Unset | bool = False
+    action_advancement_luna: Unset | bool = False
+    uncertainty: Unset | bool = False
+    factuality: Unset | bool = False
+    groundedness: Unset | bool = False
+    prompt_perplexity: Unset | bool = False
+    chunk_attribution_utilization_gpt: Unset | bool = False
+    completeness_gpt: Unset | bool = False
+    instruction_adherence: Unset | bool = False
+    ground_truth_adherence: Unset | bool = False
+    tool_selection_quality: Unset | bool = False
+    tool_error_rate: Unset | bool = False
+    agentic_session_success: Unset | bool = False
+    agentic_workflow_success: Unset | bool = False
+    prompt_injection_gpt: Unset | bool = False
+    sexist_gpt: Unset | bool = False
+    input_sexist_gpt: Unset | bool = False
+    toxicity_gpt: Unset | bool = False
+    input_toxicity_gpt: Unset | bool = False
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        latency = self.latency
+
+        cost = self.cost
+
+        pii = self.pii
+
+        input_pii = self.input_pii
+
+        bleu = self.bleu
+
+        rouge = self.rouge
+
+        protect_status = self.protect_status
+
+        context_relevance = self.context_relevance
+
+        toxicity = self.toxicity
+
+        input_toxicity = self.input_toxicity
+
+        tone = self.tone
+
+        input_tone = self.input_tone
+
+        sexist = self.sexist
+
+        input_sexist = self.input_sexist
+
+        prompt_injection = self.prompt_injection
+
+        adherence_nli = self.adherence_nli
+
+        chunk_attribution_utilization_nli = self.chunk_attribution_utilization_nli
+
+        context_adherence_luna = self.context_adherence_luna
+
+        context_relevance_luna = self.context_relevance_luna
+
+        chunk_relevance_luna = self.chunk_relevance_luna
+
+        completeness_nli = self.completeness_nli
+
+        tool_error_rate_luna = self.tool_error_rate_luna
+
+        tool_selection_quality_luna = self.tool_selection_quality_luna
+
+        action_completion_luna = self.action_completion_luna
+
+        action_advancement_luna = self.action_advancement_luna
+
+        uncertainty = self.uncertainty
+
+        factuality = self.factuality
+
+        groundedness = self.groundedness
+
+        prompt_perplexity = self.prompt_perplexity
+
+        chunk_attribution_utilization_gpt = self.chunk_attribution_utilization_gpt
+
+        completeness_gpt = self.completeness_gpt
+
+        instruction_adherence = self.instruction_adherence
+
+        ground_truth_adherence = self.ground_truth_adherence
+
+        tool_selection_quality = self.tool_selection_quality
+
+        tool_error_rate = self.tool_error_rate
+
+        agentic_session_success = self.agentic_session_success
+
+        agentic_workflow_success = self.agentic_workflow_success
+
+        prompt_injection_gpt = self.prompt_injection_gpt
+
+        sexist_gpt = self.sexist_gpt
+
+        input_sexist_gpt = self.input_sexist_gpt
+
+        toxicity_gpt = self.toxicity_gpt
+
+        input_toxicity_gpt = self.input_toxicity_gpt
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update({})
+        if latency is not UNSET:
+            field_dict["latency"] = latency
+        if cost is not UNSET:
+            field_dict["cost"] = cost
+        if pii is not UNSET:
+            field_dict["pii"] = pii
+        if input_pii is not UNSET:
+            field_dict["input_pii"] = input_pii
+        if bleu is not UNSET:
+            field_dict["bleu"] = bleu
+        if rouge is not UNSET:
+            field_dict["rouge"] = rouge
+        if protect_status is not UNSET:
+            field_dict["protect_status"] = protect_status
+        if context_relevance is not UNSET:
+            field_dict["context_relevance"] = context_relevance
+        if toxicity is not UNSET:
+            field_dict["toxicity"] = toxicity
+        if input_toxicity is not UNSET:
+            field_dict["input_toxicity"] = input_toxicity
+        if tone is not UNSET:
+            field_dict["tone"] = tone
+        if input_tone is not UNSET:
+            field_dict["input_tone"] = input_tone
+        if sexist is not UNSET:
+            field_dict["sexist"] = sexist
+        if input_sexist is not UNSET:
+            field_dict["input_sexist"] = input_sexist
+        if prompt_injection is not UNSET:
+            field_dict["prompt_injection"] = prompt_injection
+        if adherence_nli is not UNSET:
+            field_dict["adherence_nli"] = adherence_nli
+        if chunk_attribution_utilization_nli is not UNSET:
+            field_dict["chunk_attribution_utilization_nli"] = chunk_attribution_utilization_nli
+        if context_adherence_luna is not UNSET:
+            field_dict["context_adherence_luna"] = context_adherence_luna
+        if context_relevance_luna is not UNSET:
+            field_dict["context_relevance_luna"] = context_relevance_luna
+        if chunk_relevance_luna is not UNSET:
+            field_dict["chunk_relevance_luna"] = chunk_relevance_luna
+        if completeness_nli is not UNSET:
+            field_dict["completeness_nli"] = completeness_nli
+        if tool_error_rate_luna is not UNSET:
+            field_dict["tool_error_rate_luna"] = tool_error_rate_luna
+        if tool_selection_quality_luna is not UNSET:
+            field_dict["tool_selection_quality_luna"] = tool_selection_quality_luna
+        if action_completion_luna is not UNSET:
+            field_dict["action_completion_luna"] = action_completion_luna
+        if action_advancement_luna is not UNSET:
+            field_dict["action_advancement_luna"] = action_advancement_luna
+        if uncertainty is not UNSET:
+            field_dict["uncertainty"] = uncertainty
+        if factuality is not UNSET:
+            field_dict["factuality"] = factuality
+        if groundedness is not UNSET:
+            field_dict["groundedness"] = groundedness
+        if prompt_perplexity is not UNSET:
+            field_dict["prompt_perplexity"] = prompt_perplexity
+        if chunk_attribution_utilization_gpt is not UNSET:
+            field_dict["chunk_attribution_utilization_gpt"] = chunk_attribution_utilization_gpt
+        if completeness_gpt is not UNSET:
+            field_dict["completeness_gpt"] = completeness_gpt
+        if instruction_adherence is not UNSET:
+            field_dict["instruction_adherence"] = instruction_adherence
+        if ground_truth_adherence is not UNSET:
+            field_dict["ground_truth_adherence"] = ground_truth_adherence
+        if tool_selection_quality is not UNSET:
+            field_dict["tool_selection_quality"] = tool_selection_quality
+        if tool_error_rate is not UNSET:
+            field_dict["tool_error_rate"] = tool_error_rate
+        if agentic_session_success is not UNSET:
+            field_dict["agentic_session_success"] = agentic_session_success
+        if agentic_workflow_success is not UNSET:
+            field_dict["agentic_workflow_success"] = agentic_workflow_success
+        if prompt_injection_gpt is not UNSET:
+            field_dict["prompt_injection_gpt"] = prompt_injection_gpt
+        if sexist_gpt is not UNSET:
+            field_dict["sexist_gpt"] = sexist_gpt
+        if input_sexist_gpt is not UNSET:
+            field_dict["input_sexist_gpt"] = input_sexist_gpt
+        if toxicity_gpt is not UNSET:
+            field_dict["toxicity_gpt"] = toxicity_gpt
+        if input_toxicity_gpt is not UNSET:
+            field_dict["input_toxicity_gpt"] = input_toxicity_gpt
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        latency = d.pop("latency", UNSET)
+
+        cost = d.pop("cost", UNSET)
+
+        pii = d.pop("pii", UNSET)
+
+        input_pii = d.pop("input_pii", UNSET)
+
+        bleu = d.pop("bleu", UNSET)
+
+        rouge = d.pop("rouge", UNSET)
+
+        protect_status = d.pop("protect_status", UNSET)
+
+        context_relevance = d.pop("context_relevance", UNSET)
+
+        toxicity = d.pop("toxicity", UNSET)
+
+        input_toxicity = d.pop("input_toxicity", UNSET)
+
+        tone = d.pop("tone", UNSET)
+
+        input_tone = d.pop("input_tone", UNSET)
+
+        sexist = d.pop("sexist", UNSET)
+
+        input_sexist = d.pop("input_sexist", UNSET)
+
+        prompt_injection = d.pop("prompt_injection", UNSET)
+
+        adherence_nli = d.pop("adherence_nli", UNSET)
+
+        chunk_attribution_utilization_nli = d.pop("chunk_attribution_utilization_nli", UNSET)
+
+        context_adherence_luna = d.pop("context_adherence_luna", UNSET)
+
+        context_relevance_luna = d.pop("context_relevance_luna", UNSET)
+
+        chunk_relevance_luna = d.pop("chunk_relevance_luna", UNSET)
+
+        completeness_nli = d.pop("completeness_nli", UNSET)
+
+        tool_error_rate_luna = d.pop("tool_error_rate_luna", UNSET)
+
+        tool_selection_quality_luna = d.pop("tool_selection_quality_luna", UNSET)
+
+        action_completion_luna = d.pop("action_completion_luna", UNSET)
+
+        action_advancement_luna = d.pop("action_advancement_luna", UNSET)
+
+        uncertainty = d.pop("uncertainty", UNSET)
+
+        factuality = d.pop("factuality", UNSET)
+
+        groundedness = d.pop("groundedness", UNSET)
+
+        prompt_perplexity = d.pop("prompt_perplexity", UNSET)
+
+        chunk_attribution_utilization_gpt = d.pop("chunk_attribution_utilization_gpt", UNSET)
+
+        completeness_gpt = d.pop("completeness_gpt", UNSET)
+
+        instruction_adherence = d.pop("instruction_adherence", UNSET)
+
+        ground_truth_adherence = d.pop("ground_truth_adherence", UNSET)
+
+        tool_selection_quality = d.pop("tool_selection_quality", UNSET)
+
+        tool_error_rate = d.pop("tool_error_rate", UNSET)
+
+        agentic_session_success = d.pop("agentic_session_success", UNSET)
+
+        agentic_workflow_success = d.pop("agentic_workflow_success", UNSET)
+
+        prompt_injection_gpt = d.pop("prompt_injection_gpt", UNSET)
+
+        sexist_gpt = d.pop("sexist_gpt", UNSET)
+
+        input_sexist_gpt = d.pop("input_sexist_gpt", UNSET)
+
+        toxicity_gpt = d.pop("toxicity_gpt", UNSET)
+
+        input_toxicity_gpt = d.pop("input_toxicity_gpt", UNSET)
+
+        scorers_configuration = cls(
+            latency=latency,
+            cost=cost,
+            pii=pii,
+            input_pii=input_pii,
+            bleu=bleu,
+            rouge=rouge,
+            protect_status=protect_status,
+            context_relevance=context_relevance,
+            toxicity=toxicity,
+            input_toxicity=input_toxicity,
+            tone=tone,
+            input_tone=input_tone,
+            sexist=sexist,
+            input_sexist=input_sexist,
+            prompt_injection=prompt_injection,
+            adherence_nli=adherence_nli,
+            chunk_attribution_utilization_nli=chunk_attribution_utilization_nli,
+            context_adherence_luna=context_adherence_luna,
+            context_relevance_luna=context_relevance_luna,
+            chunk_relevance_luna=chunk_relevance_luna,
+            completeness_nli=completeness_nli,
+            tool_error_rate_luna=tool_error_rate_luna,
+            tool_selection_quality_luna=tool_selection_quality_luna,
+            action_completion_luna=action_completion_luna,
+            action_advancement_luna=action_advancement_luna,
+            uncertainty=uncertainty,
+            factuality=factuality,
+            groundedness=groundedness,
+            prompt_perplexity=prompt_perplexity,
+            chunk_attribution_utilization_gpt=chunk_attribution_utilization_gpt,
+            completeness_gpt=completeness_gpt,
+            instruction_adherence=instruction_adherence,
+            ground_truth_adherence=ground_truth_adherence,
+            tool_selection_quality=tool_selection_quality,
+            tool_error_rate=tool_error_rate,
+            agentic_session_success=agentic_session_success,
+            agentic_workflow_success=agentic_workflow_success,
+            prompt_injection_gpt=prompt_injection_gpt,
+            sexist_gpt=sexist_gpt,
+            input_sexist_gpt=input_sexist_gpt,
+            toxicity_gpt=toxicity_gpt,
+            input_toxicity_gpt=input_toxicity_gpt,
+        )
+
+        scorers_configuration.additional_properties = d
+        return scorers_configuration
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties
