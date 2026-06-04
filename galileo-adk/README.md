@@ -164,13 +164,13 @@ if __name__ == "__main__":
 
 ### Retriever Spans
 
-By default, all `FunctionTool` calls are logged as tool spans. To log a retriever function as a **retriever span** (enabling RAG quality metrics in Galileo), decorate it with `@splunk_ao_retriever`:
+By default, all `FunctionTool` calls are logged as tool spans. To log a retriever function as a **retriever span** (enabling RAG quality metrics in Galileo), decorate it with `@galileo_retriever`:
 
 ```python
-from galileo_adk import splunk_ao_retriever
+from galileo_adk import galileo_retriever
 from google.adk.tools import FunctionTool
 
-@splunk_ao_retriever
+@galileo_retriever
 def search_docs(query: str) -> str:
     """Search the knowledge base."""
     results = my_vector_db.search(query)
