@@ -1,3 +1,4 @@
+package_name: splunk_ao
 post_hooks:
   - "ruff check . --fix --select F,I"
   - "ruff format ."
