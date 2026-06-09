@@ -5,9 +5,9 @@ from uuid import UUID
 import pytest
 from pydantic import BaseModel
 
-from galileo import Message, MessageRole, galileo_context, log, start_session
-from galileo.decorator import _session_id_context
-from galileo.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao import Message, MessageRole, galileo_context, log, start_session
+from splunk_ao.decorator import _session_id_context
+from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
@@ -21,9 +21,9 @@ def reset_context():
     galileo_context.reset()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_reset(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -54,9 +54,9 @@ def test_decorator_context_reset(
     assert galileo_context.get_current_log_stream() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_init(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -75,9 +75,9 @@ def test_decorator_context_init(
     assert galileo_context.get_current_log_stream() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -109,9 +109,9 @@ def test_decorator_context_flush(
     assert galileo_context.get_current_span_stack() == []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush_specific_project_and_log_stream(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -158,9 +158,9 @@ def test_decorator_context_flush_specific_project_and_log_stream(
     assert galileo_context.get_current_trace() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush_all(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -205,9 +205,9 @@ def test_decorator_context_flush_all(
     assert galileo_context.get_current_span_stack() == []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -232,9 +232,9 @@ def test_decorator_llm_span(
     assert payload.traces[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_output_int(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -259,9 +259,9 @@ def test_decorator_workflow_span_output_int(
     assert payload.traces[0].spans[0].output == "3"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_io_object(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -294,9 +294,9 @@ def test_decorator_workflow_span_io_object(
     assert payload.traces[0].spans[0].output == '{"content": "response", "metadata": {"arg1": "val1", "arg2": "val2"}}'
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_tool_span_io_object(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -329,9 +329,9 @@ def test_decorator_tool_span_io_object(
     assert payload.traces[0].spans[0].output == '{"content": "response", "metadata": {"arg1": "val1", "arg2": "val2"}}'
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -356,9 +356,9 @@ def test_decorator_agent_span(
     assert payload.traces[0].spans[0].output == "arg1 arg2"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_with_agent_type(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -384,9 +384,9 @@ def test_decorator_agent_span_with_agent_type(
     assert payload.traces[0].spans[0].agent_type == "planner"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_with_nested_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -421,9 +421,9 @@ def test_decorator_agent_span_with_nested_span(
     assert payload.traces[0].spans[0].spans[0].output == "arg1"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_nested_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -456,9 +456,9 @@ def test_decorator_nested_span(
     assert payload.traces[0].spans[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_multiple_nested_spans(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -494,9 +494,9 @@ def test_decorator_multiple_nested_spans(
     assert payload.traces[0].spans[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_str(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -518,9 +518,9 @@ def test_decorator_retriever_span_str(
     assert payload.traces[0].spans[0].output == [Document(content="response1", metadata=None)]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_str(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -545,9 +545,9 @@ def test_decorator_retriever_span_list_str(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_dict(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -572,9 +572,9 @@ def test_decorator_retriever_span_list_dict(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_document(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -599,9 +599,9 @@ def test_decorator_retriever_span_list_document(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_we_should_create_trace_but_reraise_exception(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -624,9 +624,9 @@ def test_decorator_we_should_create_trace_but_reraise_exception(
     assert len(payload.traces[0].spans) == 1
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_start_session(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -653,9 +653,9 @@ def test_decorator_start_session(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_standalone_start_session(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -684,9 +684,9 @@ def test_standalone_start_session(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_start_session_empty_values(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -711,9 +711,9 @@ def test_decorator_start_session_empty_values(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_clear_session(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -742,9 +742,9 @@ def test_decorator_clear_session(
     assert payload.session_id is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_set_session(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -785,9 +785,9 @@ class ComplexPydanticModel(BaseModel):
     items: list = []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_input_serialization_deserialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -816,9 +816,9 @@ def test_decorator_input_serialization_deserialization(
     )
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_list_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -842,9 +842,9 @@ def test_decorator_llm_span_list_output_serialization(
     assert span.output.content == '["response1", "response2", "response3"]'
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_tuple_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -869,9 +869,9 @@ def test_decorator_llm_span_tuple_output_serialization(
     assert span.output.content == '["response1", "response2"]'
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_dict_output_preserved(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -897,9 +897,9 @@ def test_decorator_llm_span_dict_output_preserved(
     assert '"number": 42' in span.output.content
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_complex_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -928,9 +928,9 @@ def test_decorator_workflow_span_complex_output_serialization(
     assert span.output == expected_content
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_pydantic_model_input_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -957,9 +957,9 @@ def test_decorator_pydantic_model_input_serialization(
     assert '"optional_field"' not in span.input
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_pydantic_model_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -984,9 +984,9 @@ def test_decorator_pydantic_model_output_serialization(
     assert '"value": 123' in span.output
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_null_output_handling(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1010,9 +1010,9 @@ def test_decorator_null_output_handling(
     assert span.output is None or span.output == ""
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_tool_span_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1038,9 +1038,9 @@ def test_decorator_tool_span_output_serialization(
     assert '"items": [1, 2, 3]' in span.output
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_output_serialization(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1066,9 +1066,9 @@ def test_decorator_agent_span_output_serialization(
     assert '"actions": ["analyze", "respond"]' in span.output
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_content_blocks_output_preserved(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1103,9 +1103,9 @@ def test_decorator_workflow_content_blocks_output_preserved(
     assert isinstance(span_output, list)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_message_list_output_serialized(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1138,9 +1138,9 @@ def test_decorator_workflow_message_list_output_serialized(
 # ============================================================================
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_init_default(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1154,9 +1154,9 @@ def test_mode_context_init_default(
     assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_init_explicit(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1170,9 +1170,9 @@ def test_mode_context_init_explicit(
     assert galileo_context.get_current_mode() == "distributed"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_call_default(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1185,9 +1185,9 @@ def test_mode_context_call_default(
         assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_call_explicit(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1200,9 +1200,9 @@ def test_mode_context_call_explicit(
         assert galileo_context.get_current_mode() == "distributed"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_nested_push_pop(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1223,9 +1223,9 @@ def test_mode_context_nested_push_pop(
     assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_multiple_nested_levels(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1253,9 +1253,9 @@ def test_mode_context_multiple_nested_levels(
     assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_reset(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1271,9 +1271,9 @@ def test_mode_context_reset(
     assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_flush_with_explicit_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1302,9 +1302,9 @@ def test_mode_flush_with_explicit_mode(
     assert galileo_context.get_current_trace() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mode_flush_different_mode_no_reset(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1333,9 +1333,9 @@ def test_mode_flush_different_mode_no_reset(
     assert galileo_context.get_current_trace() == current_trace
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 @patch.dict("os.environ", {"GALILEO_MODE": "distributed"})
 def test_mode_from_environment_variable(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
@@ -1351,9 +1351,9 @@ def test_mode_from_environment_variable(
     assert galileo_context.get_current_mode() == "distributed"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 @patch.dict("os.environ", {"GALILEO_MODE": "distributed"})
 def test_mode_explicit_overrides_environment(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
@@ -1369,9 +1369,9 @@ def test_mode_explicit_overrides_environment(
     assert galileo_context.get_current_mode() == "batch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_logger_instance_with_explicit_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1395,9 +1395,9 @@ def test_get_logger_instance_with_explicit_mode(
     assert logger_distributed.mode == "distributed"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1450,9 +1450,9 @@ def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
     assert len(logger.traces) == 0
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_id_context_manager(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1476,9 +1476,9 @@ def test_session_id_context_manager(
     assert payload.session_id == UUID(test_session_id)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_id_nested_context_stacking(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1506,9 +1506,9 @@ def test_session_id_nested_context_stacking(
     assert galileo_context.get_logger_instance().session_id is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_id_cleared_on_reset_and_init(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1532,9 +1532,9 @@ def test_session_id_cleared_on_reset_and_init(
     assert galileo_context.get_logger_instance().session_id is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_start_session_overrides_context_session(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1554,9 +1554,9 @@ def test_start_session_overrides_context_session(
         assert _session_id_context.get() == new_session_id
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_called_when_flush_raises(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1585,9 +1585,9 @@ def test_flush_on_error_called_when_flush_raises(
     assert isinstance(on_error.call_args[0][0], Exception)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_warns_when_flush_raises_without_on_error(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1607,15 +1607,15 @@ def test_flush_warns_when_flush_raises_without_on_error(
 
     # When/Then: flush does not raise; a warning is logged instead
 
-    with patch("galileo.decorator._logger") as mock_logger:
+    with patch("splunk_ao.decorator._logger") as mock_logger:
         galileo_context.flush()
         mock_logger.warning.assert_called_once()
         assert "flush failed" in mock_logger.warning.call_args[0][0]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_callback_raises_is_swallowed(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1637,15 +1637,15 @@ def test_flush_on_error_callback_raises_is_swallowed(
     llm_call(query="input")
 
     # When/Then: flush does not raise even though the callback raises
-    with patch("galileo.decorator._logger") as mock_logger:
+    with patch("splunk_ao.decorator._logger") as mock_logger:
         galileo_context.flush(on_error=bad_callback)  # must not raise
         mock_logger.warning.assert_called_once()
         assert "on_error callback raised" in mock_logger.warning.call_args[0][0]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_logs_at_debug_not_warning(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -1664,7 +1664,7 @@ def test_flush_on_error_logs_at_debug_not_warning(
     llm_call(query="input")
 
     # When: flush is called with on_error
-    with patch("galileo.decorator._logger") as mock_logger:
+    with patch("splunk_ao.decorator._logger") as mock_logger:
         galileo_context.flush(on_error=Mock())
 
         # Then: debug is called, not warning

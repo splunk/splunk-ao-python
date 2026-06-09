@@ -8,9 +8,9 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel
 
-from galileo import galileo_context
-from galileo.handlers.langchain.middleware import GalileoMiddleware
-from galileo.logger.logger import GalileoLogger
+from splunk_ao import galileo_context
+from splunk_ao.handlers.langchain.middleware import GalileoMiddleware
+from splunk_ao.logger.logger import GalileoLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -88,9 +88,9 @@ class RealArgsSchema(BaseModel):
 
 
 @pytest.fixture
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def galileo_logger(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Creates a mock Galileo logger for testing."""
     setup_mock_traces_client(mock_traces_client)
@@ -494,9 +494,9 @@ class TestIngestionHook:
     @pytest.fixture(autouse=True)
     def logger_mocks(self):
         with (
-            patch("galileo.logger.logger.LogStreams") as mock_logstreams,
-            patch("galileo.logger.logger.Projects") as mock_projects,
-            patch("galileo.logger.logger.Traces") as mock_traces,
+            patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+            patch("splunk_ao.logger.logger.Projects") as mock_projects,
+            patch("splunk_ao.logger.logger.Traces") as mock_traces,
         ):
             setup_mock_traces_client(mock_traces)
             setup_mock_projects_client(mock_projects)

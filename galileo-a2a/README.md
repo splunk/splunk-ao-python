@@ -44,7 +44,7 @@ pip install galileo-a2a
 ## Quick Start
 
 ```python
-from galileo.otel import GalileoSpanProcessor, add_galileo_span_processor
+from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -119,7 +119,7 @@ from a2a.types import (
     AgentCapabilities, AgentCard, AgentSkill, Message, Role,
     TaskState, TaskStatus, TaskStatusUpdateEvent, TextPart,
 )
-from galileo.otel import GalileoSpanProcessor, add_galileo_span_processor
+from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 from langchain.agents import create_agent
 from langchain_core.tools import tool

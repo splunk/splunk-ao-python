@@ -17,7 +17,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
-from galileo.handlers.langchain import GalileoCallback
+from splunk_ao.handlers.langchain import GalileoCallback
 
 
 class State(TypedDict):

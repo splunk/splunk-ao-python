@@ -51,7 +51,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from starlette.applications import Starlette
 from typing_extensions import TypedDict
 
-from galileo.otel import GalileoSpanProcessor, add_galileo_span_processor
+from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 
 load_dotenv(Path(__file__).parent / ".env")

@@ -1,4 +1,4 @@
-from galileo.utils.decorators import galileo_logging_enabled
+from splunk_ao.utils.decorators import galileo_logging_enabled
 
 
 def test_galileo_logging_enabled(monkeypatch) -> None:

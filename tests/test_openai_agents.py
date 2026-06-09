@@ -18,9 +18,9 @@ from agents.tracing import ResponseSpanData
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
-from galileo.handlers.openai_agents import GalileoTracingProcessor
-from galileo.logger.logger import GalileoLogger
-from galileo.utils.openai_agents import _extract_llm_data, _parse_usage
+from splunk_ao.handlers.openai_agents import GalileoTracingProcessor
+from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
@@ -71,9 +71,9 @@ os.environ["OPENAI_API_KEY"] = "sk-test"
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_complex_agent(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:
@@ -102,9 +102,9 @@ async def test_complex_agent(
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_simple_agent(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:
@@ -196,9 +196,9 @@ def _find_tool_spans(spans):
 
 
 @mark.asyncio
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_pre_built_tools_multiple_types(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:

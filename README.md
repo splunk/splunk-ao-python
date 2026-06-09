@@ -29,7 +29,7 @@ Set the following environment variables:
 - `GALILEO_API_KEY`: Your Galileo API key
 - `GALILEO_PROJECT`: (Optional) Project name
 - `GALILEO_LOG_STREAM`: (Optional) Log stream name
-- `GALILEO_LOGGING_DISABLED`: (Optional) Disable collecting and sending logs to galileo.
+- `GALILEO_LOGGING_DISABLED`: (Optional) Disable collecting and sending logs to Galileo.
 
 Note: if you would like to point to an environment other than `app.galileo.ai`, you'll need to set the `GALILEO_CONSOLE_URL` environment variable.
 
@@ -40,8 +40,8 @@ Note: if you would like to point to an environment other than `app.galileo.ai`, 
 ```python
 import os
 
-from galileo import galileo_context
-from galileo.openai import openai
+from splunk_ao import galileo_context
+from splunk_ao.openai import openai
 
 # If you've set your GALILEO_PROJECT and GALILEO_LOG_STREAM env vars, you can skip this step
 galileo_context.init(project="your-project-name", log_stream="your-log-stream-name")
@@ -67,7 +67,7 @@ galileo_context.flush()
 You can also use the `@log` decorator to log spans. Here's how to create a workflow span with two nested LLM spans:
 
 ```python
-from galileo import log
+from splunk_ao import log
 
 @log
 def make_nested_call():
@@ -84,7 +84,7 @@ make_nested_call()
 Here's how to create a retriever span using the decorator:
 
 ```python
-from galileo import log
+from splunk_ao import log
 
 @log(span_type="retriever")
 def retrieve_documents(query: str):
@@ -97,7 +97,7 @@ retrieve_documents(query="history")
 Here's how to create a tool span using the decorator:
 
 ```python
-from galileo import log
+from splunk_ao import log
 
 @log(span_type="tool")
 def tool_call(input: str = "tool call input"):
@@ -113,7 +113,7 @@ galileo_context.flush()
 In some cases, you may want to wrap a block of code to start and flush a trace automatically. You can do this using the `galileo_context` context manager:
 
 ```python
-from galileo import galileo_context
+from splunk_ao import galileo_context
 
 # This will log a block of code to the project and log stream specified in the context manager
 with galileo_context():
@@ -124,7 +124,7 @@ with galileo_context():
 `galileo_context` also allows you specify a separate project and log stream for the trace:
 
 ```python
-from galileo import galileo_context
+from splunk_ao import galileo_context
 
 # This will log to the project and log stream specified in the context manager
 with galileo_context(project="gen-ai-project", log_stream="test2"):
@@ -135,7 +135,7 @@ with galileo_context(project="gen-ai-project", log_stream="test2"):
 You can also use the `GalileoLogger` for manual logging scenarios:
 
 ```python
-from galileo.logger import GalileoLogger
+from splunk_ao.logger import GalileoLogger
 
 # This will log to the project and log stream specified in the logger constructor
 logger = GalileoLogger(project="gen-ai-project", log_stream="test3")
@@ -162,7 +162,7 @@ current Galileo log stream as the runtime target:
 
 ```python
 import agent_control
-from galileo import galileo_context, get_agent_control_target
+from splunk_ao import galileo_context, get_agent_control_target
 
 galileo_context.init(project="my-project", log_stream="prod")
 
@@ -183,8 +183,8 @@ Control SDK or resolve log stream names over the network. If you use a direct
 Agent Control client instead of `agent_control.init(...)`, pass
 `target.target_type` and `target.target_id` on each evaluation call.
 
-`galileo.agent_control` resolves targets for Agent Control calls.
-`galileo.handlers.agent_control` bridges Agent Control telemetry into Galileo
+`splunk_ao.agent_control` resolves targets for Agent Control calls.
+`splunk_ao.handlers.agent_control` bridges Agent Control telemetry into Galileo
 logging.
 
 OpenAI streaming example:
@@ -192,7 +192,7 @@ OpenAI streaming example:
 ```python
 import os
 
-from galileo.openai import openai
+from splunk_ao.openai import openai
 
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -210,8 +210,8 @@ In some cases (like long-running processes), it may be necessary to explicitly f
 ```python
 import os
 
-from galileo import galileo_context
-from galileo.openai import openai
+from splunk_ao import galileo_context
+from splunk_ao.openai import openai
 
 galileo_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
@@ -236,7 +236,7 @@ galileo_context.flush()
 Using the Langchain callback handler:
 
 ```python
-from galileo.handlers.langchain import GalileoCallback
+from splunk_ao.handlers.langchain import GalileoCallback
 from langchain.schema import HumanMessage
 from langchain_openai import ChatOpenAI
 
@@ -259,7 +259,7 @@ print(response.content)
 Create a dataset:
 
 ```python
-from galileo.datasets import create_dataset
+from splunk_ao.datasets import create_dataset
 
 create_dataset(
     name="names",
@@ -273,7 +273,7 @@ create_dataset(
 Get a dataset:
 
 ```python
-from galileo.datasets import get_dataset
+from splunk_ao.datasets import get_dataset
 
 dataset = get_dataset(name="names")
 ```
@@ -281,7 +281,7 @@ dataset = get_dataset(name="names")
 List all datasets:
 
 ```python
-from galileo.datasets import list_datasets
+from splunk_ao.datasets import list_datasets
 
 datasets = list_datasets()
 ```
@@ -292,7 +292,7 @@ datasets = list_datasets()
 >
 >   Example:
 >   ```python
->   from galileo.schema.datasets import DatasetRecord
+>   from splunk_ao.schema.datasets import DatasetRecord
 >
 >   record = DatasetRecord(
 >       input="What is 2+2?",
@@ -305,7 +305,7 @@ datasets = list_datasets()
 >
 >   Example:
 >   ```python
->   from galileo.schema.datasets import DatasetRecord
+>   from splunk_ao.schema.datasets import DatasetRecord
 >
 >   # Using 'output' (backward compatible)
 >   record1 = DatasetRecord(input="What is 2+2?", output="4")
@@ -322,10 +322,10 @@ datasets = list_datasets()
 Run an experiment with a prompt template:
 
 ```python
-from galileo import Message, MessageRole
-from galileo.datasets import get_dataset
-from galileo.experiments import run_experiment
-from galileo.prompts import create_prompt_template
+from splunk_ao import Message, MessageRole
+from splunk_ao.datasets import get_dataset
+from splunk_ao.experiments import run_experiment
+from splunk_ao.prompts import create_prompt_template
 
 prompt = create_prompt_template(
     name="my-prompt",
@@ -349,7 +349,7 @@ Run an experiment with a runner function with local dataset:
 
 ```python
 import openai
-from galileo.experiments import run_experiment
+from splunk_ao.experiments import run_experiment
 
 
 dataset = [
@@ -379,7 +379,7 @@ run_experiment(
 Sessions allow you to group related traces together. By default, a session is created for each trace and a session name is auto-generated. If you would like to override this, you can explicitly start a session:
 
 ```python
-from galileo import GalileoLogger
+from splunk_ao import GalileoLogger
 
 logger = GalileoLogger(project="gen-ai-project", log_stream="my-log-stream")
 session_id =logger.start_session(name="my-session-name")
@@ -393,7 +393,7 @@ logger.flush()
 You can continue a previous session by using the same session ID that was previously generated:
 
 ```python
-from galileo import GalileoLogger
+from splunk_ao import GalileoLogger
 
 logger = GalileoLogger(project="gen-ai-project", log_stream="my-log-stream")
 logger.set_session(session_id="123e4567-e89b-12d3-a456-426614174000")
@@ -407,7 +407,7 @@ logger.flush()
 All of this can also be done using the `galileo_context` context manager:
 
 ```python
-from galileo import galileo_context
+from splunk_ao import galileo_context
 
 session_id = galileo_context.start_session(name="my-session-name")
 

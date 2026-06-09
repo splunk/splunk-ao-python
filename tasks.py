@@ -21,26 +21,26 @@ def setup(ctx: Context) -> None:
 
 @task
 def test_report_xml(ctx: Context) -> None:
-    ctx.run("poetry run pytest -vvv --cov=galileo --cov-report=xml", **COMMON_PARAMS)
+    ctx.run("poetry run pytest -vvv --cov=splunk_ao --cov-report=xml", **COMMON_PARAMS)
 
 
 @task
 def test(ctx: Context) -> None:
-    ctx.run("poetry run pytest --cov=galileo --cov-report=term-missing", **COMMON_PARAMS)
+    ctx.run("poetry run pytest --cov=splunk_ao --cov-report=term-missing", **COMMON_PARAMS)
 
 
 @task
 def type_check(ctx: Context) -> None:
     ctx.run(
-        "poetry run mypy --package galileo "
+        "poetry run mypy --package splunk_ao "
         # TODO: remove as soon as mypy errors fixed
         "--exclude galileo.resources "
-        "--exclude galileo.openai "
-        "--exclude galileo.decorator "
-        "--exclude galileo.handlers.langchain "
-        "--exclude galileo.log_streams "
-        "--exclude galileo.logger "
-        "--exclude galileo.api_client "
+        "--exclude splunk_ao.openai "
+        "--exclude splunk_ao.decorator "
+        "--exclude splunk_ao.handlers.langchain "
+        "--exclude splunk_ao.log_streams "
+        "--exclude splunk_ao.logger "
+        "--exclude splunk_ao.api_client "
         "--namespace-packages",
         **COMMON_PARAMS,
     )

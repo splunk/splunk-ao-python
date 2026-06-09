@@ -32,7 +32,7 @@ class A2AInstrumentor(BaseInstrumentor):  # type: ignore[misc]
     Example::
 
         from opentelemetry.sdk.trace import TracerProvider
-        from galileo.otel import GalileoSpanProcessor, add_galileo_span_processor
+        from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
         from galileo_a2a import A2AInstrumentor
 
         provider = TracerProvider()

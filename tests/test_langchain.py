@@ -10,23 +10,23 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from galileo import Message, MessageRole, galileo_context
-from galileo.config import GalileoPythonConfig
-from galileo.handlers.langchain import GalileoAsyncCallback, GalileoCallback
-from galileo.handlers.langchain.utils import parse_llm_result, update_root_to_agent
-from galileo.logger.logger import GalileoLogger
-from galileo.schema.handlers import Node
-from galileo.utils.singleton import GalileoLoggerSingleton
-from galileo.utils.uuid_utils import uuid7_to_uuid4
+from splunk_ao import Message, MessageRole, galileo_context
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.handlers.langchain import GalileoAsyncCallback, GalileoCallback
+from splunk_ao.handlers.langchain.utils import parse_llm_result, update_root_to_agent
+from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.schema.handlers import Node
+from splunk_ao.utils.singleton import GalileoLoggerSingleton
+from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
 from galileo_core.schemas.shared.document import Document as GalileoDocument
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 class TestGalileoCallback:
     @pytest.fixture
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
@@ -1021,9 +1021,9 @@ class TestGalileoCallbackWithIngestionHook:
     @pytest.fixture(autouse=True)
     def logger_mocks(self):
         with (
-            patch("galileo.logger.logger.LogStreams") as mock_logstreams,
-            patch("galileo.logger.logger.Projects") as mock_projects,
-            patch("galileo.logger.logger.Traces") as mock_traces,
+            patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+            patch("splunk_ao.logger.logger.Projects") as mock_projects,
+            patch("splunk_ao.logger.logger.Traces") as mock_traces,
         ):
             setup_mock_traces_client(mock_traces)
             setup_mock_projects_client(mock_projects)

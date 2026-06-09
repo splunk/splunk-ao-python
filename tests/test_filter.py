@@ -12,7 +12,7 @@ from galileo.resources.models import (
     LogRecordsTextFilter,
     LogRecordsTextFilterOperator,
 )
-from galileo.shared.filter import (
+from splunk_ao.shared.filter import (
     BooleanFilter,
     DateFilter,
     Filter,

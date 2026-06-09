@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from galileo.experiment_tags import (
+from splunk_ao.experiment_tags import (
     ExperimentTags,
     ExperimentTagsAPIException,
     delete_experiment_tag,

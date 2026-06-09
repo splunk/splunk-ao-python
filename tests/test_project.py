@@ -4,10 +4,10 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.collaborator import Collaborator, CollaboratorRole
-from galileo.project import Project
-from galileo.shared.base import SyncState
-from galileo.shared.exceptions import APIError, ValidationError
+from splunk_ao.collaborator import Collaborator, CollaboratorRole
+from splunk_ao.project import Project
+from splunk_ao.shared.base import SyncState
+from splunk_ao.shared.exceptions import APIError, ValidationError
 
 
 class TestProjectInitialization:
@@ -30,7 +30,7 @@ class TestProjectInitialization:
 class TestProjectCreate:
     """Test suite for Project.create() method."""
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_create_persists_project_to_api(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -45,7 +45,7 @@ class TestProjectCreate:
         assert project.id == mock_project.id
         assert project.is_synced()
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_create_handles_api_failure(self, mock_projects_class: MagicMock, reset_configuration: None) -> None:
         """Test create() handles API failures and sets state correctly."""
         mock_service = MagicMock()
@@ -64,7 +64,7 @@ class TestProjectGet:
     """Test suite for Project.get() class method."""
 
     @pytest.mark.parametrize("lookup_key,lookup_value", [("name", "Test Project"), ("id", "test-project-id-123")])
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_get_returns_project(
         self,
         mock_projects_class: MagicMock,
@@ -85,7 +85,7 @@ class TestProjectGet:
         assert project is not None
         assert project.is_synced()
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_get_returns_none_when_not_found(self, mock_projects_class: MagicMock, reset_configuration: None) -> None:
         """Test get() returns None when project is not found."""
         mock_service = MagicMock()
@@ -96,7 +96,7 @@ class TestProjectGet:
 
         assert project is None
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_get_raises_error_for_api_failure(self, mock_projects_class: MagicMock, reset_configuration: None) -> None:
         """Test get() wraps API errors in APIError."""
         mock_service = MagicMock()
@@ -110,7 +110,7 @@ class TestProjectGet:
 class TestProjectList:
     """Test suite for Project.list() class method."""
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_list_returns_all_projects(self, mock_projects_class: MagicMock, reset_configuration: None) -> None:
         """Test list() returns a list of synced project instances."""
         mock_service = MagicMock()
@@ -140,7 +140,7 @@ class TestProjectList:
 class TestProjectSave:
     """Test suite for Project.save() method."""
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_save_local_only_delegates_to_create(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -158,7 +158,7 @@ class TestProjectSave:
         assert result.id == mock_project.id
         assert result.is_synced()
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_save_synced_is_noop(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -197,9 +197,9 @@ class TestProjectSave:
         with pytest.raises(ValueError, match="Project ID is not set"):
             project.save()
 
-    @patch("galileo.project.GalileoPythonConfig")
-    @patch("galileo.project.update_project_projects_project_id_put")
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.GalileoPythonConfig")
+    @patch("splunk_ao.project.update_project_projects_project_id_put")
+    @patch("splunk_ao.project.Projects")
     def test_save_dirty_calls_update_and_syncs_attributes(
         self,
         mock_projects_class: MagicMock,
@@ -251,7 +251,7 @@ class TestProjectSave:
         assert result.bookmark == mock_project.bookmark
         assert result.permissions == mock_project.permissions
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_save_failed_sync_raises_value_error(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -267,9 +267,9 @@ class TestProjectSave:
         with pytest.raises(ValueError, match="FAILED_SYNC"):
             project.save()
 
-    @patch("galileo.project.GalileoPythonConfig")
-    @patch("galileo.project.update_project_projects_project_id_put")
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.GalileoPythonConfig")
+    @patch("splunk_ao.project.update_project_projects_project_id_put")
+    @patch("splunk_ao.project.Projects")
     def test_save_handles_api_failure(
         self,
         mock_projects_class: MagicMock,
@@ -299,7 +299,7 @@ class TestProjectSave:
 class TestProjectDirtyTracking:
     """Test suite for Project dirty-tracking via __setattr__."""
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_dirty_tracking_transitions_on_name_change(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -318,7 +318,7 @@ class TestProjectDirtyTracking:
         assert project.is_dirty()
         assert project.name == "A Completely New Name"
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_dirty_tracking_noop_on_same_value(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_project: MagicMock
     ) -> None:
@@ -361,7 +361,7 @@ class TestProjectMethods:
 class TestProjectCollaborators:
     """Test suite for Project collaborator management methods."""
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_add_update_remove_collaborator(
         self,
         mock_projects_class: MagicMock,
@@ -387,7 +387,7 @@ class TestProjectCollaborators:
         project.remove_collaborator(user_id=mock_collaborator.user_id)
         mock_service.unshare_project_with_user.assert_called_once()
 
-    @patch("galileo.project.Projects")
+    @patch("splunk_ao.project.Projects")
     def test_collaborators_property_returns_same_as_list_method(
         self,
         mock_projects_class: MagicMock,
@@ -529,7 +529,7 @@ class TestCollaborator:
         assert result["last_name"] is None
         assert result["permissions"] is None
 
-    @patch("galileo.collaborator.Projects")
+    @patch("splunk_ao.collaborator.Projects")
     def test_collaborator_update_error_path(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_collaborator: MagicMock
     ) -> None:
@@ -548,7 +548,7 @@ class TestCollaborator:
         with pytest.raises(Exception, match="API Error"):
             collab.update(role=CollaboratorRole.EDITOR)
 
-    @patch("galileo.collaborator.Projects")
+    @patch("splunk_ao.collaborator.Projects")
     def test_collaborator_remove_error_path(
         self, mock_projects_class: MagicMock, reset_configuration: None, mock_collaborator: MagicMock
     ) -> None:

@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import pytest
 
-from galileo.exceptions import (
+from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
     ConflictError,

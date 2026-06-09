@@ -6,10 +6,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from galileo.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
-from galileo.decorator import _parent_id_context, _trace_id_context
-from galileo.logger import GalileoLogger
-from galileo.middleware import TracingMiddleware, get_request_logger
+from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
+from splunk_ao.decorator import _parent_id_context, _trace_id_context
+from splunk_ao.logger import GalileoLogger
+from splunk_ao.middleware import TracingMiddleware, get_request_logger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -64,9 +64,9 @@ def client(app):
     return TestClient(app)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_middleware_extracts_headers(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -123,9 +123,9 @@ def test_middleware_extracts_headers(
     assert data["span_id"] == parent_id
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_middleware_handles_missing_headers(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -143,9 +143,9 @@ def test_middleware_handles_missing_headers(
     assert data["span_id"] is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_middleware_handles_partial_headers(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -172,9 +172,9 @@ def test_middleware_handles_partial_headers(
     assert data["span_id"] is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_context_cleanup_after_request(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -201,9 +201,9 @@ def test_context_cleanup_after_request(
     assert data2["parent_id"] is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_request_logger_when_parent_id_equals_trace_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -233,9 +233,9 @@ def test_get_request_logger_when_parent_id_equals_trace_id(
     assert data["span_id"] is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_mismatched_trace_and_span_ids(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, client: TestClient
 ):
@@ -267,13 +267,13 @@ def test_mismatched_trace_and_span_ids(
     assert data["span_id"] == parent_id
 
 
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.LogStreams")
 def test_invalid_uuid_headers_raise_exception(
     mock_logstreams_client: Mock, mock_projects_client: Mock, app: FastAPI, client: TestClient
 ):
     """Test that invalid UUID headers raise GalileoLoggerException."""
-    from galileo.exceptions import GalileoLoggerException
+    from splunk_ao.exceptions import GalileoLoggerException
 
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)

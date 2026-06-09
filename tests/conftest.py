@@ -35,7 +35,7 @@ del _os  # Clean up temporary import
 # background tasks pending, which causes pytest workers to hang at exit.
 # Override the module constant directly so tests don't depend on a user-facing
 # env var or any new SDK config knob.
-from galileo.logger import logger as _galileo_logger_module  # noqa: E402
+from splunk_ao.logger import logger as _galileo_logger_module  # noqa: E402
 
 _galileo_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
@@ -51,9 +51,9 @@ from uuid import uuid4  # noqa: E402
 from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
 
-from galileo.collaborator import CollaboratorRole  # noqa: E402
-from galileo.config import GalileoPythonConfig  # noqa: E402
-from galileo.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
+from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
+from splunk_ao.config import GalileoPythonConfig  # noqa: E402
+from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
 from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
 from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from galileo_core.constants.request_method import RequestMethod  # noqa: E402
@@ -106,7 +106,7 @@ def reset_agent_control_bridge_state() -> Generator[None, None, None]:
     """Reset optional Agent Control bridge globals when tests load that module."""
     yield
 
-    bridge_module = sys.modules.get("galileo.handlers.agent_control.bridge")
+    bridge_module = sys.modules.get("splunk_ao.handlers.agent_control.bridge")
     if bridge_module is None:
         return
 

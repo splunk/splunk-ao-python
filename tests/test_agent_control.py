@@ -4,10 +4,10 @@ from uuid import uuid4
 
 import pytest
 
-from galileo import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
-from galileo.constants import DEFAULT_LOG_STREAM_NAME, DEFAULT_PROJECT_NAME
-from galileo.decorator import galileo_context
-from galileo.utils.singleton import GalileoLoggerSingleton
+from splunk_ao import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
+from splunk_ao.constants import DEFAULT_LOG_STREAM_NAME, DEFAULT_PROJECT_NAME
+from splunk_ao.decorator import galileo_context
+from splunk_ao.utils.singleton import GalileoLoggerSingleton
 
 
 @pytest.fixture(autouse=True)

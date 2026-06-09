@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import httpx
 import pytest
 
-from galileo.utils.decorators import (
+from splunk_ao.utils.decorators import (
     INFRASTRUCTURE_EXCEPTIONS,
     RETRYABLE_STATUS_CODES,
     async_warn_catch_exception,

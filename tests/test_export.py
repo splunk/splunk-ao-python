@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.export import export_records
-from galileo.log_streams import LogStream
+from splunk_ao.export import export_records
+from splunk_ao.log_streams import LogStream
 from galileo.resources.errors import UnexpectedStatus
 from galileo.resources.models import (
     LLMExportFormat,
@@ -17,7 +17,7 @@ from galileo.resources.models import (
 )
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_basic(mock_export_records_stream):
     project_id = str(uuid4())
     records_data = [
@@ -48,7 +48,7 @@ def test_export_records_basic(mock_export_records_stream):
     assert request_body.sort == sort
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_with_defaults(mock_export_records_stream):
     project_id = str(uuid4())
     log_stream_id = str(uuid4())
@@ -64,8 +64,8 @@ def test_export_records_with_defaults(mock_export_records_stream):
     assert request_body.sort == LogRecordsSortClause(column_id="created_at", ascending=False)
 
 
-@patch("galileo.export.LogStreams._list_all")
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.LogStreams._list_all")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_default_log_stream(mock_export_records_stream, mock_log_streams_list_all):
     project_id = str(uuid4())
     oldest_log_stream_id = str(uuid4())
@@ -99,8 +99,8 @@ def test_export_records_default_log_stream(mock_export_records_stream, mock_log_
     assert request_body.experiment_id is None
 
 
-@patch("galileo.export.LogStreams._list_all")
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.LogStreams._list_all")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_no_default_log_stream(mock_export_records_stream, mock_log_streams_list_all):
     project_id = str(uuid4())
     mock_log_streams_list_all.return_value = []
@@ -113,7 +113,7 @@ def test_export_records_no_default_log_stream(mock_export_records_stream, mock_l
     mock_export_records_stream.assert_not_called()
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_id_validation(mock_export_records_stream):
     project_id = str(uuid4())
     log_stream_id = str(uuid4())
@@ -134,7 +134,7 @@ def test_export_records_id_validation(mock_export_records_stream):
         )
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_with_filters(mock_export_records_stream):
     project_id = str(uuid4())
     filters = [LogRecordsTextFilter(column_id="input", value="test", operator="eq")]
@@ -155,7 +155,7 @@ def test_export_records_with_filters(mock_export_records_stream):
     assert request_body.filters == filters
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_api_failure(mock_export_records_stream):
     project_id = str(uuid4())
     mock_export_records_stream.side_effect = UnexpectedStatus(400, b"Bad Request")
@@ -173,7 +173,7 @@ def test_export_records_api_failure(mock_export_records_stream):
 
 
 @pytest.mark.parametrize("root_type", [RootType.TRACE, RootType.SPAN, RootType.SESSION])
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_all_root_types(mock_export_records_stream, root_type):
     project_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
@@ -193,7 +193,7 @@ def test_export_records_all_root_types(mock_export_records_stream, root_type):
     assert request_body.root_type == root_type
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_empty_response(mock_export_records_stream):
     project_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
@@ -210,7 +210,7 @@ def test_export_records_empty_response(mock_export_records_stream):
     assert len(result) == 0
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_malformed_json(mock_export_records_stream):
     project_id = str(uuid4())
     lines = ['{"id": "123", "input": "test"}', "this is not json"]
@@ -228,7 +228,7 @@ def test_export_records_malformed_json(mock_export_records_stream):
         )
 
 
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_csv(mock_export_records_stream):
     project_id = str(uuid4())
     csv_lines = ["id,input,output", "1,test1,out1", "2,test2,out2"]
@@ -253,7 +253,7 @@ def test_export_records_csv(mock_export_records_stream):
 
 
 @pytest.mark.parametrize("redact_param", [True, False])
-@patch("galileo.export.export_records_stream")
+@patch("splunk_ao.export.export_records_stream")
 def test_export_records_redact(mock_export_records_stream, redact_param):
     project_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])

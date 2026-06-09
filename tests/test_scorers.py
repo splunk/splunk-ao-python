@@ -1,16 +1,15 @@
 import uuid
 from unittest.mock import ANY, Mock, patch
 
-from src.galileo.resources.models.base_scorer_version_response import BaseScorerVersionResponse
-
 from galileo.resources.models import (
+    BaseScorerVersionResponse,
     ListScorersRequest,
     ListScorersResponse,
     ScorerTypeFilter,
     ScorerTypeFilterOperator,
     ScorerTypes,
 )
-from galileo.scorers import Scorers
+from splunk_ao.scorers import Scorers
 
 
 def list_scorers_all():
@@ -50,7 +49,7 @@ def list_scorers_all():
     )
 
 
-@patch("galileo.scorers.list_scorers_with_filters_scorers_list_post")
+@patch("splunk_ao.scorers.list_scorers_with_filters_scorers_list_post")
 def test_list_all_scorers(list_scorers_mock: Mock) -> None:
     list_scorers_mock.sync.return_value = list_scorers_all()
     results = Scorers().list()
@@ -61,7 +60,7 @@ def test_list_all_scorers(list_scorers_mock: Mock) -> None:
     list_scorers_mock.sync.assert_called_once_with(client=ANY, body=ListScorersRequest(filters=[]), starting_token=0)
 
 
-@patch("galileo.scorers.list_scorers_with_filters_scorers_list_post")
+@patch("splunk_ao.scorers.list_scorers_with_filters_scorers_list_post")
 def test_list_all_scorers_preset_filter(list_scorers_mock: Mock) -> None:
     list_scorers_mock.sync.return_value = ListScorersResponse(scorers=[])
     Scorers().list(types=[ScorerTypes.LLM])
@@ -74,7 +73,7 @@ def test_list_all_scorers_preset_filter(list_scorers_mock: Mock) -> None:
     )
 
 
-@patch("galileo.scorers.list_scorers_with_filters_scorers_list_post")
+@patch("splunk_ao.scorers.list_scorers_with_filters_scorers_list_post")
 def test_list_all_scorers_paginated(list_scorers_mock: Mock) -> None:
     # Mock the first page of the response
     page1_response = ListScorersResponse.from_dict(
@@ -172,7 +171,7 @@ class MockHTTPError(Exception):
         super().__init__(f"HTTP Error: {status_code}")
 
 
-@patch("galileo.scorers.get_scorer_version_or_latest_scorers_scorer_id_version_get")
+@patch("splunk_ao.scorers.get_scorer_version_or_latest_scorers_scorer_id_version_get")
 def test_get_scorer_version_success(get_scorer_version_mock: Mock) -> None:
     # Setup
     mock_response = create_mock_version_response()
@@ -196,7 +195,7 @@ def test_get_scorer_version_success(get_scorer_version_mock: Mock) -> None:
     assert result.registered_scorer is None
 
 
-@patch("galileo.scorers.list_scorers_with_filters_scorers_list_post")
+@patch("splunk_ao.scorers.list_scorers_with_filters_scorers_list_post")
 def test_list_with_multiple_types(mock_list_scorers: Mock) -> None:
     """Test that listing scorers with multiple types uses the ONE_OF operator."""
     mock_list_scorers.sync.return_value = ListScorersResponse(scorers=[])

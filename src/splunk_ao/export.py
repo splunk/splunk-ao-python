@@ -1,0 +1,135 @@
+import csv
+import json
+import logging
+import sys
+from collections.abc import Iterator
+from typing import Any
+
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.log_streams import LogStreams
+from galileo.resources.api.trace.export_records_projects_project_id_export_records_post import (
+    stream_detailed as export_records_stream,
+)
+from galileo.resources.models import LLMExportFormat, LogRecordsExportRequest, LogRecordsSortClause, RootType
+from splunk_ao.schema.filters import FilterType
+
+logger = logging.getLogger(__name__)
+
+
+class ExportClient:
+    config: GalileoPythonConfig
+
+    def __init__(self) -> None:
+        self.config = GalileoPythonConfig.get()
+
+        # Increase the field size limit to handle large fields.
+        try:
+            csv.field_size_limit(sys.maxsize)
+        except OverflowError:
+            # Handle OverflowError for platforms where C long is 32-bit
+            csv.field_size_limit(2**31 - 1)
+
+    def records(
+        self,
+        project_id: str,
+        root_type: RootType = RootType.TRACE,
+        filters: list[FilterType] | None = None,
+        sort: LogRecordsSortClause = LogRecordsSortClause(column_id="created_at", ascending=False),
+        export_format: LLMExportFormat = LLMExportFormat.JSONL,
+        log_stream_id: str | None = None,
+        experiment_id: str | None = None,
+        column_ids: list[str] | None = None,
+        redact: bool = True,
+    ) -> Iterator[dict[str, Any]]:
+        if filters is None:
+            filters = []
+
+        response_iterator = export_records_stream(
+            client=self.config.api_client,
+            project_id=project_id,
+            body=LogRecordsExportRequest(
+                root_type=root_type,
+                export_format=export_format,
+                log_stream_id=log_stream_id,
+                experiment_id=experiment_id,
+                filters=filters,
+                column_ids=column_ids,
+                sort=sort,
+                redact=redact,
+            ),
+        )
+
+        if export_format == LLMExportFormat.JSONL:
+            for line in response_iterator:
+                if line:
+                    yield json.loads(line)
+        elif export_format == LLMExportFormat.CSV:
+            reader = csv.DictReader(response_iterator)
+            yield from reader
+
+
+def export_records(
+    project_id: str,
+    root_type: RootType = RootType.TRACE,
+    filters: list[FilterType] | None = None,
+    sort: LogRecordsSortClause = LogRecordsSortClause(column_id="created_at", ascending=False),
+    export_format: LLMExportFormat = LLMExportFormat.JSONL,
+    log_stream_id: str | None = None,
+    experiment_id: str | None = None,
+    column_ids: list[str] | None = None,
+    redact: bool = True,
+) -> Iterator[dict[str, Any]]:
+    """Exports records from a Galileo project.
+
+    Defaults to the first logstream if `log_stream_id` and `experiment_id` are not provided.
+
+    Parameters
+    ----------
+    project_id
+        The unique identifier of the project.
+    root_type
+        The type of records to export.
+    export_format
+        The desired format for the exported data.
+    log_stream_id
+        Filter records by a specific run ID.
+    experiment_id
+        Filter records by a specific experiment ID.
+    filters
+        A list of filters to apply to the export.
+    column_ids
+        A list of column IDs to include in the export.
+    sort
+        A sort clause to order the exported records.
+    redact
+        Redact sensitive data from the response.
+
+    Returns
+    -------
+    An iterator that yields each record as a dictionary.
+    """
+    if filters is None:
+        filters = []
+
+    if log_stream_id is None and experiment_id is None:
+        # Use _list_all to paginate across all pages so we pick the globally oldest
+        # stream, not just the oldest in the first page (default page size is 100).
+        log_streams = LogStreams()._list_all(project_id=project_id)
+        if log_streams:
+            sorted_log_streams = sorted(log_streams, key=lambda ls: (ls.created_at, ls.id))
+            log_stream_id = sorted_log_streams[0].id
+
+    if (log_stream_id is None) == (experiment_id is None):
+        raise ValueError("Exactly one of log_stream_id or experiment_id must be provided.")
+
+    return ExportClient().records(
+        project_id=project_id,
+        root_type=root_type,
+        export_format=export_format,
+        log_stream_id=log_stream_id,
+        experiment_id=experiment_id,
+        filters=filters,
+        column_ids=column_ids,
+        sort=sort,
+        redact=redact,
+    )

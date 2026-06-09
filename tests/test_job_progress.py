@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from pytest import CaptureFixture, LogCaptureFixture
 
-from galileo.job_progress import job_progress, scorer_jobs_status
+from splunk_ao.job_progress import job_progress, scorer_jobs_status
 from galileo.resources.models import HTTPValidationError, JobDB, ValidationError
 from galileo_core.constants.job import JobStatus
 
@@ -47,8 +47,8 @@ def _job_db_factory(
 
 
 class TestJobProgress:
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
-    @patch("galileo.job_progress.get_job_jobs_job_id_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_job_jobs_job_id_get.sync")
     def test_completed(self, mock_get_job: Mock, mock_get_scorer_jobs: Mock):
         mock_get_job.return_value = _job_db_factory(status=JobStatus.completed)
         mock_get_scorer_jobs.return_value = []
@@ -56,7 +56,7 @@ class TestJobProgress:
         job_progress(job_id=FIXED_JOB_ID, project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
         mock_get_job.assert_called_with(client=ANY, job_id=FIXED_JOB_ID)
 
-    @patch("galileo.job_progress.get_job_jobs_job_id_get.sync")
+    @patch("splunk_ao.job_progress.get_job_jobs_job_id_get.sync")
     def test_failed(self, mock_get_job: Mock):
         mock_get_job.return_value = _job_db_factory(status=JobStatus.failed, error_message="Test error")
 
@@ -64,7 +64,7 @@ class TestJobProgress:
             job_progress(job_id=FIXED_JOB_ID, project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
         mock_get_job.assert_called_with(client=ANY, job_id=FIXED_JOB_ID)
 
-    @patch("galileo.job_progress.get_job_jobs_job_id_get.sync")
+    @patch("splunk_ao.job_progress.get_job_jobs_job_id_get.sync")
     def test_get_job_fails(self, mock_get_job: Mock):
         mock_get_job.return_value = None
 
@@ -72,7 +72,7 @@ class TestJobProgress:
             job_progress(job_id=FIXED_JOB_ID, project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
         mock_get_job.assert_called_with(client=ANY, job_id=FIXED_JOB_ID)
 
-    @patch("galileo.job_progress.get_job_jobs_job_id_get.sync")
+    @patch("splunk_ao.job_progress.get_job_jobs_job_id_get.sync")
     def test_get_job_http_validation_error(self, mock_get_job: Mock):
         detail = [ValidationError(loc=["path", "job_id"], msg="value is not a valid uuid", type_="type_error.uuid")]
         mock_get_job.return_value = HTTPValidationError(detail=detail)
@@ -82,7 +82,7 @@ class TestJobProgress:
 
 
 class TestScorerJobsStatus:
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_simple(self, mock_get_jobs: Mock, caplog: LogCaptureFixture, enable_galileo_logging):
         mock_get_jobs.return_value = [
             _job_db_factory(
@@ -92,11 +92,11 @@ class TestScorerJobsStatus:
             )
         ]
 
-        with caplog.at_level(logging.INFO, logger="galileo.job_progress"):
+        with caplog.at_level(logging.INFO, logger="splunk_ao.job_progress"):
             scorer_jobs_status(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
             assert "pii: Computing 🚧" in caplog.text
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_skips_prompt_run(self, mock_get_jobs: Mock, caplog: LogCaptureFixture, enable_galileo_logging):
         mock_get_jobs.return_value = [
             _job_db_factory(job_name="log_stream_run"),
@@ -107,11 +107,11 @@ class TestScorerJobsStatus:
             ),
         ]
 
-        with caplog.at_level(logging.INFO, logger="galileo.job_progress"):
+        with caplog.at_level(logging.INFO, logger="splunk_ao.job_progress"):
             scorer_jobs_status(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
             assert "pii: Computing 🚧" in caplog.text
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_no_scorer_jobs(self, mock_get_jobs: Mock, capsys: CaptureFixture[str]):
         mock_get_jobs.return_value = [_job_db_factory(job_name="log_stream_run")]
 
@@ -119,7 +119,7 @@ class TestScorerJobsStatus:
         captured = capsys.readouterr()
         assert captured.out == ""
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_one_of_each(self, mock_get_jobs: Mock, caplog: LogCaptureFixture, enable_galileo_logging):
         mock_get_jobs.return_value = [
             _job_db_factory(job_name="log_stream_run"),
@@ -141,13 +141,13 @@ class TestScorerJobsStatus:
             ),
         ]
 
-        with caplog.at_level(logging.INFO, logger="galileo.job_progress"):
+        with caplog.at_level(logging.INFO, logger="splunk_ao.job_progress"):
             scorer_jobs_status(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
             assert "pii: Computing 🚧" in caplog.text
             assert "toxicity: Failed ❌, error was: An error occurred." in caplog.text
             assert "chunk_attribution_utilization_plus: Done ✅" in caplog.text
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_unknown_scorer_name(self, mock_get_jobs: Mock, caplog: LogCaptureFixture, enable_galileo_logging):
         mock_get_jobs.return_value = [
             _job_db_factory(job_name="log_stream_run"),
@@ -158,11 +158,11 @@ class TestScorerJobsStatus:
             ),
         ]
 
-        with caplog.at_level(logging.INFO, logger="galileo.job_progress"):
+        with caplog.at_level(logging.INFO, logger="splunk_ao.job_progress"):
             scorer_jobs_status(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
             assert "abc: Computing 🚧" in caplog.text
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_get_run_scorer_jobs_fails(self, mock_get_jobs: Mock):
         mock_get_jobs.return_value = None
 
@@ -171,7 +171,7 @@ class TestScorerJobsStatus:
         ):
             scorer_jobs_status(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID)
 
-    @patch("galileo.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
+    @patch("splunk_ao.job_progress.get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync")
     def test_get_run_scorer_jobs_http_validation_error(self, mock_get_jobs: Mock):
         detail = [ValidationError(loc=["path", "project_id"], msg="value is not a valid uuid", type_="type_error.uuid")]
         mock_get_jobs.return_value = HTTPValidationError(detail=detail)

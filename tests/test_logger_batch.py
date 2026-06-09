@@ -8,12 +8,12 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from galileo.logger import GalileoLogger
-from galileo.schema.content_blocks import DataContentBlock, TextContentBlock
-from galileo.schema.logged import LoggedTrace, LoggedWorkflowSpan
-from galileo.schema.message import LoggedMessage
-from galileo.schema.metrics import LocalMetricConfig
-from galileo.schema.trace import TracesIngestRequest
+from splunk_ao.logger import GalileoLogger
+from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.logged import LoggedTrace, LoggedWorkflowSpan
+from splunk_ao.schema.message import LoggedMessage
+from splunk_ao.schema.metrics import LocalMetricConfig
+from splunk_ao.schema.trace import TracesIngestRequest
 from galileo_core.schemas.logging.agent import AgentType
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import (
@@ -54,7 +54,7 @@ def test_galileo_logger_exceptions() -> None:
     assert str(exc_info.value) == "ingestion_hook can only be used in batch mode"
 
 
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.Traces")
 def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog, enable_galileo_logging) -> None:
     monkeypatch.setenv("GALILEO_LOGGING_DISABLED", "true")
 
@@ -83,9 +83,9 @@ def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog, e
     mock_traces_client.ingest_traces.assert_not_called()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_single_span_trace_to_galileo(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -130,9 +130,9 @@ def test_single_span_trace_to_galileo(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_all_span_types_with_redacted_fields(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -314,9 +314,9 @@ def test_all_span_types_with_redacted_fields(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.experiments.Experiments")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.experiments.Experiments")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_single_span_trace_to_galileo_experiment_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_experiments_client: Mock
 ) -> None:
@@ -349,9 +349,9 @@ def test_single_span_trace_to_galileo_experiment_id(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_nested_span_trace_to_galileo(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -400,9 +400,9 @@ def test_nested_span_trace_to_galileo(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_agent_span(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -430,9 +430,9 @@ def test_add_agent_span(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_protect_tool_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -513,9 +513,9 @@ def test_add_protect_tool_span(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_multi_span_trace_to_galileo(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -581,9 +581,9 @@ def test_multi_span_trace_to_galileo(
 
 
 @pytest.mark.asyncio
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_single_span_trace_to_galileo_with_async(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -638,9 +638,9 @@ async def test_single_span_trace_to_galileo_with_async(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_str_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -664,9 +664,9 @@ def test_retriever_span_str_output(
     assert payload.traces[0].spans[0].output == [Document(content="response", metadata=None)]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_str_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -693,9 +693,9 @@ def test_retriever_span_list_str_output(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_dict_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -728,9 +728,9 @@ def test_retriever_span_dict_output(
     assert payload.traces[0].spans[1].output == [Document(content="response2", metadata={"key": "value"})]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_dict_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -775,9 +775,9 @@ def test_retriever_span_list_dict_output(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_document_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -805,9 +805,9 @@ def test_retriever_span_document_output(
     assert payload.traces[0].spans[0].output == [Document(content="response", metadata={"key": "value"})]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_document_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -838,9 +838,9 @@ def test_retriever_span_list_document_output(
     ]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_none_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -862,9 +862,9 @@ def test_retriever_span_none_output(
     assert payload.traces[0].spans[0].output == [Document(content="", metadata={})]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_all_spans(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -901,9 +901,9 @@ def test_conclude_all_spans(mock_traces_client: Mock, mock_projects_client: Mock
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_with_conclude_all_spans(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -948,9 +948,9 @@ def test_flush_with_conclude_all_spans(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_workflow_keeps_message_trace_gets_string(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -982,9 +982,9 @@ def test_flush_workflow_keeps_message_trace_gets_string(
     assert workflow_span.output.role == MessageRole.assistant
 
 
-@patch("galileo.logger.logger.Projects.get")
-@patch("galileo.projects.create_project_projects_post")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.Projects.get")
+@patch("splunk_ao.projects.create_project_projects_post")
+@patch("splunk_ao.logger.logger.Traces")
 def test_galileo_logger_failed_creating_project(
     mock_traces_client: Mock, galileo_resources_api_projects: Mock, mock_projects_get: Mock
 ) -> None:
@@ -1331,9 +1331,9 @@ def test_get_last_output_llm_message_raw() -> None:
     assert output.role == MessageRole.assistant
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_create(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -1353,9 +1353,9 @@ def test_session_create(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_create_with_metadata(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1379,9 +1379,9 @@ def test_session_create_with_metadata(
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_create_empty_values(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1401,9 +1401,9 @@ def test_session_create_empty_values(
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_clear(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -1421,9 +1421,9 @@ def test_session_clear(mock_traces_client: Mock, mock_projects_client: Mock, moc
     assert logger.session_id is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_session_id_on_flush(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1447,9 +1447,9 @@ def test_session_id_on_flush(
     assert str(payload.session_id) == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_set_session_id(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -1473,9 +1473,9 @@ def test_set_session_id(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert payload.session_id == UUID(session_id)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_start_session_with_external_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1545,9 +1545,9 @@ def test_start_session_with_external_id(
     assert payload.session_id == session_id
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_log_stream_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1566,9 +1566,9 @@ def test_logger_init_with_project_id_and_log_stream_id(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_log_stream_name(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1585,9 +1585,9 @@ def test_logger_init_with_project_id_and_log_stream_name(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_name_and_log_stream_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1604,9 +1604,9 @@ def test_logger_init_with_project_name_and_log_stream_id(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_name_and_experiment_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1624,9 +1624,9 @@ def test_logger_init_with_project_name_and_experiment_id(
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_experiment_id(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1646,9 +1646,9 @@ def test_logger_init_with_project_id_and_experiment_id(
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_ingestion_hook_sync(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1671,9 +1671,9 @@ def test_ingestion_hook_sync(
 
 
 @pytest.mark.asyncio
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_ingestion_hook_async(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1696,9 +1696,9 @@ async def test_ingestion_hook_async(
 
 
 @pytest.mark.asyncio
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_ingest_traces_methods(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1717,9 +1717,9 @@ async def test_ingest_traces_methods(
     assert mock_traces_client_instance.ingest_traces.call_count == 2
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_ingestion_hook_with_real_redaction(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1763,9 +1763,9 @@ def test_ingestion_hook_with_real_redaction(
     assert payload.traces[0].input == "This is a [REDACTED]"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_single_llm_span_trace_ingestion(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1812,9 +1812,9 @@ def test_add_single_llm_span_trace_ingestion(
     assert logger._parent_stack == deque()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_with_unconcluded_trace_redaction(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1889,9 +1889,9 @@ def test_get_last_output_with_redacted_output() -> None:
         ),
     ],
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_start_trace_auto_conversion(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -1920,9 +1920,9 @@ def test_start_trace_auto_conversion(
         assert getattr(payload_trace, attr) == expected_value, f"payload.{attr} mismatch"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_multimodal_input_not_stringified_at_trace_level(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1983,9 +1983,9 @@ def test_multimodal_input_not_stringified_at_trace_level(
         ),
     ],
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_start_trace_valid_input_types(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, valid_input: object
 ) -> None:
@@ -2145,9 +2145,9 @@ class TestMultipleLoggerInstanceIsolation:
     on one logger do not affect another logger's state or trace hierarchy.
     """
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def test_loggers_have_isolated_state(
         self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
     ) -> None:
@@ -2201,9 +2201,9 @@ class TestMultipleLoggerInstanceIsolation:
         assert isinstance(workflow_a, WorkflowSpan) and len(workflow_a.spans) == 1
         assert workflow_a.spans[0].name == "llm_a"
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def test_reset_only_affects_own_logger(
         self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
     ) -> None:
@@ -2299,7 +2299,7 @@ def test_ingestion_hook_registers_atexit_before_agent_control_auto_enable() -> N
 
     # When: creating an ingestion-hook logger
     with (
-        patch("galileo.logger.logger.atexit.register", side_effect=record_atexit_register),
+        patch("splunk_ao.logger.logger.atexit.register", side_effect=record_atexit_register),
         patch.object(
             GalileoLogger,
             "_auto_enable_agent_control_if_available",
@@ -2314,9 +2314,9 @@ def test_ingestion_hook_registers_atexit_before_agent_control_auto_enable() -> N
     assert calls == [("atexit", "terminate"), ("agent_control", None)]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_standard_init_registers_atexit_before_agent_control_auto_enable(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2334,7 +2334,7 @@ def test_standard_init_registers_atexit_before_agent_control_auto_enable(
 
     # When: creating the logger
     with (
-        patch("galileo.logger.logger.atexit.register", side_effect=record_atexit_register),
+        patch("splunk_ao.logger.logger.atexit.register", side_effect=record_atexit_register),
         patch.object(
             GalileoLogger,
             "_auto_enable_agent_control_if_available",
@@ -2349,9 +2349,9 @@ def test_standard_init_registers_atexit_before_agent_control_auto_enable(
     assert calls == [("atexit", "terminate"), ("agent_control", None)]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_flush_does_not_propagate_exceptions(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2378,9 +2378,9 @@ def test_flush_does_not_propagate_exceptions(
     assert result is None or result == []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_terminate_does_not_propagate_exceptions(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2409,9 +2409,9 @@ def test_terminate_does_not_propagate_exceptions(
         pytest.fail(f"terminate() should not propagate exceptions, but raised: {e}")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_ingest_traces_lazy_creates_client_for_ingestion_hook(
     mock_traces_cls: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2450,9 +2450,9 @@ def test_ingest_traces_lazy_creates_client_for_ingestion_hook(
     mock_traces_instance.ingest_traces.assert_called_once_with(captured_payload)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_ingest_traces_reuses_existing_client(
     mock_traces_cls: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:

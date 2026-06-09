@@ -13,13 +13,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import galileo.logger.control as control_module
-import galileo.logger.logger as logger_module
-import galileo.schema.logged as logged_module
-from galileo.handlers.agent_control import setup_agent_control_bridge
-from galileo.logger.control import ControlResult, ControlSpan
-from galileo.logger.logger import GalileoLogger
-from galileo.schema.trace import SpansIngestRequest, TracesIngestRequest
+import splunk_ao.logger.control as control_module
+import splunk_ao.logger.logger as logger_module
+import splunk_ao.schema.logged as logged_module
+from splunk_ao.handlers.agent_control import setup_agent_control_bridge
+from splunk_ao.logger.control import ControlResult, ControlSpan
+from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.schema.trace import SpansIngestRequest, TracesIngestRequest
 from tests.testutils.setup import (
     setup_mock_logstreams_client,
     setup_mock_projects_client,
@@ -103,7 +103,7 @@ def fake_agent_control_modules(monkeypatch):
 
     yield {"agent_control": agent_control_module, "trace_context": trace_context_module, "sinks": sinks_module}
 
-    bridge_module = sys.modules.get("galileo.handlers.agent_control.bridge")
+    bridge_module = sys.modules.get("splunk_ao.handlers.agent_control.bridge")
     if bridge_module is not None:
         bridge_module._REGISTERED_BRIDGES.clear()
         bridge_module._PREVIOUS_TRACE_CONTEXT_PROVIDER = None
@@ -144,9 +144,9 @@ def _make_event(logger: GalileoLogger, **overrides: object) -> FakeControlExecut
     return FakeControlExecutionEvent(**payload)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_enable_agent_control_registers_provider_and_sink(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -176,9 +176,9 @@ def test_enable_agent_control_registers_provider_and_sink(
     assert fake_agent_control_modules["trace_context"].get_trace_context_from_provider() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_auto_registers_agent_control_bridge_when_available(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -196,9 +196,9 @@ def test_logger_auto_registers_agent_control_bridge_when_available(
     assert fake_agent_control_modules["agent_control"]._registered_sinks == [bridge._sink]
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_does_not_raise_when_agent_control_is_missing(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -207,7 +207,7 @@ def test_logger_init_does_not_raise_when_agent_control_is_missing(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
     monkeypatch.setattr(
-        "galileo.handlers.agent_control.bridge._import_module", lambda name: (_ for _ in ()).throw(ImportError(name))
+        "splunk_ao.handlers.agent_control.bridge._import_module", lambda name: (_ for _ in ()).throw(ImportError(name))
     )
 
     # When: creating a new Galileo logger
@@ -217,9 +217,9 @@ def test_logger_init_does_not_raise_when_agent_control_is_missing(
     assert getattr(logger, "_agent_control_bridge", None) is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_cleanup_restores_previous_provider_across_loggers(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -262,9 +262,9 @@ def test_agent_control_cleanup_restores_previous_provider_across_loggers(
     }
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_cleanup_does_not_clobber_provider_installed_while_active(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -295,9 +295,9 @@ def test_agent_control_cleanup_does_not_clobber_provider_installed_while_active(
     assert fake_agent_control_modules["agent_control"]._registered_sinks == []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_idle_new_logger_does_not_mask_active_logger_context(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -327,9 +327,9 @@ def test_idle_new_logger_does_not_mask_active_logger_context(
     assert len(workflow_a.spans) == 1
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_converts_to_control_span_in_batch_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -376,9 +376,9 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     assert flushed_control_span.control_id == 7
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_uses_empty_string_when_no_representative_input(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -401,9 +401,9 @@ def test_agent_control_event_uses_empty_string_when_no_representative_input(
     assert workflow.spans[0].input == ""
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -426,9 +426,9 @@ def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
     assert workflow.spans == []
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_streams_immediately_in_distributed_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
@@ -473,9 +473,9 @@ def test_agent_control_event_streams_immediately_in_distributed_mode(
     mock_traces_client_instance.ingest_spans.assert_called_with(request)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_control_span_uses_model_default_name_in_fallback_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -524,9 +524,9 @@ def test_add_control_span_uses_model_default_name_in_fallback_mode(
         logger_module.LoggedControlSpan = logged_module.LoggedControlSpan
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_is_dropped_when_context_does_not_match(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:

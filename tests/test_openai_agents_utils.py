@@ -17,7 +17,7 @@ from agents import (
 )
 from agents.tracing import ResponseSpanData
 
-from galileo.utils.openai_agents import (
+from splunk_ao.utils.openai_agents import (
     GalileoCustomSpan,
     _extract_llm_data,
     _extract_tool_data,

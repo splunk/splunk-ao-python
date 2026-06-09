@@ -8,9 +8,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from galileo.log_streams import LogStream
-from galileo.logger.logger import GalileoLogger
-from galileo.projects import Project
+from splunk_ao.log_streams import LogStream
+from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.projects import Project
 from galileo.resources.models import ExperimentResponse, ProjectType
 from galileo.resources.models.log_stream_response import LogStreamResponse
 from galileo.resources.models.project_create_response import ProjectCreateResponse

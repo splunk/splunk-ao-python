@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.datasets import (
+from splunk_ao.datasets import (
     DEFAULT_EXTEND_MODEL_ALIAS,
     Dataset,
     DatasetAPIException,
@@ -39,7 +39,7 @@ from galileo.resources.models.dataset_row import DatasetRow
 from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.types import UNSET, Response
-from galileo.schema.datasets import DatasetRecord
+from splunk_ao.schema.datasets import DatasetRecord
 
 
 def dataset_content():
@@ -154,14 +154,14 @@ def list_dataset_versions():
     )
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_validation_error(create_dataset_datasets_post_mock: Mock) -> None:
     with pytest.raises(ValueError) as exc_info:
         create_dataset(name="my_dataset_name", content=None)
     assert "Invalid dataset type: '<class 'NoneType'>'." in str(exc_info.value), str(exc_info)
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_with_empty_list(create_dataset_datasets_post_mock: Mock) -> None:
     create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
         content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0060","permissions":[],"name":"my_dataset_name","created_at":"2025-05-16T16:26:41.76451","email":"user.test@galileo.ai","first_name":"","last_name":""},"current_version_index":1,"draft":false}',
@@ -192,7 +192,7 @@ def test_create_dataset_with_empty_list(create_dataset_datasets_post_mock: Mock)
     )
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_with_empty_dict(create_dataset_datasets_post_mock: Mock) -> None:
     create_dataset_datasets_post_mock.sync_detailed.return_value = Response(
         content=b'{"id":"bb830fae-99d3-4ce7-bef9-300d528e0060","permissions":[],"name":"my_dataset_name","created_at":"2025-05-16T16:26:41.76451","email":"user.test@galileo.ai","first_name":"","last_name":""},"current_version_index":1,"draft":false}',
@@ -223,8 +223,8 @@ def test_create_dataset_with_empty_dict(create_dataset_datasets_post_mock: Mock)
     )
 
 
-@patch("galileo.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 def test_get_dataset_version_using_dataset_id(
     get_dataset_datasets_dataset_id_get: Mock, get_dataset_version_mock: Mock
 ) -> None:
@@ -242,8 +242,8 @@ def test_get_dataset_version_using_dataset_id(
     )
 
 
-@patch("galileo.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.datasets.get_dataset_version_content_datasets_dataset_id_versions_version_index_content_get")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 def test_get_dataset_version_using_dataset_name(
     query_datasets_datasets_query_post: Mock, get_dataset_version_mock: Mock
 ) -> None:
@@ -268,8 +268,8 @@ def test_get_dataset_version_wo_dataset_name_or_dataset_id() -> None:
     assert "Either dataset_name or dataset_id must be provided." in str(exc_info.value), str(exc_info)
 
 
-@patch("galileo.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 def test_get_dataset_version_history_using_dataset_id(
     get_dataset_datasets_dataset_id_get: Mock, get_dataset_versions_mock: Mock
 ) -> None:
@@ -288,8 +288,8 @@ def test_get_dataset_version_history_using_dataset_id(
     )
 
 
-@patch("galileo.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.datasets.query_dataset_versions_datasets_dataset_id_versions_query_post")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 def test_get_dataset_version_history_using_dataset_name(
     query_datasets_datasets_query_post: Mock, get_dataset_version_mock: Mock
 ) -> None:
@@ -425,7 +425,7 @@ def test_convert_dataset_row_to_record() -> None:
     assert record.ground_truth == "4"  # Property reflects output value
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test__get_etag(get_dataset_content_by_id_patch: Mock) -> None:
     dataset = Dataset(dataset_db=dataset_db())
 
@@ -440,9 +440,9 @@ def test__get_etag(get_dataset_content_by_id_patch: Mock) -> None:
     )
 
 
-@patch("galileo.datasets.Dataset._get_etag", return_value="test_etag")
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("splunk_ao.datasets.Dataset._get_etag", return_value="test_etag")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.update_dataset_content_datasets_dataset_id_content_patch")
 def test_dataset_add_rows_success(
     update_dataset_patch: Mock, get_dataset_content_patch: Mock, etag_patch: Mock
 ) -> None:
@@ -471,9 +471,9 @@ def test_dataset_add_rows_success(
     get_dataset_content_patch.sync.assert_called_once()
 
 
-@patch("galileo.datasets.Dataset._get_etag", return_value="test_etag")
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("splunk_ao.datasets.Dataset._get_etag", return_value="test_etag")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.update_dataset_content_datasets_dataset_id_content_patch")
 def test_dataset_add_rows_failure(
     update_dataset_patch: Mock, get_dataset_content_patch: Mock, etag_patch: Mock
 ) -> None:
@@ -520,10 +520,10 @@ def test_get_dataset_validation_errors() -> None:
     assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
-@patch("galileo.datasets.time.sleep")  # Mock sleep to avoid actual delays
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.time.sleep")  # Mock sleep to avoid actual delays
 def test_extend_dataset_success(
     sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
 ) -> None:
@@ -577,7 +577,7 @@ def test_extend_dataset_success(
     assert sleep_mock.call_count == 2  # Called 2 times (between the 3 status checks)
 
 
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
 def test_extend_dataset_uses_default_model_alias_when_prompt_settings_is_none(extend_dataset_mock: Mock) -> None:
     # Given: no prompt_settings provided
     extend_dataset_mock.sync.return_value = HTTPValidationError()
@@ -591,7 +591,7 @@ def test_extend_dataset_uses_default_model_alias_when_prompt_settings_is_none(ex
     assert call_body.prompt_settings.model_alias == DEFAULT_EXTEND_MODEL_ALIAS
 
 
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
 def test_extend_dataset_uses_default_model_alias_when_model_alias_key_missing(extend_dataset_mock: Mock) -> None:
     # Given: prompt_settings provided but without a "model_alias" key
     extend_dataset_mock.sync.return_value = HTTPValidationError()
@@ -605,7 +605,7 @@ def test_extend_dataset_uses_default_model_alias_when_model_alias_key_missing(ex
     assert call_body.prompt_settings.model_alias == DEFAULT_EXTEND_MODEL_ALIAS
 
 
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
 def test_extend_dataset_preserves_non_model_alias_prompt_settings(extend_dataset_mock: Mock) -> None:
     """Regression for sc-61766: extend_dataset must forward all prompt_settings fields,
     not just model_alias."""
@@ -628,7 +628,7 @@ def test_extend_dataset_preserves_non_model_alias_prompt_settings(extend_dataset
     assert call_body.prompt_settings.top_p == 0.9
 
 
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
 def test_extend_dataset_does_not_mutate_caller_prompt_settings(extend_dataset_mock: Mock) -> None:
     """extend_dataset must not mutate the caller's prompt_settings dict (e.g. inject model_alias)."""
     # Given: a caller dict without model_alias
@@ -643,7 +643,7 @@ def test_extend_dataset_does_not_mutate_caller_prompt_settings(extend_dataset_mo
     assert caller_settings == {"temperature": 0.5}
 
 
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
 def test_extend_dataset_api_failure(extend_dataset_mock: Mock) -> None:
     """Test extend_dataset when the initial API call fails."""
 
@@ -655,10 +655,10 @@ def test_extend_dataset_api_failure(extend_dataset_mock: Mock) -> None:
         extend_dataset(prompt_settings={"model_alias": "GPT-4o mini"}, prompt="Test prompt", count=1)
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
-@patch("galileo.datasets.time.sleep")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.time.sleep")
 def test_extend_dataset_unexpected_error_in_progress_message(
     sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
 ) -> None:
@@ -679,10 +679,10 @@ def test_extend_dataset_unexpected_error_in_progress_message(
     get_dataset_content_mock.sync.assert_not_called()
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
-@patch("galileo.datasets.time.sleep")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.time.sleep")
 def test_extend_dataset_unexpected_error_case_insensitive(
     sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
 ) -> None:
@@ -703,15 +703,15 @@ def test_extend_dataset_unexpected_error_case_insensitive(
     get_dataset_content_mock.sync.assert_not_called()
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
-@patch("galileo.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
-@patch("galileo.datasets.extend_dataset_content_datasets_extend_post")
-@patch("galileo.datasets.time.sleep")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_synthetic_extend_status_datasets_extend_dataset_id_get")
+@patch("splunk_ao.datasets.extend_dataset_content_datasets_extend_post")
+@patch("splunk_ao.datasets.time.sleep")
 def test_dataset_generate_propagates_unexpected_error(
     sleep_mock: Mock, extend_dataset_mock: Mock, get_extend_status_mock: Mock, get_dataset_content_mock: Mock
 ) -> None:
     """Test that Dataset.generate propagates DatasetAPIException from extend when a job fails."""
-    from galileo.dataset import Dataset as FutureDataset
+    from splunk_ao.dataset import Dataset as FutureDataset
 
     # Given: the underlying extend job signals failure via progress_message
     extended_dataset_id = "abc-123"
@@ -734,11 +734,11 @@ def test_dataset_generate_propagates_unexpected_error(
 # ===================================================================
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 def test_list_datasets_with_project_id(query_datasets_mock: Mock, get_project_mock: Mock) -> None:
     """Test listing datasets filtered by project_id."""
-    from galileo.datasets import list_datasets
+    from splunk_ao.datasets import list_datasets
 
     project_id = "test-project-id"
     dataset_db = DatasetDB(
@@ -776,11 +776,11 @@ def test_list_datasets_with_project_id(query_datasets_mock: Mock, get_project_mo
     assert call_args.kwargs["body"].filters[0].value == project_id
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 def test_list_datasets_with_project_name(query_datasets_mock: Mock, get_project_mock: Mock) -> None:
     """Test listing datasets filtered by project_name."""
-    from galileo.datasets import list_datasets
+    from splunk_ao.datasets import list_datasets
 
     project_name = "Test Project"
     project_id = "test-project-id"
@@ -820,16 +820,16 @@ def test_list_datasets_with_project_name(query_datasets_mock: Mock, get_project_
 
 def test_list_datasets_with_both_project_params() -> None:
     """Test that providing both project_id and project_name raises an error."""
-    from galileo.datasets import list_datasets
+    from splunk_ao.datasets import list_datasets
 
     with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
         list_datasets(project_id="id-123", project_name="My Project")
 
 
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.projects.Projects.get")
 def test_list_datasets_with_nonexistent_project_name(get_project_mock: Mock) -> None:
     """Test listing datasets with a project name that doesn't exist."""
-    from galileo.datasets import list_datasets
+    from splunk_ao.datasets import list_datasets
 
     # Mock project not found
     get_project_mock.return_value = None
@@ -838,12 +838,12 @@ def test_list_datasets_with_nonexistent_project_name(get_project_mock: Mock) -> 
         list_datasets(project_name="Nonexistent Project")
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_with_project_id(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test getting a dataset with project_id validation."""
-    from galileo.datasets import get_dataset
+    from splunk_ao.datasets import get_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
@@ -885,14 +885,14 @@ def test_get_dataset_with_project_id(list_projects_mock: Mock, get_dataset_mock:
     list_projects_mock.assert_called_once()
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_with_project_name(
     list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test getting a dataset with project_name validation."""
-    from galileo.datasets import get_dataset
+    from splunk_ao.datasets import get_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_name = "Test Dataset"
@@ -938,17 +938,17 @@ def test_get_dataset_with_project_name(
 
 def test_get_dataset_with_both_project_params() -> None:
     """Test that providing both project_id and project_name raises an error."""
-    from galileo.datasets import get_dataset
+    from splunk_ao.datasets import get_dataset
 
     with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
         get_dataset(name="my-dataset", project_id="id-123", project_name="My Project")
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 def test_get_dataset_with_nonexistent_project(get_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test getting a dataset with a project that doesn't exist."""
-    from galileo.datasets import get_dataset
+    from splunk_ao.datasets import get_dataset
 
     dataset_id = "dataset-1"
 
@@ -974,12 +974,12 @@ def test_get_dataset_with_nonexistent_project(get_dataset_mock: Mock, get_projec
         get_dataset(id=dataset_id, project_id="nonexistent-project")
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_not_in_project(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test getting a dataset that is not used in the specified project."""
-    from galileo.datasets import get_dataset
+    from splunk_ao.datasets import get_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
@@ -1015,15 +1015,15 @@ def test_get_dataset_not_in_project(list_projects_mock: Mock, get_dataset_mock: 
         get_dataset(id=dataset_id, project_id=project_id)
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
-@patch("galileo.datasets.delete_dataset_datasets_dataset_id_delete")
+@patch("splunk_ao.datasets.delete_dataset_datasets_dataset_id_delete")
 def test_delete_dataset_with_project_id(
     delete_dataset_mock: Mock, list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset with project_id validation."""
-    from galileo.datasets import delete_dataset
+    from splunk_ao.datasets import delete_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
@@ -1064,15 +1064,15 @@ def test_delete_dataset_with_project_id(
     delete_dataset_mock.sync.assert_called_once_with(client=ANY, dataset_id=dataset_id)
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
-@patch("galileo.datasets.delete_dataset_datasets_dataset_id_delete")
+@patch("splunk_ao.datasets.delete_dataset_datasets_dataset_id_delete")
 def test_delete_dataset_with_project_name(
     delete_dataset_mock: Mock, list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset with project_name validation."""
-    from galileo.datasets import delete_dataset
+    from splunk_ao.datasets import delete_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_name = "Test Dataset"
@@ -1117,20 +1117,20 @@ def test_delete_dataset_with_project_name(
 
 def test_delete_dataset_with_both_project_params() -> None:
     """Test that providing both project_id and project_name raises an error."""
-    from galileo.datasets import delete_dataset
+    from splunk_ao.datasets import delete_dataset
 
     with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
         delete_dataset(name="my-dataset", project_id="id-123", project_name="My Project")
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_delete_dataset_not_in_project(
     list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset that is not used in the specified project."""
-    from galileo.datasets import delete_dataset
+    from splunk_ao.datasets import delete_dataset
     from galileo.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
@@ -1166,11 +1166,11 @@ def test_delete_dataset_not_in_project(
         delete_dataset(id=dataset_id, project_id=project_id)
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_with_project_id(create_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test creating a dataset with project_id association."""
-    from galileo.datasets import create_dataset
+    from splunk_ao.datasets import create_dataset
 
     project_id = "test-project-id"
     dataset_name = "Test Dataset"
@@ -1211,11 +1211,11 @@ def test_create_dataset_with_project_id(create_dataset_mock: Mock, get_project_m
     assert call_args.kwargs["body"].project_id == project_id
 
 
-@patch("galileo.projects.Projects.get")
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.projects.Projects.get")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_with_project_name(create_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test creating a dataset with project_name association."""
-    from galileo.datasets import create_dataset
+    from splunk_ao.datasets import create_dataset
 
     project_name = "Test Project"
     project_id = "test-project-id"
@@ -1264,16 +1264,16 @@ def test_create_dataset_with_project_name(create_dataset_mock: Mock, get_project
 
 def test_create_dataset_with_both_project_params() -> None:
     """Test that providing both project_id and project_name raises an error."""
-    from galileo.datasets import create_dataset
+    from splunk_ao.datasets import create_dataset
 
     with pytest.raises(ValueError, match="Only one of 'project_id' or 'project_name' can be provided, not both"):
         create_dataset(name="test-dataset", content=[{"input": "test"}], project_id="id-123", project_name="My Project")
 
 
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.projects.Projects.get")
 def test_create_dataset_with_nonexistent_project(get_project_mock: Mock) -> None:
     """Test creating a dataset with a project that doesn't exist."""
-    from galileo.datasets import create_dataset
+    from splunk_ao.datasets import create_dataset
 
     # Mock project retrieval - return None to simulate nonexistent project
     get_project_mock.return_value = None
@@ -1282,14 +1282,14 @@ def test_create_dataset_with_nonexistent_project(get_project_mock: Mock) -> None
         create_dataset(name="test-dataset", content=[{"input": "test"}], project_id="nonexistent-project")
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_without_project_uses_unset(create_dataset_mock: Mock) -> None:
     """Test that creating a dataset without project_id uses UNSET, not None.
 
     This prevents the string 'None' from being sent to the API which would
     cause a 422 validation error.
     """
-    from galileo.datasets import create_dataset
+    from splunk_ao.datasets import create_dataset
 
     # Mock successful dataset creation
     create_dataset_mock.sync_detailed.return_value = Response(
@@ -1386,7 +1386,7 @@ def test_dataset_list_projects(list_projects_mock: Mock) -> None:
     list_projects_mock.assert_called_once_with(dataset_id="dataset-1", client=ANY, limit=100)
 
 
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_list_dataset_projects_by_id(list_projects_mock: Mock, get_dataset_mock: Mock) -> None:
     """Test list_dataset_projects() convenience function with dataset_id."""
@@ -1431,7 +1431,7 @@ def test_list_dataset_projects_by_id(list_projects_mock: Mock, get_dataset_mock:
     get_dataset_mock.sync.assert_called_once_with(client=ANY, dataset_id=dataset_id)
 
 
-@patch("galileo.datasets.query_datasets_datasets_query_post")
+@patch("splunk_ao.datasets.query_datasets_datasets_query_post")
 @patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_list_dataset_projects_by_name(list_projects_mock: Mock, query_datasets_mock: Mock) -> None:
     """Test list_dataset_projects() convenience function with dataset_name."""
@@ -1486,7 +1486,7 @@ def test_list_dataset_projects_with_no_params() -> None:
         list_dataset_projects()
 
 
-@patch("galileo.datasets.get_dataset_datasets_dataset_id_get")
+@patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
 def test_list_dataset_projects_with_nonexistent_dataset(get_dataset_mock: Mock) -> None:
     """Test list_dataset_projects with a dataset that doesn't exist."""
     # Mock dataset retrieval - return None to simulate nonexistent dataset
@@ -1496,7 +1496,7 @@ def test_list_dataset_projects_with_nonexistent_dataset(get_dataset_mock: Mock) 
         list_dataset_projects(dataset_id="nonexistent-dataset")
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_normalizes_ground_truth_to_output(create_dataset_datasets_post_mock: Mock) -> None:
     """Test that create_dataset normalizes ground_truth field to output before sending to API."""
     # Given: a dataset with ground_truth fields
@@ -1548,7 +1548,7 @@ def test_create_dataset_normalizes_ground_truth_to_output(create_dataset_dataset
         assert row["output"] in ["Europe", "Asia"], f"Expected output value, got {row['output']}"
 
 
-@patch("galileo.datasets.create_dataset_datasets_post")
+@patch("splunk_ao.datasets.create_dataset_datasets_post")
 def test_create_dataset_does_not_mutate_caller_dicts(create_dataset_datasets_post_mock: Mock) -> None:
     """Test that create_dataset does not mutate the caller's input dicts."""
     # Given: a dataset with ground_truth in caller-owned dicts
@@ -1589,7 +1589,7 @@ def test_create_dataset_does_not_mutate_caller_dicts(create_dataset_datasets_pos
 
 
 def test_normalize_dataset_rows_renames_ground_truth_to_output() -> None:
-    from galileo.utils.datasets import normalize_dataset_rows
+    from splunk_ao.utils.datasets import normalize_dataset_rows
 
     # Given: rows with ground_truth
     rows = [{"input": "Q1", "ground_truth": "A1"}, {"input": "Q2", "ground_truth": "A2"}]
@@ -1602,7 +1602,7 @@ def test_normalize_dataset_rows_renames_ground_truth_to_output() -> None:
 
 
 def test_normalize_dataset_rows_output_takes_precedence() -> None:
-    from galileo.utils.datasets import normalize_dataset_rows
+    from splunk_ao.utils.datasets import normalize_dataset_rows
 
     # Given: a row with both output and ground_truth
     rows = [{"input": "Q1", "output": "correct", "ground_truth": "ignored"}]
@@ -1615,7 +1615,7 @@ def test_normalize_dataset_rows_output_takes_precedence() -> None:
 
 
 def test_normalize_dataset_rows_does_not_mutate_caller_dicts() -> None:
-    from galileo.utils.datasets import normalize_dataset_rows
+    from splunk_ao.utils.datasets import normalize_dataset_rows
 
     # Given: caller-owned dicts
     original = {"input": "Q1", "ground_truth": "A1"}
@@ -1629,7 +1629,7 @@ def test_normalize_dataset_rows_does_not_mutate_caller_dicts() -> None:
 
 
 def test_normalize_dataset_rows_passes_through_rows_without_ground_truth() -> None:
-    from galileo.utils.datasets import normalize_dataset_rows
+    from splunk_ao.utils.datasets import normalize_dataset_rows
 
     # Given: rows that already use output
     rows = [{"input": "Q1", "output": "A1"}, {"input": "Q2", "custom_col": "val"}]
@@ -1646,8 +1646,8 @@ def test_normalize_dataset_rows_passes_through_rows_without_ground_truth() -> No
 # ---------------------------------------------------------------------------
 
 
-@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test_add_rows_normalizes_ground_truth_to_output(get_content_mock: Mock, patch_mock: Mock) -> None:
     """Test that add_rows normalizes ground_truth to output before sending to the API."""
     from http import HTTPStatus
@@ -1674,8 +1674,8 @@ def test_add_rows_normalizes_ground_truth_to_output(get_content_mock: Mock, patc
     assert sent_values == {"input": "Which continent is Morocco in?", "output": "Africa"}
 
 
-@patch("galileo.datasets.update_dataset_content_datasets_dataset_id_content_patch")
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.update_dataset_content_datasets_dataset_id_content_patch")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test_add_rows_does_not_mutate_caller_dicts(get_content_mock: Mock, patch_mock: Mock) -> None:
     """Test that add_rows does not mutate the caller's input dicts."""
     from http import HTTPStatus
@@ -1697,7 +1697,7 @@ def test_add_rows_does_not_mutate_caller_dicts(get_content_mock: Mock, patch_moc
     assert original == {"input": "Q1", "ground_truth": "A1"}
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test_get_content_returns_none_when_api_returns_none(get_content_mock: Mock) -> None:
     """Test that get_content() handles None API response without crashing."""
     # Given: the API returns None
@@ -1713,7 +1713,7 @@ def test_get_content_returns_none_when_api_returns_none(get_content_mock: Mock) 
     assert content is None
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test_get_content_syncs_dataset_column_names_after_remap(get_content_mock: Mock) -> None:
     """Test that get_content() updates dataset.column_names to the remapped names."""
     # Given: the API returns content with 'output' as a column name
@@ -1730,7 +1730,7 @@ def test_get_content_syncs_dataset_column_names_after_remap(get_content_mock: Mo
     assert ds.dataset.column_names == ["input", "ground_truth", "generated_output"]
 
 
-@patch("galileo.datasets.get_dataset_content_datasets_dataset_id_content_get")
+@patch("splunk_ao.datasets.get_dataset_content_datasets_dataset_id_content_get")
 def test_get_content_remaps_output_to_ground_truth(get_content_mock: Mock) -> None:
     """Test that get_content() remaps 'output' to 'ground_truth' in column_names and row values."""
     # Given: the API returns content with 'output' as the column name

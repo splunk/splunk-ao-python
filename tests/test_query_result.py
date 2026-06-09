@@ -4,8 +4,8 @@ import pytest
 
 from galileo.resources.models import LogRecordsQueryResponse
 from galileo.resources.types import UNSET
-from galileo.search import RecordType
-from galileo.shared.query_result import QueryResult, _flatten_dict
+from splunk_ao.search import RecordType
+from splunk_ao.shared.query_result import QueryResult, _flatten_dict
 
 
 @pytest.mark.parametrize(

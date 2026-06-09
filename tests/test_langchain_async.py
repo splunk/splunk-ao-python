@@ -11,19 +11,19 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, LLMResult
 from pytest import mark
 
-from galileo import Message, MessageRole
-from galileo.handlers.langchain import GalileoAsyncCallback
-from galileo.logger.logger import GalileoLogger
-from galileo.utils.uuid_utils import uuid7_to_uuid4
+from splunk_ao import Message, MessageRole
+from splunk_ao.handlers.langchain import GalileoAsyncCallback
+from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
 from galileo_core.schemas.shared.document import Document as GalileoDocument
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 class TestGalileoAsyncCallback:
     @pytest.fixture
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)

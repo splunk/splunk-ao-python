@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from galileo.openai.extractors import _parse_usage
+from splunk_ao.openai.extractors import _parse_usage
 
 
 class TestParseUsage:

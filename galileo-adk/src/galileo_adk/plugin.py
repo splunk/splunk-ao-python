@@ -9,7 +9,7 @@ from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
-from galileo.schema.trace import TracesIngestRequest
+from splunk_ao.schema.trace import TracesIngestRequest
 from galileo_adk.observer import (
     GalileoObserver,
     get_agent_name_from_tool_context,

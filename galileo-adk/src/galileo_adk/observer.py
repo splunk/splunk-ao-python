@@ -10,10 +10,10 @@ from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
-from galileo import galileo_context
-from galileo.handlers.base_handler import GalileoBaseHandler
-from galileo.schema.trace import TracesIngestRequest
-from galileo.utils.serialization import serialize_to_str
+from splunk_ao import galileo_context
+from splunk_ao.handlers.base_handler import GalileoBaseHandler
+from splunk_ao.schema.trace import TracesIngestRequest
+from splunk_ao.utils.serialization import serialize_to_str
 from galileo_adk.data_converters import (
     convert_adk_content_to_galileo_messages,
     convert_adk_tools_to_galileo_format,
