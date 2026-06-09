@@ -5,8 +5,6 @@ from uuid import uuid4
 
 import pytest
 
-from splunk_ao.export import export_records
-from splunk_ao.log_streams import LogStream
 from galileo.resources.errors import UnexpectedStatus
 from galileo.resources.models import (
     LLMExportFormat,
@@ -15,6 +13,8 @@ from galileo.resources.models import (
     LogRecordsTextFilter,
     RootType,
 )
+from splunk_ao.export import export_records
+from splunk_ao.log_streams import LogStream
 
 
 @patch("splunk_ao.export.export_records_stream")

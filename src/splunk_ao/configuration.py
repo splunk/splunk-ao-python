@@ -9,8 +9,8 @@ from typing import Any
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.constants import DEFAULT_CONSOLE_URL
 from splunk_ao.shared.exceptions import ConfigurationError
+from splunk_ao.utils.log_config import SDK_LOGGER_NAME, get_logger
 from splunk_ao.utils.log_config import enable_console_logging as _enable_console_logging
-from splunk_ao.utils.log_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -502,7 +502,7 @@ class Configuration(metaclass=ConfigurationMeta):
         Configuration.disable_console_logging()
         ```
         """
-        galileo_logger = logging.getLogger("galileo")
+        galileo_logger = logging.getLogger(SDK_LOGGER_NAME)
 
         # Remove all stream handlers
         for handler in galileo_logger.handlers[:]:

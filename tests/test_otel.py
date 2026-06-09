@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import SecretStr
 
+from galileo_core.schemas.logging.span import ToolSpan
 from splunk_ao.decorator import (
     _dataset_input_context,
     _dataset_metadata_context,
@@ -25,13 +26,12 @@ from splunk_ao.otel import (
     _set_tool_span_attributes,
     start_galileo_span,
 )
-from galileo_core.schemas.logging.span import ToolSpan
 
 if OTEL_AVAILABLE:
-    from splunk_ao.otel import _set_workflow_span_attributes, start_galileo_span
     from galileo_core.schemas.logging.llm import Message, MessageRole
     from galileo_core.schemas.logging.span import WorkflowSpan
     from galileo_core.schemas.shared.document import Document
+    from splunk_ao.otel import _set_workflow_span_attributes, start_galileo_span
 
 
 class TestGalileoOTLPExporter:

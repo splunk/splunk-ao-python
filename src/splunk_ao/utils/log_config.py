@@ -7,6 +7,8 @@ including silent-by-default behavior and console output helpers.
 
 import logging
 
+SDK_LOGGER_NAME = "splunk_ao"
+
 
 def _is_logger_configured(logger: logging.Logger) -> bool:
     """
@@ -29,10 +31,10 @@ def _is_logger_configured(logger: logging.Logger) -> bool:
 
 def _ensure_silent_by_default() -> None:
     """
-    Ensure galileo loggers are silent by default, but only if they haven't been configured yet.
+    Ensure SDK loggers are silent by default, but only if they haven't been configured yet.
     This avoids interfering with existing logging configurations.
     """
-    logger = logging.getLogger("galileo")
+    logger = logging.getLogger(SDK_LOGGER_NAME)
 
     # Only apply silent defaults if the logger hasn't been configured by the user
     if not _is_logger_configured(logger):
@@ -67,7 +69,7 @@ def enable_console_logging(level: int = logging.INFO) -> None:
     """
     Enable console logging for interactive use.
 
-    This function configures the root galileo logger to output to the console
+    This function configures the root SDK logger to output to the console
     with a simple formatter. This is particularly useful for REPL, IPython,
     and Jupyter environments where users want to see SDK logs immediately.
 
@@ -85,7 +87,7 @@ def enable_console_logging(level: int = logging.INFO) -> None:
     # Ensure we apply silent defaults first if logger wasn't configured
     _ensure_silent_by_default()
 
-    logger = logging.getLogger("galileo")
+    logger = logging.getLogger(SDK_LOGGER_NAME)
 
     # Check if handler already exists to avoid duplicates
     if not any(isinstance(handler, logging.StreamHandler) for handler in logger.handlers):

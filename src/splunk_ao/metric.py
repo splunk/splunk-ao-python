@@ -13,9 +13,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from splunk_ao.model import Model
 
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.configuration import Configuration
-from splunk_ao.metrics import Metrics
 from galileo.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
@@ -35,15 +32,18 @@ from galileo.resources.models import (
 )
 from galileo.resources.models.invalid_result import InvalidResult
 from galileo.resources.types import UNSET, File, Unset
+from galileo_core.schemas.logging.span import Span
+from galileo_core.schemas.logging.step import StepType
+from galileo_core.schemas.logging.trace import Trace
+from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.configuration import Configuration
+from splunk_ao.metrics import Metrics
 from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig
 from splunk_ao.schema.metrics import Metric as LegacyMetric
 from splunk_ao.scorers import Scorers
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
-from galileo_core.schemas.logging.span import Span
-from galileo_core.schemas.logging.step import StepType
-from galileo_core.schemas.logging.trace import Trace
-from galileo_core.schemas.shared.metric import MetricValueType
 
 logger = logging.getLogger(__name__)
 

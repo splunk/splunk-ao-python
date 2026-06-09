@@ -5,9 +5,9 @@ from typing import Any, ClassVar, Optional
 
 from pydantic_core import Url
 
+from galileo_core.schemas.base_config import GalileoConfig
 from splunk_ao.constants import DEFAULT_CONSOLE_URL
 from splunk_ao.shared.exceptions import ConfigurationError
-from galileo_core.schemas.base_config import GalileoConfig
 
 
 class GalileoPythonConfig(GalileoConfig):

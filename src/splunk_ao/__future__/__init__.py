@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from galileo_core.schemas.logging.llm import MessageRole
+from galileo_core.schemas.logging.step import StepType
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
@@ -21,8 +23,6 @@ from splunk_ao.shared.exceptions import (
     ValidationError,
 )
 from splunk_ao.utils.log_config import enable_console_logging
-from galileo_core.schemas.logging.llm import MessageRole
-from galileo_core.schemas.logging.step import StepType
 
 __all__ = [
     "APIError",

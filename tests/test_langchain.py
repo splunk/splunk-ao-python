@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
+from galileo_core.schemas.shared.document import Document as GalileoDocument
 from splunk_ao import Message, MessageRole, galileo_context
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.handlers.langchain import GalileoAsyncCallback, GalileoCallback
@@ -18,7 +19,6 @@ from splunk_ao.logger.logger import GalileoLogger
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.singleton import GalileoLoggerSingleton
 from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
-from galileo_core.schemas.shared.document import Document as GalileoDocument
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 

@@ -9,6 +9,8 @@ from urllib.parse import urljoin
 
 from requests import Session
 
+from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.decorator import (
     _dataset_input_context,
@@ -21,8 +23,6 @@ from splunk_ao.decorator import (
 )
 from splunk_ao.utils.env_helpers import _get_log_stream_or_default, _get_project_or_default
 from splunk_ao.utils.retrievers import document_adapter
-from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
 
 logger = logging.getLogger(__name__)
 

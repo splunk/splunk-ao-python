@@ -4,8 +4,8 @@ from unittest.mock import ANY, Mock, patch
 import httpx
 import pytest
 
-from splunk_ao.projects import Projects, ProjectsAPIException, delete_project
 from galileo.resources.models.project_type import ProjectType
+from splunk_ao.projects import Projects, ProjectsAPIException, delete_project
 
 
 @pytest.fixture(autouse=True)

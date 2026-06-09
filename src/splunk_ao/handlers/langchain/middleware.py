@@ -8,13 +8,13 @@ from uuid import UUID, uuid4
 from langchain_core.messages import AnyMessage
 from pydantic import BaseModel
 
+from galileo_core.schemas.logging.llm import Message, MessageRole
 from splunk_ao.handlers.base_async_handler import GalileoAsyncBaseHandler
 from splunk_ao.handlers.base_handler import GalileoBaseHandler
 from splunk_ao.handlers.langchain.handler import GalileoCallback
 from splunk_ao.logger import GalileoLogger
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import EventSerializer, serialize_to_str
-from galileo_core.schemas.logging.llm import Message, MessageRole
 
 try:
     from langchain_core.messages import AIMessage, BaseMessage

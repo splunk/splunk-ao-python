@@ -11,9 +11,9 @@ from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from packaging.version import Version
 from pydantic import BaseModel
 
+from galileo_core.schemas.logging.llm import Event, Message, MessageRole, ReasoningEvent, ToolCall, ToolCallFunction
 from splunk_ao.logger import GalileoLogger
 from splunk_ao.openai.models import OpenAiInputData, OpenAiModuleDefinition
-from galileo_core.schemas.logging.llm import Event, Message, MessageRole, ReasoningEvent, ToolCall, ToolCallFunction
 
 try:
     import openai

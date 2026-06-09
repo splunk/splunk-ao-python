@@ -1,9 +1,9 @@
 import logging
 
-from splunk_ao.utils.decorators import nop_sync
-from splunk_ao.utils.serialization import serialize_to_str
 from galileo_core.schemas.logging.span import StepWithChildSpans
 from galileo_core.schemas.logging.step import BaseStep
+from splunk_ao.utils.decorators import nop_sync
+from splunk_ao.utils.serialization import serialize_to_str
 
 _logger = logging.getLogger(__name__)
 

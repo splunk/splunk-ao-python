@@ -8,6 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from splunk_ao.handlers.base_handler import GalileoBaseHandler
+
 from galileo_adk.types import RunContext
 
 # Integration tag for all spans

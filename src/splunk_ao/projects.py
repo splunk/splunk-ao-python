@@ -3,7 +3,6 @@ import datetime
 
 import httpx
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.projects import (
     create_project_projects_post,
     create_user_project_collaborators_projects_project_id_users_post,
@@ -28,6 +27,7 @@ from galileo.resources.models.project_update_response import ProjectUpdateRespon
 from galileo.resources.models.user_collaborator import UserCollaborator
 from galileo.resources.models.user_collaborator_create import UserCollaboratorCreate
 from galileo.resources.types import UNSET, Unset
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.utils.env_helpers import _get_project_from_env, _get_project_id_from_env
 from splunk_ao.utils.exceptions import APIException
 from splunk_ao.utils.log_config import get_logger

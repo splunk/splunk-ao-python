@@ -1,6 +1,5 @@
 import logging
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.jobs import create_job_jobs_post
 from galileo.resources.models import (
     CreateJobRequest,
@@ -10,6 +9,7 @@ from galileo.resources.models import (
     ScorerConfig,
     TaskType,
 )
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.utils.exceptions import _format_http_validation_error
 
 _logger = logging.getLogger(__name__)

@@ -3,9 +3,9 @@ from typing import cast
 
 from pydantic import TypeAdapter, ValidationError
 
+from galileo_core.schemas.shared.document import Document
 from splunk_ao.schema.trace import Document as GalileoDocument
 from splunk_ao.schema.trace import RetrieverSpanAllowedOutputType
-from galileo_core.schemas.shared.document import Document
 
 document_adapter = TypeAdapter(list[Document])
 

@@ -8,7 +8,6 @@ from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes as CoreRoutes
 from galileo_core.schemas.core.user import User
 from galileo_core.schemas.core.user_role import UserRole
-
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.utils.singleton import GalileoLoggerSingleton
 

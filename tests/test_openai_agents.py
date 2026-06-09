@@ -18,10 +18,10 @@ from agents.tracing import ResponseSpanData
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
+from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
 from splunk_ao.handlers.openai_agents import GalileoTracingProcessor
 from splunk_ao.logger.logger import GalileoLogger
 from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
-from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 

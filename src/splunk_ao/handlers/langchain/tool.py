@@ -4,13 +4,13 @@ from langchain_core.runnables.base import Runnable
 from langchain_core.tools import BaseTool
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 
-from splunk_ao.constants.protect import TIMEOUT_SECS
-from splunk_ao.protect import ainvoke_protect, invoke_protect
-from splunk_ao.utils.log_config import get_logger
 from galileo_core.schemas.protect.execution_status import ExecutionStatus
 from galileo_core.schemas.protect.payload import Payload as CorePayload
 from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.protect.ruleset import Ruleset
+from splunk_ao.constants.protect import TIMEOUT_SECS
+from splunk_ao.protect import ainvoke_protect, invoke_protect
+from splunk_ao.utils.log_config import get_logger
 
 logger = get_logger(__name__)
 

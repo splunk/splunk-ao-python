@@ -1,7 +1,6 @@
 import logging
 from enum import Enum
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.trace import (
     query_sessions_projects_project_id_sessions_search_post,
     query_spans_projects_project_id_spans_search_post,
@@ -13,6 +12,7 @@ from galileo.resources.models import (
     LogRecordsQueryResponse,
     LogRecordsSortClause,
 )
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.schema.filters import FilterType
 
 logger = logging.getLogger(__name__)

@@ -6,6 +6,8 @@ from typing import Any, cast
 from agents import Span, Trace, TracingProcessor
 from agents.tracing import ResponseSpanData, get_current_span, get_trace_provider
 
+from galileo_core.schemas.logging.span import LlmMetrics, LlmSpan
+from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao import GalileoLogger, galileo_context
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils import _get_timestamp
@@ -18,8 +20,6 @@ from splunk_ao.utils.openai_agents import (
     _map_span_type,
 )
 from splunk_ao.utils.serialization import convert_time_delta_to_ns, convert_to_string_dict, serialize_to_str
-from galileo_core.schemas.logging.span import LlmMetrics, LlmSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
 
 _logger = logging.getLogger(__name__)
 

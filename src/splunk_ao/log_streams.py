@@ -1,8 +1,6 @@
 import builtins
 from typing import overload
 
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.projects import Projects
 from galileo.resources.api.log_stream import (
     create_log_stream_projects_project_id_log_streams_post,
     get_log_stream_projects_project_id_log_streams_log_stream_id_get,
@@ -12,6 +10,8 @@ from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.log_stream_create_request import LogStreamCreateRequest
 from galileo.resources.models.log_stream_response import LogStreamResponse
 from galileo.resources.types import Unset
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.projects import Projects
 from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig, Metric
 from splunk_ao.utils.env_helpers import _get_log_stream_from_env, _get_project_from_env
 from splunk_ao.utils.log_config import get_logger

@@ -6,9 +6,9 @@ from uuid import uuid4
 import pytest
 from pytest import CaptureFixture, LogCaptureFixture
 
-from splunk_ao.job_progress import job_progress, scorer_jobs_status
 from galileo.resources.models import HTTPValidationError, JobDB, ValidationError
 from galileo_core.constants.job import JobStatus
+from splunk_ao.job_progress import job_progress, scorer_jobs_status
 
 FIXED_PROJECT_ID = str(uuid4())
 FIXED_RUN_ID = str(uuid4())

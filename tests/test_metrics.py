@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
 from galileo.resources.models import (
     BucketedMetrics,
     HTTPValidationError,
@@ -22,6 +21,7 @@ from galileo.resources.models.scorer_defaults import ScorerDefaults
 from galileo.resources.models.scorer_response import ScorerResponse
 from galileo.resources.models.scorer_types import ScorerTypes
 from galileo_core.schemas.logging.step import StepType
+from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
 
 FIXED_PROJECT_ID = str(uuid4())
 

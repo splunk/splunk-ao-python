@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.integrations import (
     create_or_update_integration_integrations_anthropic_put,
     create_or_update_integration_integrations_aws_bedrock_put,
@@ -24,6 +23,7 @@ from galileo.resources.models import (
     OpenAIIntegrationCreate,
 )
 from galileo.resources.types import Unset
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, IntegrationNotConfiguredError, ValidationError
 from splunk_ao.utils.exceptions import APIException

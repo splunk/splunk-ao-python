@@ -2,8 +2,6 @@ from collections.abc import Sequence
 
 from pydantic import UUID4
 
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.projects import Projects
 from galileo.resources.api.protect import (
     create_stage_projects_project_id_stages_post,
     get_stage_projects_project_id_stages_get,
@@ -17,6 +15,8 @@ from galileo.resources.types import UNSET
 from galileo_core.schemas.protect.ruleset import Ruleset, RulesetsMixin
 from galileo_core.schemas.protect.stage import StageDB, StageType, StageWithRulesets
 from galileo_core.utils.name import ts_name
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.projects import Projects
 
 
 def _get_validated_project_id(project_id: str | UUID4 | None = None, project_name: str | None = None) -> str:

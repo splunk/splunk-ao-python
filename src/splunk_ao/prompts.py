@@ -2,7 +2,6 @@ import builtins
 import logging
 from typing import overload
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.prompts import (
     create_global_prompt_template_templates_post,
     delete_global_template_templates_template_id_delete,
@@ -28,6 +27,7 @@ from galileo.resources.models import (
     UpdatePromptTemplateRequest,
 )
 from galileo.resources.types import Unset
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.schema.message import Message
 from splunk_ao.utils.exceptions import APIException
 from splunk_ao.utils.projects import resolve_project_id

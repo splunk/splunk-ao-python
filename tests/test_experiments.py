@@ -14,18 +14,6 @@ from time_machine import travel
 import splunk_ao.experiments
 import splunk_ao.jobs
 import splunk_ao.utils.datasets
-from splunk_ao import galileo_context
-from splunk_ao.decorator import SPAN_TYPE
-from splunk_ao.experiments import (
-    Experiments,
-    create_experiment,
-    get_experiment,
-    get_experiments,
-    list_experiment_groups,
-    run_experiment,
-)
-from splunk_ao.projects import Project
-from splunk_ao.prompts import PromptTemplate
 from galileo.resources.models import (
     BasePromptTemplateResponse,
     BasePromptTemplateVersionResponse,
@@ -44,13 +32,25 @@ from galileo.resources.models import (
     ValidationError,
 )
 from galileo.resources.types import UNSET
+from galileo_core.schemas.logging.span import Span, StepWithChildSpans
+from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao import galileo_context
+from splunk_ao.decorator import SPAN_TYPE
+from splunk_ao.experiments import (
+    Experiments,
+    create_experiment,
+    get_experiment,
+    get_experiments,
+    list_experiment_groups,
+    run_experiment,
+)
+from splunk_ao.projects import Project
+from splunk_ao.prompts import PromptTemplate
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
 from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig
 from splunk_ao.utils.datasets import load_dataset_and_records
 from splunk_ao.utils.exceptions import _format_http_validation_error
-from galileo_core.schemas.logging.span import Span, StepWithChildSpans
-from galileo_core.schemas.shared.metric import MetricValueType
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 

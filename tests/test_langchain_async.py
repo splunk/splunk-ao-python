@@ -11,11 +11,11 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, LLMResult
 from pytest import mark
 
+from galileo_core.schemas.shared.document import Document as GalileoDocument
 from splunk_ao import Message, MessageRole
 from splunk_ao.handlers.langchain import GalileoAsyncCallback
 from splunk_ao.logger.logger import GalileoLogger
 from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
-from galileo_core.schemas.shared.document import Document as GalileoDocument
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 

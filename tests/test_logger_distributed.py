@@ -8,14 +8,14 @@ from uuid import UUID
 
 import pytest
 
-from splunk_ao.logger import GalileoLogger
-from splunk_ao.logger.logger import GalileoLoggerException
-from splunk_ao.schema.trace import SpansIngestRequest, SpanUpdateRequest, TracesIngestRequest, TraceUpdateRequest
 from galileo_core.schemas.logging.llm import Message
 from galileo_core.schemas.protect.execution_status import ExecutionStatus
 from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.response import Response, TraceMetadata
 from galileo_core.schemas.shared.document import Document
+from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger.logger import GalileoLoggerException
+from splunk_ao.schema.trace import SpansIngestRequest, SpanUpdateRequest, TracesIngestRequest, TraceUpdateRequest
 from tests.testutils.setup import (
     setup_mock_logstreams_client,
     setup_mock_projects_client,

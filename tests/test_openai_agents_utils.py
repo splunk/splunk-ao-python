@@ -17,6 +17,7 @@ from agents import (
 )
 from agents.tracing import ResponseSpanData
 
+from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
 from splunk_ao.utils.openai_agents import (
     GalileoCustomSpan,
     _extract_llm_data,
@@ -26,7 +27,6 @@ from splunk_ao.utils.openai_agents import (
     _map_span_type,
     _parse_usage,
 )
-from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
 
 
 class TestParseUsage:

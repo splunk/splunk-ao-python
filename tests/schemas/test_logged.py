@@ -9,15 +9,15 @@ from pydantic import ValidationError
 import splunk_ao.logger.control as control_module
 import splunk_ao.logger.logger as logger_module
 import splunk_ao.schema.logged as logged_module
-from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
-from splunk_ao.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
-from splunk_ao.schema.message import LoggedMessage
-from splunk_ao.schema.trace import TracesIngestRequest
 from galileo_core.schemas.logging.llm import MessageRole
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
+from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
+from splunk_ao.schema.message import LoggedMessage
+from splunk_ao.schema.trace import TracesIngestRequest
 
 
 class TestTextContentBlock:

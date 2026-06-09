@@ -2,7 +2,6 @@
 
 import logging
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.experiment_tags import (
     delete_experiment_tag_projects_project_id_experiments_experiment_id_tags_tag_id_delete,
     get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get,
@@ -11,6 +10,7 @@ from galileo.resources.api.experiment_tags import (
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.run_tag_create_request import RunTagCreateRequest
 from galileo.resources.models.run_tag_db import RunTagDB
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.utils.exceptions import APIException
 
 _logger = logging.getLogger(__name__)

@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.data import (
     create_llm_scorer_version_scorers_scorer_id_version_llm_post,
     create_scorers_post,
@@ -19,9 +18,10 @@ from galileo.resources.models.create_llm_scorer_version_request import CreateLLM
 from galileo.resources.models.create_scorer_request import CreateScorerRequest
 from galileo.resources.models.output_type_enum import OutputTypeEnum
 from galileo.resources.models.scorer_defaults import ScorerDefaults
+from galileo_core.schemas.logging.step import StepType
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
-from galileo_core.schemas.logging.step import StepType
 
 _logger = logging.getLogger(__name__)
 

@@ -3,8 +3,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from splunk_ao.schema.trace import TracesIngestRequest
+
 from galileo_adk.trace_builder import TraceBuilder
 
 

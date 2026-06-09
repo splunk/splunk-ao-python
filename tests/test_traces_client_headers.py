@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.traces import Traces
 from splunk_ao.utils.headers_data import get_package_version
-from galileo_core.constants.request_method import RequestMethod
 
 
 class TestTracesHeaders:

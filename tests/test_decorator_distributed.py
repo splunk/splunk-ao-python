@@ -6,14 +6,14 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from galileo_core.schemas.shared.document import Document
+from galileo_core.schemas.shared.multimodal import ContentModality
 from splunk_ao import Message, MessageRole, galileo_context, log
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.decorator import _parent_id_context, _trace_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from splunk_ao.schema.trace import SpanUpdateRequest, TraceUpdateRequest
 from splunk_ao.tracing import get_tracing_headers
-from galileo_core.schemas.shared.document import Document
-from galileo_core.schemas.shared.multimodal import ContentModality
 from tests.testutils.setup import (
     setup_mock_logstreams_client,
     setup_mock_projects_client,

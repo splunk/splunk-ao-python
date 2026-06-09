@@ -6,6 +6,9 @@ from pydantic import UUID4
 
 from galileo.resources.models import HTTPValidationError
 from galileo.resources.models.stage_db import StageDB as APIStageDB
+from galileo_core.schemas.protect.rule import Rule, RuleOperator
+from galileo_core.schemas.protect.ruleset import Ruleset
+from galileo_core.schemas.protect.stage import StageDB, StageType
 from splunk_ao.stages import (
     create_protect_stage,
     get_protect_stage,
@@ -13,9 +16,6 @@ from splunk_ao.stages import (
     resume_protect_stage,
     update_protect_stage,
 )
-from galileo_core.schemas.protect.rule import Rule, RuleOperator
-from galileo_core.schemas.protect.ruleset import Ruleset
-from galileo_core.schemas.protect.stage import StageDB, StageType
 
 FIXED_PROJECT_ID = uuid.uuid4()
 FIXED_STAGE_ID = uuid.uuid4()

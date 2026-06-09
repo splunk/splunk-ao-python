@@ -2,8 +2,6 @@ from collections.abc import Sequence
 
 from pydantic import UUID4
 
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.constants.protect import TIMEOUT_SECS
 from galileo.resources.api.protect import invoke_protect_invoke_post
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.protect_request import ProtectRequest as APIRequest
@@ -13,6 +11,8 @@ from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.request import Request
 from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.protect.ruleset import Ruleset
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.constants.protect import TIMEOUT_SECS
 
 
 class Protect:

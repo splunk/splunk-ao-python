@@ -4,16 +4,6 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 
-from splunk_ao import Message, MessageRole
-from splunk_ao.prompts import (
-    PromptTemplateAPIException,
-    create_prompt,
-    delete_prompt,
-    get_prompt,
-    get_prompts,
-    render_template,
-    update_prompt,
-)
 from galileo.resources.models import (
     BasePromptTemplateResponse,
     BasePromptTemplateVersionResponse,
@@ -32,6 +22,16 @@ from galileo.resources.models import (
     UpdatePromptTemplateRequest,
 )
 from galileo.resources.types import Response
+from splunk_ao import Message, MessageRole
+from splunk_ao.prompts import (
+    PromptTemplateAPIException,
+    create_prompt,
+    delete_prompt,
+    get_prompt,
+    get_prompts,
+    render_template,
+    update_prompt,
+)
 
 
 def projects_response():

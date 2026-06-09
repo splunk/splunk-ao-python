@@ -5,6 +5,8 @@ from uuid import UUID
 
 import httpx
 
+from galileo_core.constants.http_headers import HttpHeaders
+from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.constants.routes import Routes
 from splunk_ao.schema.trace import (
@@ -17,8 +19,6 @@ from splunk_ao.schema.trace import (
 )
 from splunk_ao.utils.decorators import async_warn_catch_exception
 from splunk_ao.utils.headers_data import get_sdk_header
-from galileo_core.constants.http_headers import HttpHeaders
-from galileo_core.constants.request_method import RequestMethod
 
 _logger = logging.getLogger(__name__)
 

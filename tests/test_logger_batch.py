@@ -8,12 +8,6 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from splunk_ao.logger import GalileoLogger
-from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
-from splunk_ao.schema.logged import LoggedTrace, LoggedWorkflowSpan
-from splunk_ao.schema.message import LoggedMessage
-from splunk_ao.schema.metrics import LocalMetricConfig
-from splunk_ao.schema.trace import TracesIngestRequest
 from galileo_core.schemas.logging.agent import AgentType
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import (
@@ -32,6 +26,12 @@ from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.response import Response, TraceMetadata
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
+from splunk_ao.logger import GalileoLogger
+from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.logged import LoggedTrace, LoggedWorkflowSpan
+from splunk_ao.schema.message import LoggedMessage
+from splunk_ao.schema.metrics import LocalMetricConfig
+from splunk_ao.schema.trace import TracesIngestRequest
 from tests.testutils.setup import (
     setup_mock_experiments_client,
     setup_mock_logstreams_client,

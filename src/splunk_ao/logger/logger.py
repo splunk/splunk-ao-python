@@ -18,6 +18,24 @@ if TYPE_CHECKING:
 import backoff
 import httpx
 
+from galileo_core.helpers.execution import async_run
+from galileo_core.schemas.logging.agent import AgentType
+from galileo_core.schemas.logging.llm import Event
+from galileo_core.schemas.logging.span import (
+    LlmMetrics,
+    LlmSpan,
+    LlmSpanAllowedInputType,
+    LlmSpanAllowedOutputType,
+    RetrieverSpan,
+    Span,
+    StepWithChildSpans,
+    ToolSpan,
+)
+from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
+from galileo_core.schemas.logging.trace import Trace
+from galileo_core.schemas.protect.payload import Payload
+from galileo_core.schemas.protect.response import Response
+from galileo_core.schemas.shared.traces_logger import TracesLogger
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
@@ -72,24 +90,6 @@ from splunk_ao.utils.env_helpers import (
 from splunk_ao.utils.metrics import populate_local_metrics
 from splunk_ao.utils.retrievers import convert_to_documents
 from splunk_ao.utils.serialization import serialize_to_str
-from galileo_core.helpers.execution import async_run
-from galileo_core.schemas.logging.agent import AgentType
-from galileo_core.schemas.logging.llm import Event
-from galileo_core.schemas.logging.span import (
-    LlmMetrics,
-    LlmSpan,
-    LlmSpanAllowedInputType,
-    LlmSpanAllowedOutputType,
-    RetrieverSpan,
-    Span,
-    StepWithChildSpans,
-    ToolSpan,
-)
-from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
-from galileo_core.schemas.logging.trace import Trace
-from galileo_core.schemas.protect.payload import Payload
-from galileo_core.schemas.protect.response import Response
-from galileo_core.schemas.shared.traces_logger import TracesLogger
 
 # Type alias for metadata values that can be auto-converted to strings
 MetadataValue = str | bool | int | float | None

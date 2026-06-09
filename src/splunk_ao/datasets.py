@@ -3,7 +3,6 @@ import mimetypes
 import time
 from typing import Any, overload
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.datasets import (
     create_dataset_datasets_post,
     delete_dataset_datasets_dataset_id_delete,
@@ -41,12 +40,13 @@ from galileo.resources.models.synthetic_dataset_extension_response import Synthe
 from galileo.resources.models.update_dataset_content_request import UpdateDatasetContentRequest
 from galileo.resources.models.update_dataset_request import UpdateDatasetRequest
 from galileo.resources.types import UNSET, File, Unset
+from galileo_core.utils.dataset import DatasetType, parse_dataset
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.utils.datasets import normalize_dataset_rows, remap_output_to_ground_truth, validate_dataset_in_project
 from splunk_ao.utils.exceptions import APIException
 from splunk_ao.utils.log_config import get_logger
 from splunk_ao.utils.projects import resolve_project_id
-from galileo_core.utils.dataset import DatasetType, parse_dataset
 
 logger = get_logger(__name__)
 MAX_DATASET_ROWS = 100000

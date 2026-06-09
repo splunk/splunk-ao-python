@@ -56,6 +56,8 @@ from typing import Any, TypeVar, cast, overload
 
 from typing_extensions import ParamSpec
 
+from galileo_core.schemas.logging.span import WorkflowSpan
+from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.logger import GalileoLogger
 from splunk_ao.logger.logger import STUB_TRACE_NAME
@@ -69,8 +71,6 @@ from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.serialization import EventSerializer, convert_time_delta_to_ns, serialize_to_str
 from splunk_ao.utils.singleton import GalileoLoggerSingleton
 from splunk_ao.utils.span_utils import is_concludable_span_type, is_textual_span_type
-from galileo_core.schemas.logging.span import WorkflowSpan
-from galileo_core.schemas.logging.trace import Trace
 
 _logger = logging.getLogger(__name__)
 

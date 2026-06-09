@@ -6,10 +6,6 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.decorator import galileo_context
-from splunk_ao.export import ExportClient
-from splunk_ao.log_streams import LogStreams
 from galileo.resources.api.trace import (
     sessions_available_columns_projects_project_id_sessions_available_columns_post,
     spans_available_columns_projects_project_id_spans_available_columns_post,
@@ -20,6 +16,10 @@ from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
 from galileo.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from galileo.resources.types import Unset
+from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.decorator import galileo_context
+from splunk_ao.export import ExportClient
+from splunk_ao.log_streams import LogStreams
 from splunk_ao.schema.filters import FilterType
 from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig, Metric
 from splunk_ao.search import RecordType, Search
@@ -964,8 +964,8 @@ class LogStream(StateManagementMixin):
 
 
 # Import at end to avoid circular import (project.py imports LogStream)
-from splunk_ao.project import Project  # noqa: E402
 from galileo.resources.api.run_scorer_settings import (  # noqa: E402
     get_settings_projects_project_id_runs_run_id_scorer_settings_get,
 )
+from splunk_ao.project import Project  # noqa: E402
 from splunk_ao.shared.column import Column, ColumnCollection  # noqa: E402

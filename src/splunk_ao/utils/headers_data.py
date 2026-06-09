@@ -45,7 +45,7 @@ def get_method_name() -> str:
             frame_info = frames_info[i]
             module_name = str(frame_info["module"])  # Explicitly cast to string
 
-            if module_name.startswith("splunk_ao.") or module_name.startswith("galileo.resources."):
+            if module_name.startswith(("splunk_ao.", "galileo.resources.")):
                 entry_point = frame_info
                 break
 

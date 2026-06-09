@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.models.dataset_content import DatasetContent
 from galileo.resources.types import Unset
+from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.schema.datasets import DatasetRecord
 
 if TYPE_CHECKING:

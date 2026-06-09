@@ -13,9 +13,9 @@ from agents import (
 )
 from agents.tracing import ResponseSpanData
 
+from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.schema.handlers import SPAN_TYPE
 from splunk_ao.utils.serialization import serialize_to_str
-from galileo_core.schemas.logging.span import Span as GalileoSpan
 
 _logger = logging.getLogger(__name__)
 

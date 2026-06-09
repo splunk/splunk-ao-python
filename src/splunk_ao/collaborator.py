@@ -4,10 +4,9 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from splunk_ao.projects import Projects
-
 # Re-export CollaboratorRole from the auto-generated models
 from galileo.resources.models.collaborator_role import CollaboratorRole
+from splunk_ao.projects import Projects
 
 logger = logging.getLogger(__name__)
 

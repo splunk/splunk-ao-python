@@ -11,9 +11,6 @@ from typing import Annotated, Any
 
 from pydantic import Field
 
-from splunk_ao.logger.control import ControlSpan
-from splunk_ao.schema.content_blocks import IngestContentBlock, IngestMessageContent
-from splunk_ao.schema.message import LoggedMessage
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import (
     AgentSpan,
@@ -28,6 +25,9 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
+from splunk_ao.logger.control import ControlSpan
+from splunk_ao.schema.content_blocks import IngestContentBlock, IngestMessageContent
+from splunk_ao.schema.message import LoggedMessage
 
 TextOrContentBlocks = IngestMessageContent
 IngestInputType = str | Sequence[LoggedMessage] | list[IngestContentBlock]

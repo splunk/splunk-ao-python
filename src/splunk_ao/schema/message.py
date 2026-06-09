@@ -3,12 +3,12 @@ from typing import Any
 
 from pydantic import Field
 
-from splunk_ao.schema.content_blocks import IngestMessageContent
 from galileo_core.schemas.logging.llm import Message as CoreMessage
 
 # These classes should not be removed. They are used to rebuild the new `Message` model
 # we are defining below.
 from galileo_core.schemas.logging.llm import ToolCall, ToolCallFunction
+from splunk_ao.schema.content_blocks import IngestMessageContent
 
 
 class Message(CoreMessage):

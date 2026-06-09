@@ -1,6 +1,5 @@
 import logging
 
-from splunk_ao.config import GalileoPythonConfig
 from galileo.resources.api.run_scorer_settings import (
     upsert_scorers_config_projects_project_id_runs_run_id_scorer_settings_patch,
 )
@@ -11,6 +10,7 @@ from galileo.resources.models import (
     ScorerConfig,
     SegmentFilter,
 )
+from splunk_ao.config import GalileoPythonConfig
 
 logger = logging.getLogger(__name__)
 

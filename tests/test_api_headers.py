@@ -2,11 +2,11 @@
 
 from unittest.mock import patch
 
-from splunk_ao.project import Project
-from splunk_ao.projects import list_projects
 from galileo.resources.api.datasets.get_dataset_datasets_dataset_id_get import _get_kwargs as dataset_get_kwargs
 from galileo.resources.api.health.healthcheck_healthcheck_get import _get_kwargs as healthcheck_get_kwargs
 from galileo.resources.api.projects import get_all_projects_projects_all_get
+from splunk_ao.project import Project
+from splunk_ao.projects import list_projects
 from splunk_ao.utils.headers_data import get_package_version
 
 
