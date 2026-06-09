@@ -1,0 +1,62 @@
+name: CI - Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    runs-on: ${{ matrix.os }}
+    # Hard cap per matrix job — bail out fast on real hangs instead of
+    # burning CI minutes up to the GitHub-default 6h ceiling.
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Enable long paths on Windows
+        if: runner.os == 'Windows'
+        run: git config --system core.longpaths true
+
+      - name: Install poetry
+        run: pipx install poetry==2.1.3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          cache: "poetry"
+          python-version: ${{ matrix.python-version }}
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install invoke
+        run: pipx install invoke
+
+      - name: Install Dependencies
+        run: invoke install
+
+      - name: Validate Types
+        if: always()
+        run: invoke type-check
+
+      - name: Run Tests
+        if: always()
+        run: invoke test-report-xml
