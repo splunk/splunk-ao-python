@@ -44,14 +44,16 @@ jobs:
         id: setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          cache: "poetry"
           python-version: ${{ matrix.python-version }}
-          cache-dependency-path: "poetry.lock"
 
       - name: Configure Poetry Python
-        run: |
-          poetry env remove --all || true
-          poetry env use "${{ steps.setup-python.outputs.python-path }}"
+        run: poetry env use "${{ steps.setup-python.outputs.python-path }}"
+
+      - name: Install invoke
+        run: pipx install invoke
+
+      - name: Install Dependencies
+        run: invoke install
 
       - name: Verify Poetry Python version
         run: |
@@ -62,12 +64,6 @@ jobs:
           print('Python:', sys.version)
           assert actual == expected, f'Expected Python {expected}, got {actual}'
           "
-
-      - name: Install invoke
-        run: pipx install invoke
-
-      - name: Install Dependencies
-        run: invoke install
 
       - name: Validate Types
         if: always()
