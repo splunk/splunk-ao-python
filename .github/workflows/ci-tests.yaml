@@ -21,13 +21,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        # INVESTIGATION BRANCH: trimmed to the two cells that bracket the
+        # Windows slowdown — 3.10 (fast: ~6 min) vs 3.11 (slow: ~28 min).
+        os: [windows-latest]
+        python-version: ["3.10", "3.11"]
 
     runs-on: ${{ matrix.os }}
-    # Hard cap per matrix job — bail out fast on real hangs instead of
-    # burning CI minutes up to the GitHub-default 6h ceiling.
-    timeout-minutes: 30
+    # Raised from 30 -> 45 so the instrumented full run (~23 min on 3.11) plus
+    # the extra diagnostic steps don't get truncated by the timeout.
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -53,7 +55,26 @@ jobs:
       - name: Install Dependencies
         run: invoke install
 
-      - name: Verify Poetry Python version
+      # All diagnostic steps below run in Git-bash (present on Windows runners)
+      # so heredocs, pipes, and `head` behave consistently regardless of pwsh.
+      # Ordered cheap -> expensive: the fast probes land their data even if the
+      # full instrumented run later hits the timeout.
+
+      - name: "[probe] Environment + dependency dump"
+        if: always()
+        shell: bash
+        run: |
+          echo "::group::interpreter"
+          poetry run python -VV
+          poetry run python -c "import sys, asyncio, platform; print('platform:', platform.platform()); print('loop_policy:', type(asyncio.get_event_loop_policy()).__name__)"
+          echo "::endgroup::"
+          echo "::group::poetry show"
+          poetry show
+          echo "::endgroup::"
+
+      - name: "[probe] Verify Poetry Python version"
+        if: always()
+        shell: bash
         run: |
           poetry run python -c "
           import sys
@@ -63,10 +84,74 @@ jobs:
           assert actual == expected, f'Expected Python {expected}, got {actual}'
           "
 
-      - name: Validate Types
+      - name: "[probe] Microbenchmarks (getaddrinfo / asyncio / config)"
         if: always()
-        run: invoke type-check
+        shell: bash
+        run: poetry run python .ci/probe_microbench.py
 
-      - name: Run Tests
+      # Isolation variants on a tiny, all-trivial file. addopts is cleared with
+      # `-o addopts=` and rebuilt explicitly so each variant toggles exactly ONE
+      # factor vs the baseline. Compare per-test durations across 3.10 vs 3.11.
+      - name: "[probe] Subset: baseline (xdist + cov + socket-disabled)"
         if: always()
-        run: invoke test-report-xml
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] baseline"
+          poetry run pytest tests/test_configuration.py -o addopts= \
+            -n auto --disable-socket --allow-hosts=127.0.0.1,localhost --cov=galileo \
+            -p no:cacheprovider --durations=0 -q
+
+      - name: "[probe] Subset: no-xdist (serial)"
+        if: always()
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] no-xdist"
+          poetry run pytest tests/test_configuration.py -o addopts= \
+            -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost --cov=galileo \
+            -p no:cacheprovider --durations=0 -q
+
+      - name: "[probe] Subset: no-cov"
+        if: always()
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] no-cov"
+          poetry run pytest tests/test_configuration.py -o addopts= \
+            -n auto --disable-socket --allow-hosts=127.0.0.1,localhost \
+            -p no:cacheprovider --durations=0 -q
+
+      - name: "[probe] Subset: no-socket-plugin (sockets enabled) — decisive for getaddrinfo theory"
+        if: always()
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] no-socket-plugin"
+          poetry run pytest tests/test_configuration.py -o addopts= \
+            -n auto --cov=galileo \
+            -p no:cacheprovider --durations=0 -q
+
+      - name: "[probe] Subset: serial + DEBUG logs + ResourceWarnings (cProfile)"
+        if: always()
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] cProfile serial run"
+          poetry run python -m cProfile -o profile.out -m pytest tests/test_configuration.py -o addopts= \
+            --disable-socket --allow-hosts=127.0.0.1,localhost \
+            -p no:cacheprovider -o log_cli=true --log-cli-level=DEBUG -W default -q 2>&1 | head -300
+          echo "::group::cumulative profile (top 45 by cumtime)"
+          poetry run python -c "import pstats; p=pstats.Stats('profile.out'); p.sort_stats('cumulative'); p.print_stats(45)"
+          echo "::endgroup::"
+          echo "::group::profile (top 30 by total/internal time)"
+          poetry run python -c "import pstats; p=pstats.Stats('profile.out'); p.sort_stats('tottime'); p.print_stats(30)"
+          echo "::endgroup::"
+
+      # Realistic full run last. The appended conftest timing plugin prints live
+      # [PHASE ...] lines and an end-of-run setup/call/teardown aggregate.
+      - name: "[probe] Full suite (all durations + phase aggregate)"
+        if: always()
+        shell: bash
+        run: |
+          echo "[probe $(date -u +%H:%M:%S)] full suite start"
+          # Keeps ini addopts (-n auto, --disable-socket, --timeout=120, ...) and
+          # adds --cov to mirror the real (slow) CI path; --durations=0 wins over
+          # the ini --durations=10.
+          poetry run pytest tests --cov=galileo --durations=0 -ra -q
+          echo "[probe $(date -u +%H:%M:%S)] full suite end"

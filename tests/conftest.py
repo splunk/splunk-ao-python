@@ -553,3 +553,48 @@ def mock_collaborator() -> MagicMock:
     mock_collab.last_name = "Collaborator"
     mock_collab.permissions = []
     return mock_collab
+
+
+# ---------------------------------------------------------------------------
+# TIMING INSTRUMENTATION (investigation branch ci/windows-timing-probe).
+# Localizes the ~1s/test silent overhead on Windows by attributing wall time to
+# setup / call / teardown phases, with live timestamped lines for slow phases
+# and a per-phase aggregate at the end. xdist-safe: pytest replays worker
+# reports through pytest_runtest_logreport on the controller. Remove before any
+# merge — this is diagnostic only.
+# ---------------------------------------------------------------------------
+_PHASE_DURATIONS: dict[str, list[tuple[float, str]]] = {"setup": [], "call": [], "teardown": []}
+
+
+def _probe_ts() -> str:
+    return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+
+def pytest_runtest_logreport(report) -> None:
+    when = getattr(report, "when", None)
+    if when not in _PHASE_DURATIONS:
+        return
+    dur = getattr(report, "duration", 0.0) or 0.0
+    _PHASE_DURATIONS[when].append((dur, report.nodeid))
+    # Live line for anything slow, timestamped so we can see WHEN in the run the
+    # cost accrues and correlate with anything else interleaved in the log.
+    if dur >= 0.25:
+        print(f"[PHASE {_probe_ts()}] {when:8s} {dur:7.3f}s {report.nodeid}", flush=True)
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:
+    print(f"\n[PHASE {_probe_ts()}] ==================== TIMING SUMMARY ====================", flush=True)
+    grand = 0.0
+    for phase in ("setup", "call", "teardown"):
+        durs = _PHASE_DURATIONS[phase]
+        total = sum(d for d, _ in durs)
+        grand += total
+        n = len(durs)
+        avg = (total / n * 1000) if n else 0.0
+        print(f"  {phase:8s} total={total:9.1f}s  count={n:5d}  avg={avg:8.2f}ms", flush=True)
+    print(f"  {'GRAND':8s} total={grand:9.1f}s", flush=True)
+    for phase in ("setup", "call", "teardown"):
+        print(f"  --- slowest {phase} phases ---", flush=True)
+        for dur, nodeid in sorted(_PHASE_DURATIONS[phase], reverse=True)[:10]:
+            print(f"      {dur:7.3f}s {nodeid}", flush=True)
+    print("  ========================================================", flush=True)
