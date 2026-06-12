@@ -1,6 +1,7 @@
 import importlib
 import importlib.util
 import sys
+from collections.abc import Generator
 
 import pytest
 
@@ -9,6 +10,20 @@ def _clear_legacy_modules() -> None:
     for module_name in list(sys.modules):
         if module_name == "galileo" or module_name.startswith("galileo."):
             sys.modules.pop(module_name)
+
+
+@pytest.fixture(autouse=True)
+def restore_legacy_modules() -> Generator[None, None, None]:
+    previous_modules = {
+        module_name: module
+        for module_name, module in sys.modules.items()
+        if module_name == "galileo" or module_name.startswith("galileo.")
+    }
+
+    yield
+
+    _clear_legacy_modules()
+    sys.modules.update(previous_modules)
 
 
 def test_splunk_ao_import_smoke() -> None:
