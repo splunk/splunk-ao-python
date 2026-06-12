@@ -123,3 +123,13 @@ jobs:
           poetry run pytest tests/test_configuration.py -o addopts= \
             -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost \
             -p no:cacheprovider --durations=0 -q
+
+      # Thread-aware profile of the mocked config.get path: attributes the
+      # ~12x-more timer waits on 3.11 to a concrete function/call-count (cProfile
+      # can't — the work runs on a background EventLoopThread).
+      - name: "[probe] yappi thread-aware profile (mocked config.get)"
+        if: always()
+        shell: bash
+        run: |
+          poetry run pip install --quiet yappi
+          poetry run python .ci/probe_yappi.py
