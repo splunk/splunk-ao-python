@@ -168,7 +168,7 @@ def set_validated_config(
     # Reset any cached loggers from previous tests
     GalileoLoggerSingleton().reset_all()
 
-    config = GalileoPythonConfig.get(console_url="http://localtest:8088", api_key="api-1234567890")
+    config = GalileoPythonConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     # Clean up after test
     GalileoLoggerSingleton().reset_all()
