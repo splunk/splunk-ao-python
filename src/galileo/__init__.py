@@ -9,8 +9,7 @@ from typing import Any
 
 if not getattr(sys, "_splunk_ao_suppress_galileo_deprecation_warning", False):
     warnings.warn(
-        "The 'galileo' namespace is deprecated and will be removed in a future HYBIM task; "
-        "use 'splunk_ao' instead.",
+        "The 'galileo' namespace is deprecated and will be removed in a future HYBIM task; use 'splunk_ao' instead.",
         DeprecationWarning,
         stacklevel=2,
     )
