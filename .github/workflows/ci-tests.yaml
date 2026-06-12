@@ -84,52 +84,31 @@ jobs:
           assert actual == expected, f'Expected Python {expected}, got {actual}'
           "
 
-      # CPython verification: A/B the Windows default Proactor loop against the
-      # Selector loop, both at the raw-primitive level (microbench: cross-thread
-      # dispatch latency) and at the suite level (per-test setup avg via the
-      # conftest timing plugin). The full 24-min suite is intentionally dropped —
-      # this run is just the causal experiment.
+      # FIX VERIFICATION: the autouse set_validated_config fixture now bypasses
+      # the slow async validation round-trips (HYBIM-790). The conftest timing
+      # plugin prints the per-test "setup avg"; compare against the recorded
+      # pre-fix baselines (subset serial: 685ms on 3.11 / 55ms on 3.10; full
+      # suite parallel: 1335ms on 3.11). If the fix works, 3.11 setup collapses
+      # toward 3.10 and the full suite drops from ~23min to a few minutes.
 
-      - name: "[probe] Microbench — Proactor (default loop)"
+      - name: "[probe] Microbench (getaddrinfo / asyncio / dispatch)"
         if: always()
         shell: bash
         run: poetry run python .ci/probe_microbench.py
 
-      - name: "[probe] Microbench — Selector loop"
-        if: always()
-        shell: bash
-        env:
-          PROBE_EVENT_LOOP: selector
-        run: poetry run python .ci/probe_microbench.py
-
-      # Same trivial 41-test file, serial, only the event loop policy differs.
-      # Compare the "setup total/avg" line in each run's TIMING SUMMARY.
-      - name: "[probe] Subset A/B — Proactor (default loop)"
+      - name: "[probe] Subset serial (setup avg WITH fix)"
         if: always()
         shell: bash
         run: |
-          echo "[probe $(date -u +%H:%M:%S)] subset serial — Proactor (default)"
+          echo "[probe $(date -u +%H:%M:%S)] subset serial — with fix"
           poetry run pytest tests/test_configuration.py -o addopts= \
             -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost \
             -p no:cacheprovider --durations=0 -q
 
-      - name: "[probe] Subset A/B — Selector loop"
-        if: always()
-        shell: bash
-        env:
-          PROBE_EVENT_LOOP: selector
-        run: |
-          echo "[probe $(date -u +%H:%M:%S)] subset serial — Selector"
-          poetry run pytest tests/test_configuration.py -o addopts= \
-            -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost \
-            -p no:cacheprovider --durations=0 -q
-
-      # Thread-aware profile of the mocked config.get path: attributes the
-      # ~12x-more timer waits on 3.11 to a concrete function/call-count (cProfile
-      # can't — the work runs on a background EventLoopThread).
-      - name: "[probe] yappi thread-aware profile (mocked config.get)"
+      - name: "[probe] Full suite (setup avg + total WITH fix)"
         if: always()
         shell: bash
         run: |
-          poetry run pip install --quiet yappi
-          poetry run python .ci/probe_yappi.py
+          echo "[probe $(date -u +%H:%M:%S)] full suite start — with fix"
+          poetry run pytest tests --durations=0 -ra -q
+          echo "[probe $(date -u +%H:%M:%S)] full suite end — with fix"
