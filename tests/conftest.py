@@ -27,6 +27,15 @@ _os.environ["GALILEO_API_KEY"] = "api-1234567890"
 _os.environ["GALILEO_PROJECT"] = "test-project"
 _os.environ["GALILEO_LOG_STREAM"] = "test-log-stream"
 _os.environ["OPENAI_API_KEY"] = "sk-test"
+# PROBE (investigation branch): optionally force the selector event loop so we can
+# A/B it against the Windows default ProactorEventLoop. Must run before any asyncio
+# object (incl. galileo_core's EventLoopThreadPool) is created.
+if _os.environ.get("PROBE_EVENT_LOOP") == "selector":
+    import asyncio as _asyncio
+    import sys as _sys
+
+    if _sys.platform == "win32" and hasattr(_asyncio, "WindowsSelectorEventLoopPolicy"):
+        _asyncio.set_event_loop_policy(_asyncio.WindowsSelectorEventLoopPolicy())
 del _os  # Clean up temporary import
 # fmt: on
 

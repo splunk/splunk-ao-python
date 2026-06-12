@@ -84,74 +84,42 @@ jobs:
           assert actual == expected, f'Expected Python {expected}, got {actual}'
           "
 
-      - name: "[probe] Microbenchmarks (getaddrinfo / asyncio / config)"
+      # CPython verification: A/B the Windows default Proactor loop against the
+      # Selector loop, both at the raw-primitive level (microbench: cross-thread
+      # dispatch latency) and at the suite level (per-test setup avg via the
+      # conftest timing plugin). The full 24-min suite is intentionally dropped —
+      # this run is just the causal experiment.
+
+      - name: "[probe] Microbench — Proactor (default loop)"
         if: always()
         shell: bash
         run: poetry run python .ci/probe_microbench.py
 
-      # Isolation variants on a tiny, all-trivial file. addopts is cleared with
-      # `-o addopts=` and rebuilt explicitly so each variant toggles exactly ONE
-      # factor vs the baseline. Compare per-test durations across 3.10 vs 3.11.
-      - name: "[probe] Subset: baseline (xdist + cov + socket-disabled)"
+      - name: "[probe] Microbench — Selector loop"
+        if: always()
+        shell: bash
+        env:
+          PROBE_EVENT_LOOP: selector
+        run: poetry run python .ci/probe_microbench.py
+
+      # Same trivial 41-test file, serial, only the event loop policy differs.
+      # Compare the "setup total/avg" line in each run's TIMING SUMMARY.
+      - name: "[probe] Subset A/B — Proactor (default loop)"
         if: always()
         shell: bash
         run: |
-          echo "[probe $(date -u +%H:%M:%S)] baseline"
+          echo "[probe $(date -u +%H:%M:%S)] subset serial — Proactor (default)"
           poetry run pytest tests/test_configuration.py -o addopts= \
-            -n auto --disable-socket --allow-hosts=127.0.0.1,localhost --cov=galileo \
+            -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost \
             -p no:cacheprovider --durations=0 -q
 
-      - name: "[probe] Subset: no-xdist (serial)"
+      - name: "[probe] Subset A/B — Selector loop"
         if: always()
         shell: bash
+        env:
+          PROBE_EVENT_LOOP: selector
         run: |
-          echo "[probe $(date -u +%H:%M:%S)] no-xdist"
+          echo "[probe $(date -u +%H:%M:%S)] subset serial — Selector"
           poetry run pytest tests/test_configuration.py -o addopts= \
-            -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost --cov=galileo \
+            -p no:xdist --disable-socket --allow-hosts=127.0.0.1,localhost \
             -p no:cacheprovider --durations=0 -q
-
-      - name: "[probe] Subset: no-cov"
-        if: always()
-        shell: bash
-        run: |
-          echo "[probe $(date -u +%H:%M:%S)] no-cov"
-          poetry run pytest tests/test_configuration.py -o addopts= \
-            -n auto --disable-socket --allow-hosts=127.0.0.1,localhost \
-            -p no:cacheprovider --durations=0 -q
-
-      - name: "[probe] Subset: no-socket-plugin (sockets enabled) — decisive for getaddrinfo theory"
-        if: always()
-        shell: bash
-        run: |
-          echo "[probe $(date -u +%H:%M:%S)] no-socket-plugin"
-          poetry run pytest tests/test_configuration.py -o addopts= \
-            -n auto --cov=galileo \
-            -p no:cacheprovider --durations=0 -q
-
-      - name: "[probe] Subset: serial + DEBUG logs + ResourceWarnings (cProfile)"
-        if: always()
-        shell: bash
-        run: |
-          echo "[probe $(date -u +%H:%M:%S)] cProfile serial run"
-          poetry run python -m cProfile -o profile.out -m pytest tests/test_configuration.py -o addopts= \
-            --disable-socket --allow-hosts=127.0.0.1,localhost \
-            -p no:cacheprovider -o log_cli=true --log-cli-level=DEBUG -W default -q 2>&1 | head -300
-          echo "::group::cumulative profile (top 45 by cumtime)"
-          poetry run python -c "import pstats; p=pstats.Stats('profile.out'); p.sort_stats('cumulative'); p.print_stats(45)"
-          echo "::endgroup::"
-          echo "::group::profile (top 30 by total/internal time)"
-          poetry run python -c "import pstats; p=pstats.Stats('profile.out'); p.sort_stats('tottime'); p.print_stats(30)"
-          echo "::endgroup::"
-
-      # Realistic full run last. The appended conftest timing plugin prints live
-      # [PHASE ...] lines and an end-of-run setup/call/teardown aggregate.
-      - name: "[probe] Full suite (all durations + phase aggregate)"
-        if: always()
-        shell: bash
-        run: |
-          echo "[probe $(date -u +%H:%M:%S)] full suite start"
-          # Keeps ini addopts (-n auto, --disable-socket, --timeout=120, ...) and
-          # adds --cov to mirror the real (slow) CI path; --durations=0 wins over
-          # the ini --durations=10.
-          poetry run pytest tests --cov=galileo --durations=0 -ra -q
-          echo "[probe $(date -u +%H:%M:%S)] full suite end"
