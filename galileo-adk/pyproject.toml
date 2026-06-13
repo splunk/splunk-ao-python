@@ -34,7 +34,9 @@ packages = ["src/galileo_adk"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# ".." puts the monorepo root on sys.path so tests can import the shared
+# `test_support` helper package (see test_support/config.py).
+pythonpath = ["src", ".."]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 python_files = ["test_*.py"]

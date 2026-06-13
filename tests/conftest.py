@@ -43,15 +43,14 @@ import datetime  # noqa: E402
 import logging  # noqa: E402
 import sys  # noqa: E402
 from collections.abc import Callable, Generator  # noqa: E402
-from contextlib import contextmanager  # noqa: E402
 from io import StringIO  # noqa: E402
 from pathlib import Path  # noqa: E402
-from typing import Any  # noqa: E402
 from unittest.mock import AsyncMock, MagicMock, patch  # noqa: E402
 from uuid import uuid4  # noqa: E402
 
 from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
+from test_support.config import fast_config_validation  # noqa: E402
 
 from galileo.collaborator import CollaboratorRole  # noqa: E402
 from galileo.config import GalileoPythonConfig  # noqa: E402
@@ -60,7 +59,6 @@ from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValue
 from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from galileo_core.constants.request_method import RequestMethod  # noqa: E402
 from galileo_core.constants.routes import Routes as CoreRoutes  # noqa: E402
-from galileo_core.helpers.api_client import ApiClient  # noqa: E402
 from galileo_core.schemas.core.user import User  # noqa: E402
 from galileo_core.schemas.core.user_role import UserRole  # noqa: E402
 from galileo_core.schemas.protect.rule import Rule, RuleOperator  # noqa: E402
@@ -118,41 +116,6 @@ def reset_agent_control_bridge_state() -> Generator[None, None, None]:
         bridge_module._PREVIOUS_TRACE_CONTEXT_PROVIDER = None
 
 
-def _fast_validation_payload(endpoint: Any) -> dict:
-    """Canned response for the 3 config-validation endpoints."""
-    ep = str(endpoint)
-    if "login" in ep or "token" in ep:
-        return {"access_token": "secret_jwt_token"}
-    if "current_user" in ep:
-        return User.model_validate({"id": uuid4(), "email": "user@example.com", "role": UserRole.user}).model_dump(
-            mode="json"
-        )
-    return {"status": "ok"}
-
-
-@contextmanager
-def _fast_config_validation() -> Generator[None, None, None]:
-    """Building GalileoPythonConfig runs 3 async validation requests
-    (healthcheck/login/current_user) through galileo_core's async_run /
-    EventLoopThreadPool, whose Windows IOCP poll is ~11x slower on Python 3.11+.
-    They are already mocked, so they add no coverage — only event-loop cost.
-    Replace them with canned, await-free results so the dispatch is trivial.
-    Scoped to the per-test config build only; test bodies still exercise the
-    real validation/connect code."""
-
-    async def _stub_make_request(request_method: Any, base_url: str, endpoint: Any, **kwargs: Any) -> dict:
-        return _fast_validation_payload(endpoint)
-
-    def _stub_request(self: Any, request_method: Any, path: Any = None, **kwargs: Any) -> dict:
-        return _fast_validation_payload(path)
-
-    with (
-        patch.object(ApiClient, "make_request", staticmethod(_stub_make_request)),
-        patch.object(ApiClient, "request", _stub_request),
-    ):
-        yield
-
-
 @pytest.fixture(autouse=True)
 def set_validated_config(
     mock_healthcheck: None, mock_login_api_key: None, mock_get_current_user: None, mock_decode_jwt: MagicMock
@@ -165,7 +128,7 @@ def set_validated_config(
     # Initialize config with EXPLICIT values to avoid env var timing issues with pytest-xdist
     # This ensures correct config even if env vars weren't set before module imports.
     # Bypass the slow async validation round-trips for the build only.
-    with _fast_config_validation():
+    with fast_config_validation():
         config = GalileoPythonConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     config.reset()
