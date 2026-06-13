@@ -34,14 +34,16 @@ packages = ["src/galileo_adk"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# ".." puts the monorepo root on sys.path so tests can import the shared
+# `test_support` helper package (see test_support/config.py).
+pythonpath = ["src", ".."]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 env = [
-    "GALILEO_CONSOLE_URL=http://localtest:8088",
+    "GALILEO_CONSOLE_URL=http://fake.test:8088",
     "GALILEO_API_KEY=api-1234567890",
     "GALILEO_PROJECT=test-project",
     "GALILEO_LOG_STREAM=test-log-stream",
