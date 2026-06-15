@@ -674,7 +674,7 @@ class TestExperiments:
             prompt_settings=ANY,
         )
 
-    @pytest.mark.parametrize("console_url", ["http://localtest:8088", "http://localtest:8088/"])
+    @pytest.mark.parametrize("console_url", ["http://fake.test:8088", "http://fake.test:8088/"])
     @travel(datetime(2012, 1, 1), tick=False)
     @patch.object(splunk_ao.datasets.Datasets, "get")
     @patch.object(splunk_ao.jobs.Jobs, "create")

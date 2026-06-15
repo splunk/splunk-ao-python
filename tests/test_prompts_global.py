@@ -62,12 +62,12 @@ class TestGlobalPromptTemplates:
     def test_create_global_prompt(self, respx_mock: MockRouter, prompt_template_response):
         """Test creating a global prompt template."""
         # Mock the query API (for uniqueness check)
-        query_route = respx_mock.post("http://localtest:8088/templates/query").mock(
+        query_route = respx_mock.post("http://fake.test:8088/templates/query").mock(
             return_value=httpx.Response(200, json={"templates": []})
         )
 
         # Mock the create API
-        create_route = respx_mock.post("http://localtest:8088/templates").mock(
+        create_route = respx_mock.post("http://fake.test:8088/templates").mock(
             return_value=httpx.Response(200, json=prompt_template_response)
         )
 
@@ -80,7 +80,7 @@ class TestGlobalPromptTemplates:
 
     def test_get_global_prompt_by_id(self, respx_mock: MockRouter, prompt_template_response):
         """Test retrieving a global prompt template by ID."""
-        get_route = respx_mock.get(f"http://localtest:8088/templates/{prompt_template_response['id']}").mock(
+        get_route = respx_mock.get(f"http://fake.test:8088/templates/{prompt_template_response['id']}").mock(
             return_value=httpx.Response(200, json=prompt_template_response)
         )
 
@@ -92,7 +92,7 @@ class TestGlobalPromptTemplates:
 
     def test_get_global_prompt_by_name(self, respx_mock: MockRouter, prompt_template_response):
         """Test retrieving a global prompt template by name."""
-        query_route = respx_mock.post("http://localtest:8088/templates/query").mock(
+        query_route = respx_mock.post("http://fake.test:8088/templates/query").mock(
             return_value=httpx.Response(
                 200, json={"templates": [prompt_template_response], "next_starting_token": None}
             )
@@ -106,7 +106,7 @@ class TestGlobalPromptTemplates:
 
     def test_list_global_prompts(self, respx_mock: MockRouter, prompt_template_response):
         """Test listing global prompt templates."""
-        query_route = respx_mock.post("http://localtest:8088/templates/query").mock(
+        query_route = respx_mock.post("http://fake.test:8088/templates/query").mock(
             return_value=httpx.Response(
                 200, json={"templates": [prompt_template_response], "next_starting_token": None}
             )
@@ -120,7 +120,7 @@ class TestGlobalPromptTemplates:
 
     def test_delete_global_prompt_by_id(self, respx_mock: MockRouter):
         """Test deleting a global prompt template by ID."""
-        delete_route = respx_mock.delete("http://localtest:8088/templates/template-id-123").mock(
+        delete_route = respx_mock.delete("http://fake.test:8088/templates/template-id-123").mock(
             return_value=httpx.Response(200, json={"message": "Template deleted successfully"})
         )
 
@@ -131,14 +131,14 @@ class TestGlobalPromptTemplates:
     def test_delete_global_prompt_by_name(self, respx_mock: MockRouter, prompt_template_response):
         """Test deleting a global prompt template by name."""
         # Mock query to find template by name
-        query_route = respx_mock.post("http://localtest:8088/templates/query").mock(
+        query_route = respx_mock.post("http://fake.test:8088/templates/query").mock(
             return_value=httpx.Response(
                 200, json={"templates": [prompt_template_response], "next_starting_token": None}
             )
         )
 
         # Mock delete
-        delete_route = respx_mock.delete(f"http://localtest:8088/templates/{prompt_template_response['id']}").mock(
+        delete_route = respx_mock.delete(f"http://fake.test:8088/templates/{prompt_template_response['id']}").mock(
             return_value=httpx.Response(200, json={"message": "Template deleted successfully"})
         )
 
@@ -151,13 +151,13 @@ class TestGlobalPromptTemplates:
         """Test that duplicate names get auto-incremented."""
         # Mock query to find existing template
         existing_template = {**prompt_template_response, "name": "test-template"}
-        query_route = respx_mock.post("http://localtest:8088/templates/query").mock(
+        query_route = respx_mock.post("http://fake.test:8088/templates/query").mock(
             return_value=httpx.Response(200, json={"templates": [existing_template], "next_starting_token": None})
         )
 
         # Mock create with new unique name
         new_template = {**prompt_template_response, "name": "test-template (1)"}
-        create_route = respx_mock.post("http://localtest:8088/templates").mock(
+        create_route = respx_mock.post("http://fake.test:8088/templates").mock(
             return_value=httpx.Response(200, json=new_template)
         )
 

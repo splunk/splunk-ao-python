@@ -8,6 +8,7 @@ from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes as CoreRoutes
 from galileo_core.schemas.core.user import User
 from galileo_core.schemas.core.user_role import UserRole
+from test_support.config import fast_config_validation
 from splunk_ao.config import GalileoPythonConfig
 from splunk_ao.utils.singleton import GalileoLoggerSingleton
 
@@ -167,7 +168,11 @@ def set_validated_config(
     # Reset any cached loggers from previous tests
     GalileoLoggerSingleton().reset_all()
 
-    config = GalileoPythonConfig.get(console_url="http://localtest:8088", api_key="api-1234567890")
+    # Bypass the slow async validation round-trips for the build only; the
+    # endpoints are already mocked above, so this only removes event-loop cost
+    # (notably the ~11x slower Windows IOCP poll on Python 3.11+).
+    with fast_config_validation():
+        config = GalileoPythonConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     # Clean up after test
     GalileoLoggerSingleton().reset_all()
