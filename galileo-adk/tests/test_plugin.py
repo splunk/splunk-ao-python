@@ -40,7 +40,7 @@ class TestGalileoADKPluginInit:
         traces: list = []
         plugin = GalileoADKPlugin(ingestion_hook=lambda r: traces.extend(r.traces))
 
-        # Then: plugin initializes successfully with TraceBuilder (not GalileoLogger)
+        # Then: plugin initializes successfully with TraceBuilder (not SplunkAOLogger)
         assert plugin._observer is not None
         assert plugin._observer._trace_builder is not None
         assert plugin._observer._trace_builder._ingestion_hook is not None

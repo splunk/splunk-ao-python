@@ -1,6 +1,6 @@
-"""Fast GalileoPythonConfig validation for tests.
+"""Fast SplunkAOConfig validation for tests.
 
-Building ``GalileoPythonConfig`` runs 3 async validation requests
+Building ``SplunkAOConfig`` runs 3 async validation requests
 (healthcheck/login/current_user) through galileo_core's ``async_run`` /
 ``EventLoopThreadPool``, whose Windows IOCP poll is ~11x slower on Python
 3.11+. In tests these endpoints are already mocked, so they add no coverage —
@@ -40,7 +40,7 @@ def fast_validation_payload(endpoint: Any) -> dict:
 @contextmanager
 def fast_config_validation() -> Generator[None, None, None]:
     """Stub the async config-validation round-trips with canned, await-free
-    results so the per-test ``GalileoPythonConfig`` build is cheap.
+    results so the per-test ``SplunkAOConfig`` build is cheap.
 
     Scoped to the config build only; test bodies still exercise the real
     validation/connect code.

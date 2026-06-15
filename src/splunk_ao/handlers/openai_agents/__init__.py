@@ -1,3 +1,3 @@
-from splunk_ao.handlers.openai_agents.handler import GalileoTracingProcessor
+from splunk_ao.handlers.openai_agents.handler import SplunkAOTracingProcessor
 
-__all__ = ["GalileoTracingProcessor"]
+__all__ = ["SplunkAOTracingProcessor"]

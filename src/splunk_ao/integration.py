@@ -11,7 +11,7 @@ from galileo.resources.api.integrations import (
 from galileo.resources.models.integration_db import IntegrationDB
 from galileo.resources.models.integration_name import IntegrationName
 from galileo.resources.types import Unset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 from splunk_ao.shared.utils import classproperty
@@ -188,7 +188,7 @@ class Integration(StateManagementMixin):
             available = Integration.list(all=True)
             print(f"Available types: {available}")
         """
-        config = GalileoPythonConfig.get()
+        config = SplunkAOConfig.get()
 
         try:
             if all:
@@ -264,7 +264,7 @@ class Integration(StateManagementMixin):
         logger.info(f"Integration.refresh: refreshing integration {self.id}")
 
         try:
-            config = GalileoPythonConfig.get()
+            config = SplunkAOConfig.get()
             all_integrations = list_integrations_integrations_get.sync(client=config.api_client)
 
             if not all_integrations:

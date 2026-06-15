@@ -11,7 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from splunk_ao import galileo_context
-from splunk_ao.handlers.base_handler import GalileoBaseHandler
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import serialize_to_str
 
@@ -148,7 +148,7 @@ class GalileoObserver:
         if ingestion_hook:
             trace_builder = TraceBuilder(ingestion_hook=ingestion_hook)
             self._trace_builder = trace_builder
-            self._handler = GalileoBaseHandler(
+            self._handler = SplunkAOBaseHandler(
                 galileo_logger=trace_builder,  # type: ignore[arg-type]
                 start_new_trace=True,
                 flush_on_chain_end=True,
@@ -157,7 +157,7 @@ class GalileoObserver:
         else:
             self._trace_builder = None
             galileo_logger = galileo_context.get_logger_instance(project=project, log_stream=log_stream)
-            self._handler = GalileoBaseHandler(
+            self._handler = SplunkAOBaseHandler(
                 galileo_logger=galileo_logger,
                 start_new_trace=True,
                 flush_on_chain_end=True,
@@ -171,7 +171,7 @@ class GalileoObserver:
         self._session_root_invocation: dict[str, str] = {}
 
     @property
-    def handler(self) -> GalileoBaseHandler:
+    def handler(self) -> SplunkAOBaseHandler:
         """Access the underlying handler."""
         return self._handler
 

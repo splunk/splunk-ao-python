@@ -3,6 +3,6 @@
 For Agent Control target resolution, use ``splunk_ao.agent_control``.
 """
 
-from splunk_ao.handlers.agent_control.bridge import GalileoAgentControlBridge, setup_agent_control_bridge
+from splunk_ao.handlers.agent_control.bridge import SplunkAOAgentControlBridge, setup_agent_control_bridge
 
-__all__ = ["GalileoAgentControlBridge", "setup_agent_control_bridge"]
+__all__ = ["SplunkAOAgentControlBridge", "setup_agent_control_bridge"]

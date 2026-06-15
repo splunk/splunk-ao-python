@@ -7,7 +7,7 @@ import time
 from typing import Any
 from uuid import UUID
 
-from splunk_ao.handlers.base_handler import GalileoBaseHandler
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 
 from galileo_adk.types import RunContext
 
@@ -18,7 +18,7 @@ INTEGRATION_TAG = "google_adk"
 class SpanManager:
     """Manages span creation and hierarchy for Galileo observability."""
 
-    def __init__(self, handler: GalileoBaseHandler) -> None:
+    def __init__(self, handler: SplunkAOBaseHandler) -> None:
         self._handler = handler
         self._run_contexts: dict[str, RunContext] = {}
 

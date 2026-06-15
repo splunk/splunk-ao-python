@@ -176,7 +176,7 @@ class TestTraceBuilderSpans:
         # When: adding a retriever span
         span = builder.add_retriever_span(
             input="search query",
-            output=[],  # TraceBuilder uses 'output' (same as GalileoLogger API)
+            output=[],  # TraceBuilder uses 'output' (same as SplunkAOLogger API)
         )
 
         # Then: span is created
@@ -184,7 +184,7 @@ class TestTraceBuilderSpans:
 
     def test_add_retriever_span_with_string_output(self, builder_with_trace: TraceBuilder) -> None:
         # Given: a trace builder with an active trace and string output
-        # (this is what GalileoBaseHandler passes after serialize_to_str)
+        # (this is what SplunkAOBaseHandler passes after serialize_to_str)
         builder = builder_with_trace
 
         # When: adding a retriever span with a string output

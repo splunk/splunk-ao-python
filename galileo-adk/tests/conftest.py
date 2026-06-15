@@ -8,9 +8,9 @@ from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes as CoreRoutes
 from galileo_core.schemas.core.user import User
 from galileo_core.schemas.core.user_role import UserRole
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 from test_support.config import fast_config_validation
-from splunk_ao.config import GalileoPythonConfig
-from splunk_ao.utils.singleton import GalileoLoggerSingleton
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
 
@@ -123,7 +123,7 @@ def mock_log_streams(mock_request: Callable) -> Generator[None, None, None]:
 
 @pytest.fixture
 def mock_sessions(mock_request: Callable) -> Generator[None, None, None]:
-    """Mock the sessions endpoints used by GalileoLogger.start_session().
+    """Mock the sessions endpoints used by SplunkAOLogger.start_session().
 
     Endpoints:
     - POST /projects/{project_id}/sessions/search - search sessions
@@ -163,17 +163,17 @@ def set_validated_config(
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
     # Reset any existing config state
-    if GalileoPythonConfig._instance is not None:
-        GalileoPythonConfig._instance.reset()
+    if SplunkAOConfig._instance is not None:
+        SplunkAOConfig._instance.reset()
     # Reset any cached loggers from previous tests
-    GalileoLoggerSingleton().reset_all()
+    SplunkAOLoggerSingleton().reset_all()
 
     # Bypass the slow async validation round-trips for the build only; the
     # endpoints are already mocked above, so this only removes event-loop cost
     # (notably the ~11x slower Windows IOCP poll on Python 3.11+).
     with fast_config_validation():
-        config = GalileoPythonConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
+        config = SplunkAOConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     # Clean up after test
-    GalileoLoggerSingleton().reset_all()
+    SplunkAOLoggerSingleton().reset_all()
     config.reset()

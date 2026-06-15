@@ -14,7 +14,7 @@ from galileo.resources.api.experiment import (
 )
 from galileo.resources.models import ExperimentResponse, HTTPValidationError, PromptRunSettings, ScorerConfig, TaskType
 from galileo_core.constants.request_method import RequestMethod
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
 from splunk_ao.decorator import galileo_context, galileo_dataset_context, log
 from splunk_ao.experiment_tags import upsert_experiment_tag
@@ -22,7 +22,7 @@ from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
-from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig, Metric
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
 from splunk_ao.utils.datasets import create_rows_from_records, load_dataset
 from splunk_ao.utils.exceptions import _format_http_validation_error
 from splunk_ao.utils.headers_data import get_sdk_header
@@ -88,10 +88,10 @@ class ExperimentCreateRequest:
 
 
 class Experiments:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def create(
         self,
@@ -312,7 +312,7 @@ def run_experiment(
     dataset: Dataset | list[dict[str, Any] | str] | str | None = None,
     dataset_id: str | None = None,
     dataset_name: str | None = None,
-    metrics: list[GalileoMetrics | Metric | LocalMetricConfig | str] | None = None,
+    metrics: list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None = None,
     function: Callable | None = None,
     experiment_tags: dict[str, str] | None = None,
     on_error: Callable[[Exception], None] | None = None,
@@ -674,7 +674,7 @@ def get_experiments(
             }
         )
 
-    config = GalileoPythonConfig.get()
+    config = SplunkAOConfig.get()
     headers = {"Content-Type": "application/json", "X-Galileo-SDK": get_sdk_header()}
     path = f"/projects/{project_obj.id}/experiments/search"
 
@@ -741,7 +741,7 @@ def list_experiment_groups(
     # uses (see src/galileo/resources/api/experiment/*.py). This preserves auth, base URL,
     # timeout, and SDK headers. The experiment-group routes are not yet in the generated
     # client; once they are, this helper should be rewritten to use the generated function.
-    config = GalileoPythonConfig.get()
+    config = SplunkAOConfig.get()
     headers = {"Content-Type": "application/json", "X-Galileo-SDK": get_sdk_header()}
     path = f"/projects/{project_obj.id}/experiment-groups/query"
 

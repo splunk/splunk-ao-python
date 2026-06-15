@@ -12,7 +12,7 @@ from packaging.version import Version
 from pydantic import BaseModel
 
 from galileo_core.schemas.logging.llm import Event, Message, MessageRole, ReasoningEvent, ToolCall, ToolCallFunction
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.openai.models import OpenAiInputData, OpenAiModuleDefinition
 
 try:
@@ -481,7 +481,7 @@ def _extract_message_content(item: ResponseOutputMessage) -> str:
     return str(content) if content else ""
 
 
-def process_function_call_outputs(input_items: list, galileo_logger: GalileoLogger) -> None:
+def process_function_call_outputs(input_items: list, galileo_logger: SplunkAOLogger) -> None:
     """
     Process function_call and function_call_output items from the input and create combined tool spans.
     This joins the function call (model's request to call a tool) with the function output (tool result)
@@ -537,7 +537,7 @@ def process_function_call_outputs(input_items: list, galileo_logger: GalileoLogg
 
 def process_output_items(
     output_items: list,
-    galileo_logger: GalileoLogger,
+    galileo_logger: SplunkAOLogger,
     model: str | None = None,
     original_input: list | None = None,
     model_parameters: dict | None = None,

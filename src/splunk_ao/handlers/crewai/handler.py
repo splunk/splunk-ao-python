@@ -7,8 +7,8 @@ from uuid import UUID
 
 from packaging.version import Version
 
-from splunk_ao.handlers.base_handler import GalileoBaseHandler
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import NodeType
 from splunk_ao.utils.serialization import serialize_to_str
 
@@ -59,19 +59,19 @@ class CrewAIEventListener:
 
     Attributes
     ----------
-    _handler : GalileoBaseHandler
+    _handler : SplunkAOBaseHandler
         The handler for managing the trace.
     """
 
     def __init__(
         self,
-        galileo_logger: GalileoLogger | None = None,
+        galileo_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
         flush_on_crew_completed: bool = True,
     ):
         _resolve_crewai_imports()
 
-        self._handler = GalileoBaseHandler(
+        self._handler = SplunkAOBaseHandler(
             flush_on_chain_end=flush_on_crew_completed,
             start_new_trace=start_new_trace,
             galileo_logger=galileo_logger,

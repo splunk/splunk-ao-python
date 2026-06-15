@@ -59,7 +59,7 @@ from typing_extensions import ParamSpec
 from galileo_core.schemas.logging.span import WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.constants import LoggerModeType
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import STUB_TRACE_NAME
 from splunk_ao.schema.content_blocks import is_content_block_list
 from splunk_ao.schema.datasets import DatasetRecord
@@ -69,7 +69,7 @@ from splunk_ao.shared.exceptions import ConfigurationError
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.serialization import EventSerializer, convert_time_delta_to_ns, serialize_to_str
-from splunk_ao.utils.singleton import GalileoLoggerSingleton
+from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 from splunk_ao.utils.span_utils import is_concludable_span_type, is_textual_span_type
 
 _logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ def _get_or_init_list(context_var: ContextVar, default_factory: Callable = list)
     return value
 
 
-class GalileoDecorator:
+class SplunkAODecorator:
     """
     Main decorator class that provides both decorator and context manager functionality
     for logging and tracing in Galileo.
@@ -133,13 +133,13 @@ class GalileoDecorator:
     2. A context manager via the `__call__` method
     """
 
-    def __enter__(self) -> "GalileoDecorator":
+    def __enter__(self) -> "SplunkAODecorator":
         """
         Entry point for the context manager.
 
         Returns
         -------
-        GalileoDecorator
+        SplunkAODecorator
             The decorator instance for use in a with statement
         """
         # Nothing to do here since __call__ has already set up the context
@@ -188,7 +188,7 @@ class GalileoDecorator:
         experiment_id: str | None = None,
         mode: str | None = None,
         session_id: str | None = None,
-    ) -> "GalileoDecorator":
+    ) -> "SplunkAODecorator":
         """
         Call method to use the decorator as a context manager.
 
@@ -213,7 +213,7 @@ class GalileoDecorator:
 
         Returns
         -------
-        GalileoDecorator
+        SplunkAODecorator
             The decorator instance for use in a with statement
         """
         # Push current values onto the stacks
@@ -859,9 +859,9 @@ class GalileoDecorator:
                             # _coerce_output preserves str and List[ContentBlock],
                             # serializes everything else (Message, List[Document], etc.) to JSON string.
                             if output is not None:
-                                current_parent.output = GalileoLogger._coerce_output(output)
+                                current_parent.output = SplunkAOLogger._coerce_output(output)
                             if redacted_output is not None:
-                                current_parent.redacted_output = GalileoLogger._coerce_output(redacted_output)
+                                current_parent.redacted_output = SplunkAOLogger._coerce_output(redacted_output)
 
                             # Update trace duration
                             # Note: In distributed mode, trace.created_at may be set by the server
@@ -992,7 +992,7 @@ class GalileoDecorator:
         experiment_id: str | None = None,
         mode: str | None = None,
         ingestion_hook: Callable | None = None,
-    ) -> GalileoLogger:
+    ) -> SplunkAOLogger:
         """
         Get the Galileo Logger instance for the current decorator context.
 
@@ -1009,7 +1009,7 @@ class GalileoDecorator:
 
         Returns
         -------
-        GalileoLogger instance configured with the specified project and log stream
+        SplunkAOLogger instance configured with the specified project and log stream
         """
         kwargs = {
             "project": project or _project_context.get(),
@@ -1026,7 +1026,7 @@ class GalileoDecorator:
         if ingestion_hook is not None:
             kwargs["ingestion_hook"] = ingestion_hook
 
-        return GalileoLoggerSingleton().get(**kwargs)
+        return SplunkAOLoggerSingleton().get(**kwargs)
 
     def get_current_project(self) -> str | None:
         """
@@ -1151,7 +1151,7 @@ class GalileoDecorator:
 
         This method flushes all traces regardless of project or log stream.
         """
-        GalileoLoggerSingleton().flush_all()
+        SplunkAOLoggerSingleton().flush_all()
         _span_stack_context.set([])
         _trace_context.set(None)
 
@@ -1161,7 +1161,7 @@ class GalileoDecorator:
 
         This method clears all context variables and resets the logger singleton.
         """
-        GalileoLoggerSingleton().reset(
+        SplunkAOLoggerSingleton().reset(
             project=_project_context.get(),
             log_stream=_log_stream_context.get(),
             experiment_id=_experiment_id_context.get(),
@@ -1220,8 +1220,8 @@ class GalileoDecorator:
         mode
             The logger mode.
         """
-        GalileoLoggerSingleton().reset(project=project, log_stream=log_stream, experiment_id=experiment_id)
-        logger_instance = GalileoLoggerSingleton().get(
+        SplunkAOLoggerSingleton().reset(project=project, log_stream=log_stream, experiment_id=experiment_id)
+        logger_instance = SplunkAOLoggerSingleton().get(
             project=project, log_stream=log_stream, experiment_id=experiment_id, local_metrics=local_metrics, mode=mode
         )
         # Reset the logger's parent tracking to ensure clean state
@@ -1285,7 +1285,7 @@ class GalileoDecorator:
         self.get_logger_instance().set_session(session_id)
 
 
-galileo_context = GalileoDecorator()
+galileo_context = SplunkAODecorator()
 log = galileo_context.log
 start_session = galileo_context.start_session
 

@@ -11,15 +11,15 @@ from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.request import Request
 from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.protect.ruleset import Ruleset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.constants.protect import TIMEOUT_SECS
 
 
 class Protect:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     async def ainvoke(
         self,

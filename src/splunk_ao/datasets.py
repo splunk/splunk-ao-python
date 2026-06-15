@@ -41,7 +41,7 @@ from galileo.resources.models.update_dataset_content_request import UpdateDatase
 from galileo.resources.models.update_dataset_request import UpdateDatasetRequest
 from galileo.resources.types import UNSET, File, Unset
 from galileo_core.utils.dataset import DatasetType, parse_dataset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.utils.datasets import normalize_dataset_rows, remap_output_to_ground_truth, validate_dataset_in_project
 from splunk_ao.utils.exceptions import APIException
@@ -59,11 +59,11 @@ class DatasetAPIException(APIException):
 
 class Dataset:
     content: DatasetContent | None = None
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self, dataset_db: DatasetDB) -> None:
         self.dataset = dataset_db
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def get_content(self, starting_token: int = 0, limit: int = MAX_DATASET_ROWS) -> None | DatasetContent:
         """
@@ -205,10 +205,10 @@ class Dataset:
 
 
 class Datasets:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def list(
         self, limit: Unset | int = 100, *, project_id: str | None = None, project_name: str | None = None

@@ -9,7 +9,7 @@ from galileo.resources.api.trace.export_records_projects_project_id_export_recor
     stream_detailed as export_records_stream,
 )
 from galileo.resources.models import LLMExportFormat, LogRecordsExportRequest, LogRecordsSortClause, RootType
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.log_streams import LogStreams
 from splunk_ao.schema.filters import FilterType
 
@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class ExportClient:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
         # Increase the field size limit to handle large fields.
         try:

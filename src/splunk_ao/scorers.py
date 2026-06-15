@@ -28,14 +28,14 @@ from galileo.resources.models.base_scorer_version_response import BaseScorerVers
 from galileo.resources.models.run_scorer_settings_patch_request import RunScorerSettingsPatchRequest
 from galileo.resources.models.run_scorer_settings_response import RunScorerSettingsResponse
 from galileo.resources.types import Unset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 
 
 class Scorers:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def _list_with_filters(self, filters: list) -> list[ScorerResponse]:
         """Paginate through scorers/list with the given filters."""
@@ -156,10 +156,10 @@ class Scorers:
 
 
 class ScorerSettings:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def create(
         self, project_id: str, run_id: str, scorers: list[ScorerConfig]

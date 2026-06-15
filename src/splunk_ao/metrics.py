@@ -19,7 +19,7 @@ from galileo.resources.models.create_scorer_request import CreateScorerRequest
 from galileo.resources.models.output_type_enum import OutputTypeEnum
 from galileo.resources.models.scorer_defaults import ScorerDefaults
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
 
@@ -27,10 +27,10 @@ _logger = logging.getLogger(__name__)
 
 
 class Metrics:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def delete_metric(self, name: str) -> None:
         scorers_to_delete = Scorers().list(name=name)

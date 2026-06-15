@@ -1,7 +1,7 @@
 """Lightweight trace builder for ingestion hook mode.
 
 This module provides a TraceBuilder class that implements the same interface as
-GalileoLogger for trace building, but without requiring Galileo credentials or
+SplunkAOLogger for trace building, but without requiring Galileo credentials or
 backend connectivity.
 
 When using `ingestion_hook`, the plugin can build traces locally and pass them
@@ -46,10 +46,10 @@ MetadataValue = str | bool | int | float | None
 class TraceBuilder(TracesLogger):
     """Lightweight trace builder for ingestion hook mode.
 
-    Inherits trace-building logic from TracesLogger (same base as GalileoLogger).
+    Inherits trace-building logic from TracesLogger (same base as SplunkAOLogger).
     No Galileo credentials or backend connection required.
 
-    This class provides the same interface as GalileoLogger for:
+    This class provides the same interface as SplunkAOLogger for:
     - Starting traces and adding spans (llm, tool, workflow, agent, retriever)
     - Managing parent span hierarchy
     - Flushing traces (calls ingestion_hook instead of API)
@@ -150,8 +150,8 @@ class TraceBuilder(TracesLogger):
     ) -> LoggedTrace:
         """Create a new trace and add it to the list of traces.
 
-        This method mirrors GalileoLogger.start_trace() for API compatibility
-        with GalileoBaseHandler.
+        This method mirrors SplunkAOLogger.start_trace() for API compatibility
+        with SplunkAOBaseHandler.
 
         Parameters
         ----------
@@ -228,7 +228,7 @@ class TraceBuilder(TracesLogger):
         """Add a workflow span to the current parent.
 
         This method wraps TracesLogger.add_workflow_span() to accept
-        `metadata` parameter (for GalileoBaseHandler compatibility).
+        `metadata` parameter (for SplunkAOBaseHandler compatibility).
         """
         parent = self.current_parent()
         span = LoggedWorkflowSpan(
@@ -269,7 +269,7 @@ class TraceBuilder(TracesLogger):
         """Add an agent span to the current parent.
 
         This method wraps TracesLogger.add_agent_span() to accept
-        `metadata` parameter (for GalileoBaseHandler compatibility).
+        `metadata` parameter (for SplunkAOBaseHandler compatibility).
         """
         parent = self.current_parent()
         span = LoggedAgentSpan(
@@ -318,7 +318,7 @@ class TraceBuilder(TracesLogger):
         """Add an LLM span to the current parent.
 
         This method wraps TracesLogger.add_llm_span() to accept
-        `metadata` parameter (for GalileoBaseHandler compatibility).
+        `metadata` parameter (for SplunkAOBaseHandler compatibility).
         """
         span = LoggedLlmSpan(
             input=input,
@@ -365,7 +365,7 @@ class TraceBuilder(TracesLogger):
         """Add a tool span to the current parent.
 
         This method wraps TracesLogger.add_tool_span() to accept
-        `metadata` parameter (for GalileoBaseHandler compatibility).
+        `metadata` parameter (for SplunkAOBaseHandler compatibility).
         """
         return super().add_tool_span(
             id=uuid.uuid4(),
@@ -400,7 +400,7 @@ class TraceBuilder(TracesLogger):
         """Add a retriever span to the current parent.
 
         This method wraps TracesLogger.add_retriever_span() to accept
-        `metadata` parameter (for GalileoBaseHandler compatibility).
+        `metadata` parameter (for SplunkAOBaseHandler compatibility).
         """
         documents = convert_to_documents(output, "output")
         redacted_documents = convert_to_documents(redacted_output, "redacted_output")

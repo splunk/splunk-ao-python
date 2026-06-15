@@ -47,7 +47,7 @@ import httpx
 from wrapt import wrap_function_wrapper  # type: ignore[import-untyped]
 
 from splunk_ao.decorator import galileo_context
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.openai.extractors import (
     OpenAiArgsExtractor,
     convert_to_galileo_message,
@@ -78,7 +78,7 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
-def _safe_initialize_logger(initialize: Callable[[], GalileoLogger | None]) -> GalileoLogger | None:
+def _safe_initialize_logger(initialize: Callable[[], SplunkAOLogger | None]) -> SplunkAOLogger | None:
     """
     Safely initialize the Galileo logger.
 
@@ -89,11 +89,11 @@ def _safe_initialize_logger(initialize: Callable[[], GalileoLogger | None]) -> G
     Parameters
     ----------
     initialize
-        A callable that initializes and returns a GalileoLogger instance.
+        A callable that initializes and returns a SplunkAOLogger instance.
 
     Returns
     -------
-    Optional[GalileoLogger]
+    Optional[SplunkAOLogger]
         The initialized logger if successful, None if initialization fails or returns None.
     """
     try:
@@ -290,13 +290,13 @@ class OpenAIGalileo:
 
     Attributes
     ----------
-    _galileo_logger : Optional[GalileoLogger]
+    _galileo_logger : Optional[SplunkAOLogger]
         The Galileo logger instance used for logging OpenAI API calls.
     """
 
-    _galileo_logger: GalileoLogger | None = None
+    _galileo_logger: SplunkAOLogger | None = None
 
-    def initialize(self) -> GalileoLogger | None:
+    def initialize(self) -> SplunkAOLogger | None:
         """
         Initialize a Galileo logger.
 
@@ -309,7 +309,7 @@ class OpenAIGalileo:
 
         Returns
         -------
-        Optional[GalileoLogger]
+        Optional[SplunkAOLogger]
             The initialized Galileo logger instance.
         """
         self._galileo_logger = galileo_context.get_logger_instance()

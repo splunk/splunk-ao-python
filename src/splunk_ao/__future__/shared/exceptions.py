@@ -11,10 +11,10 @@ warnings.warn(
 from splunk_ao.shared.exceptions import (  # noqa: E402
     APIError,
     ConfigurationError,
-    GalileoFutureError,
     IntegrationNotConfiguredError,
     ResourceConflictError,
     ResourceNotFoundError,
+    SplunkAOFutureError,
     SyncError,
     ValidationError,
 )
@@ -22,10 +22,10 @@ from splunk_ao.shared.exceptions import (  # noqa: E402
 __all__ = [
     "APIError",
     "ConfigurationError",
-    "GalileoFutureError",
     "IntegrationNotConfiguredError",
     "ResourceConflictError",
     "ResourceNotFoundError",
+    "SplunkAOFutureError",
     "SyncError",
     "ValidationError",
 ]

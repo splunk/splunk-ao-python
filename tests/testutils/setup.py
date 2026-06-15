@@ -13,7 +13,7 @@ from galileo.resources.models.log_stream_response import LogStreamResponse
 from galileo.resources.models.project_create_response import ProjectCreateResponse
 from galileo.resources.models.task_type import TaskType
 from splunk_ao.log_streams import LogStream
-from splunk_ao.logger.logger import GalileoLogger
+from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.projects import Project
 
 
@@ -146,12 +146,12 @@ class ThreadPoolRequestCapture:
         )
 
 
-def setup_thread_pool_request_capture(logger: GalileoLogger) -> ThreadPoolRequestCapture:
+def setup_thread_pool_request_capture(logger: SplunkAOLogger) -> ThreadPoolRequestCapture:
     """
     Set up request capture for a logger's thread pool.
 
     Args:
-        logger: GalileoLogger instance to mock the thread pool for
+        logger: SplunkAOLogger instance to mock the thread pool for
 
     Returns:
         ThreadPoolRequestCapture instance that can be used to inspect captured requests

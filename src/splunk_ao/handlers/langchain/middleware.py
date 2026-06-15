@@ -9,10 +9,10 @@ from langchain_core.messages import AnyMessage
 from pydantic import BaseModel
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
-from splunk_ao.handlers.base_async_handler import GalileoAsyncBaseHandler
-from splunk_ao.handlers.base_handler import GalileoBaseHandler
-from splunk_ao.handlers.langchain.handler import GalileoCallback
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.handlers.langchain.handler import SplunkAOCallback
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import EventSerializer, serialize_to_str
 
@@ -36,10 +36,10 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
-class GalileoMiddleware(AgentMiddleware):
+class SplunkAOMiddleware(AgentMiddleware):
     def __init__(
         self,
-        galileo_logger: GalileoLogger | None = None,
+        galileo_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
         flush_on_chain_end: bool = True,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
@@ -47,14 +47,14 @@ class GalileoMiddleware(AgentMiddleware):
         if not HAS_LANGCHAIN:
             raise ImportError("langchain is not installed or is not compatible with the expected version.")
         super().__init__()
-        self._handler = GalileoBaseHandler(
+        self._handler = SplunkAOBaseHandler(
             flush_on_chain_end=flush_on_chain_end,
             start_new_trace=start_new_trace,
             galileo_logger=galileo_logger,
             integration="langchain",
             ingestion_hook=ingestion_hook,
         )
-        self._async_handler = GalileoAsyncBaseHandler(
+        self._async_handler = SplunkAOAsyncBaseHandler(
             flush_on_chain_end=flush_on_chain_end,
             start_new_trace=start_new_trace,
             galileo_logger=galileo_logger,
@@ -164,7 +164,7 @@ class GalileoMiddleware(AgentMiddleware):
     def _serialize_tool_response(self, response: "AgentState") -> dict[str, Any]:
         """Serialize tool response to end_node kwargs."""
         kwargs: dict[str, Any] = {}
-        tool_message = GalileoCallback._find_tool_message(response)
+        tool_message = SplunkAOCallback._find_tool_message(response)
         if tool_message is not None:
             kwargs["output"] = tool_message.content
             kwargs["tool_call_id"] = tool_message.tool_call_id

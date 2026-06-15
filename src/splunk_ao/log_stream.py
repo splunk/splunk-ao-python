@@ -16,12 +16,12 @@ from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
 from galileo.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from galileo.resources.types import Unset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.decorator import galileo_context
 from splunk_ao.export import ExportClient
 from splunk_ao.log_streams import LogStreams
 from splunk_ao.schema.filters import FilterType
-from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig, Metric
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
 from splunk_ao.search import RecordType, Search
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ValidationError
@@ -75,10 +75,10 @@ class LogStream(StateManagementMixin):
         log_stream = project.create_log_stream(name="Production Logs")
 
         # Enable metrics on the log stream
-        from splunk_ao.schema.metrics import GalileoMetrics
+        from splunk_ao.schema.metrics import SplunkAOMetrics
         local_metrics = log_stream.enable_metrics([
-            GalileoMetrics.correctness,
-            GalileoMetrics.completeness,
+            SplunkAOMetrics.correctness,
+            SplunkAOMetrics.completeness,
             "context_relevance"
         ])
 
@@ -423,7 +423,7 @@ class LogStream(StateManagementMixin):
             print(f"Currently enabled: {current_metrics}")
         """
         logger.info(f"LogStream.get_metrics: id='{self.id}' - started")
-        config = GalileoPythonConfig.get()
+        config = SplunkAOConfig.get()
 
         settings = get_settings_projects_project_id_runs_run_id_scorer_settings_get.sync(
             project_id=self.project_id, run_id=self.id, client=config.api_client
@@ -439,7 +439,7 @@ class LogStream(StateManagementMixin):
         return metric_names
 
     def set_metrics(
-        self, metrics: builtins.list[GalileoMetrics | Metric | LocalMetricConfig | str]
+        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Set (replace) the metrics on this log stream.
@@ -449,7 +449,7 @@ class LogStream(StateManagementMixin):
 
         Args:
             metrics: List of metrics to set. Supports:
-                - GalileoMetrics enum values (e.g., GalileoMetrics.correctness)
+                - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
                 - Metric objects (including from Metric.get(id="..."))
                 - LocalMetricConfig objects for custom scoring functions
                 - String names of built-in metrics
@@ -847,7 +847,7 @@ class LogStream(StateManagementMixin):
         if self.project_id is None:
             raise ValueError("Project ID is not set. Cannot get columns without project_id.")
 
-        config = GalileoPythonConfig.get()
+        config = SplunkAOConfig.get()
         body = LogRecordsAvailableColumnsRequest(log_stream_id=self.id)
         response = api_func.sync(project_id=self.project_id, client=config.api_client, body=body)
         if isinstance(response, HTTPValidationError):

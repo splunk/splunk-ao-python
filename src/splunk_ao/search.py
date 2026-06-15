@@ -12,7 +12,7 @@ from galileo.resources.models import (
     LogRecordsQueryResponse,
     LogRecordsSortClause,
 )
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.schema.filters import FilterType
 
 logger = logging.getLogger(__name__)
@@ -25,10 +25,10 @@ class RecordType(str, Enum):
 
 
 class Search:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def query(
         self,

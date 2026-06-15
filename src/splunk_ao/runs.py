@@ -10,16 +10,16 @@ from galileo.resources.models import (
     ScorerConfig,
     SegmentFilter,
 )
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 
 logger = logging.getLogger(__name__)
 
 
 class Runs:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def update_scorer_settings(
         self,

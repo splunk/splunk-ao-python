@@ -10,7 +10,7 @@ from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.project_update import ProjectUpdate
 from galileo.resources.types import Unset
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.projects import Projects
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
@@ -842,7 +842,7 @@ class Project(StateManagementMixin):
             raise ValueError("Project ID is not set. Cannot update a project without an ID.")
 
         logger.info(f"Project.save: name='{self.name}' id='{self.id}' - started")
-        config = GalileoPythonConfig.get()
+        config = SplunkAOConfig.get()
         # ProjectUpdate also accepts `description`, `labels`, and `created_by`, but:
         # - `description`/`labels`: not exposed on the domain object because neither the
         #   get (ProjectDBThin) nor list endpoints return them, so round-tripping would

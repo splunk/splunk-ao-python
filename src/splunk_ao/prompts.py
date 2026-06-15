@@ -27,7 +27,7 @@ from galileo.resources.models import (
     UpdatePromptTemplateRequest,
 )
 from galileo.resources.types import Unset
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.schema.message import Message
 from splunk_ao.utils.exceptions import APIException
 from splunk_ao.utils.projects import resolve_project_id
@@ -86,10 +86,10 @@ class PromptTemplateVersion(BasePromptTemplateVersionResponse):
 
 
 class GlobalPromptTemplates:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def list(
         self,

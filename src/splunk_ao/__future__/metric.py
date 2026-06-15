@@ -8,6 +8,6 @@ warnings.warn(
     stacklevel=2,
 )
 
-from splunk_ao.metric import BuiltInMetrics, CodeMetric, GalileoMetric, LlmMetric, LocalMetric, Metric  # noqa: E402
+from splunk_ao.metric import BuiltInMetrics, CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric  # noqa: E402
 
-__all__ = ["BuiltInMetrics", "CodeMetric", "GalileoMetric", "LlmMetric", "LocalMetric", "Metric"]
+__all__ = ["BuiltInMetrics", "CodeMetric", "LlmMetric", "LocalMetric", "Metric", "SplunkAOMetric"]

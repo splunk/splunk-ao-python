@@ -8,7 +8,7 @@ from splunk_ao.dataset import Dataset
 from splunk_ao.experiment import Experiment
 from splunk_ao.integration import Integration
 from splunk_ao.log_stream import LogStream
-from splunk_ao.metric import CodeMetric, GalileoMetric, LlmMetric, LocalMetric, Metric
+from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
@@ -17,9 +17,9 @@ from splunk_ao.search import RecordType
 from splunk_ao.shared.exceptions import (
     APIError,
     ConfigurationError,
-    GalileoFutureError,
     ResourceConflictError,
     ResourceNotFoundError,
+    SplunkAOFutureError,
     ValidationError,
 )
 from splunk_ao.utils.log_config import enable_console_logging
@@ -33,8 +33,6 @@ __all__ = [
     "ConfigurationError",
     "Dataset",
     "Experiment",
-    "GalileoFutureError",
-    "GalileoMetric",
     "Integration",
     "LlmMetric",
     "LocalMetric",
@@ -48,6 +46,8 @@ __all__ = [
     "RecordType",
     "ResourceConflictError",
     "ResourceNotFoundError",
+    "SplunkAOFutureError",
+    "SplunkAOMetric",
     "StepType",
     "ValidationError",
     "enable_console_logging",

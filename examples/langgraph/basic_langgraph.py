@@ -17,7 +17,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
-from splunk_ao.handlers.langchain import GalileoCallback
+from splunk_ao.handlers.langchain import SplunkAOCallback
 
 
 class State(TypedDict):
@@ -45,4 +45,4 @@ graph_builder.add_edge("node_name", END)
 graph = graph_builder.compile()
 
 graph.get_graph().print_ascii()
-graph.invoke({"messages": [{"role": "user", "content": "hi!"}]}, config={"callbacks": [GalileoCallback()]})
+graph.invoke({"messages": [{"role": "user", "content": "hi!"}]}, config={"callbacks": [SplunkAOCallback()]})

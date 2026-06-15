@@ -19,7 +19,7 @@ from galileo.resources.models import (
 )
 from galileo.resources.types import Unset
 from galileo_core.schemas.logging.llm import MessageRole
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.projects import Projects
 from splunk_ao.prompts import GlobalPromptTemplates
 from splunk_ao.schema.message import Message
@@ -557,7 +557,7 @@ class Prompt(StateManagementMixin):
 
             logger.info(f"Prompt.create_version: id='{self.id}' - started")
 
-            config = GalileoPythonConfig.get()
+            config = SplunkAOConfig.get()
             body = BasePromptTemplateVersion(template=self._messages_to_api_format(version_messages))
 
             response = create_global_prompt_template_version_templates_template_id_versions_post.sync(
@@ -670,7 +670,7 @@ class Prompt(StateManagementMixin):
         try:
             logger.debug(f"Prompt.list_versions: id='{self.id}' - started")
 
-            config = GalileoPythonConfig.get()
+            config = SplunkAOConfig.get()
             body = ListPromptTemplateVersionParams()
 
             response = query_template_versions_templates_template_id_versions_query_post.sync(
@@ -720,7 +720,7 @@ class Prompt(StateManagementMixin):
         try:
             logger.info(f"Prompt.select_version: id='{self.id}' version={version} - started")
 
-            config = GalileoPythonConfig.get()
+            config = SplunkAOConfig.get()
 
             response = set_selected_global_template_version_templates_template_id_versions_version_put.sync(
                 template_id=self.id, version=version, client=config.api_client

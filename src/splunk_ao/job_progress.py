@@ -12,14 +12,14 @@ from galileo.resources.api.jobs import (
 from galileo.resources.models import HTTPValidationError, JobDB
 from galileo_core.constants.job import JobName, JobStatus
 from galileo_core.constants.scorers import Scorers
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.utils.log_config import get_logger
 
 _logger = get_logger(__name__)
 
 
 def get_job(job_id: str) -> JobDB:
-    config = GalileoPythonConfig.get()
+    config = SplunkAOConfig.get()
 
     response = get_job_jobs_job_id_get.sync(client=config.api_client, job_id=str(job_id))
 
@@ -31,7 +31,7 @@ def get_job(job_id: str) -> JobDB:
 
 
 def get_run_scorer_jobs(project_id: str, run_id: str) -> list[JobDB]:
-    config = GalileoPythonConfig.get()
+    config = SplunkAOConfig.get()
 
     response = get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get.sync(
         client=config.api_client, project_id=str(project_id), run_id=str(run_id)

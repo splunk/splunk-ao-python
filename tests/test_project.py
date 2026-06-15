@@ -197,7 +197,7 @@ class TestProjectSave:
         with pytest.raises(ValueError, match="Project ID is not set"):
             project.save()
 
-    @patch("splunk_ao.project.GalileoPythonConfig")
+    @patch("splunk_ao.project.SplunkAOConfig")
     @patch("splunk_ao.project.update_project_projects_project_id_put")
     @patch("splunk_ao.project.Projects")
     def test_save_dirty_calls_update_and_syncs_attributes(
@@ -267,7 +267,7 @@ class TestProjectSave:
         with pytest.raises(ValueError, match="FAILED_SYNC"):
             project.save()
 
-    @patch("splunk_ao.project.GalileoPythonConfig")
+    @patch("splunk_ao.project.SplunkAOConfig")
     @patch("splunk_ao.project.update_project_projects_project_id_put")
     @patch("splunk_ao.project.Projects")
     def test_save_handles_api_failure(

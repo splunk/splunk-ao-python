@@ -15,7 +15,7 @@ from galileo.resources.types import UNSET
 from galileo_core.schemas.protect.ruleset import Ruleset, RulesetsMixin
 from galileo_core.schemas.protect.stage import StageDB, StageType, StageWithRulesets
 from galileo_core.utils.name import ts_name
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.projects import Projects
 
 
@@ -49,10 +49,10 @@ def _get_stage_id(
 
 
 class Stages:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def create(
         self,

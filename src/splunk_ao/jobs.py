@@ -9,17 +9,17 @@ from galileo.resources.models import (
     ScorerConfig,
     TaskType,
 )
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.utils.exceptions import _format_http_validation_error
 
 _logger = logging.getLogger(__name__)
 
 
 class Jobs:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def create(
         self,

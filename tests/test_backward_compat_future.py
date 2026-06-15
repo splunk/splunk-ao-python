@@ -39,26 +39,26 @@ def test_state_management_mixin_is_same_class():
 def test_exceptions_are_same_classes():
     from splunk_ao.__future__.shared.exceptions import APIError as FutureAPIError
     from splunk_ao.__future__.shared.exceptions import ConfigurationError as FutureConfigError
-    from splunk_ao.__future__.shared.exceptions import GalileoFutureError as FutureBaseError
     from splunk_ao.__future__.shared.exceptions import IntegrationNotConfiguredError as FutureIntError
     from splunk_ao.__future__.shared.exceptions import ResourceConflictError as FutureConflictError
     from splunk_ao.__future__.shared.exceptions import ResourceNotFoundError as FutureNotFoundError
+    from splunk_ao.__future__.shared.exceptions import SplunkAOFutureError as FutureBaseError
     from splunk_ao.__future__.shared.exceptions import SyncError as FutureSyncError
     from splunk_ao.__future__.shared.exceptions import ValidationError as FutureValidationError
     from splunk_ao.shared.exceptions import (
         APIError,
         ConfigurationError,
-        GalileoFutureError,
         IntegrationNotConfiguredError,
         ResourceConflictError,
         ResourceNotFoundError,
+        SplunkAOFutureError,
         SyncError,
         ValidationError,
     )
 
     assert FutureAPIError is APIError
     assert FutureConfigError is ConfigurationError
-    assert FutureBaseError is GalileoFutureError
+    assert FutureBaseError is SplunkAOFutureError
     assert FutureIntError is IntegrationNotConfiguredError
     assert FutureConflictError is ResourceConflictError
     assert FutureNotFoundError is ResourceNotFoundError
@@ -128,15 +128,15 @@ def test_provider_classes_are_same():
 
 def test_metric_classes_are_same():
     from splunk_ao.__future__.metric import CodeMetric as FutureCodeMetric
-    from splunk_ao.__future__.metric import GalileoMetric as FutureGalileoMetric
     from splunk_ao.__future__.metric import LlmMetric as FutureLlmMetric
     from splunk_ao.__future__.metric import LocalMetric as FutureLocalMetric
     from splunk_ao.__future__.metric import Metric as FutureMetric
-    from splunk_ao.metric import CodeMetric, GalileoMetric, LlmMetric, LocalMetric, Metric
+    from splunk_ao.__future__.metric import SplunkAOMetric as FutureSplunkAOMetric
+    from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
 
     assert FutureMetric is Metric
     assert FutureCodeMetric is CodeMetric
-    assert FutureGalileoMetric is GalileoMetric
+    assert FutureSplunkAOMetric is SplunkAOMetric
     assert FutureLlmMetric is LlmMetric
     assert FutureLocalMetric is LocalMetric
 
@@ -288,7 +288,6 @@ def test_root_init_has_new_exports():
         Configuration,
         Dataset,
         Experiment,
-        GalileoMetric,
         Integration,
         LlmMetric,
         LocalMetric,
@@ -299,6 +298,7 @@ def test_root_init_has_new_exports():
         OpenAIProvider,
         Prompt,
         Provider,
+        SplunkAOMetric,
     )
 
     assert Configuration is not None
@@ -308,7 +308,7 @@ def test_root_init_has_new_exports():
     assert LogStream is not None
     assert Metric is not None
     assert CodeMetric is not None
-    assert GalileoMetric is not None
+    assert SplunkAOMetric is not None
     assert LlmMetric is not None
     assert LocalMetric is not None
     assert MetricSpec is not None

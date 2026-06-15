@@ -32,39 +32,39 @@ from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnreso
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
-from splunk_ao.decorator import GalileoDecorator, galileo_context, log, start_session
+from splunk_ao.decorator import SplunkAODecorator, galileo_context, log, start_session
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
     ConflictError,
     ForbiddenError,
-    GalileoAPIError,
-    GalileoLoggerException,
     NotFoundError,
     RateLimitError,
     ServerError,
+    SplunkAOAPIError,
+    SplunkAOLoggerException,
 )
 from splunk_ao.experiment import Experiment
-from splunk_ao.handlers.agent_control import GalileoAgentControlBridge, setup_agent_control_bridge
+from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
 from splunk_ao.integration import Integration
 from splunk_ao.log_stream import LogStream
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
-from splunk_ao.metric import CodeMetric, GalileoMetric, LlmMetric, LocalMetric, Metric
+from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
 from splunk_ao.protect import ainvoke_protect, invoke_protect
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
 from splunk_ao.schema.message import Message
-from splunk_ao.schema.metrics import GalileoMetrics, GalileoScorers
+from splunk_ao.schema.metrics import GalileoScorers, SplunkAOMetrics
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import (
     APIError,
     ConfigurationError,
-    GalileoFutureError,
     ResourceConflictError,
     ResourceNotFoundError,
+    SplunkAOFutureError,
     ValidationError,
 )
 from splunk_ao.stages import (
@@ -107,14 +107,6 @@ __all__ = [
     "ExecutionStatus",
     "Experiment",
     "ForbiddenError",
-    "GalileoAPIError",
-    "GalileoAgentControlBridge",
-    "GalileoDecorator",
-    "GalileoFutureError",
-    "GalileoLogger",
-    "GalileoLoggerException",
-    "GalileoMetric",
-    "GalileoMetrics",
     "GalileoScorers",
     "Integration",
     "LlmMetric",
@@ -142,6 +134,14 @@ __all__ = [
     "ServerError",
     "Session",
     "Span",
+    "SplunkAOAPIError",
+    "SplunkAOAgentControlBridge",
+    "SplunkAODecorator",
+    "SplunkAOFutureError",
+    "SplunkAOLogger",
+    "SplunkAOLoggerException",
+    "SplunkAOMetric",
+    "SplunkAOMetrics",
     "StageType",
     "StepType",
     "StepWithChildSpans",

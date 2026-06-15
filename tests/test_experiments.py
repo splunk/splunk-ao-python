@@ -48,7 +48,7 @@ from splunk_ao.projects import Project
 from splunk_ao.prompts import PromptTemplate
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
-from splunk_ao.schema.metrics import GalileoMetrics, LocalMetricConfig
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
 from splunk_ao.utils.datasets import load_dataset_and_records
 from splunk_ao.utils.exceptions import _format_http_validation_error
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -697,7 +697,7 @@ class TestExperiments:
         mock_config.console_url = console_url
 
         # When: running an experiment
-        with patch("splunk_ao.experiments.GalileoPythonConfig.get", return_value=mock_config):
+        with patch("splunk_ao.experiments.SplunkAOConfig.get", return_value=mock_config):
             result = run_experiment(
                 "test_experiment",
                 project="awesome-new-project",
@@ -978,7 +978,7 @@ class TestExperiments:
             project="awesome-new-project",
             dataset_id=dataset_id,
             prompt_template=prompt_template(),
-            metrics=[GalileoMetrics.correctness],
+            metrics=[SplunkAOMetrics.correctness],
         )
 
         mock_get_project.assert_called_once_with(id=None, name="awesome-new-project")
@@ -1960,7 +1960,7 @@ class TestExperimentGroups:
         assert body.additional_properties["experiment_group_id"] == group_uuid
         assert "experiment_group_name" not in body.additional_properties
 
-    @patch("splunk_ao.experiments.GalileoPythonConfig")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
     @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_list_experiment_groups(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """list_experiment_groups() POSTs to /experiment-groups/query and returns typed objects."""
@@ -2023,7 +2023,7 @@ class TestExperimentGroups:
         assert groups[0].experiment_count == 2
         assert groups[1].is_system is True
 
-    @patch("splunk_ao.experiments.GalileoPythonConfig")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
     @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_list_experiment_groups_paginates_internally(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """list_experiment_groups() walks all pages and returns the combined list."""
@@ -2075,7 +2075,7 @@ class TestExperimentGroups:
         assert len(groups) == 3
         assert [g.name for g in groups] == ["group-1", "group-2", "group-3"]
 
-    @patch("splunk_ao.experiments.GalileoPythonConfig")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
     @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_group_name_filter(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """get_experiments(experiment_group=...) calls the search endpoint with a name filter."""
@@ -2111,7 +2111,7 @@ class TestExperimentGroups:
         assert isinstance(result, list)
         assert len(result) == 1
 
-    @patch("splunk_ao.experiments.GalileoPythonConfig")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
     @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_group_id_filter(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """get_experiments(experiment_group_id=...) calls the search endpoint with an id filter."""

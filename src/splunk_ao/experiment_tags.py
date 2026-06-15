@@ -10,7 +10,7 @@ from galileo.resources.api.experiment_tags import (
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.run_tag_create_request import RunTagCreateRequest
 from galileo.resources.models.run_tag_db import RunTagDB
-from splunk_ao.config import GalileoPythonConfig
+from splunk_ao.config import SplunkAOConfig
 from splunk_ao.utils.exceptions import APIException
 
 _logger = logging.getLogger(__name__)
@@ -49,10 +49,10 @@ class ExperimentTag(RunTagDB):
 
 
 class ExperimentTags:
-    config: GalileoPythonConfig
+    config: SplunkAOConfig
 
     def __init__(self) -> None:
-        self.config = GalileoPythonConfig.get()
+        self.config = SplunkAOConfig.get()
 
     def get_experiment_tags(self, project_id: str, experiment_id: str) -> list[ExperimentTag]:
         """
