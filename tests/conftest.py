@@ -22,7 +22,7 @@ from openai.types.responses import (
 )
 from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails
 
-_os.environ["SPLUNK_AO_CONSOLE_URL"] = "http://localtest:8088"
+_os.environ["SPLUNK_AO_CONSOLE_URL"] = "http://fake.test:8088"
 _os.environ["SPLUNK_AO_API_KEY"] = "api-1234567890"
 _os.environ["SPLUNK_AO_PROJECT"] = "test-project"
 _os.environ["SPLUNK_AO_LOG_STREAM"] = "test-log-stream"
@@ -50,6 +50,7 @@ from uuid import uuid4  # noqa: E402
 
 from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
+from test_support.config import fast_config_validation  # noqa: E402
 
 from galileo.collaborator import CollaboratorRole  # noqa: E402
 from galileo.config import SplunkAOConfig  # noqa: E402
@@ -125,8 +126,10 @@ def set_validated_config(
     if SplunkAOConfig._instance is not None:
         SplunkAOConfig._instance.reset()
     # Initialize config with EXPLICIT values to avoid env var timing issues with pytest-xdist
-    # This ensures correct config even if env vars weren't set before module imports
-    config = SplunkAOConfig.get(console_url="http://localtest:8088", api_key="api-1234567890")
+    # This ensures correct config even if env vars weren't set before module imports.
+    # Bypass the slow async validation round-trips for the build only.
+    with fast_config_validation():
+        config = SplunkAOConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     config.reset()
 
