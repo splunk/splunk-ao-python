@@ -43,10 +43,10 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 env = [
-    "GALILEO_CONSOLE_URL=http://fake.test:8088",
-    "GALILEO_API_KEY=api-1234567890",
-    "GALILEO_PROJECT=test-project",
-    "GALILEO_LOG_STREAM=test-log-stream",
+    "SPLUNK_AO_CONSOLE_URL=http://fake.test:8088",
+    "SPLUNK_AO_API_KEY=api-1234567890",
+    "SPLUNK_AO_PROJECT=test-project",
+    "SPLUNK_AO_LOG_STREAM=test-log-stream",
 ]
 addopts = [
     "-v",

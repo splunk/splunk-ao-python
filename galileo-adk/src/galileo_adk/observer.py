@@ -1,4 +1,4 @@
-"""Shared observability logic for Galileo ADK integration."""
+"""Shared observability logic for Splunk AO ADK integration."""
 
 from __future__ import annotations
 
@@ -132,7 +132,7 @@ def get_custom_metadata(context: Any) -> dict[str, Any]:
     return {}
 
 
-class GalileoObserver:
+class SplunkAOObserver:
     """Shared observability logic for Plugin and Callback interfaces."""
 
     _trace_builder: TraceBuilder | None
@@ -393,12 +393,12 @@ class GalileoObserver:
 
         Detection uses two strategies:
         1. isinstance check against google.adk.tools.retrieval.BaseRetrievalTool
-        2. Custom functions decorated with @galileo_retriever (sets _galileo_is_retriever on func)
+        2. Custom functions decorated with @splunk_ao_retriever (sets _splunk_ao_is_retriever on func)
         """
         if _BaseRetrievalTool is not None and isinstance(tool, _BaseRetrievalTool):
             return True
         func = getattr(tool, "func", None)
-        return bool(func is not None and getattr(func, "_galileo_is_retriever", False))
+        return bool(func is not None and getattr(func, "_splunk_ao_is_retriever", False))
 
     def on_tool_start(
         self,

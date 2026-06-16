@@ -1,24 +1,24 @@
-"""Unit tests for GalileoObserver extraction methods."""
+"""Unit tests for SplunkAOObserver extraction methods."""
 
 from unittest.mock import MagicMock
 
 import pytest
 
-from galileo_adk.observer import GalileoObserver
+from galileo_adk.observer import SplunkAOObserver
 
 from .mocks import MockContent, MockEvent, MockPart
 
 
 @pytest.fixture
-def observer() -> GalileoObserver:
+def observer() -> SplunkAOObserver:
     """Create observer with ingestion hook for testing (no credentials needed)."""
-    return GalileoObserver(ingestion_hook=lambda r: None)
+    return SplunkAOObserver(ingestion_hook=lambda r: None)
 
 
 class TestExtractInvocationMetadata:
     """Tests for _extract_invocation_metadata method."""
 
-    def test_extracts_invocation_id(self, observer: GalileoObserver) -> None:
+    def test_extracts_invocation_id(self, observer: SplunkAOObserver) -> None:
         # Given: an invocation context with an invocation_id
         context = MagicMock()
         context.invocation_id = "inv_123"
@@ -30,7 +30,7 @@ class TestExtractInvocationMetadata:
         # Then: invocation_id is included
         assert result["invocation_id"] == "inv_123"
 
-    def test_extracts_session_id_from_nested_session(self, observer: GalileoObserver) -> None:
+    def test_extracts_session_id_from_nested_session(self, observer: SplunkAOObserver) -> None:
         # Given: an invocation context with a nested session
         context = MagicMock()
         context.invocation_id = "inv_123"
@@ -43,7 +43,7 @@ class TestExtractInvocationMetadata:
         assert result["invocation_id"] == "inv_123"
         assert result["session_id"] == "sess_456"
 
-    def test_missing_attributes_returns_empty_metadata(self, observer: GalileoObserver) -> None:
+    def test_missing_attributes_returns_empty_metadata(self, observer: SplunkAOObserver) -> None:
         # Given: a context without invocation_id or session
         context = MagicMock(spec=[])  # Empty spec means no attributes
 
@@ -58,7 +58,7 @@ class TestExtractInvocationMetadata:
 class TestExtractAgentInput:
     """Tests for _extract_agent_input method."""
 
-    def test_extracts_from_parent_context_new_message(self, observer: GalileoObserver) -> None:
+    def test_extracts_from_parent_context_new_message(self, observer: SplunkAOObserver) -> None:
         # Given: a callback context with parent_context.new_message
         context = MagicMock()
         context.parent_context.new_message.parts = [MockPart(text="Hello, agent!")]
@@ -69,7 +69,7 @@ class TestExtractAgentInput:
         # Then: the text is extracted
         assert result == "Hello, agent!"
 
-    def test_fallback_when_no_parent_context(self, observer: GalileoObserver) -> None:
+    def test_fallback_when_no_parent_context(self, observer: SplunkAOObserver) -> None:
         # Given: a context without parent_context
         context = MagicMock(spec=[])
 
@@ -79,7 +79,7 @@ class TestExtractAgentInput:
         # Then: fallback message is returned
         assert result == "Agent invocation"
 
-    def test_extracts_multiple_parts(self, observer: GalileoObserver) -> None:
+    def test_extracts_multiple_parts(self, observer: SplunkAOObserver) -> None:
         # Given: a callback context with multiple text parts
         context = MagicMock()
         context.parent_context.new_message.parts = [
@@ -98,7 +98,7 @@ class TestExtractAgentInput:
 class TestExtractAgentOutput:
     """Tests for _extract_agent_output method."""
 
-    def test_extracts_from_last_event(self, observer: GalileoObserver) -> None:
+    def test_extracts_from_last_event(self, observer: SplunkAOObserver) -> None:
         # Given: a context with parent_context.events containing output
         context = MagicMock()
         event1 = MockEvent(content=MockContent(parts=[MockPart(text="Processing...")]))
@@ -111,7 +111,7 @@ class TestExtractAgentOutput:
         # Then: the last event's content is extracted
         assert result == "Final answer"
 
-    def test_returns_empty_when_no_events(self, observer: GalileoObserver) -> None:
+    def test_returns_empty_when_no_events(self, observer: SplunkAOObserver) -> None:
         # Given: a context without events
         context = MagicMock()
         context.parent_context.events = []
@@ -126,7 +126,7 @@ class TestExtractAgentOutput:
 class TestExtractTools:
     """Tests for _extract_tools method."""
 
-    def test_converts_tools_when_present(self, observer: GalileoObserver) -> None:
+    def test_converts_tools_when_present(self, observer: SplunkAOObserver) -> None:
         # Given: an LLM request with tools in config
         request = MagicMock()
         tool = MagicMock()
@@ -144,7 +144,7 @@ class TestExtractTools:
         assert result[0]["type"] == "function"
         assert result[0]["function"]["name"] == "search"
 
-    def test_returns_none_when_no_tools(self, observer: GalileoObserver) -> None:
+    def test_returns_none_when_no_tools(self, observer: SplunkAOObserver) -> None:
         # Given: an LLM request without tools
         request = MagicMock()
         request.config.tools = None
@@ -159,7 +159,7 @@ class TestExtractTools:
 class TestExtractFinalOutput:
     """Tests for _extract_final_output method."""
 
-    def test_extracts_from_session_events(self, observer: GalileoObserver) -> None:
+    def test_extracts_from_session_events(self, observer: SplunkAOObserver) -> None:
         # Given: an invocation context with session.events containing a final response
         context = MagicMock()
         event = MockEvent(content=MockContent(parts=[MockPart(text="The answer is 42")]), is_final=True)
@@ -171,7 +171,7 @@ class TestExtractFinalOutput:
         # Then: the final response content is extracted
         assert result == "The answer is 42"
 
-    def test_finds_final_response_not_at_end(self, observer: GalileoObserver) -> None:
+    def test_finds_final_response_not_at_end(self, observer: SplunkAOObserver) -> None:
         # Given: session.events where final response is not the last event
         context = MagicMock()
         tool_call = MockEvent(content=MockContent(parts=[MockPart(text="calling tool")]), is_final=False)
@@ -185,7 +185,7 @@ class TestExtractFinalOutput:
         # Then: the final response content is extracted (not the last event)
         assert result == "The answer is 42"
 
-    def test_returns_empty_when_no_final_response(self, observer: GalileoObserver) -> None:
+    def test_returns_empty_when_no_final_response(self, observer: SplunkAOObserver) -> None:
         # Given: session.events with no final response
         context = MagicMock()
         tool_call = MockEvent(content=MockContent(parts=[MockPart(text="calling tool")]), is_final=False)
@@ -198,7 +198,7 @@ class TestExtractFinalOutput:
         # Then: empty string is returned (no misleading data)
         assert result == ""
 
-    def test_handles_missing_session_gracefully(self, observer: GalileoObserver) -> None:
+    def test_handles_missing_session_gracefully(self, observer: SplunkAOObserver) -> None:
         # Given: an invocation context without session
         context = MagicMock(spec=[])
 
@@ -215,7 +215,7 @@ class TestUpdateSessionIfChanged:
     def test_hook_mode_sets_session_external_id_without_backend_call(self) -> None:
         # Given: an observer in hook mode
         captured_requests: list = []
-        observer = GalileoObserver(ingestion_hook=lambda r: captured_requests.append(r))
+        observer = SplunkAOObserver(ingestion_hook=lambda r: captured_requests.append(r))
         logger = observer._handler._galileo_logger
 
         # When: updating session with an ADK session ID
@@ -227,7 +227,7 @@ class TestUpdateSessionIfChanged:
 
     def test_hook_mode_updates_external_id_on_session_change(self) -> None:
         # Given: an observer in hook mode with an existing session
-        observer = GalileoObserver(ingestion_hook=lambda r: None)
+        observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("session-1")
         logger = observer._handler._galileo_logger
 
@@ -240,7 +240,7 @@ class TestUpdateSessionIfChanged:
 
     def test_hook_mode_ignores_unknown_session_id(self) -> None:
         # Given: an observer in hook mode
-        observer = GalileoObserver(ingestion_hook=lambda r: None)
+        observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         logger = observer._handler._galileo_logger
 
         # When: updating with "unknown" session ID
@@ -252,7 +252,7 @@ class TestUpdateSessionIfChanged:
 
     def test_hook_mode_ignores_duplicate_session_id(self) -> None:
         # Given: an observer in hook mode with an existing session
-        observer = GalileoObserver(ingestion_hook=lambda r: None)
+        observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("session-1")
         logger = observer._handler._galileo_logger
         original_external_id = logger._session_external_id
@@ -265,7 +265,7 @@ class TestUpdateSessionIfChanged:
 
     def test_hook_mode_preserves_parent_session_for_sub_invocations(self) -> None:
         # Given: an observer in hook mode with an existing parent session
-        observer = GalileoObserver(ingestion_hook=lambda r: None)
+        observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("parent-session")
         logger = observer._handler._galileo_logger
 

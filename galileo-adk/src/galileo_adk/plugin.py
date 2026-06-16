@@ -1,4 +1,4 @@
-"""Galileo ADK Plugin - Runner-level observability for Google ADK."""
+"""Splunk AO ADK Plugin - Runner-level observability for Google ADK."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from uuid import UUID
 from splunk_ao.schema.trace import TracesIngestRequest
 
 from galileo_adk.observer import (
-    GalileoObserver,
+    SplunkAOObserver,
     get_agent_name_from_tool_context,
     get_custom_metadata,
     get_invocation_id,
@@ -99,14 +99,14 @@ def _extract_status_code(error: Exception) -> int:
     return 500
 
 
-class GalileoADKPlugin(BasePlugin):
-    """Galileo observability plugin for Google ADK Runner.
+class SplunkAOADKPlugin(BasePlugin):
+    """Splunk AO observability plugin for Google ADK Runner.
 
     Provides full lifecycle observability including invocation, agent, LLM, and tool
     spans. Pass to Runner's plugins list for automatic trace capture.
 
-    ADK session_id is automatically mapped to Galileo sessions for trace grouping.
-    All traces from the same ADK session will be grouped together in Galileo.
+    ADK session_id is automatically mapped to Splunk AO sessions for trace grouping.
+    All traces from the same ADK session will be grouped together in Splunk AO.
 
     Per-invocation metadata is passed via ADK's native RunConfig.custom_metadata:
 
@@ -116,17 +116,17 @@ class GalileoADKPlugin(BasePlugin):
     Parameters
     ----------
     project : str, optional
-        Galileo project name. Can also be set via GALILEO_PROJECT env var.
+        Splunk AO project name. Can also be set via SPLUNK_AO_PROJECT env var.
         Required unless `ingestion_hook` is provided.
     log_stream : str, optional
-        Log stream name within the project. Can also be set via GALILEO_LOG_STREAM env var.
+        Log stream name within the project. Can also be set via SPLUNK_AO_LOG_STREAM env var.
         Required unless `ingestion_hook` is provided.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
-        Custom callback to receive trace data instead of sending to Galileo.
+        Custom callback to receive trace data instead of sending to Splunk AO.
 
     Example
     -------
-    >>> plugin = GalileoADKPlugin(project="my-project", log_stream="production")
+    >>> plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
     >>> runner = Runner(agent=agent, plugins=[plugin])
     >>> run_config = RunConfig(custom_metadata={"turn": 1})
     >>> await runner.run_async(..., run_config=run_config)
@@ -138,16 +138,16 @@ class GalileoADKPlugin(BasePlugin):
         log_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ) -> None:
-        effective_project = project or os.environ.get("GALILEO_PROJECT")
-        effective_log_stream = log_stream or os.environ.get("GALILEO_LOG_STREAM")
+        effective_project = project or os.environ.get("SPLUNK_AO_PROJECT")
+        effective_log_stream = log_stream or os.environ.get("SPLUNK_AO_LOG_STREAM")
         if not ingestion_hook and (not effective_project or not effective_log_stream):
             raise ValueError(
                 "Both 'project' and 'log_stream' must be provided via parameters or "
-                "GALILEO_PROJECT/GALILEO_LOG_STREAM environment variables"
+                "SPLUNK_AO_PROJECT/SPLUNK_AO_LOG_STREAM environment variables"
             )
 
-        super().__init__(name="galileo")
-        self._observer = GalileoObserver(
+        super().__init__(name="splunk_ao")
+        self._observer = SplunkAOObserver(
             project=project,
             log_stream=log_stream,
             ingestion_hook=ingestion_hook,
