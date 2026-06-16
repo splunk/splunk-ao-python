@@ -1,0 +1,83 @@
+# Regenerates the OpenAPI Python client from the Splunk AO backend spec.
+# TODO(HYBIM-725): Set the following secrets in repo Settings → Secrets before this workflow
+# is operational:
+#   - SPLUNK_AO_AUTOMATION_SSH_PRIVATE_KEY: SSH key for GPG-signed commits
+#   - PAT_AO_DOC_AUTOMATION: GitHub token to open PRs
+# TODO(HYBIM-725): Replace the HOST_URL below with the Splunk AO backend endpoint.
+name: Update API Client
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * 1-5" # Runs at 9am ET M-F
+
+jobs:
+  update_api_client:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    env:
+      CI_ENV: dev
+
+    steps:
+      - name: Update ubuntu, install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install socat wget jq -y
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --all-extras --with dev
+
+      - name: Create SSH key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SPLUNK_AO_AUTOMATION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+
+      - name: Set up ssh-agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SPLUNK_AO_AUTOMATION_SSH_PRIVATE_KEY }}
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+      - name: Fetch API types and regenerate
+        run: |
+          git config --global gpg.format ssh
+          git config --global user.signingKey ~/.ssh/id_rsa
+          git config --global commit.gpgsign true
+          # TODO(HYBIM-725): replace with Splunk bot email and name
+          git config --global user.email "splunk-ao-automation@splunk.com"
+          git config --global user.name "splunk-ao-automation"
+          git checkout -b $BRANCH_NAME
+          # TODO(HYBIM-725): replace with the Splunk AO backend URL
+          poetry run ./scripts/import-openapi-yaml.sh ${{ secrets.SPLUNK_AO_API_URL }}
+          poetry run ./scripts/auto-generate-api-client.sh
+          git add .
+          git commit -m "Update API Client"
+          git push --force origin $BRANCH_NAME --no-verify
+        env:
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}
+
+      - name: Create pull request
+        run: gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'
+        env:
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}
+          GITHUB_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
