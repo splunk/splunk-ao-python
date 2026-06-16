@@ -4,7 +4,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/galileo-a2a.svg)](https://pypi.org/project/galileo-a2a/)
 [![License](https://img.shields.io/pypi/l/galileo-a2a.svg)](https://github.com/rungalileo/galileo-python/blob/main/LICENSE)
 
-Galileo observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A) protocol interactions. Automatic tracing of agent-to-agent calls, task lifecycle, and cross-agent distributed trace correlation.
+Splunk AO observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A) protocol interactions. Automatic tracing of agent-to-agent calls, task lifecycle, and cross-agent distributed trace correlation.
 
 ## How It Works
 
@@ -25,13 +25,13 @@ Galileo observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A) 
 │             └─────────────────┬────────────────────────┘             │
 │                               │                                      │
 │                    ┌──────────▼──────────┐                           │
-│                    │      Galileo        │                           │
+│                    │     Splunk AO       │                           │
 │                    │  (Trace Explorer)   │                           │
 │                    └─────────────────────┘                           │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-`galileo-a2a` instruments both the **client** (outbound calls) and **server** (inbound requests) sides of the A2A protocol. Trace context is propagated through A2A message metadata so all agents appear in a single distributed trace in Galileo.
+`galileo-a2a` instruments both the **client** (outbound calls) and **server** (inbound requests) sides of the A2A protocol. Trace context is propagated through A2A message metadata so all agents appear in a single distributed trace in Splunk AO.
 
 ## Installation
 
@@ -39,17 +39,17 @@ Galileo observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A) 
 pip install galileo-a2a
 ```
 
-**Requirements:** Python 3.10+, a [Galileo API key](https://www.rungalileo.io/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
+**Requirements:** Python 3.10+, a [Splunk AO API key](https://www.splunk.com/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
 
 ## Quick Start
 
 ```python
-from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
+from splunk_ao.otel import SplunkAOSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
 provider = TracerProvider()
-add_galileo_span_processor(provider, GalileoSpanProcessor())
+add_galileo_span_processor(provider, SplunkAOSpanProcessor())
 A2AInstrumentor().instrument(tracer_provider=provider, agent_name="orchestrator")
 ```
 
@@ -63,13 +63,14 @@ Once instrumented, all `a2a-sdk` client and server interactions produce OTel spa
 | `agent_name` | Name of this agent, set on spans as `gen_ai.agent.name`. |
 | `capture_content` | Set to `False` to disable capturing message content (e.g. for PII compliance). |
 
-Environment variables for the Galileo exporter:
+Environment variables for the Splunk AO exporter:
 
 | Environment Variable | Description |
 |---------------------|-------------|
-| `GALILEO_API_KEY` | Galileo API key (required) |
-| `GALILEO_PROJECT` | Project name (alternative to `GalileoSpanProcessor(project=...)`) |
-| `GALILEO_LOG_STREAM` | Log stream name (alternative to `GalileoSpanProcessor(logstream=...)`) |
+| `SPLUNK_AO_API_KEY` | Splunk AO API key (required) |
+| `SPLUNK_AO_API_URL` | Splunk AO API host URL (required for self-hosted deployments, e.g. `https://agent-observability-api.rc0.signalfx.com`) |
+| `SPLUNK_AO_PROJECT` | Project name (alternative to `SplunkAOSpanProcessor(project=...)`) |
+| `SPLUNK_AO_LOG_STREAM` | Log stream name (alternative to `SplunkAOSpanProcessor(logstream=...)`) |
 
 ## Features
 
@@ -83,11 +84,11 @@ The instrumentor patches both sides of the A2A protocol:
 
 ### Cross-Agent Distributed Tracing
 
-When Agent A calls Agent B, trace context is propagated through A2A message metadata. The receiving agent joins the caller's trace, so both agents appear in a single distributed trace in Galileo.
+When Agent A calls Agent B, trace context is propagated through A2A message metadata. The receiving agent joins the caller's trace, so both agents appear in a single distributed trace in Splunk AO.
 
 ### Session Tracking
 
-A2A's `context_id` is mapped to `session.id`, grouping all interactions within the same conversation into a Galileo session.
+A2A's `context_id` is mapped to `session.id`, grouping all interactions within the same conversation into a Splunk AO session.
 
 ### Disabling Instrumentation
 
@@ -119,7 +120,7 @@ from a2a.types import (
     AgentCapabilities, AgentCard, AgentSkill, Message, Role,
     TaskState, TaskStatus, TaskStatusUpdateEvent, TextPart,
 )
-from splunk_ao.otel import GalileoSpanProcessor, add_galileo_span_processor
+from splunk_ao.otel import SplunkAOSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 from langchain.agents import create_agent
 from langchain_core.tools import tool
@@ -132,7 +133,7 @@ from typing_extensions import TypedDict
 
 # ---- Only 4 lines needed for full distributed tracing ----
 provider = TracerProvider()
-add_galileo_span_processor(provider, GalileoSpanProcessor())
+add_galileo_span_processor(provider, SplunkAOSpanProcessor())
 A2AInstrumentor().instrument(tracer_provider=provider, agent_name="orchestrator")
 LangchainInstrumentor().instrument(tracer_provider=provider)
 
@@ -255,13 +256,13 @@ async def main():
     provider.shutdown()
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, OPENAI_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, OPENAI_API_KEY
     asyncio.run(main())
 ```
 
 ## Resources
 
-- [Galileo Documentation](https://v2docs.galileo.ai)
+- [Splunk AO Documentation](https://docs.splunk.com/)
 - [A2A Protocol Specification](https://a2a-protocol.org)
 - [a2a-sdk Documentation](https://pypi.org/project/a2a-sdk)
 

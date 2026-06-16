@@ -5,7 +5,7 @@ from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Link
 
-from galileo_a2a._constants import AGNTCY_OBSERVE_KEY, GALILEO_OBSERVE_KEY
+from galileo_a2a._constants import AGNTCY_OBSERVE_KEY, SPLUNK_AO_OBSERVE_KEY
 from galileo_a2a._context import (
     create_span_link_from_context,
     extract_trace_context,
@@ -33,10 +33,10 @@ class TestInjectTraceContext:
 
 
 class TestExtractTraceContext:
-    def test_extracts_from_galileo_observe_key(self):
-        # Given: metadata with galileo_observe context
+    def test_extracts_from_splunk_ao_observe_key(self):
+        # Given: metadata with splunk_ao_observe context
         metadata = {
-            GALILEO_OBSERVE_KEY: {
+            SPLUNK_AO_OBSERVE_KEY: {
                 "traceparent": "00-aabb00112233445566778899aabbccdd-1122334455667788-01",
                 "agent_name": "planner",
             }
@@ -45,7 +45,7 @@ class TestExtractTraceContext:
         # When: extracting trace context
         result = extract_trace_context(metadata)
 
-        # Then: context extracted from galileo_observe key
+        # Then: context extracted from splunk_ao_observe key
         assert result is not None
         assert result["traceparent"] == "00-aabb00112233445566778899aabbccdd-1122334455667788-01"
         assert result["agent_name"] == "planner"
@@ -66,19 +66,19 @@ class TestExtractTraceContext:
         assert result is not None
         assert "traceparent" in result
 
-    def test_galileo_key_takes_precedence_over_agntcy(self):
+    def test_splunk_ao_key_takes_precedence_over_agntcy(self):
         # Given: metadata with both keys
         metadata = {
-            GALILEO_OBSERVE_KEY: {"traceparent": "galileo-traceparent"},
+            SPLUNK_AO_OBSERVE_KEY: {"traceparent": "splunk-ao-traceparent"},
             AGNTCY_OBSERVE_KEY: {"traceparent": "agntcy-traceparent"},
         }
 
         # When: extracting trace context
         result = extract_trace_context(metadata)
 
-        # Then: galileo key takes precedence
+        # Then: splunk_ao key takes precedence
         assert result is not None
-        assert result["traceparent"] == "galileo-traceparent"
+        assert result["traceparent"] == "splunk-ao-traceparent"
 
     def test_returns_none_when_missing(self):
         # Given: metadata with no observe keys

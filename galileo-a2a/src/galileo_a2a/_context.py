@@ -12,7 +12,7 @@ from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags
 
 from galileo_a2a._constants import (
     AGNTCY_OBSERVE_KEY,
-    GALILEO_OBSERVE_KEY,
+    SPLUNK_AO_OBSERVE_KEY,
     LINK_FROM_AGENT,
     LINK_TYPE,
     LINK_TYPE_AGENT_HANDOFF,
@@ -46,14 +46,14 @@ def inject_trace_context(agent_name: str | None = None) -> dict[str, str]:
 def extract_trace_context(metadata: dict[str, Any] | None) -> dict[str, str] | None:
     """Extract trace context from A2A request metadata.
 
-    Checks the Galileo key first, then falls back to the AGNTCY key for
+    Checks the Splunk AO key first, then falls back to the AGNTCY key for
     interoperability with the AGNTCY Observe SDK.  Returns ``None`` when
     no trace context is present.
     """
     if not metadata or not isinstance(metadata, dict):
         return None
 
-    ctx = metadata.get(GALILEO_OBSERVE_KEY)
+    ctx = metadata.get(SPLUNK_AO_OBSERVE_KEY)
     if ctx and isinstance(ctx, dict):
         return {str(k): str(v) for k, v in ctx.items()}
 
