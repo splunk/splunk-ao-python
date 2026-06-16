@@ -1,17 +1,34 @@
 """Tests for X-Galileo-SDK header in API calls."""
 
+from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
-from galileo.project import Project
-from galileo.projects import list_projects
 from galileo.resources.api.datasets.get_dataset_datasets_dataset_id_get import _get_kwargs as dataset_get_kwargs
 from galileo.resources.api.health.healthcheck_healthcheck_get import _get_kwargs as healthcheck_get_kwargs
 from galileo.resources.api.projects import get_all_projects_projects_all_get
-from galileo.utils.headers_data import get_package_version
+from splunk_ao.project import Project
+from splunk_ao.projects import list_projects
+from splunk_ao.utils.headers_data import get_package_version
 
 
 class TestApiHeaders:
     """Test that X-Galileo-SDK headers are properly included in API calls."""
+
+    @patch("splunk_ao.utils.headers_data.version")
+    def test_get_package_version_uses_splunk_ao_distribution(self, mock_version) -> None:
+        """Test package version lookup uses the rebranded distribution name."""
+        mock_version.return_value = "0.1.0"
+
+        assert get_package_version() == "0.1.0"
+        mock_version.assert_called_once_with("splunk-ao")
+
+    @patch("splunk_ao.utils.headers_data.version")
+    def test_get_package_version_preserves_missing_package_fallback(self, mock_version) -> None:
+        """Test missing package metadata still returns the fallback version."""
+        mock_version.side_effect = PackageNotFoundError
+
+        assert get_package_version() == "0.0.0"
+        mock_version.assert_called_once_with("splunk-ao")
 
     def test_generated_api_method_includes_sdk_header(self) -> None:
         """Test that generated API methods include the X-Galileo-SDK header with method name."""
@@ -45,7 +62,7 @@ class TestApiHeaders:
         # Version should be a string (may be empty in test environment)
         assert isinstance(version_part, str)
 
-    @patch("galileo.utils.headers_data.get_package_version")
+    @patch("splunk_ao.utils.headers_data.get_package_version")
     def test_generated_api_method_with_mocked_version(self, mock_get_version) -> None:
         """Test header includes mocked version and method name."""
         mock_get_version.return_value = "1.2.3"
@@ -78,13 +95,13 @@ class TestApiHeaders:
         with patch.object(
             get_all_projects_projects_all_get, "_get_kwargs", side_effect=capture_and_call
         ) as mock_get_kwargs:
-            # Test 1: galileo.project.Project.list()
+            # Test 1: splunk_ao.project.Project.list()
             try:
                 Project.list()
             except Exception:
                 pass  # API call might fail in test, we only care about headers
 
-            # Test 2: galileo.projects.list_projects()
+            # Test 2: splunk_ao.projects.list_projects()
             try:
                 list_projects()
             except Exception:
@@ -103,8 +120,8 @@ class TestApiHeaders:
         assert header2.startswith("galileo-python/")
 
         # But they should have different method names
-        assert "list@galileo.project" in header1.lower()
-        assert "list_projects@galileo.projects" in header2
+        assert "list@splunk_ao.project" in header1.lower()
+        assert "list_projects@splunk_ao.projects" in header2
 
         # Headers should be different
         assert header1 != header2, f"Headers should be different: '{header1}' vs '{header2}'"

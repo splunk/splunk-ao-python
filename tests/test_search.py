@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from galileo.resources.models import HTTPValidationError, LogRecordsQueryResponse, ValidationError
-from galileo.search import get_sessions, get_spans, get_traces
+from splunk_ao.search import get_sessions, get_spans, get_traces
 
 FIXED_PROJECT_ID = str(uuid4())
 
@@ -17,9 +17,9 @@ def _log_records_query_response_factory(records: list) -> LogRecordsQueryRespons
 @pytest.mark.parametrize(
     "test_function, patch_target",
     [
-        (get_spans, "galileo.search.query_spans_projects_project_id_spans_search_post.sync"),
-        (get_traces, "galileo.search.query_traces_projects_project_id_traces_search_post.sync"),
-        (get_sessions, "galileo.search.query_sessions_projects_project_id_sessions_search_post.sync"),
+        (get_spans, "splunk_ao.search.query_spans_projects_project_id_spans_search_post.sync"),
+        (get_traces, "splunk_ao.search.query_traces_projects_project_id_traces_search_post.sync"),
+        (get_sessions, "splunk_ao.search.query_sessions_projects_project_id_sessions_search_post.sync"),
     ],
 )
 class TestSearchHelpers:

@@ -5,19 +5,19 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.exceptions import NotFoundError
-from galileo.experiment import Experiment
 from galileo.resources.models import ExperimentResponse, PromptRunSettings
 from galileo.resources.models.column_category import ColumnCategory
 from galileo.resources.models.column_info import ColumnInfo
 from galileo.resources.models.data_type import DataType
-from galileo.schema.metrics import GalileoMetrics
-from galileo.search import RecordType
-from galileo.shared.base import SyncState
-from galileo.shared.column import ColumnCollection
-from galileo.shared.exceptions import ResourceNotFoundError, ValidationError
-from galileo.shared.experiment_result import ExperimentRunResult, ExperimentStatusInfo
-from galileo.shared.query_result import QueryResult
+from splunk_ao.exceptions import NotFoundError
+from splunk_ao.experiment import Experiment
+from splunk_ao.schema.metrics import SplunkAOMetrics
+from splunk_ao.search import RecordType
+from splunk_ao.shared.base import SyncState
+from splunk_ao.shared.column import ColumnCollection
+from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
+from splunk_ao.shared.experiment_result import ExperimentRunResult, ExperimentStatusInfo
+from splunk_ao.shared.query_result import QueryResult
 
 
 @pytest.fixture
@@ -107,7 +107,7 @@ class TestExperimentInitialization:
 
     def test_init_with_metrics(self, reset_configuration: None) -> None:
         """Test initializing an experiment with metrics."""
-        metrics = [GalileoMetrics.correctness, "completeness"]
+        metrics = [SplunkAOMetrics.correctness, "completeness"]
         experiment = Experiment(
             name="Test Experiment",
             dataset_name="test-dataset",
@@ -179,7 +179,7 @@ class TestExperimentInitialization:
         """Test that providing both 'prompt' and 'prompt_name' logs a warning and 'prompt' takes precedence."""
         # Given: both prompt and prompt_name provided
         # When: creating an experiment while capturing warnings on the experiment logger
-        with caplog.at_level(logging.WARNING, logger="galileo.experiment"):
+        with caplog.at_level(logging.WARNING, logger="splunk_ao.experiment"):
             experiment = Experiment(
                 name="Test Experiment",
                 dataset_name="test-dataset",
@@ -201,11 +201,11 @@ class TestExperimentInitialization:
 class TestExperimentEnvFallback:
     """Test suite for Experiment environment variable fallback behavior."""
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_uses_env_fallback_when_no_project_specified(
         self,
         mock_experiments_class: MagicMock,
@@ -219,8 +219,8 @@ class TestExperimentEnvFallback:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test create() uses Projects().get_with_env_fallbacks() when no project is specified."""
-        # Given: GALILEO_PROJECT is set so the resolver delegates to the API
-        monkeypatch.setenv("GALILEO_PROJECT", "Env Project")
+        # Given: SPLUNK_AO_PROJECT is set so the resolver delegates to the API
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "Env Project")
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = mock_project
@@ -244,7 +244,7 @@ class TestExperimentEnvFallback:
         assert experiment.project_id == mock_project.id
         assert experiment.is_synced()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_raises_named_error_when_project_name_not_found(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -264,12 +264,12 @@ class TestExperimentEnvFallback:
         with pytest.raises(ResourceNotFoundError, match=r'Project "my-nonexistent-project" not found'):
             experiment.create()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_raises_error_when_no_project_and_no_env_fallback(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test create() raises ResourceNotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -279,10 +279,10 @@ class TestExperimentEnvFallback:
         with pytest.raises(ResourceNotFoundError, match="No project specified"):
             experiment.create()
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_without_prompt_succeeds(
         self,
         mock_experiments_class: MagicMock,
@@ -320,8 +320,8 @@ class TestExperimentEnvFallback:
         assert kwargs.get("prompt_template") is None
         assert kwargs.get("prompt_settings") is None
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_get_uses_env_fallback_when_no_project_specified(
         self,
         mock_experiments_class: MagicMock,
@@ -332,8 +332,8 @@ class TestExperimentEnvFallback:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test get() uses Projects().get_with_env_fallbacks() when no project is specified."""
-        # Given: GALILEO_PROJECT is set so the resolver delegates to the API
-        monkeypatch.setenv("GALILEO_PROJECT", "Env Project")
+        # Given: SPLUNK_AO_PROJECT is set so the resolver delegates to the API
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "Env Project")
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = mock_project
@@ -349,12 +349,12 @@ class TestExperimentEnvFallback:
         mock_projects_service.get_with_env_fallbacks.assert_called_once()
         assert experiment.project_id == mock_project.id
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_raises_error_when_no_project_and_no_env_fallback(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test get() raises ResourceNotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -363,8 +363,8 @@ class TestExperimentEnvFallback:
         with pytest.raises(ResourceNotFoundError, match="No project specified"):
             Experiment.get(name="Test Experiment")
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_list_uses_env_fallback_when_no_project_specified(
         self,
         mock_experiments_class: MagicMock,
@@ -374,8 +374,8 @@ class TestExperimentEnvFallback:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test list() uses Projects().get_with_env_fallbacks() when no project is specified."""
-        # Given: GALILEO_PROJECT is set so the resolver delegates to the API
-        monkeypatch.setenv("GALILEO_PROJECT", "Env Project")
+        # Given: SPLUNK_AO_PROJECT is set so the resolver delegates to the API
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "Env Project")
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = mock_project
@@ -391,12 +391,12 @@ class TestExperimentEnvFallback:
         mock_projects_service.get_with_env_fallbacks.assert_called_once()
         assert experiments == []
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_raises_error_when_no_project_and_no_env_fallback(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test list() raises ResourceNotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -405,7 +405,7 @@ class TestExperimentEnvFallback:
         with pytest.raises(ResourceNotFoundError, match="No project specified"):
             Experiment.list()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_no_project_no_env_does_not_leak_value_error(
         self, mock_projects_class: MagicMock, reset_configuration: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -418,8 +418,8 @@ class TestExperimentEnvFallback:
         documented ``NotFoundError``. The shared ``_resolve_project`` fixes this.
         """
         # Given: env vars are unset
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
-        monkeypatch.delenv("GALILEO_PROJECT_ID", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
 
         # When/Then: NotFoundError is raised without instantiating Projects or leaking ValueError
         with pytest.raises(ResourceNotFoundError, match="No project specified"):
@@ -430,11 +430,11 @@ class TestExperimentEnvFallback:
 class TestExperimentCreate:
     """Test suite for Experiment.create() method."""
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_persists_and_triggers_experiment(
         self,
         mock_experiments_class: MagicMock,
@@ -480,11 +480,11 @@ class TestExperimentCreate:
         assert experiment.is_synced()
         assert experiment._run_result is not None
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_handles_existing_experiment_with_timestamp(
         self,
         mock_experiments_class: MagicMock,
@@ -526,11 +526,11 @@ class TestExperimentCreate:
         assert "Test Experiment" in call_args.kwargs["name"]
         assert call_args.kwargs["name"] != "Test Experiment"
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_handles_api_failure(
         self,
         mock_experiments_class: MagicMock,
@@ -568,11 +568,11 @@ class TestExperimentCreate:
 
         assert experiment.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_fills_default_prompt_settings_for_prompt_template(
         self,
         mock_experiments_class: MagicMock,
@@ -621,11 +621,11 @@ class TestExperimentCreate:
         assert call_kwargs["prompt_settings"].temperature == 0.8
         assert call_kwargs["prompt_settings"].max_tokens == 256
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_preserves_user_prompt_settings_when_overriding_model_alias(
         self,
         mock_experiments_class: MagicMock,
@@ -678,11 +678,11 @@ class TestExperimentCreate:
         assert effective.max_tokens == 123
         assert effective.top_p == 0.9
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_treats_not_found_as_no_existing_experiment(
         self,
         mock_experiments_class: MagicMock,
@@ -732,8 +732,8 @@ class TestExperimentCreate:
 class TestExperimentGet:
     """Test suite for Experiment.get() class method."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_get_retrieves_experiment_by_name(
         self,
         mock_experiments_class: MagicMock,
@@ -762,8 +762,8 @@ class TestExperimentGet:
         assert experiment.is_synced()
         assert experiment.project_id == mock_project.id
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_get_returns_none_when_not_found(
         self,
         mock_experiments_class: MagicMock,
@@ -791,8 +791,8 @@ class TestExperimentGet:
 class TestExperimentList:
     """Test suite for Experiment.list() class method."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_list_retrieves_all_experiments(
         self,
         mock_experiments_class: MagicMock,
@@ -859,7 +859,7 @@ class TestExperimentRun:
         assert isinstance(run_result, ExperimentRunResult)
         assert run_result.link == "http://test.com/results"
 
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_run_returns_fallback_result_when_no_stored_result(
         self, mock_experiments_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -891,11 +891,11 @@ class TestExperimentRun:
         with pytest.raises(ValueError, match="Experiment must be created before running"):
             experiment.run()
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_run_raises_error_on_second_call_after_result_consumed(
         self,
         mock_experiments_class: MagicMock,
@@ -940,11 +940,11 @@ class TestExperimentRun:
         with pytest.raises(ValueError, match="has already been run"):
             experiment.run()
 
-    @patch("galileo.experiment.create_metric_configs")
-    @patch("galileo.experiment.get_prompt")
-    @patch("galileo.experiment.load_dataset_and_records")
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.experiment.ExperimentsService")
+    @patch("splunk_ao.experiment.create_metric_configs")
+    @patch("splunk_ao.experiment.get_prompt")
+    @patch("splunk_ao.experiment.load_dataset_and_records")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.experiment.ExperimentsService")
     def test_create_run_create_run_resets_consumed_flag(
         self,
         mock_experiments_class: MagicMock,
@@ -999,7 +999,7 @@ class TestExperimentRun:
 class TestExperimentQuery:
     """Test suite for Experiment query methods."""
 
-    @patch("galileo.experiment.Search")
+    @patch("splunk_ao.experiment.Search")
     def test_query_returns_query_result(
         self, mock_search_class: MagicMock, synced_experiment: Experiment, reset_configuration: None
     ) -> None:
@@ -1030,7 +1030,7 @@ class TestExperimentQuery:
 class TestExperimentRelationships:
     """Test suite for Experiment relationship properties."""
 
-    @patch("galileo.project.Project")
+    @patch("splunk_ao.project.Project")
     def test_project_property_returns_project(
         self,
         mock_project_class: MagicMock,
@@ -1061,8 +1061,8 @@ class TestExperimentRelationships:
 class TestExperimentLifecycle:
     """Test suite for Experiment lifecycle methods (refresh, delete)."""
 
-    @patch("galileo.experiment.GalileoPythonConfig")
-    @patch("galileo.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
+    @patch("splunk_ao.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
     def test_refresh_updates_attributes(
         self,
         mock_get_experiment_api: MagicMock,
@@ -1107,8 +1107,8 @@ class TestExperimentLifecycle:
         assert synced_experiment._experiment_response is mock_experiment_response
         assert synced_experiment.is_synced()
 
-    @patch("galileo.experiment.GalileoPythonConfig")
-    @patch("galileo.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
+    @patch("splunk_ao.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
     def test_refresh_sets_failed_sync_on_not_found(
         self,
         mock_get_experiment_api: MagicMock,
@@ -1128,8 +1128,8 @@ class TestExperimentLifecycle:
 
         assert synced_experiment.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.experiment.GalileoPythonConfig")
-    @patch("galileo.experiment.delete_experiment_projects_project_id_experiments_experiment_id_delete")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
+    @patch("splunk_ao.experiment.delete_experiment_projects_project_id_experiments_experiment_id_delete")
     def test_delete_removes_experiment(
         self,
         mock_delete_api: MagicMock,
@@ -1165,7 +1165,7 @@ class TestExperimentQueryMethods:
         "method_name,record_type",
         [("get_traces", RecordType.TRACE), ("get_sessions", RecordType.SESSION), ("get_spans", RecordType.SPAN)],
     )
-    @patch("galileo.experiment.Search")
+    @patch("splunk_ao.experiment.Search")
     def test_query_convenience_methods(
         self,
         mock_search_class: MagicMock,
@@ -1211,7 +1211,7 @@ class TestExperimentPromptMethods:
         synced_experiment.set_prompt(**kwargs)
         assert getattr(synced_experiment, expected_attr) == expected_value
 
-    @patch("galileo.experiment.get_prompt")
+    @patch("splunk_ao.experiment.get_prompt")
     def test_get_prompt_template_settings(
         self, mock_get_prompt: MagicMock, synced_experiment: Experiment, reset_configuration: None
     ) -> None:
@@ -1235,7 +1235,7 @@ class TestExperimentStatusMethods:
     """Test suite for Experiment status methods."""
 
     @pytest.mark.parametrize("has_records,expected_result", [(True, True), (False, False)])
-    @patch("galileo.experiment.Search")
+    @patch("splunk_ao.experiment.Search")
     def test_has_traces(
         self,
         mock_search_class: MagicMock,
@@ -1255,8 +1255,8 @@ class TestExperimentStatusMethods:
 
         assert synced_experiment.has_traces() is expected_result
 
-    @patch("galileo.experiment.GalileoPythonConfig")
-    @patch("galileo.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
+    @patch("splunk_ao.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
     def test_get_status_returns_status_info(
         self,
         mock_get_experiment_api: MagicMock,
@@ -1379,7 +1379,7 @@ class TestMetricAggregates:
         assert result[scorer_uuid].avg == 0.85
         assert "cost" in result
 
-    @patch("galileo.experiment._logger")
+    @patch("splunk_ao.experiment._logger")
     def test_aggregate_metrics_logs_deprecation_warning(
         self, mock_logger: MagicMock, synced_experiment: Experiment, reset_configuration: None
     ) -> None:
@@ -1402,8 +1402,8 @@ class TestMetricAggregates:
 class TestMetricColumns:
     """Tests for Experiment.experiment_columns."""
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_experiment_columns_returns_column_collection(
         self,
         mock_config_class: MagicMock,
@@ -1492,13 +1492,13 @@ class TestGetMetricAggregate:
         synced_experiment._experiment_response = mock_response
 
         # When: getting a metric aggregate
-        result = synced_experiment.get_metric_aggregate(GalileoMetrics.correctness)
+        result = synced_experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
 
         # Then: None is returned without error
         assert result is None
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_lookup_by_galileo_metrics_enum(
         self,
         mock_config_class: MagicMock,
@@ -1513,15 +1513,15 @@ class TestGetMetricAggregate:
         )
         mock_config_class.get.return_value = MagicMock()
 
-        # When: looking up by GalileoMetrics enum (value == label "Correctness")
-        result = experiment.get_metric_aggregate(GalileoMetrics.correctness)
+        # When: looking up by SplunkAOMetrics enum (value == label "Correctness")
+        result = experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
 
         # Then: the aggregate for the scorer UUID is returned
         assert result is not None
         assert result.avg == 0.85
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_lookup_by_label_string(
         self,
         mock_config_class: MagicMock,
@@ -1543,8 +1543,8 @@ class TestGetMetricAggregate:
         assert result is not None
         assert result.avg == 0.85
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_lookup_by_metric_key_alias(
         self,
         mock_config_class: MagicMock,
@@ -1577,8 +1577,8 @@ class TestGetMetricAggregate:
         assert result is not None
         assert result.avg == 0.85
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_returns_none_for_unknown_metric(
         self,
         mock_config_class: MagicMock,
@@ -1599,8 +1599,8 @@ class TestGetMetricAggregate:
         # Then: None is returned
         assert result is None
 
-    @patch("galileo.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_label_takes_priority_over_alias(
         self,
         mock_config_class: MagicMock,
@@ -1651,9 +1651,9 @@ class TestGetMetricAggregate:
 class TestExperimentTagging:
     """Test suite for Experiment tagging functionality."""
 
-    @patch("galileo.experiment.GalileoPythonConfig")
-    @patch("galileo.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
-    @patch("galileo.experiment.upsert_experiment_tag")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
+    @patch("splunk_ao.experiment.get_experiment_projects_project_id_experiments_experiment_id_get")
+    @patch("splunk_ao.experiment.upsert_experiment_tag")
     def test_add_tag_upserts_tag(
         self,
         mock_upsert_tag: MagicMock,
@@ -1708,7 +1708,7 @@ class TestExperimentColumns:
             ("session_columns", "sessions_available_columns_projects_project_id_sessions_available_columns_post"),
         ],
     )
-    @patch("galileo.experiment.GalileoPythonConfig")
+    @patch("splunk_ao.experiment.SplunkAOConfig")
     def test_column_properties_return_collection(
         self,
         mock_config_class: MagicMock,
@@ -1722,7 +1722,7 @@ class TestExperimentColumns:
         mock_config_class.get.return_value = mock_config
 
         # Patch the specific API function
-        with patch(f"galileo.experiment.{api_function}") as mock_api:
+        with patch(f"splunk_ao.experiment.{api_function}") as mock_api:
             mock_response = MagicMock()
             mock_response.columns = []
             mock_api.sync.return_value = mock_response

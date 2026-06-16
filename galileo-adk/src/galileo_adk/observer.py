@@ -10,10 +10,11 @@ from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
-from galileo import splunk_ao_context
-from galileo.handlers.base_handler import GalileoBaseHandler
-from galileo.schema.trace import TracesIngestRequest
-from galileo.utils.serialization import serialize_to_str
+from splunk_ao import splunk_ao_context
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.schema.trace import TracesIngestRequest
+from splunk_ao.utils.serialization import serialize_to_str
+
 from galileo_adk.data_converters import (
     convert_adk_content_to_splunk_ao_messages,
     convert_adk_tools_to_splunk_ao_format,
@@ -147,7 +148,7 @@ class GalileoObserver:
         if ingestion_hook:
             trace_builder = TraceBuilder(ingestion_hook=ingestion_hook)
             self._trace_builder = trace_builder
-            self._handler = GalileoBaseHandler(
+            self._handler = SplunkAOBaseHandler(
                 galileo_logger=trace_builder,  # type: ignore[arg-type]
                 start_new_trace=True,
                 flush_on_chain_end=True,
@@ -156,7 +157,7 @@ class GalileoObserver:
         else:
             self._trace_builder = None
             galileo_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
-            self._handler = GalileoBaseHandler(
+            self._handler = SplunkAOBaseHandler(
                 galileo_logger=galileo_logger,
                 start_new_trace=True,
                 flush_on_chain_end=True,
@@ -170,7 +171,7 @@ class GalileoObserver:
         self._session_root_invocation: dict[str, str] = {}
 
     @property
-    def handler(self) -> GalileoBaseHandler:
+    def handler(self) -> SplunkAOBaseHandler:
         """Access the underlying handler."""
         return self._handler
 

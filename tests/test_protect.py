@@ -3,8 +3,6 @@ from uuid import uuid4
 
 from pytest import mark
 
-from galileo.handlers.langchain.tool import ProtectTool
-from galileo.protect import Protect, ainvoke_protect, invoke_protect
 from galileo.resources.models.execution_status import ExecutionStatus as APIExecutionStatus
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.protect_request import ProtectRequest as APIRequest
@@ -16,6 +14,8 @@ from galileo_core.schemas.protect.request import Request
 from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.protect.rule import Rule, RuleOperator
 from galileo_core.schemas.protect.ruleset import Ruleset
+from splunk_ao.handlers.langchain.tool import ProtectTool
+from splunk_ao.protect import Protect, ainvoke_protect, invoke_protect
 
 A_PROJECT_NAME = "project_name"
 A_STAGE_NAME = "stage_name"
@@ -98,7 +98,7 @@ def invoke_response() -> APIResponse:
         Payload(input=A_PROTECT_INPUT, output=A_PROTECT_INPUT),
     ],
 )
-@patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+@patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
 class TestAInvoke:
     @mark.asyncio
     async def test_ainvoke_success(
@@ -170,7 +170,7 @@ class TestAInvoke:
 # ---------------------------------------------------------------------------
 class TestAInvokePassThrough:
     @mark.parametrize("timeout", [5, 60])
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_ainvoke_forwards_timeout(self, mock_invoke_post_async: AsyncMock, timeout: float) -> None:
         mock_invoke_post_async.return_value = invoke_response()
@@ -188,7 +188,7 @@ class TestAInvokePassThrough:
         assert body.timeout == timeout
 
     @mark.parametrize("metadata", [None, {"key": "value"}])
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_ainvoke_forwards_metadata(self, mock_invoke_post_async: AsyncMock, metadata: dict | None) -> None:
         mock_invoke_post_async.return_value = invoke_response()
@@ -209,7 +209,7 @@ class TestAInvokePassThrough:
             assert body.metadata.additional_properties == metadata
 
     @mark.parametrize("headers", [None, {"key": "value"}])
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_ainvoke_forwards_headers(self, mock_invoke_post_async: AsyncMock, headers: dict | None) -> None:
         mock_invoke_post_async.return_value = invoke_response()
@@ -230,7 +230,7 @@ class TestAInvokePassThrough:
             assert body.headers.additional_properties == headers
 
     @mark.parametrize("stage_version", [None, 1, 2])
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_ainvoke_forwards_stage_version(
         self, mock_invoke_post_async: AsyncMock, stage_version: int | None
@@ -278,7 +278,7 @@ class TestAInvokePassThrough:
     ],
 )
 class TestInvoke:
-    @patch("galileo.protect.ainvoke_protect")
+    @patch("splunk_ao.protect.ainvoke_protect")
     def test_invoke_success(
         self,
         mock_ainvoke_protect: Mock,
@@ -288,7 +288,7 @@ class TestInvoke:
         include_stage_id: bool,
         payload: Payload,
     ) -> None:
-        with patch("galileo.protect.async_run") as mock_async_run:
+        with patch("splunk_ao.protect.async_run") as mock_async_run:
             project_id = uuid4() if include_project_id else None
             project_name = A_PROJECT_NAME if include_project_name else None
             stage_id = uuid4() if include_stage_id else None
@@ -320,7 +320,7 @@ class TestInvoke:
                 headers=DEFAULT_HEADERS,
             )
 
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_langchain_tool(
         self,
@@ -371,36 +371,36 @@ class TestInvoke:
 # ---------------------------------------------------------------------------
 class TestInvokePassThrough:
     @mark.parametrize("timeout", [5, 60])
-    @patch("galileo.protect.ainvoke_protect")
+    @patch("splunk_ao.protect.ainvoke_protect")
     def test_invoke_forwards_timeout(self, mock_ainvoke_protect: Mock, timeout: float) -> None:
-        with patch("galileo.protect.async_run"):
+        with patch("splunk_ao.protect.async_run"):
             invoke_protect(
                 payload=Payload(input=A_PROTECT_INPUT), stage_id=uuid4(), stage_name=A_STAGE_NAME, timeout=timeout
             )
             assert mock_ainvoke_protect.call_args.kwargs["timeout"] == timeout
 
     @mark.parametrize("metadata", [None, {"key": "value"}])
-    @patch("galileo.protect.ainvoke_protect")
+    @patch("splunk_ao.protect.ainvoke_protect")
     def test_invoke_forwards_metadata(self, mock_ainvoke_protect: Mock, metadata: dict | None) -> None:
-        with patch("galileo.protect.async_run"):
+        with patch("splunk_ao.protect.async_run"):
             invoke_protect(
                 payload=Payload(input=A_PROTECT_INPUT), stage_id=uuid4(), stage_name=A_STAGE_NAME, metadata=metadata
             )
             assert mock_ainvoke_protect.call_args.kwargs["metadata"] == metadata
 
     @mark.parametrize("headers", [None, {"key": "value"}])
-    @patch("galileo.protect.ainvoke_protect")
+    @patch("splunk_ao.protect.ainvoke_protect")
     def test_invoke_forwards_headers(self, mock_ainvoke_protect: Mock, headers: dict | None) -> None:
-        with patch("galileo.protect.async_run"):
+        with patch("splunk_ao.protect.async_run"):
             invoke_protect(
                 payload=Payload(input=A_PROTECT_INPUT), stage_id=uuid4(), stage_name=A_STAGE_NAME, headers=headers
             )
             assert mock_ainvoke_protect.call_args.kwargs["headers"] == headers
 
     @mark.parametrize("stage_version", [None, 1, 2])
-    @patch("galileo.protect.ainvoke_protect")
+    @patch("splunk_ao.protect.ainvoke_protect")
     def test_invoke_forwards_stage_version(self, mock_ainvoke_protect: Mock, stage_version: int | None) -> None:
-        with patch("galileo.protect.async_run"):
+        with patch("splunk_ao.protect.async_run"):
             invoke_protect(
                 payload=Payload(input=A_PROTECT_INPUT),
                 stage_id=uuid4(),
@@ -409,7 +409,7 @@ class TestInvokePassThrough:
             )
             assert mock_ainvoke_protect.call_args.kwargs["stage_version"] == stage_version
 
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_langchain_tool_forwards_timeout(self, mock_invoke_post_async: AsyncMock) -> None:
         mock_invoke_post_async.return_value = invoke_response()
@@ -420,7 +420,7 @@ class TestInvokePassThrough:
         assert body.timeout == 60
 
     @mark.parametrize("stage_version", [None, 1, 2])
-    @patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+    @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
     async def test_langchain_tool_forwards_stage_version(
         self, mock_invoke_post_async: AsyncMock, stage_version: int | None
@@ -435,7 +435,7 @@ class TestInvokePassThrough:
         assert body.stage_version == stage_version
 
 
-@patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+@patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
 @mark.asyncio
 async def test_invoke_with_rulesets(mock_invoke_post_async: Mock) -> None:
     mock_invoke_post_async.return_value = invoke_response()
@@ -460,7 +460,7 @@ async def test_invoke_with_rulesets(mock_invoke_post_async: Mock) -> None:
     assert "rulesets" not in body.additional_properties
 
 
-@patch("galileo.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
+@patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
 @mark.asyncio
 async def test_invoke_api_validation_error(mock_invoke_post_async: Mock) -> None:
     error_detail_item = {"loc": ["body", "payload", "input"], "msg": "Field required", "type": "missing"}

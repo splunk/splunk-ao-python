@@ -1,23 +1,29 @@
 [project]
-name = "galileo"
-version = "2.3.0"
-description = "Client library for the Galileo platform."
-authors = [{ name = "Galileo Technologies Inc.", email = "team@galileo.ai" }]
+name = "splunk-ao"
+version = "0.1.0"
+description = "Splunk Agent Observability SDK for Python."
+authors = [{ name = "Splunk Inc." }]
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
 dynamic = ["dependencies"]
 license = "Apache-2.0"
 
 [project.urls]
-Repository = "https://github.com/rungalileo/galileo-python"
+Repository = "https://github.com/splunk/splunk-ao-python"
+
+[tool.poetry]
+packages = [
+    { include = "splunk_ao", from = "src" },
+    { include = "galileo", from = "src" },
+]
 
 [project.optional-dependencies]
 langchain = ["langchain-core", "langchain"]
 openai = ["openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)"]
 crewai = ["crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
 middleware = ["starlette"]
-otel = ["opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)"]
-all = ["langchain-core", "langchain", "openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)", "opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
+otel = ["opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)", "grpcio (>=1.80.0,<2.0.0)"]
+all = ["langchain-core", "langchain", "openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)", "opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)", "grpcio (>=1.80.0,<2.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
 
 
 
@@ -42,6 +48,10 @@ typing-extensions = { version = ">=4.5.0" }
 opentelemetry-sdk = { version = "^1.38.0", optional = true }
 opentelemetry-api = { version = "^1.38.0", optional = true }
 opentelemetry-exporter-otlp = { version = "^1.38.0", optional = true }
+# Explicit lower bound ensures pre-built cp314 wheels are available (1.80.0+).
+# Without this, resolvers could pick grpcio<1.80.0 which has no cp314 wheels,
+# forcing source compilation (~20 min) on Python 3.14 CI runners.
+grpcio = { version = ">=1.80.0,<2.0.0", optional = true }
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.4.0"
@@ -63,6 +73,7 @@ time-machine = "^2.17.0"  # freezegun causes problems with pydantic model valida
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.0.1"
 mypy = "^1.16.0"
+invoke = "^2.2.0"
 openai = ">=2.8.0,<3.0.0"
 fastapi = "^0.115.0"
 ruff = "^0.12.3"
@@ -78,7 +89,7 @@ pythonpath = ["./src/"]
 # Note: Some env vars are also set in conftest.py for pytest-xdist compatibility
 # on Python 3.14+. This section remains for documentation and older Python support.
 env = [
-    "GALILEO_CONSOLE_URL=http://localtest:8088",
+    "GALILEO_CONSOLE_URL=http://fake.test:8088",
     "GALILEO_API_KEY=api-1234567890",
     "GALILEO_PROJECT=test-project",
     "GALILEO_LOG_STREAM=test-log-stream",
@@ -258,13 +269,13 @@ ignore = [
     "D",        # All docstring rules (scripts are utility tools)
 ]
 # Allow local imports in these files (needed to avoid circular dependencies or conditional imports)
-"src/galileo/utils/prompts.py" = ["PLC0415"]
-"src/galileo/utils/datasets.py" = ["PLC0415"]
-"src/galileo/utils/serialization.py" = ["PLC0415"]  # Optional dependency conditional imports
-"src/galileo/handlers/crewai/handler.py" = ["PLC0415"]  # Version-specific conditional imports
-"src/galileo/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
-"src/galileo/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
-"src/galileo/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
+"src/splunk_ao/utils/prompts.py" = ["PLC0415"]
+"src/splunk_ao/utils/datasets.py" = ["PLC0415"]
+"src/splunk_ao/utils/serialization.py" = ["PLC0415"]  # Optional dependency conditional imports
+"src/splunk_ao/handlers/crewai/handler.py" = ["PLC0415"]  # Version-specific conditional imports
+"src/splunk_ao/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
+"src/splunk_ao/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
+"src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
 
 [tool.ruff.lint.isort]
 known-first-party = ["galileo_core"]
@@ -321,7 +332,7 @@ sqlite_cache = true
 # Release.
 
 [tool.semantic_release]
-version_variables = ["src/galileo/__init__.py:__version__"]
+version_variables = ["src/splunk_ao/__init__.py:__version__"]
 version_toml = ["pyproject.toml:project.version"]
 version_source = "tag"
 commit_message = "chore(release): v{version}\n\nAutomatically generated by python-semantic-release"

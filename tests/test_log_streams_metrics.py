@@ -4,12 +4,12 @@ from uuid import UUID
 
 import pytest
 
-from galileo.log_streams import LogStream, LogStreams, enable_metrics
-from galileo.projects import Project
 from galileo.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
 from galileo.resources.models.log_stream_response import LogStreamResponse
-from galileo.schema.metrics import GalileoMetrics, LocalMetricConfig
-from galileo.utils.metrics import create_metric_configs
+from splunk_ao.log_streams import LogStream, LogStreams, enable_metrics
+from splunk_ao.projects import Project
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
+from splunk_ao.utils.metrics import create_metric_configs
 
 
 @pytest.fixture(autouse=True)
@@ -17,7 +17,7 @@ def reset_env_vars():
     """Reset environment variables before each test and restore after."""
     saved = {
         k: os.environ.pop(k, None)
-        for k in ("GALILEO_PROJECT", "GALILEO_PROJECT_ID", "GALILEO_LOG_STREAM", "GALILEO_LOG_STREAM_ID")
+        for k in ("SPLUNK_AO_PROJECT", "SPLUNK_AO_PROJECT_ID", "SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID")
     }
     yield
     for k, v in saved.items():
@@ -78,8 +78,8 @@ def mock_scorers():
 class TestLogStreamMetrics:
     """Test cases for log stream metrics functionality."""
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_create_metric_configs_with_builtin_metrics(
         self, mock_scorer_settings_class, mock_scorers_class, mock_scorers
     ) -> None:
@@ -90,7 +90,7 @@ class TestLogStreamMetrics:
 
         # Test with built-in metrics
         scorers, local_metrics = create_metric_configs(
-            "project-123", "logstream-456", [GalileoMetrics.correctness, "completeness"]
+            "project-123", "logstream-456", [SplunkAOMetrics.correctness, "completeness"]
         )
 
         # Verify scorers list_by_labels was called
@@ -104,8 +104,8 @@ class TestLogStreamMetrics:
         # Verify no local metrics
         assert len(local_metrics) == 0
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_create_metric_configs_with_local_metrics(self, mock_scorer_settings, mock_scorers_class) -> None:
         """Test create_metric_configs with local metric configs."""
 
@@ -126,8 +126,8 @@ class TestLogStreamMetrics:
         assert local_metrics[0].name == "custom_metric"
         assert len(scorers) == 0
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_create_metric_configs_with_mixed_metrics(
         self, mock_scorer_settings_class, mock_scorers_class, mock_scorers
     ) -> None:
@@ -143,7 +143,7 @@ class TestLogStreamMetrics:
 
         # Test with mixed metrics (only valid ones to avoid decorator error handling)
         scorers, local_metrics = create_metric_configs(
-            "project-123", "logstream-456", [GalileoMetrics.correctness, local_metric]
+            "project-123", "logstream-456", [SplunkAOMetrics.correctness, local_metric]
         )
 
         # Verify local metrics
@@ -155,7 +155,7 @@ class TestLogStreamMetrics:
 
     def test_log_stream_enable_metrics_instance_method(self, mock_log_stream) -> None:
         """Test LogStream instance enable_metrics method."""
-        with patch("galileo.log_streams.create_metric_configs") as mock_create_configs:
+        with patch("splunk_ao.log_streams.create_metric_configs") as mock_create_configs:
             mock_create_configs.return_value = ([], [])
 
             # Test instance method
@@ -174,9 +174,9 @@ class TestLogStreamMetrics:
         with pytest.raises(ValueError, match="Log stream must have id and project_id to enable metrics"):
             log_stream.enable_metrics(["correctness"])
 
-    @patch("galileo.log_streams.Projects")
+    @patch("splunk_ao.log_streams.Projects")
     @patch.object(LogStreams, "get")
-    @patch("galileo.log_streams.create_metric_configs")
+    @patch("splunk_ao.log_streams.create_metric_configs")
     def test_logstreams_enable_metrics_with_explicit_params(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
@@ -206,8 +206,8 @@ class TestLogStreamMetrics:
         assert local_metrics == []
 
     @patch.object(LogStreams, "get")
-    @patch("galileo.log_streams.create_metric_configs")
-    @patch("galileo.projects.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.log_streams.create_metric_configs")
+    @patch("splunk_ao.projects.Projects.get_with_env_fallbacks")
     def test_logstreams_enable_metrics_gets_project_correctly(
         self, mock_get_with_env_fallbacks, mock_create_configs, mock_get, mock_log_stream, mock_project
     ) -> None:
@@ -232,16 +232,16 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("galileo.log_streams.Projects")
+    @patch("splunk_ao.log_streams.Projects")
     @patch.object(LogStreams, "get")
-    @patch("galileo.log_streams.create_metric_configs")
+    @patch("splunk_ao.log_streams.create_metric_configs")
     def test_logstreams_enable_metrics_with_env_vars(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
         """Test LogStreams.enable_metrics with environment variables."""
         # Set environment variables
-        os.environ["GALILEO_PROJECT"] = "Test Project"
-        os.environ["GALILEO_LOG_STREAM"] = "Test Log Stream"
+        os.environ["SPLUNK_AO_PROJECT"] = "Test Project"
+        os.environ["SPLUNK_AO_LOG_STREAM"] = "Test Log Stream"
 
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value
@@ -262,7 +262,7 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("galileo.log_streams.Projects")
+    @patch("splunk_ao.log_streams.Projects")
     def test_logstreams_enable_metrics_project_not_found(self, mock_projects_class) -> None:
         """Test LogStreams.enable_metrics raises ValueError when project not found."""
         # Setup mock to return None
@@ -278,7 +278,7 @@ class TestLogStreamMetrics:
 
         assert "Project 'Nonexistent Project' not found" in str(exc_info.value)
 
-    @patch("galileo.log_streams.Projects")
+    @patch("splunk_ao.log_streams.Projects")
     @patch.object(LogStreams, "get")
     def test_logstreams_enable_metrics_logstream_not_found(self, mock_get, mock_projects_class, mock_project) -> None:
         """Test LogStreams.enable_metrics raises ValueError when log stream not found."""
@@ -328,16 +328,16 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("galileo.log_streams.Projects")
+    @patch("splunk_ao.log_streams.Projects")
     @patch.object(LogStreams, "get")
-    @patch("galileo.log_streams.create_metric_configs")
+    @patch("splunk_ao.log_streams.create_metric_configs")
     def test_enable_metrics_with_env_vars_integration(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
         """Test enable_metrics function with environment variables (integration test)."""
         # Set environment variables
-        os.environ["GALILEO_PROJECT"] = "Integration Project"
-        os.environ["GALILEO_LOG_STREAM"] = "Integration Stream"
+        os.environ["SPLUNK_AO_PROJECT"] = "Integration Project"
+        os.environ["SPLUNK_AO_LOG_STREAM"] = "Integration Stream"
 
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value
@@ -361,7 +361,7 @@ class TestLogStreamMetrics:
     def test_enable_metrics_missing_env_vars(self) -> None:
         """Test enable_metrics raises ValueError when environment variables are missing."""
         # Don't set any environment variables
-        with patch("galileo.log_streams.Projects") as mock_projects_class:
+        with patch("splunk_ao.log_streams.Projects") as mock_projects_class:
             mock_projects_instance = mock_projects_class.return_value
             mock_projects_instance.get_with_env_fallbacks.return_value = None
 
@@ -376,8 +376,8 @@ class TestLogStreamMetrics:
 class TestCreateMetricConfigsRouting:
     """Tests for metric type routing in create_metric_configs."""
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_uuid_string_routes_through_list_by_ids(self, mock_settings_class, mock_scorers_class) -> None:
         """UUID strings are routed through list_by_ids, not list_by_labels."""
         # Given: a scorer resolved via list_by_ids
@@ -402,8 +402,8 @@ class TestCreateMetricConfigsRouting:
         mock_scorers_class.return_value.list_by_labels.assert_not_called()
         assert len(scorers) == 1
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_mixed_uuid_and_label(self, mock_settings_class, mock_scorers_class) -> None:
         """Mix of UUID + enum routes through both list_by_ids and list_by_labels."""
         # Given: scorers resolved via both lookup methods
@@ -431,14 +431,14 @@ class TestCreateMetricConfigsRouting:
         mock_settings_class.return_value.create.return_value = None
 
         # When: passing both a UUID and an enum
-        scorers, _ = create_metric_configs("project-123", "run-456", [scorer_id, GalileoMetrics.completeness])
+        scorers, _ = create_metric_configs("project-123", "run-456", [scorer_id, SplunkAOMetrics.completeness])
 
         # Then: both lookup methods are called
         mock_scorers_class.return_value.list_by_ids.assert_called_once()
         mock_scorers_class.return_value.list_by_labels.assert_called_once()
         assert len(scorers) == 2
 
-    @patch("galileo.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.Scorers")
     def test_unknown_uuid_raises_value_error(self, mock_scorers_class) -> None:
         """UUID string that doesn't match any scorer raises ValueError."""
         # Given: no scorers match the UUID
@@ -448,8 +448,8 @@ class TestCreateMetricConfigsRouting:
         with pytest.raises(ValueError, match="non-existent"):
             create_metric_configs("project-123", "run-456", ["00000000-0000-0000-0000-000000000099"])
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_run_id_none_skips_registration(self, mock_settings_class, mock_scorers_class) -> None:
         """When run_id is None (trigger=True flow), ScorerSettings.create is not called."""
         # Given: scorers resolved via labels
@@ -465,7 +465,7 @@ class TestCreateMetricConfigsRouting:
         ]
 
         # When: run_id is None
-        scorers, _ = create_metric_configs("project-123", None, [GalileoMetrics.correctness])
+        scorers, _ = create_metric_configs("project-123", None, [SplunkAOMetrics.correctness])
 
         # Then: scorers are returned but registration is skipped
         mock_settings_class.return_value.create.assert_not_called()

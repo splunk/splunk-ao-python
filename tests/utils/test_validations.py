@@ -1,6 +1,6 @@
 import pytest
 
-from galileo.utils.validations import ValidationError, require_exactly_one
+from splunk_ao.utils.validations import ValidationError, require_exactly_one
 
 
 class TestRequireExactlyOne:

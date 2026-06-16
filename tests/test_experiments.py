@@ -11,21 +11,9 @@ from uuid import UUID
 import pytest
 from time_machine import travel
 
-import galileo.experiments
-import galileo.jobs
-import galileo.utils.datasets
-from galileo import splunk_ao_context
-from galileo.decorator import SPAN_TYPE
-from galileo.experiments import (
-    Experiments,
-    create_experiment,
-    get_experiment,
-    get_experiments,
-    list_experiment_groups,
-    run_experiment,
-)
-from galileo.projects import Project
-from galileo.prompts import PromptTemplate
+import splunk_ao.experiments
+import splunk_ao.jobs
+import splunk_ao.utils.datasets
 from galileo.resources.models import (
     BasePromptTemplateResponse,
     BasePromptTemplateVersionResponse,
@@ -44,21 +32,33 @@ from galileo.resources.models import (
     ValidationError,
 )
 from galileo.resources.types import UNSET
-from galileo.schema.datasets import DatasetRecord
-from galileo.schema.experiment_group import ExperimentGroupResponse
-from galileo.schema.metrics import GalileoMetrics, LocalMetricConfig
-from galileo.utils.datasets import load_dataset_and_records
-from galileo.utils.exceptions import _format_http_validation_error
 from galileo_core.schemas.logging.span import Span, StepWithChildSpans
 from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao import splunk_ao_context
+from splunk_ao.decorator import SPAN_TYPE
+from splunk_ao.experiments import (
+    Experiments,
+    create_experiment,
+    get_experiment,
+    get_experiments,
+    list_experiment_groups,
+    run_experiment,
+)
+from splunk_ao.projects import Project
+from splunk_ao.prompts import PromptTemplate
+from splunk_ao.schema.datasets import DatasetRecord
+from splunk_ao.schema.experiment_group import ExperimentGroupResponse
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
+from splunk_ao.utils.datasets import load_dataset_and_records
+from splunk_ao.utils.exceptions import _format_http_validation_error
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 @pytest.fixture
 def reset_context(auto_use=True) -> None:
     splunk_ao_context.reset()
-    os.environ.pop("GALILEO_PROJECT", None)
-    os.environ.pop("GALILEO_PROJECT_ID", None)
+    os.environ.pop("SPLUNK_AO_PROJECT", None)
+    os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
 
 
 def project():
@@ -167,7 +167,7 @@ def mock_scorer_version_response():
 
 
 class TestExperiments:
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_create(self, galileo_resources_api_create_experiment: Mock) -> None:
         now = datetime(2020, 1, 1).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         galileo_resources_api_create_experiment.sync = Mock(
@@ -187,7 +187,7 @@ class TestExperiments:
         assert experiment.project_id == "test"
         galileo_resources_api_create_experiment.sync.assert_called_once_with(project_id="test", client=ANY, body=ANY)
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_create_raises_value_error_with_clear_message_on_invalid_model_alias(
         self, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -213,7 +213,7 @@ class TestExperiments:
                 project_id="test", name="test_experiment", prompt_settings=PromptRunSettings(model_alias="gpt-4o-mini")
             )
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_create_error_message_contains_field_and_msg_on_422(
         self, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -240,7 +240,7 @@ class TestExperiments:
         assert "model_alias" in msg
         assert "gpt-4o-mini" in msg
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_create_raises_value_error_when_api_returns_string_detail(
         self, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -256,7 +256,7 @@ class TestExperiments:
                 project_id="test", name="test_experiment", prompt_settings=PromptRunSettings(model_alias="gpt-4o-mini")
             )
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_create_with_dict_prompt_settings(self, galileo_resources_api_create_experiment: Mock) -> None:
         """Test create() converts dict prompt_settings via PromptRunSettings roundtrip."""
         # Given: a dict prompt_settings and a mocked API response
@@ -285,8 +285,8 @@ class TestExperiments:
         assert actual_settings["model_alias"] == "GPT-4o"
         assert actual_settings["temperature"] == 0.8
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_create_experiment_with_project_id(
         self, mock_get_with_env_fallbacks: Mock, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -312,8 +312,8 @@ class TestExperiments:
         )
         mock_get_with_env_fallbacks.assert_called_once_with(id=str(UUID(int=0)), name=None)
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_create_experiment_with_project_name(
         self, mock_get_with_env_fallbacks: Mock, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -339,8 +339,8 @@ class TestExperiments:
         )
         mock_get_with_env_fallbacks.assert_called_once_with(id=None, name="test_project")
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks", return_value=None)
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks", return_value=None)
     def test_create_experiment_without_project_fails(
         self, mock_get_with_env_fallbacks: Mock, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -361,8 +361,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="Project not specified and no defaults found"):
             create_experiment(experiment_name="test_experiment")
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_create_experiment_with_wrong_project_name_fails(
         self, mock_get_with_env_fallbacks: Mock, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -392,8 +392,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="experiment_name is required"):
             create_experiment(experiment_name="", project_name="test_project")
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_project_id(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -404,8 +404,8 @@ class TestExperiments:
         assert experiments[0].name == experiment_response().name
         list_experiments_mock.sync.assert_called_once_with(project_id=str(UUID(int=0)), client=ANY)
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_project_name(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -417,8 +417,8 @@ class TestExperiments:
         list_experiments_mock.sync.assert_called_once_with(project_id=str(UUID(int=0)), client=ANY)
         mock_get_with_env_fallbacks.assert_called_once_with(id=None, name="test_project")
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_without_project_id_or_name_fails(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -428,8 +428,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="Project not specified and no defaults found"):
             get_experiments()
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_wrong_project_name_fails(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -439,8 +439,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="Project test_project does not exist"):
             get_experiments(project_name="test_project")
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiment_not_found(self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock) -> None:
         list_experiments_mock.sync = Mock(return_value=None)
         mock_get_with_env_fallbacks.return_value = project()
@@ -457,8 +457,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="experiment_name is required"):
             get_experiment(project_id=str(UUID(int=0)), experiment_name="")
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiment_neither_project_id_nor_name_raises(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -471,8 +471,8 @@ class TestExperiments:
 
         list_experiments_mock.sync.assert_not_called()
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiment_with_project_name(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -485,8 +485,8 @@ class TestExperiments:
         list_experiments_mock.sync.assert_called_once_with(project_id=project().id, client=ANY)
         mock_get_with_env_fallbacks.assert_called_once_with(id=None, name="awesome-new-project")
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiment_with_wrong_project_name_fails(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -496,8 +496,8 @@ class TestExperiments:
         with pytest.raises(ValueError, match="Project awesome-new-project does not exist"):
             get_experiment(project_name="awesome-new-project", experiment_name=experiment_response().name)
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiment_with_project_id(
         self, mock_get_with_env_fallbacks: Mock, list_experiments_mock: Mock
     ) -> None:
@@ -514,7 +514,7 @@ class TestExperiments:
         ("dataset", "dataset_name", "dataset_id"),
         [("awesome-dataset", None, None), (None, "awesome-dataset", None), (None, None, "dataset_id")],
     )
-    @patch.object(galileo.datasets.Datasets, "get")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
     def test_load_dataset_and_records(
         self,
         mock_get_dataset,
@@ -542,11 +542,11 @@ class TestExperiments:
             load_dataset_and_records(dataset=None, dataset_name=None, dataset_id=None)
         assert str(exc_info.value) == "To load dataset records, dataset, dataset_name, or dataset_id must be provided"
 
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_project_name_loads_project(
         self,
         mock_get_project: Mock,
@@ -564,11 +564,11 @@ class TestExperiments:
 
         mock_get_project.assert_called_once_with(id=None, name="awesome-new-project")
 
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_project_id_loads_project(
         self,
         mock_get_project: Mock,
@@ -589,11 +589,11 @@ class TestExperiments:
 
         mock_get_project.assert_called_once_with(id="awesome-new-project", name=None)
 
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=None)
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=None)
     def test_run_experiment_with_invalid_project_id_gives_error(
         self,
         mock_get_project: Mock,
@@ -615,11 +615,11 @@ class TestExperiments:
 
         assert str(exc_info.value) == "Project with Id awesome-new-project does not exist"
 
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=None)
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=None)
     def test_run_experiment_with_invalid_project_name_gives_error(
         self,
         mock_get_project: Mock,
@@ -642,10 +642,10 @@ class TestExperiments:
         assert str(exc_info.value) == "Project awesome-new-project does not exist"
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_without_metrics(
         self,
         mock_get_project: Mock,
@@ -674,13 +674,13 @@ class TestExperiments:
             prompt_settings=ANY,
         )
 
-    @pytest.mark.parametrize("console_url", ["http://localtest:8088", "http://localtest:8088/"])
+    @pytest.mark.parametrize("console_url", ["http://fake.test:8088", "http://fake.test:8088/"])
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_link_no_double_slash(
         self,
         mock_get_project: Mock,
@@ -697,7 +697,7 @@ class TestExperiments:
         mock_config.console_url = console_url
 
         # When: running an experiment
-        with patch("galileo.experiments.GalileoPythonConfig.get", return_value=mock_config):
+        with patch("splunk_ao.experiments.SplunkAOConfig.get", return_value=mock_config):
             result = run_experiment(
                 "test_experiment",
                 project="awesome-new-project",
@@ -712,10 +712,10 @@ class TestExperiments:
         assert f"/project/{project().id}/experiments/{experiment_response().id}" in link
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_generated_output_flow(
         self,
         mock_get_project: Mock,
@@ -743,10 +743,10 @@ class TestExperiments:
         )
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_prompt_takes_precedence_over_generated_output(
         self,
         mock_get_project: Mock,
@@ -775,11 +775,11 @@ class TestExperiments:
             prompt_settings=ANY,
         )
 
-    @patch.object(galileo.datasets.Datasets, "get", return_value=None)
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get", return_value=None)
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_no_prompt_no_dataset_raises(
         self,
         mock_get_project: Mock,
@@ -793,15 +793,15 @@ class TestExperiments:
         with pytest.raises(ValueError, match="dataset"):
             run_experiment("test_experiment", project="awesome-new-project")
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     @pytest.mark.parametrize("thread_pool", [True, False])
     @pytest.mark.parametrize(
         ("function", "metrics", "num_spans", "span_type", "results", "aggregate_results"),
@@ -952,12 +952,12 @@ class TestExperiments:
         assert num_spans == sum(check_span(span) for span in trace.spans)
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch("galileo.utils.metrics.ScorerSettings")
-    @patch("galileo.utils.metrics.Scorers")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_w_prompt_template_and_metrics(
         self,
         mock_get_project: Mock,
@@ -978,7 +978,7 @@ class TestExperiments:
             project="awesome-new-project",
             dataset_id=dataset_id,
             prompt_template=prompt_template(),
-            metrics=[GalileoMetrics.correctness],
+            metrics=[SplunkAOMetrics.correctness],
         )
 
         mock_get_project.assert_called_once_with(id=None, name="awesome-new-project")
@@ -998,10 +998,10 @@ class TestExperiments:
         mock_scorer_settings_class.return_value.create.assert_not_called()
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_w_prompt_template_and_prompt_settings(
         self,
         mock_get_project: Mock,
@@ -1033,10 +1033,10 @@ class TestExperiments:
         )
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_prompt_settings_as_dict(
         self,
         mock_get_with_env_fallbacks: Mock,
@@ -1087,7 +1087,7 @@ class TestExperiments:
         assert ps.presence_penalty == 0.0
         assert ps.frequency_penalty == 0.0
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
     def test_experiments_create_with_prompt_settings_as_dict(
         self, galileo_resources_api_create_experiment: Mock
     ) -> None:
@@ -1122,7 +1122,7 @@ class TestExperiments:
         assert ps_dict["temperature"] == 0.5
         assert ps_dict["max_tokens"] == 256
 
-    @patch.object(galileo.experiments.Experiments, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create")
     def test_experiments_run_raises_when_create_raises(self, mock_create: Mock) -> None:
         # Given: Experiments.create raises
         mock_create.side_effect = RuntimeError("API unavailable")
@@ -1131,13 +1131,13 @@ class TestExperiments:
         with pytest.raises(RuntimeError, match="API unavailable"):
             Experiments().run(
                 project_obj=project(),
-                dataset_obj=Mock(spec=galileo.datasets.Dataset),
+                dataset_obj=Mock(spec=splunk_ao.datasets.Dataset),
                 experiment_name="test_experiment",
                 prompt_template=None,
                 scorers=None,
             )
 
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
     def test_experiments_run_with_prompt_settings_as_dict(self, mock_create: Mock) -> None:
         # Given: a project, dataset, and prompt_settings passed as a plain dict
         settings_dict = {"model_alias": "GPT-4o", "temperature": 0.5, "max_tokens": 256}
@@ -1145,7 +1145,7 @@ class TestExperiments:
         # When: Experiments().run() is called with prompt_settings as a plain dict
         Experiments().run(
             project_obj=project(),
-            dataset_obj=Mock(spec=galileo.datasets.Dataset),
+            dataset_obj=Mock(spec=splunk_ao.datasets.Dataset),
             experiment_name="test_experiment",
             prompt_template=prompt_template(),
             scorers=None,
@@ -1162,14 +1162,14 @@ class TestExperiments:
         assert ps.max_tokens == 256
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_runner_and_dataset(
         self,
         mock_get_project: Mock,
@@ -1228,10 +1228,10 @@ class TestExperiments:
         assert payload.traces[0].output == "Say hello: Which continent is Spain in?"
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create")
-    @patch.object(galileo.experiments.Experiments, "get")
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "get")
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_raises_when_create_raises(
         self,
         mock_get_project: Mock,
@@ -1253,14 +1253,14 @@ class TestExperiments:
             )
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch.object(galileo.datasets.Datasets, "get")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
     @patch.object(
-        galileo.experiments.Experiments,
+        splunk_ao.experiments.Experiments,
         "run",
         return_value={"experiment": experiment_response(), "link": "http://example.com", "message": "done"},
     )
-    @patch.object(galileo.experiments.Experiments, "get", return_value=None)
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=None)
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_on_error_warns_when_unused_in_prompt_template_flow(
         self,
         mock_get_project: Mock,
@@ -1273,7 +1273,7 @@ class TestExperiments:
         on_error = Mock()
 
         # When: run_experiment() is called with a prompt template and on_error
-        with patch("galileo.experiments._logger") as mock_logger:
+        with patch("splunk_ao.experiments._logger") as mock_logger:
             run_experiment(
                 "test_experiment",
                 project="awesome-new-project",
@@ -1289,13 +1289,13 @@ class TestExperiments:
         )
         on_error.assert_not_called()
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_on_error_passed_to_flush_in_function_flow(
         self,
         mock_get_project: Mock,
@@ -1319,7 +1319,7 @@ class TestExperiments:
         on_error = Mock()
 
         # When: run_experiment() is called with a function and on_error (function flow)
-        with patch("galileo.experiments.splunk_ao_context.flush") as mock_flush:
+        with patch("splunk_ao.experiments.splunk_ao_context.flush") as mock_flush:
             run_experiment(
                 experiment_name="test_experiment",
                 project="awesome-new-project",
@@ -1332,7 +1332,7 @@ class TestExperiments:
         assert mock_flush.call_count >= 1
         assert all(c == mock_call(on_error=on_error) for c in mock_flush.call_args_list)
 
-    @patch.object(galileo.datasets.Datasets, "get")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
     def test_run_experiment_with_prompt_template_and_function(
         self, mock_get_dataset: Mock, dataset_content: DatasetContent
     ) -> None:
@@ -1350,7 +1350,7 @@ class TestExperiments:
             id="00000000-0000-0000-0000-000000000001", name=None, project_id=None, project_name=None
         )
 
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_prompt_template_and_local_dataset(
         self, mock_projects_client: Mock, local_dataset: list[dict[str, str]]
     ) -> None:
@@ -1368,14 +1368,14 @@ class TestExperiments:
             == "A dataset record, id, or name of a dataset must be provided when a prompt_template is used"
         )
 
-    @patch("galileo.logger.logger.Projects")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_run_experiment_with_local_scorers_and_prompt_template(
         self,
         mock_scorer_settings_create: Mock,
@@ -1408,8 +1408,8 @@ class TestExperiments:
             == "Local metrics can only be used with a locally run experiment, not a prompt experiment."
         )
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_create_scorer_configs(self, mock_scorer_settings_class, mock_scorers_class) -> None:
         # Setup mock return values — new code uses list_by_labels
         mock_scorers_instance = mock_scorers_class.return_value
@@ -1420,7 +1420,7 @@ class TestExperiments:
         mock_scorer_settings_class.return_value.create = MagicMock()
 
         # Test valid metrics
-        from galileo.utils.metrics import create_metric_configs
+        from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs(
             "project_id", "experiment_id", ["metric1", LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))]
@@ -1433,8 +1433,8 @@ class TestExperiments:
         with pytest.raises(ValueError):
             create_metric_configs("project_id", "experiment_id", ["unknown_metric"])
 
-    @patch("galileo.utils.metrics.Scorers")
-    @patch("galileo.utils.metrics.ScorerSettings")
+    @patch("splunk_ao.utils.metrics.Scorers")
+    @patch("splunk_ao.utils.metrics.ScorerSettings")
     def test_create_scorer_configs_with_metric_objects(self, mock_scorer_settings_class, mock_scorers_class) -> None:
         # Setup mock return values
         mock_scorers_instance = mock_scorers_class.return_value
@@ -1454,12 +1454,12 @@ class TestExperiments:
         mock_version_response.to_dict.return_value = {"id": "version1", "version": 2}
         mock_scorers_instance.get_scorer_version.return_value = mock_version_response
 
-        from galileo.schema.metrics import Metric
+        from splunk_ao.schema.metrics import Metric
 
         # Test with Metric objects (without version)
         metric1 = Metric(name="metric1")
         metric2 = Metric(name="metric2")
-        from galileo.utils.metrics import create_metric_configs
+        from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs("project_id", "experiment_id", [metric1, metric2])
 
@@ -1472,7 +1472,7 @@ class TestExperiments:
         # Test with a Metric object with version
         versionable_metric = Metric(name="versionable_metric", version=2)
 
-        from galileo.utils.metrics import create_metric_configs
+        from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs("project_id", "experiment_id", [versionable_metric])
 
@@ -1485,7 +1485,7 @@ class TestExperiments:
         # Test mixed input types
         local_metric = LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))
 
-        from galileo.utils.metrics import create_metric_configs
+        from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs(
             "project_id", "experiment_id", ["metric1", local_metric, Metric(name="metric2")]
@@ -1494,10 +1494,10 @@ class TestExperiments:
         assert len(scorers) == 2  # Should return two valid scorers
         assert len(local_scorers) == 1  # One local scorer
 
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", side_effect=ValueError("experiment creation failed"))
-    @patch.object(galileo.experiments.Experiments, "get", return_value=None)
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", side_effect=ValueError("experiment creation failed"))
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=None)
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_job_creation_failure(
         self,
         mock_get_project: Mock,
@@ -1521,12 +1521,12 @@ class TestExperiments:
 
         mock_get_project.assert_called_once_with(id=None, name="awesome-new-project")
 
-    @patch("galileo.experiments.upsert_experiment_tag")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.jobs.Jobs, "create")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=None)
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.experiments.upsert_experiment_tag")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.jobs.Jobs, "create")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=None)
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_experiment_tags_basic(
         self,
         mock_get_project: Mock,
@@ -1554,13 +1554,13 @@ class TestExperiments:
 
         assert mock_upsert_tag.call_count == 3
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_dataset_limit(
         self,
         mock_get_project: Mock,
@@ -1601,12 +1601,12 @@ class TestExperiments:
             total_traces += len(payload.traces)
         assert total_traces == 150
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_function_and_list_dataset(
         self,
         mock_get_project: Mock,
@@ -1662,13 +1662,13 @@ class TestExperiments:
         assert '{"input": "Which continent is Spain in?"}' in span_inputs[0]
         assert '{"input": "Which continent is Japan in?"}' in span_inputs[1]
 
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
-    @patch.object(galileo.datasets.Datasets, "get")
-    @patch.object(galileo.experiments.Experiments, "create", return_value=experiment_response())
-    @patch.object(galileo.experiments.Experiments, "get", return_value=experiment_response())
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
+    @patch.object(splunk_ao.datasets.Datasets, "get")
+    @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=experiment_response())
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
     def test_run_experiment_with_multi_page_pagination(
         self,
         mock_get_project: Mock,
@@ -1859,13 +1859,13 @@ class TestExperimentGroups:
     """V1 experiment-group support: group-aware run/create + list_experiment_groups()."""
 
     @patch.object(
-        galileo.experiments.Experiments,
+        splunk_ao.experiments.Experiments,
         "run",
         return_value={"experiment": experiment_response(), "link": "x", "message": "y"},
     )
-    @patch.object(galileo.experiments.Experiments, "get", return_value=None)
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
-    @patch("galileo.experiments.load_dataset")
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=None)
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.experiments.load_dataset")
     def test_run_experiment_with_experiment_group_name(
         self, load_dataset_mock: Mock, get_project_mock: Mock, get_experiment_mock: Mock, run_mock: Mock
     ) -> None:
@@ -1889,13 +1889,13 @@ class TestExperimentGroups:
         assert "experiment_group_id" not in call_kwargs
 
     @patch.object(
-        galileo.experiments.Experiments,
+        splunk_ao.experiments.Experiments,
         "run",
         return_value={"experiment": experiment_response(), "link": "x", "message": "y"},
     )
-    @patch.object(galileo.experiments.Experiments, "get", return_value=None)
-    @patch.object(galileo.experiments.Projects, "get_with_env_fallbacks", return_value=project())
-    @patch("galileo.experiments.load_dataset")
+    @patch.object(splunk_ao.experiments.Experiments, "get", return_value=None)
+    @patch.object(splunk_ao.experiments.Projects, "get_with_env_fallbacks", return_value=project())
+    @patch("splunk_ao.experiments.load_dataset")
     def test_run_experiment_with_experiment_group_id(
         self, load_dataset_mock: Mock, get_project_mock: Mock, get_experiment_mock: Mock, run_mock: Mock
     ) -> None:
@@ -1919,8 +1919,8 @@ class TestExperimentGroups:
         assert call_kwargs.get("experiment_group_id") == group_uuid
         assert "experiment_group_name" not in call_kwargs
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_create_experiment_with_experiment_group_name(
         self, get_project_mock: Mock, create_experiment_mock: Mock
     ) -> None:
@@ -1939,8 +1939,8 @@ class TestExperimentGroups:
         assert body.additional_properties["experiment_group_name"] == "standalone-bench"
         assert "experiment_group_id" not in body.additional_properties
 
-    @patch("galileo.experiments.create_experiment_projects_project_id_experiments_post")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.create_experiment_projects_project_id_experiments_post")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_create_experiment_with_experiment_group_id(
         self, get_project_mock: Mock, create_experiment_mock: Mock
     ) -> None:
@@ -1960,8 +1960,8 @@ class TestExperimentGroups:
         assert body.additional_properties["experiment_group_id"] == group_uuid
         assert "experiment_group_name" not in body.additional_properties
 
-    @patch("galileo.experiments.GalileoPythonConfig")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_list_experiment_groups(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """list_experiment_groups() POSTs to /experiment-groups/query and returns typed objects."""
         # Given: a resolved project and a mocked httpx client returning two groups
@@ -2023,8 +2023,8 @@ class TestExperimentGroups:
         assert groups[0].experiment_count == 2
         assert groups[1].is_system is True
 
-    @patch("galileo.experiments.GalileoPythonConfig")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_list_experiment_groups_paginates_internally(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """list_experiment_groups() walks all pages and returns the combined list."""
         # Given: a project and an API that returns 2 pages
@@ -2075,8 +2075,8 @@ class TestExperimentGroups:
         assert len(groups) == 3
         assert [g.name for g in groups] == ["group-1", "group-2", "group-3"]
 
-    @patch("galileo.experiments.GalileoPythonConfig")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_group_name_filter(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """get_experiments(experiment_group=...) calls the search endpoint with a name filter."""
         # Given: a resolved project and a search endpoint that returns one matching experiment
@@ -2111,8 +2111,8 @@ class TestExperimentGroups:
         assert isinstance(result, list)
         assert len(result) == 1
 
-    @patch("galileo.experiments.GalileoPythonConfig")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.SplunkAOConfig")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_with_group_id_filter(self, get_project_mock: Mock, config_mock: Mock) -> None:
         """get_experiments(experiment_group_id=...) calls the search endpoint with an id filter."""
         # Given: a resolved project and a search endpoint that returns one matching experiment
@@ -2139,8 +2139,8 @@ class TestExperimentGroups:
         assert isinstance(result, list)
         assert len(result) == 1
 
-    @patch("galileo.experiments.list_experiments_projects_project_id_experiments_get")
-    @patch("galileo.experiments.Projects.get_with_env_fallbacks")
+    @patch("splunk_ao.experiments.list_experiments_projects_project_id_experiments_get")
+    @patch("splunk_ao.experiments.Projects.get_with_env_fallbacks")
     def test_get_experiments_without_filter_unchanged(
         self, get_project_mock: Mock, list_experiments_mock: Mock
     ) -> None:

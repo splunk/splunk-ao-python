@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from galileo.config import GalileoPythonConfig
-from galileo.configuration import _CONFIGURATION_KEYS, VALID_LOG_LEVELS, Configuration, parse_log_level
-from galileo.shared.exceptions import ConfigurationError
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.configuration import _CONFIGURATION_KEYS, VALID_LOG_LEVELS, Configuration, parse_log_level
+from splunk_ao.shared.exceptions import ConfigurationError
 
 
 class TestParseLogLevel:
@@ -171,8 +171,8 @@ class TestConfigurationEnvFileLoading:
         """Test that .env file is loaded and environment variables are set correctly."""
         # Create .env file with test values
         mock_env_file.write_text(
-            'GALILEO_API_KEY="env-file-key"\n'
-            'GALILEO_CONSOLE_URL="https://envfile.galileo.ai"\n'
+            'SPLUNK_AO_API_KEY="env-file-key"\n'
+            'SPLUNK_AO_CONSOLE_URL="https://envfile.galileo.ai"\n'
             'OPENAI_API_KEY="env-file-openai"\n'
         )
 
@@ -189,10 +189,10 @@ class TestConfigurationEnvFileLoading:
     ) -> None:
         """Test that .env file does not override existing environment variables."""
         # Set existing environment variable
-        monkeypatch.setenv("GALILEO_API_KEY", "existing-env-key")
+        monkeypatch.setenv("SPLUNK_AO_API_KEY", "existing-env-key")
 
         # Create .env file with different value
-        mock_env_file.write_text('GALILEO_API_KEY="env-file-key"\n')
+        mock_env_file.write_text('SPLUNK_AO_API_KEY="env-file-key"\n')
 
         # Access property to trigger env file loading
         api_key = Configuration.galileo_api_key
@@ -207,8 +207,8 @@ class TestConfigurationEnvFileLoading:
         mock_env_file.write_text(
             "# This is a comment\n"
             "\n"
-            "GALILEO_API_KEY=key-without-quotes\n"
-            'GALILEO_CONSOLE_URL="url-with-double-quotes"\n'
+            "SPLUNK_AO_API_KEY=key-without-quotes\n"
+            'SPLUNK_AO_CONSOLE_URL="url-with-double-quotes"\n'
             "OPENAI_API_KEY='key-with-single-quotes'\n"
             "  \n"
             "# Another comment\n"
@@ -226,7 +226,7 @@ class TestConfigurationEnvFileLoading:
         self, mock_env_file: Path, clean_env: None, reset_configuration: None
     ) -> None:
         """Test that env file is only loaded once even with multiple property accesses."""
-        mock_env_file.write_text('GALILEO_API_KEY="test-key"\n')
+        mock_env_file.write_text('SPLUNK_AO_API_KEY="test-key"\n')
 
         # Access multiple times
         _ = Configuration.galileo_api_key
@@ -270,8 +270,8 @@ class TestConfigurationConnect:
         _, log_stream = capture_logs
 
         # Set valid configuration
-        monkeypatch.setenv("GALILEO_API_KEY", "valid-key")
-        monkeypatch.setenv("GALILEO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
 
         # Connect should succeed without raising
         Configuration.connect()
@@ -292,7 +292,7 @@ class TestConfigurationConnect:
         _, log_stream = capture_logs
 
         # Set valid configuration
-        monkeypatch.setenv("GALILEO_API_KEY", "valid-key")
+        monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
 
         # Connect should succeed without raising
         Configuration.connect()
@@ -316,14 +316,14 @@ class TestConfigurationConnect:
         _, log_stream = capture_logs
 
         # Set only console URL
-        monkeypatch.setenv("GALILEO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
 
         # Should raise ConfigurationError
         with pytest.raises(ConfigurationError) as exc_info:
             Configuration.connect()
 
         # Verify error message provides helpful guidance
-        assert "galileo api key is required" in str(exc_info.value).lower()
+        assert "splunk ao api key is required" in str(exc_info.value).lower()
         assert "Configuration.galileo_api_key" in str(exc_info.value)
 
     @pytest.mark.parametrize(
@@ -335,7 +335,7 @@ class TestConfigurationConnect:
             ("generic", "Unknown error", "Configuration validation failed"),
         ],
     )
-    @patch("galileo.configuration.GalileoPythonConfig.get")
+    @patch("splunk_ao.configuration.SplunkAOConfig.get")
     def test_connect_handles_different_error_types(
         self,
         mock_config_get: Mock,
@@ -350,10 +350,10 @@ class TestConfigurationConnect:
         _, log_stream = capture_logs
 
         # Set valid configuration
-        monkeypatch.setenv("GALILEO_API_KEY", "valid-key")
-        monkeypatch.setenv("GALILEO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
 
-        # Mock GalileoPythonConfig.get to raise appropriate error
+        # Mock SplunkAOConfig.get to raise appropriate error
         mock_config_get.side_effect = Exception(error_message)
 
         with pytest.raises(ConfigurationError) as exc_info:
@@ -405,8 +405,8 @@ class TestConfigurationReset:
             assert key.env_var not in os.environ
 
     def test_reset_handles_missing_config_instance_gracefully(self, reset_configuration: None) -> None:
-        """Test reset() handles case when GalileoPythonConfig instance doesn't exist."""
-        GalileoPythonConfig._instance = None
+        """Test reset() handles case when SplunkAOConfig instance doesn't exist."""
+        SplunkAOConfig._instance = None
         Configuration.reset()
 
         # Verify all keys are reset

@@ -3,17 +3,17 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.exceptions import NotFoundError
-from galileo.log_stream import LogStream
-from galileo.projects import ProjectNotFoundError, ProjectsAPIException
 from galileo.resources.models import LLMExportFormat, LogRecordsSortClause, RootType
 from galileo.resources.models.log_records_column_info import LogRecordsColumnInfo
 from galileo.resources.models.step_type import StepType
-from galileo.search import RecordType
-from galileo.shared.base import SyncState
-from galileo.shared.column import ColumnCollection
-from galileo.shared.exceptions import ResourceNotFoundError, ValidationError
-from galileo.shared.query_result import QueryResult
+from splunk_ao.exceptions import NotFoundError
+from splunk_ao.log_stream import LogStream
+from splunk_ao.projects import ProjectNotFoundError, ProjectsAPIException
+from splunk_ao.search import RecordType
+from splunk_ao.shared.base import SyncState
+from splunk_ao.shared.column import ColumnCollection
+from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
+from splunk_ao.shared.query_result import QueryResult
 
 
 class TestLogStreamInitialization:
@@ -65,8 +65,8 @@ class TestLogStreamInitialization:
 class TestLogStreamCreate:
     """Test suite for LogStream.create() method."""
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_persists_log_stream_to_api_with_project_id(
         self,
         mock_projects_class: MagicMock,
@@ -95,8 +95,8 @@ class TestLogStreamCreate:
         assert log_stream.id == mock_logstream.id
         assert log_stream.is_synced()
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_persists_log_stream_to_api_with_project_name(
         self,
         mock_projects_class: MagicMock,
@@ -128,8 +128,8 @@ class TestLogStreamCreate:
         assert log_stream.is_synced()
         assert log_stream.project_name == "Test Project"
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_handles_api_failure(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -154,7 +154,7 @@ class TestLogStreamCreate:
 
         assert log_stream.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_names_project_in_error_when_project_name_not_found(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -171,12 +171,12 @@ class TestLogStreamCreate:
         with pytest.raises(NotFoundError, match=r'Project "my-nonexistent-project" not found'):
             log_stream.create()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_without_project_info_raises_error(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test create() raises NotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -196,8 +196,8 @@ class TestLogStreamCreate:
 class TestLogStreamGet:
     """Test suite for LogStream.get() class method."""
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_returns_log_stream_with_project_id(
         self,
         mock_projects_class: MagicMock,
@@ -227,8 +227,8 @@ class TestLogStreamGet:
         assert log_stream.project_name == "Test Project"
         mock_service.get.assert_called_once_with(name="Test Stream", project_id="test-project-id")
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_returns_log_stream_with_project_name(
         self,
         mock_projects_class: MagicMock,
@@ -258,8 +258,8 @@ class TestLogStreamGet:
         assert log_stream.project_name == "Test Project"
         mock_service.get.assert_called_once_with(name="Test Stream", project_id="resolved-project-id")
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_returns_none_when_not_found(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -282,12 +282,12 @@ class TestLogStreamGet:
         # Then: None is returned
         assert log_stream is None
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_raises_error_without_project_info_and_no_env_fallback(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test get() raises NotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -296,7 +296,7 @@ class TestLogStreamGet:
         with pytest.raises(NotFoundError, match="No project specified"):
             LogStream.get(name="Test Stream")
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_raises_not_found_when_project_id_unknown(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -310,7 +310,7 @@ class TestLogStreamGet:
         with pytest.raises(NotFoundError, match=r'Project with id "unknown-id" not found'):
             LogStream.get(name="Test Stream", project_id="unknown-id")
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_reraises_non_404_projects_api_exception(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -324,8 +324,8 @@ class TestLogStreamGet:
         with pytest.raises(ProjectsAPIException):
             LogStream.get(name="Test Stream", project_id="some-id")
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_uses_env_fallback_when_no_project_specified(
         self,
         mock_projects_class: MagicMock,
@@ -335,8 +335,8 @@ class TestLogStreamGet:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test get() uses Projects().get_with_env_fallbacks() when no project is specified."""
-        # Given: GALILEO_PROJECT is set so the resolver delegates to the API
-        monkeypatch.setenv("GALILEO_PROJECT", "Env Project")
+        # Given: SPLUNK_AO_PROJECT is set so the resolver delegates to the API
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "Env Project")
         mock_project = MagicMock()
         mock_project.id = "env-project-id"
         mock_project.name = "Env Project"
@@ -359,8 +359,8 @@ class TestLogStreamGet:
 class TestLogStreamList:
     """Test suite for LogStream.list() class method."""
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_returns_all_log_streams_with_project_id(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -400,8 +400,8 @@ class TestLogStreamList:
         assert all(ls.project_name == "Test Project" for ls in log_streams)
         mock_service.list.assert_called_once_with(project_id="test-project-id", limit=100, starting_token=0)
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_returns_all_log_streams_with_project_name(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -434,12 +434,12 @@ class TestLogStreamList:
         assert all(ls.project_name == "Test Project" for ls in log_streams)
         mock_service.list.assert_called_once_with(project_id="resolved-project-id", limit=100, starting_token=0)
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_raises_error_without_project_info_and_no_env_fallback(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test list() raises NotFoundError naming the project that wasn't found."""
-        # Given: env fallback returns None (project from GALILEO_PROJECT env var not found on server)
+        # Given: env fallback returns None (project from SPLUNK_AO_PROJECT env var not found on server)
         mock_projects_service = MagicMock()
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
@@ -448,7 +448,7 @@ class TestLogStreamList:
         with pytest.raises(NotFoundError, match="No project specified"):
             LogStream.list()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_raises_not_found_when_project_id_unknown(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -462,7 +462,7 @@ class TestLogStreamList:
         with pytest.raises(NotFoundError, match=r'Project with id "unknown-id" not found'):
             LogStream.list(project_id="unknown-id")
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_reraises_non_404_projects_api_exception(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -476,8 +476,8 @@ class TestLogStreamList:
         with pytest.raises(ProjectsAPIException):
             LogStream.list(project_id="some-id")
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_forwards_limit_to_service(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -500,8 +500,8 @@ class TestLogStreamList:
         # Then: limit is forwarded to the service call
         mock_service.list.assert_called_once_with(project_id="test-project-id", limit=3, starting_token=0)
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_forwards_starting_token_to_service(
         self, mock_projects_class: MagicMock, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -524,8 +524,8 @@ class TestLogStreamList:
         # Then: starting_token is forwarded to the service call
         mock_service.list.assert_called_once_with(project_id="test-project-id", limit=100, starting_token=100)
 
-    @patch("galileo.log_stream.LogStreams")
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_list_uses_env_fallback_when_no_project_specified(
         self,
         mock_projects_class: MagicMock,
@@ -534,8 +534,8 @@ class TestLogStreamList:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test list() uses Projects().get_with_env_fallbacks() when no project is specified."""
-        # Given: GALILEO_PROJECT is set so the resolver delegates to the API
-        monkeypatch.setenv("GALILEO_PROJECT", "Env Project")
+        # Given: SPLUNK_AO_PROJECT is set so the resolver delegates to the API
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "Env Project")
         mock_project = MagicMock()
         mock_project.id = "env-project-id"
         mock_project.name = "Env Project"
@@ -558,8 +558,8 @@ class TestLogStreamList:
 class TestLogStreamRefresh:
     """Test suite for LogStream.refresh() method."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_refresh_updates_attributes_from_api(
         self,
         mock_logstreams_class: MagicMock,
@@ -609,8 +609,8 @@ class TestLogStreamRefresh:
         with pytest.raises(ValueError, match="Log stream ID is not set"):
             log_stream.refresh()
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_refresh_raises_error_if_log_stream_no_longer_exists(
         self,
         mock_logstreams_class: MagicMock,
@@ -632,7 +632,7 @@ class TestLogStreamRefresh:
 
         assert log_stream.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_refresh_without_project_id_raises_error(
         self, mock_logstreams_class: MagicMock, reset_configuration: None, mock_logstream: MagicMock
     ) -> None:
@@ -662,9 +662,9 @@ class TestLogStreamQuery:
             ("get_sessions", RecordType.SESSION, 10),
         ],
     )
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.Search")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.Search")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_query_methods(
         self,
         mock_logstreams_class: MagicMock,
@@ -717,7 +717,7 @@ class TestLogStreamQuery:
         with pytest.raises(ValueError, match="Log stream ID is not set"):
             log_stream.query(record_type=RecordType.SPAN)
 
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_query_raises_error_without_project_id(
         self, mock_logstreams_class: MagicMock, reset_configuration: None, mock_logstream: MagicMock
     ) -> None:
@@ -736,9 +736,9 @@ class TestLogStreamQuery:
 class TestLogStreamExportRecords:
     """Test suite for LogStream.export_records() method."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.ExportClient")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.ExportClient")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_export_records_with_default_params(
         self,
         mock_logstreams_class: MagicMock,
@@ -775,9 +775,9 @@ class TestLogStreamExportRecords:
         )
         assert result == mock_iterator
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.ExportClient")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.ExportClient")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_export_records_with_custom_params(
         self,
         mock_logstreams_class: MagicMock,
@@ -827,7 +827,7 @@ class TestLogStreamExportRecords:
         with pytest.raises(ValueError, match="Log stream ID is not set"):
             log_stream.export_records()
 
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_export_records_raises_error_without_project_id(
         self, mock_logstreams_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -846,9 +846,9 @@ class TestLogStreamExportRecords:
 class TestLogStreamContext:
     """Test suite for LogStream.context() method."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.splunk_ao_context")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.splunk_ao_context")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_context_returns_splunk_ao_context(
         self,
         mock_logstreams_class: MagicMock,
@@ -868,7 +868,7 @@ class TestLogStreamContext:
         mock_splunk_ao_context.return_value = mock_context
 
         # Mock the project property
-        with patch("galileo.log_stream.Project") as mock_project_class:
+        with patch("splunk_ao.log_stream.Project") as mock_project_class:
             mock_project = MagicMock()
             mock_project.name = "Test Project"
             mock_project_class.get.return_value = mock_project
@@ -883,9 +883,9 @@ class TestLogStreamContext:
 class TestLogStreamProject:
     """Test suite for LogStream.project property."""
 
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.Project")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.Project")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_project_property_returns_project(
         self,
         mock_logstreams_class: MagicMock,
@@ -936,9 +936,9 @@ class TestLogStreamColumns:
             ),
         ],
     )
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.GalileoPythonConfig")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.SplunkAOConfig")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_column_properties_return_column_collection(
         self,
         mock_logstreams_class: MagicMock,
@@ -972,7 +972,7 @@ class TestLogStreamColumns:
         mock_response = MagicMock()
         mock_response.columns = [mock_column_1, mock_column_2]
 
-        with patch(f"galileo.log_stream.{api_func_name}") as mock_api_func:
+        with patch(f"splunk_ao.log_stream.{api_func_name}") as mock_api_func:
             mock_api_func.sync.return_value = mock_response
 
             log_stream = LogStream.get(name="Test Stream", project_id="test-project-id")
@@ -1006,9 +1006,9 @@ class TestLogStreamColumns:
             ("trace_columns", "traces_available_columns_projects_project_id_traces_available_columns_post"),
         ],
     )
-    @patch("galileo.shared.project_resolver.Projects")
-    @patch("galileo.log_stream.GalileoPythonConfig")
-    @patch("galileo.log_stream.LogStreams")
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.log_stream.SplunkAOConfig")
+    @patch("splunk_ao.log_stream.LogStreams")
     def test_column_properties_raise_error_on_empty_response(
         self,
         mock_logstreams_class: MagicMock,
@@ -1030,7 +1030,7 @@ class TestLogStreamColumns:
         mock_config = MagicMock()
         mock_config_class.get.return_value = mock_config
 
-        with patch(f"galileo.log_stream.{api_func_name}") as mock_api_func:
+        with patch(f"splunk_ao.log_stream.{api_func_name}") as mock_api_func:
             mock_api_func.sync.return_value = None
 
             log_stream = LogStream.get(name="Test Stream", project_id="test-project-id")
@@ -1085,7 +1085,7 @@ class TestProjectNotFoundErrorBackwardCompat:
     ResourceNotFoundError inherits from NotFoundError.
     """
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_raises_resource_not_found_error_subclass(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -1101,7 +1101,7 @@ class TestProjectNotFoundErrorBackwardCompat:
             log_stream.create()
         assert isinstance(exc_info.value, ResourceNotFoundError)
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_skips_api_when_no_identifier_anywhere(
         self, mock_projects_class: MagicMock, reset_configuration: None, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1114,8 +1114,8 @@ class TestProjectNotFoundErrorBackwardCompat:
         call and raise ``NotFoundError`` directly.
         """
         # Given: env vars are unset and Projects() shouldn't be touched
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
-        monkeypatch.delenv("GALILEO_PROJECT_ID", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
 
         log_stream = LogStream._create_empty()
         log_stream.name = "Test Stream"
@@ -1128,7 +1128,7 @@ class TestProjectNotFoundErrorBackwardCompat:
             log_stream.create()
         mock_projects_class.assert_not_called()
 
-    @patch("galileo.shared.project_resolver.Projects")
+    @patch("splunk_ao.shared.project_resolver.Projects")
     def test_resolver_does_not_swallow_unrelated_value_error(
         self, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -1192,7 +1192,7 @@ class TestNotFoundErrorOverloads:
 
     def test_none_first_arg_raises_type_error(self) -> None:
         # When/Then: ``None`` is neither a status code nor a message; the previous
-        # implementation fell through to GalileoAPIError and produced "HTTP None".
+        # implementation fell through to SplunkAOAPIError and produced "HTTP None".
         with pytest.raises(TypeError, match="requires either"):
             NotFoundError(None)  # type: ignore[call-overload]
 

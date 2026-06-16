@@ -8,14 +8,14 @@ from uuid import UUID
 
 import pytest
 
-from galileo.logger import GalileoLogger
-from galileo.logger.logger import GalileoLoggerException
-from galileo.schema.trace import SpansIngestRequest, SpanUpdateRequest, TracesIngestRequest, TraceUpdateRequest
 from galileo_core.schemas.logging.llm import Message
 from galileo_core.schemas.protect.execution_status import ExecutionStatus
 from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.response import Response, TraceMetadata
 from galileo_core.schemas.shared.document import Document
+from splunk_ao.logger import SplunkAOLogger
+from splunk_ao.logger.logger import SplunkAOLoggerException
+from splunk_ao.schema.trace import SpansIngestRequest, SpanUpdateRequest, TracesIngestRequest, TraceUpdateRequest
 from tests.testutils.setup import (
     setup_mock_logstreams_client,
     setup_mock_projects_client,
@@ -28,16 +28,16 @@ LOGGER = logging.getLogger(__name__)
 
 def test_galileo_logger_exceptions() -> None:
     with pytest.raises(Exception) as exc_info:
-        GalileoLogger(project="my_project", log_stream="my_log_stream", experiment_id="my_experiment_id")
+        SplunkAOLogger(project="my_project", log_stream="my_log_stream", experiment_id="my_experiment_id")
     assert str(exc_info.value) == "User cannot specify both a log stream and an experiment."
 
 
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.Traces")
 def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog) -> None:
-    monkeypatch.setenv("GALILEO_LOGGING_DISABLED", "true")
+    monkeypatch.setenv("SPLUNK_AO_LOGGING_DISABLED", "true")
 
     with caplog.at_level(logging.WARNING):
-        logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+        logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
         capture = setup_thread_pool_request_capture(logger)
 
@@ -64,9 +64,9 @@ def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog) -
         mock_traces_client.update_span.assert_not_called()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -74,7 +74,7 @@ def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -97,10 +97,10 @@ def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_
     assert request.traces[0].metrics.duration_ns == 1_000_000
 
 
-@patch("galileo.logger.logger.IngestTraces")
-@patch("galileo.logger.logger.Traces")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.IngestTraces")
+@patch("splunk_ao.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
 def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
     mock_projects_client: Mock, mock_logstreams_client: Mock, mock_traces_client: Mock, mock_ingest_traces_client: Mock
 ) -> None:
@@ -108,9 +108,9 @@ def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    with patch.object(GalileoLogger, "_is_ingest_service_available", return_value=True):
+    with patch.object(SplunkAOLogger, "_is_ingest_service_available", return_value=True):
         # When: creating a distributed logger
-        logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+        logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     # Then: distributed mode uses IngestTraces when available, same as batch mode
     assert logger._traces_client is mock_ingest_traces_client.return_value
@@ -118,9 +118,9 @@ def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
     mock_traces_client.assert_not_called()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_nested_distributed_spans_submit_independently(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -128,7 +128,7 @@ def test_nested_distributed_spans_submit_independently(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
     capture = setup_thread_pool_request_capture(logger)
 
     logger.start_trace(input="input", name="test-trace")
@@ -145,9 +145,9 @@ def test_nested_distributed_spans_submit_independently(
     assert span_tasks[1].request.parent_id == workflow.id
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -155,7 +155,7 @@ def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -212,9 +212,9 @@ def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock
     assert request.spans[0].step_number == 1
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_protect_tool_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -224,7 +224,7 @@ def test_add_protect_tool_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -317,9 +317,9 @@ def test_add_protect_tool_span(
     assert protect_span.user_metadata == metadata
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -327,7 +327,7 @@ def test_conclude_trace(mock_traces_client: Mock, mock_projects_client: Mock, mo
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -371,9 +371,9 @@ def test_conclude_trace(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert request.duration_ns == 1_000_000
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -383,7 +383,7 @@ def test_conclude_trace_with_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -458,9 +458,9 @@ def test_conclude_trace_with_span(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_and_start_new_trace(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -470,7 +470,7 @@ def test_conclude_trace_and_start_new_trace(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -577,9 +577,9 @@ def test_conclude_trace_and_start_new_trace(
     assert request.traces[0].metrics.duration_ns is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_nested_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -589,7 +589,7 @@ def test_conclude_trace_with_nested_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -710,9 +710,9 @@ def test_conclude_trace_with_nested_span(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_all_with_nested_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -722,7 +722,7 @@ def test_conclude_all_with_nested_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -833,9 +833,9 @@ def test_conclude_all_with_nested_span(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_agent_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -845,7 +845,7 @@ def test_conclude_trace_with_agent_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -969,9 +969,9 @@ def test_conclude_trace_with_agent_span(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_trace_with_multiple_nested_spans(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -981,7 +981,7 @@ def test_trace_with_multiple_nested_spans(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -1238,9 +1238,9 @@ def test_trace_with_multiple_nested_spans(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_trace_with_nested_span_and_sibling(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1250,7 +1250,7 @@ def test_trace_with_nested_span_and_sibling(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -1392,9 +1392,9 @@ def test_trace_with_nested_span_and_sibling(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span_and_conclude_existing_trace(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1404,7 +1404,7 @@ def test_add_llm_span_and_conclude_existing_trace(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(
+    logger = SplunkAOLogger(
         project="my_project",
         log_stream="my_log_stream",
         trace_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9d",
@@ -1470,9 +1470,9 @@ def test_add_llm_span_and_conclude_existing_trace(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_nested_span_and_conclude_existing_trace(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1482,7 +1482,7 @@ def test_add_nested_span_and_conclude_existing_trace(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(
+    logger = SplunkAOLogger(
         project="my_project",
         log_stream="my_log_stream",
         mode="distributed",
@@ -1594,9 +1594,9 @@ def test_add_nested_span_and_conclude_existing_trace(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span_and_conclude_existing_workflow_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1606,7 +1606,7 @@ def test_add_llm_span_and_conclude_existing_workflow_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(
+    logger = SplunkAOLogger(
         project="my_project",
         log_stream="my_log_stream",
         mode="distributed",
@@ -1675,9 +1675,9 @@ def test_add_llm_span_and_conclude_existing_workflow_span(
     assert request.status_code == 200
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_add_nested_span_and_conclude_existing_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1687,7 +1687,7 @@ def test_add_nested_span_and_conclude_existing_span(
 
     created_at = datetime.datetime.now()
     metadata = {"key": "value"}
-    logger = GalileoLogger(
+    logger = SplunkAOLogger(
         project="my_project",
         log_stream="my_log_stream",
         mode="distributed",
@@ -1802,9 +1802,9 @@ def test_add_nested_span_and_conclude_existing_span(
     assert request.status_code == 200
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_catch_error_trace_span_ids_in_batch_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, caplog
 ) -> None:
@@ -1812,16 +1812,18 @@ def test_catch_error_trace_span_ids_in_batch_mode(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    with pytest.raises(GalileoLoggerException):
-        GalileoLogger(project="my_project", log_stream="my_log_stream", trace_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9d")
+    with pytest.raises(SplunkAOLoggerException):
+        SplunkAOLogger(
+            project="my_project", log_stream="my_log_stream", trace_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9d"
+        )
 
-    with pytest.raises(GalileoLoggerException):
-        GalileoLogger(project="my_project", log_stream="my_log_stream", span_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9e")
+    with pytest.raises(SplunkAOLoggerException):
+        SplunkAOLogger(project="my_project", log_stream="my_log_stream", span_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9e")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_catch_error_mismatched_trace_span_ids(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, caplog, enable_galileo_logging
 ) -> None:
@@ -1834,7 +1836,7 @@ def test_catch_error_mismatched_trace_span_ids(
     # With stubs, no validation is performed - stubs are created as-is
     # This is intentional to avoid race conditions where parent trace/span may not be ingested yet
     # Using different trace_id and span_id to simulate potentially mismatched IDs (which would fail with fetch-based approach)
-    logger = GalileoLogger(
+    logger = SplunkAOLogger(
         project="my_project",
         log_stream="my_log_stream",
         mode="distributed",
@@ -1854,9 +1856,9 @@ def test_catch_error_mismatched_trace_span_ids(
     assert logger._parent_stack[1].id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9e")
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_with_workflow_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1865,7 +1867,7 @@ def test_get_tracing_headers_with_workflow_span(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
     setup_thread_pool_request_capture(logger)
 
     logger.start_trace(input="test input", name="test-trace")
@@ -1879,9 +1881,9 @@ def test_get_tracing_headers_with_workflow_span(
     assert headers["X-Galileo-Parent-ID"] == str(workflow_span.id)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_with_agent_span(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1890,7 +1892,7 @@ def test_get_tracing_headers_with_agent_span(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
     setup_thread_pool_request_capture(logger)
 
     logger.start_trace(input="test input", name="test-trace")
@@ -1904,9 +1906,9 @@ def test_get_tracing_headers_with_agent_span(
     assert headers["X-Galileo-Parent-ID"] == str(agent_span.id)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_batch_mode_error(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1915,18 +1917,18 @@ def test_get_tracing_headers_batch_mode_error(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="batch")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="batch")
     logger.start_trace(input="test input")
 
-    with pytest.raises(GalileoLoggerException) as exc_info:
+    with pytest.raises(SplunkAOLoggerException) as exc_info:
         logger.get_tracing_headers()
 
     assert "only supported in distributed mode" in str(exc_info.value)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_no_trace_error(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1935,17 +1937,17 @@ def test_get_tracing_headers_no_trace_error(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
-    with pytest.raises(GalileoLoggerException) as exc_info:
+    with pytest.raises(SplunkAOLoggerException) as exc_info:
         logger.get_tracing_headers()
 
     assert "Start trace before getting tracing headers" in str(exc_info.value)
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_output_and_duration_streaming(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -1955,7 +1957,7 @@ def test_update_trace_output_and_duration_streaming(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -1992,9 +1994,9 @@ def test_update_trace_output_and_duration_streaming(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_update_span_output_and_duration_streaming(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2004,7 +2006,7 @@ def test_update_span_output_and_duration_streaming(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2043,9 +2045,9 @@ def test_update_span_output_and_duration_streaming(
     assert request.status_code == 200
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_with_none_duration(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2055,7 +2057,7 @@ def test_update_trace_with_none_duration(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2082,9 +2084,9 @@ def test_update_trace_with_none_duration(
     assert request.duration_ns is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_update_span_with_none_duration(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2094,7 +2096,7 @@ def test_update_span_with_none_duration(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2123,9 +2125,9 @@ def test_update_span_with_none_duration(
     assert request.duration_ns is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_and_span_with_duration_in_nested_structure(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2135,7 +2137,7 @@ def test_update_trace_and_span_with_duration_in_nested_structure(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2176,9 +2178,9 @@ def test_update_trace_and_span_with_duration_in_nested_structure(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_inherits_last_llm_child_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2191,7 +2193,7 @@ def test_conclude_trace_inherits_last_llm_child_output(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2227,9 +2229,9 @@ def test_conclude_trace_inherits_last_llm_child_output(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_multiple_llm_children_inherits_last(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2239,7 +2241,7 @@ def test_conclude_trace_with_multiple_llm_children_inherits_last(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2280,9 +2282,9 @@ def test_conclude_trace_with_multiple_llm_children_inherits_last(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_inherits_last_workflow_span_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2295,7 +2297,7 @@ def test_conclude_trace_inherits_last_workflow_span_output(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2337,9 +2339,9 @@ def test_conclude_trace_inherits_last_workflow_span_output(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_explicit_output_overrides_child(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2349,7 +2351,7 @@ def test_conclude_trace_explicit_output_overrides_child(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2381,9 +2383,9 @@ def test_conclude_trace_explicit_output_overrides_child(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_conclude_workflow_span_inherits_last_child_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2393,7 +2395,7 @@ def test_conclude_workflow_span_inherits_last_child_output(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2435,9 +2437,9 @@ def test_conclude_workflow_span_inherits_last_child_output(
     assert request.duration_ns == 3_000_000
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_concludes_unconcluded_trace(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2450,7 +2452,7 @@ def test_distributed_flush_concludes_unconcluded_trace(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2494,9 +2496,9 @@ def test_distributed_flush_concludes_unconcluded_trace(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_no_op_if_already_concluded(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2509,7 +2511,7 @@ def test_distributed_flush_no_op_if_already_concluded(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2550,9 +2552,9 @@ def test_distributed_flush_no_op_if_already_concluded(
     assert request.is_complete
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_waits_for_tasks(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2562,7 +2564,7 @@ def test_distributed_flush_waits_for_tasks(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     created_at = datetime.datetime.now()
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
     capture = setup_thread_pool_request_capture(logger)
 
@@ -2584,9 +2586,9 @@ def test_distributed_flush_waits_for_tasks(
     assert logger._task_handler.all_tasks_completed()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_terminate_stops_task_handler_when_agent_control_unregister_fails(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
@@ -2594,14 +2596,14 @@ def test_terminate_stops_task_handler_when_agent_control_unregister_fails(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
     task_handler = Mock()
     logger._task_handler = task_handler
 
     # When: terminating the logger
     with (
         patch.object(
-            GalileoLogger, "disable_agent_control", autospec=True, side_effect=RuntimeError("unregister failed")
+            SplunkAOLogger, "disable_agent_control", autospec=True, side_effect=RuntimeError("unregister failed")
         ) as disable_agent_control,
         patch.object(logger, "_auto_conclude_trace"),
         patch.object(logger, "_wait_for_all_tasks_sync"),
@@ -2613,9 +2615,9 @@ def test_terminate_stops_task_handler_when_agent_control_unregister_fails(
     task_handler.terminate.assert_called_once()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_batch_mode_flush_still_uses_get_last_output(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, enable_galileo_logging
 ) -> None:
@@ -2629,7 +2631,7 @@ def test_batch_mode_flush_still_uses_get_last_output(
 
     created_at = datetime.datetime.now()
     # Note: mode="batch" is the default
-    logger = GalileoLogger(project="my_project", log_stream="my_log_stream", mode="batch")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="batch")
 
     logger.start_trace(input="input", name="test-trace", created_at=created_at)
     logger.add_llm_span(

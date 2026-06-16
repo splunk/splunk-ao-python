@@ -3,12 +3,12 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.prompt import Prompt, PromptVersion, _parse_template_to_messages
 from galileo.resources.models.messages_list_item import MessagesListItem
-from galileo.schema.message import Message
-from galileo.shared.base import SyncState
-from galileo.shared.exceptions import ResourceNotFoundError, ValidationError
 from galileo_core.schemas.logging.llm import MessageRole
+from splunk_ao.prompt import Prompt, PromptVersion, _parse_template_to_messages
+from splunk_ao.schema.message import Message
+from splunk_ao.shared.base import SyncState
+from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
 
 
 class TestPromptInitialization:
@@ -68,8 +68,8 @@ class TestPromptInitialization:
 class TestPromptCreate:
     """Test suite for Prompt.create() method."""
 
-    @patch("galileo.prompt.Projects")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.Projects")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_persists_prompt_to_api(
         self,
         mock_templates_class: MagicMock,
@@ -100,8 +100,8 @@ class TestPromptCreate:
         assert prompt.selected_version_number == 1
         assert prompt.total_versions == 1
 
-    @patch("galileo.prompt.Projects")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.Projects")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_with_project_association(
         self,
         mock_templates_class: MagicMock,
@@ -134,8 +134,8 @@ class TestPromptCreate:
         assert prompt.project_id == mock_project.id
         assert prompt.project_name == mock_project.name
 
-    @patch("galileo.prompt.Projects")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.Projects")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_handles_api_failure(
         self, mock_templates_class: MagicMock, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -158,8 +158,8 @@ class TestPromptCreate:
 
         assert prompt.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.prompt.Projects")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.Projects")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_raises_resource_not_found_when_explicit_project_cannot_be_resolved(
         self, mock_templates_class: MagicMock, mock_projects_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -186,7 +186,7 @@ class TestPromptGet:
     """Test suite for Prompt.get() class method."""
 
     @pytest.mark.parametrize("lookup_key", ["name", "id"])
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_get_returns_prompt(
         self, mock_templates_class: MagicMock, lookup_key: str, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -201,7 +201,7 @@ class TestPromptGet:
         assert prompt is not None
         assert prompt.is_synced()
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_get_returns_none_when_not_found(self, mock_templates_class: MagicMock, reset_configuration: None) -> None:
         """Test get() returns None when prompt is not found."""
         mock_service = MagicMock()
@@ -228,7 +228,7 @@ class TestPromptGet:
 class TestPromptList:
     """Test suite for Prompt.list() class method."""
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_list_returns_all_prompts(self, mock_templates_class: MagicMock, reset_configuration: None) -> None:
         """Test list() returns a list of synced prompt instances."""
         mock_service = MagicMock()
@@ -260,7 +260,7 @@ class TestPromptList:
 class TestPromptUpdate:
     """Test suite for Prompt.update() method."""
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_update_name(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -304,7 +304,7 @@ class TestPromptUpdate:
 class TestPromptDelete:
     """Test suite for Prompt.delete() method."""
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_delete_removes_prompt(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -331,7 +331,7 @@ class TestPromptDelete:
 class TestPromptRefresh:
     """Test suite for Prompt.refresh() method."""
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_refresh_updates_attributes(self, mock_templates_class: MagicMock, reset_configuration: None) -> None:
         """Test refresh() updates all attributes from the API."""
         mock_service = MagicMock()
@@ -385,10 +385,10 @@ class TestPromptRefresh:
 class TestPromptMethods:
     """Test suite for other Prompt methods."""
 
-    @patch("galileo.prompt.GalileoPythonConfig")
-    @patch("galileo.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
-    @patch("galileo.prompt.create_global_prompt_template_version_templates_template_id_versions_post")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.SplunkAOConfig")
+    @patch("splunk_ao.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
+    @patch("splunk_ao.prompt.create_global_prompt_template_version_templates_template_id_versions_post")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_version_creates_actual_version(
         self,
         mock_templates_class: MagicMock,
@@ -441,10 +441,10 @@ class TestPromptMethods:
         assert prompt.is_synced()
         assert prompt.selected_version_number == 2
 
-    @patch("galileo.prompt.GalileoPythonConfig")
-    @patch("galileo.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
-    @patch("galileo.prompt.create_global_prompt_template_version_templates_template_id_versions_post")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.SplunkAOConfig")
+    @patch("splunk_ao.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
+    @patch("splunk_ao.prompt.create_global_prompt_template_version_templates_template_id_versions_post")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_create_version_with_new_messages(
         self,
         mock_templates_class: MagicMock,
@@ -508,8 +508,8 @@ class TestPromptMethods:
         with pytest.raises(ValueError, match="Prompt ID is not set"):
             prompt.create_version()
 
-    @patch("galileo.prompt.Projects")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.Projects")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_creates_prompt_when_local_only(
         self,
         mock_templates_class: MagicMock,
@@ -538,7 +538,7 @@ class TestPromptMethods:
         assert result is prompt
         assert prompt.is_synced()
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_returns_self_when_already_synced(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -598,7 +598,7 @@ class TestPromptMethods:
 class TestPromptSave:
     """Test suite for Prompt.save() — focused on the DIRTY branch and dirty tracking."""
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_dirty_calls_update_and_syncs_attributes(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -627,7 +627,7 @@ class TestPromptSave:
         assert result.updated_at == updated_response.updated_at
         assert result.is_synced()
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_without_id_raises_value_error(
         self, mock_templates_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -640,7 +640,7 @@ class TestPromptSave:
         with pytest.raises(ValueError, match="Prompt ID is not set"):
             prompt.save()
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_handles_api_failure(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -661,7 +661,7 @@ class TestPromptSave:
 
         assert prompt.sync_state == SyncState.FAILED_SYNC
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_name_assignment_transitions_synced_to_dirty(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -687,7 +687,7 @@ class TestPromptSave:
         # Then: state is LOCAL_ONLY, not DIRTY
         assert prompt.sync_state == SyncState.LOCAL_ONLY
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_same_value_assignment_stays_synced(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -706,7 +706,7 @@ class TestPromptSave:
         # Then: state stays SYNCED (no redundant API call on save)
         assert prompt.sync_state == SyncState.SYNCED
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_save_failed_sync_raises_value_error(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -722,7 +722,7 @@ class TestPromptSave:
         with pytest.raises(ValueError, match="FAILED_SYNC"):
             prompt.save()
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_refresh_does_not_trigger_dirty(
         self, mock_templates_class: MagicMock, reset_configuration: None, mock_prompt: MagicMock
     ) -> None:
@@ -805,7 +805,7 @@ class TestJsonTemplateParsing:
         assert messages[0].role == MessageRole.user
         assert messages[0].content == "{not valid json}"
 
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_get_parses_json_string_template_correctly(
         self, mock_templates_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -847,9 +847,9 @@ class TestJsonTemplateParsing:
 class TestVersionManagement:
     """Test suite for version management methods."""
 
-    @patch("galileo.prompt.GalileoPythonConfig")
-    @patch("galileo.prompt.query_template_versions_templates_template_id_versions_query_post")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.SplunkAOConfig")
+    @patch("splunk_ao.prompt.query_template_versions_templates_template_id_versions_query_post")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_list_versions_returns_version_objects(
         self,
         mock_templates_class: MagicMock,
@@ -901,9 +901,9 @@ class TestVersionManagement:
         with pytest.raises(ValueError, match="Prompt ID is not set"):
             prompt.list_versions()
 
-    @patch("galileo.prompt.GalileoPythonConfig")
-    @patch("galileo.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
-    @patch("galileo.prompt.GlobalPromptTemplates")
+    @patch("splunk_ao.prompt.SplunkAOConfig")
+    @patch("splunk_ao.prompt.set_selected_global_template_version_templates_template_id_versions_version_put")
+    @patch("splunk_ao.prompt.GlobalPromptTemplates")
     def test_select_version_sets_active_version(
         self,
         mock_templates_class: MagicMock,

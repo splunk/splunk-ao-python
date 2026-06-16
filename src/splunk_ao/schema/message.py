@@ -1,0 +1,42 @@
+# ruff: noqa: F401
+from typing import Any
+
+from pydantic import Field
+
+from galileo_core.schemas.logging.llm import Message as CoreMessage
+
+# These classes should not be removed. They are used to rebuild the new `Message` model
+# we are defining below.
+from galileo_core.schemas.logging.llm import ToolCall, ToolCallFunction
+from splunk_ao.schema.content_blocks import IngestMessageContent
+
+
+class Message(CoreMessage):
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(exclude_none=True)
+
+    def __eq__(self, value: CoreMessage) -> bool:
+        return (
+            self.content == value.content
+            and self.role == value.role
+            and self.tool_calls == value.tool_calls
+            and self.tool_call_id == value.tool_call_id
+        )
+
+
+# Without rebuilding the model, Message class we create here would not know and validate
+# constituent classes defined in core which build up message.
+Message.model_rebuild()
+
+
+class LoggedMessage(Message):
+    """Message type for ingestion that accepts IngestContentBlocks.
+
+    Unlike the read-side Message (whose content is str | List[ContentPart]),
+    this accepts str | List[IngestContentBlock] for multimodal ingestion.
+    """
+
+    content: IngestMessageContent = Field(default="")
+
+
+LoggedMessage.model_rebuild()

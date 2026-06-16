@@ -186,7 +186,7 @@ Intercept traces for custom processing before forwarding to Galileo:
 ```python
 import asyncio
 import os
-from galileo import GalileoLogger
+from splunk_ao import GalileoLogger
 from galileo_adk import GalileoADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent

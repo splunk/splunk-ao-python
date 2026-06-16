@@ -3,8 +3,8 @@
 # dependencies = ["galileo"]
 # ///
 
-from galileo import Message, MessageRole
-from galileo.prompts import create_prompt, get_prompt, get_prompts
+from splunk_ao import Message, MessageRole
+from splunk_ao.prompts import create_prompt, get_prompt, get_prompts
 
 # Create a global template
 prompt_template = create_prompt(

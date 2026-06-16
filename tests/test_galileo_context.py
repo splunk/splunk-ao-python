@@ -2,8 +2,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from galileo import splunk_ao_context
-from galileo.decorator import _experiment_id_context, _log_stream_context, _project_context
+from splunk_ao import splunk_ao_context
+from splunk_ao.decorator import _experiment_id_context, _log_stream_context, _project_context
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -12,9 +12,9 @@ def reset_context() -> None:
     splunk_ao_context.reset()
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_nested_context_restoration(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
@@ -65,9 +65,9 @@ def test_nested_context_restoration(
     assert _experiment_id_context.get() is None
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_context_update_with_defaults(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:

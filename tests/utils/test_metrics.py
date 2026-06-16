@@ -2,11 +2,11 @@ import datetime
 
 import pytest
 
-from galileo.schema.metrics import LocalMetricConfig
-from galileo.utils.metrics import _populate_local_metric, populate_local_metrics
 from galileo_core.schemas.logging.span import LlmSpan, WorkflowSpan
 from galileo_core.schemas.logging.step import StepType
 from galileo_core.schemas.logging.trace import Trace
+from splunk_ao.schema.metrics import LocalMetricConfig
+from splunk_ao.utils.metrics import _populate_local_metric, populate_local_metrics
 
 
 # Define simple scorer and aggregator functions for testing

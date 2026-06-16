@@ -1,7 +1,7 @@
 # Special PyDoc markdown configuration for the Galileo handlers module as this isn't created by default for some reason
 loaders:
   - type: python
-    search_path: [./src/galileo/handlers]
+    search_path: [./src/splunk_ao/handlers]
     ignore_when_discovered: ["__pycache__", "constants", "resources", "schema"]
 
 processors:
