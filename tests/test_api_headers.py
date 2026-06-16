@@ -1,5 +1,6 @@
 """Tests for X-Galileo-SDK header in API calls."""
 
+from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
 from galileo.resources.api.datasets.get_dataset_datasets_dataset_id_get import _get_kwargs as dataset_get_kwargs
@@ -12,6 +13,22 @@ from splunk_ao.utils.headers_data import get_package_version
 
 class TestApiHeaders:
     """Test that X-Galileo-SDK headers are properly included in API calls."""
+
+    @patch("splunk_ao.utils.headers_data.version")
+    def test_get_package_version_uses_splunk_ao_distribution(self, mock_version) -> None:
+        """Test package version lookup uses the rebranded distribution name."""
+        mock_version.return_value = "0.1.0"
+
+        assert get_package_version() == "0.1.0"
+        mock_version.assert_called_once_with("splunk-ao")
+
+    @patch("splunk_ao.utils.headers_data.version")
+    def test_get_package_version_preserves_missing_package_fallback(self, mock_version) -> None:
+        """Test missing package metadata still returns the fallback version."""
+        mock_version.side_effect = PackageNotFoundError
+
+        assert get_package_version() == "0.0.0"
+        mock_version.assert_called_once_with("splunk-ao")
 
     def test_generated_api_method_includes_sdk_header(self) -> None:
         """Test that generated API methods include the X-Galileo-SDK header with method name."""

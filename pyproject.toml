@@ -1,15 +1,15 @@
 [project]
-name = "galileo"
-version = "2.3.0"
-description = "Client library for the Galileo platform."
-authors = [{ name = "Galileo Technologies Inc.", email = "team@galileo.ai" }]
+name = "splunk-ao"
+version = "0.1.0"
+description = "Splunk Agent Observability SDK for Python."
+authors = [{ name = "Splunk Inc." }]
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
 dynamic = ["dependencies"]
 license = "Apache-2.0"
 
 [project.urls]
-Repository = "https://github.com/rungalileo/galileo-python"
+Repository = "https://github.com/splunk/splunk-ao-python"
 
 [tool.poetry]
 packages = [

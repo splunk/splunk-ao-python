@@ -80,7 +80,7 @@ from splunk_ao.utils.log_config import enable_console_logging
 
 vars(sys)["_splunk_ao_suppress_galileo_deprecation_warning"] = False
 
-__version__ = "2.3.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "APIError",
