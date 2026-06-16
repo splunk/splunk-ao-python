@@ -16,7 +16,7 @@ from galileo.resources.models import ExperimentResponse, HTTPValidationError, Pr
 from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
-from splunk_ao.decorator import splunk_ao_context, splunk_ao_context_dataset_context, log
+from splunk_ao.decorator import splunk_ao_context, splunk_ao_dataset_context, log
 from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate

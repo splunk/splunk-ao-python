@@ -30,7 +30,7 @@ def test_splunk_ao_import_smoke() -> None:
     module = importlib.import_module("splunk_ao")
 
     assert module.__version__
-    assert hasattr(module, "galileo_context")
+    assert hasattr(module, "splunk_ao_context")
     assert importlib.import_module("splunk_ao.openai")
     assert importlib.import_module("splunk_ao.logger")
 
@@ -41,7 +41,7 @@ def test_legacy_galileo_import_shim_warns() -> None:
     with pytest.warns(DeprecationWarning, match="use 'splunk_ao' instead"):
         module = importlib.import_module("galileo")
 
-    assert hasattr(module, "galileo_context")
+    assert hasattr(module, "splunk_ao_context")
 
 
 def test_protected_generated_resource_imports_remain_available() -> None:

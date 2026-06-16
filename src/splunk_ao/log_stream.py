@@ -6,10 +6,6 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from galileo.config import GalileoPythonConfig
-from galileo.decorator import splunk_ao_context
-from galileo.export import ExportClient
-from galileo.log_streams import LogStreams
 from galileo.resources.api.trace import (
     sessions_available_columns_projects_project_id_sessions_available_columns_post,
     spans_available_columns_projects_project_id_spans_available_columns_post,
@@ -21,7 +17,7 @@ from galileo.resources.models.log_records_available_columns_request import LogRe
 from galileo.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from galileo.resources.types import Unset
 from splunk_ao.config import SplunkAOConfig
-from splunk_ao.decorator import galileo_context
+from splunk_ao.decorator import splunk_ao_context
 from splunk_ao.export import ExportClient
 from splunk_ao.log_streams import LogStreams
 from splunk_ao.schema.filters import FilterType
