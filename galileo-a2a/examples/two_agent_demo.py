@@ -48,10 +48,10 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from opentelemetry.instrumentation.langchain import LangchainInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
+from splunk_ao.otel import SplunkAOSpanProcessor, add_galileo_span_processor
 from starlette.applications import Starlette
 from typing_extensions import TypedDict
 
-from galileo.otel import GalileoSpanProcessor, add_galileo_span_processor
 from galileo_a2a import A2AInstrumentor
 
 load_dotenv(Path(__file__).parent / ".env")
@@ -61,7 +61,7 @@ load_dotenv(Path(__file__).parent / ".env")
 # ---------------------------------------------------------------------------
 
 provider = TracerProvider()
-add_galileo_span_processor(provider, GalileoSpanProcessor())
+add_galileo_span_processor(provider, SplunkAOSpanProcessor())
 A2AInstrumentor().instrument(tracer_provider=provider, agent_name="orchestrator")
 LangchainInstrumentor().instrument(tracer_provider=provider)
 

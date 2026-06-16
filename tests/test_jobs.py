@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from galileo.jobs import Jobs
 from galileo.resources.models import HTTPValidationError, PromptRunSettings, TaskType, ValidationError
 from galileo.resources.types import Response
+from splunk_ao.jobs import Jobs
 
 
 def _make_422_response(msg: str = "Invalid model alias: 'gpt-4o-mini'") -> Response:
@@ -34,7 +34,7 @@ def _make_job_kwargs(**overrides):
 
 
 class TestJobsCreate:
-    @patch("galileo.jobs.create_job_jobs_post")
+    @patch("splunk_ao.jobs.create_job_jobs_post")
     def test_raises_value_error_with_clear_message_on_invalid_model_alias(self, mock_post: MagicMock) -> None:
         """Jobs.create() with invalid model_alias (HTTP 422) raises ValueError with readable message."""
         # Given: the API returns a 422 with validation error for model_alias
@@ -44,7 +44,7 @@ class TestJobsCreate:
         with pytest.raises(ValueError, match="Request validation failed"):
             Jobs().create(**_make_job_kwargs())
 
-    @patch("galileo.jobs.create_job_jobs_post")
+    @patch("splunk_ao.jobs.create_job_jobs_post")
     def test_error_message_contains_field_path_and_backend_message(self, mock_post: MagicMock) -> None:
         """The ValueError includes the field path and backend error message."""
         # Given: the API returns a 422 with specific validation detail
@@ -57,7 +57,7 @@ class TestJobsCreate:
         assert "model_alias" in msg
         assert "gpt-4o-mini" in msg
 
-    @patch("galileo.jobs.create_job_jobs_post")
+    @patch("splunk_ao.jobs.create_job_jobs_post")
     def test_does_not_raise_galileo_http_exception(self, mock_post: MagicMock) -> None:
         """Jobs.create() no longer raises the empty GalileoHTTPException on 422."""
         # Given: the API returns a 422 response
@@ -76,7 +76,7 @@ class TestJobsCreate:
         except ValueError:
             pass  # expected
 
-    @patch("galileo.jobs.create_job_jobs_post")
+    @patch("splunk_ao.jobs.create_job_jobs_post")
     def test_raises_value_error_on_unexpected_non_200(self, mock_post: MagicMock) -> None:
         """Jobs.create() raises ValueError with status code for non-422 unexpected responses."""
         # Given: the API returns an unexpected non-200 response with no parsed body
@@ -88,7 +88,7 @@ class TestJobsCreate:
         with pytest.raises(ValueError, match="503"):
             Jobs().create(**_make_job_kwargs())
 
-    @patch("galileo.jobs.create_job_jobs_post")
+    @patch("splunk_ao.jobs.create_job_jobs_post")
     def test_raises_value_error_when_api_returns_string_detail(self, mock_post: MagicMock) -> None:
         """Jobs.create() surfaces the API message when the 422 detail is a plain string."""
         # Given: the API returns a 422 whose 'detail' is a plain string (not the standard list shape)

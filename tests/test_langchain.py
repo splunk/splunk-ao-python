@@ -10,52 +10,52 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from galileo import Message, MessageRole, galileo_context
-from galileo.config import GalileoPythonConfig
-from galileo.handlers.langchain import GalileoAsyncCallback, GalileoCallback
-from galileo.handlers.langchain.utils import parse_llm_result, update_root_to_agent
-from galileo.logger.logger import GalileoLogger
-from galileo.schema.handlers import Node
-from galileo.utils.singleton import GalileoLoggerSingleton
-from galileo.utils.uuid_utils import uuid7_to_uuid4
 from galileo_core.schemas.shared.document import Document as GalileoDocument
+from splunk_ao import Message, MessageRole, galileo_context
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.handlers.langchain import SplunkAOAsyncCallback, SplunkAOCallback
+from splunk_ao.handlers.langchain.utils import parse_llm_result, update_root_to_agent
+from splunk_ao.logger.logger import SplunkAOLogger
+from splunk_ao.schema.handlers import Node
+from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
+from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
-class TestGalileoCallback:
+class TestSplunkAOCallback:
     @pytest.fixture
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
         setup_mock_logstreams_client(mock_logstreams_client)
-        return GalileoLogger(project="my_project", log_stream="my_log_stream")
+        return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
 
     @pytest.fixture
-    def callback(self, galileo_logger: GalileoLogger) -> Generator[GalileoCallback, None, None]:
-        """Creates a GalileoCallback with a mock logger"""
-        return GalileoCallback(galileo_logger=galileo_logger, flush_on_chain_end=False)
+    def callback(self, galileo_logger: SplunkAOLogger) -> Generator[SplunkAOCallback, None, None]:
+        """Creates a SplunkAOCallback with a mock logger"""
+        return SplunkAOCallback(galileo_logger=galileo_logger, flush_on_chain_end=False)
         # Reset the root node before each test
         # Clean up after each test
 
-    def test_initialization(self, galileo_logger: GalileoLogger) -> None:
+    def test_initialization(self, galileo_logger: SplunkAOLogger) -> None:
         """Test callback initialization with various parameters"""
         # Default initialization
-        callback = GalileoCallback(galileo_logger=galileo_logger)
+        callback = SplunkAOCallback(galileo_logger=galileo_logger)
         assert callback._handler._galileo_logger == galileo_logger
         assert callback._handler._start_new_trace is True
         assert callback._handler._flush_on_chain_end is True
         assert callback._handler._nodes == {}
 
         # Custom initialization
-        callback = GalileoCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
         assert callback._handler._start_new_trace is False
         assert callback._handler._flush_on_chain_end is False
 
-    def test_on_chain_start_end(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_on_chain_start_end(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test chain start and end callbacks"""
         run_id = uuid.uuid4()
 
@@ -81,7 +81,7 @@ class TestGalileoCallback:
         assert traces[0].spans[0].step_number is None
 
     def test_on_chain_start_with_kwargs_serialised_none(
-        self, callback: GalileoCallback, galileo_logger: GalileoLogger
+        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
     ) -> None:
         run_id = uuid.uuid4()
 
@@ -124,7 +124,7 @@ class TestGalileoCallback:
         assert traces[0].spans[0].output == '{"result": "test answer"}'
         assert traces[0].spans[0].step_number is None
 
-    def test_on_agent_chain(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_on_agent_chain(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test agent chain handling"""
         run_id = uuid.uuid4()
 
@@ -149,7 +149,7 @@ class TestGalileoCallback:
         assert traces[0].spans[0].output == '{"return_values": {"output": "test result"}, "log": "log message"}'
         assert traces[0].spans[0].step_number is None
 
-    def test_on_llm_start_end(self, callback: GalileoCallback) -> None:
+    def test_on_llm_start_end(self, callback: SplunkAOCallback) -> None:
         """Test LLM start and end callbacks"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -192,7 +192,7 @@ class TestGalileoCallback:
         assert node.span_params["total_tokens"] == 30
         assert node.span_params["duration_ns"] > 0
 
-    def test_on_chat_model_start(self, callback: GalileoCallback) -> None:
+    def test_on_chat_model_start(self, callback: SplunkAOCallback) -> None:
         """Test chat model start callback"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -232,7 +232,9 @@ class TestGalileoCallback:
         assert input_data[1]["role"] == "user"
         assert input_data[2]["role"] == "assistant"
 
-    def test_on_chat_model_start_end_with_tools(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_on_chat_model_start_end_with_tools(
+        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
+    ) -> None:
         """Test chat model start and end callbacks with tools"""
         run_id = uuid.uuid4()
         chain_id = uuid.uuid4()
@@ -307,7 +309,7 @@ class TestGalileoCallback:
         ]
         assert traces[0].spans[0].step_number is None
 
-    def test_on_tool_start_end_with_string_output(self, callback: GalileoCallback) -> None:
+    def test_on_tool_start_end_with_string_output(self, callback: SplunkAOCallback) -> None:
         """Test tool start and end callbacks"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -332,7 +334,7 @@ class TestGalileoCallback:
         assert node.span_params["duration_ns"] > 0
         assert node.span_params["output"] == "4"
 
-    def test_on_tool_start_end_with_object_output(self, callback: GalileoCallback) -> None:
+    def test_on_tool_start_end_with_object_output(self, callback: SplunkAOCallback) -> None:
         """Test tool start and end callbacks"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -396,7 +398,7 @@ class TestGalileoCallback:
         assert node.span_params["input"] == "2+2"
         assert node.span_params["output"] == '{"tool_call_id": "1", "status": "success", "role": "tool"}'
 
-    def test_on_tool_start_end_with_dict_output(self, callback: GalileoCallback) -> None:
+    def test_on_tool_start_end_with_dict_output(self, callback: SplunkAOCallback) -> None:
         """Test tool start and end callbacks"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -443,7 +445,7 @@ class TestGalileoCallback:
         assert node is not None
         assert node.span_params["output"] == '{"tool_call_id": "1", "status": "success", "role": "tool"}'
 
-    def test_on_retriever_start_end(self, callback: GalileoCallback) -> None:
+    def test_on_retriever_start_end(self, callback: SplunkAOCallback) -> None:
         """Test retriever start and end callbacks"""
         parent_id = uuid.uuid4()
         run_id = uuid.uuid4()
@@ -469,7 +471,7 @@ class TestGalileoCallback:
         assert len(node.span_params["output"]) == 1
 
     def test_extracting_chain_names_from_metadata(
-        self, callback: GalileoCallback, galileo_logger: GalileoLogger
+        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
     ) -> None:
         """Test extracting chain names from metadata kwarg, with two nested chains"""
         chain_id = uuid.uuid4()
@@ -501,7 +503,7 @@ class TestGalileoCallback:
         assert len(traces[0].spans[0].spans) == 1
         assert traces[0].spans[0].spans[0].name == "Test Chain 2"
 
-    def test_complex_execution_flow(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_complex_execution_flow(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test a complex execution flow with multiple component types"""
         # Create UUIDs for different components
         chain_id = uuid.uuid4()
@@ -611,7 +613,7 @@ class TestGalileoCallback:
         assert traces[0].spans[0].spans[2].user_metadata == {"key": "value", "extras": "{'tools': 'tool1'}"}
         assert traces[0].spans[0].spans[2].step_number is None
 
-    def test_missing_parent_node(self, callback: GalileoCallback) -> None:
+    def test_missing_parent_node(self, callback: SplunkAOCallback) -> None:
         """Test handling of missing parent nodes"""
         parent_id = uuid.uuid4()
         child_id = uuid.uuid4()
@@ -631,7 +633,7 @@ class TestGalileoCallback:
         assert node.node_type == "llm"
         assert node.parent_run_id == parent_id
 
-    def test_serialization_error_handling(self, callback: GalileoCallback) -> None:
+    def test_serialization_error_handling(self, callback: SplunkAOCallback) -> None:
         """Test handling of serialization errors"""
         run_id = uuid.uuid4()
 
@@ -657,7 +659,7 @@ class TestGalileoCallback:
         assert node is not None
         assert isinstance(node.span_params["output"], str)
 
-    def test_get_node_name(self, callback: GalileoCallback) -> None:
+    def test_get_node_name(self, callback: SplunkAOCallback) -> None:
         """Test the _get_node_name method to ensure it correctly extracts names from serialized data"""
         # Case 1: Serialized has a name key
         serialized = {"name": "CustomNodeName", "other_key": "value"}
@@ -687,14 +689,14 @@ class TestGalileoCallback:
         result = callback._get_node_name("chain", "not_a_dict")
         assert result == "Chain"  # Should capitalize the node_type
 
-    def test_callback_with_active_trace(self, galileo_logger: GalileoLogger) -> None:
+    def test_callback_with_active_trace(self, galileo_logger: SplunkAOLogger) -> None:
         """Test that the callback properly handles an active trace."""
         run_id = uuid.uuid4()
 
         galileo_logger.start_trace(input="test input")
 
         # Pass the active logger to the callback
-        callback = GalileoCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
 
         # Start a chain (creates a workflow span)
         callback._handler.start_node("chain", None, run_id, name="Test Chain", input='{"query": "test"}')
@@ -723,7 +725,7 @@ class TestGalileoCallback:
         assert traces[0].spans[0].spans[0].input == "test query"
         assert traces[0].spans[0].spans[0].output == [GalileoDocument(content="test document", metadata={})]
 
-    def test_node_created_at(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_node_created_at(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         parent_id = uuid.uuid4()
         llm_run_id = uuid.uuid4()
         retriever_run_id = uuid.uuid4()
@@ -824,8 +826,8 @@ class TestGalileoCallback:
     )
     def test_step_number_propagation(
         self,
-        callback: GalileoCallback,
-        galileo_logger: GalileoLogger,
+        callback: SplunkAOCallback,
+        galileo_logger: SplunkAOLogger,
         node_type,
         start_fn,
         end_fn,
@@ -871,7 +873,7 @@ class TestGalileoCallback:
             assert root_span.type == expected_type
             assert root_span.step_number == step_number
 
-    def test_on_nested_agent_chains(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_on_nested_agent_chains(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test nested agent chain handling and name change"""
         outer_run_id = uuid.uuid4()
         inner_run_id = uuid.uuid4()
@@ -901,7 +903,7 @@ class TestGalileoCallback:
         assert inner_span.type == "agent"
         assert inner_span.name == "OuterChain:Agent"
 
-    def test_ai_message_with_list_content(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_ai_message_with_list_content(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with content as list of dicts (Responses API format)"""
         run_id = uuid.uuid4()
         parent_id = uuid.uuid4()
@@ -932,7 +934,7 @@ class TestGalileoCallback:
         assert input_data[0]["role"] == "assistant"
         assert input_data[0]["content"] == [{"type": "text", "text": "This is a response from the Responses API"}]
 
-    def test_ai_message_with_reasoning(self, callback: GalileoCallback, galileo_logger: GalileoLogger) -> None:
+    def test_ai_message_with_reasoning(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with reasoning in additional_kwargs"""
         run_id = uuid.uuid4()
         parent_id = uuid.uuid4()
@@ -1017,13 +1019,13 @@ class TestGalileoCallback:
             assert converted_run_id == uuid7_to_uuid4(uuid7_run_id)
 
 
-class TestGalileoCallbackWithIngestionHook:
+class TestSplunkAOCallbackWithIngestionHook:
     @pytest.fixture(autouse=True)
     def logger_mocks(self):
         with (
-            patch("galileo.logger.logger.LogStreams") as mock_logstreams,
-            patch("galileo.logger.logger.Projects") as mock_projects,
-            patch("galileo.logger.logger.Traces") as mock_traces,
+            patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+            patch("splunk_ao.logger.logger.Projects") as mock_projects,
+            patch("splunk_ao.logger.logger.Traces") as mock_traces,
         ):
             setup_mock_traces_client(mock_traces)
             setup_mock_projects_client(mock_projects)
@@ -1033,9 +1035,9 @@ class TestGalileoCallbackWithIngestionHook:
     @pytest.mark.parametrize(
         "callback_builder",
         [
-            lambda hook: GalileoCallback(ingestion_hook=hook),
-            lambda hook: GalileoCallback(galileo_logger=GalileoLogger(), ingestion_hook=hook),
-            lambda hook: GalileoCallback(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(galileo_logger=SplunkAOLogger(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
         ],
     )
     def test_on_chain_end_with_ingestion_hook(self, callback_builder):
@@ -1298,11 +1300,11 @@ class TestParseLlmResult:
         assert result.total_tokens == 24
 
 
-class TestGalileoCallbackIngestionHookWithoutCredentials:
-    """SC-54690: GalileoCallback/GalileoAsyncCallback with ingestion_hook should work without API credentials.
+class TestSplunkAOCallbackIngestionHookWithoutCredentials:
+    """SC-54690: SplunkAOCallback/SplunkAOAsyncCallback with ingestion_hook should work without API credentials.
 
     When a user provides an ingestion_hook, the handler should not require Galileo API configuration
-    (GALILEO_API_KEY, etc.) because the hook bypasses the API entirely. This test verifies the fix
+    (SPLUNK_AO_API_KEY, etc.) because the hook bypasses the API entirely. This test verifies the fix
     without mocking Projects/LogStreams/Traces, so the real code path is exercised.
     """
 
@@ -1310,38 +1312,38 @@ class TestGalileoCallbackIngestionHookWithoutCredentials:
     def clear_galileo_config(self, monkeypatch):
         """Remove Galileo credentials and reset config to simulate no-API-key scenario."""
         # Given: no Galileo API credentials are configured
-        monkeypatch.delenv("GALILEO_API_KEY", raising=False)
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
-        monkeypatch.delenv("GALILEO_LOG_STREAM", raising=False)
-        monkeypatch.setenv("GALILEO_CONSOLE_URL", "https://console.galileo.ai/")
+        monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://console.galileo.ai/")
 
-        if GalileoPythonConfig._instance is not None:
-            GalileoPythonConfig._instance.reset()
+        if SplunkAOConfig._instance is not None:
+            SplunkAOConfig._instance.reset()
 
-        GalileoLoggerSingleton().reset_all()
+        SplunkAOLoggerSingleton().reset_all()
 
         yield
 
-        GalileoLoggerSingleton().reset_all()
+        SplunkAOLoggerSingleton().reset_all()
 
     def test_callback_with_ingestion_hook_no_credentials(self):
-        """GalileoCallback(ingestion_hook=...) should not require API credentials."""
+        """SplunkAOCallback(ingestion_hook=...) should not require API credentials."""
         # Given: a sync ingestion hook
         mock_hook = Mock()
 
-        # When: creating GalileoCallback with only an ingestion hook (no pre-created logger)
-        callback = GalileoCallback(ingestion_hook=mock_hook)
+        # When: creating SplunkAOCallback with only an ingestion hook (no pre-created logger)
+        callback = SplunkAOCallback(ingestion_hook=mock_hook)
 
         # Then: the callback is created successfully and the hook is attached
         assert callback._handler._galileo_logger._ingestion_hook is mock_hook
 
     def test_async_callback_with_ingestion_hook_no_credentials(self):
-        """GalileoAsyncCallback(ingestion_hook=...) should not require API credentials."""
+        """SplunkAOAsyncCallback(ingestion_hook=...) should not require API credentials."""
         # Given: an async ingestion hook
         mock_hook = Mock()
 
-        # When: creating GalileoAsyncCallback with only an ingestion hook (no pre-created logger)
-        callback = GalileoAsyncCallback(ingestion_hook=mock_hook)
+        # When: creating SplunkAOAsyncCallback with only an ingestion hook (no pre-created logger)
+        callback = SplunkAOAsyncCallback(ingestion_hook=mock_hook)
 
         # Then: the callback is created successfully and the hook is attached
         assert callback._handler._galileo_logger._ingestion_hook is mock_hook

@@ -1,17 +1,17 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
-from galileo.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
 def test_rapid_span_creation_ensures_uniqueness(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that creating spans in a tight loop results in unique, monotonically increasing timestamps."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = GalileoLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", log_stream="test")
     logger.start_trace(input="test")
     for _ in range(5):
         logger.add_llm_span(input="test", output="test", model="test")
@@ -23,13 +23,13 @@ def test_rapid_span_creation_ensures_uniqueness(mock_projects_client: Mock, mock
     assert timestamps == sorted(timestamps), "Timestamps should be monotonically increasing"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
 def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that timestamps provided by the user are not modified."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = GalileoLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", log_stream="test")
     logger.start_trace(input="test")
 
     # Create timestamps in reverse order to test that the logger doesn't alter them
@@ -46,13 +46,13 @@ def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock
     assert span_timestamps == timestamps, "User-provided timestamps should be respected"
 
 
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
 def test_mixed_default_and_user_timestamps(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that the internal state for default timestamp generation is not affected by user-provided timestamps."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = GalileoLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", log_stream="test")
     logger.start_trace(input="test")
 
     # 1. Add a default span

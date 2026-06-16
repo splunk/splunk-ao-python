@@ -7,7 +7,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from pytest import LogCaptureFixture, mark
 
-from galileo.handlers.langchain.tool import ProtectParser
+from splunk_ao.handlers.langchain.tool import ProtectParser
 
 A_TRACE_METADATA_DICT = {
     "trace_metadata": {
@@ -82,7 +82,7 @@ def test_echo(echo_output: bool, should_log: bool, caplog: LogCaptureFixture, en
     """Verify that the ProtectParser echoes the output if echo_output is True."""
     parser = ProtectParser(chain=ProtectLLM(), echo_output=echo_output)
 
-    with caplog.at_level(logging.DEBUG, logger="galileo.handlers.langchain.tool"):
+    with caplog.at_level(logging.DEBUG, logger="splunk_ao.handlers.langchain.tool"):
         parser.parser(dumps({"text": "foo", "status": "not_triggered", **A_TRACE_METADATA_DICT}))
 
         if should_log:

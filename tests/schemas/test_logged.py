@@ -6,18 +6,18 @@ import importlib
 import pytest
 from pydantic import ValidationError
 
-import galileo.logger.control as control_module
-import galileo.logger.logger as logger_module
-import galileo.schema.logged as logged_module
-from galileo.schema.content_blocks import DataContentBlock, TextContentBlock
-from galileo.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
-from galileo.schema.message import LoggedMessage
-from galileo.schema.trace import TracesIngestRequest
+import splunk_ao.logger.control as control_module
+import splunk_ao.logger.logger as logger_module
+import splunk_ao.schema.logged as logged_module
 from galileo_core.schemas.logging.llm import MessageRole
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
+from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
+from splunk_ao.schema.message import LoggedMessage
+from splunk_ao.schema.trace import TracesIngestRequest
 
 
 class TestTextContentBlock:
@@ -342,7 +342,7 @@ class TestJsonRoundtripNoCoercion:
         assert tool.output == "4"
 
     def test_logged_trace_roundtrip_with_fallback_control_span(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # Given: galileo.logger.control is reloaded without native ControlSpan support
+        # Given: splunk_ao.logger.control is reloaded without native ControlSpan support
         if not control_module.HAS_NATIVE_CONTROL_SPAN:
             control_payload = control_module.ControlSpan(input="selected text").model_dump(mode="python")
             trace = logged_module.LoggedTrace(input="query", spans=[control_payload])
@@ -385,7 +385,7 @@ class TestJsonRoundtripNoCoercion:
     def test_fallback_control_span_rejects_non_uuidish_id_fields(
         self, field_name: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # Given: galileo.logger.control is reloaded without native ControlSpan support
+        # Given: splunk_ao.logger.control is reloaded without native ControlSpan support
         if not control_module.HAS_NATIVE_CONTROL_SPAN:
             with pytest.raises(ValidationError):
                 control_module.ControlSpan(input="selected text", **{field_name: 123})

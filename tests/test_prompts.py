@@ -4,16 +4,6 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 
-from galileo import Message, MessageRole
-from galileo.prompts import (
-    PromptTemplateAPIException,
-    create_prompt,
-    delete_prompt,
-    get_prompt,
-    get_prompts,
-    render_template,
-    update_prompt,
-)
 from galileo.resources.models import (
     BasePromptTemplateResponse,
     BasePromptTemplateVersionResponse,
@@ -32,6 +22,16 @@ from galileo.resources.models import (
     UpdatePromptTemplateRequest,
 )
 from galileo.resources.types import Response
+from splunk_ao import Message, MessageRole
+from splunk_ao.prompts import (
+    PromptTemplateAPIException,
+    create_prompt,
+    delete_prompt,
+    get_prompt,
+    get_prompts,
+    render_template,
+    update_prompt,
+)
 
 
 def projects_response():
@@ -386,8 +386,8 @@ def render_template_response_second_page():
     )
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_global_prompt_template(create_global_prompt_template_mock: Mock, query_templates_mock: Mock) -> None:
     # Mock no existing templates (name is unique)
     query_templates_mock.sync.return_value = empty_templates_list_response()
@@ -414,8 +414,8 @@ def test_create_global_prompt_template(create_global_prompt_template_mock: Mock,
     )
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_global_prompt_template_error_scenarios(
     create_global_prompt_template_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -450,7 +450,7 @@ def test_create_global_prompt_template_error_scenarios(
     assert create_global_prompt_template_mock.sync_detailed.call_count == 2
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_get_global_prompt_template_by_id(get_global_template_mock: Mock) -> None:
     get_global_template_mock.sync.return_value = global_prompt_template()
 
@@ -465,7 +465,7 @@ def test_get_global_prompt_template_by_id(get_global_template_mock: Mock) -> Non
     get_global_template_mock.sync.assert_called_once_with(template_id="global-template-id-123", client=ANY)
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_get_global_prompt_template_by_name(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = global_templates_list_response()
 
@@ -480,7 +480,7 @@ def test_get_global_prompt_template_by_name(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_get_global_prompt_template_by_id_not_found(get_global_template_mock: Mock) -> None:
     get_global_template_mock.sync.return_value = None
 
@@ -490,7 +490,7 @@ def test_get_global_prompt_template_by_id_not_found(get_global_template_mock: Mo
     get_global_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_get_global_prompt_template_by_name_not_found(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = empty_templates_list_response()
 
@@ -510,7 +510,7 @@ def test_get_global_prompt_template_validation_errors() -> None:
     assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_list_global_prompt_templates(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = global_templates_list_response()
 
@@ -522,7 +522,7 @@ def test_list_global_prompt_templates(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_list_global_prompt_templates_with_filter(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = global_templates_list_response()
 
@@ -542,7 +542,7 @@ def test_list_global_prompt_templates_with_filter(query_templates_mock: Mock) ->
     )
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 @pytest.mark.parametrize("response_value", [HTTPValidationError(), None])
 def test_list_global_prompt_templates_with_error_responses(query_templates_mock: Mock, response_value) -> None:
     """Test list_global_prompt_templates when API returns HTTPValidationError or None."""
@@ -554,7 +554,7 @@ def test_list_global_prompt_templates_with_error_responses(query_templates_mock:
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_list_global_prompt_templates_empty(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = empty_templates_list_response()
 
@@ -564,7 +564,7 @@ def test_list_global_prompt_templates_empty(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
 def test_delete_global_prompt_template_by_id(delete_global_template_mock: Mock) -> None:
     delete_global_template_mock.sync.return_value = None
 
@@ -573,8 +573,8 @@ def test_delete_global_prompt_template_by_id(delete_global_template_mock: Mock) 
     delete_global_template_mock.sync.assert_called_once_with(client=ANY, template_id="global-template-id-123")
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
 def test_delete_global_prompt_template_by_name(delete_global_template_mock: Mock, query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = global_templates_list_response()
     delete_global_template_mock.sync.return_value = None
@@ -585,7 +585,7 @@ def test_delete_global_prompt_template_by_name(delete_global_template_mock: Mock
     delete_global_template_mock.sync.assert_called_once_with(client=ANY, template_id="global-template-id-123")
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_delete_global_prompt_template_by_name_not_found(query_templates_mock: Mock) -> None:
     query_templates_mock.sync.return_value = empty_templates_list_response()
 
@@ -611,7 +611,7 @@ def test_delete_global_prompt_template_validation_errors() -> None:
     assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
 
 
-@patch("galileo.prompts.update_global_template_templates_template_id_patch")
+@patch("splunk_ao.prompts.update_global_template_templates_template_id_patch")
 def test_update_global_prompt_template_by_id(update_global_template_mock: Mock) -> None:
     """Test update_prompt with template ID."""
     updated_template = global_prompt_template()
@@ -631,8 +631,8 @@ def test_update_global_prompt_template_by_id(update_global_template_mock: Mock) 
     )
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.update_global_template_templates_template_id_patch")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.update_global_template_templates_template_id_patch")
 def test_update_global_prompt_template_by_name(update_global_template_mock: Mock, query_templates_mock: Mock) -> None:
     """Test update_prompt with template name."""
     query_templates_mock.sync.return_value = global_templates_list_response()
@@ -656,7 +656,7 @@ def test_update_global_prompt_template_by_name(update_global_template_mock: Mock
     )
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_update_global_prompt_template_by_name_not_found(query_templates_mock: Mock) -> None:
     """Test update_prompt when template is not found by name."""
     query_templates_mock.sync.return_value = empty_templates_list_response()
@@ -668,7 +668,7 @@ def test_update_global_prompt_template_by_name_not_found(query_templates_mock: M
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.update_global_template_templates_template_id_patch")
+@patch("splunk_ao.prompts.update_global_template_templates_template_id_patch")
 def test_update_global_prompt_template_error_scenarios(update_global_template_mock: Mock) -> None:
     """Test update_prompt with realistic error scenarios."""
 
@@ -727,7 +727,7 @@ def test_update_global_prompt_template_validation_errors() -> None:
     assert str(exc_info.value) == "Exactly one of 'id' or 'name' must be provided"
 
 
-@patch("galileo.prompts.update_global_template_templates_template_id_patch")
+@patch("splunk_ao.prompts.update_global_template_templates_template_id_patch")
 def test_update_global_prompt_template_with_empty_name(update_global_template_mock: Mock) -> None:
     """Test update_prompt with empty name (should be handled by API validation)."""
     update_global_template_mock.sync_detailed.return_value = Response(
@@ -746,7 +746,7 @@ def test_update_global_prompt_template_with_empty_name(update_global_template_mo
     )
 
 
-@patch("galileo.prompts.update_global_template_templates_template_id_patch")
+@patch("splunk_ao.prompts.update_global_template_templates_template_id_patch")
 def test_update_global_prompt_template_successful_response_with_http_validation_error(
     update_global_template_mock: Mock,
 ) -> None:
@@ -765,7 +765,7 @@ def test_update_global_prompt_template_successful_response_with_http_validation_
     update_global_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_with_string_data(render_template_mock: Mock) -> None:
     """Test render_template with string data."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -788,7 +788,7 @@ def test_render_template_with_string_data(render_template_mock: Mock) -> None:
     )
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_with_dataset_data(render_template_mock: Mock) -> None:
     """Test render_template with dataset data."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -809,7 +809,7 @@ def test_render_template_with_dataset_data(render_template_mock: Mock) -> None:
     )
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_with_pagination(render_template_mock: Mock) -> None:
     """Test render_template with pagination parameters for both page 1 and page 2."""
     # Test page 1 (starting_token=0, limit=1)
@@ -863,7 +863,7 @@ def test_render_template_with_pagination(render_template_mock: Mock) -> None:
     )
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_with_dataset_data_object(render_template_mock: Mock) -> None:
     """Test render_template with DatasetData object."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -882,7 +882,7 @@ def test_render_template_with_dataset_data_object(render_template_mock: Mock) ->
     )
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_with_string_data_object(render_template_mock: Mock) -> None:
     """Test render_template with StringData object."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -901,7 +901,7 @@ def test_render_template_with_string_data_object(render_template_mock: Mock) -> 
     )
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_empty_response(render_template_mock: Mock) -> None:
     """Test render_template with empty response."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -915,7 +915,7 @@ def test_render_template_empty_response(render_template_mock: Mock) -> None:
     render_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.render_template_render_template_post")
+@patch("splunk_ao.prompts.render_template_render_template_post")
 def test_render_template_none_response(render_template_mock: Mock) -> None:
     """Test render_template when API returns None."""
     render_template_mock.sync_detailed.return_value = Response(
@@ -928,9 +928,9 @@ def test_render_template_none_response(render_template_mock: Mock) -> None:
     render_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_projects_projects_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_projects_projects_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_with_project_name(
     create_prompt_template_mock: Mock, get_projects_projects_get_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -955,8 +955,8 @@ def test_create_prompt_with_project_name(
     get_projects_projects_get_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_with_project_id(create_prompt_template_mock: Mock, query_templates_mock: Mock) -> None:
     """Test create_prompt with project_id parameter."""
     # Mock no existing templates (name is unique)
@@ -980,9 +980,9 @@ def test_create_prompt_with_project_id(create_prompt_template_mock: Mock, query_
     assert call_kwargs.kwargs["project_id"] == "e343ea54-4df3-4d0b-9bc5-7e8224be348f"
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.projects.get_projects_projects_get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.projects.get_projects_projects_get")
 def test_create_prompt_with_nonexistent_project_name(
     get_projects_projects_get_mock: Mock, get_all_projects_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1008,8 +1008,8 @@ def test_create_prompt_with_nonexistent_project_name(
     get_projects_projects_get_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_with_nonexistent_project_id(
     create_prompt_template_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1050,9 +1050,9 @@ def test_create_prompt_with_both_project_params() -> None:
     assert "Only one of 'project_id' or 'project_name' can be provided" in str(exc_info.value)
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_without_project_creates_global(
     create_global_prompt_template_mock: Mock, get_all_projects_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1076,10 +1076,10 @@ def test_create_prompt_without_project_creates_global(
     create_global_prompt_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.projects.get_projects_projects_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.projects.get_projects_projects_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_with_project_name_and_string_template(
     create_prompt_template_mock: Mock,
     get_projects_projects_get_mock: Mock,
@@ -1110,7 +1110,7 @@ def test_create_prompt_with_project_name_and_string_template(
 
 
 # Test get_prompt() with project parameters (for backward compatibility)
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_get_prompt_with_project_name_and_id(get_template_mock: Mock) -> None:
     """Test get_prompt with project_name parameter - should work (params ignored)."""
     get_template_mock.sync.return_value = prompt_template()
@@ -1122,7 +1122,7 @@ def test_get_prompt_with_project_name_and_id(get_template_mock: Mock) -> None:
     get_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_get_prompt_with_project_name_and_name(query_templates_mock: Mock) -> None:
     """Test get_prompt with project_name parameter by name - should work (params ignored)."""
     query_templates_mock.sync.return_value = ListPromptTemplateResponse(
@@ -1136,7 +1136,7 @@ def test_get_prompt_with_project_name_and_name(query_templates_mock: Mock) -> No
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_get_prompt_with_deprecated_project_id(get_template_mock: Mock) -> None:
     """Test get_prompt with project_id parameter - should work (params ignored)."""
     get_template_mock.sync.return_value = prompt_template()
@@ -1155,7 +1155,7 @@ def test_get_prompt_project_params_are_ignored() -> None:
 
 
 # Test delete_prompt() with project parameters (for backward compatibility)
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
 def test_delete_prompt_with_project_name_and_id(delete_template_mock: Mock) -> None:
     """Test delete_prompt with project_name parameter - should work (params ignored)."""
     delete_template_mock.sync.return_value = None
@@ -1165,8 +1165,8 @@ def test_delete_prompt_with_project_name_and_id(delete_template_mock: Mock) -> N
     delete_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
 def test_delete_prompt_with_project_name_and_name(delete_template_mock: Mock, query_templates_mock: Mock) -> None:
     """Test delete_prompt with project_name parameter by name - should work (params ignored)."""
     delete_template_mock.sync.return_value = None
@@ -1179,7 +1179,7 @@ def test_delete_prompt_with_project_name_and_name(delete_template_mock: Mock, qu
     delete_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
 def test_delete_prompt_with_project_id(delete_template_mock: Mock) -> None:
     """Test delete_prompt with project_id parameter - should work (params ignored)."""
     delete_template_mock.sync.return_value = None
@@ -1189,7 +1189,7 @@ def test_delete_prompt_with_project_id(delete_template_mock: Mock) -> None:
     delete_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_delete_prompt_with_project_name_template_not_found(query_templates_mock: Mock) -> None:
     """Test delete_prompt with project_name when template is not found."""
     query_templates_mock.sync.return_value = ListPromptTemplateResponse(templates=[], next_starting_token=None)
@@ -1207,9 +1207,9 @@ def test_delete_prompt_project_params_are_ignored() -> None:
 
 
 # Test organization-wide unique name generation
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_generates_unique_name_when_global_exists(
     create_global_prompt_template_mock: Mock, get_all_projects_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1245,8 +1245,8 @@ def test_create_prompt_generates_unique_name_when_global_exists(
     assert " (1)" in call_kwargs.kwargs["body"].name or call_kwargs.kwargs["body"].name == "global-helpful-assistant"
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_generates_unique_name_when_project_exists(
     create_global_prompt_template_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1281,10 +1281,10 @@ def test_create_prompt_generates_unique_name_when_project_exists(
     assert template.name == "my-template (1)"  # Should have (1) appended
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.projects.get_projects_projects_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.projects.get_projects_projects_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_with_project_generates_unique_name(
     create_prompt_template_mock: Mock,
     get_projects_projects_get_mock: Mock,
@@ -1331,9 +1331,9 @@ def test_create_prompt_with_project_generates_unique_name(
     create_prompt_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.get_all_projects_projects_all_get")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.get_all_projects_projects_all_get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
 def test_create_prompt_no_increment_when_name_unique(
     create_global_prompt_template_mock: Mock, get_all_projects_mock: Mock, query_templates_mock: Mock
 ) -> None:
@@ -1364,10 +1364,10 @@ def test_create_prompt_no_increment_when_name_unique(
     assert call_kwargs.kwargs["body"].name == "unique-template"
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_generate_unique_name_increments_multiple_times(query_templates_mock: Mock) -> None:
     """Test that unique name generation can handle multiple increments."""
-    from galileo.utils.prompts import generate_unique_name
+    from splunk_ao.utils.prompts import generate_unique_name
 
     # Mock global templates: base-name, base-name (1), and base-name (2) all exist
     template1 = global_prompt_template()
@@ -1399,11 +1399,11 @@ def test_generate_unique_name_increments_multiple_times(query_templates_mock: Mo
 # ================================
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_list_prompt_templates_deprecated(mock_projects_get: Mock, query_templates_mock: Mock) -> None:
     """Test that list_prompt_templates() still works but emits deprecation warning."""
-    from galileo.prompts import list_prompt_templates
+    from splunk_ao.prompts import list_prompt_templates
 
     # Mock the project
     mock_project = Mock()
@@ -1431,11 +1431,11 @@ def test_list_prompt_templates_deprecated(mock_projects_get: Mock, query_templat
     query_templates_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
-@patch("galileo.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
 def test_get_prompt_template_deprecated(query_templates_mock: Mock, get_template_mock: Mock) -> None:
     """Test that get_prompt_template() still works but emits deprecation warning."""
-    from galileo.prompts import get_prompt_template
+    from splunk_ao.prompts import get_prompt_template
 
     # Mock the response
     template = global_prompt_template()
@@ -1462,11 +1462,11 @@ def test_get_prompt_template_deprecated(query_templates_mock: Mock, get_template
     assert result.name == "my-template"
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_prompt_templates_class_deprecated(mock_projects_get: Mock, query_templates_mock: Mock) -> None:
     """Test that PromptTemplates class still works but emits deprecation warning."""
-    from galileo.prompts import PromptTemplates
+    from splunk_ao.prompts import PromptTemplates
 
     # Mock the project
     mock_project = Mock()
@@ -1494,7 +1494,7 @@ def test_prompt_templates_class_deprecated(mock_projects_get: Mock, query_templa
     assert templates_list[0].name == template.name
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_get_prompt_with_project_params_deprecated(get_template_mock: Mock) -> None:
     """Test that get_prompt() with project params emits deprecation warning."""
     # Mock the response
@@ -1517,8 +1517,8 @@ def test_get_prompt_with_project_params_deprecated(get_template_mock: Mock) -> N
     assert result.name == "my-template"
 
 
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
 def test_delete_prompt_with_project_params_deprecated(get_template_mock: Mock, delete_template_mock: Mock) -> None:
     """Test that delete_prompt() with project params emits deprecation warning."""
     # Mock the response
@@ -1540,14 +1540,14 @@ def test_delete_prompt_with_project_params_deprecated(get_template_mock: Mock, d
     delete_template_mock.sync.assert_called_once()
 
 
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_create_prompt_template_still_works(
     mock_projects_get: Mock, query_templates_mock: Mock, create_global_prompt_template_mock: Mock
 ) -> None:
     """Test that the old create_prompt_template() function still works but emits deprecation warning."""
-    from galileo.prompts import create_prompt_template
+    from splunk_ao.prompts import create_prompt_template
 
     # Mock the project
     mock_project = Mock()
@@ -1577,12 +1577,12 @@ def test_create_prompt_template_still_works(
     create_global_prompt_template_mock.sync_detailed.assert_called_once()
 
 
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.prompts.create_global_prompt_template_templates_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.prompts.create_global_prompt_template_templates_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_prompt_templates_create_method(mock_projects_get: Mock, create_mock: Mock, query_templates_mock: Mock) -> None:
     """Test that PromptTemplates.create() method works."""
-    from galileo.prompts import PromptTemplates
+    from splunk_ao.prompts import PromptTemplates
 
     # Mock the project
     mock_project = Mock()
@@ -1612,12 +1612,12 @@ def test_prompt_templates_create_method(mock_projects_get: Mock, create_mock: Mo
     assert template.name == "test-template"
 
 
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_prompt_templates_get_method(mock_projects_get: Mock, query_templates_mock: Mock, get_mock: Mock) -> None:
     """Test that PromptTemplates.get() method works."""
-    from galileo.prompts import PromptTemplates
+    from splunk_ao.prompts import PromptTemplates
 
     # Mock the project
     mock_project = Mock()
@@ -1650,15 +1650,15 @@ def test_prompt_templates_get_method(mock_projects_get: Mock, query_templates_mo
     assert result.name == "my-template"
 
 
-@patch("galileo.prompts.delete_global_template_templates_template_id_delete")
-@patch("galileo.prompts.get_global_template_templates_template_id_get")
-@patch("galileo.prompts.query_templates_templates_query_post")
-@patch("galileo.projects.Projects.get")
+@patch("splunk_ao.prompts.delete_global_template_templates_template_id_delete")
+@patch("splunk_ao.prompts.get_global_template_templates_template_id_get")
+@patch("splunk_ao.prompts.query_templates_templates_query_post")
+@patch("splunk_ao.projects.Projects.get")
 def test_prompt_templates_delete_method(
     mock_projects_get: Mock, query_templates_mock: Mock, get_mock: Mock, delete_mock: Mock
 ) -> None:
     """Test that PromptTemplates.delete() method works."""
-    from galileo.prompts import PromptTemplates
+    from splunk_ao.prompts import PromptTemplates
 
     # Mock the project
     mock_project = Mock()

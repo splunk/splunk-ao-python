@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from galileo import Message, MessageRole, ToolCall, ToolCallFunction
+from splunk_ao import Message, MessageRole, ToolCall, ToolCallFunction
 
 
 @pytest.mark.parametrize(

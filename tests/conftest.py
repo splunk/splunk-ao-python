@@ -22,20 +22,20 @@ from openai.types.responses import (
 )
 from openai.types.responses.response_usage import InputTokensDetails, OutputTokensDetails
 
-_os.environ["GALILEO_CONSOLE_URL"] = "http://localtest:8088"
-_os.environ["GALILEO_API_KEY"] = "api-1234567890"
-_os.environ["GALILEO_PROJECT"] = "test-project"
-_os.environ["GALILEO_LOG_STREAM"] = "test-log-stream"
+_os.environ["SPLUNK_AO_CONSOLE_URL"] = "http://fake.test:8088"
+_os.environ["SPLUNK_AO_API_KEY"] = "api-1234567890"
+_os.environ["SPLUNK_AO_PROJECT"] = "test-project"
+_os.environ["SPLUNK_AO_LOG_STREAM"] = "test-log-stream"
 _os.environ["OPENAI_API_KEY"] = "sk-test"
 del _os  # Clean up temporary import
 # fmt: on
 
-# SC-60512: Bound GalileoLogger.terminate() shutdown wait for the test session.
+# SC-60512: Bound SplunkAOLogger.terminate() shutdown wait for the test session.
 # The 90s prod default turns into a busy-poll when --disable-socket leaves
 # background tasks pending, which causes pytest workers to hang at exit.
 # Override the module constant directly so tests don't depend on a user-facing
 # env var or any new SDK config knob.
-from galileo.logger import logger as _galileo_logger_module  # noqa: E402
+from splunk_ao.logger import logger as _galileo_logger_module  # noqa: E402
 
 _galileo_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
@@ -50,10 +50,8 @@ from uuid import uuid4  # noqa: E402
 
 from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
+from test_support.config import fast_config_validation  # noqa: E402
 
-from galileo.collaborator import CollaboratorRole  # noqa: E402
-from galileo.config import GalileoPythonConfig  # noqa: E402
-from galileo.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
 from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
 from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from galileo_core.constants.request_method import RequestMethod  # noqa: E402
@@ -62,6 +60,9 @@ from galileo_core.schemas.core.user import User  # noqa: E402
 from galileo_core.schemas.core.user_role import UserRole  # noqa: E402
 from galileo_core.schemas.protect.rule import Rule, RuleOperator  # noqa: E402
 from galileo_core.schemas.protect.ruleset import Ruleset  # noqa: E402
+from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
+from splunk_ao.config import SplunkAOConfig  # noqa: E402
+from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
 from tests.testutils.setup import setup_thread_pool_request_capture  # noqa: E402
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
@@ -106,7 +107,7 @@ def reset_agent_control_bridge_state() -> Generator[None, None, None]:
     """Reset optional Agent Control bridge globals when tests load that module."""
     yield
 
-    bridge_module = sys.modules.get("galileo.handlers.agent_control.bridge")
+    bridge_module = sys.modules.get("splunk_ao.handlers.agent_control.bridge")
     if bridge_module is None:
         return
 
@@ -122,11 +123,13 @@ def set_validated_config(
     """Automatically set up validated config for tests."""
     # Reset any existing config to ensure fresh initialization
     # This is needed for pytest-xdist compatibility on Python 3.14+
-    if GalileoPythonConfig._instance is not None:
-        GalileoPythonConfig._instance.reset()
+    if SplunkAOConfig._instance is not None:
+        SplunkAOConfig._instance.reset()
     # Initialize config with EXPLICIT values to avoid env var timing issues with pytest-xdist
-    # This ensures correct config even if env vars weren't set before module imports
-    config = GalileoPythonConfig.get(console_url="http://localtest:8088", api_key="api-1234567890")
+    # This ensures correct config even if env vars weren't set before module imports.
+    # Bypass the slow async validation round-trips for the build only.
+    with fast_config_validation():
+        config = SplunkAOConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
     config.reset()
 
@@ -290,7 +293,7 @@ def thread_pool_capture():
 
     Usage:
         def test_distributed_method(thread_pool_capture):
-            logger = GalileoLogger(project="test", log_stream="test", mode="distributed")
+            logger = SplunkAOLogger(project="test", log_stream="test", mode="distributed")
             capture = thread_pool_capture(logger)
 
             logger._ingest_trace_streaming(trace)
@@ -334,8 +337,8 @@ def rulesets(request: pytest.FixtureRequest) -> list[Ruleset]:
 
 @pytest.fixture
 def enable_galileo_logging():
-    """Temporarily enable galileo logging for tests that need to capture log output."""
-    galileo_logger = logging.getLogger("galileo")
+    """Temporarily enable SDK logging for tests that need to capture log output."""
+    galileo_logger = logging.getLogger("splunk_ao")
     original_level = galileo_logger.level
     original_propagate = galileo_logger.propagate
 
@@ -393,8 +396,8 @@ def mock_env_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture
 def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
-    """Capture log messages emitted by the galileo logger for assertion."""
-    logger = logging.getLogger("galileo")
+    """Capture log messages emitted by the SDK logger for assertion."""
+    logger = logging.getLogger("splunk_ao")
     original_level = logger.level
     original_handlers = logger.handlers[:]
     original_propagate = logger.propagate

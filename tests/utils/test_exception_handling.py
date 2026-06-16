@@ -6,14 +6,14 @@ from unittest.mock import Mock
 import httpx
 import pytest
 
-from galileo.utils.decorators import (
+from galileo_core.exceptions.http import GalileoHTTPException
+from splunk_ao.utils.decorators import (
     INFRASTRUCTURE_EXCEPTIONS,
     RETRYABLE_STATUS_CODES,
     async_warn_catch_exception,
     retry_on_transient_http_error,
     warn_catch_exception,
 )
-from galileo_core.exceptions.http import GalileoHTTPException
 
 
 class TestWarnCatchException:

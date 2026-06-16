@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from galileo.utils.uuid_utils import convert_uuid_if_uuid7, uuid7_to_uuid4
+from splunk_ao.utils.uuid_utils import convert_uuid_if_uuid7, uuid7_to_uuid4
 
 
 @pytest.fixture

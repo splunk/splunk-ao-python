@@ -18,10 +18,10 @@ from agents.tracing import ResponseSpanData
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
-from galileo.handlers.openai_agents import GalileoTracingProcessor
-from galileo.logger.logger import GalileoLogger
-from galileo.utils.openai_agents import _extract_llm_data, _parse_usage
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
+from splunk_ao.handlers.openai_agents import SplunkAOTracingProcessor
+from splunk_ao.logger.logger import SplunkAOLogger
+from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -71,17 +71,17 @@ os.environ["OPENAI_API_KEY"] = "sk-test"
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_complex_agent(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    galileo_logger = GalileoLogger(project="test", log_stream="test")
-    gp = GalileoTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -102,17 +102,17 @@ async def test_complex_agent(
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_simple_agent(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    galileo_logger = GalileoLogger(project="test", log_stream="test")
-    gp = GalileoTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     agent = Agent(name="Assistant", instructions="You are the worlds best assistant.")
@@ -196,9 +196,9 @@ def _find_tool_spans(spans):
 
 
 @mark.asyncio
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 async def test_pre_built_tools_multiple_types(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: MonkeyPatch
 ) -> None:
@@ -209,8 +209,8 @@ async def test_pre_built_tools_multiple_types(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    galileo_logger = GalileoLogger(project="test", log_stream="test")
-    gp = GalileoTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 

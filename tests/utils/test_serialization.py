@@ -14,7 +14,7 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 
-from galileo.utils.serialization import (
+from splunk_ao.utils.serialization import (
     EventSerializer,
     _convert_langchain_content_block,
     _normalize_multimodal_content,
@@ -874,7 +874,7 @@ class TestPydanticModelClassSerialization:
             name: str
 
         # Mock the hasattr check to return False for model_json_schema being callable
-        with patch("galileo.utils.serialization.callable") as mock_callable:
+        with patch("splunk_ao.utils.serialization.callable") as mock_callable:
             mock_callable.return_value = False
 
             serializer = EventSerializer()

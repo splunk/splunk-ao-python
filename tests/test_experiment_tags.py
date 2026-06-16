@@ -5,15 +5,15 @@ from unittest.mock import patch
 
 import pytest
 
-from galileo.experiment_tags import (
+from galileo.resources.models.delete_run_response import DeleteRunResponse
+from galileo.resources.models.run_tag_db import RunTagDB
+from splunk_ao.experiment_tags import (
     ExperimentTags,
     ExperimentTagsAPIException,
     delete_experiment_tag,
     get_experiment_tags,
     upsert_experiment_tag,
 )
-from galileo.resources.models.delete_run_response import DeleteRunResponse
-from galileo.resources.models.run_tag_db import RunTagDB
 
 
 @pytest.fixture

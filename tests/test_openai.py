@@ -7,9 +7,9 @@ from openai import Stream
 from openai.types.chat import ChatCompletionChunk
 from openai.types.responses import ResponseCompletedEvent
 
-from galileo import Message, MessageRole, galileo_context, log
-from galileo.openai import OpenAIGalileo, openai
 from galileo_core.schemas.logging.span import LlmSpan, WorkflowSpan
+from splunk_ao import Message, MessageRole, galileo_context, log
+from splunk_ao.openai import OpenAIGalileo, openai
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 from tests.testutils.streaming import EventStream, ResponsesEventStream
 
@@ -30,9 +30,9 @@ def openai_incorrect_api_key_error() -> bytes:
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_basic_openai_call(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -94,9 +94,9 @@ def test_basic_openai_call(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_streamed_openai_call(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, openai_create
 ) -> None:
@@ -142,9 +142,9 @@ def test_streamed_openai_call(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_openai_api_calls_as_parent_span(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -195,9 +195,9 @@ def test_openai_api_calls_as_parent_span(
     "openai.resources.chat.Completions.create",
     side_effect=openai.OpenAIError("The api_key client option must be set either"),
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_openai_error_trace(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, openai_create
 ) -> None:
@@ -227,9 +227,9 @@ def test_openai_error_trace(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_openai_error_trace_(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, openai_create
 ) -> None:
@@ -272,9 +272,9 @@ def test_openai_error_trace_(
     "openai.resources.chat.Completions.create",
     side_effect=openai.OpenAIError("The api_key client option must be set either"),
 )
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_client_fails_because_openai_error_trace_no_exp(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, openai_create
 ) -> None:
@@ -308,9 +308,9 @@ def test_client_fails_because_openai_error_trace_no_exp(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams", side_effect=Exception("error"))
-@patch("galileo.logger.logger.Projects", side_effect=Exception("error"))
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams", side_effect=Exception("error"))
+@patch("splunk_ao.logger.logger.Projects", side_effect=Exception("error"))
+@patch("splunk_ao.logger.logger.Traces")
 def test_galileo_api_client_transport_error_not_blocking_user_code(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -348,9 +348,9 @@ def test_galileo_api_client_transport_error_not_blocking_user_code(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_openai_calls_in_active_trace(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -386,9 +386,9 @@ def test_openai_calls_in_active_trace(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_chat_completions_multiple_messages(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -447,9 +447,9 @@ def test_chat_completions_multiple_messages(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_basic_responses_api_call(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -488,9 +488,9 @@ def test_basic_responses_api_call(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_with_tools(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -551,9 +551,9 @@ def test_responses_api_with_tools(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_multiple_messages(
     mock_traces_client: Mock,
     mock_projects_client: Mock,
@@ -613,9 +613,9 @@ def test_responses_api_multiple_messages(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("galileo.logger.logger.LogStreams")
-@patch("galileo.logger.logger.Projects")
-@patch("galileo.logger.logger.Traces")
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_streaming(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, openai_create
 ) -> None:

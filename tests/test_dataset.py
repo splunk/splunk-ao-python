@@ -3,13 +3,13 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.dataset import Dataset, DatasetVersionContent
 from galileo.resources.models.dataset_row import DatasetRow
 from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
 from galileo.resources.models.http_validation_error import HTTPValidationError
 from galileo.resources.models.list_dataset_version_response import ListDatasetVersionResponse
-from galileo.shared.base import SyncState
-from galileo.shared.exceptions import ResourceNotFoundError, ValidationError
+from splunk_ao.dataset import Dataset, DatasetVersionContent
+from splunk_ao.shared.base import SyncState
+from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
 
 
 class TestDatasetInitialization:
@@ -40,7 +40,7 @@ class TestDatasetInitialization:
 class TestDatasetCreate:
     """Test suite for Dataset.create() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_create_persists_dataset_to_api(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -56,7 +56,7 @@ class TestDatasetCreate:
         assert dataset.id == mock_dataset.id
         assert dataset.is_synced()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_create_handles_api_failure(self, mock_datasets_class: MagicMock, reset_configuration: None) -> None:
         """Test create() handles API failures and sets state correctly."""
         mock_service = MagicMock()
@@ -75,7 +75,7 @@ class TestDatasetGet:
     """Test suite for Dataset.get() class method."""
 
     @pytest.mark.parametrize("lookup_key", ["name", "id"])
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_returns_dataset(
         self, mock_datasets_class: MagicMock, lookup_key: str, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -90,7 +90,7 @@ class TestDatasetGet:
         assert dataset is not None
         assert dataset.is_synced()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_returns_none_when_not_found(self, mock_datasets_class: MagicMock, reset_configuration: None) -> None:
         """Test get() returns None when dataset is not found."""
         mock_service = MagicMock()
@@ -101,7 +101,7 @@ class TestDatasetGet:
 
         assert dataset is None
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_raises_error_without_id_or_name(
         self, mock_datasets_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -113,7 +113,7 @@ class TestDatasetGet:
 class TestDatasetList:
     """Test suite for Dataset.list() class method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_list_returns_all_datasets(self, mock_datasets_class: MagicMock, reset_configuration: None) -> None:
         """Test list() returns a list of synced dataset instances."""
         mock_service = MagicMock()
@@ -143,7 +143,7 @@ class TestDatasetList:
 class TestDatasetContent:
     """Test suite for dataset content management."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_content(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -177,7 +177,7 @@ class TestDatasetContent:
             else:
                 getattr(dataset, method_name)()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_add_rows(self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock) -> None:
         """Test add_rows() adds rows to the dataset."""
         mock_service = MagicMock()
@@ -193,7 +193,7 @@ class TestDatasetContent:
         assert result == dataset  # Verify method chaining
         assert dataset.is_synced()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_extend_generates_rows_and_adds_to_dataset(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -238,7 +238,7 @@ class TestDatasetContent:
         # Then: the generated DatasetRow objects are returned
         assert result == generated_rows
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_extend_with_empty_result_skips_add_rows(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -262,7 +262,7 @@ class TestDatasetContent:
 class TestDatasetDelete:
     """Test suite for Dataset.delete() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_delete_removes_dataset(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -288,7 +288,7 @@ class TestDatasetDelete:
 class TestDatasetRefresh:
     """Test suite for Dataset.refresh() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_refresh_updates_attributes(self, mock_datasets_class: MagicMock, reset_configuration: None) -> None:
         """Test refresh() updates all attributes from the API."""
         mock_service = MagicMock()
@@ -334,7 +334,7 @@ class TestDatasetRefresh:
 class TestDatasetSave:
     """Test suite for Dataset.save() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_save_local_only_delegates_to_create(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -352,7 +352,7 @@ class TestDatasetSave:
         assert result.id == mock_dataset.id
         assert result.is_synced()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_save_synced_is_noop(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -391,7 +391,7 @@ class TestDatasetSave:
         with pytest.raises(ValueError, match="Dataset ID is not set"):
             dataset.save()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_save_dirty_calls_update_and_syncs_attributes(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -430,7 +430,7 @@ class TestDatasetSave:
         assert result.id == mock_dataset.id
         assert result.is_synced()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_save_failed_sync_raises_value_error(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -446,7 +446,7 @@ class TestDatasetSave:
         with pytest.raises(ValueError, match="FAILED_SYNC"):
             dataset.save()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_save_handles_api_failure(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -482,7 +482,7 @@ class TestDatasetMethods:
 class TestDatasetGetVersions:
     """Test suite for Dataset.get_versions() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_versions_returns_response(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -503,7 +503,7 @@ class TestDatasetGetVersions:
         assert result == mock_versions
         mock_dataset.get_version_history.assert_called_once()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_versions_raises_when_dataset_not_found(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -519,7 +519,7 @@ class TestDatasetGetVersions:
         with pytest.raises(ResourceNotFoundError, match="not found"):
             dataset.get_versions()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_versions_raises_on_http_validation_error(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -536,7 +536,7 @@ class TestDatasetGetVersions:
         with pytest.raises(ValueError, match="Failed to retrieve dataset versions"):
             dataset.get_versions()
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_versions_raises_on_none_response(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -557,7 +557,7 @@ class TestDatasetGetVersions:
 class TestDatasetGetVersionContent:
     """Test suite for Dataset.get_version_content() method."""
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_version_content_returns_content(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -578,7 +578,7 @@ class TestDatasetGetVersionContent:
         assert result == mock_content
         mock_dataset.load_version.assert_called_once_with(1)
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_version_content_raises_when_dataset_not_found(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -594,7 +594,7 @@ class TestDatasetGetVersionContent:
         with pytest.raises(ResourceNotFoundError, match="not found"):
             dataset.get_version_content(index=1)
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_version_content_raises_on_http_validation_error(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
@@ -611,7 +611,7 @@ class TestDatasetGetVersionContent:
         with pytest.raises(ValueError, match="Failed to retrieve version content"):
             dataset.get_version_content(index=1)
 
-    @patch("galileo.dataset.Datasets")
+    @patch("splunk_ao.dataset.Datasets")
     def test_get_version_content_raises_on_none_response(
         self, mock_datasets_class: MagicMock, reset_configuration: None, mock_dataset: MagicMock
     ) -> None:
