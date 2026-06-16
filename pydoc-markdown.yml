@@ -1,6 +1,6 @@
 loaders:
   - type: python
-    search_path: [./src/galileo]
+    search_path: [./src/splunk_ao]
     ignore_when_discovered: ["__pycache__", "constants", "resources", "schema"]
 
 processors:

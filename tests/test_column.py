@@ -20,8 +20,8 @@ from galileo.resources.models import (
 )
 from galileo.resources.models.column_info import ColumnInfo
 from galileo.resources.types import UNSET
-from galileo.shared.column import Column, ColumnCollection, _unwrap_unset
-from galileo.shared.exceptions import ValidationError
+from splunk_ao.shared.column import Column, ColumnCollection, _unwrap_unset
+from splunk_ao.shared.exceptions import ValidationError
 
 
 def _create_mock_column_info(

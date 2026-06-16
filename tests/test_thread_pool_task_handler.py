@@ -2,7 +2,7 @@ from concurrent.futures import Future
 from unittest.mock import Mock, patch
 
 import pytest
-from src.galileo.logger.task_handler import ThreadPoolTaskHandler
+from src.splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 
 
 class TestThreadPoolTaskHandler:
@@ -11,7 +11,7 @@ class TestThreadPoolTaskHandler:
     @pytest.fixture
     def mock_pool(self):
         """Mock EventLoopThreadPool."""
-        with patch("src.galileo.logger.task_handler.EventLoopThreadPool") as mock_pool_class:
+        with patch("src.splunk_ao.logger.task_handler.EventLoopThreadPool") as mock_pool_class:
             mock_pool = Mock()
             mock_pool_class.return_value = mock_pool
             yield mock_pool

@@ -11,19 +11,19 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, LLMResult
 from pytest import mark
 
-from galileo import Message, MessageRole
-from galileo.handlers.langchain import SplunkAOAsyncCallback
-from galileo.logger.logger import SplunkAOLogger
-from galileo.utils.uuid_utils import uuid7_to_uuid4
 from galileo_core.schemas.shared.document import Document as GalileoDocument
+from splunk_ao import Message, MessageRole
+from splunk_ao.handlers.langchain import SplunkAOAsyncCallback
+from splunk_ao.logger.logger import SplunkAOLogger
+from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 class TestSplunkAOAsyncCallback:
     @pytest.fixture
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
@@ -499,7 +499,9 @@ class TestSplunkAOAsyncCallback:
         assert traces[0].spans[0].spans[0].name == "Test Chain 2"
 
     @mark.asyncio
-    async def test_complex_execution_flow(self, callback: SplunkAOAsyncCallback, galileo_logger: SplunkAOLogger) -> None:
+    async def test_complex_execution_flow(
+        self, callback: SplunkAOAsyncCallback, galileo_logger: SplunkAOLogger
+    ) -> None:
         """Test a complex execution flow with multiple component types"""
         # Create UUIDs for different components
         chain_id = uuid.uuid4()
@@ -841,7 +843,9 @@ class TestSplunkAOAsyncCallback:
             assert root_span.step_number == step_number
 
     @mark.asyncio
-    async def test_on_nested_agent_chains(self, callback: SplunkAOAsyncCallback, galileo_logger: SplunkAOLogger) -> None:
+    async def test_on_nested_agent_chains(
+        self, callback: SplunkAOAsyncCallback, galileo_logger: SplunkAOLogger
+    ) -> None:
         """Test nested agent chain handling and name change"""
         outer_run_id = uuid.uuid4()
         inner_run_id = uuid.uuid4()

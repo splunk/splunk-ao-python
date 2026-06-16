@@ -8,7 +8,7 @@ This package is part of the [galileo-python](https://github.com/rungalileo/galil
 
 ```
 galileo-python/
-├── src/galileo/        ← Main Galileo SDK
+├── src/splunk_ao/        ← Main Galileo SDK
 └── galileo-adk/
     ├── src/galileo_adk/
     ├── tests/
@@ -112,7 +112,7 @@ cd galileo-adk
 uv sync --dev
 ```
 
-This installs `galileo` in **editable mode** from `../src/galileo/`. Changes to either package are immediately available without reinstalling.
+This installs `galileo` in **editable mode** from `../src/splunk_ao/`. Changes to either package are immediately available without reinstalling.
 
 ### Running Tests
 

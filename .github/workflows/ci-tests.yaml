@@ -47,6 +47,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache-dependency-path: "poetry.lock"
 
+      - name: Select matrix Python for Poetry
+        run: |
+          poetry env remove --all
+          poetry env use python
+          poetry run python -c "import sys; expected=tuple(map(int, '${{ matrix.python-version }}'.split('.'))); actual=sys.version_info[:2]; print('Poetry Python:', sys.version); raise SystemExit(0 if actual == expected else 'Expected Python %s, got %s' % (expected, actual))"
+
       - name: Install invoke
         run: pipx install invoke
 

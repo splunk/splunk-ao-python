@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from galileo.schema.datasets import DatasetRecord
+from splunk_ao.schema.datasets import DatasetRecord
 
 
 class TestDatasetRecordValidators:

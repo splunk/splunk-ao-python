@@ -9,8 +9,8 @@ import pytest
 # Skip all tests in this module on Python 3.14+ (crewai doesn't support it yet)
 pytestmark = pytest.mark.skipif(sys.version_info >= (3, 14), reason="crewai does not support Python 3.14+")
 
-from galileo.handlers.crewai.handler import CrewAIEventListener  # noqa: E402
-from galileo.schema.handlers import NodeType  # noqa: E402
+from splunk_ao.handlers.crewai.handler import CrewAIEventListener  # noqa: E402
+from splunk_ao.schema.handlers import NodeType  # noqa: E402
 from tests.testutils.setup import (  # noqa: E402
     setup_mock_logstreams_client,
     setup_mock_projects_client,
@@ -80,15 +80,15 @@ class MockOutput:
 def mock_galileo_logger():
     """Creates a mock Galileo logger for testing."""
     with (
-        patch("galileo.logger.logger.LogStreams") as mock_logstreams,
-        patch("galileo.logger.logger.Projects") as mock_projects,
-        patch("galileo.logger.logger.Traces") as mock_traces_client,
+        patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+        patch("splunk_ao.logger.logger.Projects") as mock_projects,
+        patch("splunk_ao.logger.logger.Traces") as mock_traces_client,
     ):
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects)
         setup_mock_logstreams_client(mock_logstreams)
 
-        from galileo.logger.logger import SplunkAOLogger
+        from splunk_ao.logger.logger import SplunkAOLogger
 
         return SplunkAOLogger(project="test_project", log_stream="test_log_stream")
 
@@ -97,11 +97,11 @@ def mock_galileo_logger():
 def crewai_callback(mock_galileo_logger):
     """Creates a CrewAIEventListener instance for testing."""
     with (
-        patch("galileo.handlers.crewai.handler._crewai_imports_resolved", True),
-        patch("galileo.handlers.crewai.handler.CREWAI_AVAILABLE", False),
-        patch("galileo.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
+        patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
+        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
     ):
-        from galileo.handlers.crewai.handler import CrewAIEventListener
+        from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
         return CrewAIEventListener(
             galileo_logger=mock_galileo_logger, start_new_trace=True, flush_on_crew_completed=False
@@ -111,11 +111,11 @@ def crewai_callback(mock_galileo_logger):
 def test_initialization_with_crewai_available(mock_galileo_logger) -> None:
     """Test CrewAIEventListener initialization when CrewAI is available."""
     with (
-        patch("galileo.handlers.crewai.handler._crewai_imports_resolved", True),
-        patch("galileo.handlers.crewai.handler.CREWAI_AVAILABLE", True),
-        patch("galileo.handlers.crewai.handler.LITE_LLM_AVAILABLE", True),
+        patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", True),
+        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", True),
     ):
-        from galileo.handlers.crewai.handler import CrewAIEventListener
+        from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
         callback = CrewAIEventListener(
             galileo_logger=mock_galileo_logger, start_new_trace=False, flush_on_crew_completed=True
@@ -129,11 +129,11 @@ def test_initialization_with_crewai_available(mock_galileo_logger) -> None:
 def test_initialization_with_crewai_unavailable(mock_galileo_logger) -> None:
     """Test CrewAIEventListener initialization when CrewAI is unavailable."""
     with (
-        patch("galileo.handlers.crewai.handler._crewai_imports_resolved", True),
-        patch("galileo.handlers.crewai.handler.CREWAI_AVAILABLE", False),
-        patch("galileo.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
+        patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
+        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
     ):
-        from galileo.handlers.crewai.handler import CrewAIEventListener
+        from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
         callback = CrewAIEventListener(galileo_logger=mock_galileo_logger)
 
@@ -644,7 +644,7 @@ def test_setup_listeners_crewai_unavailable(crewai_callback: CrewAIEventListener
     """Test setup_listeners when CrewAI is unavailable."""
     mock_event_bus = Mock()
 
-    with patch("galileo.handlers.crewai.handler.CREWAI_AVAILABLE", False):
+    with patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False):
         crewai_callback.setup_listeners(mock_event_bus)
 
         # Verify that no event listeners were registered

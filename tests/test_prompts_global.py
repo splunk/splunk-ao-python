@@ -8,8 +8,8 @@ import httpx
 import pytest
 from respx import MockRouter
 
-from galileo import Message, MessageRole
-from galileo.prompts import create_prompt, delete_prompt, get_prompt, get_prompts
+from splunk_ao import Message, MessageRole
+from splunk_ao.prompts import create_prompt, delete_prompt, get_prompt, get_prompts
 
 
 @pytest.fixture

@@ -5,8 +5,8 @@ import pytest
 from galileo.resources.models.dataset_content import DatasetContent
 from galileo.resources.models.dataset_row import DatasetRow
 from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
-from galileo.schema.datasets import DatasetRecord
-from galileo.utils.datasets import (
+from splunk_ao.schema.datasets import DatasetRecord
+from splunk_ao.utils.datasets import (
     create_rows_from_records,
     get_dataset_and_records,
     get_records_for_dataset,
@@ -15,8 +15,8 @@ from galileo.utils.datasets import (
 )
 
 
-@patch("galileo.datasets.get_dataset")
-@patch("galileo.utils.datasets.get_records_for_dataset", return_value=[])
+@patch("splunk_ao.datasets.get_dataset")
+@patch("splunk_ao.utils.datasets.get_records_for_dataset", return_value=[])
 def test_get_dataset_and_records_with_id(mock_get_records, mock_get_dataset, dataset_content) -> None:
     """Test _get_dataset_and_records function with dataset_id."""
     # Setup
@@ -33,8 +33,8 @@ def test_get_dataset_and_records_with_id(mock_get_records, mock_get_dataset, dat
     mock_get_records.assert_called_once_with(mock_dataset)
 
 
-@patch("galileo.datasets.get_dataset")
-@patch("galileo.utils.datasets.get_records_for_dataset", return_value=[])
+@patch("splunk_ao.datasets.get_dataset")
+@patch("splunk_ao.utils.datasets.get_records_for_dataset", return_value=[])
 def test_get_dataset_and_records_with_name(mock_get_records, mock_get_dataset, dataset_content) -> None:
     """Test _get_dataset_and_records function with dataset_name."""
     # Setup
@@ -51,7 +51,7 @@ def test_get_dataset_and_records_with_name(mock_get_records, mock_get_dataset, d
     mock_get_records.assert_called_once_with(mock_dataset)
 
 
-@patch("galileo.datasets.get_dataset")
+@patch("splunk_ao.datasets.get_dataset")
 def test_get_dataset_and_records_not_found_id(mock_get_dataset) -> None:
     """Test _get_dataset_and_records function when dataset with id is not found."""
     # Setup
@@ -62,7 +62,7 @@ def test_get_dataset_and_records_not_found_id(mock_get_dataset) -> None:
         get_dataset_and_records(id="test-id")
 
 
-@patch("galileo.datasets.get_dataset")
+@patch("splunk_ao.datasets.get_dataset")
 def test_get_dataset_and_records_not_found_name(mock_get_dataset) -> None:
     """Test _get_dataset_and_records function when dataset with name is not found."""
     # Setup
@@ -80,7 +80,7 @@ def test_get_dataset_and_records_no_params() -> None:
         get_dataset_and_records()
 
 
-@patch("galileo.datasets.convert_dataset_row_to_record")
+@patch("splunk_ao.datasets.convert_dataset_row_to_record")
 def test_get_records_for_dataset(mock_convert, dataset_content) -> None:
     """Test _get_records_for_dataset function."""
     # Setup
@@ -109,7 +109,7 @@ def test_get_records_for_dataset_no_content() -> None:
         get_records_for_dataset(mock_dataset)
 
 
-@patch("galileo.utils.datasets.DatasetRecord")
+@patch("splunk_ao.utils.datasets.DatasetRecord")
 def test_create_rows_from_records_with_input_field(mock_dataset_record) -> None:
     """Test create_rows_from_records function with records containing 'input' field."""
     # Setup
@@ -124,7 +124,7 @@ def test_create_rows_from_records_with_input_field(mock_dataset_record) -> None:
     assert result == ["record instance"]
 
 
-@patch("galileo.utils.datasets.DatasetRecord")
+@patch("splunk_ao.utils.datasets.DatasetRecord")
 def test_create_rows_from_records_without_input_field(mock_dataset_record) -> None:
     """Test create_rows_from_records function with records not containing 'input' field."""
     # Setup
@@ -139,7 +139,7 @@ def test_create_rows_from_records_without_input_field(mock_dataset_record) -> No
     assert result == ["record instance"]
 
 
-@patch("galileo.utils.datasets.DatasetRecord")
+@patch("splunk_ao.utils.datasets.DatasetRecord")
 def test_create_rows_from_records_with_dict_without_input_field(mock_dataset_record) -> None:
     """Test create_rows_from_records function with dict records not containing 'input' field."""
     # Setup
@@ -154,7 +154,7 @@ def test_create_rows_from_records_with_dict_without_input_field(mock_dataset_rec
     assert result == ["record instance"]
 
 
-@patch("galileo.utils.datasets.DatasetRecord")
+@patch("splunk_ao.utils.datasets.DatasetRecord")
 def test_create_rows_from_records_mixed_types(mock_dataset_record) -> None:
     """Test create_rows_from_records function with mixed record types."""
     # Setup
@@ -172,7 +172,7 @@ def test_create_rows_from_records_mixed_types(mock_dataset_record) -> None:
     assert result == ["record 1", "record 2", "record 3"]
 
 
-@patch("galileo.utils.datasets.get_dataset_and_records")
+@patch("splunk_ao.utils.datasets.get_dataset_and_records")
 def test_load_dataset_and_records_with_dataset_id(mock_get_dataset_and_records) -> None:
     """Test load_dataset_and_records function with dataset_id."""
     # Setup
@@ -189,7 +189,7 @@ def test_load_dataset_and_records_with_dataset_id(mock_get_dataset_and_records) 
     assert records == mock_records
 
 
-@patch("galileo.utils.datasets.get_dataset_and_records")
+@patch("splunk_ao.utils.datasets.get_dataset_and_records")
 def test_load_dataset_and_records_with_dataset_name(mock_get_dataset_and_records) -> None:
     """Test load_dataset_and_records function with dataset_name."""
     # Setup
@@ -206,7 +206,7 @@ def test_load_dataset_and_records_with_dataset_name(mock_get_dataset_and_records
     assert records == mock_records
 
 
-@patch("galileo.utils.datasets.get_dataset_and_records")
+@patch("splunk_ao.utils.datasets.get_dataset_and_records")
 def test_load_dataset_and_records_with_dataset_as_string(mock_get_dataset_and_records) -> None:
     """Test load_dataset_and_records function with dataset as string."""
     # Setup
@@ -223,11 +223,11 @@ def test_load_dataset_and_records_with_dataset_as_string(mock_get_dataset_and_re
     assert records == mock_records
 
 
-@patch("galileo.utils.datasets.get_records_for_dataset")
+@patch("splunk_ao.utils.datasets.get_records_for_dataset")
 def test_load_dataset_and_records_with_dataset_object(mock_get_records) -> None:
     """Test load_dataset_and_records function with Dataset object."""
     # Setup
-    from galileo.datasets import Dataset
+    from splunk_ao.datasets import Dataset
 
     mock_dataset = Mock(spec=Dataset)
     mock_records = [DatasetRecord(input="test")]
@@ -242,7 +242,7 @@ def test_load_dataset_and_records_with_dataset_object(mock_get_records) -> None:
     assert records == mock_records
 
 
-@patch("galileo.utils.datasets.create_rows_from_records")
+@patch("splunk_ao.utils.datasets.create_rows_from_records")
 def test_load_dataset_and_records_with_records_list(mockcreate_rows) -> None:
     """Test load_dataset_and_records function with list of records."""
     # Setup

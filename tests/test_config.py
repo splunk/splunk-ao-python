@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from galileo.config import SplunkAOConfig
-from galileo.shared.exceptions import ConfigurationError
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.shared.exceptions import ConfigurationError
 
 # Auth env vars cleared in tests that exercise the missing-auth guard.
 _AUTH_ENV_VARS = (

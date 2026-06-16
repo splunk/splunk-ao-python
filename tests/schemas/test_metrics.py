@@ -1,4 +1,4 @@
-from galileo.schema.metrics import SplunkAOMetrics, Metric
+from splunk_ao.schema.metrics import Metric, SplunkAOMetrics
 
 
 def test_metric_custom_with_version() -> None:

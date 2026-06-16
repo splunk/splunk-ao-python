@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from galileo.config import SplunkAOConfig
-from galileo.configuration import _CONFIGURATION_KEYS, VALID_LOG_LEVELS, Configuration, parse_log_level
-from galileo.shared.exceptions import ConfigurationError
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.configuration import _CONFIGURATION_KEYS, VALID_LOG_LEVELS, Configuration, parse_log_level
+from splunk_ao.shared.exceptions import ConfigurationError
 
 
 class TestParseLogLevel:
@@ -335,7 +335,7 @@ class TestConfigurationConnect:
             ("generic", "Unknown error", "Configuration validation failed"),
         ],
     )
-    @patch("galileo.configuration.SplunkAOConfig.get")
+    @patch("splunk_ao.configuration.SplunkAOConfig.get")
     def test_connect_handles_different_error_types(
         self,
         mock_config_get: Mock,

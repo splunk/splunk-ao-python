@@ -35,7 +35,7 @@ del _os  # Clean up temporary import
 # background tasks pending, which causes pytest workers to hang at exit.
 # Override the module constant directly so tests don't depend on a user-facing
 # env var or any new SDK config knob.
-from galileo.logger import logger as _galileo_logger_module  # noqa: E402
+from splunk_ao.logger import logger as _galileo_logger_module  # noqa: E402
 
 _galileo_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
@@ -52,9 +52,6 @@ from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
 from test_support.config import fast_config_validation  # noqa: E402
 
-from galileo.collaborator import CollaboratorRole  # noqa: E402
-from galileo.config import SplunkAOConfig  # noqa: E402
-from galileo.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
 from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
 from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from galileo_core.constants.request_method import RequestMethod  # noqa: E402
@@ -63,6 +60,9 @@ from galileo_core.schemas.core.user import User  # noqa: E402
 from galileo_core.schemas.core.user_role import UserRole  # noqa: E402
 from galileo_core.schemas.protect.rule import Rule, RuleOperator  # noqa: E402
 from galileo_core.schemas.protect.ruleset import Ruleset  # noqa: E402
+from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
+from splunk_ao.config import SplunkAOConfig  # noqa: E402
+from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
 from tests.testutils.setup import setup_thread_pool_request_capture  # noqa: E402
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
@@ -107,7 +107,7 @@ def reset_agent_control_bridge_state() -> Generator[None, None, None]:
     """Reset optional Agent Control bridge globals when tests load that module."""
     yield
 
-    bridge_module = sys.modules.get("galileo.handlers.agent_control.bridge")
+    bridge_module = sys.modules.get("splunk_ao.handlers.agent_control.bridge")
     if bridge_module is None:
         return
 
@@ -337,8 +337,8 @@ def rulesets(request: pytest.FixtureRequest) -> list[Ruleset]:
 
 @pytest.fixture
 def enable_galileo_logging():
-    """Temporarily enable galileo logging for tests that need to capture log output."""
-    galileo_logger = logging.getLogger("galileo")
+    """Temporarily enable SDK logging for tests that need to capture log output."""
+    galileo_logger = logging.getLogger("splunk_ao")
     original_level = galileo_logger.level
     original_propagate = galileo_logger.propagate
 
@@ -396,8 +396,8 @@ def mock_env_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture
 def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
-    """Capture log messages emitted by the galileo logger for assertion."""
-    logger = logging.getLogger("galileo")
+    """Capture log messages emitted by the SDK logger for assertion."""
+    logger = logging.getLogger("splunk_ao")
     original_level = logger.level
     original_handlers = logger.handlers[:]
     original_propagate = logger.propagate

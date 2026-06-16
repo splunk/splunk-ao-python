@@ -4,8 +4,8 @@ from unittest.mock import ANY, Mock, patch
 import httpx
 import pytest
 
-from galileo.projects import Projects, ProjectsAPIException, delete_project
 from galileo.resources.models.project_type import ProjectType
+from splunk_ao.projects import Projects, ProjectsAPIException, delete_project
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +15,7 @@ def reset_env_vars() -> None:
 
 
 class TestProjects:
-    @patch("galileo.projects.get_all_projects_projects_all_get")
+    @patch("splunk_ao.projects.get_all_projects_projects_all_get")
     def test_get_all_projects_projects_all_get_exc(self, get_all_projects_projects_all_get) -> None:
         """Test that list raises ValueError when API call fails."""
         get_all_projects_projects_all_get.sync.side_effect = ValueError("unable to get all projects")
@@ -51,7 +51,7 @@ class TestProjects:
         except ValueError as e:
             assert str(e) == "Exactly one of 'id' or 'name' must be provided."
 
-    @patch("galileo.projects.get_project_projects_project_id_get.sync_detailed")
+    @patch("splunk_ao.projects.get_project_projects_project_id_get.sync_detailed")
     def test_get_project_with_id_gets_project_by_id(self, get_project_projects_project_id_get: Mock) -> None:
         # Mock a successful response with parsed project data
         mock_response = Mock()
@@ -63,7 +63,7 @@ class TestProjects:
         get_project_projects_project_id_get.assert_called_once_with(project_id="123", client=ANY)
         assert result is None
 
-    @patch("galileo.projects.get_project_projects_project_id_get.sync_detailed")
+    @patch("splunk_ao.projects.get_project_projects_project_id_get.sync_detailed")
     def test_get_project_with_id_with_whitespace_env_vars_gets_project_by_id(
         self, get_project_projects_project_id_get: Mock
     ) -> None:
@@ -78,7 +78,7 @@ class TestProjects:
                 get_project_projects_project_id_get.assert_called_once_with(project_id="123", client=ANY)
                 assert result is None
 
-    @patch("galileo.projects.get_project_projects_project_id_get.sync_detailed")
+    @patch("splunk_ao.projects.get_project_projects_project_id_get.sync_detailed")
     def test_get_project_with_id_from_env_var_gets_project_by_id(
         self, get_project_projects_project_id_get: Mock
     ) -> None:
@@ -92,7 +92,7 @@ class TestProjects:
             get_project_projects_project_id_get.assert_called_once_with(project_id="123", client=ANY)
             assert result is None
 
-    @patch("galileo.projects.get_projects_projects_get.sync_detailed")
+    @patch("splunk_ao.projects.get_projects_projects_get.sync_detailed")
     def test_get_project_with_name_gets_project_by_name(self, get_projects_projects_get: Mock) -> None:
         mock_response = Mock()
         mock_response.status_code = httpx.codes.OK
@@ -103,7 +103,7 @@ class TestProjects:
         get_projects_projects_get.assert_called_once_with(project_name="my_project", client=ANY, type_=ANY)
         assert result is None
 
-    @patch("galileo.projects.get_projects_projects_get.sync_detailed")
+    @patch("splunk_ao.projects.get_projects_projects_get.sync_detailed")
     def test_get_project_with_name_with_whitespace_env_vars_gets_project_by_name(
         self, get_projects_projects_get: Mock
     ) -> None:
@@ -118,7 +118,7 @@ class TestProjects:
                 get_projects_projects_get.assert_called_once_with(project_name="my_project", client=ANY, type_=ANY)
                 assert result is None
 
-    @patch("galileo.projects.get_projects_projects_get.sync_detailed")
+    @patch("splunk_ao.projects.get_projects_projects_get.sync_detailed")
     def test_get_project_with_name_from_env_var_gets_project_by_name(self, get_projects_projects_get: Mock) -> None:
         os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
         mock_response = Mock()
@@ -131,14 +131,14 @@ class TestProjects:
             get_projects_projects_get.assert_called_once_with(project_name="my_project", client=ANY, type_=ANY)
             assert result is None
 
-    @patch("galileo.projects.create_user_project_collaborators_projects_project_id_users_post.sync")
+    @patch("splunk_ao.projects.create_user_project_collaborators_projects_project_id_users_post.sync")
     def test_share_project_with_user(self, mock_create_user_project_collaborators):
         mock_create_user_project_collaborators.return_value = [Mock()]
         projects_client = Projects()
         projects_client.share_project_with_user(project_id="123", user_id="456")
         mock_create_user_project_collaborators.assert_called_once_with(project_id="123", client=ANY, body=ANY)
 
-    @patch("galileo.projects.create_user_project_collaborators_projects_project_id_users_post.sync")
+    @patch("splunk_ao.projects.create_user_project_collaborators_projects_project_id_users_post.sync")
     def test_share_project_with_user_error(self, mock_create_user_project_collaborators):
         """Test that share_project_with_user raises ValueError when the API call returns None."""
         mock_create_user_project_collaborators.return_value = None
@@ -149,14 +149,14 @@ class TestProjects:
 
         assert "Failed to share project 123 with user 456" in str(exc_info.value)
 
-    @patch("galileo.projects.delete_user_project_collaborator_projects_project_id_users_user_id_delete.sync")
+    @patch("splunk_ao.projects.delete_user_project_collaborator_projects_project_id_users_user_id_delete.sync")
     def test_unshare_project_with_user(self, mock_delete_user_project_collaborator):
         mock_delete_user_project_collaborator.return_value = True
         projects_client = Projects()
         projects_client.unshare_project_with_user(project_id="123", user_id="456")
         mock_delete_user_project_collaborator.assert_called_once_with(project_id="123", user_id="456", client=ANY)
 
-    @patch("galileo.projects.delete_user_project_collaborator_projects_project_id_users_user_id_delete.sync")
+    @patch("splunk_ao.projects.delete_user_project_collaborator_projects_project_id_users_user_id_delete.sync")
     def test_unshare_project_with_user_error(self, mock_delete_user_project_collaborator):
         """Test that unshare_project_with_user raises ValueError when the API call returns None."""
         mock_delete_user_project_collaborator.return_value = None
@@ -167,7 +167,7 @@ class TestProjects:
 
         assert "Failed to unshare project 123 with user 456" in str(exc_info.value)
 
-    @patch("galileo.projects.list_user_project_collaborators_projects_project_id_users_get.sync")
+    @patch("splunk_ao.projects.list_user_project_collaborators_projects_project_id_users_get.sync")
     def test_list_user_project_collaborators(self, mock_list_user_project_collaborators):
         mock_list_user_project_collaborators.side_effect = [
             Mock(collaborators=[Mock()], paginated=True, next_starting_token=1),
@@ -178,7 +178,7 @@ class TestProjects:
         assert len(collaborators) == 2
         assert mock_list_user_project_collaborators.call_count == 2
 
-    @patch("galileo.projects.list_user_project_collaborators_projects_project_id_users_get.sync")
+    @patch("splunk_ao.projects.list_user_project_collaborators_projects_project_id_users_get.sync")
     def test_list_user_project_collaborators_error(self, mock_list_user_project_collaborators):
         """Test that list_user_project_collaborators raises ValueError when the API call returns None."""
         mock_list_user_project_collaborators.return_value = None
@@ -189,7 +189,7 @@ class TestProjects:
 
         assert "Failed to list collaborators for project 123" in str(exc_info.value)
 
-    @patch("galileo.projects.update_user_project_collaborator_projects_project_id_users_user_id_patch.sync")
+    @patch("splunk_ao.projects.update_user_project_collaborator_projects_project_id_users_user_id_patch.sync")
     def test_update_user_project_collaborator(self, mock_update_user_project_collaborator):
         projects_client = Projects()
         projects_client.update_user_project_collaborator(project_id="123", user_id="456")
@@ -197,7 +197,7 @@ class TestProjects:
             project_id="123", user_id="456", client=ANY, body=ANY
         )
 
-    @patch("galileo.projects.update_user_project_collaborator_projects_project_id_users_user_id_patch.sync")
+    @patch("splunk_ao.projects.update_user_project_collaborator_projects_project_id_users_user_id_patch.sync")
     def test_update_user_project_collaborator_error(self, mock_update_user_project_collaborator):
         """Test that update_user_project_collaborator raises ValueError when the API call returns None."""
         mock_update_user_project_collaborator.return_value = None
@@ -230,8 +230,8 @@ class TestProjects:
 
         assert "Exactly one of 'id' or 'name' must be provided." in str(exc_info.value)
 
-    @patch("galileo.projects.delete_project_projects_project_id_delete.sync_detailed")
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.delete_project_projects_project_id_delete.sync_detailed")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_with_id_deletes_project_by_id(self, get_mock: Mock, delete_project_mock: Mock) -> None:
         # Mock the get method to return a project with the expected ID
         mock_project = Mock()
@@ -251,8 +251,8 @@ class TestProjects:
         delete_project_mock.assert_called_once_with(project_id="123", client=ANY)
         assert result is True
 
-    @patch("galileo.projects.delete_project_projects_project_id_delete.sync_detailed")
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.delete_project_projects_project_id_delete.sync_detailed")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_with_name_deletes_project_by_name(self, get_mock: Mock, delete_project_mock: Mock) -> None:
         # Mock the get method to return a project with the expected ID
         mock_project = Mock()
@@ -272,7 +272,7 @@ class TestProjects:
         delete_project_mock.assert_called_once_with(project_id="456", client=ANY)
         assert result is True
 
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_with_non_genai_project_raises_api_exception(self, get_mock: Mock) -> None:
         """Test that delete_project raises ProjectsAPIException when project is not GEN_AI type."""
         # Mock the get method to return a non-GEN_AI project
@@ -288,7 +288,7 @@ class TestProjects:
 
         assert "is not a gen_ai project" in str(exc_info.value)
 
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_with_nonexistent_project_raises_value_error(self, get_mock: Mock) -> None:
         """Test that delete_project raises ValueError when project doesn't exist."""
         # Mock the get method to return None (project not found)
@@ -317,7 +317,7 @@ class TestDeleteProjectConvenienceFunction:
 
         assert "Exactly one of 'id' or 'name' must be provided." in str(exc_info.value)
 
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_convenience_with_nonexistent_project_raises_value_error(self, get_mock: Mock) -> None:
         """Test that delete_project convenience function raises ValueError when project doesn't exist."""
         # Mock the get method to return None (project not found)
@@ -328,8 +328,8 @@ class TestDeleteProjectConvenienceFunction:
 
         assert "not found" in str(exc_info.value)
 
-    @patch("galileo.projects.delete_project_projects_project_id_delete.sync_detailed")
-    @patch("galileo.projects.Projects.get")
+    @patch("splunk_ao.projects.delete_project_projects_project_id_delete.sync_detailed")
+    @patch("splunk_ao.projects.Projects.get")
     def test_delete_project_convenience_successful_deletion_returns_true(
         self, get_mock: Mock, delete_project_mock: Mock
     ) -> None:

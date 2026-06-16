@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from galileo.traces import Traces
-from galileo.utils.headers_data import get_package_version
 from galileo_core.constants.request_method import RequestMethod
+from splunk_ao.traces import Traces
+from splunk_ao.utils.headers_data import get_package_version
 
 
 class TestTracesHeaders:
@@ -15,7 +15,7 @@ class TestTracesHeaders:
     @pytest.fixture
     def mock_config(self):
         """Mock SplunkAOConfig."""
-        with patch("galileo.traces.SplunkAOConfig") as mock_config_class:
+        with patch("splunk_ao.traces.SplunkAOConfig") as mock_config_class:
             mock_config = Mock()
             mock_api_client = Mock()
             mock_api_client.arequest = AsyncMock(return_value={"status": "ok"})
@@ -46,5 +46,5 @@ class TestTracesHeaders:
         # The header should include version and dynamic method name from get_method_name()
         header_value = content_headers["X-Galileo-SDK"]
         assert header_value.startswith(f"galileo-python/{get_package_version()}")
-        # Should contain the method name (e.g., "_make_async_request@galileo.traces")
-        assert "@galileo.traces" in header_value
+        # Should contain the method name (e.g., "_make_async_request@splunk_ao.traces")
+        assert "@splunk_ao.traces" in header_value

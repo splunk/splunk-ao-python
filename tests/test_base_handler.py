@@ -4,16 +4,16 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from galileo.handlers.base_handler import SplunkAOBaseHandler
-from galileo.logger.logger import SplunkAOLogger
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 class TestSplunkAOBaseHandler:
     @pytest.fixture
-    @patch("galileo.logger.logger.LogStreams")
-    @patch("galileo.logger.logger.Projects")
-    @patch("galileo.logger.logger.Traces")
+    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.Projects")
+    @patch("splunk_ao.logger.logger.Traces")
     def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
