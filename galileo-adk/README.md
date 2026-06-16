@@ -1,15 +1,15 @@
-# galileo-adk
+# splunk-ao-adk
 
-[![PyPI version](https://img.shields.io/pypi/v/galileo-adk.svg)](https://pypi.org/project/galileo-adk/)
-[![Python versions](https://img.shields.io/pypi/pyversions/galileo-adk.svg)](https://pypi.org/project/galileo-adk/)
-[![License](https://img.shields.io/pypi/l/galileo-adk.svg)](https://github.com/rungalileo/galileo-python/blob/main/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/splunk-ao-adk.svg)](https://pypi.org/project/splunk-ao-adk/)
+[![Python versions](https://img.shields.io/pypi/pyversions/splunk-ao-adk.svg)](https://pypi.org/project/splunk-ao-adk/)
+[![License](https://img.shields.io/pypi/l/splunk-ao-adk.svg)](https://github.com/splunk/splunk-ao-python/blob/main/LICENSE)
 
 Splunk AO observability for [Google ADK](https://github.com/google/adk-python) agents. Automatic tracing of agent runs, LLM calls, and tool executions.
 
 ## Installation
 
 ```bash
-pip install galileo-adk
+pip install splunk-ao-adk
 ```
 
 **Requirements:** Python 3.10+, a [Splunk AO API key](https://www.splunk.com/), and a [Google AI API key](https://aistudio.google.com/apikey)
