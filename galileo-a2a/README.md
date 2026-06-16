@@ -1,8 +1,8 @@
-# galileo-a2a
+# splunk-ao-a2a
 
-[![PyPI version](https://img.shields.io/pypi/v/galileo-a2a.svg)](https://pypi.org/project/galileo-a2a/)
-[![Python versions](https://img.shields.io/pypi/pyversions/galileo-a2a.svg)](https://pypi.org/project/galileo-a2a/)
-[![License](https://img.shields.io/pypi/l/galileo-a2a.svg)](https://github.com/rungalileo/galileo-python/blob/main/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/splunk-ao-a2a.svg)](https://pypi.org/project/splunk-ao-a2a/)
+[![Python versions](https://img.shields.io/pypi/pyversions/splunk-ao-a2a.svg)](https://pypi.org/project/splunk-ao-a2a/)
+[![License](https://img.shields.io/pypi/l/splunk-ao-a2a.svg)](https://github.com/splunk/splunk-ao-python/blob/main/LICENSE)
 
 Splunk AO observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A) protocol interactions. Automatic tracing of agent-to-agent calls, task lifecycle, and cross-agent distributed trace correlation.
 
@@ -31,12 +31,12 @@ Splunk AO observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-`galileo-a2a` instruments both the **client** (outbound calls) and **server** (inbound requests) sides of the A2A protocol. Trace context is propagated through A2A message metadata so all agents appear in a single distributed trace in Splunk AO.
+`splunk-ao-a2a` instruments both the **client** (outbound calls) and **server** (inbound requests) sides of the A2A protocol. Trace context is propagated through A2A message metadata so all agents appear in a single distributed trace in Splunk AO.
 
 ## Installation
 
 ```bash
-pip install galileo-a2a
+pip install splunk-ao-a2a
 ```
 
 **Requirements:** Python 3.10+, a [Splunk AO API key](https://www.splunk.com/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
