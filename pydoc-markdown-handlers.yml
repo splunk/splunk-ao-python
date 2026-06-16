@@ -1,4 +1,4 @@
-# Special PyDoc markdown configuration for the Galileo handlers module as this isn't created by default for some reason
+# Special PyDoc markdown configuration for the Splunk AO handlers module as this isn't created by default for some reason
 loaders:
   - type: python
     search_path: [./src/splunk_ao/handlers]
