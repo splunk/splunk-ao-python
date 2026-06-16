@@ -9,7 +9,7 @@ dynamic = ["dependencies"]
 license = "Apache-2.0"
 
 [project.urls]
-Repository = "https://github.com/signalfx/splunk-ao-python"
+Repository = "https://github.com/splunk/splunk-ao-python"
 
 [tool.poetry]
 packages = [
