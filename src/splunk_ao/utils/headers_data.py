@@ -6,7 +6,7 @@ from typing import Any
 def get_package_version() -> str:
     """Get the installed SDK distribution version."""
     try:
-        return version("galileo")
+        return version("splunk-ao")
     except PackageNotFoundError:
         return "0.0.0"  # Unknown version
 

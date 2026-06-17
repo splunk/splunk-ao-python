@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from galileo_core.schemas.shared.document import Document as GalileoDocument
-from splunk_ao import Message, MessageRole, galileo_context
+from splunk_ao import Message, MessageRole, splunk_ao_context
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.handlers.langchain import SplunkAOAsyncCallback, SplunkAOCallback
 from splunk_ao.handlers.langchain.utils import parse_llm_result, update_root_to_agent
@@ -1037,7 +1037,7 @@ class TestSplunkAOCallbackWithIngestionHook:
         [
             lambda hook: SplunkAOCallback(ingestion_hook=hook),
             lambda hook: SplunkAOCallback(galileo_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOCallback(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(galileo_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
         ],
     )
     def test_on_chain_end_with_ingestion_hook(self, callback_builder):

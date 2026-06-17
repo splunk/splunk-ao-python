@@ -17,7 +17,7 @@ from galileo.resources.models.log_records_available_columns_request import LogRe
 from galileo.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from galileo.resources.types import Unset
 from splunk_ao.config import SplunkAOConfig
-from splunk_ao.decorator import galileo_context
+from splunk_ao.decorator import splunk_ao_context
 from splunk_ao.export import ExportClient
 from splunk_ao.log_streams import LogStreams
 from splunk_ao.schema.filters import FilterType
@@ -820,7 +820,7 @@ class LogStream(StateManagementMixin):
         """
         Get a galileo context manager for this log stream.
 
-        This is a convenient method that returns a pre-configured galileo_context
+        This is a convenient method that returns a pre-configured splunk_ao_context
         for this log stream, eliminating the need to specify project and log stream names.
 
         Returns
@@ -838,7 +838,7 @@ class LogStream(StateManagementMixin):
                 # Your logging code here
                 response = openai_client.chat.completions.create(...)
         """
-        return galileo_context(project=self.project.name if self.project else None, log_stream=self.name)
+        return splunk_ao_context(project=self.project.name if self.project else None, log_stream=self.name)
 
     def _get_columns(self, api_func: Any, error_msg: str) -> LogRecordsAvailableColumnsResponse:
         """Helper method to retrieve available columns from the API."""

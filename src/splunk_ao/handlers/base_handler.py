@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from splunk_ao import galileo_context
+from splunk_ao import splunk_ao_context
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import INTEGRATION, NODE_TYPE, Node
 from splunk_ao.schema.trace import TracesIngestRequest
@@ -44,7 +44,7 @@ class SplunkAOBaseHandler:
         flush_on_chain_end: bool = True,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ):
-        self._galileo_logger: SplunkAOLogger = galileo_logger or galileo_context.get_logger_instance(
+        self._galileo_logger: SplunkAOLogger = galileo_logger or splunk_ao_context.get_logger_instance(
             ingestion_hook=ingestion_hook
         )
         if galileo_logger and ingestion_hook:
