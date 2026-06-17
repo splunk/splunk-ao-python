@@ -58,6 +58,7 @@ jobs:
           cp -r ./splunk-ao-python/.generated_docs/reference ./splunk-ao-docs/sdk-api/python/
 
       - name: Commit changes
+        id: commit
         working-directory: ./splunk-ao-docs
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
@@ -67,10 +68,17 @@ jobs:
           git config --global user.name "splunk-ao-automation"
           git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/agent-observability-docs.git
           git add .
+          if git diff --cached --quiet; then
+            echo "No doc changes to publish"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
           git commit -m "Updating docs from ${GITHUB_REF_NAME}-${{ github.run_id }}"
           git push -u origin feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
 
       - name: Create PR
+        if: steps.commit.outputs.has_changes == 'true'
         working-directory: ./splunk-ao-docs
         env:
           GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}

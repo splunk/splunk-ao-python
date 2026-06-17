@@ -628,7 +628,6 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
                 if not code:
                     continue
                 if "```" in code:
-                    # Already contains fenced blocks — output as-is (may include prose + code)
                     parts.append(code)
                 elif code.startswith(">>>") or code.startswith("..."):
                     parts.append("```python")

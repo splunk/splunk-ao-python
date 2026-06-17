@@ -60,6 +60,10 @@ jobs:
           poetry run ./scripts/import-openapi-yaml.sh ${{ secrets.SPLUNK_AO_API_URL }}
           poetry run ./scripts/auto-generate-api-client.sh
           git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit — spec is unchanged"
+            exit 0
+          fi
           git commit -m "Update API Client"
           git push --force origin $BRANCH_NAME
 
@@ -67,4 +71,9 @@ jobs:
         env:
           BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}
           GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
-        run: gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'
+        run: |
+          if ! git ls-remote --exit-code origin refs/heads/$BRANCH_NAME > /dev/null 2>&1; then
+            echo "No branch to create PR from — nothing was committed"
+            exit 0
+          fi
+          gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy' || true
