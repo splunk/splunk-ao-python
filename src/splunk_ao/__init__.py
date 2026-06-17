@@ -32,7 +32,7 @@ from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnreso
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
-from splunk_ao.decorator import SplunkAODecorator, galileo_context, log, start_session
+from splunk_ao.decorator import SplunkAODecorator, splunk_ao_context, log, start_session
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -80,7 +80,7 @@ from splunk_ao.utils.log_config import enable_console_logging
 
 vars(sys)["_splunk_ao_suppress_galileo_deprecation_warning"] = False
 
-__version__ = "2.3.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "APIError",
@@ -157,7 +157,7 @@ __all__ = [
     "create_protect_stage",
     "delete_api_key",
     "enable_console_logging",
-    "galileo_context",
+    "splunk_ao_context",
     "get_agent_control_target",
     "get_protect_stage",
     "get_tracing_headers",

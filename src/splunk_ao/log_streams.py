@@ -68,9 +68,9 @@ class LogStream(LogStreamResponse):
 
     # Use a log stream with the context manager
     from splunk_ao.openai import openai
-    from splunk_ao import galileo_context
+    from splunk_ao import splunk_ao_context
 
-    with galileo_context(project="My AI Project", log_stream="Production Logs"):
+    with splunk_ao_context(project="My AI Project", log_stream="Production Logs"):
         response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": "Hello, world!"}]

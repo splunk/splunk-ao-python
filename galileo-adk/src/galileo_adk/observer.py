@@ -10,14 +10,14 @@ from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
-from splunk_ao import galileo_context
+from splunk_ao import splunk_ao_context
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import serialize_to_str
 
 from galileo_adk.data_converters import (
-    convert_adk_content_to_galileo_messages,
-    convert_adk_tools_to_galileo_format,
+    convert_adk_content_to_splunk_ao_messages,
+    convert_adk_tools_to_splunk_ao_format,
     extract_text_from_adk_content,
 )
 from galileo_adk.span_manager import SpanManager
@@ -156,7 +156,7 @@ class SplunkAOObserver:
             )
         else:
             self._trace_builder = None
-            galileo_logger = galileo_context.get_logger_instance(project=project, log_stream=log_stream)
+            galileo_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
             self._handler = SplunkAOBaseHandler(
                 galileo_logger=galileo_logger,
                 start_new_trace=True,
@@ -469,13 +469,13 @@ class SplunkAOObserver:
             return []
         messages = []
         for content in llm_request.contents:
-            messages.extend(convert_adk_content_to_galileo_messages(content))
+            messages.extend(convert_adk_content_to_splunk_ao_messages(content))
         return messages
 
     def _extract_llm_output(self, llm_response: Any) -> list[Any]:
         """Extract LLM output as list of Messages to preserve all parts including tool_calls."""
         if llm_response and hasattr(llm_response, "content"):
-            return convert_adk_content_to_galileo_messages(llm_response.content)
+            return convert_adk_content_to_splunk_ao_messages(llm_response.content)
         return []
 
     def _extract_model_name(self, llm_request: Any) -> str | None:
@@ -495,7 +495,7 @@ class SplunkAOObserver:
         if hasattr(llm_request, "config") and llm_request.config:
             tools = getattr(llm_request.config, "tools", None)
             if tools:
-                return convert_adk_tools_to_galileo_format(tools)
+                return convert_adk_tools_to_splunk_ao_format(tools)
         return None
 
     def _extract_usage_metadata(self, llm_response: Any) -> dict[str, Any]:

@@ -9,7 +9,6 @@ import pytest
 
 from galileo_adk.decorator import splunk_ao_retriever
 from galileo_adk.observer import SplunkAOObserver
-
 from .mocks import MockTool, MockToolContext
 
 
