@@ -60,10 +60,13 @@ jobs:
 
       - name: Commit changes
         working-directory: ./splunk-ao-docs
+        env:
+          PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
         run: |
           # TODO(HYBIM-725): replace with Splunk bot email and name
           git config --global user.email "splunk-ao-automation@splunk.com"
           git config --global user.name "splunk-ao-automation"
+          git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/agent-observability-docs.git
           git add .
           git commit -m "Updating docs from ${GITHUB_REF_NAME}-${{ github.run_id }}"
           git push -u origin feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
