@@ -9,7 +9,7 @@ from uuid import UUID
 
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 
-from galileo_adk.types import RunContext
+from splunk_ao_adk.types import RunContext
 
 # Integration tag for all spans
 INTEGRATION_TAG = "google_adk"

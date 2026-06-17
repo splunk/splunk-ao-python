@@ -4,7 +4,7 @@ import logging
 
 from galileo_core.schemas.logging.llm import MessageRole
 
-from galileo_adk.data_converters import (
+from splunk_ao_adk.data_converters import (
     _extract_tool_info,
     _try_direct_attributes,
     _try_function_declarations,

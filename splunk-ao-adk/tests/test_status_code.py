@@ -2,8 +2,8 @@
 
 import pytest
 
-from galileo_adk import GalileoADKPlugin
-from galileo_adk.plugin import _extract_status_code, _is_http_status_code
+from splunk_ao_adk import GalileoADKPlugin
+from splunk_ao_adk.plugin import _extract_status_code, _is_http_status_code
 
 
 class TestIsHttpStatusCode:

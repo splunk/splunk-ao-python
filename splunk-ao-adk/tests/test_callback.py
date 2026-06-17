@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from galileo_adk import SplunkAOADKCallback
+from splunk_ao_adk import SplunkAOADKCallback
 
 from .mocks import (
     MockCallbackContext,
@@ -123,7 +123,7 @@ class TestSplunkAOADKCallback:
         assert callback._handler is not None
 
     def test_initialization_with_project_and_log_stream(self) -> None:
-        with patch("galileo_adk.observer.splunk_ao_context") as mock_context:
+        with patch("splunk_ao_adk.observer.splunk_ao_context") as mock_context:
             mock_logger = MagicMock()
             mock_context.get_logger_instance.return_value = mock_logger
 

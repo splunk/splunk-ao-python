@@ -7,8 +7,8 @@ from uuid import UUID
 
 import pytest
 
-from galileo_adk.decorator import splunk_ao_retriever
-from galileo_adk.observer import SplunkAOObserver
+from splunk_ao_adk.decorator import splunk_ao_retriever
+from splunk_ao_adk.observer import SplunkAOObserver
 from .mocks import MockTool, MockToolContext
 
 
@@ -89,7 +89,7 @@ class TestIsRetrieverTool:
         # Then: it is not detected as a retriever
         assert result is False
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
     def test_base_retrieval_tool_instance_is_detected(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is an instance of BaseRetrievalTool
         tool = MockBaseRetrievalTool(name="vertex_ai_rag")
@@ -100,7 +100,7 @@ class TestIsRetrieverTool:
         # Then: it is detected as a retriever
         assert result is True
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
     def test_base_retrieval_tool_subclass_is_detected(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is a subclass of BaseRetrievalTool
         tool = MockRetrieverSubclass(name="custom_rag")
@@ -138,7 +138,7 @@ class TestIsRetrieverTool:
         # Then: it is not detected as a retriever
         assert result is False
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", None)
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", None)
     def test_isinstance_skipped_when_base_class_unavailable(self, observer: SplunkAOObserver) -> None:
         # Given: BaseRetrievalTool is not importable (None) and tool has no func attribute
         tool = MockBaseRetrievalTool(name="some_retriever")
@@ -265,7 +265,7 @@ class TestOnToolStartRetriever:
         # Then: a valid UUID is returned
         assert isinstance(run_id, UUID)
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
     def test_base_retrieval_tool_creates_retriever_span(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is an instance of BaseRetrievalTool
         tool = MockBaseRetrievalTool(name="vertex_ai_rag")

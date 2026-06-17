@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from galileo_adk.observer import SplunkAOObserver
+from splunk_ao_adk.observer import SplunkAOObserver
 
 from .mocks import MockContent, MockEvent, MockPart
 

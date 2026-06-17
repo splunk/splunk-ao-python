@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from galileo_adk import SplunkAOADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 
 from .mocks import (
     MockCallbackContext,

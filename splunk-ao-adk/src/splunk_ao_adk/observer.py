@@ -15,13 +15,13 @@ from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import serialize_to_str
 
-from galileo_adk.data_converters import (
+from splunk_ao_adk.data_converters import (
     convert_adk_content_to_splunk_ao_messages,
     convert_adk_tools_to_splunk_ao_format,
     extract_text_from_adk_content,
 )
-from galileo_adk.span_manager import SpanManager
-from galileo_adk.trace_builder import TraceBuilder
+from splunk_ao_adk.span_manager import SpanManager
+from splunk_ao_adk.trace_builder import TraceBuilder
 
 _logger = logging.getLogger(__name__)
 

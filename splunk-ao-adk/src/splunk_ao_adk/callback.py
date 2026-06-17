@@ -9,7 +9,7 @@ from typing import Any
 
 from splunk_ao.schema.trace import TracesIngestRequest
 
-from galileo_adk.observer import (
+from splunk_ao_adk.observer import (
     SplunkAOObserver,
     get_agent_name_from_tool_context,
     get_custom_metadata,
@@ -18,7 +18,7 @@ from galileo_adk.observer import (
     get_tool_invocation_id,
     get_tool_session_id,
 )
-from galileo_adk.span_tracker import SpanTracker
+from splunk_ao_adk.span_tracker import SpanTracker
 
 try:
     from google.adk.agents.callback_context import CallbackContext

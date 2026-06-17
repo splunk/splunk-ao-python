@@ -18,7 +18,7 @@ pip install splunk-ao-adk
 
 ```python
 import asyncio
-from galileo_adk import SplunkAOADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
@@ -54,7 +54,7 @@ All traces with the same `session_id` are automatically grouped into a Splunk AO
 
 ```python
 import asyncio
-from galileo_adk import SplunkAOADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
@@ -90,7 +90,7 @@ Attach custom metadata to traces using ADK's `RunConfig`. Metadata is propagated
 
 ```python
 import asyncio
-from galileo_adk import SplunkAOADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.adk.agents.run_config import RunConfig
@@ -131,7 +131,7 @@ For granular control over which callbacks to use, attach them directly to your a
 
 ```python
 import asyncio
-from galileo_adk import SplunkAOADKCallback
+from splunk_ao_adk import SplunkAOADKCallback
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 By default, all `FunctionTool` calls are logged as tool spans. To log a retriever function as a **retriever span** (enabling RAG quality metrics in Splunk AO), decorate it with `@splunk_ao_retriever`:
 
 ```python
-from galileo_adk import splunk_ao_retriever
+from splunk_ao_adk import splunk_ao_retriever
 from google.adk.tools import FunctionTool
 
 @splunk_ao_retriever
@@ -187,7 +187,7 @@ Intercept traces for custom processing before forwarding to Splunk AO:
 import asyncio
 import os
 from splunk_ao import GalileoLogger
-from galileo_adk import SplunkAOADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types

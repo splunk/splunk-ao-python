@@ -15,7 +15,7 @@ def splunk_ao_retriever(func: Callable[..., Any]) -> Callable[..., Any]:
 
     Example
     -------
-    >>> from galileo_adk import splunk_ao_retriever
+    >>> from splunk_ao_adk import splunk_ao_retriever
     >>> @splunk_ao_retriever
     ... def my_search(query: str) -> str:
     ...     return search_docs(query)

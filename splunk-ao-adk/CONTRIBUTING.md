@@ -10,7 +10,7 @@ This package is part of the [galileo-python](https://github.com/rungalileo/galil
 galileo-python/
 ├── src/splunk_ao/        ← Main Galileo SDK
 └── galileo-adk/
-    ├── src/galileo_adk/
+    ├── src/splunk_ao_adk/
     ├── tests/
     ├── pyproject.toml
     └── README.md
@@ -124,7 +124,7 @@ source .venv/bin/activate
 pytest tests -v
 
 # Run with coverage
-pytest tests --cov=galileo_adk --cov-report=term-missing
+pytest tests --cov=splunk_ao_adk --cov-report=term-missing
 
 # Run linting
 ruff check src/
