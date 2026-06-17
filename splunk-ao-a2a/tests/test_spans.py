@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 import pytest
 from opentelemetry.trace import Span, StatusCode
 
-from galileo_a2a import _spans
-from galileo_a2a._constants import (
+from splunk_ao_a2a import _spans
+from splunk_ao_a2a._constants import (
     A2A_CONTEXT_ID,
     A2A_RPC_METHOD,
     A2A_TASK_ID,

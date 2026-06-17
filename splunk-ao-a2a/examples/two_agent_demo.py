@@ -52,7 +52,7 @@ from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 from starlette.applications import Starlette
 from typing_extensions import TypedDict
 
-from galileo_a2a import A2AInstrumentor
+from splunk_ao_a2a import A2AInstrumentor
 
 load_dotenv(Path(__file__).parent / ".env")
 

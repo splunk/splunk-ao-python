@@ -5,8 +5,8 @@ from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import Link
 
-from galileo_a2a._constants import AGNTCY_OBSERVE_KEY, SPLUNK_AO_OBSERVE_KEY
-from galileo_a2a._context import (
+from splunk_ao_a2a._constants import AGNTCY_OBSERVE_KEY, SPLUNK_AO_OBSERVE_KEY
+from splunk_ao_a2a._context import (
     create_span_link_from_context,
     extract_trace_context,
     inject_trace_context,

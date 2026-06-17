@@ -58,7 +58,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/galileo_a2a"]
+packages = ["src/splunk_ao_a2a"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -95,7 +95,7 @@ ignore = ["ARG001", "ARG002", "D"]
 "tests/**/*.py" = ["ARG", "D"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["galileo_a2a", "splunk_ao"]
+known-first-party = ["splunk_ao_a2a", "splunk_ao"]
 
 [tool.mypy]
 python_version = "3.10"
@@ -106,7 +106,7 @@ ignore_missing_imports = true
 follow_imports = "skip"
 
 [tool.coverage.run]
-source = ["src/galileo_a2a"]
+source = ["src/splunk_ao_a2a"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -120,7 +120,7 @@ exclude_lines = [
 ]
 
 [tool.semantic_release]
-version_variables = ["src/galileo_a2a/_version.py:__version__"]
+version_variables = ["src/splunk_ao_a2a/_version.py:__version__"]
 version_toml = ["pyproject.toml:project.version"]
 tag_format = "splunk-ao-a2a-v{version}"
 version_source = "tag"

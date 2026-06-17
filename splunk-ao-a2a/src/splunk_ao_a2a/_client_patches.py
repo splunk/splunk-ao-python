@@ -11,9 +11,9 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode, Tracer
 
-from galileo_a2a._constants import SPLUNK_AO_OBSERVE_KEY
-from galileo_a2a._context import inject_trace_context, iter_with_context
-from galileo_a2a._spans import (
+from splunk_ao_a2a._constants import SPLUNK_AO_OBSERVE_KEY
+from splunk_ao_a2a._context import inject_trace_context, iter_with_context
+from splunk_ao_a2a._spans import (
     set_client_attributes,
     set_input,
     set_simple_input,

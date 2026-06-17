@@ -9,7 +9,7 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
-from galileo_a2a._constants import (
+from splunk_ao_a2a._constants import (
     A2A_CONTEXT_ID,
     A2A_RPC_METHOD,
     A2A_TASK_ID,

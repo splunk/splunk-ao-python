@@ -45,7 +45,7 @@ pip install splunk-ao-a2a
 
 ```python
 from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
-from galileo_a2a import A2AInstrumentor
+from splunk_ao_a2a import A2AInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
 provider = TracerProvider()
@@ -121,7 +121,7 @@ from a2a.types import (
     TaskState, TaskStatus, TaskStatusUpdateEvent, TextPart,
 )
 from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
-from galileo_a2a import A2AInstrumentor
+from splunk_ao_a2a import A2AInstrumentor
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI

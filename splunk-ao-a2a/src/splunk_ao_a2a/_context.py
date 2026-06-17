@@ -10,7 +10,7 @@ from opentelemetry import trace
 from opentelemetry.propagate import inject as otel_inject
 from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags
 
-from galileo_a2a._constants import (
+from splunk_ao_a2a._constants import (
     AGNTCY_OBSERVE_KEY,
     SPLUNK_AO_OBSERVE_KEY,
     LINK_FROM_AGENT,
