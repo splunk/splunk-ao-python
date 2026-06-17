@@ -16,7 +16,7 @@ from galileo.resources.models import ExperimentResponse, HTTPValidationError, Pr
 from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
-from splunk_ao.decorator import galileo_context, galileo_dataset_context, log
+from splunk_ao.decorator import splunk_ao_context, splunk_ao_dataset_context, log
 from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate
@@ -234,7 +234,7 @@ class Experiments:
         if dataset_obj is None and records is None:
             raise ValueError("Either dataset_obj or records must be provided")
         results = []
-        galileo_context.init(project=project_obj.name, experiment_id=experiment_obj.id, local_metrics=local_metrics)
+        splunk_ao_context.init(project=project_obj.name, experiment_id=experiment_obj.id, local_metrics=local_metrics)
 
         def logged_process_func(row: DatasetRecord) -> Callable:
             return log(name=experiment_obj.name, dataset_record=row)(func)
@@ -244,10 +244,10 @@ class Experiments:
             _logger.info(f"Processing {len(records)} rows from dataset")
             for row in records:
                 results.append(process_row(row, logged_process_func(row)))
-                galileo_context.reset_trace_context()
+                splunk_ao_context.reset_trace_context()
                 if getsizeof(results) > MAX_REQUEST_SIZE_BYTES or len(results) >= MAX_INGEST_BATCH_SIZE:
                     _logger.info("Flushing logger due to size limit")
-                    galileo_context.flush(on_error=on_error)
+                    splunk_ao_context.flush(on_error=on_error)
                     results = []
         # For dataset object, paginate through content
         elif dataset_obj is not None:
@@ -267,16 +267,16 @@ class Experiments:
 
                     for row in batch_records:
                         results.append(process_row(row, logged_process_func(row)))
-                        galileo_context.reset_trace_context()
+                        splunk_ao_context.reset_trace_context()
                         if getsizeof(results) > MAX_REQUEST_SIZE_BYTES or len(results) >= MAX_INGEST_BATCH_SIZE:
                             _logger.info("Flushing logger due to size limit")
-                            galileo_context.flush(on_error=on_error)
+                            splunk_ao_context.flush(on_error=on_error)
                             results = []
 
                     starting_token += len(batch_records)
 
         # flush the logger
-        galileo_context.flush(on_error=on_error)
+        splunk_ao_context.flush(on_error=on_error)
 
         _logger.info(f" {len(results)} rows processed for experiment {experiment_obj.name}.")
 
@@ -292,9 +292,9 @@ def process_row(row: DatasetRecord, process_func: Callable) -> str:
     try:
         # Set dataset context for OTEL spans (ground truth for scorers)
         # This ensures OTEL-instrumented frameworks get dataset fields attached to their spans
-        with galileo_dataset_context(dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata):
+        with splunk_ao_dataset_context(dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata):
             output = process_func(row.deserialized_input)
-            log = galileo_context.get_logger_instance()
+            log = splunk_ao_context.get_logger_instance()
             log.conclude(output)
     except Exception as exc:
         output = f"error during executing: {process_func.__name__}: {exc}"

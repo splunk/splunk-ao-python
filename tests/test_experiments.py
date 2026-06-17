@@ -34,7 +34,7 @@ from galileo.resources.models import (
 from galileo.resources.types import UNSET
 from galileo_core.schemas.logging.span import Span, StepWithChildSpans
 from galileo_core.schemas.shared.metric import MetricValueType
-from splunk_ao import galileo_context
+from splunk_ao import splunk_ao_context
 from splunk_ao.decorator import SPAN_TYPE
 from splunk_ao.experiments import (
     Experiments,
@@ -56,7 +56,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 @pytest.fixture
 def reset_context(auto_use=True) -> None:
-    galileo_context.reset()
+    splunk_ao_context.reset()
     os.environ.pop("SPLUNK_AO_PROJECT", None)
     os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
 
@@ -152,7 +152,7 @@ def prompt_run_settings():
 
 
 def complex_trace_function(input):
-    logger = galileo_context.get_logger_instance()
+    logger = splunk_ao_context.get_logger_instance()
     output = input + " output"
     logger.add_llm_span(input=input, output=output, model="example")
     return output
@@ -1319,7 +1319,7 @@ class TestExperiments:
         on_error = Mock()
 
         # When: run_experiment() is called with a function and on_error (function flow)
-        with patch("splunk_ao.experiments.galileo_context.flush") as mock_flush:
+        with patch("splunk_ao.experiments.splunk_ao_context.flush") as mock_flush:
             run_experiment(
                 experiment_name="test_experiment",
                 project="awesome-new-project",

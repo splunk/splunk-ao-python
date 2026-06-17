@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel
 
-from splunk_ao import galileo_context
+from splunk_ao import splunk_ao_context
 from splunk_ao.handlers.langchain.middleware import SplunkAOMiddleware
 from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -508,7 +508,7 @@ class TestIngestionHook:
         [
             lambda hook: SplunkAOMiddleware(ingestion_hook=hook),
             lambda hook: SplunkAOMiddleware(galileo_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOMiddleware(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOMiddleware(galileo_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
         ],
     )
     def test_ingestion_hook_called(self, middleware_builder) -> None:
