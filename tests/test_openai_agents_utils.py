@@ -299,7 +299,7 @@ class TestMapSpanType:
     def test_galileo_custom_span(self) -> None:
         """Test mapping SplunkAOCustomSpan."""
         galileo_span = WorkflowSpan(name="Test", input="input", output="output", status_code=200)
-        assert _map_span_type(SplunkAOCustomSpan(galileo_span, {})) == "galileo_custom"
+        assert _map_span_type(SplunkAOCustomSpan(galileo_span, {})) == "splunk_ao_custom"
 
     @pytest.mark.parametrize(
         "type_attr,expected_type", [("function", "tool"), ("generation", "llm"), ("agent", "workflow")]
@@ -325,7 +325,7 @@ class TestSplunkAOCustomSpan:
     )
     def test_wraps_span_types(self, span: Any) -> None:
         """Test that SplunkAOCustomSpan wraps different span types."""
-        assert SplunkAOCustomSpan(span, {}).type == "galileo_custom"
+        assert SplunkAOCustomSpan(span, {}).type == "splunk_ao_custom"
 
     def test_preserves_underlying_properties(self) -> None:
         """Test accessing underlying span properties."""
