@@ -35,9 +35,9 @@ del _os  # Clean up temporary import
 # background tasks pending, which causes pytest workers to hang at exit.
 # Override the module constant directly so tests don't depend on a user-facing
 # env var or any new SDK config knob.
-from splunk_ao.logger import logger as _galileo_logger_module  # noqa: E402
+from splunk_ao.logger import logger as _splunk_ao_logger_module  # noqa: E402
 
-_galileo_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
+_splunk_ao_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
 import datetime  # noqa: E402
 import logging  # noqa: E402
@@ -338,20 +338,20 @@ def rulesets(request: pytest.FixtureRequest) -> list[Ruleset]:
 @pytest.fixture
 def enable_galileo_logging():
     """Temporarily enable SDK logging for tests that need to capture log output."""
-    galileo_logger = logging.getLogger("splunk_ao")
-    original_level = galileo_logger.level
-    original_propagate = galileo_logger.propagate
+    splunk_ao_logger = logging.getLogger("splunk_ao")
+    original_level = splunk_ao_logger.level
+    original_propagate = splunk_ao_logger.propagate
 
     # Enable logging at appropriate levels for different test types
-    galileo_logger.setLevel(logging.DEBUG)  # Most permissive for test flexibility
-    galileo_logger.propagate = True
+    splunk_ao_logger.setLevel(logging.DEBUG)  # Most permissive for test flexibility
+    splunk_ao_logger.propagate = True
 
     try:
         yield
     finally:
         # Restore original settings
-        galileo_logger.setLevel(original_level)
-        galileo_logger.propagate = original_propagate
+        splunk_ao_logger.setLevel(original_level)
+        splunk_ao_logger.propagate = original_propagate
 
 
 # ---------------------------------------------------------------------------

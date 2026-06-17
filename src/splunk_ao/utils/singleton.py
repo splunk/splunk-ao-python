@@ -24,7 +24,7 @@ class SplunkAOLoggerSingleton:
 
     _instance = None  # Class-level attribute to hold the singleton instance.
     _lock = threading.Lock()  # Lock for thread-safe instantiation and operations.
-    _galileo_loggers: ClassVar[dict[tuple[str, ...], SplunkAOLogger]] = {}  # Cache for loggers.
+    _splunk_ao_loggers: ClassVar[dict[tuple[str, ...], SplunkAOLogger]] = {}  # Cache for loggers.
 
     def __new__(cls) -> "SplunkAOLoggerSingleton":
         """
@@ -40,7 +40,7 @@ class SplunkAOLoggerSingleton:
                 if not cls._instance:  # Double-checked locking.
                     cls._instance = super().__new__(cls)
                     # Initialize the logger dictionary in the new instance.
-                    cls._instance._galileo_loggers = {}
+                    cls._instance._splunk_ao_loggers = {}
         return cls._instance
 
     @staticmethod
@@ -157,14 +157,14 @@ class SplunkAOLoggerSingleton:
         )
 
         # First check without acquiring lock for performance.
-        if key in self._galileo_loggers:
-            return self._galileo_loggers[key]
+        if key in self._splunk_ao_loggers:
+            return self._splunk_ao_loggers[key]
 
         # Acquire lock for thread-safe creation of new logger.
         with self._lock:
             # Double-check in case another thread created the logger while waiting.
-            if key in self._galileo_loggers:
-                return self._galileo_loggers[key]
+            if key in self._splunk_ao_loggers:
+                return self._splunk_ao_loggers[key]
 
             # Prepare initialization arguments, only including non-None values.
             galileo_client_init_args = {
@@ -182,7 +182,7 @@ class SplunkAOLoggerSingleton:
 
             # Cache the newly created logger.
             if logger:
-                self._galileo_loggers[key] = logger
+                self._splunk_ao_loggers[key] = logger
             return logger
 
     def reset(
@@ -212,18 +212,18 @@ class SplunkAOLoggerSingleton:
             # Terminate and remove loggers matching the base key (project, log_stream, mode, experiment_id)
             # This will clean up all loggers including those with trace_id/span_id
             base_key = SplunkAOLoggerSingleton._get_key(project, log_stream, mode, experiment_id)
-            keys_to_remove = [k for k in self._galileo_loggers if k[: len(base_key)] == base_key]
+            keys_to_remove = [k for k in self._splunk_ao_loggers if k[: len(base_key)] == base_key]
             for key in keys_to_remove:
-                self._galileo_loggers[key].terminate()
-                del self._galileo_loggers[key]
+                self._splunk_ao_loggers[key].terminate()
+                del self._splunk_ao_loggers[key]
 
     def reset_all(self) -> None:
         """Reset (terminate and remove) all SplunkAOLogger instances."""
         with self._lock:
             # Terminate and clear all logger instances.
-            for logger in self._galileo_loggers.values():
+            for logger in self._splunk_ao_loggers.values():
                 logger.terminate()
-            self._galileo_loggers.clear()
+            self._splunk_ao_loggers.clear()
 
     def flush(
         self,
@@ -256,15 +256,15 @@ class SplunkAOLoggerSingleton:
             # Flush loggers matching the base key (project, log_stream, mode, experiment_id)
             # This will flush all loggers including those with trace_id/span_id
             base_key = SplunkAOLoggerSingleton._get_key(project, log_stream, mode, experiment_id)
-            keys_to_flush = [k for k in self._galileo_loggers if k[: len(base_key)] == base_key]
+            keys_to_flush = [k for k in self._splunk_ao_loggers if k[: len(base_key)] == base_key]
             for key in keys_to_flush:
-                self._galileo_loggers[key].flush()
+                self._splunk_ao_loggers[key].flush()
 
     def flush_all(self) -> None:
         """Flush (upload and clear) all SplunkAOLogger instances."""
         with self._lock:
             # Terminate and clear all logger instances.
-            for logger in self._galileo_loggers.values():
+            for logger in self._splunk_ao_loggers.values():
                 logger.flush()
 
     def get_all_loggers(self) -> dict[tuple[str, ...], SplunkAOLogger]:
@@ -277,4 +277,4 @@ class SplunkAOLoggerSingleton:
             A dictionary mapping keys to their corresponding SplunkAOLogger instances.
         """
         # Return a shallow copy of the loggers dictionary to prevent external modifications.
-        return dict(self._galileo_loggers)
+        return dict(self._splunk_ao_loggers)

@@ -33,7 +33,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
     Attributes
     ----------
-    _galileo_logger : SplunkAOLogger
+    _splunk_ao_logger : SplunkAOLogger
         The Galileo logger instance.
     _flush_on_trace_end : bool
         Whether to automatically flush the log batch to Galileo when a trace ends.
@@ -41,18 +41,18 @@ class SplunkAOTracingProcessor(TracingProcessor):
         Stores Node objects keyed by their OpenAI span_id or trace_id (for root).
     """
 
-    def __init__(self, galileo_logger: SplunkAOLogger | None = None, flush_on_trace_end: bool = True):
+    def __init__(self, splunk_ao_logger: SplunkAOLogger | None = None, flush_on_trace_end: bool = True):
         """
         OpenAI Agents TracingProcessor for logging traces to Galileo.
 
         Parameters
         ----------
-        galileo_logger : Optional[SplunkAOLogger]
+        splunk_ao_logger : Optional[SplunkAOLogger]
             The Galileo logger instance. If None, a default instance is created.
         flush_on_trace_end : bool
             Whether to automatically flush the log batch to Galileo when a trace ends.
         """
-        self._galileo_logger: SplunkAOLogger = galileo_logger or splunk_ao_context.get_logger_instance()
+        self._splunk_ao_logger: SplunkAOLogger = splunk_ao_logger or splunk_ao_context.get_logger_instance()
         self._flush_on_trace_end: bool = flush_on_trace_end
         self._nodes: dict[str, Node] = {}
         self._last_output: Any = None
@@ -92,7 +92,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
         # Optionally flush the log batch
         if self._flush_on_trace_end:
-            self._galileo_logger.flush()
+            self._splunk_ao_logger.flush()
 
     def _commit_trace(self, trace: Trace) -> None:
         if not self._nodes:
@@ -104,7 +104,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             self._log_node_tree(root_node, first_node=True)
         else:
             _logger.warning(f"Root node {trace.trace_id} not found")
-        self._galileo_logger.conclude(output=self._last_output, status_code=self._last_status_code)
+        self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
 
     def _log_node_tree(self, node: Node, first_node: bool = False) -> None:
         """
@@ -129,7 +129,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         if metadata is not None:
             metadata = convert_to_string_dict(metadata)
         if first_node:
-            self._galileo_logger.add_trace(
+            self._splunk_ao_logger.add_trace(
                 input=self._first_input or "Agent Workflow",
                 output=self._last_output,
                 duration_ns=node.span_params.get("duration_ns"),
@@ -139,7 +139,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             )
         # Log the current node based on its type
         elif node.node_type in ("agent", "chain", "workflow"):
-            self._galileo_logger.add_workflow_span(
+            self._splunk_ao_logger.add_workflow_span(
                 input=input or node.node_type.capitalize() + " Step",
                 output=output,
                 name=name,
@@ -180,9 +180,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 status_code=node.span_params.get("status_code", 200),
                 id=uuid.uuid4(),
             )
-            self._galileo_logger.add_child_span_to_parent(span)
+            self._splunk_ao_logger.add_child_span_to_parent(span)
         elif node.node_type == "retriever":
-            self._galileo_logger.add_retriever_span(
+            self._splunk_ao_logger.add_retriever_span(
                 input=input,
                 output=output,
                 name=name,
@@ -192,7 +192,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 duration_ns=node.span_params.get("duration_ns"),
             )
         elif node.node_type == "tool":
-            self._galileo_logger.add_tool_span(
+            self._splunk_ao_logger.add_tool_span(
                 input=input or node.node_type,
                 output=output,
                 name=name,
@@ -222,7 +222,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             if error:
                 output = error
                 status_code = 500
-            self._galileo_logger.conclude(output=serialize_to_str(output), status_code=status_code)
+            self._splunk_ao_logger.conclude(output=serialize_to_str(output), status_code=status_code)
             self._last_status_code = status_code
             self._last_output = output
 
@@ -236,7 +236,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             _logger.warning(f"Span node already exists for span_id {span_id}, overwriting...")
 
         # Determine span type and name
-        galileo_type = _map_span_type(span.span_data)
+        splunk_ao_type = _map_span_type(span.span_data)
         span_name = _map_span_name(span)
 
         # Extract initial data based on type
@@ -244,7 +244,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             "name": span_name,
             "start_time_iso": span.started_at or datetime.now(timezone.utc).isoformat(),
         }
-        if galileo_type in ["llm", "chat"]:
+        if splunk_ao_type in ["llm", "chat"]:
             llm_data = _extract_llm_data(span.span_data)
             initial_params.update(
                 {
@@ -259,7 +259,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             )
             if not self._first_input and initial_params.get("input") != serialize_to_str(None):
                 self._first_input = initial_params.get("input")
-        elif galileo_type == "tool":
+        elif splunk_ao_type == "tool":
             tool_data = _extract_tool_data(span.span_data)
             initial_params.update(
                 {
@@ -268,7 +268,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                     "status_code": tool_data.get("status_code", 200),
                 }
             )
-        elif galileo_type == "workflow":
+        elif splunk_ao_type == "workflow":
             wf_data = _extract_workflow_data(span.span_data)
             initial_params.update(
                 {
@@ -277,7 +277,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                     "status_code": wf_data.get("status_code", 200),
                 }
             )
-        elif galileo_type == "galileo_custom":
+        elif splunk_ao_type == "splunk_ao_custom":
             custom_span = cast(SplunkAOCustomSpan, span.span_data)
             initial_params.update(
                 {
@@ -288,13 +288,13 @@ class SplunkAOTracingProcessor(TracingProcessor):
                     "status_code": custom_span.span.status_code,
                 }
             )
-            galileo_type = custom_span.span.type.value
+            splunk_ao_type = custom_span.span.type.value
 
-        if galileo_type == "galileo_custom":
-            galileo_type = "workflow"
+        if splunk_ao_type == "splunk_ao_custom":
+            splunk_ao_type = "workflow"
 
         # Create the node
-        node = Node(node_type=galileo_type, span_params=initial_params, run_id=span_id, parent_run_id=parent_id)
+        node = Node(node_type=splunk_ao_type, span_params=initial_params, run_id=span_id, parent_run_id=parent_id)
         self._nodes[span_id] = node
 
         # Add to parent's children list
@@ -315,13 +315,13 @@ class SplunkAOTracingProcessor(TracingProcessor):
         node.span_params["name"] = _map_span_name(span)
 
         # Update node with final data
-        galileo_type = node.node_type
+        splunk_ao_type = node.node_type
         end_params: dict[str, Any] = {"end_time_iso": span.ended_at or datetime.now(timezone.utc).isoformat()}
         end_params["duration_ns"] = convert_time_delta_to_ns(
             datetime.fromisoformat(span.ended_at) - datetime.fromisoformat(node.span_params["start_time_iso"])
         )
 
-        if galileo_type == "llm":
+        if splunk_ao_type == "llm":
             llm_data = _extract_llm_data(span.span_data)
             end_params.update(
                 {
@@ -349,7 +349,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                         existing_tools = []
                     end_params["tools"] = existing_tools + embedded_tool_calls
 
-        elif galileo_type == "tool":
+        elif splunk_ao_type == "tool":
             tool_data = _extract_tool_data(span.span_data)
             end_params.update(
                 {
@@ -361,7 +361,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             if node.span_params.get("input") is None:
                 node.span_params["input"] = tool_data.get("input")
 
-        elif galileo_type == "workflow":
+        elif splunk_ao_type == "workflow":
             wf_data = _extract_workflow_data(span.span_data)
             end_params.update(
                 {
@@ -390,11 +390,11 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
     def shutdown(self) -> None:
         """Called when the application stops. Flushes any remaining logs."""
-        self._galileo_logger.flush()
+        self._splunk_ao_logger.flush()
 
     def force_flush(self) -> None:
         """Forces an immediate flush of all queued traces/spans."""
-        self._galileo_logger.flush()
+        self._splunk_ao_logger.flush()
 
     def _extract_embedded_tool_calls(self, response: Any) -> list[dict[str, Any]]:
         """Extract embedded tool calls from response.output."""

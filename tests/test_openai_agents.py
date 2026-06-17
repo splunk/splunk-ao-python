@@ -80,8 +80,8 @@ async def test_complex_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
-    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -89,7 +89,7 @@ async def test_complex_agent(
         await Runner.run(triage_agent, "who was the first president of the united states?")
         await Runner.run(triage_agent, "what is life")
 
-    traces = galileo_logger.traces
+    traces = splunk_ao_logger.traces
     assert len(traces) == 2
     spans = traces[0].spans
     assert len(spans) == 2
@@ -111,14 +111,14 @@ async def test_simple_agent(
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
-    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     agent = Agent(name="Assistant", instructions="You are the worlds best assistant.")
     result = await Runner.run(agent, "Write a haiku about recursion in programming.")
     assert result
-    traces = galileo_logger.traces
+    traces = splunk_ao_logger.traces
     assert len(traces) == 1
     trace = traces[0]
     for span in trace.spans:
@@ -126,7 +126,7 @@ async def test_simple_agent(
         assert span.metrics.duration_ns
         assert span.metrics.duration_ns > 0
 
-    galileo_logger.flush()
+    splunk_ao_logger.flush()
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
     assert len(payload.traces) == 1
     assert len(payload.traces[0].spans) == 1
@@ -209,8 +209,8 @@ async def test_pre_built_tools_multiple_types(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    galileo_logger = SplunkAOLogger(project="test", log_stream="test")
-    gp = SplunkAOTracingProcessor(galileo_logger=galileo_logger, flush_on_trace_end=False)
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
 
@@ -251,7 +251,7 @@ async def test_pre_built_tools_multiple_types(
         result = await Runner.run(agent, "Test multiple tools.")
         assert result
 
-    traces = galileo_logger.traces
+    traces = splunk_ao_logger.traces
     assert len(traces) == 1
 
     llm_spans = _find_llm_spans(traces[0].spans)
@@ -295,7 +295,7 @@ async def test_pre_built_tools_multiple_types(
 
     assert len(spans_with_tools) > 0, "Expected at least one LLM span with tools"
 
-    galileo_logger.flush()
+    splunk_ao_logger.flush()
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
     assert len(payload.traces) == 1
 

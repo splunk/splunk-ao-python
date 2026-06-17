@@ -917,7 +917,7 @@ class TestExperiments:
         )
         mock_get_dataset_instance.get_content.assert_called()
 
-        # check galileo_logger
+        # check splunk_ao_logger
         payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
 
         assert len(payload.traces) == 1
@@ -1219,7 +1219,7 @@ class TestExperiments:
         )
         mock_get_dataset_instance.get_content.assert_called()
 
-        # check galileo_logger
+        # check splunk_ao_logger
         payload = mock_core_api_instance.ingest_traces.call_args[0][0]
         assert len(payload.traces) == 1
         assert (
