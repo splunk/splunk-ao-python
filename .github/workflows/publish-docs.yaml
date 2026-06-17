@@ -1,6 +1,4 @@
 # Publishes SDK docs to the Splunk AO docs repo.
-# TODO(HYBIM-725): Replace PAT_CLATOOL with a dedicated PAT_AO_DOC_AUTOMATION
-# (bot account with write access to splunk/agent-observability-docs) before production use.
 name: Publish Docs
 
 on:
@@ -45,26 +43,22 @@ jobs:
           fi
 
       - name: Check out Docs repo
-        if: github.event_name != 'pull_request'
         uses: actions/checkout@v5
         with:
           repository: splunk/agent-observability-docs
           path: ./splunk-ao-docs
-          token: ${{ secrets.PAT_CLATOOL }}
+          token: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
 
       - name: Create a branch
-        if: github.event_name != 'pull_request'
         working-directory: ./splunk-ao-docs
         run: git checkout -b feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
 
       - name: Update SDK docs
-        if: github.event_name != 'pull_request'
         run: |
           rm -rf ./splunk-ao-docs/sdk-api/python/reference
           cp -r ./splunk-ao-python/.generated_docs/reference ./splunk-ao-docs/sdk-api/python/
 
       - name: Commit changes
-        if: github.event_name != 'pull_request'
         working-directory: ./splunk-ao-docs
         run: |
           # TODO(HYBIM-725): replace with Splunk bot email and name
@@ -75,10 +69,9 @@ jobs:
           git push -u origin feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
 
       - name: Create PR
-        if: github.event_name != 'pull_request'
         working-directory: ./splunk-ao-docs
         env:
-          GH_TOKEN: ${{ secrets.PAT_CLATOOL }}
+          GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
           PR_BODY: |
             This PR contains the latest updates to the Splunk AO Python SDK documentation.
 
