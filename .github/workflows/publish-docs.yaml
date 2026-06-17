@@ -3,8 +3,6 @@ name: Publish Docs
 
 on:
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize]
   workflow_run:
     workflows: ["Package Release"]
     types:
@@ -12,6 +10,7 @@ on:
 
 jobs:
   publish-docs:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
