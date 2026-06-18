@@ -14,7 +14,7 @@ class TestSplunkAOBaseHandler:
     @patch("splunk_ao.logger.logger.LogStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
-    def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
+    def splunk_ao_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
@@ -22,23 +22,23 @@ class TestSplunkAOBaseHandler:
         return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
 
     @pytest.fixture
-    def handler(self, galileo_logger: SplunkAOLogger) -> Generator[SplunkAOBaseHandler, None, None]:
+    def handler(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOBaseHandler, None, None]:
         """Creates a SplunkAOBaseHandler with a mock logger"""
-        return SplunkAOBaseHandler(galileo_logger=galileo_logger, flush_on_chain_end=False)
+        return SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger, flush_on_chain_end=False)
         # Reset the root node before each test
         # Clean up after each test
 
-    def test_initialization(self, galileo_logger: SplunkAOLogger) -> None:
+    def test_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test callback initialization with various parameters"""
         # Default initialization
-        handler = SplunkAOBaseHandler(galileo_logger=galileo_logger)
-        assert handler._galileo_logger == galileo_logger
+        handler = SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger)
+        assert handler._splunk_ao_logger == splunk_ao_logger
         assert handler._start_new_trace is True
         assert handler._flush_on_chain_end is True
         assert handler._nodes == {}
 
         # Custom initialization
-        handler = SplunkAOBaseHandler(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        handler = SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
         assert handler._start_new_trace is False
         assert handler._flush_on_chain_end is False
 
@@ -75,7 +75,7 @@ class TestSplunkAOBaseHandler:
         assert handler._root_node
         assert handler._root_node.run_id == parent_id
 
-    def test_end_node(self, handler: SplunkAOBaseHandler, galileo_logger: SplunkAOLogger) -> None:
+    def test_end_node(self, handler: SplunkAOBaseHandler, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test ending a node and updating its parameters"""
         # Create a node
         run_id = uuid.uuid4()
@@ -86,7 +86,7 @@ class TestSplunkAOBaseHandler:
         # End the node and commit the trace
         handler.end_node(run_id, output='{"result": "test result"}')
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert traces[0].spans[0].name == "Test Chain"
@@ -103,7 +103,7 @@ class TestSplunkAOBaseHandler:
         mock_logger.current_parent = Mock(return_value=None)
         mock_logger.add_workflow_span = Mock()
         mock_logger._set_current_parent = Mock()
-        handler = SplunkAOBaseHandler(galileo_logger=mock_logger, flush_on_chain_end=True)
+        handler = SplunkAOBaseHandler(splunk_ao_logger=mock_logger, flush_on_chain_end=True)
 
         # Setup a simple trace to commit
         run_id = uuid.uuid4()
@@ -125,7 +125,7 @@ class TestSplunkAOBaseHandler:
         mock_logger.current_parent = Mock(return_value=None)
         mock_logger.add_workflow_span = Mock()
         mock_logger._set_current_parent = Mock()
-        handler = SplunkAOBaseHandler(galileo_logger=mock_logger, flush_on_chain_end=False)
+        handler = SplunkAOBaseHandler(splunk_ao_logger=mock_logger, flush_on_chain_end=False)
 
         # Setup a simple trace to commit
         run_id = uuid.uuid4()
