@@ -65,7 +65,7 @@ class CrewAIEventListener:
 
     def __init__(
         self,
-        galileo_logger: SplunkAOLogger | None = None,
+        splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
         flush_on_crew_completed: bool = True,
     ):
@@ -74,7 +74,7 @@ class CrewAIEventListener:
         self._handler = SplunkAOBaseHandler(
             flush_on_chain_end=flush_on_crew_completed,
             start_new_trace=start_new_trace,
-            galileo_logger=galileo_logger,
+            splunk_ao_logger=splunk_ao_logger,
             integration="crewai",
         )
         self._active_tool_run_id: UUID | None = None

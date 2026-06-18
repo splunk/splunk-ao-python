@@ -16,7 +16,7 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
 
     Attributes
     ----------
-    _galileo_logger : SplunkAOLogger
+    _splunk_ao_logger : SplunkAOLogger
         The Galileo logger instance.
     _nodes : dict[UUID, Node]
         A dictionary of nodes, where the key is the run_id and the value is the node.
@@ -43,7 +43,7 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             return
 
         if self._start_new_trace:
-            self._galileo_logger.start_trace(
+            self._splunk_ao_logger.start_trace(
                 input=serialize_to_str(root_node.span_params.get("input", "")),
                 name=root_node.span_params.get("name"),
                 metadata=root_node.span_params.get("metadata"),
@@ -56,13 +56,13 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
 
         if self._start_new_trace:
             # If we started a new trace, we need to conclude it
-            self._galileo_logger.conclude(
+            self._splunk_ao_logger.conclude(
                 output=serialize_to_str(root_output), status_code=root_node.span_params.get("status_code")
             )
 
         if self._flush_on_chain_end:
             # Upload the trace to Galileo
-            await self._galileo_logger.async_flush()
+            await self._splunk_ao_logger.async_flush()
 
         # Clear nodes after successful commit
         self._nodes.clear()

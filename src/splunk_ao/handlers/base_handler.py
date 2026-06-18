@@ -20,7 +20,7 @@ class SplunkAOBaseHandler:
 
     Attributes
     ----------
-    _galileo_logger : SplunkAOLogger
+    _splunk_ao_logger : SplunkAOLogger
         The Galileo logger instance.
     _nodes : dict[UUID, Node]
         A dictionary of nodes, where the key is the run_id and the value is the node.
@@ -39,18 +39,18 @@ class SplunkAOBaseHandler:
     def __init__(
         self,
         integration: INTEGRATION = "langchain",
-        galileo_logger: SplunkAOLogger | None = None,
+        splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
         flush_on_chain_end: bool = True,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ):
-        self._galileo_logger: SplunkAOLogger = galileo_logger or splunk_ao_context.get_logger_instance(
+        self._splunk_ao_logger: SplunkAOLogger = splunk_ao_logger or splunk_ao_context.get_logger_instance(
             ingestion_hook=ingestion_hook
         )
-        if galileo_logger and ingestion_hook:
-            if self._galileo_logger.mode == "distributed":
+        if splunk_ao_logger and ingestion_hook:
+            if self._splunk_ao_logger.mode == "distributed":
                 raise ValueError("ingestion_hook can only be used in batch mode")
-            self._galileo_logger._ingestion_hook = ingestion_hook
+            self._splunk_ao_logger._ingestion_hook = ingestion_hook
         self._start_new_trace: bool = start_new_trace
         self._flush_on_chain_end: bool = flush_on_chain_end
         self._nodes: dict[str, Node] = {}
@@ -75,7 +75,7 @@ class SplunkAOBaseHandler:
 
         try:
             if self._start_new_trace:
-                self._galileo_logger.start_trace(
+                self._splunk_ao_logger.start_trace(
                     input=SplunkAOLogger._coerce_output(root_node.span_params.get("input", "")),
                     name=root_node.span_params.get("name"),
                     metadata=root_node.span_params.get("metadata"),
@@ -87,13 +87,13 @@ class SplunkAOBaseHandler:
             root_output = root_node.span_params.get("output", "")
 
             if self._start_new_trace:
-                self._galileo_logger.conclude(
+                self._splunk_ao_logger.conclude(
                     output=SplunkAOLogger._coerce_output(root_output),
                     status_code=root_node.span_params.get("status_code"),
                 )
 
             if self._flush_on_chain_end:
-                self._galileo_logger.flush()
+                self._splunk_ao_logger.flush()
         finally:
             # Always clean up, even if trace building or flush fails
             self._nodes.clear()
@@ -129,7 +129,7 @@ class SplunkAOBaseHandler:
 
         # Log the current node based on its type
         if node.node_type == "chain":
-            self._galileo_logger.add_workflow_span(
+            self._splunk_ao_logger.add_workflow_span(
                 input=input_,
                 output=output,
                 name=name,
@@ -142,7 +142,7 @@ class SplunkAOBaseHandler:
             )
             is_span_with_children = True
         elif node.node_type == "agent":
-            self._galileo_logger.add_agent_span(
+            self._splunk_ao_logger.add_agent_span(
                 input=input_,
                 output=output,
                 name=name,
@@ -155,7 +155,7 @@ class SplunkAOBaseHandler:
             )
             is_span_with_children = True
         elif node.node_type in ("llm", "chat"):
-            self._galileo_logger.add_llm_span(
+            self._splunk_ao_logger.add_llm_span(
                 input=input_,
                 output=output,
                 model=node.span_params.get("model"),
@@ -174,7 +174,7 @@ class SplunkAOBaseHandler:
                 status_code=node.span_params.get("status_code"),
             )
         elif node.node_type == "retriever":
-            self._galileo_logger.add_retriever_span(
+            self._splunk_ao_logger.add_retriever_span(
                 input=input_,
                 output=output,
                 name=name,
@@ -185,7 +185,7 @@ class SplunkAOBaseHandler:
                 step_number=step_number,
             )
         elif node.node_type == "tool":
-            tool_span = self._galileo_logger.add_tool_span(
+            tool_span = self._splunk_ao_logger.add_tool_span(
                 input=input_,
                 output=output,
                 name=name,
@@ -199,9 +199,9 @@ class SplunkAOBaseHandler:
             )
             # If tool has children (e.g., agent-as-tool invocations), push it to parent stack
             if node.children and tool_span is not None:
-                parent_before_tool = self._galileo_logger.current_parent()
+                parent_before_tool = self._splunk_ao_logger.current_parent()
                 tool_span._parent = parent_before_tool
-                self._galileo_logger._set_current_parent(tool_span)
+                self._splunk_ao_logger._set_current_parent(tool_span)
                 is_span_with_children = True
         else:
             _logger.warning(f"Unknown node type: {node.node_type}")
@@ -219,7 +219,7 @@ class SplunkAOBaseHandler:
         # Conclude parent span. Use the last child's output if necessary
         if is_span_with_children:
             output = output or (last_child.span_params.get("output", "") if last_child else "")
-            self._galileo_logger.conclude(
+            self._splunk_ao_logger.conclude(
                 output=serialize_to_str(output), status_code=node.span_params.get("status_code")
             )
 

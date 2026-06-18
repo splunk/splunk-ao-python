@@ -39,7 +39,7 @@ _logger = logging.getLogger(__name__)
 class SplunkAOMiddleware(AgentMiddleware):
     def __init__(
         self,
-        galileo_logger: SplunkAOLogger | None = None,
+        splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
         flush_on_chain_end: bool = True,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
@@ -50,14 +50,14 @@ class SplunkAOMiddleware(AgentMiddleware):
         self._handler = SplunkAOBaseHandler(
             flush_on_chain_end=flush_on_chain_end,
             start_new_trace=start_new_trace,
-            galileo_logger=galileo_logger,
+            splunk_ao_logger=splunk_ao_logger,
             integration="langchain",
             ingestion_hook=ingestion_hook,
         )
         self._async_handler = SplunkAOAsyncBaseHandler(
             flush_on_chain_end=flush_on_chain_end,
             start_new_trace=start_new_trace,
-            galileo_logger=galileo_logger,
+            splunk_ao_logger=splunk_ao_logger,
             integration="langchain",
             ingestion_hook=ingestion_hook,
         )
