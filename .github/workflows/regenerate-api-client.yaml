@@ -49,7 +49,7 @@ jobs:
       - name: Fetch API types and regenerate
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
-          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
         run: |
           # TODO(HYBIM-725): replace with Splunk bot email and name
           git config --global user.email "splunk-ao-automation@splunk.com"
@@ -69,11 +69,11 @@ jobs:
 
       - name: Create pull request
         env:
-          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
           GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
         run: |
           if ! git ls-remote --exit-code origin refs/heads/$BRANCH_NAME > /dev/null 2>&1; then
             echo "No branch to create PR from — nothing was committed"
             exit 0
           fi
-          gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy' || true
+          gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'
