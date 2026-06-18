@@ -1,4 +1,4 @@
-"""Constants for galileo-a2a instrumentation."""
+"""Constants for splunk-ao-a2a instrumentation."""
 
 # Instrumentor identity
 from splunk_ao_a2a._version import __version__
