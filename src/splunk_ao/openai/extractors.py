@@ -481,7 +481,7 @@ def _extract_message_content(item: ResponseOutputMessage) -> str:
     return str(content) if content else ""
 
 
-def process_function_call_outputs(input_items: list, galileo_logger: SplunkAOLogger) -> None:
+def process_function_call_outputs(input_items: list, splunk_ao_logger: SplunkAOLogger) -> None:
     """
     Process function_call and function_call_output items from the input and create combined tool spans.
     This joins the function call (model's request to call a tool) with the function output (tool result)
@@ -527,7 +527,7 @@ def process_function_call_outputs(input_items: list, galileo_logger: SplunkAOLog
             )
             tool_output = json.dumps(output) if isinstance(output, dict) else str(output)
 
-            galileo_logger.add_tool_span(
+            splunk_ao_logger.add_tool_span(
                 input=tool_input,
                 output=tool_output,
                 name=function_call.get("name") or "function_call",
@@ -537,7 +537,7 @@ def process_function_call_outputs(input_items: list, galileo_logger: SplunkAOLog
 
 def process_output_items(
     output_items: list,
-    galileo_logger: SplunkAOLogger,
+    splunk_ao_logger: SplunkAOLogger,
     model: str | None = None,
     original_input: list | None = None,
     model_parameters: dict | None = None,
@@ -626,7 +626,7 @@ def process_output_items(
             ]
 
         # Create single consolidated span with serialized messages
-        span = galileo_logger.add_llm_span(
+        span = splunk_ao_logger.add_llm_span(
             input=conversation_context,
             output=consolidated_output,
             model=model,
@@ -663,7 +663,7 @@ def process_output_items(
             tool_input, tool_output = extractor(item)
 
             # Create tool span with the tool type as the name
-            galileo_logger.add_tool_span(
+            splunk_ao_logger.add_tool_span(
                 input=tool_input,
                 output=tool_output,
                 name=item.type,

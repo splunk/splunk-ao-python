@@ -502,16 +502,16 @@ class Configuration(metaclass=ConfigurationMeta):
         Configuration.disable_console_logging()
         ```
         """
-        galileo_logger = logging.getLogger(SDK_LOGGER_NAME)
+        splunk_ao_logger = logging.getLogger(SDK_LOGGER_NAME)
 
         # Remove all stream handlers
-        for handler in galileo_logger.handlers[:]:
+        for handler in splunk_ao_logger.handlers[:]:
             if isinstance(handler, logging.StreamHandler):
-                galileo_logger.removeHandler(handler)
+                splunk_ao_logger.removeHandler(handler)
 
         # Set level to suppress all output
-        galileo_logger.setLevel(logging.CRITICAL + 1)
-        galileo_logger.propagate = False
+        splunk_ao_logger.setLevel(logging.CRITICAL + 1)
+        splunk_ao_logger.propagate = False
 
         # Clear the stored log level
         cls.log_level = None

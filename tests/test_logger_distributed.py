@@ -26,14 +26,14 @@ from tests.testutils.setup import (
 LOGGER = logging.getLogger(__name__)
 
 
-def test_galileo_logger_exceptions() -> None:
+def test_splunk_ao_logger_exceptions() -> None:
     with pytest.raises(Exception) as exc_info:
         SplunkAOLogger(project="my_project", log_stream="my_log_stream", experiment_id="my_experiment_id")
     assert str(exc_info.value) == "User cannot specify both a log stream and an experiment."
 
 
 @patch("splunk_ao.logger.logger.Traces")
-def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog) -> None:
+def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog) -> None:
     monkeypatch.setenv("SPLUNK_AO_LOGGING_DISABLED", "true")
 
     with caplog.at_level(logging.WARNING):
