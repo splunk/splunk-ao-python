@@ -133,12 +133,12 @@ def _wrap(
 
     input_data = extract_input_data_from_kwargs(open_ai_resource, start_time, arg_extractor.get_splunk_ao_args())
 
-    galileo_logger = _safe_initialize_logger(initialize)
-    if galileo_logger is None:
+    splunk_ao_logger = _safe_initialize_logger(initialize)
+    if splunk_ao_logger is None:
         return wrapped(**arg_extractor.get_openai_args())
 
     should_complete_trace = False
-    if galileo_logger.current_parent():
+    if splunk_ao_logger.current_parent():
         pass
     else:
         # If we don't have an active trace, start a new trace
@@ -151,7 +151,7 @@ def _wrap(
 
         # Serialize with "messages" wrapper for UI compatibility
         trace_input = {"messages": [msg.model_dump(exclude_none=True) for msg in trace_input_messages]}
-        galileo_logger.start_trace(input=serialize_to_str(trace_input), name=input_data.name)
+        splunk_ao_logger.start_trace(input=serialize_to_str(trace_input), name=input_data.name)
         should_complete_trace = True
 
     try:
@@ -170,7 +170,7 @@ def _wrap(
                 resource=open_ai_resource,
                 response=openai_response,
                 input_data=input_data,
-                logger=galileo_logger,
+                logger=splunk_ao_logger,
                 should_complete_trace=should_complete_trace,
                 status_code=status_code,
             )
@@ -198,7 +198,7 @@ def _wrap(
             # First, process any function_call_output items in the input to create tool spans
             # This represents tool executions that happened before this API call
             if isinstance(input_data.input, list):
-                process_function_call_outputs(input_data.input, galileo_logger)
+                process_function_call_outputs(input_data.input, splunk_ao_logger)
 
             # Get output_items safely for Responses API
             # First try direct attribute access (works for Pydantic models)
@@ -216,7 +216,7 @@ def _wrap(
             # Process all output items sequentially and get the final context
             final_conversation_context = process_output_items(
                 output_items,
-                galileo_logger,
+                splunk_ao_logger,
                 model,
                 span_input,
                 input_data.model_parameters,
@@ -229,7 +229,7 @@ def _wrap(
             span_output = convert_to_splunk_ao_message(completion, "assistant")
 
             # Add a span to the current trace or span (if this is a nested trace)
-            span = galileo_logger.add_llm_span(
+            span = splunk_ao_logger.add_llm_span(
                 input=span_input,
                 output=span_output,
                 tools=input_data.tools,
@@ -269,7 +269,7 @@ def _wrap(
 
             # Serialize with "messages" wrapper for UI compatibility
             trace_output = {"messages": [msg.model_dump(exclude_none=True) for msg in full_conversation]}
-            galileo_logger.conclude(
+            splunk_ao_logger.conclude(
                 output=serialize_to_str(trace_output), duration_ns=duration_ns, status_code=status_code
             )
 
@@ -290,11 +290,11 @@ class OpenAIGalileo:
 
     Attributes
     ----------
-    _galileo_logger : Optional[SplunkAOLogger]
+    _splunk_ao_logger : Optional[SplunkAOLogger]
         The Galileo logger instance used for logging OpenAI API calls.
     """
 
-    _galileo_logger: SplunkAOLogger | None = None
+    _splunk_ao_logger: SplunkAOLogger | None = None
 
     def initialize(self) -> SplunkAOLogger | None:
         """
@@ -312,9 +312,9 @@ class OpenAIGalileo:
         Optional[SplunkAOLogger]
             The initialized Galileo logger instance.
         """
-        self._galileo_logger = splunk_ao_context.get_logger_instance()
+        self._splunk_ao_logger = splunk_ao_context.get_logger_instance()
 
-        return self._galileo_logger
+        return self._splunk_ao_logger
 
     def register_tracing(self) -> None:
         """

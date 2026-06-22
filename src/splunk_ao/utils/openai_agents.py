@@ -26,11 +26,11 @@ class SplunkAOCustomSpan(CustomSpanData):
         super().__init__(span.name, data)
 
     @property
-    def type(self) -> Literal["galileo_custom"]:
-        return "galileo_custom"
+    def type(self) -> Literal["splunk_ao_custom"]:
+        return "splunk_ao_custom"
 
 
-def _map_span_type(span_data: SpanData, span: Span[Any] | None = None) -> SPAN_TYPE | Literal["galileo_custom"]:
+def _map_span_type(span_data: SpanData, span: Span[Any] | None = None) -> SPAN_TYPE | Literal["splunk_ao_custom"]:
     """Determine the Galileo span type based on the OpenAI Agent span data."""
     if isinstance(span_data, GenerationSpanData | ResponseSpanData):
         return "llm"

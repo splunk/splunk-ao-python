@@ -918,7 +918,7 @@ class SplunkAOLogger(TracesLogger):
 
         bridge = getattr(self, "_agent_control_bridge", None)
         if bridge is None:
-            bridge = SplunkAOAgentControlBridge(galileo_logger=self)
+            bridge = SplunkAOAgentControlBridge(splunk_ao_logger=self)
             self._agent_control_bridge = bridge
         bridge.register()
         return bridge

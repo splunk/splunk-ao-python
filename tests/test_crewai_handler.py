@@ -77,7 +77,7 @@ class MockOutput:
 
 
 @pytest.fixture
-def mock_galileo_logger():
+def mock_splunk_ao_logger():
     """Creates a mock Galileo logger for testing."""
     with (
         patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
@@ -94,7 +94,7 @@ def mock_galileo_logger():
 
 
 @pytest.fixture
-def crewai_callback(mock_galileo_logger):
+def crewai_callback(mock_splunk_ao_logger):
     """Creates a CrewAIEventListener instance for testing."""
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
@@ -104,11 +104,11 @@ def crewai_callback(mock_galileo_logger):
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
         return CrewAIEventListener(
-            galileo_logger=mock_galileo_logger, start_new_trace=True, flush_on_crew_completed=False
+            splunk_ao_logger=mock_splunk_ao_logger, start_new_trace=True, flush_on_crew_completed=False
         )
 
 
-def test_initialization_with_crewai_available(mock_galileo_logger) -> None:
+def test_initialization_with_crewai_available(mock_splunk_ao_logger) -> None:
     """Test CrewAIEventListener initialization when CrewAI is available."""
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
@@ -118,15 +118,15 @@ def test_initialization_with_crewai_available(mock_galileo_logger) -> None:
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
         callback = CrewAIEventListener(
-            galileo_logger=mock_galileo_logger, start_new_trace=False, flush_on_crew_completed=True
+            splunk_ao_logger=mock_splunk_ao_logger, start_new_trace=False, flush_on_crew_completed=True
         )
 
-        assert callback._handler._galileo_logger == mock_galileo_logger
+        assert callback._handler._splunk_ao_logger == mock_splunk_ao_logger
         assert callback._handler._start_new_trace is False
         assert callback._handler._flush_on_chain_end is True
 
 
-def test_initialization_with_crewai_unavailable(mock_galileo_logger) -> None:
+def test_initialization_with_crewai_unavailable(mock_splunk_ao_logger) -> None:
     """Test CrewAIEventListener initialization when CrewAI is unavailable."""
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
@@ -135,9 +135,9 @@ def test_initialization_with_crewai_unavailable(mock_galileo_logger) -> None:
     ):
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
-        callback = CrewAIEventListener(galileo_logger=mock_galileo_logger)
+        callback = CrewAIEventListener(splunk_ao_logger=mock_splunk_ao_logger)
 
-        assert callback._handler._galileo_logger == mock_galileo_logger
+        assert callback._handler._splunk_ao_logger == mock_splunk_ao_logger
 
 
 def test_generate_run_id_with_source_id(crewai_callback) -> None:

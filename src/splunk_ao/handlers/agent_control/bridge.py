@@ -161,8 +161,8 @@ class SplunkAOAgentControlBridge:
       safely rather than attached to the wrong logger hierarchy.
     """
 
-    def __init__(self, galileo_logger: SplunkAOLogger) -> None:
-        self._galileo_logger = galileo_logger
+    def __init__(self, splunk_ao_logger: SplunkAOLogger) -> None:
+        self._splunk_ao_logger = splunk_ao_logger
         self._modules = _load_agent_control_modules()
         self._sink = _SplunkAOControlEventSink(self)
         self._registered = False
@@ -225,7 +225,7 @@ class SplunkAOAgentControlBridge:
                 continue
 
             try:
-                result = self._galileo_logger.add_control_span(**self._control_span_kwargs(event))
+                result = self._splunk_ao_logger.add_control_span(**self._control_span_kwargs(event))
             except Exception:
                 logger.warning("Agent Control event conversion failed", exc_info=True)
                 dropped += 1
@@ -241,7 +241,7 @@ class SplunkAOAgentControlBridge:
         return self._modules.sinks.SinkResult(accepted=accepted, dropped=dropped)
 
     def _active_context(self) -> _ActiveContext | None:
-        current_parent = self._galileo_logger.current_parent()
+        current_parent = self._splunk_ao_logger.current_parent()
         if current_parent is None or current_parent.id is None:
             return None
 
@@ -300,6 +300,6 @@ class SplunkAOAgentControlBridge:
         }
 
 
-def setup_agent_control_bridge(galileo_logger: SplunkAOLogger) -> SplunkAOAgentControlBridge:
+def setup_agent_control_bridge(splunk_ao_logger: SplunkAOLogger) -> SplunkAOAgentControlBridge:
     """Create and register an Agent Control bridge for a Galileo logger."""
-    return galileo_logger.enable_agent_control()
+    return splunk_ao_logger.enable_agent_control()

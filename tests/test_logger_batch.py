@@ -42,7 +42,7 @@ from tests.testutils.setup import (
 LOGGER = logging.getLogger(__name__)
 
 
-def test_galileo_logger_exceptions() -> None:
+def test_splunk_ao_logger_exceptions() -> None:
     with pytest.raises(Exception) as exc_info:
         SplunkAOLogger(project="my_project", log_stream="my_log_stream", experiment_id="my_experiment_id")
     assert str(exc_info.value) == "User cannot specify both a log stream and an experiment."
@@ -55,7 +55,7 @@ def test_galileo_logger_exceptions() -> None:
 
 
 @patch("splunk_ao.logger.logger.Traces")
-def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog, enable_galileo_logging) -> None:
+def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog, enable_galileo_logging) -> None:
     monkeypatch.setenv("SPLUNK_AO_LOGGING_DISABLED", "true")
 
     with caplog.at_level(logging.DEBUG):
@@ -985,7 +985,7 @@ def test_flush_workflow_keeps_message_trace_gets_string(
 @patch("splunk_ao.logger.logger.Projects.get")
 @patch("splunk_ao.projects.create_project_projects_post")
 @patch("splunk_ao.logger.logger.Traces")
-def test_galileo_logger_failed_creating_project(
+def test_splunk_ao_logger_failed_creating_project(
     mock_traces_client: Mock, galileo_resources_api_projects: Mock, mock_projects_get: Mock
 ) -> None:
     """Test that SplunkAOLogger raises ValueError when project creation fails."""
