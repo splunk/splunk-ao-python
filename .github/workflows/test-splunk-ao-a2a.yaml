@@ -49,7 +49,7 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv tree --depth 1
+        run: uv pip list | grep -E "^(galileo|a2a-sdk|splunk-ao)"
 
       - name: Run type check
         run: uv run mypy src/
