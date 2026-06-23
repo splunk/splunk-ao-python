@@ -2,7 +2,7 @@
 
 import pytest
 
-from splunk_ao_adk import GalileoADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from splunk_ao_adk.plugin import _extract_status_code, _is_http_status_code
 
 
@@ -139,7 +139,7 @@ class TestFatalErrorClassification:
 
     @pytest.fixture
     def plugin(self):
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     def test_401_is_fatal(self, plugin) -> None:
         """401 Unauthorized is a fatal error."""

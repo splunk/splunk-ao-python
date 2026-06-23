@@ -149,16 +149,16 @@ class SplunkAOObserver:
             trace_builder = TraceBuilder(ingestion_hook=ingestion_hook)
             self._trace_builder = trace_builder
             self._handler = SplunkAOBaseHandler(
-                galileo_logger=trace_builder,  # type: ignore[arg-type]
+                splunk_ao_logger=trace_builder,  # type: ignore[arg-type]
                 start_new_trace=True,
                 flush_on_chain_end=True,
                 integration="google_adk",
             )
         else:
             self._trace_builder = None
-            galileo_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
+            splunk_ao_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
             self._handler = SplunkAOBaseHandler(
-                galileo_logger=galileo_logger,
+                splunk_ao_logger=splunk_ao_logger,
                 start_new_trace=True,
                 flush_on_chain_end=True,
                 integration="google_adk",
@@ -291,7 +291,7 @@ class SplunkAOObserver:
             return
 
         # Normal mode: create/find session on backend
-        logger = self._handler._galileo_logger
+        logger = self._handler._splunk_ao_logger
         previous_session_id = logger.session_id
         logger.start_session(
             name=adk_session_id,

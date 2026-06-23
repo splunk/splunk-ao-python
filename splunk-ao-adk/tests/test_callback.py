@@ -133,7 +133,7 @@ class TestSplunkAOADKCallback:
                 project="test-project",
                 log_stream="test-stream",
             )
-            assert callback._handler._galileo_logger == mock_logger
+            assert callback._handler._splunk_ao_logger == mock_logger
 
     def test_initialization_defaults(self) -> None:
         callback = SplunkAOADKCallback(ingestion_hook=lambda r: None)

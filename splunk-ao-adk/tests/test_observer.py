@@ -216,7 +216,7 @@ class TestUpdateSessionIfChanged:
         # Given: an observer in hook mode
         captured_requests: list = []
         observer = SplunkAOObserver(ingestion_hook=lambda r: captured_requests.append(r))
-        logger = observer._handler._galileo_logger
+        logger = observer._handler._splunk_ao_logger
 
         # When: updating session with an ADK session ID
         observer.update_session_if_changed("adk-session-123")
@@ -229,7 +229,7 @@ class TestUpdateSessionIfChanged:
         # Given: an observer in hook mode with an existing session
         observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("session-1")
-        logger = observer._handler._galileo_logger
+        logger = observer._handler._splunk_ao_logger
 
         # When: the ADK session changes
         observer.update_session_if_changed("session-2")
@@ -241,7 +241,7 @@ class TestUpdateSessionIfChanged:
     def test_hook_mode_ignores_unknown_session_id(self) -> None:
         # Given: an observer in hook mode
         observer = SplunkAOObserver(ingestion_hook=lambda r: None)
-        logger = observer._handler._galileo_logger
+        logger = observer._handler._splunk_ao_logger
 
         # When: updating with "unknown" session ID
         observer.update_session_if_changed("unknown")
@@ -254,7 +254,7 @@ class TestUpdateSessionIfChanged:
         # Given: an observer in hook mode with an existing session
         observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("session-1")
-        logger = observer._handler._galileo_logger
+        logger = observer._handler._splunk_ao_logger
         original_external_id = logger._session_external_id
 
         # When: updating with the same session ID
@@ -267,7 +267,7 @@ class TestUpdateSessionIfChanged:
         # Given: an observer in hook mode with an existing parent session
         observer = SplunkAOObserver(ingestion_hook=lambda r: None)
         observer.update_session_if_changed("parent-session")
-        logger = observer._handler._galileo_logger
+        logger = observer._handler._splunk_ao_logger
 
         # When: a sub-invocation tries to change the session
         observer.update_session_if_changed("sub-invocation-session", is_sub_invocation=True)
