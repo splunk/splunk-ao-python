@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     runs-on: ubuntu-latest
     # Hard cap per matrix job to bail out fast on real hangs.
@@ -49,18 +49,10 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv pip list | grep -E "^(splunk-ao|a2a-sdk)"
+        run: uv run pip list | grep -E "^(splunk-ao|a2a-sdk)"
 
       - name: Run type check
         run: uv run mypy src/
 
       - name: Run tests
         run: uv run pytest --cov=splunk_ao_a2a --cov-report=xml
-
-      - name: Upload coverage
-        if: matrix.python-version == '3.13'
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: splunk-ao-a2a
-          files: splunk-ao-a2a/coverage.xml
