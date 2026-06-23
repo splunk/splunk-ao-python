@@ -49,7 +49,7 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv run pip show splunk-ao a2a-sdk
+        run: uv tree --depth 1
 
       - name: Run type check
         run: uv run mypy src/
