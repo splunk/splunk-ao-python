@@ -49,7 +49,7 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv run pip list | grep -E "^(splunk-ao|a2a-sdk)"
+        run: uv run pip show splunk-ao a2a-sdk
 
       - name: Run type check
         run: uv run mypy src/
