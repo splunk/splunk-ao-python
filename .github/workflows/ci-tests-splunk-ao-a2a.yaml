@@ -5,11 +5,11 @@ on:
     branches: [main]
     paths:
       - 'splunk-ao-a2a/**'
-      - '.github/workflows/test-splunk-ao-a2a.yaml'
+      - '.github/workflows/ci-tests-splunk-ao-a2a.yaml'
   pull_request:
     paths:
       - 'splunk-ao-a2a/**'
-      - '.github/workflows/test-splunk-ao-a2a.yaml'
+      - '.github/workflows/ci-tests-splunk-ao-a2a.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

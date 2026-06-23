@@ -1,0 +1,6 @@
+# Project-level uv config. List settings here REPLACE (not extend) the
+# global ~/.config/uv/uv.toml, so [[index]] below overrides any corporate
+# Artifactory mirror configured globally that does not mirror all PyPI packages.
+[[index]]
+url = "https://pypi.org/simple"
+default = true

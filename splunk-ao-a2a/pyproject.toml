@@ -28,12 +28,6 @@ Repository = "https://github.com/splunk/splunk-ao-python"
 [tool.uv]
 sources = { "splunk-ao" = { path = "../", editable = true } }
 
-# Ensure all packages resolve from PyPI, overriding any corporate index in the
-# global uv config that only mirrors Splunk-internal packages.
-[[tool.uv.index]]
-url = "https://pypi.org/simple"
-default = true
-
 [dependency-groups]
 dev = [
     "pytest>=8.4.0",
