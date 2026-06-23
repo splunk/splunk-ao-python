@@ -50,7 +50,7 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv pip list | grep -E "^(splunk-ao|google-adk)"
+        run: uv run pip list | grep -E "^(splunk-ao|google-adk)"
 
       - name: Run type check
         run: uv run mypy src/
