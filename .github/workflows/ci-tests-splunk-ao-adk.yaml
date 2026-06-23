@@ -5,11 +5,11 @@ on:
     branches: [main]
     paths:
       - 'splunk-ao-adk/**'
-      - '.github/workflows/test-splunk-ao-adk.yaml'
+      - '.github/workflows/ci-tests-splunk-ao-adk.yaml'
   pull_request:
     paths:
       - 'splunk-ao-adk/**'
-      - '.github/workflows/test-splunk-ao-adk.yaml'
+      - '.github/workflows/ci-tests-splunk-ao-adk.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -57,11 +57,3 @@ jobs:
 
       - name: Run tests
         run: uv run pytest --cov=splunk_ao_adk --cov-report=xml
-
-      - name: Upload coverage
-        if: matrix.python-version == '3.13'
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: splunk-ao-adk
-          files: splunk-ao-adk/coverage.xml
