@@ -36,9 +36,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
+          cache: "uv"
           python-version: ${{ matrix.python-version }}
+          cache-dependency-path: "uv.lock"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -50,7 +53,7 @@ jobs:
         run: uv sync --dev
 
       - name: Show installed versions
-        run: uv tree --depth 1
+        run: uv pip list | grep -E "^(galileo|google-adk|splunk-ao)"
 
       - name: Run type check
         run: uv run mypy src/
