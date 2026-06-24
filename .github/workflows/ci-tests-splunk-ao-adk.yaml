@@ -44,7 +44,7 @@ jobs:
         uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
         with:
             enable-cache: true
-            cache-dependency-glob: "**/pyproject.toml"
+            cache-dependency-glob: "**/splunk-ao-adk/pyproject.toml"
 
       # uv sources in pyproject.toml pins splunk-ao to the local monorepo root
       # as an editable install, so this always tests against the latest local code.
