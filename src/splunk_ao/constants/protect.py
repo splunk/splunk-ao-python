@@ -1,1 +1,0 @@
-TIMEOUT_SECS = 10
