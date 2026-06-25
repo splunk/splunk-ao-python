@@ -1,11 +1,11 @@
 name: Release splunk-ao to Test PyPI
 
 on:
-  pull_request:  # Runs the build job on every PR push to validate packaging
+  pull_request:  # Publishes a .dev pre-release on every PR push
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., 1.2.3, 2.0.0b1). Leave empty to use the version already in pyproject.toml.'
+        description: 'Version to publish (e.g., 1.2.3, 2.0.0b1). Leave empty to use the version in pyproject.toml as-is.'
         required: false
         type: string
 
@@ -26,8 +26,19 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry==2.4.1
 
+      # PR builds: append .dev<run_number> so the clean version (e.g. 0.1.0)
+      # is never consumed on Test PyPI and can still be used for the real release.
+      - name: Set pre-release version
+        if: github.event_name == 'pull_request'
+        run: |
+          VERSION_BASE="$(poetry version --short)"
+          PRE_VERSION="${VERSION_BASE}.dev${{ github.run_number }}"
+          poetry version "$PRE_VERSION"
+          sed -i "s/__version__ = \".*\"/__version__ = \"${PRE_VERSION}\"/" src/splunk_ao/__init__.py
+
+      # Manual dispatch: use the supplied version if provided.
       - name: Override version
-        if: inputs.version != ''
+        if: github.event_name == 'workflow_dispatch' && inputs.version != ''
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
@@ -49,7 +60,6 @@ jobs:
 
   publish:
     name: Publish to Test PyPI
-    if: github.event_name == 'workflow_dispatch'  # Only publish on explicit dispatch, not on PR pushes
     needs: build
     runs-on: ubuntu-latest
     permissions:
