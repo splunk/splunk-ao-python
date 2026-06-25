@@ -28,9 +28,11 @@ def _clear_auth_env(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 # Every (SPLUNK_AO_*, GALILEO_*) pair defined in _bridge_env_vars.
+# Note: SPLUNK_AO_API_URL is intentionally excluded — api_url is an internal
+# field derived automatically from console_url in galileo-core; there is no
+# user-facing GALILEO_API_URL env var in the upstream SDK.
 _ALL_BRIDGE_PAIRS = [
     ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
-    ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
     ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
     ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
     ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
@@ -44,61 +46,60 @@ _ALL_BRIDGE_PAIRS = [
     ("SPLUNK_AO_MODE", "GALILEO_MODE"),
 ]
 
+# Safe test values per key — URL keys must be valid URLs to avoid leaking
+# an invalid GALILEO_* URL into the shared os.environ and breaking other tests.
+_TEST_VALUE: dict[str, str] = {
+    "SPLUNK_AO_CONSOLE_URL": "https://splunk-ao-test.example.com",
+    "GALILEO_CONSOLE_URL": "https://galileo-test.example.com",
+}
+
+
+def _val(key: str) -> str:
+    return _TEST_VALUE.get(key, f"test-{key.lower().replace('_', '-')}")
+
 
 @pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
-def test_bridge_env_vars_propagates_splunk_ao_to_galileo(monkeypatch, splunk_key, galileo_key) -> None:
+def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key) -> None:
     """Each SPLUNK_AO_* value is copied to its GALILEO_* counterpart when the
-    GALILEO_* key is absent from the environment."""
-    value = f"test-value-for-{splunk_key}"
-    monkeypatch.setenv(splunk_key, value)
-    monkeypatch.delenv(galileo_key, raising=False)
+    GALILEO_* key is absent from the environment.
 
-    SplunkAOConfig._bridge_env_vars()
-
-    assert os.environ.get(galileo_key) == value, (
-        f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
-    )
-
-
-@pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
-def test_bridge_env_vars_does_not_overwrite_existing_galileo_value(monkeypatch, splunk_key, galileo_key) -> None:
-    """An explicit GALILEO_* value already in the environment must win over any
-    SPLUNK_AO_* value — the bridge must not overwrite it."""
-    existing = "pre-existing-galileo-value"
-    monkeypatch.setenv(galileo_key, existing)
-    monkeypatch.setenv(splunk_key, "should-not-overwrite")
-
-    SplunkAOConfig._bridge_env_vars()
-
-    assert os.environ.get(galileo_key) == existing, (
-        f"Expected {galileo_key} to retain its original value; bridge must not overwrite it"
-    )
-
-
-def test_bridge_env_vars_skips_absent_splunk_ao_keys(monkeypatch) -> None:
-    """When a SPLUNK_AO_* key is absent, the corresponding GALILEO_* key must
-    not be set (no spurious entries introduced by the bridge)."""
-    for splunk_key, galileo_key in _ALL_BRIDGE_PAIRS:
-        monkeypatch.delenv(splunk_key, raising=False)
-        monkeypatch.delenv(galileo_key, raising=False)
-
-    SplunkAOConfig._bridge_env_vars()
-
-    for _, galileo_key in _ALL_BRIDGE_PAIRS:
-        assert galileo_key not in os.environ, (
-            f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
+    Uses patch.dict so that any GALILEO_* key written directly to os.environ by
+    _bridge_env_vars() (which bypasses monkeypatch tracking) is automatically
+    cleaned up on block exit, preventing leakage into subsequent tests.
+    """
+    value = _val(splunk_key)
+    with patch.dict(os.environ, {splunk_key: value}, clear=False):
+        os.environ.pop(galileo_key, None)
+        SplunkAOConfig._bridge_env_vars()
+        assert os.environ.get(galileo_key) == value, (
+            f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
         )
 
 
-def test_bridge_env_vars_api_url_specifically(monkeypatch) -> None:
-    """Explicit regression test for the SPLUNK_AO_API_URL -> GALILEO_API_URL
-    bridge entry, which was added as a fix for self-hosted deployments."""
-    monkeypatch.setenv("SPLUNK_AO_API_URL", "https://my-splunk-ao-host.example.com/api")
-    monkeypatch.delenv("GALILEO_API_URL", raising=False)
+@pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
+def test_bridge_env_vars_does_not_overwrite_existing_galileo_value(splunk_key, galileo_key) -> None:
+    """An explicit GALILEO_* value already in the environment must win over any
+    SPLUNK_AO_* value — the bridge must not overwrite it."""
+    existing = _val(galileo_key)
+    with patch.dict(os.environ, {galileo_key: existing, splunk_key: "should-not-overwrite"}, clear=False):
+        SplunkAOConfig._bridge_env_vars()
+        assert os.environ.get(galileo_key) == existing, (
+            f"Expected {galileo_key} to retain its original value; bridge must not overwrite it"
+        )
 
-    SplunkAOConfig._bridge_env_vars()
 
-    assert os.environ.get("GALILEO_API_URL") == "https://my-splunk-ao-host.example.com/api"
+def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
+    """When a SPLUNK_AO_* key is absent, the corresponding GALILEO_* key must
+    not be set (no spurious entries introduced by the bridge)."""
+    all_bridge_keys = {k for pair in _ALL_BRIDGE_PAIRS for k in pair}
+    # Build an env that has no bridge-related keys at all.
+    clean_env = {k: v for k, v in os.environ.items() if k not in all_bridge_keys}
+    with patch.dict(os.environ, clean_env, clear=True):
+        SplunkAOConfig._bridge_env_vars()
+        for _, galileo_key in _ALL_BRIDGE_PAIRS:
+            assert galileo_key not in os.environ, (
+                f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
+            )
 
 
 # ---------------------------------------------------------------------------

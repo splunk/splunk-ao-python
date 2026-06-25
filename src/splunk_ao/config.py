@@ -44,7 +44,6 @@ class SplunkAOConfig(GalileoConfig):
         """
         _BRIDGE = [
             ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
-            ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
             ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
             ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
             ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
