@@ -230,7 +230,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- [Splunk AO Documentation](https://docs.splunk.com/)
+- [Splunk AO Documentation](https://docs.rungalileo.io/)
 - [Google ADK Documentation](https://google.github.io/adk-docs/)
 
 ## License
