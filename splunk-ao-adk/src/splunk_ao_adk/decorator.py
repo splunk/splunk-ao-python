@@ -1,4 +1,4 @@
-"""Decorators for marking ADK tools with Galileo observability metadata."""
+"""Decorators for marking ADK tools with Splunk AO observability metadata."""
 
 from __future__ import annotations
 
@@ -7,15 +7,15 @@ from typing import Any
 
 
 def splunk_ao_retriever(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Mark a function as a retriever for Galileo observability.
+    """Mark a function as a retriever for Splunk AO observability.
 
     When a function decorated with @splunk_ao_retriever is wrapped in a
-    FunctionTool, Galileo will log it as a retriever span (node_type="retriever")
+    FunctionTool, Splunk AO will log it as a retriever span (node_type="retriever")
     instead of a tool span, enabling RAG quality metrics.
 
     Example
     -------
-    >>> from galileo_adk import splunk_ao_retriever
+    >>> from splunk_ao_adk import splunk_ao_retriever
     >>> @splunk_ao_retriever
     ... def my_search(query: str) -> str:
     ...     return search_docs(query)

@@ -1,11 +1,11 @@
-"""Integration tests for GalileoADKPlugin."""
+"""Integration tests for SplunkAOADKPlugin."""
 
 from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
 
-from galileo_adk import GalileoADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 
 from .mocks import (
     MockCallbackContext,
@@ -19,26 +19,26 @@ from .mocks import (
 )
 
 
-class TestGalileoADKPluginInit:
+class TestSplunkAOADKPluginInit:
     """Tests for plugin initialization."""
 
     def test_init_with_ingestion_hook_only(self) -> None:
         """Plugin initializes with only ingestion_hook."""
         traces: list = []
-        plugin = GalileoADKPlugin(ingestion_hook=lambda r: traces.extend(r.traces))
+        plugin = SplunkAOADKPlugin(ingestion_hook=lambda r: traces.extend(r.traces))
         assert plugin._observer is not None
 
     def test_init_with_ingestion_hook_without_env_vars(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin with ingestion_hook works without any Galileo environment variables."""
         # Given: no Galileo environment variables are set
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
-        monkeypatch.delenv("GALILEO_LOG_STREAM", raising=False)
-        monkeypatch.delenv("GALILEO_API_KEY", raising=False)
-        monkeypatch.delenv("GALILEO_CONSOLE_URL", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_CONSOLE_URL", raising=False)
 
         # When: creating plugin with only ingestion_hook
         traces: list = []
-        plugin = GalileoADKPlugin(ingestion_hook=lambda r: traces.extend(r.traces))
+        plugin = SplunkAOADKPlugin(ingestion_hook=lambda r: traces.extend(r.traces))
 
         # Then: plugin initializes successfully with TraceBuilder (not SplunkAOLogger)
         assert plugin._observer is not None
@@ -47,34 +47,34 @@ class TestGalileoADKPluginInit:
 
     def test_init_requires_project_and_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin raises error when neither project/log_stream nor hook provided."""
-        # Given: GALILEO_PROJECT and GALILEO_LOG_STREAM env vars are not set
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
-        monkeypatch.delenv("GALILEO_LOG_STREAM", raising=False)
+        # Given: SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars are not set
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
 
         # When/Then: creating plugin without project or log_stream raises an error
         with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
-            GalileoADKPlugin()
+            SplunkAOADKPlugin()
 
     def test_init_requires_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin raises error when project is provided but log_stream is not."""
-        # Given: GALILEO_LOG_STREAM env var is not set
-        monkeypatch.delenv("GALILEO_LOG_STREAM", raising=False)
+        # Given: SPLUNK_AO_LOG_STREAM env var is not set
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
 
         # When/Then: creating plugin with project but no log_stream raises an error
         with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
-            GalileoADKPlugin(project="my-project")
+            SplunkAOADKPlugin(project="my-project")
 
     def test_init_requires_project(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin raises error when log_stream is provided but project is not."""
-        # Given: GALILEO_PROJECT env var is not set
-        monkeypatch.delenv("GALILEO_PROJECT", raising=False)
+        # Given: SPLUNK_AO_PROJECT env var is not set
+        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
 
         # When/Then: creating plugin with log_stream but no project raises an error
         with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
-            GalileoADKPlugin(log_stream="my-stream")
+            SplunkAOADKPlugin(log_stream="my-stream")
 
 
-class TestGalileoADKPluginCallbacks:
+class TestSplunkAOADKPluginCallbacks:
     """Integration tests for plugin callbacks."""
 
     @pytest.fixture
@@ -82,11 +82,11 @@ class TestGalileoADKPluginCallbacks:
         return []
 
     @pytest.fixture
-    def plugin(self, captured_traces: list) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: captured_traces.extend(r.traces))
+    def plugin(self, captured_traces: list) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: captured_traces.extend(r.traces))
 
     @pytest.mark.asyncio
-    async def test_on_user_message_creates_run_span(self, plugin: GalileoADKPlugin) -> None:
+    async def test_on_user_message_creates_run_span(self, plugin: SplunkAOADKPlugin) -> None:
         """on_user_message_callback creates a run span."""
         context = MockInvocationContext()
         message = MockContent("Hello")
@@ -100,7 +100,7 @@ class TestGalileoADKPluginCallbacks:
         assert plugin._tracker.get_run(context.invocation_id) is not None
 
     @pytest.mark.asyncio
-    async def test_before_agent_creates_agent_span(self, plugin: GalileoADKPlugin) -> None:
+    async def test_before_agent_creates_agent_span(self, plugin: SplunkAOADKPlugin) -> None:
         """before_agent_callback creates an agent span."""
         invocation_id = str(uuid4())
         context = MockCallbackContext(invocation_id=invocation_id)
@@ -118,7 +118,7 @@ class TestGalileoADKPluginCallbacks:
         assert plugin._tracker.agent_count == 1
 
     @pytest.mark.asyncio
-    async def test_before_model_creates_llm_span(self, plugin: GalileoADKPlugin) -> None:
+    async def test_before_model_creates_llm_span(self, plugin: SplunkAOADKPlugin) -> None:
         """before_model_callback creates an LLM span."""
         invocation_id = str(uuid4())
         context = MockCallbackContext(invocation_id=invocation_id)
@@ -141,7 +141,7 @@ class TestGalileoADKPluginCallbacks:
         assert plugin._tracker.llm_count == 1
 
     @pytest.mark.asyncio
-    async def test_full_lifecycle_with_trace_capture(self, plugin: GalileoADKPlugin, captured_traces: list) -> None:
+    async def test_full_lifecycle_with_trace_capture(self, plugin: SplunkAOADKPlugin, captured_traces: list) -> None:
         """Full agent lifecycle produces captured traces."""
         invocation_id = str(uuid4())
         callback_context = MockCallbackContext(invocation_id=invocation_id)
@@ -177,7 +177,7 @@ class TestGalileoADKPluginCallbacks:
 
     @pytest.mark.asyncio
     async def test_metadata_from_run_config_appears_on_spans(
-        self, plugin: GalileoADKPlugin, captured_traces: list
+        self, plugin: SplunkAOADKPlugin, captured_traces: list
     ) -> None:
         """Metadata from RunConfig.custom_metadata appears on captured spans."""
         # Given: RunConfig with custom_metadata
@@ -206,7 +206,7 @@ class TestGalileoADKPluginCallbacks:
 
     @pytest.mark.asyncio
     async def test_missing_run_config_results_in_empty_metadata(
-        self, plugin: GalileoADKPlugin, captured_traces: list
+        self, plugin: SplunkAOADKPlugin, captured_traces: list
     ) -> None:
         """Missing RunConfig results in empty metadata (no error)."""
         # Given: no RunConfig (run_config=None)
@@ -231,11 +231,11 @@ class TestRunConfigMetadataIsolation:
     """Tests for per-invocation metadata isolation using RunConfig.custom_metadata."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_concurrent_invocations_have_isolated_metadata(self, plugin: GalileoADKPlugin) -> None:
+    async def test_concurrent_invocations_have_isolated_metadata(self, plugin: SplunkAOADKPlugin) -> None:
         """Concurrent invocations with different RunConfig have isolated metadata."""
         # Given: two invocations with different custom_metadata
         inv_id_1 = str(uuid4())
@@ -283,7 +283,7 @@ class TestRunConfigMetadataIsolation:
         assert inv_id_2 not in plugin._observer._invocation_metadata
 
     @pytest.mark.asyncio
-    async def test_metadata_cleaned_up_after_run_ends(self, plugin: GalileoADKPlugin) -> None:
+    async def test_metadata_cleaned_up_after_run_ends(self, plugin: SplunkAOADKPlugin) -> None:
         """Per-invocation metadata is cleaned up when run ends."""
         # Given: an invocation with custom_metadata
         invocation_id = str(uuid4())
@@ -310,7 +310,7 @@ class TestRunConfigMetadataIsolation:
         assert invocation_id not in plugin._observer._invocation_metadata
 
     @pytest.mark.asyncio
-    async def test_sub_invocation_inherits_root_metadata(self, plugin: GalileoADKPlugin) -> None:
+    async def test_sub_invocation_inherits_root_metadata(self, plugin: SplunkAOADKPlugin) -> None:
         """Sub-invocations (e.g., AgentTool calls) inherit metadata from root invocation."""
         # Given: root invocation with custom_metadata
         root_invocation_id = str(uuid4())
@@ -350,11 +350,11 @@ class TestBeforeRunCallback:
     """Tests for before_run_callback updating run span name and metadata."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_before_run_updates_span_name_and_metadata(self, plugin: GalileoADKPlugin) -> None:
+    async def test_before_run_updates_span_name_and_metadata(self, plugin: SplunkAOADKPlugin) -> None:
         """before_run_callback updates run span name to reflect the routed agent."""
         # Given: an invocation with a run span
         invocation_id = str(uuid4())
@@ -379,7 +379,7 @@ class TestBeforeRunCallback:
         assert node.span_params["metadata"]["adk_routed_agent"] == "sub_agent"
 
     @pytest.mark.asyncio
-    async def test_before_run_preserves_existing_metadata(self, plugin: GalileoADKPlugin) -> None:
+    async def test_before_run_preserves_existing_metadata(self, plugin: SplunkAOADKPlugin) -> None:
         """before_run_callback preserves any existing metadata on the run span."""
         # Given: an invocation with run_config metadata
         invocation_id = str(uuid4())
@@ -403,7 +403,7 @@ class TestBeforeRunCallback:
         assert metadata["adk_routed_agent"] == "my_agent"
 
     @pytest.mark.asyncio
-    async def test_before_run_handles_missing_agent_gracefully(self, plugin: GalileoADKPlugin) -> None:
+    async def test_before_run_handles_missing_agent_gracefully(self, plugin: SplunkAOADKPlugin) -> None:
         """before_run_callback is a no-op when agent is not available."""
         # Given: an invocation without an agent attribute
         invocation_id = str(uuid4())
@@ -421,15 +421,15 @@ class TestBeforeRunCallback:
         assert plugin._tracker.get_run(invocation_id) is not None
 
 
-class TestGalileoADKPluginErrorHandling:
+class TestSplunkAOADKPluginErrorHandling:
     """Tests for error handling in callbacks."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_callback_errors_dont_propagate(self, plugin: GalileoADKPlugin) -> None:
+    async def test_callback_errors_dont_propagate(self, plugin: SplunkAOADKPlugin) -> None:
         """Errors in callbacks don't propagate to caller."""
         # Given: an invalid context (None)
         # When/Then: calling before_agent_callback should not raise
@@ -437,7 +437,7 @@ class TestGalileoADKPluginErrorHandling:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_model_error_callback_extracts_status_code(self, plugin: GalileoADKPlugin) -> None:
+    async def test_model_error_callback_extracts_status_code(self, plugin: SplunkAOADKPlugin) -> None:
         """on_model_error_callback handles errors gracefully."""
         # Given: an invocation with an active LLM span
         invocation_id = str(uuid4())
@@ -474,11 +474,11 @@ class TestInvocationScopedToolTracking:
     """Tests for invocation-scoped tool tracking (ParallelAgent support)."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_tool_tracking_uses_current_adk_session(self, plugin: GalileoADKPlugin) -> None:
+    async def test_tool_tracking_uses_current_adk_session(self, plugin: SplunkAOADKPlugin) -> None:
         """Tools use _current_adk_session for consistent session tracking."""
         inv_id = str(uuid4())
         session_id = "main_session"
@@ -519,7 +519,7 @@ class TestInvocationScopedToolTracking:
         assert plugin._tracker.get_active_tool(session_id) is None
 
     @pytest.mark.asyncio
-    async def test_sub_invocation_parented_to_tool_via_session(self, plugin: GalileoADKPlugin) -> None:
+    async def test_sub_invocation_parented_to_tool_via_session(self, plugin: SplunkAOADKPlugin) -> None:
         """Sub-invocation from AgentTool uses parent's Galileo session despite different ADK session_id."""
         parent_inv_id = str(uuid4())
         child_inv_id = str(uuid4())
@@ -579,7 +579,7 @@ class TestInvocationScopedToolTracking:
         assert plugin._tracker.get_active_tool(parent_session_id) is None
 
     @pytest.mark.asyncio
-    async def test_tool_parent_fallback_to_run_when_no_agent(self, plugin: GalileoADKPlugin) -> None:
+    async def test_tool_parent_fallback_to_run_when_no_agent(self, plugin: SplunkAOADKPlugin) -> None:
         """Tool falls back to invocation run when agent_name is not available."""
         invocation_id = str(uuid4())
         session_id = "test_session"
@@ -604,7 +604,7 @@ class TestInvocationScopedToolTracking:
         assert plugin._tracker.tool_count == 1
 
     @pytest.mark.asyncio
-    async def test_tool_parent_fallback_to_active_tool(self, plugin: GalileoADKPlugin) -> None:
+    async def test_tool_parent_fallback_to_active_tool(self, plugin: SplunkAOADKPlugin) -> None:
         """Tool falls back to active tool when no agent or run is available."""
         invocation_id = str(uuid4())
         session_id = "test_session"
@@ -628,11 +628,11 @@ class TestGetParentAgentRunId:
     """Tests for _get_parent_agent_run_id helper method."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_finds_parent_agent_via_hierarchy(self, plugin: GalileoADKPlugin) -> None:
+    async def test_finds_parent_agent_via_hierarchy(self, plugin: SplunkAOADKPlugin) -> None:
         """Parent agent run_id found via ADK's parent_agent hierarchy."""
         # Given: a parent agent and child agent setup
         invocation_id = str(uuid4())
@@ -663,7 +663,7 @@ class TestGetParentAgentRunId:
         assert result == parent_run_id
 
     @pytest.mark.asyncio
-    async def test_fallback_to_root_invocation(self, plugin: GalileoADKPlugin) -> None:
+    async def test_fallback_to_root_invocation(self, plugin: SplunkAOADKPlugin) -> None:
         """Falls back to root invocation run_id when no parent agent."""
         # Given: a run span without any agents
         invocation_id = str(uuid4())
@@ -683,7 +683,7 @@ class TestGetParentAgentRunId:
         # Then: root run_id is returned as fallback
         assert result == run_id
 
-    def test_handles_exception_in_hierarchy_traversal(self, plugin: GalileoADKPlugin) -> None:
+    def test_handles_exception_in_hierarchy_traversal(self, plugin: SplunkAOADKPlugin) -> None:
         """Handles exceptions gracefully when traversing hierarchy."""
         # Given: a context that raises when accessing hierarchy
         callback = MagicMock()
@@ -702,11 +702,11 @@ class TestForceCommitPartialTrace:
     """Tests for _force_commit_partial_trace helper method."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_closes_all_open_agent_spans(self, plugin: GalileoADKPlugin) -> None:
+    async def test_closes_all_open_agent_spans(self, plugin: SplunkAOADKPlugin) -> None:
         """All open agent spans are closed with error status."""
         # Given: an invocation with an open agent span
         invocation_id = str(uuid4())
@@ -729,7 +729,7 @@ class TestForceCommitPartialTrace:
         assert plugin._tracker.get_agent(invocation_id, "test_agent") is None
 
     @pytest.mark.asyncio
-    async def test_closes_run_span_with_error_status(self, plugin: GalileoADKPlugin) -> None:
+    async def test_closes_run_span_with_error_status(self, plugin: SplunkAOADKPlugin) -> None:
         """Run span is closed with error output and status code."""
         # Given: an invocation with a run span
         invocation_id = str(uuid4())
@@ -750,7 +750,7 @@ class TestForceCommitPartialTrace:
         assert plugin._tracker.get_run(invocation_id) is None
 
     @pytest.mark.asyncio
-    async def test_status_code_extracted_from_error(self, plugin: GalileoADKPlugin) -> None:
+    async def test_status_code_extracted_from_error(self, plugin: SplunkAOADKPlugin) -> None:
         """Status code is extracted from error for span closure."""
         # Given: an invocation with spans
         invocation_id = str(uuid4())
@@ -772,7 +772,7 @@ class TestForceCommitPartialTrace:
         assert plugin._tracker.get_agent(invocation_id, "test_agent") is None
 
     @pytest.mark.asyncio
-    async def test_closes_all_open_tool_spans(self, plugin: GalileoADKPlugin) -> None:
+    async def test_closes_all_open_tool_spans(self, plugin: SplunkAOADKPlugin) -> None:
         """All open tool spans are closed with error status."""
         # Given: an invocation with an open tool span
         invocation_id = str(uuid4())
@@ -801,7 +801,7 @@ class TestForceCommitPartialTrace:
         assert plugin._tracker.tool_count == 0
 
     @pytest.mark.asyncio
-    async def test_closes_all_open_llm_spans(self, plugin: GalileoADKPlugin) -> None:
+    async def test_closes_all_open_llm_spans(self, plugin: SplunkAOADKPlugin) -> None:
         """All open LLM spans are closed with error status."""
         # Given: an invocation with an open LLM span
         invocation_id = str(uuid4())
@@ -825,7 +825,7 @@ class TestForceCommitPartialTrace:
         assert plugin._tracker.llm_count == 0
 
     @pytest.mark.asyncio
-    async def test_clears_active_tool_on_force_commit(self, plugin: GalileoADKPlugin) -> None:
+    async def test_clears_active_tool_on_force_commit(self, plugin: SplunkAOADKPlugin) -> None:
         """Active tool is cleared when force committing partial trace."""
         # Given: an invocation with an active tool
         invocation_id = str(uuid4())
@@ -858,11 +858,11 @@ class TestAfterRunCallbackCleanup:
     """Tests for after_run_callback cleanup of orphaned spans."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_cleans_up_orphaned_tools(self, plugin: GalileoADKPlugin) -> None:
+    async def test_cleans_up_orphaned_tools(self, plugin: SplunkAOADKPlugin) -> None:
         """Orphaned tool spans are closed on after_run_callback."""
         # Given: an invocation with a tool that wasn't closed
         invocation_id = str(uuid4())
@@ -893,7 +893,7 @@ class TestAfterRunCallbackCleanup:
         assert plugin._tracker.tool_count == 0
 
     @pytest.mark.asyncio
-    async def test_cleans_up_orphaned_llms(self, plugin: GalileoADKPlugin) -> None:
+    async def test_cleans_up_orphaned_llms(self, plugin: SplunkAOADKPlugin) -> None:
         """Orphaned LLM spans are closed on after_run_callback."""
         # Given: an invocation with an LLM that wasn't closed
         invocation_id = str(uuid4())
@@ -922,7 +922,7 @@ class TestAfterRunCallbackCleanup:
         assert plugin._tracker.llm_count == 0
 
     @pytest.mark.asyncio
-    async def test_cleans_up_orphaned_agents(self, plugin: GalileoADKPlugin) -> None:
+    async def test_cleans_up_orphaned_agents(self, plugin: SplunkAOADKPlugin) -> None:
         """Orphaned agent spans are closed on after_run_callback."""
         # Given: an invocation with an agent that wasn't closed
         invocation_id = str(uuid4())
@@ -944,7 +944,7 @@ class TestAfterRunCallbackCleanup:
         assert plugin._tracker.agent_count == 0
 
     @pytest.mark.asyncio
-    async def test_tool_error_clears_active_tool(self, plugin: GalileoADKPlugin) -> None:
+    async def test_tool_error_clears_active_tool(self, plugin: SplunkAOADKPlugin) -> None:
         """Tool error properly clears the active tool for the session."""
         inv_id = str(uuid4())
         session_id = "test_session_error"
@@ -987,11 +987,11 @@ class TestAutomaticSessionMapping:
     """Tests for automatic ADK session_id → Galileo session mapping."""
 
     @pytest.fixture
-    def plugin(self) -> GalileoADKPlugin:
-        return GalileoADKPlugin(ingestion_hook=lambda r: None)
+    def plugin(self) -> SplunkAOADKPlugin:
+        return SplunkAOADKPlugin(ingestion_hook=lambda r: None)
 
     @pytest.mark.asyncio
-    async def test_session_mapped_on_first_user_message(self, plugin: GalileoADKPlugin) -> None:
+    async def test_session_mapped_on_first_user_message(self, plugin: SplunkAOADKPlugin) -> None:
         """ADK session_id is mapped to Galileo session on first user message."""
         # Given: an invocation context with a session_id
         inv_context = MockInvocationContext()
@@ -1007,7 +1007,7 @@ class TestAutomaticSessionMapping:
         assert plugin._observer._current_adk_session == "adk-session-123"
 
     @pytest.mark.asyncio
-    async def test_session_not_remapped_for_same_session_id(self, plugin: GalileoADKPlugin) -> None:
+    async def test_session_not_remapped_for_same_session_id(self, plugin: SplunkAOADKPlugin) -> None:
         """Same session_id doesn't trigger repeated session mapping."""
         # Given: two invocations with the same session_id
         session_id = "persistent-session"
@@ -1033,7 +1033,7 @@ class TestAutomaticSessionMapping:
         assert first_mapped_session == second_mapped_session == session_id
 
     @pytest.mark.asyncio
-    async def test_unknown_session_id_not_mapped(self, plugin: GalileoADKPlugin) -> None:
+    async def test_unknown_session_id_not_mapped(self, plugin: SplunkAOADKPlugin) -> None:
         """Session_id of 'unknown' is not mapped to Galileo session."""
         # Given: an invocation context with unknown session_id
         inv_context = MockInvocationContext()
@@ -1049,7 +1049,7 @@ class TestAutomaticSessionMapping:
         assert plugin._observer._current_adk_session is None
 
     @pytest.mark.asyncio
-    async def test_session_mapping_with_sub_invocations(self, plugin: GalileoADKPlugin) -> None:
+    async def test_session_mapping_with_sub_invocations(self, plugin: SplunkAOADKPlugin) -> None:
         """Sub-invocations with same session_id don't trigger remapping."""
         # Given: parent and child invocations sharing a session
         shared_session = "shared-session-xyz"
@@ -1077,7 +1077,7 @@ class TestAutomaticSessionMapping:
         assert plugin._observer._current_adk_session == shared_session
 
     @pytest.mark.asyncio
-    async def test_session_updated_when_different_session_id_top_level(self, plugin: GalileoADKPlugin) -> None:
+    async def test_session_updated_when_different_session_id_top_level(self, plugin: SplunkAOADKPlugin) -> None:
         """Different session_id from top-level call triggers session update."""
         # Given: first invocation with session-1 (no active tools)
         inv_context_1 = MockInvocationContext(invocation_id="inv-1")

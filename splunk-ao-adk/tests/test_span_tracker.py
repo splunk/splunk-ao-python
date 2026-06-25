@@ -4,7 +4,7 @@ import threading
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-from galileo_adk.span_tracker import SpanTracker
+from splunk_ao_adk.span_tracker import SpanTracker
 
 
 class TestSpanTrackerRuns:

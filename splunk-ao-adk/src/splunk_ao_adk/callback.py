@@ -1,4 +1,4 @@
-"""Galileo ADK Callback - Agent-level observability for Google ADK."""
+"""Splunk AO ADK Callback - Agent-level observability for Google ADK."""
 
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from typing import Any
 
 from splunk_ao.schema.trace import TracesIngestRequest
 
-from galileo_adk.observer import (
-    GalileoObserver,
+from splunk_ao_adk.observer import (
+    SplunkAOObserver,
     get_agent_name_from_tool_context,
     get_custom_metadata,
     get_invocation_id,
@@ -18,7 +18,7 @@ from galileo_adk.observer import (
     get_tool_invocation_id,
     get_tool_session_id,
 )
-from galileo_adk.span_tracker import SpanTracker
+from splunk_ao_adk.span_tracker import SpanTracker
 
 try:
     from google.adk.agents.callback_context import CallbackContext
@@ -35,15 +35,15 @@ except ImportError:
 _logger = logging.getLogger(__name__)
 
 
-class GalileoADKCallback:
-    """Galileo observability callbacks for Google ADK agents.
+class SplunkAOADKCallback:
+    """Splunk AO observability callbacks for Google ADK agents.
 
     Use this class when you need agent-level callbacks (passed directly to Agent
     constructors). For runner-level observability with full lifecycle tracking,
-    use GalileoADKPlugin instead.
+    use SplunkAOADKPlugin instead.
 
-    ADK session_id is automatically mapped to Galileo sessions for trace grouping.
-    All traces from the same ADK session will be grouped together in Galileo.
+    ADK session_id is automatically mapped to Splunk AO sessions for trace grouping.
+    All traces from the same ADK session will be grouped together in Splunk AO.
 
     Per-invocation metadata is passed via ADK's native RunConfig.custom_metadata:
 
@@ -53,17 +53,17 @@ class GalileoADKCallback:
     Parameters
     ----------
     project : str, optional
-        Galileo project name. Can also be set via GALILEO_PROJECT env var.
+        Splunk AO project name. Can also be set via SPLUNK_AO_PROJECT env var.
         Required unless `ingestion_hook` is provided.
     log_stream : str, optional
-        Log stream name within the project. Can also be set via GALILEO_LOG_STREAM env var.
+        Log stream name within the project. Can also be set via SPLUNK_AO_LOG_STREAM env var.
         Required unless `ingestion_hook` is provided.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
-        Custom callback to receive trace data instead of sending to Galileo.
+        Custom callback to receive trace data instead of sending to Splunk AO.
 
     Example
     -------
-    >>> callback = GalileoADKCallback(project="my-project", log_stream="production")
+    >>> callback = SplunkAOADKCallback(project="my-project", log_stream="production")
     >>> agent = Agent(
     ...     before_agent_callback=callback.before_agent_callback,
     ...     after_agent_callback=callback.after_agent_callback,
@@ -76,15 +76,15 @@ class GalileoADKCallback:
         log_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ) -> None:
-        effective_project = project or os.environ.get("GALILEO_PROJECT")
-        effective_log_stream = log_stream or os.environ.get("GALILEO_LOG_STREAM")
+        effective_project = project or os.environ.get("SPLUNK_AO_PROJECT")
+        effective_log_stream = log_stream or os.environ.get("SPLUNK_AO_LOG_STREAM")
         if not ingestion_hook and (not effective_project or not effective_log_stream):
             raise ValueError(
                 "Both 'project' and 'log_stream' must be provided via parameters or "
-                "GALILEO_PROJECT/GALILEO_LOG_STREAM environment variables"
+                "SPLUNK_AO_PROJECT/SPLUNK_AO_LOG_STREAM environment variables"
             )
 
-        self._observer = GalileoObserver(
+        self._observer = SplunkAOObserver(
             project=project,
             log_stream=log_stream,
             ingestion_hook=ingestion_hook,

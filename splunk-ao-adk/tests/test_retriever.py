@@ -1,4 +1,4 @@
-"""Tests for retriever span detection in GalileoObserver."""
+"""Tests for retriever span detection in SplunkAOObserver."""
 
 from __future__ import annotations
 
@@ -7,9 +7,8 @@ from uuid import UUID
 
 import pytest
 
-from galileo_adk.decorator import splunk_ao_retriever
-from galileo_adk.observer import GalileoObserver
-
+from splunk_ao_adk.decorator import splunk_ao_retriever
+from splunk_ao_adk.observer import SplunkAOObserver
 from .mocks import MockTool, MockToolContext
 
 
@@ -36,9 +35,9 @@ class MockFunctionTool:
 
 
 @pytest.fixture
-def observer() -> GalileoObserver:
+def observer() -> SplunkAOObserver:
     """Create observer with ingestion hook for testing (no credentials needed)."""
-    return GalileoObserver(ingestion_hook=lambda r: None)
+    return SplunkAOObserver(ingestion_hook=lambda r: None)
 
 
 class TestGalileoRetrieverDecorator:
@@ -80,7 +79,7 @@ class TestGalileoRetrieverDecorator:
 class TestIsRetrieverTool:
     """Tests for _is_retriever_tool detection method."""
 
-    def test_regular_tool_is_not_retriever(self, observer: GalileoObserver) -> None:
+    def test_regular_tool_is_not_retriever(self, observer: SplunkAOObserver) -> None:
         # Given: a regular tool without retriever characteristics
         tool = MockTool(name="calculator")
 
@@ -90,8 +89,8 @@ class TestIsRetrieverTool:
         # Then: it is not detected as a retriever
         assert result is False
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
-    def test_base_retrieval_tool_instance_is_detected(self, observer: GalileoObserver) -> None:
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    def test_base_retrieval_tool_instance_is_detected(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is an instance of BaseRetrievalTool
         tool = MockBaseRetrievalTool(name="vertex_ai_rag")
 
@@ -101,8 +100,8 @@ class TestIsRetrieverTool:
         # Then: it is detected as a retriever
         assert result is True
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
-    def test_base_retrieval_tool_subclass_is_detected(self, observer: GalileoObserver) -> None:
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    def test_base_retrieval_tool_subclass_is_detected(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is a subclass of BaseRetrievalTool
         tool = MockRetrieverSubclass(name="custom_rag")
 
@@ -112,7 +111,7 @@ class TestIsRetrieverTool:
         # Then: it is detected as a retriever
         assert result is True
 
-    def test_decorated_function_tool_is_detected(self, observer: GalileoObserver) -> None:
+    def test_decorated_function_tool_is_detected(self, observer: SplunkAOObserver) -> None:
         # Given: a function decorated with @splunk_ao_retriever wrapped in FunctionTool
         @splunk_ao_retriever
         def my_search(query: str) -> str:
@@ -126,7 +125,7 @@ class TestIsRetrieverTool:
         # Then: it is detected as a retriever
         assert result is True
 
-    def test_undecorated_function_tool_is_not_retriever(self, observer: GalileoObserver) -> None:
+    def test_undecorated_function_tool_is_not_retriever(self, observer: SplunkAOObserver) -> None:
         # Given: a function NOT decorated with @splunk_ao_retriever wrapped in FunctionTool
         def my_calculator(expression: str) -> str:
             return "42"
@@ -139,8 +138,8 @@ class TestIsRetrieverTool:
         # Then: it is not detected as a retriever
         assert result is False
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", None)
-    def test_isinstance_skipped_when_base_class_unavailable(self, observer: GalileoObserver) -> None:
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", None)
+    def test_isinstance_skipped_when_base_class_unavailable(self, observer: SplunkAOObserver) -> None:
         # Given: BaseRetrievalTool is not importable (None) and tool has no func attribute
         tool = MockBaseRetrievalTool(name="some_retriever")
 
@@ -150,7 +149,7 @@ class TestIsRetrieverTool:
         # Then: it is NOT detected (isinstance check is skipped, no func attribute)
         assert result is False
 
-    def test_tool_without_func_attribute_is_not_retriever(self, observer: GalileoObserver) -> None:
+    def test_tool_without_func_attribute_is_not_retriever(self, observer: SplunkAOObserver) -> None:
         # Given: a tool with no func attribute and not a BaseRetrievalTool
         tool = MockTool(name="any_tool")
 
@@ -164,7 +163,7 @@ class TestIsRetrieverTool:
 class TestOnToolStartRetriever:
     """Tests for on_tool_start retriever span creation."""
 
-    def test_decorated_retriever_creates_retriever_span(self, observer: GalileoObserver) -> None:
+    def test_decorated_retriever_creates_retriever_span(self, observer: SplunkAOObserver) -> None:
         # Given: a function decorated with @splunk_ao_retriever wrapped in FunctionTool
         @splunk_ao_retriever
         def my_search(query: str) -> str:
@@ -188,7 +187,7 @@ class TestOnToolStartRetriever:
             assert call_kwargs["is_retriever"] is True
             assert call_kwargs["name"] == "my_search"
 
-    def test_retriever_tool_extracts_query_from_tool_args(self, observer: GalileoObserver) -> None:
+    def test_retriever_tool_extracts_query_from_tool_args(self, observer: SplunkAOObserver) -> None:
         # Given: a retriever tool with a "query" key in tool_args
         @splunk_ao_retriever
         def my_search(query: str) -> str:
@@ -210,7 +209,7 @@ class TestOnToolStartRetriever:
             call_kwargs = mock_start.call_args.kwargs
             assert call_kwargs["input_data"] == "What is RAG?"
 
-    def test_retriever_tool_falls_back_when_no_query_key(self, observer: GalileoObserver) -> None:
+    def test_retriever_tool_falls_back_when_no_query_key(self, observer: SplunkAOObserver) -> None:
         # Given: a retriever tool without a "query" key in tool_args
         @splunk_ao_retriever
         def my_search(search_text: str) -> str:
@@ -232,7 +231,7 @@ class TestOnToolStartRetriever:
             call_kwargs = mock_start.call_args.kwargs
             assert "search_text" in call_kwargs["input_data"]
 
-    def test_regular_tool_creates_tool_span(self, observer: GalileoObserver) -> None:
+    def test_regular_tool_creates_tool_span(self, observer: SplunkAOObserver) -> None:
         # Given: a regular tool (not a retriever)
         tool = MockTool(name="calculator")
         tool_context = MockToolContext()
@@ -250,7 +249,7 @@ class TestOnToolStartRetriever:
             call_kwargs = mock_start.call_args.kwargs
             assert call_kwargs["is_retriever"] is False
 
-    def test_on_tool_start_returns_uuid(self, observer: GalileoObserver) -> None:
+    def test_on_tool_start_returns_uuid(self, observer: SplunkAOObserver) -> None:
         # Given: any tool
         tool = MockTool(name="test_tool")
         tool_context = MockToolContext()
@@ -266,8 +265,8 @@ class TestOnToolStartRetriever:
         # Then: a valid UUID is returned
         assert isinstance(run_id, UUID)
 
-    @patch("galileo_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
-    def test_base_retrieval_tool_creates_retriever_span(self, observer: GalileoObserver) -> None:
+    @patch("splunk_ao_adk.observer._BaseRetrievalTool", MockBaseRetrievalTool)
+    def test_base_retrieval_tool_creates_retriever_span(self, observer: SplunkAOObserver) -> None:
         # Given: a tool that is an instance of BaseRetrievalTool
         tool = MockBaseRetrievalTool(name="vertex_ai_rag")
         tool_context = MockToolContext()

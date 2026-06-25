@@ -1,16 +1,16 @@
-# Contributing to galileo-adk
+# Contributing to splunk-ao-adk
 
-Thank you for your interest in contributing to galileo-adk!
+Thank you for your interest in contributing to splunk-ao-adk!
 
 ## Project Structure
 
-This package is part of the [galileo-python](https://github.com/rungalileo/galileo-python) monorepo:
+This package is part of the [splunk-ao-python](https://github.com/splunk/splunk-ao-python) monorepo:
 
 ```
-galileo-python/
-├── src/splunk_ao/        ← Main Galileo SDK
-└── galileo-adk/
-    ├── src/galileo_adk/
+splunk-ao-python/
+├── src/splunk_ao/        ← Main Splunk AO SDK
+└── splunk-ao-adk/
+    ├── src/splunk_ao_adk/
     ├── tests/
     ├── pyproject.toml
     └── README.md
@@ -23,7 +23,7 @@ galileo-python/
 │                           Google ADK                                     │
 │                                                                          │
 │  ┌─────────────────────────┐          ┌─────────────────────────┐        │
-│  │    GalileoADKPlugin     │          │   GalileoADKCallback    │        │
+│  │   SplunkAOADKPlugin     │          │   SplunkAOADKCallback   │        │
 │  │    (Runner plugins)     │          │   (Agent callbacks)     │        │
 │  │                         │          │                         │        │
 │  │  on_user_msg            │          │  before/after_agent     │        │
@@ -40,7 +40,7 @@ galileo-python/
 │                  └─────────┬──────────┘                                  │
 │                            ▼                                             │
 │                  ┌────────────────────┐                                  │
-│                  │  GalileoObserver   │  ← Shared logic + metadata       │
+│                  │  SplunkAOObserver  │  ← Shared logic + metadata       │
 │                  └─────────┬──────────┘                                  │
 │                            ▼                                             │
 │                  ┌────────────────────┐                                  │
@@ -48,43 +48,43 @@ galileo-python/
 │                  └─────────┬──────────┘                                  │
 │                            ▼                                             │
 │                  ┌────────────────────┐                                  │
-│                  │ GalileoBaseHandler │  ← From galileo lib              │
+│                  │ SplunkAOBaseHandler│  ← From splunk-ao lib            │
 │                  └─────────┬──────────┘                                  │
 └────────────────────────────┼─────────────────────────────────────────────┘
                              ▼
                 ┌────────────────────────┐
-                │    Galileo Backend     │
+                │   Splunk AO Backend    │
                 │   (or ingestion_hook)  │
                 └────────────────────────┘
 ```
 
-### TraceBuilder vs GalileoLogger
+### TraceBuilder vs SplunkAOLogger
 
 The plugin supports two modes of operation:
 
 | Mode | Logger | When to Use |
 |------|--------|-------------|
-| **Normal** | `GalileoLogger` | Traces sent directly to Galileo backend |
+| **Normal** | `SplunkAOLogger` | Traces sent directly to Splunk AO backend |
 | **Hook** | `TraceBuilder` | Traces passed to custom `ingestion_hook` callback |
 
-**TraceBuilder** is a lightweight alternative to `GalileoLogger` that:
+**TraceBuilder** is a lightweight alternative to `SplunkAOLogger` that:
 - Implements the same trace-building interface (spans, traces, metadata)
-- Requires no Galileo credentials or backend connectivity
+- Requires no Splunk AO credentials or backend connectivity
 - Passes completed traces to the `ingestion_hook` consumer
 - Delegates session management to the hook consumer via `session_external_id`
 
 ```
 Normal mode:                          Hook mode:
 ┌─────────────────┐                  ┌─────────────────┐
-│ GalileoObserver │                  │ GalileoObserver │
+│ SplunkAOObserver│                  │ SplunkAOObserver│
 └────────┬────────┘                  └────────┬────────┘
          ▼                                    ▼
 ┌─────────────────┐                  ┌─────────────────┐
-│ GalileoLogger   │                  │ TraceBuilder    │
+│ SplunkAOLogger  │                  │ TraceBuilder    │
 └────────┬────────┘                  └────────┬────────┘
          ▼                                    ▼
 ┌─────────────────┐                  ┌─────────────────┐
-│ Galileo Backend │                  │ ingestion_hook  │
+│ Splunk AO Backend│                 │ ingestion_hook  │
 └─────────────────┘                  └─────────────────┘
 ```
 
@@ -108,11 +108,11 @@ invocation [agent_name]           ← Run span (workflow wrapper)
 ### Setup
 
 ```bash
-cd galileo-adk
+cd splunk-ao-adk
 uv sync --dev
 ```
 
-This installs `galileo` in **editable mode** from `../src/splunk_ao/`. Changes to either package are immediately available without reinstalling.
+This installs `splunk-ao` in **editable mode** from `../src/splunk_ao/`. Changes to either package are immediately available without reinstalling.
 
 ### Running Tests
 
@@ -124,7 +124,7 @@ source .venv/bin/activate
 pytest tests -v
 
 # Run with coverage
-pytest tests --cov=galileo_adk --cov-report=term-missing
+pytest tests --cov=splunk_ao_adk --cov-report=term-missing
 
 # Run linting
 ruff check src/
@@ -152,23 +152,23 @@ The `[tool.uv].sources` configuration is **dev-only** and ignored when building 
 
 ### Release Sequence
 
-When both `galileo` and `galileo-adk` have changes:
+When both `splunk-ao` and `splunk-ao-adk` have changes:
 
-1. Merge changes to `galileo` (main SDK)
-2. Wait for `galileo` to publish to PyPI
-3. Update `galileo-adk/pyproject.toml` dependency constraint if needed:
+1. Merge changes to `splunk-ao` (main SDK)
+2. Wait for `splunk-ao` to publish to PyPI
+3. Update `splunk-ao-adk/pyproject.toml` dependency constraint if needed:
    ```toml
    dependencies = [
-       "galileo>=1.45.0,<2.0.0",  # bump minimum version
+       "splunk-ao>=0.1.0,<1.0.0",  # bump minimum version
    ]
    ```
-4. Merge and publish `galileo-adk`
+4. Merge and publish `splunk-ao-adk`
 
 ### Triggering a Release
 
 Releases are triggered via GitHub Actions:
 
-1. Go to **Actions** > **Release galileo-adk**
+1. Go to **Actions** > **Release splunk-ao-adk**
 2. Click **Run workflow**
 3. Either leave version empty for automatic semantic versioning, or specify a version (e.g., `1.0.0`, `1.1.0-beta.1`)
 4. Click **Run workflow**
@@ -193,5 +193,5 @@ docs(adk): update configuration examples
 
 ## Questions?
 
-- Open an issue on [GitHub](https://github.com/rungalileo/galileo-python/issues)
-- Check the [Galileo Documentation](https://docs.rungalileo.io/)
+- Open an issue on [GitHub](https://github.com/splunk/splunk-ao-python/issues)
+- Check the [Splunk Observability Documentation](https://docs.splunk.com/observability/)

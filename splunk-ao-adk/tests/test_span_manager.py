@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from galileo_adk.span_manager import INTEGRATION_TAG, SpanManager
+from splunk_ao_adk.span_manager import INTEGRATION_TAG, SpanManager
 
 
 class TestSpanManagerRunSpans:

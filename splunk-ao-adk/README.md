@@ -1,30 +1,30 @@
-# galileo-adk
+# splunk-ao-adk
 
-[![PyPI version](https://img.shields.io/pypi/v/galileo-adk.svg)](https://pypi.org/project/galileo-adk/)
-[![Python versions](https://img.shields.io/pypi/pyversions/galileo-adk.svg)](https://pypi.org/project/galileo-adk/)
-[![License](https://img.shields.io/pypi/l/galileo-adk.svg)](https://github.com/rungalileo/galileo-python/blob/main/LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/splunk-ao-adk.svg)](https://pypi.org/project/splunk-ao-adk/)
+[![Python versions](https://img.shields.io/pypi/pyversions/splunk-ao-adk.svg)](https://pypi.org/project/splunk-ao-adk/)
+[![License](https://img.shields.io/pypi/l/splunk-ao-adk.svg)](https://github.com/splunk/splunk-ao-python/blob/main/LICENSE)
 
-Galileo observability for [Google ADK](https://github.com/google/adk-python) agents. Automatic tracing of agent runs, LLM calls, and tool executions.
+Splunk AO observability for [Google ADK](https://github.com/google/adk-python) agents. Automatic tracing of agent runs, LLM calls, and tool executions.
 
 ## Installation
 
 ```bash
-pip install galileo-adk
+pip install splunk-ao-adk
 ```
 
-**Requirements:** Python 3.10+, a [Galileo API key](https://www.rungalileo.io/), and a [Google AI API key](https://aistudio.google.com/apikey)
+**Requirements:** Python 3.11+, a [Splunk AO API key](https://www.splunk.com/), and a [Google AI API key](https://aistudio.google.com/apikey)
 
 ## Quick Start
 
 ```python
 import asyncio
-from galileo_adk import GalileoADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    plugin = GalileoADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -34,7 +34,7 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, GOOGLE_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
     asyncio.run(main())
 ```
 
@@ -42,25 +42,25 @@ if __name__ == "__main__":
 
 | Parameter | Environment Variable | Description |
 |-----------|---------------------|-------------|
-| `project` | `GALILEO_PROJECT` | Project name (required unless `ingestion_hook` provided) |
-| `log_stream` | `GALILEO_LOG_STREAM` | Log stream name (required unless `ingestion_hook` provided) |
-| `ingestion_hook` | - | Custom callback for trace data (bypasses Galileo backend) |
+| `project` | `SPLUNK_AO_PROJECT` | Project name (required unless `ingestion_hook` provided) |
+| `log_stream` | `SPLUNK_AO_LOG_STREAM` | Log stream name (required unless `ingestion_hook` provided) |
+| `ingestion_hook` | - | Custom callback for trace data (bypasses Splunk AO backend) |
 
 ## Features
 
 ### Session Tracking
 
-All traces with the same `session_id` are automatically grouped into a Galileo session, enabling conversation-level tracking:
+All traces with the same `session_id` are automatically grouped into a Splunk AO session, enabling conversation-level tracking:
 
 ```python
 import asyncio
-from galileo_adk import GalileoADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    plugin = GalileoADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -80,7 +80,7 @@ async def main():
             print(f"Response 2: {event.content.parts[0].text}")
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, GOOGLE_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
     asyncio.run(main())
 ```
 
@@ -90,14 +90,14 @@ Attach custom metadata to traces using ADK's `RunConfig`. Metadata is propagated
 
 ```python
 import asyncio
-from galileo_adk import GalileoADKPlugin
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.adk.agents.run_config import RunConfig
 from google.genai import types
 
 async def main():
-    plugin = GalileoADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -121,7 +121,7 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, GOOGLE_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
     asyncio.run(main())
 ```
 
@@ -131,13 +131,13 @@ For granular control over which callbacks to use, attach them directly to your a
 
 ```python
 import asyncio
-from galileo_adk import GalileoADKCallback
+from splunk_ao_adk import SplunkAOADKCallback
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    callback = GalileoADKCallback(project="my-project", log_stream="production")
+    callback = SplunkAOADKCallback(project="my-project", log_stream="production")
 
     agent = LlmAgent(
         name="assistant",
@@ -158,16 +158,16 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, GOOGLE_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
     asyncio.run(main())
 ```
 
 ### Retriever Spans
 
-By default, all `FunctionTool` calls are logged as tool spans. To log a retriever function as a **retriever span** (enabling RAG quality metrics in Galileo), decorate it with `@splunk_ao_retriever`:
+By default, all `FunctionTool` calls are logged as tool spans. To log a retriever function as a **retriever span** (enabling RAG quality metrics in Splunk AO), decorate it with `@splunk_ao_retriever`:
 
 ```python
-from galileo_adk import splunk_ao_retriever
+from splunk_ao_adk import splunk_ao_retriever
 from google.adk.tools import FunctionTool
 
 @splunk_ao_retriever
@@ -181,20 +181,20 @@ tool = FunctionTool(search_docs)
 
 ### Ingestion Hook
 
-Intercept traces for custom processing before forwarding to Galileo:
+Intercept traces for custom processing before forwarding to Splunk AO:
 
 ```python
 import asyncio
 import os
-from splunk_ao import GalileoLogger
-from galileo_adk import GalileoADKPlugin
+from splunk_ao import SplunkAOLogger
+from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
 
-logger = GalileoLogger(
-    project=os.getenv("GALILEO_PROJECT", "my-project"),
-    log_stream=os.getenv("GALILEO_LOG_STREAM", "dev"),
+logger = SplunkAOLogger(
+    project=os.getenv("SPLUNK_AO_PROJECT", "my-project"),
+    log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "dev"),
 )
 
 def my_ingestion_hook(request):
@@ -214,7 +214,7 @@ def my_ingestion_hook(request):
     logger.ingest_traces(request)
 
 async def main():
-    plugin = GalileoADKPlugin(ingestion_hook=my_ingestion_hook)
+    plugin = SplunkAOADKPlugin(ingestion_hook=my_ingestion_hook)
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -224,13 +224,13 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: GALILEO_API_KEY, GOOGLE_API_KEY
+    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
     asyncio.run(main())
 ```
 
 ## Resources
 
-- [Galileo Documentation](https://docs.rungalileo.io/)
+- [Splunk AO Documentation](https://docs.rungalileo.io/)
 - [Google ADK Documentation](https://google.github.io/adk-docs/)
 
 ## License

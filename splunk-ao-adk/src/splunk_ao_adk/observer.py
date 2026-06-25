@@ -1,4 +1,4 @@
-"""Shared observability logic for Galileo ADK integration."""
+"""Shared observability logic for Splunk AO ADK integration."""
 
 from __future__ import annotations
 
@@ -15,13 +15,13 @@ from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import serialize_to_str
 
-from galileo_adk.data_converters import (
+from splunk_ao_adk.data_converters import (
     convert_adk_content_to_splunk_ao_messages,
     convert_adk_tools_to_splunk_ao_format,
     extract_text_from_adk_content,
 )
-from galileo_adk.span_manager import SpanManager
-from galileo_adk.trace_builder import TraceBuilder
+from splunk_ao_adk.span_manager import SpanManager
+from splunk_ao_adk.trace_builder import TraceBuilder
 
 _logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ def get_custom_metadata(context: Any) -> dict[str, Any]:
     return {}
 
 
-class GalileoObserver:
+class SplunkAOObserver:
     """Shared observability logic for Plugin and Callback interfaces."""
 
     _trace_builder: TraceBuilder | None
@@ -149,16 +149,16 @@ class GalileoObserver:
             trace_builder = TraceBuilder(ingestion_hook=ingestion_hook)
             self._trace_builder = trace_builder
             self._handler = SplunkAOBaseHandler(
-                galileo_logger=trace_builder,  # type: ignore[arg-type]
+                splunk_ao_logger=trace_builder,  # type: ignore[arg-type]
                 start_new_trace=True,
                 flush_on_chain_end=True,
                 integration="google_adk",
             )
         else:
             self._trace_builder = None
-            galileo_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
+            splunk_ao_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
             self._handler = SplunkAOBaseHandler(
-                galileo_logger=galileo_logger,
+                splunk_ao_logger=splunk_ao_logger,
                 start_new_trace=True,
                 flush_on_chain_end=True,
                 integration="google_adk",
@@ -291,7 +291,7 @@ class GalileoObserver:
             return
 
         # Normal mode: create/find session on backend
-        logger = self._handler._galileo_logger
+        logger = self._handler._splunk_ao_logger
         previous_session_id = logger.session_id
         logger.start_session(
             name=adk_session_id,
