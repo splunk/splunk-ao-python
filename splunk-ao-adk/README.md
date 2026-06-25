@@ -186,13 +186,13 @@ Intercept traces for custom processing before forwarding to Splunk AO:
 ```python
 import asyncio
 import os
-from splunk_ao import GalileoLogger
+from splunk_ao import SplunkAOLogger
 from splunk_ao_adk import SplunkAOADKPlugin
 from google.adk.runners import Runner
 from google.adk.agents import LlmAgent
 from google.genai import types
 
-logger = GalileoLogger(
+logger = SplunkAOLogger(
     project=os.getenv("SPLUNK_AO_PROJECT", "my-project"),
     log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "dev"),
 )
