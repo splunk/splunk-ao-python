@@ -1,0 +1,87 @@
+name: Release splunk-ao-adk to Test PyPI
+
+on:
+  pull_request:  # Publishes a .dev pre-release on every PR push
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Leave empty to use the version in pyproject.toml as-is.'
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: splunk-ao-adk
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # PR builds: append .dev<run_number> so the clean version is never
+      # consumed on Test PyPI and can still be used for the real release.
+      - name: Set pre-release version
+        if: github.event_name == 'pull_request'
+        run: |
+          VERSION_BASE=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          PRE_VERSION="${VERSION_BASE}.dev${{ github.run_number }}"
+          sed -i "s/^version = \".*\"/version = \"${PRE_VERSION}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${PRE_VERSION}\"/" src/splunk_ao_adk/__init__.py
+
+      # Manual dispatch: use the supplied version if provided.
+      - name: Override version
+        if: github.event_name == 'workflow_dispatch' && inputs.version != ''
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_adk/__init__.py
+
+      - name: Get current version
+        id: get-version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Upload distributables
+        uses: actions/upload-artifact@v4
+        with:
+          name: splunk-ao-adk-${{ steps.get-version.outputs.version }}
+          path: splunk-ao-adk/dist/
+
+  publish:
+    name: Publish to Test PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/splunk-ao-adk/
+
+    steps:
+      - name: Download distributables
+        uses: actions/download-artifact@v4
+        with:
+          name: splunk-ao-adk-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
+          print-hash: true
