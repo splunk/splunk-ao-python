@@ -57,7 +57,7 @@ from splunk_ao.prompt import Prompt
 from splunk_ao.protect import ainvoke_protect, invoke_protect
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
 from splunk_ao.schema.message import Message
-from splunk_ao.schema.metrics import GalileoScorers, SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOMetrics
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import (
     APIError,
@@ -107,7 +107,6 @@ __all__ = [
     "ExecutionStatus",
     "Experiment",
     "ForbiddenError",
-    "GalileoScorers",
     "Integration",
     "LlmMetric",
     "LlmSpan",
