@@ -10,8 +10,39 @@ on:
         type: string
 
 jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: splunk-ao-adk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/splunk-ao-adk/pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run type check
+        run: uv run mypy src/
+
+      - name: Run tests
+        run: uv run pytest --cov=splunk_ao_adk --cov-report=xml
+
   build:
     name: Build package
+    needs: test  # Only build if tests pass
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -64,7 +95,7 @@ jobs:
 
   publish:
     name: Publish to Test PyPI
-    needs: build
+    needs: build  # Only publish if build succeeds (which requires tests passing)
     runs-on: ubuntu-latest
     permissions:
       id-token: write  # Required for OIDC trusted publishing
