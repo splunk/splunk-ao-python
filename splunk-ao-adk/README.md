@@ -12,7 +12,7 @@ Splunk AO observability for [Google ADK](https://github.com/google/adk-python) a
 pip install splunk-ao-adk
 ```
 
-**Requirements:** Python 3.10+, a [Splunk AO API key](https://www.splunk.com/), and a [Google AI API key](https://aistudio.google.com/apikey)
+**Requirements:** Python 3.11+, a [Splunk AO API key](https://www.splunk.com/), and a [Google AI API key](https://aistudio.google.com/apikey)
 
 ## Quick Start
 
