@@ -1,4 +1,4 @@
-"""Tests for X-Galileo-SDK header in TracesClient."""
+"""Tests for Splunk-AO-SDK header in TracesClient."""
 
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -10,7 +10,7 @@ from splunk_ao.utils.headers_data import get_package_version
 
 
 class TestTracesHeaders:
-    """Test that X-Galileo-SDK headers are properly included in Trace requests."""
+    """Test that Splunk-AO-SDK headers are properly included in Trace requests."""
 
     @pytest.fixture
     def mock_config(self):
@@ -32,7 +32,7 @@ class TestTracesHeaders:
 
     @pytest.mark.asyncio
     async def test_make_async_request_includes_sdk_header(self, traces_client, mock_config) -> None:
-        """Test that _make_async_request includes the X-Galileo-SDK header with dynamic method name."""
+        """Test that _make_async_request includes the Splunk-AO-SDK header with dynamic method name."""
         # Call the private method directly to test header inclusion
         await traces_client._make_async_request(request_method=RequestMethod.GET, endpoint="/test-endpoint")
 
@@ -40,11 +40,11 @@ class TestTracesHeaders:
         mock_config.api_client.arequest.assert_called_once()
         call_args = mock_config.api_client.arequest.call_args
 
-        # Check that content_headers contains X-Galileo-SDK header
+        # Check that content_headers contains Splunk-AO-SDK header
         content_headers = call_args.kwargs.get("content_headers", {})
-        assert "X-Galileo-SDK" in content_headers
+        assert "Splunk-AO-SDK" in content_headers
         # The header should include version and dynamic method name from get_method_name()
-        header_value = content_headers["X-Galileo-SDK"]
+        header_value = content_headers["Splunk-AO-SDK"]
         assert header_value.startswith(f"galileo-python/{get_package_version()}")
         # Should contain the method name (e.g., "_make_async_request@splunk_ao.traces")
         assert "@splunk_ao.traces" in header_value

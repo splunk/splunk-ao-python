@@ -938,8 +938,8 @@ class SplunkAOLogger(TracesLogger):
         -------
         dict[str, str]
             Dictionary with the following headers:
-            - X-Galileo-Trace-ID: The root trace ID
-            - X-Galileo-Parent-ID: The ID of the current parent (trace or span) that downstream
+            - Splunk-AO-Trace-ID: The root trace ID
+            - Splunk-AO-Parent-ID: The ID of the current parent (trace or span) that downstream
               spans should attach to
 
         Raises
@@ -954,15 +954,15 @@ class SplunkAOLogger(TracesLogger):
         logger.start_trace(input="question")
         headers = logger.get_tracing_headers()
         # headers = {
-        #     "X-Galileo-Trace-ID": "...",
-        #     "X-Galileo-Parent-ID": "...",  # trace ID as parent
+        #     "Splunk-AO-Trace-ID": "...",
+        #     "Splunk-AO-Parent-ID": "...",  # trace ID as parent
         # }
 
         logger.add_workflow_span(input="workflow", name="orchestrator")
         headers = logger.get_tracing_headers()
         # headers = {
-        #     "X-Galileo-Trace-ID": "...",
-        #     "X-Galileo-Parent-ID": "...",  # workflow span ID as parent
+        #     "Splunk-AO-Trace-ID": "...",
+        #     "Splunk-AO-Parent-ID": "...",  # workflow span ID as parent
         # }
 
         # Pass headers to HTTP request
