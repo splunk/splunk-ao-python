@@ -1,0 +1,73 @@
+name: Release splunk-ao-adk to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0, 1.2.3).'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: splunk-ao-adk
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_adk/__init__.py
+
+      - name: Get current version
+        id: get-version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Upload distributables
+        uses: actions/upload-artifact@v4
+        with:
+          name: splunk-ao-adk-${{ steps.get-version.outputs.version }}
+          path: splunk-ao-adk/dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+    environment:
+      name: pypi
+      url: https://pypi.org/project/splunk-ao-adk/
+
+    steps:
+      - name: Download distributables
+        uses: actions/download-artifact@v4
+        with:
+          name: splunk-ao-adk-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          print-hash: true
