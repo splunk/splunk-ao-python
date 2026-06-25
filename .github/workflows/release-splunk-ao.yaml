@@ -1,0 +1,69 @@
+name: Release splunk-ao to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0, 1.2.3). Must match the version in pyproject.toml or will override it.'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+
+      - name: Set version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          poetry version "$INPUT_VERSION"
+          sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao/__init__.py
+
+      - name: Get current version
+        id: get-version
+        run: echo "version=$(poetry version --short)" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: poetry build
+
+      - name: Upload distributables
+        uses: actions/upload-artifact@v4
+        with:
+          name: splunk-ao-${{ steps.get-version.outputs.version }}
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+    environment:
+      name: pypi
+      url: https://pypi.org/project/splunk-ao/
+
+    steps:
+      - name: Download distributables
+        uses: actions/download-artifact@v4
+        with:
+          name: splunk-ao-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          print-hash: true
