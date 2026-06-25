@@ -1,6 +1,7 @@
 name: Release splunk-ao to Test PyPI
 
 on:
+  pull_request:  # Runs the build job on every PR push to validate packaging
   workflow_dispatch:
     inputs:
       version:
@@ -48,6 +49,7 @@ jobs:
 
   publish:
     name: Publish to Test PyPI
+    if: github.event_name == 'workflow_dispatch'  # Only publish on explicit dispatch, not on PR pushes
     needs: build
     runs-on: ubuntu-latest
     permissions:
