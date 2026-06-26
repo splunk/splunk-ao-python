@@ -1,9 +1,9 @@
-"""Two-agent A2A demo with LangGraph orchestrator and Galileo distributed tracing.
+"""Two-agent A2A demo with LangGraph orchestrator and Splunk AO distributed tracing.
 
 Architecture:
     Orchestrator (LangGraph) ──A2A──> Researcher (LangChain agent + search tool)
 
-Both agents appear in a single distributed trace in Galileo.
+Both agents appear in a single distributed trace in Splunk AO.
 
 Usage:
     # Copy and fill in the .env file:
@@ -57,7 +57,7 @@ from splunk_ao_a2a import A2AInstrumentor
 load_dotenv(Path(__file__).parent / ".env")
 
 # ---------------------------------------------------------------------------
-# Galileo tracing setup
+# Splunk AO tracing setup
 # ---------------------------------------------------------------------------
 
 provider = TracerProvider()
