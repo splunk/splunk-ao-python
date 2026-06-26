@@ -39,7 +39,7 @@ Splunk AO observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A
 pip install splunk-ao-a2a
 ```
 
-**Requirements:** Python 3.10+, a [Splunk AO API key](https://www.splunk.com/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
+**Requirements:** Python 3.11+, a [Splunk AO API key](https://www.splunk.com/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
 
 ## Quick Start
 
@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- [Splunk AO Documentation](https://docs.splunk.com/)
+- [Splunk AO Documentation](https://docs.galileo.ai)
 - [A2A Protocol Specification](https://a2a-protocol.org)
 - [a2a-sdk Documentation](https://pypi.org/project/a2a-sdk)
 
