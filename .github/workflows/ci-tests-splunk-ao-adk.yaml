@@ -1,0 +1,62 @@
+name: Test splunk-ao-adk
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'splunk-ao-adk/**'
+      - '.github/workflows/ci-tests-splunk-ao-adk.yaml'
+  pull_request:
+    paths:
+      - 'splunk-ao-adk/**'
+      - '.github/workflows/ci-tests-splunk-ao-adk.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    runs-on: ubuntu-latest
+    # Hard cap per matrix job to bail out fast on real hangs.
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: splunk-ao-adk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
+        with:
+            enable-cache: true
+            cache-dependency-glob: "**/splunk-ao-adk/pyproject.toml"
+
+      # uv sources in pyproject.toml pins splunk-ao to the local monorepo root
+      # as an editable install, so this always tests against the latest local code.
+      # pytest pythonpath includes ".." (the repo root) so test_support is importable.
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Show installed versions
+        run: uv pip list | grep -E "^(galileo|google-adk|splunk-ao)"
+
+      - name: Run type check
+        run: uv run mypy src/
+
+      - name: Run tests
+        run: uv run pytest --cov=splunk_ao_adk --cov-report=xml
