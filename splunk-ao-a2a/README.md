@@ -68,7 +68,7 @@ Environment variables for the Splunk AO exporter:
 | Environment Variable | Description |
 |---------------------|-------------|
 | `SPLUNK_AO_API_KEY` | Splunk AO API key (required) |
-| `SPLUNK_AO_API_URL` | Splunk AO API host URL (required for self-hosted deployments, e.g. `https://agent-observability-api.rc0.signalfx.com`) |
+| `SPLUNK_AO_CONSOLE_URL` | Splunk AO console URL (required for self-hosted deployments, e.g. `http://localhost:8088`) |
 | `SPLUNK_AO_PROJECT` | Project name (alternative to `SplunkAOSpanProcessor(project=...)`) |
 | `SPLUNK_AO_LOG_STREAM` | Log stream name (alternative to `SplunkAOSpanProcessor(logstream=...)`) |
 
