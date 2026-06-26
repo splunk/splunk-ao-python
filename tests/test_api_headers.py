@@ -1,4 +1,4 @@
-"""Tests for X-Galileo-SDK header in API calls."""
+"""Tests for Splunk-AO-SDK header in API calls."""
 
 from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
@@ -12,7 +12,7 @@ from splunk_ao.utils.headers_data import get_package_version
 
 
 class TestApiHeaders:
-    """Test that X-Galileo-SDK headers are properly included in API calls."""
+    """Test that Splunk-AO-SDK headers are properly included in API calls."""
 
     @patch("splunk_ao.utils.headers_data.version")
     def test_get_package_version_uses_splunk_ao_distribution(self, mock_version) -> None:
@@ -31,29 +31,29 @@ class TestApiHeaders:
         mock_version.assert_called_once_with("splunk-ao")
 
     def test_generated_api_method_includes_sdk_header(self) -> None:
-        """Test that generated API methods include the X-Galileo-SDK header with method name."""
+        """Test that generated API methods include the Splunk-AO-SDK header with method name."""
         # Test the _get_kwargs function which is responsible for setting headers
         dataset_id = "test-dataset-id"
         kwargs = dataset_get_kwargs(dataset_id=dataset_id)
 
         # Verify the header is included in the kwargs
         content_headers = kwargs.get("content_headers", {})
-        assert "X-Galileo-SDK" in content_headers
-        header = content_headers["X-Galileo-SDK"]
+        assert "Splunk-AO-SDK" in content_headers
+        header = content_headers["Splunk-AO-SDK"]
         # Should include version and method name
         assert header.startswith(f"galileo-python/{get_package_version()}")
         # Direct call to resource should include the resource method name
         assert "@galileo.resources.api.datasets" in header
 
     def test_generated_api_method_header_format(self) -> None:
-        """Test that the X-Galileo-SDK header has the correct format."""
+        """Test that the Splunk-AO-SDK header has the correct format."""
         # Test with a different API method's _get_kwargs function
 
         kwargs = healthcheck_get_kwargs()
 
         # Verify the header format
         content_headers = kwargs.get("content_headers", {})
-        sdk_header = content_headers.get("X-Galileo-SDK", "")
+        sdk_header = content_headers.get("Splunk-AO-SDK", "")
 
         # Should match pattern: galileo-python/x.x.x
         assert sdk_header.startswith("galileo-python/")
@@ -72,7 +72,7 @@ class TestApiHeaders:
 
         # Verify the header includes both version and method
         content_headers = kwargs.get("content_headers", {})
-        header = content_headers["X-Galileo-SDK"]
+        header = content_headers["Splunk-AO-SDK"]
         assert header.startswith("galileo-python/1.2.3")
         # Should also include the method name
         assert "@galileo.resources.api.datasets" in header
@@ -87,8 +87,8 @@ class TestApiHeaders:
         # Configure a wrapper to capture headers
         def capture_and_call(*args, **kwargs):
             result = original_get_kwargs(*args, **kwargs)
-            if "content_headers" in result and "X-Galileo-SDK" in result["content_headers"]:
-                captured_headers.append(result["content_headers"]["X-Galileo-SDK"])
+            if "content_headers" in result and "Splunk-AO-SDK" in result["content_headers"]:
+                captured_headers.append(result["content_headers"]["Splunk-AO-SDK"])
             return result
 
         # Apply the patch as a context manager
