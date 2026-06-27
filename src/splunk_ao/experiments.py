@@ -675,7 +675,7 @@ def get_experiments(
         )
 
     config = SplunkAOConfig.get()
-    headers = {"Content-Type": "application/json", "X-Galileo-SDK": get_sdk_header()}
+    headers = {"Content-Type": "application/json", "Splunk-AO-SDK": get_sdk_header()}
     path = f"/projects/{project_obj.id}/experiments/search"
 
     all_experiments: list[ExperimentResponse] = []
@@ -742,7 +742,7 @@ def list_experiment_groups(
     # timeout, and SDK headers. The experiment-group routes are not yet in the generated
     # client; once they are, this helper should be rewritten to use the generated function.
     config = SplunkAOConfig.get()
-    headers = {"Content-Type": "application/json", "X-Galileo-SDK": get_sdk_header()}
+    headers = {"Content-Type": "application/json", "Splunk-AO-SDK": get_sdk_header()}
     path = f"/projects/{project_obj.id}/experiment-groups/query"
 
     all_groups: list[ExperimentGroupResponse] = []

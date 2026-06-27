@@ -60,7 +60,7 @@ class Traces:
         files: dict | None = None,
         params: dict | None = None,
     ) -> Any:
-        headers = {"X-Galileo-SDK": get_sdk_header()} | HttpHeaders.json()
+        headers = {"Splunk-AO-SDK": get_sdk_header()} | HttpHeaders.json()
 
         return await self.config.api_client.arequest(
             method=request_method,
@@ -186,7 +186,7 @@ class IngestTraces:
         self._headers = {
             "Content-Type": "application/json",
             "Galileo-API-Key": api_key,
-            "X-Galileo-SDK": get_sdk_header(),
+            "Splunk-AO-SDK": get_sdk_header(),
         }
         self._thread_local = local()
 
