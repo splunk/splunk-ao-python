@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Must be an explicit PEP 440 version. Leave empty to use the version in pyproject.toml as-is.'
+        description: 'Version to publish (e.g., 0.1.0, 1.2.3rc1, 1.2.3.post1). Must be an explicit version. Leave empty to use the version in pyproject.toml as-is.'
         required: false
         type: string
 
@@ -14,6 +14,8 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: splunk-ao-adk
@@ -44,6 +46,8 @@ jobs:
     name: Build package
     needs: test  # Only build if tests pass
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: splunk-ao-adk
@@ -73,8 +77,8 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([abprc.][0-9]+)*$'; then
-            echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit PEP 440 version (e.g. 0.1.0, 1.2.3b1). Bump keywords like 'patch' or 'major' are not accepted."
+          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$'; then
+            echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit version like 0.1.0, 1.2.3rc1, or 1.2.3.post1. Bump keywords like 'patch' or 'major' are not accepted."
             exit 1
           fi
           sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
