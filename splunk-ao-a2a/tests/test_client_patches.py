@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from opentelemetry.trace import Span, StatusCode, Tracer
 
-from galileo_a2a._client_patches import _originals, _patch_client, _unpatch_client, _wrap_send_message
+from splunk_ao_a2a._client_patches import _originals, _patch_client, _unpatch_client, _wrap_send_message
 
 
-@patch("galileo_a2a._client_patches.BaseClient")
+@patch("splunk_ao_a2a._client_patches.BaseClient")
 class TestPatchClient:
     def test_patches_all_methods(self, mock_base_client):
         # Given: a fresh state
@@ -45,7 +45,7 @@ class TestPatchClient:
         # Cleanup
         _originals.clear()
 
-    @patch("galileo_a2a._client_patches._wrap_simple_method")
+    @patch("splunk_ao_a2a._client_patches._wrap_simple_method")
     def test_rollback_on_failure(self, mock_wrap, mock_base_client):
         # Given: _wrap_simple_method raises on the third call (get_card)
         _originals.clear()
@@ -59,7 +59,7 @@ class TestPatchClient:
         assert len(_originals) == 0
 
 
-@patch("galileo_a2a._client_patches.BaseClient")
+@patch("splunk_ao_a2a._client_patches.BaseClient")
 class TestUnpatchClient:
     def test_restores_originals(self, mock_base_client):
         # Given: patched state

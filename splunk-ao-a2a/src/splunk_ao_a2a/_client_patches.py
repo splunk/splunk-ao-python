@@ -11,9 +11,9 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode, Tracer
 
-from galileo_a2a._constants import GALILEO_OBSERVE_KEY
-from galileo_a2a._context import inject_trace_context, iter_with_context
-from galileo_a2a._spans import (
+from splunk_ao_a2a._constants import SPLUNK_AO_OBSERVE_KEY
+from splunk_ao_a2a._context import inject_trace_context, iter_with_context
+from splunk_ao_a2a._spans import (
     set_client_attributes,
     set_input,
     set_simple_input,
@@ -107,7 +107,7 @@ def _wrap_send_message(tracer: Tracer, original: Any, agent_name: str | None = N
                 otel_context.detach(token)
 
             request_metadata = dict(request_metadata) if request_metadata else {}
-            request_metadata[GALILEO_OBSERVE_KEY] = observe_ctx
+            request_metadata[SPLUNK_AO_OBSERVE_KEY] = observe_ctx
 
             result = original(
                 self,

@@ -9,10 +9,10 @@ from typing import Any
 from opentelemetry import trace
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor  # type: ignore[import-untyped]
 
-from galileo_a2a import _spans
-from galileo_a2a._client_patches import _patch_client, _unpatch_client
-from galileo_a2a._constants import INSTRUMENTOR_NAME, INSTRUMENTOR_VERSION
-from galileo_a2a._server_patches import _patch_server, _unpatch_server
+from splunk_ao_a2a import _spans
+from splunk_ao_a2a._client_patches import _patch_client, _unpatch_client
+from splunk_ao_a2a._constants import INSTRUMENTOR_NAME, INSTRUMENTOR_VERSION
+from splunk_ao_a2a._server_patches import _patch_server, _unpatch_server
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class A2AInstrumentor(BaseInstrumentor):  # type: ignore[misc]
 
         from opentelemetry.sdk.trace import TracerProvider
         from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
-        from galileo_a2a import A2AInstrumentor
+        from splunk_ao_a2a import A2AInstrumentor
 
         provider = TracerProvider()
         add_splunk_ao_span_processor(provider, SplunkAOSpanProcessor())
