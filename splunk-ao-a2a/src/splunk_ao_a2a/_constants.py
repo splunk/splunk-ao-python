@@ -1,13 +1,13 @@
-"""Constants for galileo-a2a instrumentation."""
+"""Constants for splunk-ao-a2a instrumentation."""
 
 # Instrumentor identity
-from galileo_a2a._version import __version__
+from splunk_ao_a2a._version import __version__
 
-INSTRUMENTOR_NAME = "galileo-a2a"
+INSTRUMENTOR_NAME = "splunk-ao-a2a"
 INSTRUMENTOR_VERSION = __version__
 
 # Metadata keys for in-band trace context propagation
-GALILEO_OBSERVE_KEY = "galileo_observe"
+SPLUNK_AO_OBSERVE_KEY = "splunk_ao_observe"
 AGNTCY_OBSERVE_KEY = "observe"  # compatibility with AGNTCY Observe SDK
 
 # A2A span attribute keys (match API-side A2A extension expectations)

@@ -10,13 +10,13 @@ from a2a.server.request_handlers.default_request_handler import DefaultRequestHa
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode, Tracer
 
-from galileo_a2a._context import (
+from splunk_ao_a2a._context import (
     create_parent_context_from_trace,
     create_span_link_from_context,
     extract_trace_context,
     iter_with_context,
 )
-from galileo_a2a._spans import set_input, set_output, set_server_attributes, track_task_state
+from splunk_ao_a2a._spans import set_input, set_output, set_server_attributes, track_task_state
 
 _logger = logging.getLogger(__name__)
 

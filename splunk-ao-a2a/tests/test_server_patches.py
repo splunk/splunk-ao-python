@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from opentelemetry.trace import Span, StatusCode, Tracer
 
-from galileo_a2a._server_patches import _originals, _patch_server, _unpatch_server, _wrap_on_message_send_stream
+from splunk_ao_a2a._server_patches import _originals, _patch_server, _unpatch_server, _wrap_on_message_send_stream
 
 
-@patch("galileo_a2a._server_patches.DefaultRequestHandler")
+@patch("splunk_ao_a2a._server_patches.DefaultRequestHandler")
 class TestPatchServer:
     def test_patches_all_methods(self, mock_handler):
         # Given: a fresh state
@@ -44,7 +44,7 @@ class TestPatchServer:
         _originals.clear()
 
 
-@patch("galileo_a2a._server_patches.DefaultRequestHandler")
+@patch("splunk_ao_a2a._server_patches.DefaultRequestHandler")
 class TestUnpatchServer:
     def test_restores_originals(self, mock_handler):
         # Given: patched state
