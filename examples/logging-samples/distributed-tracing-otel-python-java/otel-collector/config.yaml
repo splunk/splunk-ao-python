@@ -26,7 +26,7 @@ exporters:
   otlphttp/galileo:
     endpoint: ${env:SPLUNK_AO_API_URL}/otel
     headers:
-      Splunk-AO-Api-Key: ${env:SPLUNK_AO_API_KEY}
+      Splunk-AO-API-Key: ${env:SPLUNK_AO_API_KEY}
       project: ${env:SPLUNK_AO_PROJECT}
       logstream: ${env:SPLUNK_AO_LOG_STREAM}
     # Retry on transient failures so a blip to Splunk AO doesn't drop half a trace.
