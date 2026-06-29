@@ -27,7 +27,7 @@ class MCPClient:
             streamablehttp_client(
                 url=os.environ.get("MCP_SERVER_URL", "https://api.galileo.ai/mcp/http/mcp"),
                 headers={
-                    "Galileo-API-Key": os.environ["SPLUNK_AO_API_KEY"],
+                    "Splunk-AO-Api-Key": os.environ["SPLUNK_AO_API_KEY"],
                     "Accept": "text/event-stream",
                 },
             )

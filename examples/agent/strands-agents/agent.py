@@ -14,7 +14,7 @@ os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = os.environ.get("SPLUNK_AO_API
 
 # Export the Splunk AO OTel headers pointing to the correct API key, project, and log stream
 headers = {
-    "Galileo-API-Key": os.environ["SPLUNK_AO_API_KEY"],
+    "Splunk-AO-Api-Key": os.environ["SPLUNK_AO_API_KEY"],
     "project": os.environ["SPLUNK_AO_PROJECT"],
     "logstream": os.environ["SPLUNK_AO_LOG_STREAM"],
 }
