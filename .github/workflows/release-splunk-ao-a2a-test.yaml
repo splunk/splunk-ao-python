@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Leave empty to use the version in pyproject.toml as-is.'
+        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Must be an explicit PEP 440 version. Leave empty to use the version in pyproject.toml as-is.'
         required: false
         type: string
 
@@ -67,12 +67,16 @@ jobs:
           sed -i "s/^version = \".*\"/version = \"${PRE_VERSION}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${PRE_VERSION}\"/" src/splunk_ao_a2a/_version.py
 
-      # Manual dispatch: use the supplied version if provided.
+      # Manual dispatch: validate and use the supplied version if provided.
       - name: Override version
         if: github.event_name == 'workflow_dispatch' && inputs.version != ''
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
+          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([abprc.][0-9]+)*$'; then
+            echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit PEP 440 version (e.g. 0.1.0, 1.2.3b1). Bump keywords like 'patch' or 'major' are not accepted."
+            exit 1
+          fi
           sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_a2a/_version.py
 
