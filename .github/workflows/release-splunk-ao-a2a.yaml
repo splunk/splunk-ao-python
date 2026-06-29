@@ -1,0 +1,73 @@
+name: Release splunk-ao-a2a to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0, 1.2.3).'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: splunk-ao-a2a
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.11'
+
+      - name: Set version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
+          sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_a2a/_version.py
+
+      - name: Get current version
+        id: get-version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Upload distributables
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: splunk-ao-a2a-${{ steps.get-version.outputs.version }}
+          path: splunk-ao-a2a/dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for OIDC trusted publishing
+    environment:
+      name: pypi
+      url: https://pypi.org/project/splunk-ao-a2a/
+
+    steps:
+      - name: Download distributables
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: splunk-ao-a2a-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          verbose: true
+          print-hash: true
