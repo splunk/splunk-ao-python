@@ -55,6 +55,7 @@ jobs:
       - name: Update SDK docs
         run: |
           rm -rf ./splunk-ao-docs/sdk-api/python/reference
+          mkdir -p ./splunk-ao-docs/sdk-api/python
           cp -r ./splunk-ao-python/.generated_docs/reference ./splunk-ao-docs/sdk-api/python/
 
       - name: Commit changes
@@ -63,9 +64,8 @@ jobs:
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
         run: |
-          # TODO(HYBIM-725): replace with Splunk bot email and name
-          git config --global user.email "splunk-ao-automation@splunk.com"
-          git config --global user.name "splunk-ao-automation"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/agent-observability-docs.git
           git add .
           if git diff --cached --quiet; then
@@ -98,4 +98,4 @@ jobs:
 
             **DO NOT** approve this PR until you have completed these checks.
         run: |
-          gh pr create --title "Updated Python SDK docs" --body "${{ env.PR_BODY }}"
+          gh pr create --title "Updated Python SDK docs" --body "$PR_BODY"

@@ -1,8 +1,4 @@
 # Regenerates the OpenAPI Python client from the Splunk AO backend spec.
-# TODO(HYBIM-725): Set the following secrets in repo Settings → Secrets before this workflow
-# is operational:
-#   - SPLUNK_AO_API_URL: Splunk AO backend endpoint for fetching the OpenAPI spec
-# PAT_AO_DOC_AUTOMATION is already provisioned and used for push + PR creation.
 name: Update API Client
 
 on:
@@ -51,12 +47,10 @@ jobs:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
           BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
         run: |
-          # TODO(HYBIM-725): replace with Splunk bot email and name
-          git config --global user.email "splunk-ao-automation@splunk.com"
-          git config --global user.name "splunk-ao-automation"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/splunk-ao-python.git
           git checkout -b $BRANCH_NAME
-          # TODO(HYBIM-725): replace with the Splunk AO backend URL
           poetry run ./scripts/import-openapi-yaml.sh ${{ secrets.SPLUNK_AO_API_URL }}
           poetry run ./scripts/auto-generate-api-client.sh
           git add .
