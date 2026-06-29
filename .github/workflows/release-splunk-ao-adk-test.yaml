@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Leave empty to use the version in pyproject.toml as-is.'
+        description: 'Version to publish (e.g., 0.1.0, 1.2.3b1). Must be an explicit PEP 440 version. Leave empty to use the version in pyproject.toml as-is.'
         required: false
         type: string
 
@@ -18,15 +18,15 @@ jobs:
       run:
         working-directory: splunk-ao-adk
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.11'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
         with:
           enable-cache: true
           cache-dependency-glob: "**/splunk-ao-adk/pyproject.toml"
@@ -50,10 +50,10 @@ jobs:
     outputs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.11'
 
@@ -67,12 +67,16 @@ jobs:
           sed -i "s/^version = \".*\"/version = \"${PRE_VERSION}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${PRE_VERSION}\"/" src/splunk_ao_adk/__init__.py
 
-      # Manual dispatch: use the supplied version if provided.
+      # Manual dispatch: validate and use the supplied version if provided.
       - name: Override version
         if: github.event_name == 'workflow_dispatch' && inputs.version != ''
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
+          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([abprc.][0-9]+)*$'; then
+            echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit PEP 440 version (e.g. 0.1.0, 1.2.3b1). Bump keywords like 'patch' or 'major' are not accepted."
+            exit 1
+          fi
           sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_adk/__init__.py
 
@@ -88,7 +92,7 @@ jobs:
           python -m build
 
       - name: Upload distributables
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: splunk-ao-adk-${{ steps.get-version.outputs.version }}
           path: splunk-ao-adk/dist/
@@ -105,13 +109,13 @@ jobs:
 
     steps:
       - name: Download distributables
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: splunk-ao-adk-${{ needs.build.outputs.version }}
           path: dist/
 
       - name: Publish to Test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
