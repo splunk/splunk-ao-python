@@ -140,7 +140,7 @@ class SplunkAOOTLPExporter(OTLPSpanExporter):
         self.project = _get_project_or_default(ctx_project)
         self.logstream = _get_log_stream_or_default(ctx_logstream)
 
-        exporter_headers = {"Galileo-API-Key": api_key, "project": self.project, "logstream": self.logstream}
+        exporter_headers = {"Splunk-AO-Api-Key": api_key, "project": self.project, "logstream": self.logstream}
 
         super().__init__(endpoint=endpoint, headers=exporter_headers, **kwargs)
 

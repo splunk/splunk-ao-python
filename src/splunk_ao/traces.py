@@ -185,7 +185,7 @@ class IngestTraces:
         self.base_url = base_url.rstrip("/")
         self._headers = {
             "Content-Type": "application/json",
-            "Galileo-API-Key": api_key,
+            "Splunk-AO-Api-Key": api_key,
             "Splunk-AO-SDK": get_sdk_header(),
         }
         self._thread_local = local()
