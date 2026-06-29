@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 0.1.0, 1.2.3).'
+        description: 'Version to release (e.g., 0.1.0, 1.2.3). Must be an explicit PEP 440 version — bump keywords like "patch" or "minor" are not accepted.'
         required: true
         type: string
 
@@ -29,6 +29,10 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
+          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([abprc.][0-9]+)*$'; then
+            echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit PEP 440 version (e.g. 0.1.0, 1.2.3b1). Bump keywords like 'patch' or 'major' are not accepted."
+            exit 1
+          fi
           sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
           sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_a2a/_version.py
 
