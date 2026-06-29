@@ -31,12 +31,22 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if ! printf '%s' "$INPUT_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$'; then
+          # Use bash [[ =~ ]] so ^ and $ anchor the entire string, preventing
+          # multi-line inputs from bypassing the validation (grep -E matches per line).
+          if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?(\.post[0-9]+)?(\.dev[0-9]+)?$ ]]; then
             echo "::error::Invalid version '${INPUT_VERSION}'. Expected an explicit version like 0.1.0, 1.2.3rc1, or 1.2.3.post1. Bump keywords like 'patch' or 'major' are not accepted."
             exit 1
           fi
           sed -i "s/^version = \".*\"/version = \"${INPUT_VERSION}\"/" pyproject.toml
+          if ! grep -q "^version = \"${INPUT_VERSION}\"" pyproject.toml; then
+            echo "::error::Failed to set version in pyproject.toml — the version line format may have changed."
+            exit 1
+          fi
           sed -i "s/__version__ = \".*\"/__version__ = \"${INPUT_VERSION}\"/" src/splunk_ao_a2a/_version.py
+          if ! grep -q "__version__ = \"${INPUT_VERSION}\"" src/splunk_ao_a2a/_version.py; then
+            echo "::error::Failed to set __version__ in src/splunk_ao_a2a/_version.py — the version line format may have changed."
+            exit 1
+          fi
 
       - name: Get current version
         id: get-version
