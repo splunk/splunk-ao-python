@@ -142,21 +142,24 @@ def extract_docstrings_from_file(path: Path) -> FileDoc:
         examples = []
         for e in getattr(parsed, "examples", []) or []:
             code = ""
+            had_snippet = False
             snippet = getattr(e, "snippet", None)
             if snippet:
                 snippet = snippet.replace("\n>>> ", "\n")
             description = getattr(e, "description", None)
             if snippet and description:
+                had_snippet = True
                 if snippet.startswith(">>>"):
                     code = f"{snippet}\n{description.replace('... ', '').replace('>>> ', '')}"
                 else:
                     code = f"{snippet}\n{description}"
             elif snippet:
+                had_snippet = True
                 code = f"{snippet}"
             elif description:
                 code = f"{description}"
             if code:
-                examples.append({"code": code})
+                examples.append({"code": code, "had_snippet": had_snippet})
         if examples:
             out["examples"] = examples
 
@@ -633,10 +636,12 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
                     parts.append("```python")
                     parts.append(code[4:])
                     parts.append("```")
-                else:
+                elif ex.get("had_snippet"):
                     parts.append("```python")
                     parts.append(code)
                     parts.append("```")
+                else:
+                    parts.append(_escape_curly_braces(code))
             parts.append("")
         if fdoc.get("notes"):
             parts.append("**Notes**\n")
@@ -709,10 +714,12 @@ def write_class(parts: list[str], cls: Any) -> None:
                     parts.append("```python")
                     parts.append(code[4:])
                     parts.append("```")
-                else:
+                elif ex.get("had_snippet"):
                     parts.append("```python")
                     parts.append(code)
                     parts.append("```")
+                else:
+                    parts.append(_escape_curly_braces(code))
             parts.append("")
         if cdoc.get("returns"):
             parts.append("**Returns**\n")
