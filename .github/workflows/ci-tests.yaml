@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     runs-on: ${{ matrix.os }}
     # Hard cap per matrix job — bail out fast on real hangs instead of
@@ -41,6 +41,7 @@ jobs:
         run: pipx install poetry==2.4.1
 
       - name: Set up Python ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           cache: "poetry"
@@ -49,9 +50,7 @@ jobs:
 
       - name: Select matrix Python for Poetry
         run: |
-          poetry env remove --all
-          poetry env use python
-          poetry run python -c "import sys; expected=tuple(map(int, '${{ matrix.python-version }}'.split('.'))); actual=sys.version_info[:2]; print('Poetry Python:', sys.version); raise SystemExit(0 if actual == expected else 'Expected Python %s, got %s' % (expected, actual))"
+          poetry env use "${{ steps.setup-python.outputs.python-path }}"
 
       - name: Install invoke
         run: pipx install invoke

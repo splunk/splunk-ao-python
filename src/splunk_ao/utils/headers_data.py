@@ -6,7 +6,7 @@ from typing import Any
 def get_package_version() -> str:
     """Get the installed SDK distribution version."""
     try:
-        return version("galileo")
+        return version("splunk-ao")
     except PackageNotFoundError:
         return "0.0.0"  # Unknown version
 
@@ -61,7 +61,7 @@ def get_method_name() -> str:
 
 
 def get_sdk_header() -> str:
-    """Build the X-Galileo-SDK header value."""
+    """Build the Splunk-AO-SDK header value."""
     version = get_package_version()
     method_name = get_method_name()
 

@@ -1,6 +1,6 @@
 """Utilities for distributed tracing with Galileo."""
 
-from splunk_ao.decorator import galileo_context
+from splunk_ao.decorator import splunk_ao_context
 
 
 def get_tracing_headers() -> dict[str, str]:
@@ -13,7 +13,7 @@ def get_tracing_headers() -> dict[str, str]:
     Returns
     -------
     dict[str, str]
-        Dictionary with X-Galileo-Trace-ID and X-Galileo-Parent-ID headers
+        Dictionary with Splunk-AO-Trace-ID and Splunk-AO-Parent-ID headers
 
     Raises
     ------
@@ -42,4 +42,4 @@ def get_tracing_headers() -> dict[str, str]:
             )
     ```
     """
-    return galileo_context.get_logger_instance().get_tracing_headers()
+    return splunk_ao_context.get_logger_instance().get_tracing_headers()

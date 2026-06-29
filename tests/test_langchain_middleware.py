@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel
 
-from splunk_ao import galileo_context
+from splunk_ao import splunk_ao_context
 from splunk_ao.handlers.langchain.middleware import SplunkAOMiddleware
 from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -91,7 +91,7 @@ class RealArgsSchema(BaseModel):
 @patch("splunk_ao.logger.logger.LogStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def galileo_logger(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
+def splunk_ao_logger(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Creates a mock Galileo logger for testing."""
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -100,9 +100,9 @@ def galileo_logger(mock_traces_client: Mock, mock_projects_client: Mock, mock_lo
 
 
 @pytest.fixture
-def middleware(galileo_logger: SplunkAOLogger) -> SplunkAOMiddleware:
+def middleware(splunk_ao_logger: SplunkAOLogger) -> SplunkAOMiddleware:
     """Creates a SplunkAOMiddleware with a mock logger."""
-    return SplunkAOMiddleware(galileo_logger=galileo_logger, flush_on_chain_end=False)
+    return SplunkAOMiddleware(splunk_ao_logger=splunk_ao_logger, flush_on_chain_end=False)
 
 
 @pytest.fixture
@@ -124,19 +124,19 @@ def sample_state(sample_messages):
 
 
 class TestSplunkAOMiddlewareInitialization:
-    def test_default_initialization(self, galileo_logger: SplunkAOLogger) -> None:
+    def test_default_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test middleware initialization with default parameters."""
-        middleware = SplunkAOMiddleware(galileo_logger=galileo_logger)
+        middleware = SplunkAOMiddleware(splunk_ao_logger=splunk_ao_logger)
 
-        assert middleware._handler._galileo_logger == galileo_logger
-        assert middleware._async_handler._galileo_logger == galileo_logger
+        assert middleware._handler._splunk_ao_logger == splunk_ao_logger
+        assert middleware._async_handler._splunk_ao_logger == splunk_ao_logger
         assert middleware._handler._start_new_trace is True
         assert middleware._handler._flush_on_chain_end is True
         assert middleware._root_run_id is None
 
-    def test_custom_initialization(self, galileo_logger: SplunkAOLogger) -> None:
+    def test_custom_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test middleware initialization with custom parameters."""
-        middleware = SplunkAOMiddleware(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        middleware = SplunkAOMiddleware(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
 
         assert middleware._handler._start_new_trace is False
         assert middleware._handler._flush_on_chain_end is False
@@ -507,8 +507,8 @@ class TestIngestionHook:
         "middleware_builder",
         [
             lambda hook: SplunkAOMiddleware(ingestion_hook=hook),
-            lambda hook: SplunkAOMiddleware(galileo_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOMiddleware(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOMiddleware(splunk_ao_logger=SplunkAOLogger(), ingestion_hook=hook),
+            lambda hook: SplunkAOMiddleware(splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
         ],
     )
     def test_ingestion_hook_called(self, middleware_builder) -> None:

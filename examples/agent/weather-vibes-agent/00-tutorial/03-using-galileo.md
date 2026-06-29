@@ -1,0 +1,112 @@
+# Using Splunk AO with Weather Vibes Agent
+
+This document explains how to use Splunk AO for evaluating and monitoring the Weather Vibes agent.
+
+## What is Splunk AO?
+
+[Splunk AO](https://www.rungalileo.io/) is an AI observability and evaluation platform that helps you:
+
+- Track agent behavior
+- Collect and analyze traces
+- Evaluate agent performance
+- Identify areas for improvement
+- Monitor production deployments
+
+## Setup
+
+### 1. Install Splunk AO SDK
+
+```bash
+pip install -r requirements-galileo.txt
+```
+
+### 2. Configure Splunk AO details
+
+Create or edit your `.env` file and add your Splunk AO details:
+
+```
+# Splunk AO Environment Variables
+SPLUNK_AO_API_KEY=your-splunk-ao-api-key             # Your Splunk AO API key.
+SPLUNK_AO_PROJECT=your-splunk-ao-project-name        # Your Splunk AO project name.
+SPLUNK_AO_LOG_STREAM=your-splunk-ao-log-stream       # The name of the log stream you want to use for logging.
+
+# Provide the console url below if you are using a custom deployment, and not using app.galileo.ai
+# SPLUNK_AO_CONSOLE_URL=your-splunk-ao-console-url   # Optional if you are using a hosted version of Splunk AO
+```
+
+You can get your API key from the Splunk AO dashboard.
+
+## Running the Splunk AO-Instrumented Agent
+
+Run the agent with Splunk AO instrumentation:
+
+```bash
+python galileo_agent.py "San Francisco"
+```
+
+You can use all the same command-line arguments as the regular agent:
+
+```bash
+python galileo_agent.py --location "Tokyo" --units imperial --mood relaxing --verbose
+```
+
+## Understanding the Spans
+
+The Splunk AO-instrumented version of the agent includes several span types. Learn more about spans, the atomic unit of logging in Splunk AO, [here](https://docs.galileo.ai/getting-started/logging).
+
+1. **Workflow Span** (`workflow`):
+   - Captures the main agent workflow in `process_request`
+   - Shows how the agent processes the request end-to-end
+   - Also used for the main agent orchestration function
+
+2. **Tool Spans** (`tool`):
+   - Individual tool executions:
+     - `weather_tool`: WeatherAPI call
+     - `recommendations_tool`: Weather-based recommendations generation
+     - `youtube_tool`: YouTube video search
+
+3. **LLM Span** (`llm`):
+   - Used when a span invokes an LLM call
+   - Currently not used in this agent but available for future LLM integrations
+
+4. **Retriever Span** (`retriever`):
+   - Used when a span is retrieving data
+   - Currently not used in this agent but available for future retrieval operations
+
+## Viewing Traces in Splunk AO
+
+After running the agent, you can view the traces in the Splunk AO dashboard. The traces will show:
+
+- Request and response data for each span
+- Execution time for each component
+- Hierarchical view of the agent's workflow
+- Input/output data flow between components
+
+## Customizing Instrumentation
+
+You can add more spans or customize existing ones by modifying `agent.py`:
+
+1. **Adding LLM spans**: If you implement LLM-based tools, use `@log(span_type="llm")` decorators
+2. **Adding retrieval spans**: For document retrieval functions, use `@log(span_type="retriever")` decorators
+3. **Custom span names**: Modify the `name` parameter in decorators for better organization
+
+## Using Splunk AO for Evaluation
+
+You can use Splunk AO's evaluation features to:
+
+1. **Create eval datasets**: Build a set of test inputs for your agent
+2. **Define metrics**: Set up metrics to measure agent performance
+3. **Run evaluations**: Test your agent against the datasets
+4. **Analyze results**: Identify strengths and weaknesses
+5. **Improve the agent**: Make targeted improvements based on insights
+
+## Troubleshooting
+
+If you encounter issues with Splunk AO:
+
+- Check that your API key is correctly set in the environment
+- Ensure the Splunk AO SDK is properly installed
+- Verify that your spans are correctly configured
+- Check the Splunk AO documentation for more information
+
+For more information, visit the [Splunk AO documentation](https://docs.galileo.ai/what-is-galileo).

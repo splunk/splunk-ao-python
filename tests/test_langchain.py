@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, LLMResult
 
 from galileo_core.schemas.shared.document import Document as GalileoDocument
-from splunk_ao import Message, MessageRole, galileo_context
+from splunk_ao import Message, MessageRole, splunk_ao_context
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.handlers.langchain import SplunkAOAsyncCallback, SplunkAOCallback
 from splunk_ao.handlers.langchain.utils import parse_llm_result, update_root_to_agent
@@ -27,7 +27,7 @@ class TestSplunkAOCallback:
     @patch("splunk_ao.logger.logger.LogStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
-    def galileo_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
+    def splunk_ao_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
         """Creates a mock Galileo logger for testing"""
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
@@ -35,27 +35,27 @@ class TestSplunkAOCallback:
         return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
 
     @pytest.fixture
-    def callback(self, galileo_logger: SplunkAOLogger) -> Generator[SplunkAOCallback, None, None]:
+    def callback(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOCallback, None, None]:
         """Creates a SplunkAOCallback with a mock logger"""
-        return SplunkAOCallback(galileo_logger=galileo_logger, flush_on_chain_end=False)
+        return SplunkAOCallback(splunk_ao_logger=splunk_ao_logger, flush_on_chain_end=False)
         # Reset the root node before each test
         # Clean up after each test
 
-    def test_initialization(self, galileo_logger: SplunkAOLogger) -> None:
+    def test_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test callback initialization with various parameters"""
         # Default initialization
-        callback = SplunkAOCallback(galileo_logger=galileo_logger)
-        assert callback._handler._galileo_logger == galileo_logger
+        callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger)
+        assert callback._handler._splunk_ao_logger == splunk_ao_logger
         assert callback._handler._start_new_trace is True
         assert callback._handler._flush_on_chain_end is True
         assert callback._handler._nodes == {}
 
         # Custom initialization
-        callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
         assert callback._handler._start_new_trace is False
         assert callback._handler._flush_on_chain_end is False
 
-    def test_on_chain_start_end(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_on_chain_start_end(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test chain start and end callbacks"""
         run_id = uuid.uuid4()
 
@@ -71,7 +71,7 @@ class TestSplunkAOCallback:
         # End chain
         callback.on_chain_end(outputs='{"result": "test answer"}', run_id=run_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert traces[0].spans[0].name == "TestChain"
@@ -81,7 +81,7 @@ class TestSplunkAOCallback:
         assert traces[0].spans[0].step_number is None
 
     def test_on_chain_start_with_kwargs_serialised_none(
-        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
+        self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger
     ) -> None:
         run_id = uuid.uuid4()
 
@@ -112,7 +112,7 @@ class TestSplunkAOCallback:
         # End chain
         callback.on_chain_end(outputs='{"result": "test answer"}', run_id=run_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert traces[0].spans[0].name == "Agent"
@@ -124,7 +124,7 @@ class TestSplunkAOCallback:
         assert traces[0].spans[0].output == '{"result": "test answer"}'
         assert traces[0].spans[0].step_number is None
 
-    def test_on_agent_chain(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_on_agent_chain(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test agent chain handling"""
         run_id = uuid.uuid4()
 
@@ -140,7 +140,7 @@ class TestSplunkAOCallback:
 
         callback.on_agent_finish(finish=finish, run_id=run_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert traces[0].spans[0].name == "Agent"
@@ -233,7 +233,7 @@ class TestSplunkAOCallback:
         assert input_data[2]["role"] == "assistant"
 
     def test_on_chat_model_start_end_with_tools(
-        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
+        self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger
     ) -> None:
         """Test chat model start and end callbacks with tools"""
         run_id = uuid.uuid4()
@@ -292,7 +292,7 @@ class TestSplunkAOCallback:
 
         callback.on_llm_end(response=llm_response, run_id=run_id, parent_run_id=chain_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert traces[0].spans[0].name == "Chat"
@@ -471,7 +471,7 @@ class TestSplunkAOCallback:
         assert len(node.span_params["output"]) == 1
 
     def test_extracting_chain_names_from_metadata(
-        self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger
+        self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger
     ) -> None:
         """Test extracting chain names from metadata kwarg, with two nested chains"""
         chain_id = uuid.uuid4()
@@ -493,7 +493,7 @@ class TestSplunkAOCallback:
 
         callback.on_chain_end(outputs={"result": "test"}, run_id=chain_id2)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
 
         assert len(traces) == 1
 
@@ -503,7 +503,7 @@ class TestSplunkAOCallback:
         assert len(traces[0].spans[0].spans) == 1
         assert traces[0].spans[0].spans[0].name == "Test Chain 2"
 
-    def test_complex_execution_flow(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_complex_execution_flow(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test a complex execution flow with multiple component types"""
         # Create UUIDs for different components
         chain_id = uuid.uuid4()
@@ -571,7 +571,7 @@ class TestSplunkAOCallback:
             run_id=chain_id,
         )
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1  # 1 workflow span
         assert len(traces[0].spans[0].spans) == 3  # 3 child spans
@@ -689,14 +689,14 @@ class TestSplunkAOCallback:
         result = callback._get_node_name("chain", "not_a_dict")
         assert result == "Chain"  # Should capitalize the node_type
 
-    def test_callback_with_active_trace(self, galileo_logger: SplunkAOLogger) -> None:
+    def test_callback_with_active_trace(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test that the callback properly handles an active trace."""
         run_id = uuid.uuid4()
 
-        galileo_logger.start_trace(input="test input")
+        splunk_ao_logger.start_trace(input="test input")
 
         # Pass the active logger to the callback
-        callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
 
         # Start a chain (creates a workflow span)
         callback._handler.start_node("chain", None, run_id, name="Test Chain", input='{"query": "test"}')
@@ -711,9 +711,9 @@ class TestSplunkAOCallback:
         # End the chain (ends the workflow span)
         callback._handler.end_node(run_id, output='{"result": "test result"}')
 
-        galileo_logger.conclude(output="test output", status_code=200)
+        splunk_ao_logger.conclude(output="test output", status_code=200)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
 
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
@@ -725,7 +725,7 @@ class TestSplunkAOCallback:
         assert traces[0].spans[0].spans[0].input == "test query"
         assert traces[0].spans[0].spans[0].output == [GalileoDocument(content="test document", metadata={})]
 
-    def test_node_created_at(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_node_created_at(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         parent_id = uuid.uuid4()
         llm_run_id = uuid.uuid4()
         retriever_run_id = uuid.uuid4()
@@ -768,7 +768,7 @@ class TestSplunkAOCallback:
         # End chain
         callback.on_chain_end(outputs='{"result": "test answer"}', run_id=parent_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         assert len(traces[0].spans[0].spans) == 2
@@ -827,7 +827,7 @@ class TestSplunkAOCallback:
     def test_step_number_propagation(
         self,
         callback: SplunkAOCallback,
-        galileo_logger: SplunkAOLogger,
+        splunk_ao_logger: SplunkAOLogger,
         node_type,
         start_fn,
         end_fn,
@@ -859,21 +859,21 @@ class TestSplunkAOCallback:
         # End chain to trigger commit for non-root nodes
         if node_type not in ("chain", "agent"):
             callback.on_chain_end(outputs={"result": "test answer"}, run_id=parent_id)
-            traces = galileo_logger.traces
+            traces = splunk_ao_logger.traces
             assert len(traces) == 1
             assert len(traces[0].spans) == 1
             child_span = traces[0].spans[0].spans[0]
             assert child_span.type == expected_type
             assert child_span.step_number == step_number
         else:
-            traces = galileo_logger.traces
+            traces = splunk_ao_logger.traces
             assert len(traces) == 1
             assert len(traces[0].spans) == 1
             root_span = traces[0].spans[0]
             assert root_span.type == expected_type
             assert root_span.step_number == step_number
 
-    def test_on_nested_agent_chains(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_on_nested_agent_chains(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test nested agent chain handling and name change"""
         outer_run_id = uuid.uuid4()
         inner_run_id = uuid.uuid4()
@@ -892,7 +892,7 @@ class TestSplunkAOCallback:
         callback.on_agent_finish(finish=inner_finish, run_id=inner_run_id)
         callback.on_chain_end(outputs={"output": "outer result"}, run_id=outer_run_id)
 
-        traces = galileo_logger.traces
+        traces = splunk_ao_logger.traces
         assert len(traces) == 1
         assert len(traces[0].spans) == 1
         outer_span = traces[0].spans[0]
@@ -903,7 +903,7 @@ class TestSplunkAOCallback:
         assert inner_span.type == "agent"
         assert inner_span.name == "OuterChain:Agent"
 
-    def test_ai_message_with_list_content(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_ai_message_with_list_content(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with content as list of dicts (Responses API format)"""
         run_id = uuid.uuid4()
         parent_id = uuid.uuid4()
@@ -934,7 +934,7 @@ class TestSplunkAOCallback:
         assert input_data[0]["role"] == "assistant"
         assert input_data[0]["content"] == [{"type": "text", "text": "This is a response from the Responses API"}]
 
-    def test_ai_message_with_reasoning(self, callback: SplunkAOCallback, galileo_logger: SplunkAOLogger) -> None:
+    def test_ai_message_with_reasoning(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with reasoning in additional_kwargs"""
         run_id = uuid.uuid4()
         parent_id = uuid.uuid4()
@@ -1036,8 +1036,8 @@ class TestSplunkAOCallbackWithIngestionHook:
         "callback_builder",
         [
             lambda hook: SplunkAOCallback(ingestion_hook=hook),
-            lambda hook: SplunkAOCallback(galileo_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOCallback(galileo_logger=galileo_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(splunk_ao_logger=SplunkAOLogger(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
         ],
     )
     def test_on_chain_end_with_ingestion_hook(self, callback_builder):
@@ -1335,7 +1335,7 @@ class TestSplunkAOCallbackIngestionHookWithoutCredentials:
         callback = SplunkAOCallback(ingestion_hook=mock_hook)
 
         # Then: the callback is created successfully and the hook is attached
-        assert callback._handler._galileo_logger._ingestion_hook is mock_hook
+        assert callback._handler._splunk_ao_logger._ingestion_hook is mock_hook
 
     def test_async_callback_with_ingestion_hook_no_credentials(self):
         """SplunkAOAsyncCallback(ingestion_hook=...) should not require API credentials."""
@@ -1346,4 +1346,4 @@ class TestSplunkAOCallbackIngestionHookWithoutCredentials:
         callback = SplunkAOAsyncCallback(ingestion_hook=mock_hook)
 
         # Then: the callback is created successfully and the hook is attached
-        assert callback._handler._galileo_logger._ingestion_hook is mock_hook
+        assert callback._handler._splunk_ao_logger._ingestion_hook is mock_hook

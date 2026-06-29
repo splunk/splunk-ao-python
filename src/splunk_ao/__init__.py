@@ -32,7 +32,7 @@ from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnreso
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
-from splunk_ao.decorator import SplunkAODecorator, galileo_context, log, start_session
+from splunk_ao.decorator import SplunkAODecorator, splunk_ao_context, log, start_session
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -57,7 +57,7 @@ from splunk_ao.prompt import Prompt
 from splunk_ao.protect import ainvoke_protect, invoke_protect
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
 from splunk_ao.schema.message import Message
-from splunk_ao.schema.metrics import GalileoScorers, SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOMetrics
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import (
     APIError,
@@ -80,7 +80,7 @@ from splunk_ao.utils.log_config import enable_console_logging
 
 vars(sys)["_splunk_ao_suppress_galileo_deprecation_warning"] = False
 
-__version__ = "2.3.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "APIError",
@@ -107,7 +107,6 @@ __all__ = [
     "ExecutionStatus",
     "Experiment",
     "ForbiddenError",
-    "GalileoScorers",
     "Integration",
     "LlmMetric",
     "LlmSpan",
@@ -157,7 +156,7 @@ __all__ = [
     "create_protect_stage",
     "delete_api_key",
     "enable_console_logging",
-    "galileo_context",
+    "splunk_ao_context",
     "get_agent_control_target",
     "get_protect_stage",
     "get_tracing_headers",

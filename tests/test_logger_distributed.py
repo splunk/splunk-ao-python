@@ -26,14 +26,14 @@ from tests.testutils.setup import (
 LOGGER = logging.getLogger(__name__)
 
 
-def test_galileo_logger_exceptions() -> None:
+def test_splunk_ao_logger_exceptions() -> None:
     with pytest.raises(Exception) as exc_info:
         SplunkAOLogger(project="my_project", log_stream="my_log_stream", experiment_id="my_experiment_id")
     assert str(exc_info.value) == "User cannot specify both a log stream and an experiment."
 
 
 @patch("splunk_ao.logger.logger.Traces")
-def test_disable_galileo_logger(mock_traces_client: Mock, monkeypatch, caplog) -> None:
+def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog) -> None:
     monkeypatch.setenv("SPLUNK_AO_LOGGING_DISABLED", "true")
 
     with caplog.at_level(logging.WARNING):
@@ -1875,10 +1875,10 @@ def test_get_tracing_headers_with_workflow_span(
 
     headers = logger.get_tracing_headers()
 
-    assert "X-Galileo-Trace-ID" in headers
-    assert headers["X-Galileo-Trace-ID"] == str(logger.traces[0].id)
-    assert "X-Galileo-Parent-ID" in headers
-    assert headers["X-Galileo-Parent-ID"] == str(workflow_span.id)
+    assert "Splunk-AO-Trace-ID" in headers
+    assert headers["Splunk-AO-Trace-ID"] == str(logger.traces[0].id)
+    assert "Splunk-AO-Parent-ID" in headers
+    assert headers["Splunk-AO-Parent-ID"] == str(workflow_span.id)
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
@@ -1900,10 +1900,10 @@ def test_get_tracing_headers_with_agent_span(
 
     headers = logger.get_tracing_headers()
 
-    assert "X-Galileo-Trace-ID" in headers
-    assert headers["X-Galileo-Trace-ID"] == str(logger.traces[0].id)
-    assert "X-Galileo-Parent-ID" in headers
-    assert headers["X-Galileo-Parent-ID"] == str(agent_span.id)
+    assert "Splunk-AO-Trace-ID" in headers
+    assert headers["Splunk-AO-Trace-ID"] == str(logger.traces[0].id)
+    assert "Splunk-AO-Parent-ID" in headers
+    assert headers["Splunk-AO-Parent-ID"] == str(agent_span.id)
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
