@@ -1,0 +1,20 @@
+# Core dependencies
+fastapi
+uvicorn
+python-dotenv
+jinja2
+pydantic
+rich>=13.0.0
+galileo
+
+# Direct OpenAI dependency instead of relying on Simple Agent Framework's LLM utility
+openai>=1.0.0
+
+# API integrations
+requests
+google-api-python-client
+
+# Simple Agent Framework
+# Comment out if causing issues and use direct OpenAI client instead
+git+https://github.com/rungalileo/simple-agent-framework.git@main 
+
