@@ -58,8 +58,6 @@ from galileo_core.constants.request_method import RequestMethod  # noqa: E402
 from galileo_core.constants.routes import Routes as CoreRoutes  # noqa: E402
 from galileo_core.schemas.core.user import User  # noqa: E402
 from galileo_core.schemas.core.user_role import UserRole  # noqa: E402
-from galileo_core.schemas.protect.rule import Rule, RuleOperator  # noqa: E402
-from galileo_core.schemas.protect.ruleset import Ruleset  # noqa: E402
 from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
 from splunk_ao.config import SplunkAOConfig  # noqa: E402
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
@@ -307,32 +305,6 @@ def thread_pool_capture():
         return setup_thread_pool_request_capture(logger)
 
     return _capture_factory
-
-
-@pytest.fixture(
-    params=[
-        # Single ruleset with a single rule.
-        [Ruleset(rules=[Rule(metric="toxicity", operator=RuleOperator.gt, target_value=0.5)])],
-        # Single ruleset with multiple rules.
-        [
-            Ruleset(
-                rules=[
-                    Rule(metric="toxicity", operator=RuleOperator.gt, target_value=0.5),
-                    Rule(metric="tone", operator=RuleOperator.lt, target_value=0.8),
-                ]
-            )
-        ],
-        # Single ruleset with an unknown metric.
-        [Ruleset(rules=[Rule(metric="unknown", operator=RuleOperator.gt, target_value=0.5)])],
-        # Multiple rulesets with a single rule each.
-        [
-            Ruleset(rules=[Rule(metric="toxicity", operator=RuleOperator.gt, target_value=0.5)]),
-            Ruleset(rules=[Rule(metric="toxicity", operator=RuleOperator.lt, target_value=0.8)]),
-        ],
-    ]
-)
-def rulesets(request: pytest.FixtureRequest) -> list[Ruleset]:
-    return request.param
 
 
 @pytest.fixture

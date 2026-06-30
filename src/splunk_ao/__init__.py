@@ -22,12 +22,6 @@ from galileo_core.schemas.logging.span import (
 )
 from galileo_core.schemas.logging.step import StepType
 from galileo_core.schemas.logging.trace import Trace
-from galileo_core.schemas.protect.execution_status import ExecutionStatus
-from galileo_core.schemas.protect.payload import Payload
-from galileo_core.schemas.protect.request import Request
-from galileo_core.schemas.protect.response import Response
-from galileo_core.schemas.protect.ruleset import Ruleset
-from galileo_core.schemas.protect.stage import StageType
 from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
@@ -54,7 +48,6 @@ from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkA
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
-from splunk_ao.protect import ainvoke_protect, invoke_protect
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
 from splunk_ao.schema.message import Message
 from splunk_ao.schema.metrics import SplunkAOMetrics
@@ -66,13 +59,6 @@ from splunk_ao.shared.exceptions import (
     ResourceNotFoundError,
     SplunkAOFutureError,
     ValidationError,
-)
-from splunk_ao.stages import (
-    create_protect_stage,
-    get_protect_stage,
-    pause_protect_stage,
-    resume_protect_stage,
-    update_protect_stage,
 )
 from splunk_ao.tracing import get_tracing_headers
 from splunk_ao.types import MetricSpec
@@ -104,7 +90,6 @@ __all__ = [
     "ControlSpan",
     "Dataset",
     "Document",
-    "ExecutionStatus",
     "Experiment",
     "ForbiddenError",
     "Integration",
@@ -119,17 +104,13 @@ __all__ = [
     "Model",
     "NotFoundError",
     "OpenAIProvider",
-    "Payload",
     "Project",
     "Prompt",
     "Provider",
     "RateLimitError",
-    "Request",
     "ResourceConflictError",
     "ResourceNotFoundError",
-    "Response",
     "RetrieverSpan",
-    "Ruleset",
     "ServerError",
     "Session",
     "Span",
@@ -141,7 +122,6 @@ __all__ = [
     "SplunkAOLoggerException",
     "SplunkAOMetric",
     "SplunkAOMetrics",
-    "StageType",
     "StepType",
     "StepWithChildSpans",
     "SyncState",
@@ -151,22 +131,15 @@ __all__ = [
     "Trace",
     "ValidationError",
     "WorkflowSpan",
-    "ainvoke_protect",
     "create_api_key",
-    "create_protect_stage",
     "delete_api_key",
     "enable_console_logging",
     "splunk_ao_context",
     "get_agent_control_target",
-    "get_protect_stage",
     "get_tracing_headers",
-    "invoke_protect",
     "is_dependency_available",
     "list_api_keys",
     "log",
-    "pause_protect_stage",
-    "resume_protect_stage",
     "setup_agent_control_bridge",
     "start_session",
-    "update_protect_stage",
 ]
