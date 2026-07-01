@@ -1,0 +1,100 @@
+# Publishes SDK docs to the Splunk AO docs repo.
+name: Publish Docs
+
+on:
+  workflow_dispatch:
+  # When a Package Release workflow exists, add it here:
+  # workflow_run:
+  #   workflows: ["Package Release"]
+  #   types: [completed]
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          path: ./splunk-ao-python
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Docstring Parser
+        run: pip install 'docstring-parser>=0.17.0'
+
+      - name: Build Docs
+        working-directory: ./splunk-ao-python
+        run: python ./scripts/create_docs.py
+
+      - name: Verify Docs Output
+        working-directory: ./splunk-ao-python
+        run: |
+          count=$(find .generated_docs/reference -name "*.mdx" | wc -l)
+          echo "Generated $count .mdx files"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No .mdx files generated"
+            exit 1
+          fi
+
+      - name: Check out Docs repo
+        uses: actions/checkout@v5
+        with:
+          repository: splunk/agent-observability-docs
+          path: ./splunk-ao-docs
+          token: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+
+      - name: Create a branch
+        working-directory: ./splunk-ao-docs
+        run: git checkout -b feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
+
+      - name: Update SDK docs
+        run: |
+          rm -rf ./splunk-ao-docs/sdk-api/python/reference
+          mkdir -p ./splunk-ao-docs/sdk-api/python
+          cp -r ./splunk-ao-python/.generated_docs/reference ./splunk-ao-docs/sdk-api/python/
+
+      - name: Commit changes
+        id: commit
+        working-directory: ./splunk-ao-docs
+        env:
+          PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/agent-observability-docs.git
+          git add .
+          if git diff --cached --quiet; then
+            echo "No doc changes to publish"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          git commit -m "Updating docs from ${GITHUB_REF_NAME}-${{ github.run_id }}"
+          git push -u origin feat/update-docs-${GITHUB_REF_NAME}-${{ github.run_id }}
+
+      - name: Create PR
+        if: steps.commit.outputs.has_changes == 'true'
+        working-directory: ./splunk-ao-docs
+        env:
+          GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+          PR_BODY: |
+            This PR contains the latest updates to the Splunk AO Python SDK documentation.
+
+            The SDK doc generation will not change docs.json for new or removed files, so you
+            will need to manually commit a change to this PR for any file changes.
+
+            When reviewing this PR, please do the following:
+
+            - [ ] If there are any new files added by the PR, add them to the docs.json file in the right location
+            - [ ] If there are any files removed by the PR, remove them from the docs.json
+            - [ ] Launch the docs and check for any file path errors
+            - [ ] If any SDK docs are removed, check why — this should not happen. If the docstrings are wrong they should be fixed, not removed
+            - [ ] For added docs, check they are correct (e.g. match the function signature)
+
+            **DO NOT** approve this PR until you have completed these checks.
+        run: |
+          gh pr create --title "Updated Python SDK docs" --body "$PR_BODY"

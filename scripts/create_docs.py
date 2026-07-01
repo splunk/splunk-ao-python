@@ -142,21 +142,24 @@ def extract_docstrings_from_file(path: Path) -> FileDoc:
         examples = []
         for e in getattr(parsed, "examples", []) or []:
             code = ""
+            had_snippet = False
             snippet = getattr(e, "snippet", None)
             if snippet:
                 snippet = snippet.replace("\n>>> ", "\n")
             description = getattr(e, "description", None)
             if snippet and description:
+                had_snippet = True
                 if snippet.startswith(">>>"):
                     code = f"{snippet}\n{description.replace('... ', '').replace('>>> ', '')}"
                 else:
                     code = f"{snippet}\n{description}"
             elif snippet:
+                had_snippet = True
                 code = f"{snippet}"
             elif description:
                 code = f"{description}"
             if code:
-                examples.append({"code": code})
+                examples.append({"code": code, "had_snippet": had_snippet})
         if examples:
             out["examples"] = examples
 
@@ -501,6 +504,59 @@ def build_docs(files_docs: list[FileDoc], source_root: str, output_root: str) ->
     print(f"Documentation generation complete. Output written to {out_root}")
 
 
+def _escape_curly_braces(text: str) -> str:
+    """Escape { and } outside fenced and inline code blocks so MDX doesn't treat them as JSX."""
+    triple_segments = re.split(r"(```.*?```)", text, flags=re.DOTALL)
+    for i, triple_seg in enumerate(triple_segments):
+        if triple_seg.startswith("```"):
+            continue
+        single_segments = re.split(r"(`[^`]*`)", triple_seg)
+        for j, single_seg in enumerate(single_segments):
+            if not single_seg.startswith("`"):
+                single_seg = single_seg.replace("{", r"\{").replace("}", r"\}")
+            single_segments[j] = single_seg
+        triple_segments[i] = "".join(single_segments)
+    return "".join(triple_segments)
+
+
+def _convert_rst_code_blocks(text: str) -> str:
+    """Convert RST :: indented code blocks to fenced ```python blocks."""
+    lines = text.split("\n")
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.rstrip().endswith("::"):
+            # Emit the line with :: stripped (or removed if standalone)
+            stripped = line.rstrip()[:-2].rstrip()
+            out.append(stripped)
+            i += 1
+            # Collect the indented block that follows
+            block: list[str] = []
+            while i < len(lines) and (lines[i].strip() == "" or lines[i].startswith("    ")):
+                block.append(lines[i])
+                i += 1
+            # Strip trailing blank lines from block
+            while block and block[-1].strip() == "":
+                block.pop()
+            if block:
+                out.append("```python")
+                for bl in block:
+                    out.append(bl[4:] if bl.startswith("    ") else bl)
+                out.append("```")
+        else:
+            out.append(line)
+            i += 1
+    return "\n".join(out)
+
+
+def _sanitize_description(text: str) -> str:
+    """Convert RST code blocks and escape MDX-unsafe curly braces in description text."""
+    text = _convert_rst_code_blocks(text)
+    text = _escape_curly_braces(text)
+    return text
+
+
 def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
     """
     Append formatted documentation for a function to the provided parts list.
@@ -537,7 +593,7 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
     fdoc = fn.doc
     if isinstance(fdoc, dict):
         if fdoc.get("description"):
-            parts.append(f"{fdoc.get('description')}\n")
+            parts.append(f"{_sanitize_description(fdoc.get('description'))}\n")
         if fdoc.get("params"):
             parts.append("**Arguments**\n")
             for p in fdoc.get("params", []):
@@ -545,26 +601,7 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
                 t = p.get("type")
                 desc = p.get("description") or ""
                 desc = desc.replace("\n", "\n    ")
-
-                # Escape curly braces outside code blocks (triple or single backticks)
-                def escape_curly_braces(text: str) -> str:
-                    # Split by triple backtick code blocks first
-                    triple_segments = re.split(r"(```.*?```)", text, flags=re.DOTALL)
-                    for i, triple_seg in enumerate(triple_segments):
-                        if triple_seg.startswith("```"):
-                            # Inside triple backtick code block, leave as is
-                            continue
-                        # Now split by single backtick code blocks
-                        single_segments = re.split(r"(`[^`]*`)", triple_seg)
-                        for j, single_seg in enumerate(single_segments):
-                            if not single_seg.startswith("`"):
-                                single_seg = single_seg.replace("{", r"\{").replace("}", r"\}")
-                            single_segments[j] = single_seg
-                        triple_segments[i] = "".join(single_segments)
-                    return "".join(triple_segments)
-
-                desc = escape_curly_braces(desc)
-
+                desc = _escape_curly_braces(desc)
                 if t:
                     parts.append(f"- `{name}` (`{t}`): {desc}")
                 else:
@@ -574,7 +611,7 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
             parts.append("**Raises**\n")
             for r in fdoc.get("raises", []):
                 typ = r.get("type") or "Exception"
-                desc = r.get("description") or ""
+                desc = _escape_curly_braces(r.get("description") or "")
                 parts.append(f"- `{typ}`: {desc}")
             parts.append("")
         if fdoc.get("returns"):
@@ -582,29 +619,29 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
             ret = fdoc.get("returns")
             if ret:
                 rtyp = ret.get("type") or ""
-                rdesc = ret.get("description") or ""
+                rdesc = _escape_curly_braces(ret.get("description") or "")
                 if rtyp:
                     parts.append(f"- `{rtyp}`: {rdesc}\n")
                 else:
                     parts.append(f"- {rdesc}\n")
         if fdoc.get("examples"):
             parts.append("**Examples**\n")
-            is_in_code_block = False
             for ex in fdoc.get("examples", []):
                 code = ex.get("code")
-                if code:
-                    if not is_in_code_block and code.startswith(">>>"):
-                        is_in_code_block = True
-                        parts.append("```python")
-                    if is_in_code_block and not code.startswith(">>>") and not code.startswith("..."):
-                        is_in_code_block = False
-                        parts.append("```\n")
-                    if not code.startswith(">>>") and not code.startswith("..."):
-                        parts.append(code)
-                    else:
-                        parts.append(code[4:])
-            if is_in_code_block:
-                parts.append("```\n")
+                if not code:
+                    continue
+                if "```" in code:
+                    parts.append(code)
+                elif code.startswith(">>>") or code.startswith("..."):
+                    parts.append("```python")
+                    parts.append(code[4:])
+                    parts.append("```")
+                elif ex.get("had_snippet"):
+                    parts.append("```python")
+                    parts.append(code)
+                    parts.append("```")
+                else:
+                    parts.append(_escape_curly_braces(code))
             parts.append("")
         if fdoc.get("notes"):
             parts.append("**Notes**\n")
@@ -651,7 +688,7 @@ def write_class(parts: list[str], cls: Any) -> None:
     cdoc = cls.doc
     if isinstance(cdoc, dict):
         if cdoc.get("description"):
-            parts.append(f"{cdoc.get('description')}\n")
+            parts.append(f"{_sanitize_description(cdoc.get('description'))}\n")
         if cdoc.get("params"):
             parts.append("**Arguments**\n")
             for p in cdoc.get("params", []):
@@ -659,6 +696,7 @@ def write_class(parts: list[str], cls: Any) -> None:
                 t = p.get("type")
                 desc = p.get("description") or ""
                 desc = desc.replace("\n", "\n    ")
+                desc = _escape_curly_braces(desc)
                 if t:
                     parts.append(f"- `{name}` (`{t}`): {desc}\n")
                 else:
@@ -666,29 +704,29 @@ def write_class(parts: list[str], cls: Any) -> None:
 
         if cdoc.get("examples"):
             parts.append("**Examples**\n")
-            is_in_code_block = False
             for ex in cdoc.get("examples", []):
                 code = ex.get("code")
-                if code:
-                    if not is_in_code_block and code.startswith(">>>"):
-                        is_in_code_block = True
-                        parts.append("```python")
-                    if is_in_code_block and not code.startswith(">>>") and not code.startswith("..."):
-                        is_in_code_block = False
-                        parts.append("```\n")
-                    if not code.startswith(">>>") and not code.startswith("..."):
-                        parts.append(code)
-                    else:
-                        parts.append(code[4:])
-            if is_in_code_block:
-                parts.append("```\n")
+                if not code:
+                    continue
+                if "```" in code:
+                    parts.append(code)
+                elif code.startswith(">>>") or code.startswith("..."):
+                    parts.append("```python")
+                    parts.append(code[4:])
+                    parts.append("```")
+                elif ex.get("had_snippet"):
+                    parts.append("```python")
+                    parts.append(code)
+                    parts.append("```")
+                else:
+                    parts.append(_escape_curly_braces(code))
             parts.append("")
         if cdoc.get("returns"):
             parts.append("**Returns**\n")
             ret = cdoc.get("returns")
             if ret:
                 rtyp = ret.get("type") or ""
-                rdesc = ret.get("description") or ""
+                rdesc = _escape_curly_braces(ret.get("description") or "")
                 if rtyp:
                     parts.append(f"- `{rtyp}`: {rdesc}\n")
                 else:
@@ -736,17 +774,15 @@ def write_module(fd: FileDoc, parts: list[str]) -> None:
     md = fd.module.doc
     if isinstance(md, dict):
         if md.get("description"):
-            parts.append(f"{md.get('description')}\n")
+            parts.append(f"{_sanitize_description(md.get('description'))}\n")
         if md.get("params"):
             parts.append("**Arguments**\n")
             for p in md.get("params", []):
                 name = p.get("name") or "<arg>"
                 t = p.get("type")
                 desc = p.get("description") or ""
-
-                # If description is multi-line, indent subsequent lines for better Markdown rendering
                 desc = desc.replace("\n", "\n    ")
-
+                desc = _escape_curly_braces(desc)
                 if t:
                     parts.append(f"- `{name}` (`{t}`): {desc}\n")
                 else:
@@ -755,14 +791,14 @@ def write_module(fd: FileDoc, parts: list[str]) -> None:
             parts.append("**Raises**\n")
             for r in md.get("raises", []):
                 typ = r.get("type") or "Exception"
-                desc = r.get("description") or ""
+                desc = _escape_curly_braces(r.get("description") or "")
                 parts.append(f"- `{typ}`: {desc}\n")
         if md.get("returns"):
             parts.append("**Returns**\n")
             ret = md.get("returns")
             if ret:
                 rtyp = ret.get("type") or ""
-                rdesc = ret.get("description") or ""
+                rdesc = _escape_curly_braces(ret.get("description") or "")
                 if rtyp:
                     parts.append(f"- `{rtyp}`: {rdesc}\n")
                 else:
