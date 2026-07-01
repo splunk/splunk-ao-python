@@ -1,4 +1,4 @@
-# Contributing to the Galileo Python SDK
+# Contributing to the Splunk Agent Observability Python SDK
 
 ## Local Installation
 
