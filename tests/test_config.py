@@ -28,11 +28,9 @@ def _clear_auth_env(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 # Every (SPLUNK_AO_*, GALILEO_*) pair defined in _bridge_env_vars.
-# Note: SPLUNK_AO_API_URL is intentionally excluded — api_url is an internal
-# field derived automatically from console_url in galileo-core; there is no
-# user-facing GALILEO_API_URL env var in the upstream SDK.
 _ALL_BRIDGE_PAIRS = [
     ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
+    ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
     ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
     ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
     ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
@@ -49,6 +47,8 @@ _ALL_BRIDGE_PAIRS = [
 # Safe test values per key — URL keys must be valid URLs to avoid leaking
 # an invalid GALILEO_* URL into the shared os.environ and breaking other tests.
 _TEST_VALUE: dict[str, str] = {
+    "SPLUNK_AO_API_URL": "https://splunk-ao-api-test.example.com",
+    "GALILEO_API_URL": "https://galileo-api-test.example.com",
     "SPLUNK_AO_CONSOLE_URL": "https://splunk-ao-test.example.com",
     "GALILEO_CONSOLE_URL": "https://galileo-test.example.com",
 }
