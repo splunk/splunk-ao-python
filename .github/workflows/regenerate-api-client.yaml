@@ -45,13 +45,14 @@ jobs:
       - name: Fetch API types and regenerate
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+          API_URL: ${{ secrets.SPLUNK_AO_API_URL }}
           BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/splunk-ao-python.git
           git checkout -b $BRANCH_NAME
-          poetry run ./scripts/import-openapi-yaml.sh ${{ secrets.SPLUNK_AO_API_URL }}
+          poetry run ./scripts/import-openapi-yaml.sh "$API_URL"
           poetry run ./scripts/auto-generate-api-client.sh
           git add .
           if git diff --cached --quiet; then
@@ -59,7 +60,7 @@ jobs:
             exit 0
           fi
           git commit -m "Update API Client"
-          git push --force origin $BRANCH_NAME
+          git push origin $BRANCH_NAME
 
       - name: Create pull request
         env:

@@ -3,14 +3,13 @@ name: Publish Docs
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Package Release"]
-    types:
-      - completed
+  # When a Package Release workflow exists, add it here:
+  # workflow_run:
+  #   workflows: ["Package Release"]
+  #   types: [completed]
 
 jobs:
   publish-docs:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +24,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install Docstring Parser
-        run: pip install docstring-parser>=0.17.0
+        run: pip install 'docstring-parser>=0.17.0'
 
       - name: Build Docs
         working-directory: ./splunk-ao-python
