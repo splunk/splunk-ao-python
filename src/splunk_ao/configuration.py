@@ -27,7 +27,7 @@ class ConfigKey:
     Attributes
     ----------
     name : str
-        The attribute name used in the Configuration class (e.g., "galileo_api_key").
+        The attribute name used in the Configuration class (e.g., "splunk_ao_api_key").
     env_var : str
         The corresponding environment variable name (e.g., "SPLUNK_AO_API_KEY").
     description : str
@@ -71,7 +71,7 @@ def parse_log_level(value: str) -> str:
 
 _CONFIGURATION_KEYS = [
     ConfigKey(
-        name="galileo_api_key",
+        name="splunk_ao_api_key",
         env_var="SPLUNK_AO_API_KEY",
         description="API key for authenticating with Splunk Agent Observability",
         required=True,
@@ -166,17 +166,17 @@ class ConfigurationMeta(type):
 
     This metaclass enables the Configuration class to provide dynamic attribute access
     with automatic resolution from multiple sources. When accessing a configuration
-    attribute (e.g., `Configuration.galileo_api_key`), the metaclass:
+    attribute (e.g., `Configuration.splunk_ao_api_key`), the metaclass:
 
     1. Checks if the attribute is in _CONFIGURATION_KEYS
     2. Resolves the value from: explicit value → environment variable → .env file → default
     3. Applies type conversion and validation if a parser is defined
     4. Returns the resolved value
 
-    When setting a configuration attribute (e.g., `Configuration.galileo_api_key = "key"`),
+    When setting a configuration attribute (e.g., `Configuration.splunk_ao_api_key = "key"`),
     the metaclass:
 
-    1. Stores the value internally (with underscore prefix: `_galileo_api_key`)
+    1. Stores the value internally (with underscore prefix: `_splunk_ao_api_key`)
     2. Automatically updates the corresponding environment variable
     3. Ensures compatibility with libraries that read from os.environ
 
@@ -241,7 +241,7 @@ class ConfigurationMeta(type):
         Set configuration attribute and sync to environment variable.
 
         When setting a configuration key, the value is:
-        1. Stored internally with underscore prefix (e.g., `_galileo_api_key`)
+        1. Stored internally with underscore prefix (e.g., `_splunk_ao_api_key`)
         2. Synced to the corresponding environment variable (e.g., `SPLUNK_AO_API_KEY`)
 
         This ensures that both the Configuration class and environment variables
@@ -288,7 +288,7 @@ class Configuration(metaclass=ConfigurationMeta):
     Attributes
     ----------
     Configuration attributes are dynamically provided based on _CONFIGURATION_KEYS:
-        galileo_api_key (str): API key for Galileo authentication (sensitive)
+        splunk_ao_api_key (str): API key for Galileo authentication (sensitive)
         console_url (str): URL of the Galileo console
         openai_api_key (str): OpenAI API key for SDK interoperability (sensitive)
         default_project_name (str): Default project name
@@ -303,14 +303,14 @@ class Configuration(metaclass=ConfigurationMeta):
     Reading configuration values:
     ```python
     # Access via class attribute (reads from env vars, .env, or defaults)
-    api_key = Configuration.galileo_api_key
+    api_key = Configuration.splunk_ao_api_key
     url = Configuration.console_url
     ```
 
     Setting configuration values:
     ```python
     # Set explicitly (also updates environment variables)
-    Configuration.galileo_api_key = "your-api-key"
+    Configuration.splunk_ao_api_key = "your-api-key"
     Configuration.console_url = "your-console-url"
     ```
 
@@ -325,7 +325,7 @@ class Configuration(metaclass=ConfigurationMeta):
     ```python
     # Get all configuration values (sensitive values are masked)
     config = Configuration.get_configuration()
-    print(config["galileo_api_key"])  # Output: "***"
+    print(config["splunk_ao_api_key"])  # Output: "***"
     print(config["console_url"])       # Output: actual URL
     ```
 
@@ -348,7 +348,7 @@ class Configuration(metaclass=ConfigurationMeta):
     Notes
     -----
     - The Configuration class should not be instantiated; use it as a static class
-    - Direct attribute access (e.g., `Configuration.galileo_api_key`) is the recommended pattern
+    - Direct attribute access (e.g., `Configuration.splunk_ao_api_key`) is the recommended pattern
     - The `get_configuration()` method masks sensitive values for safe display/logging
     - Setting an attribute automatically updates the corresponding environment variable
     - This design maintains compatibility with third-party libraries expecting env vars
@@ -386,9 +386,9 @@ class Configuration(metaclass=ConfigurationMeta):
         """Validate configuration and connect to Galileo."""
         cls._load_env_file()
 
-        if not cls.galileo_api_key:
+        if not cls.splunk_ao_api_key:
             raise ConfigurationError(
-                "Splunk AO API key is required. Set Configuration.galileo_api_key or SPLUNK_AO_API_KEY."
+                "Splunk AO API key is required. Set Configuration.splunk_ao_api_key or SPLUNK_AO_API_KEY."
             )
 
         logger.info("Validating Galileo configuration and connectivity...")

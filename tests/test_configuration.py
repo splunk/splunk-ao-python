@@ -150,7 +150,7 @@ class TestConfigurationProperties:
         """Test that internal state takes precedence over environment variables for all keys."""
         # Test with a few representative keys
         test_cases = [
-            ("galileo_api_key", "env-key", "internal-key"),
+            ("splunk_ao_api_key", "env-key", "internal-key"),
             ("console_url", "https://env.galileo.ai", "https://internal.galileo.ai"),
             ("default_project_name", "env-project", "internal-project"),
         ]
@@ -177,7 +177,7 @@ class TestConfigurationEnvFileLoading:
         )
 
         # Access property to trigger env file loading
-        api_key = Configuration.galileo_api_key
+        api_key = Configuration.splunk_ao_api_key
 
         # Verify env file was loaded
         assert api_key == "env-file-key"
@@ -195,7 +195,7 @@ class TestConfigurationEnvFileLoading:
         mock_env_file.write_text('SPLUNK_AO_API_KEY="env-file-key"\n')
 
         # Access property to trigger env file loading
-        api_key = Configuration.galileo_api_key
+        api_key = Configuration.splunk_ao_api_key
 
         # Verify existing env var is preserved
         assert api_key == "existing-env-key"
@@ -215,10 +215,10 @@ class TestConfigurationEnvFileLoading:
         )
 
         # Trigger loading
-        _ = Configuration.galileo_api_key
+        _ = Configuration.splunk_ao_api_key
 
         # Verify all values are loaded correctly
-        assert Configuration.galileo_api_key == "key-without-quotes"
+        assert Configuration.splunk_ao_api_key == "key-without-quotes"
         assert Configuration.console_url == "url-with-double-quotes"
         assert Configuration.openai_api_key == "key-with-single-quotes"
 
@@ -229,7 +229,7 @@ class TestConfigurationEnvFileLoading:
         mock_env_file.write_text('SPLUNK_AO_API_KEY="test-key"\n')
 
         # Access multiple times
-        _ = Configuration.galileo_api_key
+        _ = Configuration.splunk_ao_api_key
         _ = Configuration.console_url
         _ = Configuration.openai_api_key
 
@@ -250,7 +250,7 @@ class TestConfigurationEnvFileLoading:
         mock_env_file.write_text("INVALID_LINE_WITHOUT_EQUALS\n")
 
         # This should not raise an exception
-        api_key = Configuration.galileo_api_key
+        api_key = Configuration.splunk_ao_api_key
 
         # Verify operation continues (returns None since no valid config)
         assert api_key is None
@@ -324,7 +324,7 @@ class TestConfigurationConnect:
 
         # Verify error message provides helpful guidance
         assert "splunk ao api key is required" in str(exc_info.value).lower()
-        assert "Configuration.galileo_api_key" in str(exc_info.value)
+        assert "Configuration.splunk_ao_api_key" in str(exc_info.value)
 
     @pytest.mark.parametrize(
         "error_type,error_message,expected_in_error",
@@ -454,7 +454,7 @@ class TestConfigurationGetConfiguration:
     def test_get_configuration_returns_all_keys(self, clean_env: None, reset_configuration: None) -> None:
         """Test get_configuration() returns all keys from CONFIGURATION_KEYS."""
         # Set a few values
-        Configuration.galileo_api_key = "test-key"
+        Configuration.splunk_ao_api_key = "test-key"
         Configuration.console_url = "https://test.galileo.ai"
 
         config = Configuration.get_configuration()
