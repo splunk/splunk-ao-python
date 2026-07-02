@@ -151,7 +151,7 @@ class TestConfigurationProperties:
         # Test with a few representative keys
         test_cases = [
             ("splunk_ao_api_key", "env-key", "internal-key"),
-            ("console_url", "https://env.galileo.ai", "https://internal.galileo.ai"),
+            ("console_url", "https://env.Splunk AO.ai", "https://internal.Splunk AO.ai"),
             ("default_project_name", "env-project", "internal-project"),
         ]
 
@@ -172,7 +172,7 @@ class TestConfigurationEnvFileLoading:
         # Create .env file with test values
         mock_env_file.write_text(
             'SPLUNK_AO_API_KEY="env-file-key"\n'
-            'SPLUNK_AO_CONSOLE_URL="https://envfile.galileo.ai"\n'
+            'SPLUNK_AO_CONSOLE_URL="https://envfile.Splunk AO.ai"\n'
             'OPENAI_API_KEY="env-file-openai"\n'
         )
 
@@ -181,7 +181,7 @@ class TestConfigurationEnvFileLoading:
 
         # Verify env file was loaded
         assert api_key == "env-file-key"
-        assert Configuration.console_url == "https://envfile.galileo.ai"
+        assert Configuration.console_url == "https://envfile.Splunk AO.ai"
         assert Configuration.openai_api_key == "env-file-openai"
 
     def test_env_file_does_not_override_existing_env_vars(
@@ -271,15 +271,15 @@ class TestConfigurationConnect:
 
         # Set valid configuration
         monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
-        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.Splunk AO.ai")
 
         # Connect should succeed without raising
         Configuration.connect()
 
         # Verify logging occurred (no print statements)
         logs = log_stream.getvalue()
-        assert "Validating Galileo configuration" in logs
-        assert "Successfully connected to Galileo" in logs
+        assert "Validating Splunk AO configuration" in logs
+        assert "Successfully connected to Splunk AO" in logs
 
     def test_connect_passes_without_console_url(
         self,
@@ -299,8 +299,8 @@ class TestConfigurationConnect:
 
         # Verify logging occurred (no print statements)
         logs = log_stream.getvalue()
-        assert "Validating Galileo configuration" in logs
-        assert "Successfully connected to Galileo" in logs
+        assert "Validating Splunk AO configuration" in logs
+        assert "Successfully connected to Splunk AO" in logs
 
         # Verify console URL is set to default
         assert Configuration.console_url == "https://app.galileo.ai/"
@@ -316,7 +316,7 @@ class TestConfigurationConnect:
         _, log_stream = capture_logs
 
         # Set only console URL
-        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.Splunk AO.ai")
 
         # Should raise ConfigurationError
         with pytest.raises(ConfigurationError) as exc_info:
@@ -351,7 +351,7 @@ class TestConfigurationConnect:
 
         # Set valid configuration
         monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
-        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai")
+        monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.Splunk AO.ai")
 
         # Mock SplunkAOConfig.get to raise appropriate error
         mock_config_get.side_effect = Exception(error_message)
@@ -364,7 +364,7 @@ class TestConfigurationConnect:
 
         # Verify error is logged
         logs = log_stream.getvalue()
-        assert "Failed to connect to Galileo" in logs
+        assert "Failed to connect to Splunk AO" in logs
 
 
 class TestConfigurationReset:
@@ -455,7 +455,7 @@ class TestConfigurationGetConfiguration:
         """Test get_configuration() returns all keys from CONFIGURATION_KEYS."""
         # Set a few values
         Configuration.splunk_ao_api_key = "test-key"
-        Configuration.console_url = "https://test.galileo.ai"
+        Configuration.console_url = "https://test.Splunk AO.ai"
 
         config = Configuration.get_configuration()
 
@@ -532,8 +532,8 @@ class TestConfigurationIntegration:
 
         # Verify logging was used throughout
         logs = log_stream.getvalue()
-        assert "Validating Galileo configuration" in logs
-        assert "Successfully connected to Galileo" in logs
+        assert "Validating Splunk AO configuration" in logs
+        assert "Successfully connected to Splunk AO" in logs
 
     def test_configuration_with_env_file_workflow(
         self, mock_env_file: Path, clean_env: None, reset_configuration: None, mock_api_endpoints: MagicMock

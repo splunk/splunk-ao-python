@@ -288,14 +288,14 @@ class Configuration(metaclass=ConfigurationMeta):
     Attributes
     ----------
     Configuration attributes are dynamically provided based on _CONFIGURATION_KEYS:
-        splunk_ao_api_key (str): API key for Galileo authentication (sensitive)
-        console_url (str): URL of the Galileo console
+        splunk_ao_api_key (str): API key for Splunk AO authentication (sensitive)
+        console_url (str): URL of the Splunk AO console
         openai_api_key (str): OpenAI API key for SDK interoperability (sensitive)
         default_project_name (str): Default project name
         default_project_id (str): Default project ID
         default_logstream_name (str): Default log stream name
         default_logstream_id (str): Default log stream ID
-        logging_disabled (bool): Disable all telemetry logging to Galileo
+        logging_disabled (bool): Disable all telemetry logging to Splunk AO
         log_level (str): Python logging level for SDK console output
 
     Examples
@@ -383,7 +383,7 @@ class Configuration(metaclass=ConfigurationMeta):
 
     @classmethod
     def connect(cls) -> None:
-        """Validate configuration and connect to Galileo."""
+        """Validate configuration and connect to Splunk AO."""
         cls._load_env_file()
 
         if not cls.splunk_ao_api_key:
@@ -391,14 +391,14 @@ class Configuration(metaclass=ConfigurationMeta):
                 "Splunk AO API key is required. Set Configuration.splunk_ao_api_key or SPLUNK_AO_API_KEY."
             )
 
-        logger.info("Validating Galileo configuration and connectivity...")
+        logger.info("Validating Splunk AO configuration and connectivity...")
 
         try:
             SplunkAOConfig.get()
-            logger.info("Successfully connected to Galileo")
+            logger.info("Successfully connected to Splunk AO")
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"Failed to connect to Galileo: {error_msg}")
+            logger.error(f"Failed to connect to Splunk AO: {error_msg}")
 
             error_lower = error_msg.lower()
             if ("api" in error_lower and "key" in error_lower) or "auth" in error_lower:
