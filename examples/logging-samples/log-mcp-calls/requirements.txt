@@ -1,4 +1,4 @@
 anthropic
-galileo
+splunk-ao
 mcp
 python-dotenv

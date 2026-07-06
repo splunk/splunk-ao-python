@@ -7,19 +7,19 @@ anyio==4.12.1
     #   httpx
     #   openai
 attrs==25.4.0
-    # via galileo
+    # via splunk-ao
 backoff==2.2.1
-    # via galileo
+    # via splunk-ao
 certifi==2026.1.4
     # via
     #   httpcore
     #   httpx
 distro==1.9.0
     # via openai
-galileo==1.42.0
+splunk-ao
     # via openai-responses (pyproject.toml)
 galileo-core==3.84.0
-    # via galileo
+    # via splunk-ao
 h11==0.16.0
     # via httpcore
 httpcore==1.0.9
@@ -40,7 +40,7 @@ packaging==26.0
     # via openai-responses (pyproject.toml)
 pydantic==2.12.5
     # via
-    #   galileo
+    #   splunk-ao
     #   galileo-core
     #   openai
     #   pydantic-partial
@@ -53,10 +53,10 @@ pydantic-settings==2.12.0
     # via galileo-core
 pyjwt==2.10.1
     # via
-    #   galileo
+    #   splunk-ao
     #   galileo-core
 python-dateutil==2.9.0.post0
-    # via galileo
+    # via splunk-ao
 python-dotenv==1.2.1
     # via pydantic-settings
 six==1.17.0
@@ -80,4 +80,4 @@ typing-inspection==0.4.2
 uvloop==0.21.0
     # via galileo-core
 wrapt==1.17.3
-    # via galileo
+    # via splunk-ao
