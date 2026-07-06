@@ -1,16 +1,18 @@
 import asyncio
-from agent import SimpleAgent
-from agent_framework.llm.openai_provider import OpenAIProvider
-from agent_framework.llm.models import LLMConfig
-from splunk_ao import splunk_ao_context
 import os
+
+from agent import SimpleAgent
+from agent_framework.llm.models import LLMConfig
+from agent_framework.llm.openai_provider import OpenAIProvider
 from dotenv import load_dotenv
+
+from splunk_ao import splunk_ao_context
 
 # Load environment variables
 load_dotenv()
 
 
-async def main():
+async def main() -> None:
     # Ensure Splunk AO environment variables are set
     if not os.getenv("SPLUNK_AO_API_KEY"):
         print("Warning: SPLUNK_AO_API_KEY not set. Splunk AO logging will be disabled.")

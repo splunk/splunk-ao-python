@@ -1,8 +1,8 @@
-from splunk_ao import splunk_ao_context  # The Splunk AO context manager
-from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
-
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
+from splunk_ao import splunk_ao_context  # The Splunk AO context manager
+from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
 
 load_dotenv()
 
@@ -21,7 +21,6 @@ prompt_output_data = [
 logger = splunk_ao_context.get_logger_instance()
 
 for i in range(len(prompt_input_data)):
-
     prompt_output = prompt_output_data[0]
 
     # Start a session
@@ -31,7 +30,12 @@ for i in range(len(prompt_input_data)):
     trace = logger.start_trace("This is a trace start")
 
     # Add a retriever span for document retrieval
-    logger.add_retriever_span(input="Who's a good bot?", output=["Research shows that I am a good bot."], name="Document Retrieval", duration_ns=1000000)
+    logger.add_retriever_span(
+        input="Who's a good bot?",
+        output=["Research shows that I am a good bot."],
+        name="Document Retrieval",
+        duration_ns=1000000,
+    )
 
     # Add an LLM span for generating a response
     logger.add_llm_span(

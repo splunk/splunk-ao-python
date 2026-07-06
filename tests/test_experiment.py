@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -26,8 +26,8 @@ def mock_experiment_response() -> MagicMock:
     mock_response = MagicMock(spec=ExperimentResponse)
     mock_response.id = str(uuid4())
     mock_response.name = "Test Experiment"
-    mock_response.created_at = datetime.now(timezone.utc)
-    mock_response.updated_at = datetime.now(timezone.utc)
+    mock_response.created_at = datetime.now(UTC)
+    mock_response.updated_at = datetime.now(UTC)
     mock_response.additional_properties = {}
     mock_response.dataset = None
     mock_response.prompt = None
@@ -809,15 +809,15 @@ class TestExperimentList:
         mock_exp1 = MagicMock(spec=ExperimentResponse)
         mock_exp1.id = str(uuid4())
         mock_exp1.name = "Experiment 1"
-        mock_exp1.created_at = datetime.now(timezone.utc)
-        mock_exp1.updated_at = datetime.now(timezone.utc)
+        mock_exp1.created_at = datetime.now(UTC)
+        mock_exp1.updated_at = datetime.now(UTC)
         mock_exp1.additional_properties = {}
 
         mock_exp2 = MagicMock(spec=ExperimentResponse)
         mock_exp2.id = str(uuid4())
         mock_exp2.name = "Experiment 2"
-        mock_exp2.created_at = datetime.now(timezone.utc)
-        mock_exp2.updated_at = datetime.now(timezone.utc)
+        mock_exp2.created_at = datetime.now(UTC)
+        mock_exp2.updated_at = datetime.now(UTC)
         mock_exp2.additional_properties = {}
 
         mock_experiments_service = MagicMock()
@@ -1754,7 +1754,7 @@ class TestExperimentStringRepresentation:
         experiment.name = "Test Experiment"
         experiment.id = "test-id"
         experiment.project_id = "project-id"
-        experiment.created_at = datetime.now(timezone.utc)
+        experiment.created_at = datetime.now(UTC)
 
         result = repr(experiment)
 

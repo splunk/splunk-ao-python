@@ -1,7 +1,8 @@
 import os
+
 from dotenv import load_dotenv
 
-from splunk_ao import splunk_ao_context, openai
+from splunk_ao import openai, splunk_ao_context
 
 load_dotenv()
 
@@ -13,7 +14,9 @@ client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 def call_openai():
-    chat_completion = client.chat.completions.create(messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-4o")
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-4o"
+    )
 
     return chat_completion.choices[0].message.content
 

@@ -1,6 +1,7 @@
-from typing import Dict, Any
-from agent_framework.tools.base import BaseTool
+from typing import Any
+
 from agent_framework.models import ToolMetadata
+from agent_framework.tools.base import BaseTool
 
 
 class TextAnalyzerTool(BaseTool):
@@ -28,7 +29,7 @@ class TextAnalyzerTool(BaseTool):
             },
         )
 
-    async def execute(self, text: str) -> Dict[str, Any]:
+    async def execute(self, text: str) -> dict[str, Any]:
         """Analyze text complexity"""
         # Simple implementation - in real world would use NLP
         word_count = len(text.split())

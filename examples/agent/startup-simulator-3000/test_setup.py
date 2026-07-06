@@ -4,13 +4,14 @@ Test script to verify Startup Simulator 3000 setup
 Run this script to check if everything is configured correctly
 """
 
+import importlib
 import os
 import sys
-import importlib
+
 from dotenv import load_dotenv
 
 
-def test_python_version():
+def test_python_version() -> bool:
     """Test if Python version is compatible"""
     print("🐍 Testing Python version...")
     version = sys.version_info
@@ -21,18 +22,10 @@ def test_python_version():
     return True
 
 
-def test_dependencies():
+def test_dependencies() -> bool:
     """Test if all required dependencies are installed"""
     print("\n📦 Testing dependencies...")
-    required_packages = [
-        "flask",
-        "openai",
-        "galileo",
-        "requests",
-        "python-dotenv",
-        "aiohttp",
-        "langchain",
-    ]
+    required_packages = ["flask", "openai", "galileo", "requests", "python-dotenv", "aiohttp", "langchain"]
 
     missing_packages = []
     for package in required_packages:
@@ -52,7 +45,7 @@ def test_dependencies():
     return True
 
 
-def test_environment():
+def test_environment() -> bool:
     """Test environment configuration"""
     print("\n🔧 Testing environment configuration...")
 
@@ -88,7 +81,7 @@ def test_environment():
     return True
 
 
-def test_imports():
+def test_imports() -> bool:
     """Test if all project modules can be imported"""
     print("\n📚 Testing project imports...")
 
@@ -131,7 +124,7 @@ def test_imports():
     return True
 
 
-def test_files():
+def test_files() -> bool:
     """Test if all required files exist"""
     print("\n📁 Testing file structure...")
 
@@ -166,13 +159,7 @@ def main():
     print("🚀 Startup Simulator 3000 - Setup Test")
     print("=" * 50)
 
-    tests = [
-        test_python_version,
-        test_dependencies,
-        test_environment,
-        test_imports,
-        test_files,
-    ]
+    tests = [test_python_version, test_dependencies, test_environment, test_imports, test_files]
 
     passed = 0
     total = len(tests)

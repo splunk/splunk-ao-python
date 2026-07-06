@@ -7,17 +7,14 @@ https://docs.galileo.ai/how-to-guides/basics/log-mcp-server-calls/log-mcp-server
 
 import asyncio
 import os
-
 from datetime import datetime
 
 from anthropic import Anthropic, omit
 from anthropic.types import Message
-
 from dotenv import load_dotenv
+from mcp_client import MCPClient
 
 from splunk_ao import splunk_ao_context
-
-from mcp_client import MCPClient
 
 load_dotenv()  # load environment variables from .env
 
@@ -66,10 +63,7 @@ async def process_query(query: str) -> str:
 
     # Start a Splunk AO Logger trace
     galileo_logger = splunk_ao_context.get_logger_instance()
-    galileo_logger.start_trace(
-        input=query,
-        name="MCP Chatbot Query",
-    )
+    galileo_logger.start_trace(input=query, name="MCP Chatbot Query")
 
     message_history.append({"role": "user", "content": query})
 
@@ -119,8 +113,7 @@ async def process_query(query: str) -> str:
 
     # Conclude and flush the trace
     galileo_logger.conclude(
-        output="\n".join(final_text),
-        duration_ns=int((datetime.now().timestamp() * 1_000_000_000) - start_time_ns),
+        output="\n".join(final_text), duration_ns=int((datetime.now().timestamp() * 1_000_000_000) - start_time_ns)
     )
     galileo_logger.flush()
 
@@ -128,7 +121,7 @@ async def process_query(query: str) -> str:
     return "\n".join(final_text)
 
 
-async def main():
+async def main() -> None:
     """Main function to run the chat loop"""
     # Connect to the MCP server
     await mcp_client.connect_to_server()

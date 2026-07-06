@@ -71,9 +71,7 @@ def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key
     with patch.dict(os.environ, {splunk_key: value}, clear=False):
         os.environ.pop(galileo_key, None)
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ.get(galileo_key) == value, (
-            f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
-        )
+        assert os.environ.get(galileo_key) == value, f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
 
 
 @pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
@@ -97,9 +95,7 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
     with patch.dict(os.environ, clean_env, clear=True):
         SplunkAOConfig._bridge_env_vars()
         for _, galileo_key in _ALL_BRIDGE_PAIRS:
-            assert galileo_key not in os.environ, (
-                f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
-            )
+            assert galileo_key not in os.environ, f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
 
 
 # ---------------------------------------------------------------------------

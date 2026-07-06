@@ -35,33 +35,33 @@ del _os  # Clean up temporary import
 # background tasks pending, which causes pytest workers to hang at exit.
 # Override the module constant directly so tests don't depend on a user-facing
 # env var or any new SDK config knob.
-from splunk_ao.logger import logger as _splunk_ao_logger_module  # noqa: E402
+from splunk_ao.logger import logger as _splunk_ao_logger_module
 
 _splunk_ao_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
-import datetime  # noqa: E402
-import logging  # noqa: E402
-import sys  # noqa: E402
-from collections.abc import Callable, Generator  # noqa: E402
-from io import StringIO  # noqa: E402
-from pathlib import Path  # noqa: E402
-from unittest.mock import AsyncMock, MagicMock, patch  # noqa: E402
-from uuid import uuid4  # noqa: E402
+import datetime
+import logging
+import sys
+from collections.abc import Callable, Generator
+from io import StringIO
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
-from httpx import Request  # noqa: E402
-from httpx import Response as HttpxResponse  # noqa: E402
-from test_support.config import fast_config_validation  # noqa: E402
+from httpx import Request
+from httpx import Response as HttpxResponse
+from test_support.config import fast_config_validation
 
-from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
-from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
-from galileo_core.constants.request_method import RequestMethod  # noqa: E402
-from galileo_core.constants.routes import Routes as CoreRoutes  # noqa: E402
-from galileo_core.schemas.core.user import User  # noqa: E402
-from galileo_core.schemas.core.user_role import UserRole  # noqa: E402
-from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
-from splunk_ao.config import SplunkAOConfig  # noqa: E402
-from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
-from tests.testutils.setup import setup_thread_pool_request_capture  # noqa: E402
+from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
+from galileo.resources.models.messages_list_item import MessagesListItem
+from galileo_core.constants.request_method import RequestMethod
+from galileo_core.constants.routes import Routes as CoreRoutes
+from galileo_core.schemas.core.user import User
+from galileo_core.schemas.core.user_role import UserRole
+from splunk_ao.collaborator import CollaboratorRole
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration
+from tests.testutils.setup import setup_thread_pool_request_capture
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
 

@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -7,16 +8,16 @@ class LLMMessage(BaseModel):
 
     role: str
     content: str
-    name: Optional[str] = None
+    name: str | None = None
 
 
 class LLMResponse(BaseModel):
     """Structured response from LLM"""
 
     content: str
-    raw_response: Dict[str, Any] = Field(default_factory=dict)
-    finish_reason: Optional[str] = None
-    usage: Optional[Dict[str, int]] = None
+    raw_response: dict[str, Any] = Field(default_factory=dict)
+    finish_reason: str | None = None
+    usage: dict[str, int] | None = None
 
 
 class LLMConfig(BaseModel):
@@ -24,23 +25,23 @@ class LLMConfig(BaseModel):
 
     model: str
     temperature: float = 0.7
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
     top_p: float = 1.0
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
-    stop: Optional[List[str]] = None
-    custom_settings: Dict[str, Any] = Field(default_factory=dict)
+    stop: list[str] | None = None
+    custom_settings: dict[str, Any] = Field(default_factory=dict)
 
 
 class ToolSelectionOutput(BaseModel):
     """Output from tool selection"""
 
-    selected_tools: List[str] = Field(description="Names of the selected tools in order of execution")
+    selected_tools: list[str] = Field(description="Names of the selected tools in order of execution")
     confidence: float = Field(description="Confidence score for the tool selection (0-1)", ge=0.0, le=1.0)
-    reasoning_steps: List[str] = Field(description="List of reasoning steps that led to the tool selection")
+    reasoning_steps: list[str] = Field(description="List of reasoning steps that led to the tool selection")
 
     @classmethod
-    def model_json_schema(cls) -> Dict[str, Any]:
+    def model_json_schema(cls) -> dict[str, Any]:
         """Get JSON schema with example"""
         schema = super().model_json_schema()
         schema["examples"] = [

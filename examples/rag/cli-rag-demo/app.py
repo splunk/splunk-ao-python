@@ -1,11 +1,13 @@
 import os
-from dotenv import load_dotenv
-from splunk_ao import openai, log, SplunkAOLogger
-from rich.console import Console
-from rich.panel import Panel
-from rich.markdown import Markdown
-import questionary
 import sys
+
+import questionary
+from dotenv import load_dotenv
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+
+from splunk_ao import SplunkAOLogger, log, openai
 
 load_dotenv()
 
@@ -15,10 +17,7 @@ console = Console()
 # Check if Splunk AO logging is enabled
 logging_enabled = os.environ.get("SPLUNK_AO_API_KEY") is not None
 
-logger = SplunkAOLogger(
-    project="rag-test",
-    log_stream="dev",
-)
+logger = SplunkAOLogger(project="rag-test", log_stream="dev")
 
 # Initialize OpenAI client directly
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -27,7 +26,7 @@ client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 @log(span_type="retriever")
 def retrieve_documents(query: str):
     # TODO: Replace with actual RAG retrieval
-    documents = [
+    return [
         {
             "id": "doc1",
             "text": (
@@ -64,7 +63,6 @@ def retrieve_documents(query: str):
             "metadata": {"source": "best_practices", "category": "prompting"},
         },
     ]
-    return documents
 
 
 def rag(query: str):
@@ -73,7 +71,7 @@ def rag(query: str):
     # Format documents for better readability in the prompt
     formatted_docs = ""
     for i, doc in enumerate(documents):
-        formatted_docs += f"Document {i+1} (Source: {doc['metadata']['source']}):\n{doc['text']}\n\n"
+        formatted_docs += f"Document {i + 1} (Source: {doc['metadata']['source']}):\n{doc['text']}\n\n"
 
     prompt = f"""
     Answer the following question based on the context provided. If the answer is not in the context, say you don't know.
@@ -98,10 +96,10 @@ def rag(query: str):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Error generating response: {str(e)}"
+        return f"Error generating response: {e!s}"
 
 
-def main():
+def main() -> None:
     console.print(
         Panel.fit(
             "[bold]RAG Demo[/bold]\nThis demo uses a simulated RAG system to answer your questions.",
@@ -127,8 +125,7 @@ def main():
     while True:
         # Get user query
         query = questionary.text(
-            "Enter your question about Splunk AO, RAG, or AI techniques:",
-            validate=lambda text: len(text) > 0,
+            "Enter your question about Splunk AO, RAG, or AI techniques:", validate=lambda text: len(text) > 0
         ).ask()
 
         if query.lower() in ["exit", "quit", "q"]:
@@ -147,7 +144,7 @@ def main():
                 break
 
         except Exception as e:
-            console.print(f"[bold red]Error:[/bold red] {str(e)}")
+            console.print(f"[bold red]Error:[/bold red] {e!s}")
 
 
 if __name__ == "__main__":

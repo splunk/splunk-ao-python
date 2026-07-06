@@ -8,7 +8,6 @@ from collections.abc import Callable
 from typing import Any
 
 from splunk_ao.schema.trace import TracesIngestRequest
-
 from splunk_ao_adk.observer import (
     SplunkAOObserver,
     get_agent_name_from_tool_context,

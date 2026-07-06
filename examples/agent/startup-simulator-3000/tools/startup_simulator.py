@@ -1,16 +1,14 @@
-import os
-import json
-from splunk_ao.openai import (
-    openai,
-)  # 🔍 Splunk AO-wrapped OpenAI client for automatic logging
-from agent_framework.tools.base import BaseTool
-from agent_framework.models import ToolMetadata
-from agent_framework.utils.logging import (
-    get_galileo_logger,
-)  # 🔍 Splunk AO helper import - gets centralized logger
 import asyncio
-from dotenv import load_dotenv
+import json
+import os
 from datetime import datetime
+
+from agent_framework.models import ToolMetadata
+from agent_framework.tools.base import BaseTool
+from agent_framework.utils.logging import get_galileo_logger  # 🔍 Splunk AO helper import - gets centralized logger
+from dotenv import load_dotenv
+
+from splunk_ao.openai import openai  # 🔍 Splunk AO-wrapped OpenAI client for automatic logging
 
 # Load environment variables
 load_dotenv()
@@ -40,19 +38,10 @@ class StartupSimulatorTool(BaseTool):
             input_schema={
                 "type": "object",
                 "properties": {
-                    "industry": {
-                        "type": "string",
-                        "description": "Industry for the startup",
-                    },
+                    "industry": {"type": "string", "description": "Industry for the startup"},
                     "audience": {"type": "string", "description": "Target audience"},
-                    "random_word": {
-                        "type": "string",
-                        "description": "A random word to include",
-                    },
-                    "hn_context": {
-                        "type": "string",
-                        "description": "Recent HackerNews context for inspiration",
-                    },
+                    "random_word": {"type": "string", "description": "A random word to include"},
+                    "hn_context": {"type": "string", "description": "Recent HackerNews context for inspiration"},
                 },
                 "required": ["industry", "audience", "random_word"],
             },
@@ -133,7 +122,9 @@ class StartupSimulatorTool(BaseTool):
                 "timestamp": datetime.now().isoformat(),
                 "model": "gpt-4",
                 "input_tokens": (response.usage.prompt_tokens if hasattr(response.usage, "prompt_tokens") else 0),
-                "output_tokens": (response.usage.completion_tokens if hasattr(response.usage, "completion_tokens") else 0),
+                "output_tokens": (
+                    response.usage.completion_tokens if hasattr(response.usage, "completion_tokens") else 0
+                ),
                 "total_tokens": (response.usage.total_tokens if hasattr(response.usage, "total_tokens") else 0),
             }
 
@@ -191,7 +182,9 @@ class StartupSimulatorTool(BaseTool):
 
             raise e
 
-    async def _execute_without_galileo(self, industry: str, audience: str, random_word: str, hn_context: str = "") -> str:
+    async def _execute_without_galileo(
+        self, industry: str, audience: str, random_word: str, hn_context: str = ""
+    ) -> str:
         """Fallback execution without Splunk AO logging"""
         # ℹ️ FALLBACK METHOD: This method runs when Splunk AO is not available
         # It performs the same functionality but without any observability logging
@@ -241,14 +234,11 @@ class StartupSimulatorTool(BaseTool):
 
 
 # ℹ️ TEST FUNCTION: This function can be used to test the tool independently
-async def main():
+async def main() -> None:
     """Test the Startup Simulator tool"""
     tool = StartupSimulatorTool()
     result = await tool.execute(
-        industry="Tech",
-        audience="Developers",
-        random_word="blockchain",
-        hn_context="Sample HN context for testing",
+        industry="Tech", audience="Developers", random_word="blockchain", hn_context="Sample HN context for testing"
     )
     print(f"Result: {result}")
 

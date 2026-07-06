@@ -102,7 +102,9 @@ async def main(msg: cl.Message) -> None:
         main_step.input = msg.content
 
         # Call the graph with the user's message and stream the response back to the user
-        async for response_msg in supervisor_agent.astream(input=messages, stream_mode="updates", config=runnable_config):
+        async for response_msg in supervisor_agent.astream(
+            input=messages, stream_mode="updates", config=runnable_config
+        ):
             # Debug: Log the response structure
             print(f"Response keys: {response_msg.keys()}")
 
