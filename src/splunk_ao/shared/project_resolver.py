@@ -1,9 +1,9 @@
 """Shared helper for resolving a project from explicit params or env fallbacks.
 
-Lives alongside :func:`splunk_ao.shared.exceptions._project_not_found_error` so the
-two helpers — "how to find a project" and "what error to raise when you can't" —
-sit in one place and can be reused by every ``__future__`` domain object
-(LogStream, Experiment, …) instead of being duplicated per-class.
+This lives alongside :func:`splunk_ao.shared.exceptions._project_not_found_error`
+so the two concerns — how to find a project, and what error to raise when one
+can't be found — stay together in one place and can be reused across modules
+instead of being duplicated in each one.
 """
 
 from __future__ import annotations
