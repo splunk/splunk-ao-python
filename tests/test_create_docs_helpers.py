@@ -117,6 +117,19 @@ class TestConvertRstCodeBlocks:
         prose_idx = lines.index("More prose here.")
         assert prose_idx > fence_close
 
+    def test_prose_ending_in_double_colon_no_indented_block(self):
+        """Prose line ending in :: with no indented block following loses the :: but is otherwise intact."""
+        text = "Refer to namespace::\n\nNext paragraph (not indented)."
+        result = _convert_rst_code_blocks(text)
+        assert "```" not in result
+        assert "Refer to namespace" in result
+        assert "Next paragraph (not indented)." in result
+
+    def test_double_colon_mid_line_not_treated_as_rst(self):
+        """:: mid-line (e.g. namespace::method) does not trigger RST block conversion."""
+        text = "Use namespace::method() here.\n\nMore text."
+        assert _convert_rst_code_blocks(text) == text
+
     def test_empty_string(self):
         """Empty input returns empty string."""
         assert _convert_rst_code_blocks("") == ""
