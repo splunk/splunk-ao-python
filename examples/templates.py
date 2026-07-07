@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["galileo"]
+# dependencies = ["splunk-ao"]
 # ///
 
 from splunk_ao import Message, MessageRole
