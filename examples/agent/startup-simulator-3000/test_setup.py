@@ -4,9 +4,9 @@ Test script to verify Startup Simulator 3000 setup
 Run this script to check if everything is configured correctly
 """
 
-import importlib
 import os
 import sys
+from importlib.metadata import version, PackageNotFoundError
 
 from dotenv import load_dotenv
 
@@ -25,14 +25,22 @@ def test_python_version() -> bool:
 def test_dependencies() -> bool:
     """Test if all required dependencies are installed"""
     print("\n📦 Testing dependencies...")
-    required_packages = ["flask", "openai", "galileo", "requests", "python-dotenv", "aiohttp", "langchain"]
+    required_packages = [
+        "flask",
+        "openai",
+        "splunk-ao",
+        "requests",
+        "python-dotenv",
+        "aiohttp",
+        "langchain",
+    ]
 
     missing_packages = []
     for package in required_packages:
         try:
-            importlib.import_module(package)
+            version(package)
             print(f"✅ {package}")
-        except ImportError:
+        except PackageNotFoundError:
             print(f"❌ {package} - not installed")
             missing_packages.append(package)
 

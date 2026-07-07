@@ -1,2 +1,2 @@
-galileo>=1.16.0
+splunk-ao
 python-dotenv>=1.0.0

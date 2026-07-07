@@ -1,2 +1,2 @@
-galileo
+splunk-ao
 python-dotenv

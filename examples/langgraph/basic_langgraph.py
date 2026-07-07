@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "galileo",
+#     "splunk-ao",
 #     "langgraph",
 #     "langsmith",
 #     "langchain",
