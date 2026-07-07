@@ -2,15 +2,16 @@
 Tool for generating item recommendations based on weather conditions.
 """
 
-from typing import Dict, Any, List
-from pydantic import BaseModel
+from typing import Any
+
 from agent_framework.tools.base import BaseTool
+from pydantic import BaseModel
 
 
 class RecommendationsInput(BaseModel):
     """Input schema for recommendations tool"""
 
-    weather: Dict[str, Any]
+    weather: dict[str, Any]
     max_items: int = 5
 
 
@@ -22,7 +23,7 @@ class RecommendationsTool(BaseTool):
     tags = ["weather", "recommendations"]
     input_schema = RecommendationsInput.model_json_schema()
 
-    async def execute(self, weather: Dict[str, Any], max_items: int = 5) -> List[str]:
+    async def execute(self, weather: dict[str, Any], max_items: int = 5) -> list[str]:
         """
         Execute the tool to get recommendations.
 

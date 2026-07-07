@@ -1,11 +1,12 @@
-from typing import Any, Dict, List
+import json
+from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any
+
+from agent_framework.utils.hooks import ToolHooks, ToolSelectionHooks
 from rich.console import Console
 from rich.panel import Panel
 from rich.theme import Theme
-import json
-from abc import ABC, abstractmethod
-from agent_framework.utils.hooks import ToolHooks, ToolSelectionHooks
 
 # Create a custom theme for our logger
 theme = Theme(
@@ -34,6 +35,7 @@ def get_galileo_logger():
 
     if _global_galileo_logger is None:
         import os
+
         from dotenv import load_dotenv
 
         # Load environment variables
@@ -77,47 +79,38 @@ class AgentLogger(ABC):
     @abstractmethod
     def info(self, message: str, **kwargs) -> None:
         """Log an informational message"""
-        pass
 
     @abstractmethod
     def warning(self, message: str, **kwargs) -> None:
         """Log a warning message"""
-        pass
 
     @abstractmethod
     def error(self, message: str, **kwargs) -> None:
         """Log an error message"""
-        pass
 
     @abstractmethod
     def debug(self, message: str, **kwargs) -> None:
         """Log a debug message"""
-        pass
 
     @abstractmethod
-    def _write_log(self, log_entry: Dict[str, Any]) -> None:
+    def _write_log(self, log_entry: dict[str, Any]) -> None:
         """Write a log entry"""
-        pass
 
     @abstractmethod
     def _sanitize_for_json(self, obj: Any) -> Any:
         """Sanitize an object for JSON serialization"""
-        pass
 
     @abstractmethod
     async def on_agent_planning(self, planning_prompt: str) -> None:
         """Log the agent planning prompt"""
-        pass
 
     @abstractmethod
     def on_agent_start(self, initial_task: str) -> None:
         """Log the agent execution prompt"""
-        pass
 
     @abstractmethod
-    async def on_agent_done(self, result: str, message_history: List[Dict[str, Any]]) -> None:
+    async def on_agent_done(self, result: str, message_history: list[dict[str, Any]]) -> None:
         """Log the agent completion"""
-        pass
 
     def get_tool_hooks(self) -> ToolHooks:
         """Get tool hooks for this logger"""
@@ -155,18 +148,17 @@ class ConsoleAgentLogger(AgentLogger):
         if kwargs:
             console.print(Panel(json.dumps(kwargs, indent=2), title="Additional Info"))
 
-    def _write_log(self, log_entry: Dict[str, Any]) -> None:
+    def _write_log(self, log_entry: dict[str, Any]) -> None:
         pass  # Console logger doesn't need to write to file
 
     def _sanitize_for_json(self, obj: Any) -> Any:
         if isinstance(obj, (str, int, float, bool, type(None))):
             return obj
-        elif isinstance(obj, (list, tuple)):
+        if isinstance(obj, (list, tuple)):
             return [self._sanitize_for_json(item) for item in obj]
-        elif isinstance(obj, dict):
+        if isinstance(obj, dict):
             return {str(k): self._sanitize_for_json(v) for k, v in obj.items()}
-        else:
-            return str(obj)
+        return str(obj)
 
     async def on_agent_planning(self, planning_prompt: str) -> None:
         self.info(f"Planning: {planning_prompt}")
@@ -174,5 +166,5 @@ class ConsoleAgentLogger(AgentLogger):
     def on_agent_start(self, initial_task: str) -> None:
         self.info(f"Starting task: {initial_task}")
 
-    async def on_agent_done(self, result: str, message_history: List[Dict[str, Any]]) -> None:
+    async def on_agent_done(self, result: str, message_history: list[dict[str, Any]]) -> None:
         self.info(f"Task completed: {result}")

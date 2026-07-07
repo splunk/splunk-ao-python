@@ -70,7 +70,7 @@ Time: 3-5 minutes
 Support Ticket Created: {ticket_id}
 Priority: High
 Response Time: Within 2 hours
-Callback: {(datetime.now() + timedelta(hours=2)).strftime('%Y-%m-%d %H:%M')}
+Callback: {(datetime.now() + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M")}
 24/7 Support: 1-800-TELECOM
 """
 

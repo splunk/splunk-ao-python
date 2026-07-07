@@ -1,11 +1,14 @@
-from typing import Any, Dict, List, Optional, AsyncGenerator, Type, TypeVar
-from splunk_ao.openai import openai  # Use Splunk AO's OpenAI wrapper
-from pydantic import BaseModel
 import os
+from collections.abc import AsyncGenerator
+from typing import Any, TypeVar
+
 from dotenv import load_dotenv
+from pydantic import BaseModel
+
+from splunk_ao.openai import openai  # Use Splunk AO's OpenAI wrapper
 
 from .base import LLMProvider
-from .models import LLMMessage, LLMResponse, LLMConfig
+from .models import LLMConfig, LLMMessage, LLMResponse
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -13,7 +16,7 @@ T = TypeVar("T", bound=BaseModel)
 class OpenAIProvider(LLMProvider):
     """OpenAI implementation of LLM provider with support for both regular and project-based keys"""
 
-    def __init__(self, config: LLMConfig, organization: Optional[str] = None):
+    def __init__(self, config: LLMConfig, organization: str | None = None):
         super().__init__(config)
 
         # Load environment variables
@@ -49,18 +52,13 @@ class OpenAIProvider(LLMProvider):
         else:
             print("Initialized OpenAI client with regular API key")
 
-    def _prepare_messages(self, messages: List[LLMMessage]) -> List[Dict[str, Any]]:
+    def _prepare_messages(self, messages: list[LLMMessage]) -> list[dict[str, Any]]:
         """Convert internal message format to OpenAI format"""
         return [
-            {
-                "role": msg.role,
-                "content": msg.content,
-                **({"name": msg.name} if msg.name else {}),
-            }
-            for msg in messages
+            {"role": msg.role, "content": msg.content, **({"name": msg.name} if msg.name else {})} for msg in messages
         ]
 
-    def _prepare_config(self, config: Optional[LLMConfig] = None) -> Dict[str, Any]:
+    def _prepare_config(self, config: LLMConfig | None = None) -> dict[str, Any]:
         """Prepare configuration for OpenAI API"""
         cfg = config or self.config
         return {
@@ -74,7 +72,7 @@ class OpenAIProvider(LLMProvider):
             **cfg.custom_settings,
         }
 
-    async def generate(self, messages: List[LLMMessage], config: Optional[LLMConfig] = None) -> LLMResponse:
+    async def generate(self, messages: list[LLMMessage], config: LLMConfig | None = None) -> LLMResponse:
         """Generate a response using OpenAI"""
         openai_messages = self._prepare_messages(messages)
         api_config = self._prepare_config(config)
@@ -93,10 +91,14 @@ class OpenAIProvider(LLMProvider):
             )
         except Exception as e:
             if "401" in str(e) and self.is_project_key:
-                raise ValueError(f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}")
+                raise ValueError(
+                    f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}"
+                )
             raise e
 
-    async def generate_stream(self, messages: List[LLMMessage], config: Optional[LLMConfig] = None) -> AsyncGenerator[LLMResponse, None]:
+    async def generate_stream(
+        self, messages: list[LLMMessage], config: LLMConfig | None = None
+    ) -> AsyncGenerator[LLMResponse, None]:
         """Generate a streaming response using OpenAI"""
         openai_messages = self._prepare_messages(messages)
         api_config = self._prepare_config(config)
@@ -113,14 +115,13 @@ class OpenAIProvider(LLMProvider):
                     )
         except Exception as e:
             if "401" in str(e) and self.is_project_key:
-                raise ValueError(f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}")
+                raise ValueError(
+                    f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}"
+                )
             raise e
 
     async def generate_structured(
-        self,
-        messages: List[LLMMessage],
-        output_model: Type[T],
-        config: Optional[LLMConfig] = None,
+        self, messages: list[LLMMessage], output_model: type[T], config: LLMConfig | None = None
     ) -> T:
         """Generate a response with structured output using function calling"""
         openai_messages = self._prepare_messages(messages)
@@ -149,5 +150,7 @@ class OpenAIProvider(LLMProvider):
                 raise ValueError(f"Failed to parse structured output: {e}")
         except Exception as e:
             if "401" in str(e) and self.is_project_key:
-                raise ValueError(f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}")
+                raise ValueError(
+                    f"Project-based key authentication failed. Please check your OPENAI_PROJECT_ID and ensure the project exists. Error: {e}"
+                )
             raise e

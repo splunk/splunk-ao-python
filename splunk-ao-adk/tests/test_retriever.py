@@ -9,6 +9,7 @@ import pytest
 
 from splunk_ao_adk.decorator import splunk_ao_retriever
 from splunk_ao_adk.observer import SplunkAOObserver
+
 from .mocks import MockTool, MockToolContext
 
 

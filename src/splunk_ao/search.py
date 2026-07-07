@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+from enum import StrEnum
 
 from galileo.resources.api.trace import (
     query_sessions_projects_project_id_sessions_search_post,
@@ -18,7 +18,7 @@ from splunk_ao.schema.filters import FilterType
 logger = logging.getLogger(__name__)
 
 
-class RecordType(str, Enum):
+class RecordType(StrEnum):
     SPAN = "spans"
     TRACE = "traces"
     SESSION = "sessions"

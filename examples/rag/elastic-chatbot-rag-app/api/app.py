@@ -27,7 +27,7 @@ def api_chat():
 
 
 @app.cli.command()
-def create_index():
+def create_index() -> None:
     """Create or re-create the Elasticsearch index."""
     basedir = os.path.abspath(os.path.dirname(__file__))
     sys.path.append(f"{basedir}/../")

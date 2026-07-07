@@ -1,15 +1,15 @@
 import os
-from typing import Optional, Any, Dict, List
-from dotenv import load_dotenv
 from dataclasses import dataclass, field
-from .models import VerbosityLevel
+from typing import Any
+
+from dotenv import load_dotenv
+
 from .llm.models import LLMConfig
+from .models import VerbosityLevel
 
 
 class EnvironmentError(Exception):
     """Raised when required environment variables are missing"""
-
-    pass
 
 
 @dataclass
@@ -17,19 +17,19 @@ class AgentConfiguration:
     """Configuration for the agent framework"""
 
     llm_config: LLMConfig = field(default_factory=lambda: LLMConfig(model="gpt-4", temperature=0.1))
-    api_keys: Dict[str, str] = field(default_factory=dict)
+    api_keys: dict[str, str] = field(default_factory=dict)
     verbosity: VerbosityLevel = field(default=VerbosityLevel.LOW)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     enable_logging: bool = field(default=True)
     enable_tool_selection: bool = field(default=True)
 
     @staticmethod
-    def get_env(key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_env(key: str, default: str | None = None) -> str | None:
         """Get an environment variable with an optional default"""
         return os.getenv(key, default)
 
     @classmethod
-    def from_env(cls, required_keys: List[str], optional_keys: Optional[Dict[str, str]] = None) -> "AgentConfiguration":
+    def from_env(cls, required_keys: list[str], optional_keys: dict[str, str] | None = None) -> "AgentConfiguration":
         """Create configuration from environment variables
 
         Args:
@@ -43,7 +43,9 @@ class AgentConfiguration:
         for key_name in required_keys:
             env_value = os.getenv(f"{key_name.upper()}_API_KEY")
             if not env_value:
-                raise EnvironmentError(f"{key_name.upper()}_API_KEY environment variable is required. " "Please set it in your .env file")
+                raise EnvironmentError(
+                    f"{key_name.upper()}_API_KEY environment variable is required. Please set it in your .env file"
+                )
             api_keys[key_name] = env_value
 
         # Load optional API keys
@@ -56,8 +58,7 @@ class AgentConfiguration:
         # Create configuration
         return cls(
             llm_config=LLMConfig(
-                model=os.getenv("LLM_MODEL", "gpt-4"),
-                temperature=float(os.getenv("LLM_TEMPERATURE", "0.1")),
+                model=os.getenv("LLM_MODEL", "gpt-4"), temperature=float(os.getenv("LLM_TEMPERATURE", "0.1"))
             ),
             api_keys=api_keys,
             verbosity=VerbosityLevel(os.getenv("VERBOSITY", "low")),
@@ -73,7 +74,7 @@ class AgentConfiguration:
         return AgentConfiguration(**config_dict)
 
     @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> "AgentConfiguration":
+    def from_dict(cls, config_dict: dict[str, Any]) -> "AgentConfiguration":
         """Create configuration from dictionary - mainly used for testing"""
         if "api_keys" not in config_dict or "openai" not in config_dict["api_keys"]:
             raise ValueError("OpenAI API key must be provided in api_keys dictionary")

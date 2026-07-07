@@ -27,7 +27,7 @@ from splunk_ao.utils.serialization import (
 class TestSerializeDateTime:
     def test_serialize_datetime_with_utc_timezone(self) -> None:
         # Test with UTC timezone
-        dt_utc = dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.timezone.utc)
+        dt_utc = dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.UTC)
         result = serialize_datetime(dt_utc)
         assert result.endswith("Z")
         assert result == "2023-01-01T12:00:00Z"
@@ -44,7 +44,7 @@ class TestSerializeDateTime:
 class TestEventSerializer:
     def test_default_datetime(self) -> None:
         # Test datetime serialization
-        dt_obj = dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.timezone.utc)
+        dt_obj = dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.UTC)
         result = json.dumps(dt_obj, cls=EventSerializer)
         decoded_result = json.loads(result)
         assert decoded_result == "2023-01-01T12:00:00Z"

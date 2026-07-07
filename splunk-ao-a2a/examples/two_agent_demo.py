@@ -48,10 +48,10 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from opentelemetry.instrumentation.langchain import LangchainInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
-from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 from starlette.applications import Starlette
 from typing_extensions import TypedDict
 
+from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 from splunk_ao_a2a import A2AInstrumentor
 
 load_dotenv(Path(__file__).parent / ".env")

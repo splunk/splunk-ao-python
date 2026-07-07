@@ -1,5 +1,6 @@
 """Seed ChromaDB with sample financial services documents."""
 
+import contextlib
 import os
 import sys
 import time
@@ -75,7 +76,7 @@ DOCUMENTS = [
 ]
 
 
-def seed():
+def seed() -> None:
     host = os.getenv("CHROMADB_HOST", "localhost")
     port = int(os.getenv("CHROMADB_PORT", "8000"))
 
@@ -95,20 +96,12 @@ def seed():
         sys.exit(1)
 
     # Delete existing collection if present, then create fresh
-    try:
+    with contextlib.suppress(Exception):
         client.delete_collection(COLLECTION)
-    except Exception:
-        pass
 
-    embedding_fn = ef.OpenAIEmbeddingFunction(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        model_name="text-embedding-3-small",
-    )
+    embedding_fn = ef.OpenAIEmbeddingFunction(api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-3-small")
     collection = client.create_collection(name=COLLECTION, embedding_function=embedding_fn)
-    collection.add(
-        ids=[d["id"] for d in DOCUMENTS],
-        documents=[d["text"] for d in DOCUMENTS],
-    )
+    collection.add(ids=[d["id"] for d in DOCUMENTS], documents=[d["text"] for d in DOCUMENTS])
     print(f"Seeded {len(DOCUMENTS)} documents into '{COLLECTION}' collection.")
 
 

@@ -3,10 +3,11 @@ from typing import Annotated
 
 from agent_framework import openai, tool
 from agent_framework.observability import enable_instrumentation
-from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from pydantic import Field
+
+from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 
 # Set up the OTel tracer provider with the Splunk AO span processor
 tracer_provider = TracerProvider()
@@ -26,9 +27,7 @@ enable_instrumentation(enable_sensitive_data=True)
 
 
 @tool(approval_mode="never_require")
-def get_weather(
-    location: Annotated[str, Field(description="The location to get the weather for.")],
-) -> str:
+def get_weather(location: Annotated[str, Field(description="The location to get the weather for.")]) -> str:
     """Get the weather for a given location."""
     conditions = ["sunny", "cloudy", "rainy", "stormy"]
     return f"The weather in {location} is {conditions[randint(0, 3)]} with a high of {randint(10, 30)}C."
@@ -43,7 +42,7 @@ agent = client.as_agent(
 )
 
 
-async def main():
+async def main() -> None:
     result = await agent.run("What's the weather like in Seattle?")
     print(result)
 

@@ -1,15 +1,15 @@
-from sentence_transformers import SentenceTransformer
-import faiss
-from typing import Optional
 import re
 from pathlib import Path
+
+import faiss
+from sentence_transformers import SentenceTransformer
 
 
 class DocumentStoreBasic:
     def __init__(
         self,
         source: str = "custom",
-        custom_documents_path: Optional[str] = None,
+        custom_documents_path: str | None = None,
         num_docs: int = 1,  # Only return 1 document
         chunk_size: int = 1000,  # Larger chunks, less precise
     ):
@@ -35,13 +35,13 @@ class DocumentStoreBasic:
 
         self._build_index()
 
-    def _load_custom_documents(self, documents_path: str, chunk_size: int):
+    def _load_custom_documents(self, documents_path: str, chunk_size: int) -> None:
         """Helper method to load custom documents from a file"""
         documents_path = Path(documents_path)
         if not documents_path.exists():
             raise FileNotFoundError(f"Custom documents file not found: {documents_path}")
 
-        with open(documents_path, "r") as f:
+        with open(documents_path) as f:
             text = f.read()
 
         # Simple chunking by paragraphs
@@ -75,7 +75,7 @@ class DocumentStoreBasic:
                     {
                         "text": chunk,
                         "metadata": {
-                            "source": f"Document {i+1}",
+                            "source": f"Document {i + 1}",
                             "chunk_id": j,
                             "total_chunks": len(chunks),
                             "relevance": "medium",
@@ -84,7 +84,7 @@ class DocumentStoreBasic:
                     }
                 )
 
-    def _build_index(self):
+    def _build_index(self) -> None:
         print("Building basic FAISS index...")
         texts = [doc["text"] for doc in self.documents]
         self.embeddings = self.encoder.encode(texts)
@@ -105,7 +105,7 @@ class DocumentStoreBasic:
 
         # Process results
         results = []
-        for distance, idx in zip(distances[0], indices[0]):
+        for distance, idx in zip(distances[0], indices[0], strict=False):
             doc = self.documents[idx].copy()
             doc["metadata"] = doc["metadata"].copy()
             doc["metadata"]["score"] = float(1 / (1 + distance))  # Simple distance to score conversion
@@ -115,4 +115,4 @@ class DocumentStoreBasic:
 
 
 def format_documents(documents: list) -> str:
-    return "\n\n".join(f"Document {i+1}:\n{doc['text']}" for i, doc in enumerate(documents))
+    return "\n\n".join(f"Document {i + 1}:\n{doc['text']}" for i, doc in enumerate(documents))

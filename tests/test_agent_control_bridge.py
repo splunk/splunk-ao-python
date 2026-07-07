@@ -129,7 +129,7 @@ def _make_event(logger: SplunkAOLogger, **overrides: object) -> FakeControlExecu
         "action": "observe",
         "matched": True,
         "confidence": 0.91,
-        "timestamp": datetime.datetime.now(tz=datetime.timezone.utc),
+        "timestamp": datetime.datetime.now(tz=datetime.UTC),
         "execution_duration_ms": 12.5,
         "evaluator_name": "regex",
         "selector_path": "input",
