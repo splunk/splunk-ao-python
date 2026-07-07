@@ -3,17 +3,18 @@ Tool for finding YouTube videos that match the weather vibe.
 """
 
 import os
-from typing import Dict, Any, Optional
-from pydantic import BaseModel
+from typing import Any
+
 from agent_framework.tools.base import BaseTool
 from googleapiclient.discovery import build
+from pydantic import BaseModel
 
 
 class YouTubeInput(BaseModel):
     """Input schema for YouTube tool"""
 
     weather_condition: str
-    mood_override: Optional[str] = None
+    mood_override: str | None = None
 
 
 class YouTubeTool(BaseTool):
@@ -30,7 +31,7 @@ class YouTubeTool(BaseTool):
             raise ValueError("YouTube API key not found in environment")
         self.youtube = build("youtube", "v3", developerKey=self.api_key)
 
-    async def execute(self, weather_condition: str, mood_override: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(self, weather_condition: str, mood_override: str | None = None) -> dict[str, Any]:
         """
         Execute the tool to find a weather-matching YouTube video.
 
@@ -82,11 +83,7 @@ class YouTubeTool(BaseTool):
                     "channel": video["snippet"]["channelTitle"],
                     "query": query,
                 }
-            else:
-                return {"error": "No videos found", "query": query}
+            return {"error": "No videos found", "query": query}
 
         except Exception as e:
-            return {
-                "error": str(e),
-                "message": "Failed to find a matching YouTube video",
-            }
+            return {"error": str(e), "message": "Failed to find a matching YouTube video"}

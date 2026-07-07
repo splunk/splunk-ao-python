@@ -33,8 +33,6 @@ from galileo_core.schemas.logging.span import (
 )
 from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
-from galileo_core.schemas.protect.payload import Payload
-from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.shared.traces_logger import TracesLogger
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.constants import LoggerModeType
@@ -938,8 +936,8 @@ class SplunkAOLogger(TracesLogger):
         -------
         dict[str, str]
             Dictionary with the following headers:
-            - X-Galileo-Trace-ID: The root trace ID
-            - X-Galileo-Parent-ID: The ID of the current parent (trace or span) that downstream
+            - Splunk-AO-Trace-ID: The root trace ID
+            - Splunk-AO-Parent-ID: The ID of the current parent (trace or span) that downstream
               spans should attach to
 
         Raises
@@ -954,15 +952,15 @@ class SplunkAOLogger(TracesLogger):
         logger.start_trace(input="question")
         headers = logger.get_tracing_headers()
         # headers = {
-        #     "X-Galileo-Trace-ID": "...",
-        #     "X-Galileo-Parent-ID": "...",  # trace ID as parent
+        #     "Splunk-AO-Trace-ID": "...",
+        #     "Splunk-AO-Parent-ID": "...",  # trace ID as parent
         # }
 
         logger.add_workflow_span(input="workflow", name="orchestrator")
         headers = logger.get_tracing_headers()
         # headers = {
-        #     "X-Galileo-Trace-ID": "...",
-        #     "X-Galileo-Parent-ID": "...",  # workflow span ID as parent
+        #     "Splunk-AO-Trace-ID": "...",
+        #     "Splunk-AO-Parent-ID": "...",  # workflow span ID as parent
         # }
 
         # Pass headers to HTTP request
@@ -1568,85 +1566,6 @@ class SplunkAOLogger(TracesLogger):
             "tags": tags,
             "status_code": status_code,
             "tool_call_id": tool_call_id,
-            "step_number": step_number,
-            "id": uuid.uuid4(),
-        }
-        span = super().add_tool_span(**kwargs)
-
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
-
-        return span
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def add_protect_span(
-        self,
-        payload: Payload,
-        redacted_payload: Payload | None = None,
-        response: Response | None = None,
-        redacted_response: Response | None = None,
-        created_at: datetime | None = None,
-        metadata: dict[str, MetadataValue] | None = None,
-        tags: list[str] | None = None,
-        status_code: int | None = None,
-        step_number: int | None = None,
-    ) -> ToolSpan:
-        """
-        Add a new Protect tool span to the current parent.
-
-        Parameters
-        ----------
-        payload: Payload
-            Input to the node. This is the input to the Protect `invoke` method.
-            Expected format: Payload object with input_ and/or output attributes.
-            Example: `Payload(input_="User input text", output="Model output text")`
-        redacted_payload: Optional[Payload]
-            Input that removes any sensitive information (redacted input to the node).
-            Same format as payload parameter.
-        response: Optional[Response]
-            Output of the node. This is the output from the Protect `invoke` method.
-            Expected format: Response object with text, trace_metadata, and status.
-            Example: `Response(text="Processed text", status=ExecutionStatus.triggered)`
-        redacted_response: Optional[Response]
-            Output that removes any sensitive information (redacted output of the node).
-            Same format as response parameter.
-        created_at: Optional[datetime]
-            Timestamp of the span's creation.
-        metadata: Optional[dict[str, str]]
-            Metadata associated with this span.
-            Expected format: `{"key1": "value1", "key2": "value2"}`
-        tags: Optional[list[str]]
-            Tags associated with this span.
-            Expected format: `["tag1", "tag2", "tag3"]`
-        status_code: Optional[int]
-            Status code of the node execution.
-            Expected values: 200 (success), 400 (client error), 500 (server error)
-        step_number: Optional[int]
-            Step number of the span.
-
-        Returns
-        -------
-        ToolSpan
-            The created Protect tool span.
-        """
-        # Auto-convert non-string metadata values to strings
-        if metadata:
-            metadata = {k: SplunkAOLogger._convert_metadata_value(v) for k, v in metadata.items()}
-
-        kwargs = {
-            "input": json.dumps(payload.model_dump(mode="json")),
-            "redacted_input": json.dumps(redacted_payload.model_dump(mode="json")) if redacted_payload else None,
-            "output": json.dumps(response.model_dump(mode="json")) if response else None,
-            "redacted_output": json.dumps(redacted_response.model_dump(mode="json")) if redacted_response else None,
-            "name": "GalileoProtect",
-            "duration_ns": response.trace_metadata.response_at - response.trace_metadata.received_at
-            if response
-            else None,
-            "created_at": created_at,
-            "user_metadata": metadata,
-            "tags": tags,
-            "status_code": status_code,
             "step_number": step_number,
             "id": uuid.uuid4(),
         }

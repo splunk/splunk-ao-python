@@ -21,22 +21,23 @@ Data Flow:
 - Result: Complete evaluation with metrics and detailed traces
 """
 
-import os
 import json
-from typing import Dict, Any, Optional
+import os
+from typing import Any
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Splunk AO imports
+from splunk_ao import splunk_ao_context
 from splunk_ao.datasets import create_dataset, get_dataset
 from splunk_ao.experiments import run_experiment
 from splunk_ao.schema.metrics import SplunkAOMetrics
-from splunk_ao import splunk_ao_context
 
 
-def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
+def load_evaluation_data(json_path: str) -> dict[str, dict[str, Any]]:
     """
     Load your existing evaluation results from JSON.
 
@@ -60,7 +61,7 @@ def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
     Returns:
         Dict mapping questions to their full evaluation records
     """
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         data = json.load(f)
 
     # Create lookup dict keyed by question
@@ -75,7 +76,11 @@ def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
         elif not isinstance(context, list):
             context = [str(context)] if context else []
 
-        lookup[question] = {"context": context, "llm_answer": record.get("llm_answer", ""), "model": record.get("model", "gpt-4o")}  # Allow model override
+        lookup[question] = {
+            "context": context,
+            "llm_answer": record.get("llm_answer", ""),
+            "model": record.get("model", "gpt-4o"),
+        }  # Allow model override
 
     return lookup
 
@@ -126,7 +131,7 @@ def prepare_dataset_for_galileo(json_path: str, dataset_name: str) -> Any:
         Dataset object from Splunk AO
     """
     # Load your evaluation results
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         raw_data = json.load(f)
 
     # Transform to Splunk AO dataset format
@@ -139,7 +144,7 @@ def prepare_dataset_for_galileo(json_path: str, dataset_name: str) -> Any:
     return create_or_get_dataset(dataset_name, galileo_dataset)
 
 
-def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_prompt: Optional[str] = None):
+def create_replay_function(evaluation_lookup: dict[str, dict[str, Any]], system_prompt: str | None = None):
     """
     Create a function that replays your evaluation with full tracing.
 
@@ -156,7 +161,9 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
 
     # Default system prompt if none provided
     if system_prompt is None:
-        system_prompt = "You are a helpful AI assistant. Use the provided context " "to answer the question accurately and concisely."
+        system_prompt = (
+            "You are a helpful AI assistant. Use the provided context to answer the question accurately and concisely."
+        )
 
     def replay_evaluation(input: str, **kwargs) -> str:
         """
@@ -189,7 +196,7 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
         # Format context chunks for the prompt
         # Join multiple chunks with clear separators
         if context_chunks:
-            context_text = "\n\n---\n\n".join([f"Chunk {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks)])
+            context_text = "\n\n---\n\n".join([f"Chunk {i + 1}:\n{chunk}" for i, chunk in enumerate(context_chunks)])
         else:
             context_text = ""
 
@@ -208,7 +215,12 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
 
 
 def upload_experiment(
-    dataset: Any, evaluation_data_path: str, project_name: str, run_name: str, system_prompt: Optional[str] = None, metrics: Optional[list] = None
+    dataset: Any,
+    evaluation_data_path: str,
+    project_name: str,
+    run_name: str,
+    system_prompt: str | None = None,
+    metrics: list | None = None,
 ) -> Any:
     """
     Upload your evaluation results as a Splunk AO experiment.
@@ -247,20 +259,14 @@ def upload_experiment(
         ]
 
     # Run experiment with your data
-    results = run_experiment(
-        run_name,
-        project=project_name,
-        dataset=dataset,
-        function=replay_fn,
-        metrics=metrics,
-    )
+    results = run_experiment(run_name, project=project_name, dataset=dataset, function=replay_fn, metrics=metrics)
 
     print("✓ Experiment complete!")
 
     return results
 
 
-def main():
+def main() -> None:
     """
     Example: Upload existing evaluation results to Splunk AO
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 from uuid import UUID
 
@@ -17,15 +17,15 @@ try:
 except ImportError:
     HAS_NATIVE_CONTROL_SPAN = False
 
-    class ControlAppliesTo(str, Enum):
+    class ControlAppliesTo(StrEnum):
         llm_call = "llm_call"
         tool_call = "tool_call"
 
-    class ControlCheckStage(str, Enum):
+    class ControlCheckStage(StrEnum):
         pre = "pre"
         post = "post"
 
-    class ControlAction(str, Enum):
+    class ControlAction(StrEnum):
         deny = "deny"
         steer = "steer"
         observe = "observe"

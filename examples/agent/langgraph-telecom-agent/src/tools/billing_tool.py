@@ -36,18 +36,18 @@ class BillingTool(BaseTool):
 
         if query_type == "usage":
             return f"""
-Usage Summary for {customer['name']}:
-- Data: {customer['data_used']:.1f} GB used ({customer['data_limit']})
+Usage Summary for {customer["name"]}:
+- Data: {customer["data_used"]:.1f} GB used ({customer["data_limit"]})
 - Minutes: {random.randint(300, 800)} (Unlimited)
 - Texts: {random.randint(500, 2000)} (Unlimited)
-- Average daily: {customer['data_used'] / 15:.2f} GB
+- Average daily: {customer["data_used"] / 15:.2f} GB
 """
 
         elif query_type == "plan":
             return f"""
-Current Plan: {customer['plan']}
-- Monthly Cost: ${customer['monthly_charge']:.2f}
-- Data: {customer['data_limit']}
+Current Plan: {customer["plan"]}
+- Monthly Cost: ${customer["monthly_charge"]:.2f}
+- Data: {customer["data_limit"]}
 - Talk & Text: Unlimited
 - 5G Access: Included
 
@@ -72,10 +72,10 @@ Auto-pay: Enabled
 
         # Default summary
         return f"""
-Account Summary for {customer['name']}:
-- Account: {customer['account']}
-- Plan: {customer['plan']}
-- Amount Due: ${customer['monthly_charge']:.2f}
-- Due Date: {customer['due_date']}
-- Data Used: {customer['data_used']:.1f} GB ({customer['data_limit']})
+Account Summary for {customer["name"]}:
+- Account: {customer["account"]}
+- Plan: {customer["plan"]}
+- Amount Due: ${customer["monthly_charge"]:.2f}
+- Due Date: {customer["due_date"]}
+- Data Used: {customer["data_used"]:.1f} GB ({customer["data_limit"]})
 """

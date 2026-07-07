@@ -21,4 +21,4 @@ elastic-opentelemetry
 langtrace-python-sdk
 
 # Logging dependencies
-galileo
+splunk-ao

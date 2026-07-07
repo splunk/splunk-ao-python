@@ -15,7 +15,7 @@ METRIC_NAME = SplunkAOMetrics.conversation_quality
 # METRIC_NAME = "multi-turn-session-test-metric-apples"
 
 # Load environment variables from the .env file
-from dotenv import load_dotenv  # noqa: E402
+from dotenv import load_dotenv
 
 load_dotenv()
 

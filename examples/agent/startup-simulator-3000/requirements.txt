@@ -5,7 +5,7 @@ attrs==25.3.0
 certifi==2025.4.26
 charset-normalizer==3.4.2
 distro==1.9.0
-galileo==1.5.1
+splunk-ao
 galileo-core
 h11==0.16.0
 httpcore==1.0.9

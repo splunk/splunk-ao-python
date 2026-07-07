@@ -1,4 +1,4 @@
-galileo>=0.3.0
+splunk-ao
 rich>=13.7.0
 questionary>=2.0.1
 openai==1.61.1

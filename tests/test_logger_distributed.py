@@ -1,17 +1,12 @@
 import asyncio
 import datetime
-import json
 import logging
-import uuid
 from unittest.mock import Mock, patch
 from uuid import UUID
 
 import pytest
 
 from galileo_core.schemas.logging.llm import Message
-from galileo_core.schemas.protect.execution_status import ExecutionStatus
-from galileo_core.schemas.protect.payload import Payload
-from galileo_core.schemas.protect.response import Response, TraceMetadata
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import SplunkAOLoggerException
@@ -210,111 +205,6 @@ def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock
     assert request.spans[0].user_metadata == metadata
     assert request.spans[0].metrics.duration_ns == 1_000_000
     assert request.spans[0].step_number == 1
-
-
-@patch("splunk_ao.logger.logger.LogStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_add_protect_tool_span(
-    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
-) -> None:
-    mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    created_at = datetime.datetime.now()
-    metadata = {"key": "value"}
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
-
-    capture = setup_thread_pool_request_capture(logger)
-
-    logger.start_trace(
-        input="input", name="test-trace", duration_ns=1_000_000, created_at=created_at, metadata=metadata
-    )
-
-    received_at = int(created_at.timestamp() * 1_000_000_000)
-    response_at = int((created_at + datetime.timedelta(seconds=1)).timestamp() * 1_000_000_000)
-    execution_time = 1000.0
-    trace_metadata_id = uuid.uuid4()
-
-    logger.add_protect_span(
-        payload=Payload(input="Protect input", output="Protect output"),
-        redacted_payload=Payload(input="Protect redacted input", output="Protect redacted output"),
-        response=Response(
-            status=ExecutionStatus.not_triggered,
-            text="Protect text",
-            trace_metadata=TraceMetadata(
-                id=trace_metadata_id, received_at=received_at, response_at=response_at, execution_time=execution_time
-            ),
-        ),
-        redacted_response=Response(
-            status=ExecutionStatus.not_triggered,
-            text="Protect redacted text",
-            trace_metadata=TraceMetadata(
-                id=trace_metadata_id, received_at=received_at, response_at=response_at, execution_time=execution_time
-            ),
-        ),
-        created_at=created_at,
-        metadata=metadata,
-        status_code=200,
-    )
-
-    assert len(logger._parent_stack) == 1
-
-    captured_task = capture.get_task_by_function_name("ingest_traces_with_backoff")
-    request = captured_task.request
-    assert isinstance(request, TracesIngestRequest)
-
-    asyncio.run(captured_task.task_func())
-    mock_traces_client_instance.ingest_traces.assert_called_with(request)
-
-    assert request.traces[0].input == "input"
-    assert request.traces[0].name == "test-trace"
-    assert request.traces[0].created_at == created_at
-    assert request.traces[0].user_metadata == metadata
-    assert len(request.traces[0].spans) == 0
-    assert request.traces[0].metrics.duration_ns == 1_000_000
-    trace_id = request.traces[0].id
-
-    captured_task = capture.get_task_by_function_name("ingest_spans_with_backoff")
-    request = captured_task.request
-    assert isinstance(request, SpansIngestRequest)
-
-    asyncio.run(captured_task.task_func())
-    mock_traces_client_instance.ingest_spans.assert_called_with(request)
-
-    assert request.trace_id == trace_id
-    assert request.parent_id == trace_id
-    protect_span = request.spans[0]
-    assert protect_span.type == "tool"
-    assert json.loads(protect_span.input) == {"input": "Protect input", "output": "Protect output"}
-    assert json.loads(protect_span.redacted_input) == {
-        "input": "Protect redacted input",
-        "output": "Protect redacted output",
-    }
-    assert json.loads(protect_span.output) == {
-        "status": "NOT_TRIGGERED",
-        "text": "Protect text",
-        "trace_metadata": {
-            "id": str(trace_metadata_id),
-            "received_at": received_at,
-            "response_at": response_at,
-            "execution_time": execution_time,
-        },
-    }
-    assert json.loads(protect_span.redacted_output) == {
-        "status": "NOT_TRIGGERED",
-        "text": "Protect redacted text",
-        "trace_metadata": {
-            "id": str(trace_metadata_id),
-            "received_at": received_at,
-            "response_at": response_at,
-            "execution_time": execution_time,
-        },
-    }
-    assert protect_span.name == "GalileoProtect"
-    assert protect_span.created_at == created_at
-    assert protect_span.user_metadata == metadata
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
@@ -1028,25 +918,6 @@ def test_trace_with_multiple_nested_spans(
         metadata=metadata,
     )
 
-    received_at = int(created_at.timestamp() * 1_000_000_000)
-    response_at = int((created_at + datetime.timedelta(seconds=1)).timestamp() * 1_000_000_000)
-    execution_time = 1000.0
-    trace_metadata_id = uuid.uuid4()
-
-    logger.add_protect_span(
-        payload=Payload(input="Protect input", output="Protect output"),
-        response=Response(
-            status=ExecutionStatus.not_triggered,
-            text="Protect text",
-            trace_metadata=TraceMetadata(
-                id=trace_metadata_id, received_at=received_at, response_at=response_at, execution_time=execution_time
-            ),
-        ),
-        created_at=created_at,
-        metadata=metadata,
-        status_code=200,
-    )
-
     logger.conclude(output="response2", status_code=200, duration_ns=1_000_000)
 
     logger.conclude(output="response2", status_code=200, duration_ns=1_000_000)
@@ -1054,7 +925,7 @@ def test_trace_with_multiple_nested_spans(
     assert len(logger._parent_stack) == 0
 
     captured_tasks = capture.get_all_tasks()
-    assert len(captured_tasks) == 10
+    assert len(captured_tasks) == 9
 
     captured_task = captured_tasks[0]
     assert captured_task.function_name == "ingest_traces_with_backoff"
@@ -1186,33 +1057,6 @@ def test_trace_with_multiple_nested_spans(
     assert request.spans[0].metrics.duration_ns == 1_000_000
 
     captured_task = captured_tasks[7]
-    assert captured_task.function_name == "ingest_spans_with_backoff"
-    request = captured_task.request
-    assert isinstance(request, SpansIngestRequest)
-
-    asyncio.run(captured_task.task_func())
-    mock_traces_client_instance.ingest_spans.assert_called_with(request)
-
-    assert request.trace_id == trace_id
-    assert request.parent_id == workflow_span_id
-    protect_span = request.spans[0]
-    assert protect_span.type == "tool"
-    assert json.loads(protect_span.input) == {"input": "Protect input", "output": "Protect output"}
-    assert json.loads(protect_span.output) == {
-        "status": "NOT_TRIGGERED",
-        "text": "Protect text",
-        "trace_metadata": {
-            "id": str(trace_metadata_id),
-            "received_at": received_at,
-            "response_at": response_at,
-            "execution_time": execution_time,
-        },
-    }
-    assert protect_span.name == "GalileoProtect"
-    assert protect_span.created_at == created_at
-    assert protect_span.user_metadata == metadata
-
-    captured_task = captured_tasks[8]
     assert captured_task.function_name == "update_span_with_backoff"
     request = captured_task.request
     assert isinstance(request, SpanUpdateRequest)
@@ -1224,7 +1068,7 @@ def test_trace_with_multiple_nested_spans(
     assert request.output == "response2"
     assert request.status_code == 200
 
-    captured_task = captured_tasks[9]
+    captured_task = captured_tasks[8]
     assert captured_task.function_name == "update_trace_with_backoff"
     request = captured_task.request
     assert isinstance(request, TraceUpdateRequest)
@@ -1875,10 +1719,10 @@ def test_get_tracing_headers_with_workflow_span(
 
     headers = logger.get_tracing_headers()
 
-    assert "X-Galileo-Trace-ID" in headers
-    assert headers["X-Galileo-Trace-ID"] == str(logger.traces[0].id)
-    assert "X-Galileo-Parent-ID" in headers
-    assert headers["X-Galileo-Parent-ID"] == str(workflow_span.id)
+    assert "Splunk-AO-Trace-ID" in headers
+    assert headers["Splunk-AO-Trace-ID"] == str(logger.traces[0].id)
+    assert "Splunk-AO-Parent-ID" in headers
+    assert headers["Splunk-AO-Parent-ID"] == str(workflow_span.id)
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
@@ -1900,10 +1744,10 @@ def test_get_tracing_headers_with_agent_span(
 
     headers = logger.get_tracing_headers()
 
-    assert "X-Galileo-Trace-ID" in headers
-    assert headers["X-Galileo-Trace-ID"] == str(logger.traces[0].id)
-    assert "X-Galileo-Parent-ID" in headers
-    assert headers["X-Galileo-Parent-ID"] == str(agent_span.id)
+    assert "Splunk-AO-Trace-ID" in headers
+    assert headers["Splunk-AO-Trace-ID"] == str(logger.traces[0].id)
+    assert "Splunk-AO-Parent-ID" in headers
+    assert headers["Splunk-AO-Parent-ID"] == str(agent_span.id)
 
 
 @patch("splunk_ao.logger.logger.LogStreams")

@@ -1,5 +1,5 @@
 openai
 langchain
 langchain-openai
-galileo
+splunk-ao
 python-dotenv

@@ -1,4 +1,4 @@
 azure-ai-inference
-galileo
+splunk-ao
 python-dotenv
 pytest

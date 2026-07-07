@@ -1,0 +1,74 @@
+# Regenerates the OpenAPI Python client from the Splunk AO backend spec.
+name: Update API Client
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * 1-5" # Runs at 9am ET M-F
+
+jobs:
+  update_api_client:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: "write"
+
+    env:
+      CI_ENV: dev
+
+    steps:
+      - name: Update ubuntu, install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install socat wget jq -y
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry==2.4.1
+          poetry install --all-extras --with dev
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch API types and regenerate
+        env:
+          PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+          API_URL: ${{ secrets.SPLUNK_AO_API_URL }}
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/splunk-ao-python.git
+          git checkout -b $BRANCH_NAME
+          poetry run ./scripts/import-openapi-yaml.sh "$API_URL"
+          poetry run ./scripts/auto-generate-api-client.sh
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to commit — spec is unchanged"
+            exit 0
+          fi
+          git commit -m "Update API Client"
+          git push origin $BRANCH_NAME
+
+      - name: Create pull request
+        env:
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
+          GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
+        run: |
+          if ! git ls-remote --exit-code origin refs/heads/$BRANCH_NAME > /dev/null 2>&1; then
+            echo "No branch to create PR from — nothing was committed"
+            exit 0
+          fi
+          gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'

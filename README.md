@@ -1,8 +1,8 @@
-# Galileo Python SDK
+# Splunk Agent Observability Python SDK
 
 <div align="center">
 
-<strong>The Python client library for the Galileo AI platform.</strong>
+<strong>The Python client library for the Splunk Agent Observability product.</strong>
 
 [![PyPI][pypi-badge]][pypi-url]
 [![Python Version][python-badge]][python-url]
@@ -20,18 +20,18 @@
 
 ### Installation
 
-`pip install galileo`
+`pip install splunk-ao`
 
 ### Setup
 
 Set the following environment variables:
 
-- `GALILEO_API_KEY`: Your Galileo API key
-- `GALILEO_PROJECT`: (Optional) Project name
-- `GALILEO_LOG_STREAM`: (Optional) Log stream name
-- `GALILEO_LOGGING_DISABLED`: (Optional) Disable collecting and sending logs to Galileo.
+- `SPLUNK_AO_API_KEY`: Your Agent Observability API key
+- `SPLUNK_AO_PROJECT`: (Optional) Project name
+- `SPLUNK_AO_LOG_STREAM`: (Optional) Log stream name
+- `SPLUNK_AO_LOGGING_DISABLED`: (Optional) Disable collecting and sending logs to Agent Observability.
 
-Note: if you would like to point to an environment other than `app.galileo.ai`, you'll need to set the `GALILEO_CONSOLE_URL` environment variable.
+Note: if you would like to point to an environment other than `app.galileo.ai`, you'll need to set the `SPLUNK_AO_CONSOLE_URL` environment variable.
 
 ### Usage
 
@@ -43,10 +43,10 @@ import os
 from splunk_ao import splunk_ao_context
 from splunk_ao.openai import openai
 
-# If you've set your GALILEO_PROJECT and GALILEO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
-# Initialize the Galileo wrapped OpenAI client
+# Initialize the Agent Observability wrapped OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 def call_openai():
@@ -60,7 +60,7 @@ def call_openai():
 # This will create a single span trace with the OpenAI call
 call_openai()
 
-# This will upload the trace to Galileo
+# This will upload the trace to Agent Observability
 splunk_ao_context.flush()
 ```
 
@@ -74,7 +74,7 @@ def make_nested_call():
     call_openai()
     call_openai()
 
-# If you've set your GALILEO_PROJECT and GALILEO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
 # This will create a trace with a workflow span and two nested LLM spans containing the OpenAI calls
@@ -106,7 +106,7 @@ def tool_call(input: str = "tool call input"):
 # This will create a trace with a tool span containing the tool call output
 tool_call(input="question")
 
-# This will upload the trace to Galileo
+# This will upload the trace to Agent Observability
 splunk_ao_context.flush()
 ```
 
@@ -132,13 +132,13 @@ with splunk_ao_context(project="gen-ai-project", log_stream="test2"):
     print(content)
 ```
 
-You can also use the `GalileoLogger` for manual logging scenarios:
+You can also use the `SplunkAOLogger` for manual logging scenarios:
 
 ```python
-from splunk_ao.logger import GalileoLogger
+from splunk_ao.logger import SplunkAOLogger
 
 # This will log to the project and log stream specified in the logger constructor
-logger = GalileoLogger(project="gen-ai-project", log_stream="test3")
+logger = SplunkAOLogger(project="gen-ai-project", log_stream="test3")
 trace = logger.start_trace("Say this is a test")
 
 logger.add_llm_span(
@@ -152,13 +152,13 @@ logger.add_llm_span(
 )
 
 logger.conclude(output="Hello, this is a test", duration_ns=1000)
-logger.flush() # This will upload the trace to Galileo
+logger.flush() # This will upload the trace to Agent Observability
 ```
 
-#### Using Galileo context with Agent Control
+#### Using Agent Observability context with Agent Control
 
-If you use Galileo-hosted Agent Control, initialize Agent Control with the
-current Galileo log stream as the runtime target:
+If you use Agent Control hosted by Splunk, initialize Agent Control with the
+current Agent Observability log stream as the runtime target:
 
 ```python
 import agent_control
@@ -177,15 +177,15 @@ agent_control.init(
 )
 ```
 
-The helper resolves an explicit log stream ID, `GALILEO_LOG_STREAM_ID`, or an
+The helper resolves an explicit log stream ID, `SPLUNK_AO_LOG_STREAM_ID`, or an
 already-initialized `splunk_ao_context` logger. It does not import the Agent
 Control SDK or resolve log stream names over the network. If you use a direct
 Agent Control client instead of `agent_control.init(...)`, pass
 `target.target_type` and `target.target_id` on each evaluation call.
 
 `splunk_ao.agent_control` resolves targets for Agent Control calls.
-`splunk_ao.handlers.agent_control` bridges Agent Control telemetry into Galileo
-logging.
+`splunk_ao.handlers.agent_control` bridges Agent Control telemetry into Agent
+Observability logging.
 
 OpenAI streaming example:
 
@@ -205,7 +205,7 @@ for chunk in stream:
     print(chunk.choices[0].delta.content or "", end="")
 ```
 
-In some cases (like long-running processes), it may be necessary to explicitly flush the trace to upload it to Galileo:
+In some cases (like long-running processes), it may be necessary to explicitly flush the trace to upload it to Agent Observability:
 
 ```python
 import os
@@ -215,7 +215,7 @@ from splunk_ao.openai import openai
 
 splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
-# Initialize the Galileo wrapped OpenAI client
+# Initialize the Agent Observability wrapped OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 def call_openai():
@@ -229,19 +229,19 @@ def call_openai():
 # This will create a single span trace with the OpenAI call
 call_openai()
 
-# This will upload the trace to Galileo
+# This will upload the trace to Agent Observability
 splunk_ao_context.flush()
 ```
 
 Using the Langchain callback handler:
 
 ```python
-from splunk_ao.handlers.langchain import GalileoCallback
+from splunk_ao.handlers.langchain import SplunkAOCallback
 from langchain.schema import HumanMessage
 from langchain_openai import ChatOpenAI
 
-# You can optionally pass a GalileoLogger instance to the callback if you don't want to use the default context
-callback = GalileoCallback()
+# You can optionally pass a SplunkAOLogger instance to the callback if you don't want to use the default context
+callback = SplunkAOCallback()
 
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7, callbacks=[callback])
 
@@ -301,7 +301,7 @@ datasets = list_datasets()
 >   )
 >   ```
 >
-> - **`output` / `ground_truth`**: The existing `output` field is now displayed as "Ground Truth" in the Galileo UI for better clarity. The SDK supports both `output` and `ground_truth` field names when creating records - both are normalized to `output` internally, ensuring full backward compatibility. You can use either field name, and access the value via the `ground_truth` property.
+> - **`output` / `ground_truth`**: The existing `output` field is now displayed as "Ground Truth" in the Agent Observability UI for better clarity. The SDK supports both `output` and `ground_truth` field names when creating records - both are normalized to `output` internally, ensuring full backward compatibility. You can use either field name, and access the value via the `ground_truth` property.
 >
 >   Example:
 >   ```python
@@ -379,9 +379,9 @@ run_experiment(
 Sessions allow you to group related traces together. By default, a session is created for each trace and a session name is auto-generated. If you would like to override this, you can explicitly start a session:
 
 ```python
-from splunk_ao import GalileoLogger
+from splunk_ao import SplunkAOLogger
 
-logger = GalileoLogger(project="gen-ai-project", log_stream="my-log-stream")
+logger = SplunkAOLogger(project="gen-ai-project", log_stream="my-log-stream")
 session_id =logger.start_session(name="my-session-name")
 
 ...
@@ -393,9 +393,9 @@ logger.flush()
 You can continue a previous session by using the same session ID that was previously generated:
 
 ```python
-from splunk_ao import GalileoLogger
+from splunk_ao import SplunkAOLogger
 
-logger = GalileoLogger(project="gen-ai-project", log_stream="my-log-stream")
+logger = SplunkAOLogger(project="gen-ai-project", log_stream="my-log-stream")
 logger.set_session(session_id="123e4567-e89b-12d3-a456-426614174000")
 
 ...

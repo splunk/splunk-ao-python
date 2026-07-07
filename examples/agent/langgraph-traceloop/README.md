@@ -36,7 +36,7 @@ Create a `.env` file in the project root with the following variables:
 
 TRACELOOP_BASE_URL=https://api.galileo.ai/otel
 
-TRACELOOP_HEADERS="Galileo-API-Key=your_splunk_ao_api_key_here, project=traceloop, logstream=default, X-Use-Otel-New=true"
+TRACELOOP_HEADERS="Splunk-AO-API-Key=your_splunk_ao_api_key_here, project=traceloop, logstream=default, X-Use-Otel-New=true"
 
 # Your OpenAI API key
 OPENAI_API_KEY=your_openai_api_key_here

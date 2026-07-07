@@ -1,6 +1,6 @@
-from typing import Any, Dict, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -8,15 +8,15 @@ class AgentState:
     """Container for agent state management"""
 
     # General state
-    variables: Dict[str, Any] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict)
 
     # Tool execution state
-    tool_results: Dict[str, Any] = field(default_factory=dict)
-    last_tool: Optional[str] = None
+    tool_results: dict[str, Any] = field(default_factory=dict)
+    last_tool: str | None = None
 
     # Task state
-    task_start_time: Optional[datetime] = None
-    task_variables: Dict[str, Any] = field(default_factory=dict)
+    task_start_time: datetime | None = None
+    task_variables: dict[str, Any] = field(default_factory=dict)
 
     def has_variable(self, name: str) -> bool:
         """Check if a variable exists in state"""

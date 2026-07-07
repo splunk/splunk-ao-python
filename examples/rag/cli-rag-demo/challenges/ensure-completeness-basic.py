@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from splunk_ao.openai import openai
-from rich.console import Console
+
 from document_store_basic import DocumentStoreBasic, format_documents
+from dotenv import load_dotenv
+from rich.console import Console
+
 from splunk_ao import splunk_ao_context
+from splunk_ao.openai import openai
 
 # Find the .env file in the parent directory
 current_dir = Path(__file__).resolve().parent
@@ -45,21 +47,14 @@ def query(question: str):
     prompt = Prompts.BASIC.format(query=question, documents=format_documents(docs))
 
     response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
+        model="gpt-4", messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}]
     )
 
     return response.choices[0].message.content.strip()
 
 
-def main():
-    with splunk_ao_context(
-        project=os.getenv("SPLUNK_AO_PROJECT", "ensure-completeness"),
-        log_stream="basic_approach",
-    ):
+def main() -> None:
+    with splunk_ao_context(project=os.getenv("SPLUNK_AO_PROJECT", "ensure-completeness"), log_stream="basic_approach"):
         console = Console()
         console.print("\nBasic Completeness Demo")
         console.print("\nUsing example question:", EXAMPLE_QUESTION)

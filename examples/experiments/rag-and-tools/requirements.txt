@@ -1,2 +1,2 @@
-galileo[openai]
+splunk-ao[openai]
 python-dotenv

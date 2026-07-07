@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from splunk_ao.openai import openai
-from rich.console import Console
+
 from document_store import DocumentStore, format_documents
+from dotenv import load_dotenv
+from rich.console import Console
+
 from splunk_ao import splunk_ao_context
+from splunk_ao.openai import openai
 
 # Find the .env file in the parent directory
 current_dir = Path(__file__).resolve().parent
@@ -20,7 +22,9 @@ print("SPLUNK_AO_PROJECT:", os.getenv("SPLUNK_AO_PROJECT"))
 print("SPLUNK_AO_API_KEY:", os.getenv("SPLUNK_AO_API_KEY"))
 print("SPLUNK_AO_BASE_URL:", os.getenv("SPLUNK_AO_BASE_URL"))
 
-EXAMPLE_QUESTION = "What are the fundamental concepts and operations in arithmetic, and how are they used in mathematics?"
+EXAMPLE_QUESTION = (
+    "What are the fundamental concepts and operations in arithmetic, and how are they used in mathematics?"
+)
 
 
 class Prompts:
@@ -60,11 +64,8 @@ def query(question: str):
     return response.choices[0].message.content.strip()
 
 
-def main():
-    with splunk_ao_context(
-        project=os.getenv("SPLUNK_AO_PROJECT", "chunk-utilization"),
-        log_stream="basic_approach",
-    ):
+def main() -> None:
+    with splunk_ao_context(project=os.getenv("SPLUNK_AO_PROJECT", "chunk-utilization"), log_stream="basic_approach"):
         console = Console()
         console.print("\nBasic Chunk Utilization Demo")
         console.print("\nUsing example question:", EXAMPLE_QUESTION)

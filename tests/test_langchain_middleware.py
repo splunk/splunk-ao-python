@@ -136,7 +136,9 @@ class TestSplunkAOMiddlewareInitialization:
 
     def test_custom_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test middleware initialization with custom parameters."""
-        middleware = SplunkAOMiddleware(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
+        middleware = SplunkAOMiddleware(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
 
         assert middleware._handler._start_new_trace is False
         assert middleware._handler._flush_on_chain_end is False
@@ -508,7 +510,9 @@ class TestIngestionHook:
         [
             lambda hook: SplunkAOMiddleware(ingestion_hook=hook),
             lambda hook: SplunkAOMiddleware(splunk_ao_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOMiddleware(splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOMiddleware(
+                splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook
+            ),
         ],
     )
     def test_ingestion_hook_called(self, middleware_builder) -> None:

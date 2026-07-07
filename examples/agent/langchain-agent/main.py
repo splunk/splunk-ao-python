@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 from langchain.agents import initialize_agent
 from langchain.agents.agent_types import AgentType
-from langchain_openai import ChatOpenAI
 from langchain.tools import tool
+from langchain_openai import ChatOpenAI
+
 from splunk_ao import splunk_ao_context
 from splunk_ao.handlers.langchain import SplunkAOCallback
 

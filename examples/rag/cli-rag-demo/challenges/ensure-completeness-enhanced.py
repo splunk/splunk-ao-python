@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from splunk_ao.openai import openai
-from rich.console import Console
+
 from document_store import DocumentStore
+from dotenv import load_dotenv
+from rich.console import Console
+
 from splunk_ao import splunk_ao_context
+from splunk_ao.openai import openai
 
 # Find the .env file in the parent directory
 current_dir = Path(__file__).resolve().parent
@@ -45,7 +47,7 @@ IMPORTANT: Your response must:
 
 def format_documents_with_citations(documents: list) -> str:
     return "\n\n".join(
-        f"Document {i+1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}, "
+        f"Document {i + 1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}, "
         f"Score: {doc['metadata'].get('combined_score', doc['metadata'].get('score', 'N/A')):.3f}):\n{doc['text']}"
         for i, doc in enumerate(documents)
     )
@@ -70,20 +72,15 @@ def query(question: str):
     prompt = Prompts.ENHANCED.format(query=question, documents=format_documents_with_citations(docs))
 
     response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
+        model="gpt-4", messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}]
     )
 
     return response.choices[0].message.content.strip()
 
 
-def main():
+def main() -> None:
     with splunk_ao_context(
-        project=os.getenv("SPLUNK_AO_PROJECT", "ensure-completeness"),
-        log_stream="enhanced_approach",
+        project=os.getenv("SPLUNK_AO_PROJECT", "ensure-completeness"), log_stream="enhanced_approach"
     ):
         console = Console()
         console.print("\nEnhanced Completeness Demo")

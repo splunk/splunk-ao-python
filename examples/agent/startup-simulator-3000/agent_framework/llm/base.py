@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
-from .models import LLMMessage, LLMResponse, LLMConfig
+from .models import LLMConfig, LLMMessage, LLMResponse
 
 
 class LLMProvider(ABC):
@@ -11,11 +10,9 @@ class LLMProvider(ABC):
         self.config = config
 
     @abstractmethod
-    async def generate(self, messages: List[LLMMessage], config: Optional[LLMConfig] = None) -> LLMResponse:
+    async def generate(self, messages: list[LLMMessage], config: LLMConfig | None = None) -> LLMResponse:
         """Generate a response from the LLM"""
-        pass
 
     @abstractmethod
-    async def generate_stream(self, messages: List[LLMMessage], config: Optional[LLMConfig] = None):
+    async def generate_stream(self, messages: list[LLMMessage], config: LLMConfig | None = None):
         """Generate a streaming response from the LLM"""
-        pass

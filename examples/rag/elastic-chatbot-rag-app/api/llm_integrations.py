@@ -1,4 +1,5 @@
 import os
+
 from langchain.chat_models import init_chat_model
 
 LLM_TYPE = os.getenv("LLM_TYPE", "openai")
@@ -59,6 +60,8 @@ MAP_LLM_TYPE_TO_CHAT_MODEL = {
 
 def get_llm(temperature=0):
     if LLM_TYPE not in MAP_LLM_TYPE_TO_CHAT_MODEL:
-        raise Exception("LLM type not found. Please set LLM_TYPE to one of: " + ", ".join(MAP_LLM_TYPE_TO_CHAT_MODEL.keys()) + ".")
+        raise Exception(
+            "LLM type not found. Please set LLM_TYPE to one of: " + ", ".join(MAP_LLM_TYPE_TO_CHAT_MODEL.keys()) + "."
+        )
 
     return MAP_LLM_TYPE_TO_CHAT_MODEL[LLM_TYPE](temperature=temperature)

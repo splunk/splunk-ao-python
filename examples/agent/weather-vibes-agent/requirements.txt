@@ -5,7 +5,7 @@ python-dotenv
 jinja2
 pydantic
 rich>=13.0.0
-galileo
+splunk-ao
 
 # Direct OpenAI dependency instead of relying on Simple Agent Framework's LLM utility
 openai>=1.0.0

@@ -24,7 +24,7 @@ logger.flush()  # send the trace to Splunk AO
 # Example of how to create "redacted_input", matching email as sensitive info
 # ---------------------------------------------------------------------------
 
-import re  # regular expression  # noqa: E402
+import re  # regular expression
 
 user_input = "This is the email: example@example.com"
 
@@ -43,7 +43,7 @@ logger.flush()  # send the trace to Splunk AO
 
 # Export the logged traces in the logstream
 
-import os  # noqa: E402
+import os
 
 project_name = os.getenv("SPLUNK_AO_PROJECT")
 log_stream_name = os.getenv("SPLUNK_AO_LOG_STREAM")

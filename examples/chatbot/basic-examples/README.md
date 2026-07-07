@@ -86,7 +86,7 @@ To run the examples, you'll need to:
 
 1. Install the required packages:
    ```
-   pip install openai galileo python-dotenv
+   pip install openai splunk-ao python-dotenv
    ```
 
 2. Set up your environment variables in a `.env` file:

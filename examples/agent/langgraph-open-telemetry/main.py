@@ -4,7 +4,6 @@ from typing import TypedDict
 
 import dotenv
 import openai
-from splunk_ao import otel
 
 # LangGraph imports - this is what we're actually instrumenting
 from langgraph.graph import END, StateGraph
@@ -13,6 +12,8 @@ from opentelemetry.instrumentation.langchain import LangchainInstrumentor
 from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
 from opentelemetry.sdk import trace as trace_sdk  # SDK for creating traces
 from opentelemetry.sdk.resources import Resource
+
+from splunk_ao import otel
 
 dotenv.load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
@@ -84,10 +85,7 @@ def generate_response(state: AgentState):
 
         # Make the OpenAI API call - OpenAI instrumentation handles tracing
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}],
-            max_tokens=300,
-            temperature=0.7,
+            model="gpt-3.5-turbo", messages=[{"role": "user", "content": user_input}], max_tokens=300, temperature=0.7
         )
 
         # Extract the response content
@@ -102,7 +100,7 @@ def generate_response(state: AgentState):
 
     except Exception as e:
         print(f"❌ Error calling OpenAI: {e}")
-        return {"llm_response": f"Error: {str(e)}"}
+        return {"llm_response": f"Error: {e!s}"}
 
 
 # Node 3: Format Answer
