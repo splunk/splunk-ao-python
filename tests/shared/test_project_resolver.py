@@ -1,9 +1,8 @@
 """Unit tests for ``splunk_ao.shared.project_resolver._resolve_project``.
 
-The resolver is the single canonical entry point used by every ``__future__``
-domain object (LogStream, Experiment, …) to turn explicit kwargs / env vars
-into a concrete project. These tests pin its contract so future callers
-behave consistently.
+This resolver is the single canonical entry point every module should use to
+turn explicit kwargs or env vars into a concrete project. These tests pin
+down its contract so future callers behave consistently.
 """
 
 from unittest.mock import MagicMock, patch
