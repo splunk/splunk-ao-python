@@ -12,9 +12,9 @@ from __future__ import annotations
 
 import pytest
 
-from galileo.resources.models import OutputTypeEnum, ScorerTypes
 from galileo_core.schemas.logging.step import StepType
 from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
+from splunk_ao.resources.models import OutputTypeEnum, ScorerTypes
 from splunk_ao.shared.exceptions import ValidationError
 
 

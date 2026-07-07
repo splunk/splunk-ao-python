@@ -1,18 +1,18 @@
 import logging
 from enum import Enum
 
-from galileo.resources.api.trace import (
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.trace import (
     query_sessions_projects_project_id_sessions_search_post,
     query_spans_projects_project_id_spans_search_post,
     query_traces_projects_project_id_traces_search_post,
 )
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     HTTPValidationError,
     LogRecordsQueryRequest,
     LogRecordsQueryResponse,
     LogRecordsSortClause,
 )
-from splunk_ao.config import SplunkAOConfig
 from splunk_ao.schema.filters import FilterType
 
 logger = logging.getLogger(__name__)

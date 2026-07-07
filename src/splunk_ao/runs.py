@@ -1,16 +1,16 @@
 import logging
 
-from galileo.resources.api.run_scorer_settings import (
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.run_scorer_settings import (
     upsert_scorers_config_projects_project_id_runs_run_id_scorer_settings_patch,
 )
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     HTTPValidationError,
     RunScorerSettingsPatchRequest,
     RunScorerSettingsResponse,
     ScorerConfig,
     SegmentFilter,
 )
-from splunk_ao.config import SplunkAOConfig
 
 logger = logging.getLogger(__name__)
 

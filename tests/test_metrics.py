@@ -5,7 +5,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from galileo.resources.models import (
+from galileo_core.schemas.logging.step import StepType
+from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
+from splunk_ao.resources.models import (
     BucketedMetrics,
     HTTPValidationError,
     LogRecordsMetricsResponse,
@@ -13,15 +15,13 @@ from galileo.resources.models import (
     LogRecordsMetricsResponseBucketedMetrics,
     ValidationError,
 )
-from galileo.resources.models.base_scorer_version_response import BaseScorerVersionResponse
-from galileo.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
-from galileo.resources.models.create_scorer_request import CreateScorerRequest
-from galileo.resources.models.output_type_enum import OutputTypeEnum
-from galileo.resources.models.scorer_defaults import ScorerDefaults
-from galileo.resources.models.scorer_response import ScorerResponse
-from galileo.resources.models.scorer_types import ScorerTypes
-from galileo_core.schemas.logging.step import StepType
-from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
+from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
+from splunk_ao.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
+from splunk_ao.resources.models.create_scorer_request import CreateScorerRequest
+from splunk_ao.resources.models.output_type_enum import OutputTypeEnum
+from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
+from splunk_ao.resources.models.scorer_response import ScorerResponse
+from splunk_ao.resources.models.scorer_types import ScorerTypes
 
 FIXED_PROJECT_ID = str(uuid4())
 

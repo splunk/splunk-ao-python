@@ -14,10 +14,8 @@ def get_package_version() -> str:
 def get_method_name() -> str:
     """Get the entry point method name into the SDK namespace boundary.
 
-    Returns the last SDK function before exiting the supported namespace boundary
-    when traversing from the bottom of the call stack. This captures entry points
-    from the active ``splunk_ao`` package and from protected generated resources
-    that remain under ``galileo.resources`` for HYBIM-717.
+    Returns the last SDK function before exiting the ``splunk_ao`` namespace
+    when traversing from the bottom of the call stack.
 
     Returns
     -------
@@ -40,13 +38,12 @@ def get_method_name() -> str:
             temp_frame = temp_frame.f_back
 
         # Find the entry point into the SDK package (traversing from bottom to top).
-        # Protected generated resources remain under galileo.resources for HYBIM-717.
         entry_point: dict[str, Any] | None = None
         for i in range(len(frames_info) - 1, -1, -1):
             frame_info = frames_info[i]
             module_name = str(frame_info["module"])  # Explicitly cast to string
 
-            if module_name.startswith(("splunk_ao.", "galileo.resources.")):
+            if module_name.startswith("splunk_ao."):
                 entry_point = frame_info
                 break
 

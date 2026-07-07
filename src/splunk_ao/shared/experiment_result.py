@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.types import Unset
+from splunk_ao.resources.types import Unset
 
 if TYPE_CHECKING:
-    from galileo.resources.models import ExperimentResponse
+    from splunk_ao.resources.models import ExperimentResponse
 
 logger = logging.getLogger(__name__)
 

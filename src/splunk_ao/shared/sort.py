@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from galileo.resources.models import LogRecordsSortClause
+from splunk_ao.resources.models import LogRecordsSortClause
 
 
 class Sort:

@@ -3,7 +3,7 @@ from typing import Any, Iterator, Optional, Union, cast
 
 import httpx
 
-from galileo.exceptions import (
+from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
     ConflictError,
@@ -12,7 +12,7 @@ from galileo.exceptions import (
     RateLimitError,
     ServerError,
 )
-from galileo.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_sdk_header
 from galileo_core.constants.request_method import RequestMethod
 from galileo_core.helpers.api_client import ApiClient
 from ...types import Response, UNSET

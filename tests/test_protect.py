@@ -3,11 +3,6 @@ from uuid import uuid4
 
 from pytest import mark
 
-from galileo.resources.models.execution_status import ExecutionStatus as APIExecutionStatus
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.protect_request import ProtectRequest as APIRequest
-from galileo.resources.models.protect_response import ProtectResponse as APIResponse
-from galileo.resources.models.validation_error import ValidationError
 from galileo_core.schemas.protect.execution_status import ExecutionStatus
 from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.request import Request
@@ -16,6 +11,11 @@ from galileo_core.schemas.protect.rule import Rule, RuleOperator
 from galileo_core.schemas.protect.ruleset import Ruleset
 from splunk_ao.handlers.langchain.tool import ProtectTool
 from splunk_ao.protect import Protect, ainvoke_protect, invoke_protect
+from splunk_ao.resources.models.execution_status import ExecutionStatus as APIExecutionStatus
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.protect_request import ProtectRequest as APIRequest
+from splunk_ao.resources.models.protect_response import ProtectResponse as APIResponse
+from splunk_ao.resources.models.validation_error import ValidationError
 
 A_PROJECT_NAME = "project_name"
 A_STAGE_NAME = "stage_name"
@@ -172,7 +172,7 @@ class TestAInvokePassThrough:
     @mark.parametrize("timeout", [5, 60])
     @patch("splunk_ao.protect.invoke_protect_invoke_post.asyncio", new_callable=AsyncMock)
     @mark.asyncio
-    async def test_ainvoke_forwards_timeout(self, mock_invoke_post_async: AsyncMock, timeout: float) -> None:
+    async def test_ainvoke_forwards_timeout(self, mock_invoke_post_async: AsyncMock, timeout: float) -> None:  # noqa: ASYNC109
         mock_invoke_post_async.return_value = invoke_response()
         stage_id = uuid4()
 

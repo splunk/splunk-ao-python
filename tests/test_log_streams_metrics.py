@@ -4,10 +4,10 @@ from uuid import UUID
 
 import pytest
 
-from galileo.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
-from galileo.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.log_streams import LogStream, LogStreams, enable_metrics
 from splunk_ao.projects import Project
+from splunk_ao.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
+from splunk_ao.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
 from splunk_ao.utils.metrics import create_metric_configs
 
@@ -89,7 +89,7 @@ class TestLogStreamMetrics:
         mock_scorer_settings_class.return_value.create.return_value = None
 
         # Test with built-in metrics
-        scorers, local_metrics = create_metric_configs(
+        _scorers, local_metrics = create_metric_configs(
             "project-123", "logstream-456", [SplunkAOMetrics.correctness, "completeness"]
         )
 
@@ -142,7 +142,7 @@ class TestLogStreamMetrics:
         local_metric = LocalMetricConfig(name="local_metric", scorer_fn=custom_scorer)
 
         # Test with mixed metrics (only valid ones to avoid decorator error handling)
-        scorers, local_metrics = create_metric_configs(
+        _scorers, local_metrics = create_metric_configs(
             "project-123", "logstream-456", [SplunkAOMetrics.correctness, local_metric]
         )
 

@@ -1,7 +1,7 @@
 import uuid
 from unittest.mock import ANY, Mock, patch
 
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     BaseScorerVersionResponse,
     ListScorersRequest,
     ListScorersResponse,

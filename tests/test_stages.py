@@ -4,11 +4,11 @@ from unittest.mock import ANY, Mock, patch
 import pytest
 from pydantic import UUID4
 
-from galileo.resources.models import HTTPValidationError
-from galileo.resources.models.stage_db import StageDB as APIStageDB
 from galileo_core.schemas.protect.rule import Rule, RuleOperator
 from galileo_core.schemas.protect.ruleset import Ruleset
 from galileo_core.schemas.protect.stage import StageDB, StageType
+from splunk_ao.resources.models import HTTPValidationError
+from splunk_ao.resources.models.stage_db import StageDB as APIStageDB
 from splunk_ao.stages import (
     create_protect_stage,
     get_protect_stage,

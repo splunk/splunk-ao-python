@@ -5,11 +5,11 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models import HTTPValidationError, OutputTypeEnum, ScorerTypes
-from galileo.resources.models.invalid_result import InvalidResult
-from galileo.resources.models.task_result_status import TaskResultStatus
 from galileo_core.schemas.logging.step import StepType
 from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric
+from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerTypes
+from splunk_ao.resources.models.invalid_result import InvalidResult
+from splunk_ao.resources.models.task_result_status import TaskResultStatus
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 
@@ -777,7 +777,7 @@ class TestMetricMethods:
         self, mock_scorers_class: MagicMock, reset_configuration: None
     ) -> None:
         """Test _populate_from_scorer_response handles Unset values correctly."""
-        from galileo.resources.types import Unset as UnsetType
+        from splunk_ao.resources.types import Unset as UnsetType
 
         mock_service = MagicMock()
         mock_scorers_class.return_value = mock_service

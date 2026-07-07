@@ -6,11 +6,11 @@ import logging
 from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.models import LogRecordsQueryResponse
-from galileo.resources.types import UNSET
+from splunk_ao.resources.models import LogRecordsQueryResponse
+from splunk_ao.resources.types import UNSET
 
 if TYPE_CHECKING:
-    from galileo.resources.models import LogRecordsSortClause
+    from splunk_ao.resources.models import LogRecordsSortClause
     from splunk_ao.schema.filters import FilterType
     from splunk_ao.search import RecordType
 

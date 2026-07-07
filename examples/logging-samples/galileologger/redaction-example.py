@@ -1,12 +1,12 @@
-from splunk_ao import SplunkAOLogger
-from splunk_ao.projects import get_project
-from splunk_ao.log_streams import get_log_stream
-from splunk_ao.export import export_records
-from galileo.resources.models.root_type import RootType
-from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
-
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
+from splunk_ao import SplunkAOLogger
+from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
+from splunk_ao.export import export_records
+from splunk_ao.log_streams import get_log_stream
+from splunk_ao.projects import get_project
+from splunk_ao.resources.models.root_type import RootType
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ logger.flush()  # send the trace to Splunk AO
 # Example of how to create "redacted_input", matching email as sensitive info
 # ---------------------------------------------------------------------------
 
-import re  # regular expression
+import re  # regular expression  # noqa: E402
 
 user_input = "This is the email: example@example.com"
 
@@ -43,7 +43,7 @@ logger.flush()  # send the trace to Splunk AO
 
 # Export the logged traces in the logstream
 
-import os
+import os  # noqa: E402
 
 project_name = os.getenv("SPLUNK_AO_PROJECT")
 log_stream_name = os.getenv("SPLUNK_AO_LOG_STREAM")

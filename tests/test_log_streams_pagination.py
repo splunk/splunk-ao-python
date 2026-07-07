@@ -12,11 +12,11 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.list_log_stream_response import ListLogStreamResponse
-from galileo.resources.models.log_stream_response import LogStreamResponse
-from galileo.resources.types import UNSET
 from splunk_ao.log_streams import LogStreams
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.list_log_stream_response import ListLogStreamResponse
+from splunk_ao.resources.models.log_stream_response import LogStreamResponse
+from splunk_ao.resources.types import UNSET
 
 
 def _make_response(*, names: list[str], next_token, paginated: bool) -> ListLogStreamResponse:

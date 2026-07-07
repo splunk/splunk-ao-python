@@ -1,4 +1,4 @@
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     LogRecordsBooleanFilter,
     LogRecordsDateFilter,
     LogRecordsIDFilter,

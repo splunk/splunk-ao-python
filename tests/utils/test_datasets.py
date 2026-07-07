@@ -2,9 +2,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from galileo.resources.models.dataset_content import DatasetContent
-from galileo.resources.models.dataset_row import DatasetRow
-from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
+from splunk_ao.resources.models.dataset_content import DatasetContent
+from splunk_ao.resources.models.dataset_row import DatasetRow
+from splunk_ao.resources.models.dataset_row_values_dict import DatasetRowValuesDict
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.utils.datasets import (
     create_rows_from_records,
@@ -25,7 +25,7 @@ def test_get_dataset_and_records_with_id(mock_get_records, mock_get_dataset, dat
     mock_get_dataset.return_value = mock_dataset
 
     # Execute
-    dataset, records = get_dataset_and_records(id="test-id")
+    dataset, _records = get_dataset_and_records(id="test-id")
 
     # Assert
     mock_get_dataset.assert_called_once_with(id="test-id")
@@ -43,7 +43,7 @@ def test_get_dataset_and_records_with_name(mock_get_records, mock_get_dataset, d
     mock_get_dataset.return_value = mock_dataset
 
     # Execute
-    dataset, records = get_dataset_and_records(name="test-dataset")
+    dataset, _records = get_dataset_and_records(name="test-dataset")
 
     # Assert
     mock_get_dataset.assert_called_once_with(name="test-dataset")

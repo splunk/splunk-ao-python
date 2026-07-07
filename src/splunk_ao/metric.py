@@ -13,14 +13,21 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from splunk_ao.model import Model
 
-from galileo.resources.api.data import (
+from galileo_core.schemas.logging.span import Span
+from galileo_core.schemas.logging.step import StepType
+from galileo_core.schemas.logging.trace import Trace
+from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.configuration import Configuration
+from splunk_ao.metrics import Metrics
+from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
     get_validate_code_scorer_task_result_scorers_code_validate_task_id_get,
     update_scorers_scorer_id_patch,
     validate_code_scorer_scorers_code_validate_post,
 )
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
     BodyValidateCodeScorerScorersCodeValidatePost,
     CreateScorerRequest,
@@ -30,15 +37,8 @@ from galileo.resources.models import (
     TaskResultStatus,
     UpdateScorerRequest,
 )
-from galileo.resources.models.invalid_result import InvalidResult
-from galileo.resources.types import UNSET, File, Unset
-from galileo_core.schemas.logging.span import Span
-from galileo_core.schemas.logging.step import StepType
-from galileo_core.schemas.logging.trace import Trace
-from galileo_core.schemas.shared.metric import MetricValueType
-from splunk_ao.config import SplunkAOConfig
-from splunk_ao.configuration import Configuration
-from splunk_ao.metrics import Metrics
+from splunk_ao.resources.models.invalid_result import InvalidResult
+from splunk_ao.resources.types import UNSET, File, Unset
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
 from splunk_ao.schema.metrics import Metric as LegacyMetric
 from splunk_ao.scorers import Scorers

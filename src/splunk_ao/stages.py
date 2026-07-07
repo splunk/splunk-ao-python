@@ -2,21 +2,21 @@ from collections.abc import Sequence
 
 from pydantic import UUID4
 
-from galileo.resources.api.protect import (
-    create_stage_projects_project_id_stages_post,
-    get_stage_projects_project_id_stages_get,
-    pause_stage_projects_project_id_stages_stage_id_put,
-    update_stage_projects_project_id_stages_stage_id_post,
-)
-from galileo.resources.models.rulesets_mixin import RulesetsMixin as APIRulesetsMixin
-from galileo.resources.models.stage_db import StageDB as APIStageDB
-from galileo.resources.models.stage_with_rulesets import StageWithRulesets as APIStageWithRulesets
-from galileo.resources.types import UNSET
 from galileo_core.schemas.protect.ruleset import Ruleset, RulesetsMixin
 from galileo_core.schemas.protect.stage import StageDB, StageType, StageWithRulesets
 from galileo_core.utils.name import ts_name
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.projects import Projects
+from splunk_ao.resources.api.protect import (
+    create_stage_projects_project_id_stages_post,
+    get_stage_projects_project_id_stages_get,
+    pause_stage_projects_project_id_stages_stage_id_put,
+    update_stage_projects_project_id_stages_stage_id_post,
+)
+from splunk_ao.resources.models.rulesets_mixin import RulesetsMixin as APIRulesetsMixin
+from splunk_ao.resources.models.stage_db import StageDB as APIStageDB
+from splunk_ao.resources.models.stage_with_rulesets import StageWithRulesets as APIStageWithRulesets
+from splunk_ao.resources.types import UNSET
 
 
 def _get_validated_project_id(project_id: str | UUID4 | None = None, project_name: str | None = None) -> str:

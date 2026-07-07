@@ -5,25 +5,6 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models import (
-    BodyCreateDatasetDatasetsPost,
-    DatasetContent,
-    DatasetDB,
-    DatasetFormat,
-    DatasetNameFilter,
-    DatasetNameFilterOperator,
-    DatasetUpdatedAtSort,
-    JobProgress,
-    ListDatasetParams,
-    ListDatasetResponse,
-    ListDatasetVersionParams,
-    ListDatasetVersionResponse,
-    SyntheticDatasetExtensionResponse,
-)
-from galileo.resources.models.dataset_row import DatasetRow
-from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.types import UNSET, Response
 from splunk_ao.datasets import (
     DEFAULT_EXTEND_MODEL_ALIAS,
     Dataset,
@@ -39,6 +20,25 @@ from splunk_ao.datasets import (
     get_dataset_version_history,
     list_dataset_projects,
 )
+from splunk_ao.resources.models import (
+    BodyCreateDatasetDatasetsPost,
+    DatasetContent,
+    DatasetDB,
+    DatasetFormat,
+    DatasetNameFilter,
+    DatasetNameFilterOperator,
+    DatasetUpdatedAtSort,
+    JobProgress,
+    ListDatasetParams,
+    ListDatasetResponse,
+    ListDatasetVersionParams,
+    ListDatasetVersionResponse,
+    SyntheticDatasetExtensionResponse,
+)
+from splunk_ao.resources.models.dataset_row import DatasetRow
+from splunk_ao.resources.models.dataset_row_values_dict import DatasetRowValuesDict
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.types import UNSET, Response
 from splunk_ao.schema.datasets import DatasetRecord
 
 
@@ -840,11 +840,11 @@ def test_list_datasets_with_nonexistent_project_name(get_project_mock: Mock) -> 
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_with_project_id(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test getting a dataset with project_id validation."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import get_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
     project_id = "test-project-id"
@@ -887,13 +887,13 @@ def test_get_dataset_with_project_id(list_projects_mock: Mock, get_dataset_mock:
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.query_datasets_datasets_query_post")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_with_project_name(
     list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test getting a dataset with project_name validation."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import get_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_name = "Test Dataset"
     dataset_id = "dataset-1"
@@ -976,11 +976,11 @@ def test_get_dataset_with_nonexistent_project(get_dataset_mock: Mock, get_projec
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_get_dataset_not_in_project(list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock) -> None:
     """Test getting a dataset that is not used in the specified project."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import get_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
     project_id = "test-project-id"
@@ -1017,14 +1017,14 @@ def test_get_dataset_not_in_project(list_projects_mock: Mock, get_dataset_mock: 
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 @patch("splunk_ao.datasets.delete_dataset_datasets_dataset_id_delete")
 def test_delete_dataset_with_project_id(
     delete_dataset_mock: Mock, list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset with project_id validation."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import delete_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
     project_id = "test-project-id"
@@ -1066,14 +1066,14 @@ def test_delete_dataset_with_project_id(
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.query_datasets_datasets_query_post")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 @patch("splunk_ao.datasets.delete_dataset_datasets_dataset_id_delete")
 def test_delete_dataset_with_project_name(
     delete_dataset_mock: Mock, list_projects_mock: Mock, query_datasets_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset with project_name validation."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import delete_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_name = "Test Dataset"
     dataset_id = "dataset-1"
@@ -1125,13 +1125,13 @@ def test_delete_dataset_with_both_project_params() -> None:
 
 @patch("splunk_ao.projects.Projects.get")
 @patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_delete_dataset_not_in_project(
     list_projects_mock: Mock, get_dataset_mock: Mock, get_project_mock: Mock
 ) -> None:
     """Test deleting a dataset that is not used in the specified project."""
-    from galileo.resources.models import ListDatasetProjectsResponse
     from splunk_ao.datasets import delete_dataset
+    from splunk_ao.resources.models import ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
     project_id = "test-project-id"
@@ -1335,10 +1335,10 @@ def test_create_dataset_without_project_uses_unset(create_dataset_mock: Mock) ->
                 pytest.fail(f"Field {field_name} contains string 'None' which would cause 422 error")
 
 
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_dataset_list_projects(list_projects_mock: Mock) -> None:
     """Test Dataset.list_projects() method."""
-    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+    from splunk_ao.resources.models import DatasetProject, ListDatasetProjectsResponse
 
     # Create a dataset instance
     dataset_db = DatasetDB(
@@ -1387,10 +1387,10 @@ def test_dataset_list_projects(list_projects_mock: Mock) -> None:
 
 
 @patch("splunk_ao.datasets.get_dataset_datasets_dataset_id_get")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_list_dataset_projects_by_id(list_projects_mock: Mock, get_dataset_mock: Mock) -> None:
     """Test list_dataset_projects() convenience function with dataset_id."""
-    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+    from splunk_ao.resources.models import DatasetProject, ListDatasetProjectsResponse
 
     dataset_id = "dataset-1"
 
@@ -1432,10 +1432,10 @@ def test_list_dataset_projects_by_id(list_projects_mock: Mock, get_dataset_mock:
 
 
 @patch("splunk_ao.datasets.query_datasets_datasets_query_post")
-@patch("galileo.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
+@patch("splunk_ao.resources.api.datasets.list_dataset_projects_datasets_dataset_id_projects_get.sync")
 def test_list_dataset_projects_by_name(list_projects_mock: Mock, query_datasets_mock: Mock) -> None:
     """Test list_dataset_projects() convenience function with dataset_name."""
-    from galileo.resources.models import DatasetProject, ListDatasetProjectsResponse
+    from splunk_ao.resources.models import DatasetProject, ListDatasetProjectsResponse
 
     dataset_name = "Test Dataset"
     dataset_id = "dataset-1"

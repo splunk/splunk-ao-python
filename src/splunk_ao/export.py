@@ -5,12 +5,12 @@ import sys
 from collections.abc import Iterator
 from typing import Any
 
-from galileo.resources.api.trace.export_records_projects_project_id_export_records_post import (
-    stream_detailed as export_records_stream,
-)
-from galileo.resources.models import LLMExportFormat, LogRecordsExportRequest, LogRecordsSortClause, RootType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.log_streams import LogStreams
+from splunk_ao.resources.api.trace.export_records_projects_project_id_export_records_post import (
+    stream_detailed as export_records_stream,
+)
+from splunk_ao.resources.models import LLMExportFormat, LogRecordsExportRequest, LogRecordsSortClause, RootType
 from splunk_ao.schema.filters import FilterType
 
 logger = logging.getLogger(__name__)

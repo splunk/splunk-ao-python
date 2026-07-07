@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
@@ -55,7 +55,7 @@ except ImportError:
         )
         name: str = Field(default="control", description="Human-readable control name.")
         created_at: datetime = Field(
-            default_factory=lambda: datetime.now(tz=timezone.utc), description="Timestamp of the control execution."
+            default_factory=lambda: datetime.now(tz=UTC), description="Timestamp of the control execution."
         )
         user_metadata: dict[str, str] = Field(default_factory=dict, description="Metadata associated with the span.")
         tags: list[str] = Field(default_factory=list, description="Tags associated with the span.")

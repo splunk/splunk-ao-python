@@ -52,8 +52,6 @@ from httpx import Request  # noqa: E402
 from httpx import Response as HttpxResponse  # noqa: E402
 from test_support.config import fast_config_validation  # noqa: E402
 
-from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
-from galileo.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from galileo_core.constants.request_method import RequestMethod  # noqa: E402
 from galileo_core.constants.routes import Routes as CoreRoutes  # noqa: E402
 from galileo_core.schemas.core.user import User  # noqa: E402
@@ -63,6 +61,8 @@ from galileo_core.schemas.protect.ruleset import Ruleset  # noqa: E402
 from splunk_ao.collaborator import CollaboratorRole  # noqa: E402
 from splunk_ao.config import SplunkAOConfig  # noqa: E402
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration  # noqa: E402
+from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict  # noqa: E402
+from splunk_ao.resources.models.messages_list_item import MessagesListItem  # noqa: E402
 from tests.testutils.setup import setup_thread_pool_request_capture  # noqa: E402
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras

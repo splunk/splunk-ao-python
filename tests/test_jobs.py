@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from galileo.resources.models import HTTPValidationError, PromptRunSettings, TaskType, ValidationError
-from galileo.resources.types import Response
 from splunk_ao.jobs import Jobs
+from splunk_ao.resources.models import HTTPValidationError, PromptRunSettings, TaskType, ValidationError
+from splunk_ao.resources.types import Response
 
 
 def _make_422_response(msg: str = "Invalid model alias: 'gpt-4o-mini'") -> Response:

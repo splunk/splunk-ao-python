@@ -17,9 +17,9 @@ client = GalileoApiClient()
 Now call your endpoint and use your models:
 
 ```python
-from galileo.resources.models import MyDataModel
-from galileo.resources.api.my_tag import get_my_data_model
-from galileo.resources.types import Response
+from splunk_ao.resources.models import MyDataModel
+from splunk_ao.resources.api.my_tag import get_my_data_model
+from splunk_ao.resources.types import Response
 
 my_data: MyDataModel = get_my_data_model.sync(client=client)
 # or if you need more info (e.g. status_code)
@@ -29,9 +29,9 @@ response: Response[MyDataModel] = get_my_data_model.sync_detailed(client=client)
 Or do the same thing with an async version:
 
 ```python
-from galileo.resources.models import MyDataModel
-from galileo.resources.api.my_tag import get_my_data_model
-from galileo.resources.types import Response
+from splunk_ao.resources.models import MyDataModel
+from splunk_ao.resources.api.my_tag import get_my_data_model
+from splunk_ao.resources.types import Response
 
 my_data: MyDataModel = await get_my_data_model.asyncio(client=client)
 # or if you need more info (e.g. status_code)

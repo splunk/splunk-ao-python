@@ -3,7 +3,8 @@ import datetime
 
 import httpx
 
-from galileo.resources.api.projects import (
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.projects import (
     create_project_projects_post,
     create_user_project_collaborators_projects_project_id_users_post,
     delete_project_projects_project_id_delete,
@@ -14,20 +15,19 @@ from galileo.resources.api.projects import (
     list_user_project_collaborators_projects_project_id_users_get,
     update_user_project_collaborator_projects_project_id_users_user_id_patch,
 )
-from galileo.resources.models.collaborator_role import CollaboratorRole
-from galileo.resources.models.collaborator_update import CollaboratorUpdate
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.permission import Permission
-from galileo.resources.models.project_create import ProjectCreate
-from galileo.resources.models.project_create_response import ProjectCreateResponse
-from galileo.resources.models.project_db import ProjectDB
-from galileo.resources.models.project_db_thin import ProjectDBThin
-from galileo.resources.models.project_type import ProjectType
-from galileo.resources.models.project_update_response import ProjectUpdateResponse
-from galileo.resources.models.user_collaborator import UserCollaborator
-from galileo.resources.models.user_collaborator_create import UserCollaboratorCreate
-from galileo.resources.types import UNSET, Unset
-from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.models.collaborator_role import CollaboratorRole
+from splunk_ao.resources.models.collaborator_update import CollaboratorUpdate
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.permission import Permission
+from splunk_ao.resources.models.project_create import ProjectCreate
+from splunk_ao.resources.models.project_create_response import ProjectCreateResponse
+from splunk_ao.resources.models.project_db import ProjectDB
+from splunk_ao.resources.models.project_db_thin import ProjectDBThin
+from splunk_ao.resources.models.project_type import ProjectType
+from splunk_ao.resources.models.project_update_response import ProjectUpdateResponse
+from splunk_ao.resources.models.user_collaborator import UserCollaborator
+from splunk_ao.resources.models.user_collaborator_create import UserCollaboratorCreate
+from splunk_ao.resources.types import UNSET, Unset
 from splunk_ao.utils.env_helpers import _get_project_from_env, _get_project_id_from_env
 from splunk_ao.utils.exceptions import APIException
 from splunk_ao.utils.log_config import get_logger

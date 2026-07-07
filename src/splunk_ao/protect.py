@@ -2,10 +2,6 @@ from collections.abc import Sequence
 
 from pydantic import UUID4
 
-from galileo.resources.api.protect import invoke_protect_invoke_post
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.protect_request import ProtectRequest as APIRequest
-from galileo.resources.models.protect_response import ProtectResponse as APIResponse
 from galileo_core.helpers.execution import async_run
 from galileo_core.schemas.protect.payload import Payload
 from galileo_core.schemas.protect.request import Request
@@ -13,6 +9,10 @@ from galileo_core.schemas.protect.response import Response
 from galileo_core.schemas.protect.ruleset import Ruleset
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.constants.protect import TIMEOUT_SECS
+from splunk_ao.resources.api.protect import invoke_protect_invoke_post
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.protect_request import ProtectRequest as APIRequest
+from splunk_ao.resources.models.protect_response import ProtectResponse as APIResponse
 
 
 class Protect:
@@ -30,7 +30,7 @@ class Protect:
         stage_id: UUID4 | None = None,
         stage_name: str | None = None,
         stage_version: int | None = None,
-        timeout: float = TIMEOUT_SECS,
+        timeout: float = TIMEOUT_SECS,  # noqa: ASYNC109
         metadata: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
     ) -> Response | HTTPValidationError | None:
@@ -67,7 +67,7 @@ async def ainvoke_protect(
     stage_id: UUID4 | None = None,
     stage_name: str | None = None,
     stage_version: int | None = None,
-    timeout: float = TIMEOUT_SECS,
+    timeout: float = TIMEOUT_SECS,  # noqa: ASYNC109
     metadata: dict[str, str] | None = None,
     headers: dict[str, str] | None = None,
 ) -> Response | HTTPValidationError | None:

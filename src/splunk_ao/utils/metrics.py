@@ -4,11 +4,11 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from galileo.resources.models.scorer_config import ScorerConfig
-from galileo.resources.models.scorer_response import ScorerResponse
 from galileo_core.schemas.logging.span import Span, StepWithChildSpans
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao.resources.models.scorer_config import ScorerConfig
+from splunk_ao.resources.models.scorer_response import ScorerResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
 from splunk_ao.scorers import Scorers, ScorerSettings
 

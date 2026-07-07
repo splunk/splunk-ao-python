@@ -8,18 +8,24 @@ from typing import Any
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from galileo.resources.api.experiment import (
-    create_experiment_projects_project_id_experiments_post,
-    list_experiments_projects_project_id_experiments_get,
-)
-from galileo.resources.models import ExperimentResponse, HTTPValidationError, PromptRunSettings, ScorerConfig, TaskType
 from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
-from splunk_ao.decorator import splunk_ao_context, splunk_ao_dataset_context, log
+from splunk_ao.decorator import log, splunk_ao_context, splunk_ao_dataset_context
 from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate
+from splunk_ao.resources.api.experiment import (
+    create_experiment_projects_project_id_experiments_post,
+    list_experiments_projects_project_id_experiments_get,
+)
+from splunk_ao.resources.models import (
+    ExperimentResponse,
+    HTTPValidationError,
+    PromptRunSettings,
+    ScorerConfig,
+    TaskType,
+)
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
@@ -292,7 +298,9 @@ def process_row(row: DatasetRecord, process_func: Callable) -> str:
     try:
         # Set dataset context for OTEL spans (ground truth for scorers)
         # This ensures OTEL-instrumented frameworks get dataset fields attached to their spans
-        with splunk_ao_dataset_context(dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata):
+        with splunk_ao_dataset_context(
+            dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata
+        ):
             output = process_func(row.deserialized_input)
             log = splunk_ao_context.get_logger_instance()
             log.conclude(output)
@@ -418,7 +426,7 @@ def run_experiment(
 
     if existing_experiment:
         logging.warning(f"Experiment {existing_experiment.name} already exists, adding a timestamp")
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         experiment_name = f"{existing_experiment.name} {now:%Y-%m-%d} at {now:%H:%M:%S}.{now.microsecond // 1000:03d}"
 
     # Execute a runner function experiment (custom function flow — uses logstream pipeline)
@@ -738,7 +746,7 @@ def list_experiment_groups(
         raise ValueError("Project not specified and no defaults found")
 
     # Use the SDK's configured ApiClient — the same client every generated endpoint call
-    # uses (see src/galileo/resources/api/experiment/*.py). This preserves auth, base URL,
+    # uses (see src/splunk_ao/resources/api/experiment/*.py). This preserves auth, base URL,
     # timeout, and SDK headers. The experiment-group routes are not yet in the generated
     # client; once they are, this helper should be rewritten to use the generated function.
     config = SplunkAOConfig.get()

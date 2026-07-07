@@ -4,14 +4,14 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
 
-from galileo.resources.api.integrations import (
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.integrations import (
     list_available_integrations_integrations_available_get,
     list_integrations_integrations_get,
 )
-from galileo.resources.models.integration_db import IntegrationDB
-from galileo.resources.models.integration_name import IntegrationName
-from galileo.resources.types import Unset
-from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.models.integration_db import IntegrationDB
+from splunk_ao.resources.models.integration_name import IntegrationName
+from splunk_ao.resources.types import Unset
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 from splunk_ao.shared.utils import classproperty

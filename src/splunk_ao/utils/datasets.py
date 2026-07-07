@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from galileo.resources.models.dataset_content import DatasetContent
-from galileo.resources.types import Unset
 from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.models.dataset_content import DatasetContent
+from splunk_ao.resources.types import Unset
 from splunk_ao.schema.datasets import DatasetRecord
 
 if TYPE_CHECKING:
@@ -53,7 +53,7 @@ def normalize_dataset_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def validate_dataset_in_project(
     dataset_id: str, dataset_identifier: str, project_id: str, project_identifier: str, config: SplunkAOConfig
 ) -> None:
-    from galileo.resources.api.datasets import list_dataset_projects_datasets_dataset_id_projects_get
+    from splunk_ao.resources.api.datasets import list_dataset_projects_datasets_dataset_id_projects_get
 
     projects_response = list_dataset_projects_datasets_dataset_id_projects_get.sync(
         dataset_id=dataset_id, client=config.api_client
