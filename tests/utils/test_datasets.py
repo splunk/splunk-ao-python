@@ -2,9 +2,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from galileo.resources.models.dataset_content import DatasetContent
-from galileo.resources.models.dataset_row import DatasetRow
-from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
+from splunk_ao.resources.models.dataset_content import DatasetContent
+from splunk_ao.resources.models.dataset_row import DatasetRow
+from splunk_ao.resources.models.dataset_row_values_dict import DatasetRowValuesDict
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.utils.datasets import (
     create_rows_from_records,

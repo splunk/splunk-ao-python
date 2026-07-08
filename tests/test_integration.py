@@ -4,9 +4,6 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models.available_integrations import AvailableIntegrations
-from galileo.resources.models.integration_db import IntegrationDB
-from galileo.resources.models.integration_name import IntegrationName
 from splunk_ao.integration import Integration
 from splunk_ao.provider import (
     AnthropicProvider,
@@ -16,6 +13,9 @@ from splunk_ao.provider import (
     Provider,
     UnconfiguredProvider,
 )
+from splunk_ao.resources.models.available_integrations import AvailableIntegrations
+from splunk_ao.resources.models.integration_db import IntegrationDB
+from splunk_ao.resources.models.integration_name import IntegrationName
 from splunk_ao.shared.exceptions import IntegrationNotConfiguredError, ValidationError
 
 # Test data

@@ -14,7 +14,21 @@ from time_machine import travel
 import splunk_ao.experiments
 import splunk_ao.jobs
 import splunk_ao.utils.datasets
-from galileo.resources.models import (
+from galileo_core.schemas.logging.span import Span, StepWithChildSpans
+from galileo_core.schemas.shared.metric import MetricValueType
+from splunk_ao import splunk_ao_context
+from splunk_ao.decorator import SPAN_TYPE
+from splunk_ao.experiments import (
+    Experiments,
+    create_experiment,
+    get_experiment,
+    get_experiments,
+    list_experiment_groups,
+    run_experiment,
+)
+from splunk_ao.projects import Project
+from splunk_ao.prompts import PromptTemplate
+from splunk_ao.resources.models import (
     BasePromptTemplateResponse,
     BasePromptTemplateVersionResponse,
     DatasetContent,
@@ -31,21 +45,7 @@ from galileo.resources.models import (
     TaskType,
     ValidationError,
 )
-from galileo.resources.types import UNSET
-from galileo_core.schemas.logging.span import Span, StepWithChildSpans
-from galileo_core.schemas.shared.metric import MetricValueType
-from splunk_ao import splunk_ao_context
-from splunk_ao.decorator import SPAN_TYPE
-from splunk_ao.experiments import (
-    Experiments,
-    create_experiment,
-    get_experiment,
-    get_experiments,
-    list_experiment_groups,
-    run_experiment,
-)
-from splunk_ao.projects import Project
-from splunk_ao.prompts import PromptTemplate
+from splunk_ao.resources.types import UNSET
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
@@ -193,7 +193,7 @@ class TestExperiments:
     ) -> None:
         """Experiments.create() with invalid model_alias (HTTP 422) raises ValueError with human-readable message."""
         # Given: the API returns a 422 HTTPValidationError for an invalid model alias
-        from galileo.resources.models import HTTPValidationError, ValidationError
+        from splunk_ao.resources.models import HTTPValidationError, ValidationError
 
         galileo_resources_api_create_experiment.sync = Mock(
             return_value=HTTPValidationError(
@@ -219,7 +219,7 @@ class TestExperiments:
     ) -> None:
         """ValueError from Experiments.create() includes field path and backend message."""
         # Given: the API returns a 422 with specific validation detail
-        from galileo.resources.models import HTTPValidationError, ValidationError
+        from splunk_ao.resources.models import HTTPValidationError, ValidationError
 
         galileo_resources_api_create_experiment.sync = Mock(
             return_value=HTTPValidationError(

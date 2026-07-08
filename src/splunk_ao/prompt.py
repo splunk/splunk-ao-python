@@ -6,29 +6,29 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.api.prompts import (
+from galileo_core.schemas.logging.llm import MessageRole
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.projects import Projects
+from splunk_ao.prompts import GlobalPromptTemplates
+from splunk_ao.resources.api.prompts import (
     create_global_prompt_template_version_templates_template_id_versions_post,
     query_template_versions_templates_template_id_versions_query_post,
     set_selected_global_template_version_templates_template_id_versions_version_put,
 )
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     BasePromptTemplateVersion,
     HTTPValidationError,
     ListPromptTemplateVersionParams,
     MessagesListItem,
 )
-from galileo.resources.types import Unset
-from galileo_core.schemas.logging.llm import MessageRole
-from splunk_ao.config import SplunkAOConfig
-from splunk_ao.projects import Projects
-from splunk_ao.prompts import GlobalPromptTemplates
+from splunk_ao.resources.types import Unset
 from splunk_ao.schema.message import Message
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
 from splunk_ao.utils.env_helpers import _get_project_from_env, _get_project_id_from_env
 
 if TYPE_CHECKING:
-    from galileo.resources.models import PromptRunSettings
+    from splunk_ao.resources.models import PromptRunSettings
 
 logger = logging.getLogger(__name__)
 

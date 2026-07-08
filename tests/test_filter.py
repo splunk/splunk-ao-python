@@ -4,7 +4,7 @@ import datetime
 
 import pytest
 
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     LogRecordsDateFilter,
     LogRecordsDateFilterOperator,
     LogRecordsNumberFilter,

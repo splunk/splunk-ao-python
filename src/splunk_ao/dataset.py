@@ -4,12 +4,12 @@ import logging
 from datetime import datetime
 from typing import Any, TypeAlias
 
-from galileo.resources.models.dataset_content import DatasetContent
-from galileo.resources.models.dataset_row import DatasetRow
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.list_dataset_version_response import ListDatasetVersionResponse
-from galileo.resources.types import Unset
 from splunk_ao.datasets import Datasets
+from splunk_ao.resources.models.dataset_content import DatasetContent
+from splunk_ao.resources.models.dataset_row import DatasetRow
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.list_dataset_version_response import ListDatasetVersionResponse
+from splunk_ao.resources.types import Unset
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
 

@@ -5,16 +5,16 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.errors import UnexpectedStatus
-from galileo.resources.models import (
+from splunk_ao.export import export_records
+from splunk_ao.log_streams import LogStream
+from splunk_ao.resources.errors import UnexpectedStatus
+from splunk_ao.resources.models import (
     LLMExportFormat,
     LogRecordsExportRequest,
     LogRecordsSortClause,
     LogRecordsTextFilter,
     RootType,
 )
-from splunk_ao.export import export_records
-from splunk_ao.log_streams import LogStream
 
 
 @patch("splunk_ao.export.export_records_stream")

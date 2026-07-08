@@ -5,8 +5,6 @@ from unittest.mock import patch
 
 import pytest
 
-from galileo.resources.models.delete_run_response import DeleteRunResponse
-from galileo.resources.models.run_tag_db import RunTagDB
 from splunk_ao.experiment_tags import (
     ExperimentTags,
     ExperimentTagsAPIException,
@@ -14,6 +12,8 @@ from splunk_ao.experiment_tags import (
     get_experiment_tags,
     upsert_experiment_tag,
 )
+from splunk_ao.resources.models.delete_run_response import DeleteRunResponse
+from splunk_ao.resources.models.run_tag_db import RunTagDB
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def sample_run_tag():
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
+    "splunk_ao.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
 )
 def test_get_experiment_tags_success(mock_get_tags, sample_run_tag) -> None:
     """Test successfully getting experiment tags."""
@@ -48,7 +48,7 @@ def test_get_experiment_tags_success(mock_get_tags, sample_run_tag) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
+    "splunk_ao.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
 )
 def test_get_experiment_tags_no_tags(mock_get_tags) -> None:
     """Test getting experiment tags when experiment has no tags."""
@@ -59,7 +59,7 @@ def test_get_experiment_tags_no_tags(mock_get_tags) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
+    "splunk_ao.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
 )
 def test_get_experiment_tags_experiment_not_found(mock_get_tags) -> None:
     """Test getting experiment tags when experiment is not found."""
@@ -70,7 +70,7 @@ def test_get_experiment_tags_experiment_not_found(mock_get_tags) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.set_tag_for_experiment_projects_project_id_experiments_experiment_id_tags_post.sync"
+    "splunk_ao.resources.api.experiment_tags.set_tag_for_experiment_projects_project_id_experiments_experiment_id_tags_post.sync"
 )
 def test_upsert_experiment_tag_create_new(mock_set_tag, sample_run_tag) -> None:
     """Test creating a new tag via upsert."""
@@ -84,7 +84,7 @@ def test_upsert_experiment_tag_create_new(mock_set_tag, sample_run_tag) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.set_tag_for_experiment_projects_project_id_experiments_experiment_id_tags_post.sync"
+    "splunk_ao.resources.api.experiment_tags.set_tag_for_experiment_projects_project_id_experiments_experiment_id_tags_post.sync"
 )
 def test_upsert_experiment_tag_update(mock_set_tag, sample_run_tag) -> None:
     """Test updating an existing tag via upsert."""
@@ -98,7 +98,7 @@ def test_upsert_experiment_tag_update(mock_set_tag, sample_run_tag) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.delete_experiment_tag_projects_project_id_experiments_experiment_id_tags_tag_id_delete.sync"
+    "splunk_ao.resources.api.experiment_tags.delete_experiment_tag_projects_project_id_experiments_experiment_id_tags_tag_id_delete.sync"
 )
 def test_delete_experiment_tag_success(mock_delete_tag) -> None:
     """Test successfully deleting a tag."""
@@ -111,7 +111,7 @@ def test_delete_experiment_tag_success(mock_delete_tag) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.delete_experiment_tag_projects_project_id_experiments_experiment_id_tags_tag_id_delete.sync"
+    "splunk_ao.resources.api.experiment_tags.delete_experiment_tag_projects_project_id_experiments_experiment_id_tags_tag_id_delete.sync"
 )
 def test_delete_experiment_tag_not_found(mock_delete_tag) -> None:
     """Test deleting a tag that doesn't exist raises ExperimentTagsAPIException."""
@@ -125,7 +125,7 @@ def test_delete_experiment_tag_not_found(mock_delete_tag) -> None:
 
 
 @patch(
-    "galileo.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
+    "splunk_ao.resources.api.experiment_tags.get_experiment_tags_projects_project_id_experiments_experiment_id_tags_get.sync"
 )
 def test_experiment_tags_class_get_tags(mock_get_tags, sample_run_tag) -> None:
     """Test ExperimentTags class get_experiment_tags method."""

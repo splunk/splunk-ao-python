@@ -5,13 +5,13 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.api.projects import update_project_projects_project_id_put
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.project_update import ProjectUpdate
-from galileo.resources.types import Unset
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.projects import Projects
+from splunk_ao.resources.api.projects import update_project_projects_project_id_put
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.project_update import ProjectUpdate
+from splunk_ao.resources.types import Unset
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 

@@ -4,10 +4,10 @@ from uuid import UUID
 
 import pytest
 
-from galileo.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
-from galileo.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.log_streams import LogStream, LogStreams, enable_metrics
 from splunk_ao.projects import Project
+from splunk_ao.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
+from splunk_ao.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
 from splunk_ao.utils.metrics import create_metric_configs
 

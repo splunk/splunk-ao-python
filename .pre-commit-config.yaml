@@ -64,5 +64,5 @@ repos:
 exclude: |
   (?x)^(
     CHANGELOG\.md|
-    src/galileo/resources/.*
+    src/splunk_ao/resources/.*
   )$

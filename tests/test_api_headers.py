@@ -7,11 +7,11 @@ pytestmark = pytest.mark.skip(reason="Header rename to Splunk-AO-SDK pending sep
 from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
-from galileo.resources.api.datasets.get_dataset_datasets_dataset_id_get import _get_kwargs as dataset_get_kwargs
-from galileo.resources.api.health.healthcheck_healthcheck_get import _get_kwargs as healthcheck_get_kwargs
-from galileo.resources.api.projects import get_all_projects_projects_all_get
 from splunk_ao.project import Project
 from splunk_ao.projects import list_projects
+from splunk_ao.resources.api.datasets.get_dataset_datasets_dataset_id_get import _get_kwargs as dataset_get_kwargs
+from splunk_ao.resources.api.health.healthcheck_healthcheck_get import _get_kwargs as healthcheck_get_kwargs
+from splunk_ao.resources.api.projects import get_all_projects_projects_all_get
 from splunk_ao.utils.headers_data import get_package_version
 
 
@@ -47,7 +47,7 @@ class TestApiHeaders:
         # Should include version and method name
         assert header.startswith(f"galileo-python/{get_package_version()}")
         # Direct call to resource should include the resource method name
-        assert "@galileo.resources.api.datasets" in header
+        assert "@splunk_ao.resources.api.datasets" in header
 
     def test_generated_api_method_header_format(self) -> None:
         """Test that the Splunk-AO-SDK header has the correct format."""
@@ -79,7 +79,7 @@ class TestApiHeaders:
         header = content_headers["Splunk-AO-SDK"]
         assert header.startswith("galileo-python/1.2.3")
         # Should also include the method name
-        assert "@galileo.resources.api.datasets" in header
+        assert "@splunk_ao.resources.api.datasets" in header
 
     def test_different_entry_points_produce_different_headers(self) -> None:
         """Test that Project.list() and list_projects() produce different headers using real calls."""

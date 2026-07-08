@@ -1,12 +1,5 @@
 """Splunk AO."""
 
-# ruff: noqa: E402
-
-import sys
-
-vars(sys)["_splunk_ao_suppress_galileo_deprecation_warning"] = True
-
-from galileo.resources.models.document import Document
 from galileo_core.helpers.api_key import create_api_key, delete_api_key, list_api_keys
 from galileo_core.helpers.dependencies import is_dependency_available
 from galileo_core.schemas.logging.llm import MessageRole, ToolCall, ToolCallFunction
@@ -49,6 +42,7 @@ from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
+from splunk_ao.resources.models.document import Document
 from splunk_ao.schema.message import Message
 from splunk_ao.schema.metrics import SplunkAOMetrics
 from splunk_ao.shared.base import SyncState
@@ -63,8 +57,6 @@ from splunk_ao.shared.exceptions import (
 from splunk_ao.tracing import get_tracing_headers
 from splunk_ao.types import MetricSpec
 from splunk_ao.utils.log_config import enable_console_logging
-
-vars(sys)["_splunk_ao_suppress_galileo_deprecation_warning"] = False
 
 __version__ = "0.1.0"
 

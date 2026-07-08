@@ -52,8 +52,6 @@ from httpx import Request
 from httpx import Response as HttpxResponse
 from test_support.config import fast_config_validation
 
-from galileo.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
-from galileo.resources.models.messages_list_item import MessagesListItem
 from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes as CoreRoutes
 from galileo_core.schemas.core.user import User
@@ -61,6 +59,8 @@ from galileo_core.schemas.core.user_role import UserRole
 from splunk_ao.collaborator import CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration
+from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
+from splunk_ao.resources.models.messages_list_item import MessagesListItem
 from tests.testutils.setup import setup_thread_pool_request_capture
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras

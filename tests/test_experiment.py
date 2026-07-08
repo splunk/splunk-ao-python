@@ -5,12 +5,12 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models import ExperimentResponse, PromptRunSettings
-from galileo.resources.models.column_category import ColumnCategory
-from galileo.resources.models.column_info import ColumnInfo
-from galileo.resources.models.data_type import DataType
 from splunk_ao.exceptions import NotFoundError
 from splunk_ao.experiment import Experiment
+from splunk_ao.resources.models import ExperimentResponse, PromptRunSettings
+from splunk_ao.resources.models.column_category import ColumnCategory
+from splunk_ao.resources.models.column_info import ColumnInfo
+from splunk_ao.resources.models.data_type import DataType
 from splunk_ao.schema.metrics import SplunkAOMetrics
 from splunk_ao.search import RecordType
 from splunk_ao.shared.base import SyncState

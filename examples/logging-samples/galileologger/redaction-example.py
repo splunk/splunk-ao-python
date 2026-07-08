@@ -1,12 +1,12 @@
 # Load environment variables from .env file
 from dotenv import load_dotenv
 
-from galileo.resources.models.root_type import RootType
 from splunk_ao import SplunkAOLogger
 from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
 from splunk_ao.export import export_records
 from splunk_ao.log_streams import get_log_stream
 from splunk_ao.projects import get_project
+from splunk_ao.resources.models.root_type import RootType
 
 load_dotenv()
 

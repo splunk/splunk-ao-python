@@ -3,8 +3,8 @@ from typing import Any, Literal
 
 from pydantic import UUID4, BaseModel, Field
 
-from galileo.resources.models import Document
 from galileo_core.schemas.logging.step import StepAllowedInputType, StepAllowedOutputType
+from splunk_ao.resources.models import Document
 from splunk_ao.schema.logged import LoggedSpan, LoggedTrace
 
 SPAN_TYPE = Literal["llm", "retriever", "tool", "workflow", "agent"]

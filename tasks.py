@@ -34,7 +34,7 @@ def type_check(ctx: Context) -> None:
     ctx.run(
         "poetry run mypy --package splunk_ao "
         # TODO: remove as soon as mypy errors fixed
-        "--exclude galileo.resources "
+        "--exclude splunk_ao.resources "
         "--exclude splunk_ao.openai "
         "--exclude splunk_ao.decorator "
         "--exclude splunk_ao.handlers.langchain "

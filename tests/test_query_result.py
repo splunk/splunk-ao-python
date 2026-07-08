@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from galileo.resources.models import LogRecordsQueryResponse
-from galileo.resources.types import UNSET
+from splunk_ao.resources.models import LogRecordsQueryResponse
+from splunk_ao.resources.types import UNSET
 from splunk_ao.search import RecordType
 from splunk_ao.shared.query_result import QueryResult, _flatten_dict
 

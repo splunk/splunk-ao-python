@@ -3,7 +3,7 @@
 These shadow the API's ExperimentGroupResponse until the Client API OpenAPI spec
 includes the experiment-group routes and the generated client provides typed
 models. When that happens, this file should be deleted in favor of
-``galileo.resources.models.experiment_group_response``.
+``splunk_ao.resources.models.experiment_group_response``.
 """
 
 from datetime import datetime

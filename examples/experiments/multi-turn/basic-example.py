@@ -1,10 +1,10 @@
 import os
 import time
 
-from galileo.resources.models import MetricSuccess
 from splunk_ao import SplunkAOMetrics, splunk_ao_context
 from splunk_ao.experiments import create_experiment
 from splunk_ao.projects import create_project, get_project
+from splunk_ao.resources.models import MetricSuccess
 from splunk_ao.search import get_sessions
 from splunk_ao.utils.metrics import create_metric_configs
 

@@ -2,8 +2,6 @@ from collections.abc import Callable
 
 import pytest
 
-from galileo.resources import errors
-from galileo.resources.api.health import healthcheck_healthcheck_get
 from galileo_core.constants.request_method import RequestMethod
 from galileo_core.helpers.api_client import ApiClient
 from splunk_ao.exceptions import (
@@ -15,6 +13,8 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
+from splunk_ao.resources import errors
+from splunk_ao.resources.api.health import healthcheck_healthcheck_get
 
 
 def test_common_http_errors_raise_specific_exceptions(mock_request: Callable) -> None:

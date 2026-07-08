@@ -6,7 +6,7 @@ import datetime
 
 from dateutil.parser import parse as parse_date
 
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     LogRecordsBooleanFilter,
     LogRecordsDateFilter,
     LogRecordsDateFilterOperator,

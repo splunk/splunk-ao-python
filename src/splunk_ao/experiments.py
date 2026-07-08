@@ -8,11 +8,6 @@ from typing import Any
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from galileo.resources.api.experiment import (
-    create_experiment_projects_project_id_experiments_post,
-    list_experiments_projects_project_id_experiments_get,
-)
-from galileo.resources.models import ExperimentResponse, HTTPValidationError, PromptRunSettings, ScorerConfig, TaskType
 from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
@@ -20,6 +15,17 @@ from splunk_ao.decorator import log, splunk_ao_context, splunk_ao_dataset_contex
 from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate
+from splunk_ao.resources.api.experiment import (
+    create_experiment_projects_project_id_experiments_post,
+    list_experiments_projects_project_id_experiments_get,
+)
+from splunk_ao.resources.models import (
+    ExperimentResponse,
+    HTTPValidationError,
+    PromptRunSettings,
+    ScorerConfig,
+    TaskType,
+)
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
@@ -740,7 +746,7 @@ def list_experiment_groups(
         raise ValueError("Project not specified and no defaults found")
 
     # Use the SDK's configured ApiClient — the same client every generated endpoint call
-    # uses (see src/galileo/resources/api/experiment/*.py). This preserves auth, base URL,
+    # uses (see src/splunk_ao/resources/api/experiment/*.py). This preserves auth, base URL,
     # timeout, and SDK headers. The experiment-group routes are not yet in the generated
     # client; once they are, this helper should be rewritten to use the generated function.
     config = SplunkAOConfig.get()

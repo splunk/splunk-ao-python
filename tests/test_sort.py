@@ -2,7 +2,7 @@
 
 import pytest
 
-from galileo.resources.models import LogRecordsSortClause
+from splunk_ao.resources.models import LogRecordsSortClause
 from splunk_ao.shared.sort import Sort, sort
 
 

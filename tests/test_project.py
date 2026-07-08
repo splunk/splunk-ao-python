@@ -213,7 +213,7 @@ class TestProjectSave:
         mock_projects_class.return_value = mock_service
         mock_service.get.return_value = mock_project
 
-        from galileo.resources.types import UNSET as RESOURCES_UNSET
+        from splunk_ao.resources.types import UNSET as RESOURCES_UNSET
 
         updated_at = MagicMock()
         updated_response = MagicMock()

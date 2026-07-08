@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models import HTTPValidationError, LogRecordsQueryResponse, ValidationError
+from splunk_ao.resources.models import HTTPValidationError, LogRecordsQueryResponse, ValidationError
 from splunk_ao.search import get_sessions, get_spans, get_traces
 
 FIXED_PROJECT_ID = str(uuid4())

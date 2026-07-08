@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models import HTTPValidationError, RunScorerSettingsResponse, ScorerConfig, ValidationError
+from splunk_ao.resources.models import HTTPValidationError, RunScorerSettingsResponse, ScorerConfig, ValidationError
 from splunk_ao.runs import update_scorer_settings
 
 FIXED_PROJECT_ID = str(uuid4())

@@ -5,14 +5,14 @@ from time import sleep
 from pydantic import UUID4
 from tqdm.auto import tqdm
 
-from galileo.resources.api.jobs import (
-    get_job_jobs_job_id_get,
-    get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get,
-)
-from galileo.resources.models import HTTPValidationError, JobDB
 from galileo_core.constants.job import JobName, JobStatus
 from galileo_core.constants.scorers import Scorers
 from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.jobs import (
+    get_job_jobs_job_id_get,
+    get_jobs_for_project_run_projects_project_id_runs_run_id_jobs_get,
+)
+from splunk_ao.resources.models import HTTPValidationError, JobDB
 from splunk_ao.utils.log_config import get_logger
 
 _logger = get_logger(__name__)

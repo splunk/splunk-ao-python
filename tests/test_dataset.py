@@ -3,11 +3,11 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models.dataset_row import DatasetRow
-from galileo.resources.models.dataset_row_values_dict import DatasetRowValuesDict
-from galileo.resources.models.http_validation_error import HTTPValidationError
-from galileo.resources.models.list_dataset_version_response import ListDatasetVersionResponse
 from splunk_ao.dataset import Dataset, DatasetVersionContent
+from splunk_ao.resources.models.dataset_row import DatasetRow
+from splunk_ao.resources.models.dataset_row_values_dict import DatasetRowValuesDict
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.list_dataset_version_response import ListDatasetVersionResponse
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError
 

@@ -3,9 +3,9 @@ from uuid import uuid4
 
 import pytest
 
-from galileo.resources.models.messages_list_item import MessagesListItem
 from galileo_core.schemas.logging.llm import MessageRole
 from splunk_ao.prompt import Prompt, PromptVersion, _parse_template_to_messages
+from splunk_ao.resources.models.messages_list_item import MessagesListItem
 from splunk_ao.schema.message import Message
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import ResourceNotFoundError, ValidationError

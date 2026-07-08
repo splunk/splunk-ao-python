@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from galileo.resources.types import UNSET
+from splunk_ao.resources.types import UNSET
 
 if TYPE_CHECKING:
-    from galileo.resources.models import HTTPValidationError
+    from splunk_ao.resources.models import HTTPValidationError
 
 
 class APIException(Exception):

@@ -1,25 +1,25 @@
 import datetime
 import logging
 
-from galileo.resources.api.data import (
+from galileo_core.schemas.logging.step import StepType
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.data import (
     create_llm_scorer_version_scorers_scorer_id_version_llm_post,
     create_scorers_post,
     delete_scorer_scorers_scorer_id_delete,
 )
-from galileo.resources.api.trace import query_metrics_projects_project_id_metrics_search_post
-from galileo.resources.models import (
+from splunk_ao.resources.api.trace import query_metrics_projects_project_id_metrics_search_post
+from splunk_ao.resources.models import (
     HTTPValidationError,
     LogRecordsMetricsQueryRequest,
     LogRecordsMetricsResponse,
     ScorerTypes,
 )
-from galileo.resources.models.base_scorer_version_response import BaseScorerVersionResponse
-from galileo.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
-from galileo.resources.models.create_scorer_request import CreateScorerRequest
-from galileo.resources.models.output_type_enum import OutputTypeEnum
-from galileo.resources.models.scorer_defaults import ScorerDefaults
-from galileo_core.schemas.logging.step import StepType
-from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
+from splunk_ao.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
+from splunk_ao.resources.models.create_scorer_request import CreateScorerRequest
+from splunk_ao.resources.models.output_type_enum import OutputTypeEnum
+from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
 from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
 

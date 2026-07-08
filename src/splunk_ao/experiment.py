@@ -6,29 +6,6 @@ import re
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.api.experiment import (
-    delete_experiment_projects_project_id_experiments_experiment_id_delete,
-    experiments_available_columns_projects_project_id_experiments_available_columns_post,
-    get_experiment_projects_project_id_experiments_experiment_id_get,
-)
-from galileo.resources.api.trace import (
-    sessions_available_columns_projects_project_id_sessions_available_columns_post,
-    spans_available_columns_projects_project_id_spans_available_columns_post,
-    traces_available_columns_projects_project_id_traces_available_columns_post,
-)
-from galileo.resources.models import (
-    ExperimentResponse,
-    HTTPValidationError,
-    LLMExportFormat,
-    LogRecordsSortClause,
-    PromptRunSettings,
-    RootType,
-    ScorerConfig,
-)
-from galileo.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
-from galileo.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
-from galileo.resources.models.metric_aggregates import MetricAggregates
-from galileo.resources.types import Unset
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset as LegacyDataset
 from splunk_ao.exceptions import NotFoundError
@@ -38,6 +15,29 @@ from splunk_ao.experiments import _default_prompt_settings
 from splunk_ao.export import ExportClient
 from splunk_ao.job_progress import get_run_scorer_jobs, job_progress
 from splunk_ao.prompts import PromptTemplate, get_prompt
+from splunk_ao.resources.api.experiment import (
+    delete_experiment_projects_project_id_experiments_experiment_id_delete,
+    experiments_available_columns_projects_project_id_experiments_available_columns_post,
+    get_experiment_projects_project_id_experiments_experiment_id_get,
+)
+from splunk_ao.resources.api.trace import (
+    sessions_available_columns_projects_project_id_sessions_available_columns_post,
+    spans_available_columns_projects_project_id_spans_available_columns_post,
+    traces_available_columns_projects_project_id_traces_available_columns_post,
+)
+from splunk_ao.resources.models import (
+    ExperimentResponse,
+    HTTPValidationError,
+    LLMExportFormat,
+    LogRecordsSortClause,
+    PromptRunSettings,
+    RootType,
+    ScorerConfig,
+)
+from splunk_ao.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
+from splunk_ao.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
+from splunk_ao.resources.models.metric_aggregates import MetricAggregates
+from splunk_ao.resources.types import Unset
 
 # TODO: DatasetRecord needed for function-based experiments
 # from splunk_ao.schema.datasets import DatasetRecord

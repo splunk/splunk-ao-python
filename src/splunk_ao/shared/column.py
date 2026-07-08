@@ -6,7 +6,7 @@ import datetime
 from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     DataType,
     LogRecordsBooleanFilter,
     LogRecordsDateFilter,
@@ -14,13 +14,13 @@ from galileo.resources.models import (
     LogRecordsSortClause,
     LogRecordsTextFilter,
 )
-from galileo.resources.types import Unset
+from splunk_ao.resources.types import Unset
 from splunk_ao.shared.exceptions import ValidationError
 from splunk_ao.shared.filter import boolean, date, number, text
 from splunk_ao.shared.sort import sort
 
 if TYPE_CHECKING:
-    from galileo.resources.models import ColumnInfo
+    from splunk_ao.resources.models import ColumnInfo
 
 # Constants for common data type groups
 _TEXT_TYPES = (DataType.TEXT, DataType.UUID)

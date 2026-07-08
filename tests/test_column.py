@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     ColumnCategory,
     DataType,
     LogRecordsBooleanFilter,
@@ -18,8 +18,8 @@ from galileo.resources.models import (
     LogRecordsTextFilter,
     LogRecordsTextFilterOperator,
 )
-from galileo.resources.models.column_info import ColumnInfo
-from galileo.resources.types import UNSET
+from splunk_ao.resources.models.column_info import ColumnInfo
+from splunk_ao.resources.types import UNSET
 from splunk_ao.shared.column import Column, ColumnCollection, _unwrap_unset
 from splunk_ao.shared.exceptions import ValidationError
 

@@ -1,14 +1,15 @@
 import builtins
 from uuid import UUID
 
-from galileo.resources.api.data import (
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.data import (
     get_scorer_version_or_latest_scorers_scorer_id_version_get,
     list_scorers_with_filters_scorers_list_post,
 )
-from galileo.resources.api.run_scorer_settings import (
+from splunk_ao.resources.api.run_scorer_settings import (
     upsert_scorers_config_projects_project_id_runs_run_id_scorer_settings_post,
 )
-from galileo.resources.models import (
+from splunk_ao.resources.models import (
     HTTPValidationError,
     ListScorersRequest,
     ListScorersResponse,
@@ -24,11 +25,10 @@ from galileo.resources.models import (
     ScorerTypeFilterOperator,
     ScorerTypes,
 )
-from galileo.resources.models.base_scorer_version_response import BaseScorerVersionResponse
-from galileo.resources.models.run_scorer_settings_patch_request import RunScorerSettingsPatchRequest
-from galileo.resources.models.run_scorer_settings_response import RunScorerSettingsResponse
-from galileo.resources.types import Unset
-from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
+from splunk_ao.resources.models.run_scorer_settings_patch_request import RunScorerSettingsPatchRequest
+from splunk_ao.resources.models.run_scorer_settings_response import RunScorerSettingsResponse
+from splunk_ao.resources.types import Unset
 
 
 class Scorers:
