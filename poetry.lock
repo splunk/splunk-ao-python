@@ -920,14 +920,14 @@ markers = {main = "(extra == \"crewai\" or extra == \"all\" or extra == \"openai
 name = "docstring-parser"
 version = "0.17.0"
 description = "Parse Python docstrings in reST, Google and Numpydoc format"
-optional = true
+optional = false
 python-versions = ">=3.8"
-groups = ["main"]
-markers = "(extra == \"crewai\" or extra == \"all\") and python_version <= \"3.13\""
+groups = ["main", "test"]
 files = [
     {file = "docstring_parser-0.17.0-py3-none-any.whl", hash = "sha256:cf2569abd23dce8099b300f9b4fa8191e9582dda731fd533daf54c4551658708"},
     {file = "docstring_parser-0.17.0.tar.gz", hash = "sha256:583de4a309722b3315439bb31d64ba3eebada841f2e2cee23b99df001434c912"},
 ]
+markers = {main = "(extra == \"crewai\" or extra == \"all\") and python_version <= \"3.13\""}
 
 [package.extras]
 dev = ["pre-commit (>=2.16.0) ; python_version >= \"3.9\"", "pydoctor (>=25.4.0)", "pytest"]
@@ -6548,4 +6548,4 @@ otel = ["grpcio", "opentelemetry-api", "opentelemetry-exporter-otlp", "opentelem
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "10b70f8ba837e4db50d7c61669cb285863b217c556d5c7df2b9ec978d3c1b486"
+content-hash = "f75a182570e1129b6b65927aac9d700eae02d507391e7d2d6850d8910e4d55bf"
