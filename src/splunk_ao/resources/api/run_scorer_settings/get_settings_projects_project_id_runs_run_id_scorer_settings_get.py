@@ -1,8 +1,10 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
+from galileo_core.constants.request_method import RequestMethod
+from galileo_core.helpers.api_client import ApiClient
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -13,8 +15,6 @@ from splunk_ao.exceptions import (
     ServerError,
 )
 from splunk_ao.utils.headers_data import get_sdk_header
-from galileo_core.constants.request_method import RequestMethod
-from galileo_core.helpers.api_client import ApiClient
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
@@ -28,7 +28,7 @@ def _get_kwargs(project_id: str, run_id: str) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": RequestMethod.GET,
         "return_raw_response": True,
-        "path": f"/projects/{project_id}/runs/{run_id}/scorer-settings",
+        "path": "/projects/{project_id}/runs/{run_id}/scorer-settings".format(project_id=project_id, run_id=run_id),
     }
 
     headers["X-Galileo-SDK"] = get_sdk_header()
@@ -39,10 +39,14 @@ def _get_kwargs(project_id: str, run_id: str) -> dict[str, Any]:
 
 def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | RunScorerSettingsResponse:
     if response.status_code == 200:
-        return RunScorerSettingsResponse.from_dict(response.json())
+        response_200 = RunScorerSettingsResponse.from_dict(response.json())
+
+        return response_200
 
     if response.status_code == 422:
-        return HTTPValidationError.from_dict(response.json())
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -76,21 +80,20 @@ def _build_response(
 def sync_detailed(
     project_id: str, run_id: str, *, client: ApiClient
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
-    """Get Settings.
+    """Get Settings
 
     Args:
         project_id (str):
         run_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, RunScorerSettingsResponse]]
+    Returns:
+        Response[HTTPValidationError | RunScorerSettingsResponse]
     """
+
     kwargs = _get_kwargs(project_id=project_id, run_id=run_id)
 
     response = client.request(**kwargs)
@@ -98,43 +101,43 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(project_id: str, run_id: str, *, client: ApiClient) -> HTTPValidationError | RunScorerSettingsResponse | None:
-    """Get Settings.
+def sync(
+    project_id: str, run_id: str, *, client: ApiClient
+) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
+    """Get Settings
 
     Args:
         project_id (str):
         run_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, RunScorerSettingsResponse]
+    Returns:
+        HTTPValidationError | RunScorerSettingsResponse
     """
+
     return sync_detailed(project_id=project_id, run_id=run_id, client=client).parsed
 
 
 async def asyncio_detailed(
     project_id: str, run_id: str, *, client: ApiClient
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
-    """Get Settings.
+    """Get Settings
 
     Args:
         project_id (str):
         run_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, RunScorerSettingsResponse]]
+    Returns:
+        Response[HTTPValidationError | RunScorerSettingsResponse]
     """
+
     kwargs = _get_kwargs(project_id=project_id, run_id=run_id)
 
     response = await client.arequest(**kwargs)
@@ -144,20 +147,19 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, run_id: str, *, client: ApiClient
-) -> HTTPValidationError | RunScorerSettingsResponse | None:
-    """Get Settings.
+) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
+    """Get Settings
 
     Args:
         project_id (str):
         run_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, RunScorerSettingsResponse]
+    Returns:
+        HTTPValidationError | RunScorerSettingsResponse
     """
+
     return (await asyncio_detailed(project_id=project_id, run_id=run_id, client=client)).parsed

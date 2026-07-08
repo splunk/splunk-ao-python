@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -13,11 +15,12 @@ T = TypeVar("T", bound="ExperimentResponseAggregateFeedback")
 
 @_attrs_define
 class ExperimentResponseAggregateFeedback:
-    """Aggregate feedback information related to the experiment (traces only)."""
+    """Aggregate feedback information related to the experiment (traces only)"""
 
-    additional_properties: dict[str, "FeedbackAggregate"] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, FeedbackAggregate] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         field_dict: dict[str, Any] = {}
         for prop_name, prop in self.additional_properties.items():
             field_dict[prop_name] = prop.to_dict()
@@ -44,10 +47,10 @@ class ExperimentResponseAggregateFeedback:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> "FeedbackAggregate":
+    def __getitem__(self, key: str) -> FeedbackAggregate:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: "FeedbackAggregate") -> None:
+    def __setitem__(self, key: str, value: FeedbackAggregate) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

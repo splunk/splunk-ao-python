@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -15,13 +17,14 @@ T = TypeVar("T", bound="ExtendedRetrieverSpanRecordWithChildrenAnnotations")
 
 @_attrs_define
 class ExtendedRetrieverSpanRecordWithChildrenAnnotations:
-    """Annotations keyed by template ID and annotator ID."""
+    """Annotations keyed by template ID and annotator ID"""
 
-    additional_properties: dict[str, "ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty"] = (
+    additional_properties: dict[str, ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty] = (
         _attrs_field(init=False, factory=dict)
     )
 
     def to_dict(self) -> dict[str, Any]:
+
         field_dict: dict[str, Any] = {}
         for prop_name, prop in self.additional_properties.items():
             field_dict[prop_name] = prop.to_dict()
@@ -52,11 +55,11 @@ class ExtendedRetrieverSpanRecordWithChildrenAnnotations:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> "ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty":
+    def __getitem__(self, key: str) -> ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty:
         return self.additional_properties[key]
 
     def __setitem__(
-        self, key: str, value: "ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty"
+        self, key: str, value: ExtendedRetrieverSpanRecordWithChildrenAnnotationsAdditionalProperty
     ) -> None:
         self.additional_properties[key] = value
 

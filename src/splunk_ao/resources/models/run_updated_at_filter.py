@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
 from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.run_updated_at_filter_operator import RunUpdatedAtFilterOperator
 from ..types import UNSET, Unset
@@ -15,11 +16,10 @@ T = TypeVar("T", bound="RunUpdatedAtFilter")
 @_attrs_define
 class RunUpdatedAtFilter:
     """
-    Attributes
-    ----------
+    Attributes:
         operator (RunUpdatedAtFilterOperator):
         value (datetime.datetime):
-        name (Union[Literal['updated_at'], Unset]):  Default: 'updated_at'.
+        name (Literal['updated_at'] | Unset):  Default: 'updated_at'.
     """
 
     operator: RunUpdatedAtFilterOperator
@@ -47,7 +47,7 @@ class RunUpdatedAtFilter:
         d = dict(src_dict)
         operator = RunUpdatedAtFilterOperator(d.pop("operator"))
 
-        value = isoparse(d.pop("value"))
+        value = datetime.datetime.fromisoformat(d.pop("value"))
 
         name = cast(Literal["updated_at"] | Unset, d.pop("name", UNSET))
         if name != "updated_at" and not isinstance(name, Unset):

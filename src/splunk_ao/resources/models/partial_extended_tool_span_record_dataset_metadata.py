@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
@@ -9,11 +11,12 @@ T = TypeVar("T", bound="PartialExtendedToolSpanRecordDatasetMetadata")
 
 @_attrs_define
 class PartialExtendedToolSpanRecordDatasetMetadata:
-    """Metadata from the dataset associated with this trace."""
+    """Metadata from the dataset associated with this trace"""
 
     additional_properties: dict[str, str] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
 

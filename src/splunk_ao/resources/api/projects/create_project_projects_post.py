@@ -1,8 +1,10 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
+from galileo_core.constants.request_method import RequestMethod
+from galileo_core.helpers.api_client import ApiClient
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -13,8 +15,6 @@ from splunk_ao.exceptions import (
     ServerError,
 )
 from splunk_ao.utils.headers_data import get_sdk_header
-from galileo_core.constants.request_method import RequestMethod
-from galileo_core.helpers.api_client import ApiClient
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
@@ -40,10 +40,14 @@ def _get_kwargs(*, body: ProjectCreate) -> dict[str, Any]:
 
 def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ProjectCreateResponse:
     if response.status_code == 200:
-        return ProjectCreateResponse.from_dict(response.json())
+        response_200 = ProjectCreateResponse.from_dict(response.json())
+
+        return response_200
 
     if response.status_code == 422:
-        return HTTPValidationError.from_dict(response.json())
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -75,22 +79,21 @@ def _build_response(
 
 
 def sync_detailed(*, client: ApiClient, body: ProjectCreate) -> Response[HTTPValidationError | ProjectCreateResponse]:
-    """Create Project.
+    """Create Project
 
      Create a new project.
 
     Args:
         body (ProjectCreate):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, ProjectCreateResponse]]
+    Returns:
+        Response[HTTPValidationError | ProjectCreateResponse]
     """
+
     kwargs = _get_kwargs(body=body)
 
     response = client.request(**kwargs)
@@ -98,45 +101,43 @@ def sync_detailed(*, client: ApiClient, body: ProjectCreate) -> Response[HTTPVal
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: ProjectCreate) -> HTTPValidationError | ProjectCreateResponse | None:
-    """Create Project.
+def sync(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationError | ProjectCreateResponse]:
+    """Create Project
 
      Create a new project.
 
     Args:
         body (ProjectCreate):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, ProjectCreateResponse]
+    Returns:
+        HTTPValidationError | ProjectCreateResponse
     """
+
     return sync_detailed(client=client, body=body).parsed
 
 
 async def asyncio_detailed(
     *, client: ApiClient, body: ProjectCreate
 ) -> Response[HTTPValidationError | ProjectCreateResponse]:
-    """Create Project.
+    """Create Project
 
      Create a new project.
 
     Args:
         body (ProjectCreate):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, ProjectCreateResponse]]
+    Returns:
+        Response[HTTPValidationError | ProjectCreateResponse]
     """
+
     kwargs = _get_kwargs(body=body)
 
     response = await client.arequest(**kwargs)
@@ -144,21 +145,20 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient, body: ProjectCreate) -> HTTPValidationError | ProjectCreateResponse | None:
-    """Create Project.
+async def asyncio(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationError | ProjectCreateResponse]:
+    """Create Project
 
      Create a new project.
 
     Args:
         body (ProjectCreate):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, ProjectCreateResponse]
+    Returns:
+        HTTPValidationError | ProjectCreateResponse
     """
+
     return (await asyncio_detailed(client=client, body=body)).parsed

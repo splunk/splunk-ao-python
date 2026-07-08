@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 if TYPE_CHECKING:
     from ..models.user_info import UserInfo
@@ -16,20 +17,19 @@ T = TypeVar("T", bound="DatasetProject")
 @_attrs_define
 class DatasetProject:
     """
-    Attributes
-    ----------
+    Attributes:
         id (str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         name (str):
-        created_by_user (Union['UserInfo', None]):
+        created_by_user (None | UserInfo):
     """
 
     id: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
     name: str
-    created_by_user: Union["UserInfo", None]
+    created_by_user: None | UserInfo
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -43,7 +43,7 @@ class DatasetProject:
 
         name = self.name
 
-        created_by_user: None | dict[str, Any]
+        created_by_user: dict[str, Any] | None
         if isinstance(self.created_by_user, UserInfo):
             created_by_user = self.created_by_user.to_dict()
         else:
@@ -70,23 +70,24 @@ class DatasetProject:
         d = dict(src_dict)
         id = d.pop("id")
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        updated_at = isoparse(d.pop("updated_at"))
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
         name = d.pop("name")
 
-        def _parse_created_by_user(data: object) -> Union["UserInfo", None]:
+        def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return UserInfo.from_dict(data)
+                created_by_user_type_0 = UserInfo.from_dict(data)
 
+                return created_by_user_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["UserInfo", None], data)
+            return cast(None | UserInfo, data)
 
         created_by_user = _parse_created_by_user(d.pop("created_by_user"))
 

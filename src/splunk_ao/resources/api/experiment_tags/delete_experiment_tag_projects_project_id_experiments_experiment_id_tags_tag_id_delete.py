@@ -1,8 +1,10 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
+from galileo_core.constants.request_method import RequestMethod
+from galileo_core.helpers.api_client import ApiClient
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -13,8 +15,6 @@ from splunk_ao.exceptions import (
     ServerError,
 )
 from splunk_ao.utils.headers_data import get_sdk_header
-from galileo_core.constants.request_method import RequestMethod
-from galileo_core.helpers.api_client import ApiClient
 
 from ... import errors
 from ...models.delete_run_response import DeleteRunResponse
@@ -28,7 +28,9 @@ def _get_kwargs(project_id: str, experiment_id: str, tag_id: str) -> dict[str, A
     _kwargs: dict[str, Any] = {
         "method": RequestMethod.DELETE,
         "return_raw_response": True,
-        "path": f"/projects/{project_id}/experiments/{experiment_id}/tags/{tag_id}",
+        "path": "/projects/{project_id}/experiments/{experiment_id}/tags/{tag_id}".format(
+            project_id=project_id, experiment_id=experiment_id, tag_id=tag_id
+        ),
     }
 
     headers["X-Galileo-SDK"] = get_sdk_header()
@@ -39,10 +41,14 @@ def _get_kwargs(project_id: str, experiment_id: str, tag_id: str) -> dict[str, A
 
 def _parse_response(*, client: ApiClient, response: httpx.Response) -> DeleteRunResponse | HTTPValidationError:
     if response.status_code == 200:
-        return DeleteRunResponse.from_dict(response.json())
+        response_200 = DeleteRunResponse.from_dict(response.json())
+
+        return response_200
 
     if response.status_code == 422:
-        return HTTPValidationError.from_dict(response.json())
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -76,22 +82,21 @@ def _build_response(
 def sync_detailed(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
 ) -> Response[DeleteRunResponse | HTTPValidationError]:
-    """Delete Experiment Tag.
+    """Delete Experiment Tag
 
     Args:
         project_id (str):
         experiment_id (str):
         tag_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[DeleteRunResponse, HTTPValidationError]]
+    Returns:
+        Response[DeleteRunResponse | HTTPValidationError]
     """
+
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id, tag_id=tag_id)
 
     response = client.request(**kwargs)
@@ -101,45 +106,43 @@ def sync_detailed(
 
 def sync(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
-) -> DeleteRunResponse | HTTPValidationError | None:
-    """Delete Experiment Tag.
+) -> Optional[DeleteRunResponse | HTTPValidationError]:
+    """Delete Experiment Tag
 
     Args:
         project_id (str):
         experiment_id (str):
         tag_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[DeleteRunResponse, HTTPValidationError]
+    Returns:
+        DeleteRunResponse | HTTPValidationError
     """
+
     return sync_detailed(project_id=project_id, experiment_id=experiment_id, tag_id=tag_id, client=client).parsed
 
 
 async def asyncio_detailed(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
 ) -> Response[DeleteRunResponse | HTTPValidationError]:
-    """Delete Experiment Tag.
+    """Delete Experiment Tag
 
     Args:
         project_id (str):
         experiment_id (str):
         tag_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[DeleteRunResponse, HTTPValidationError]]
+    Returns:
+        Response[DeleteRunResponse | HTTPValidationError]
     """
+
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id, tag_id=tag_id)
 
     response = await client.arequest(**kwargs)
@@ -149,23 +152,22 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
-) -> DeleteRunResponse | HTTPValidationError | None:
-    """Delete Experiment Tag.
+) -> Optional[DeleteRunResponse | HTTPValidationError]:
+    """Delete Experiment Tag
 
     Args:
         project_id (str):
         experiment_id (str):
         tag_id (str):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[DeleteRunResponse, HTTPValidationError]
+    Returns:
+        DeleteRunResponse | HTTPValidationError
     """
+
     return (
         await asyncio_detailed(project_id=project_id, experiment_id=experiment_id, tag_id=tag_id, client=client)
     ).parsed
