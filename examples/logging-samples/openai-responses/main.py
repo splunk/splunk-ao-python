@@ -12,7 +12,7 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-# Create an OpenAI client. Because we imported from `galileo`, all calls
+# Create an OpenAI client. Because we imported from `splunk_ao`, all calls
 # made through this client are automatically instrumented and logged.
 client = openai.OpenAI()
 
