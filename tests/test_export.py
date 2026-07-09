@@ -272,3 +272,27 @@ def test_export_records_redact(mock_export_records_stream, redact_param):
     mock_export_records_stream.assert_called_once()
     request_body = mock_export_records_stream.call_args.kwargs["body"]
     assert request_body.redact == redact_param
+
+
+@patch("splunk_ao.export.export_records_stream")
+def test_export_records_include_code_metric_metadata_default(mock_export_records_stream):
+    project_id = str(uuid4())
+    mock_export_records_stream.return_value = iter([])
+
+    list(export_records(project_id=project_id, log_stream_id=str(uuid4())))
+
+    request_body = mock_export_records_stream.call_args.kwargs["body"]
+    assert request_body.include_code_metric_metadata is False
+    assert request_body.to_dict()["include_code_metric_metadata"] is False
+
+
+@patch("splunk_ao.export.export_records_stream")
+def test_export_records_include_code_metric_metadata_opt_in(mock_export_records_stream):
+    project_id = str(uuid4())
+    mock_export_records_stream.return_value = iter([])
+
+    list(export_records(project_id=project_id, log_stream_id=str(uuid4()), include_code_metric_metadata=True))
+
+    request_body = mock_export_records_stream.call_args.kwargs["body"]
+    assert request_body.include_code_metric_metadata is True
+    assert request_body.to_dict()["include_code_metric_metadata"] is True
