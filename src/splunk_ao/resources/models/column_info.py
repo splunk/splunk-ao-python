@@ -38,6 +38,9 @@ class ColumnInfo:
         is_optional (bool | Unset): Whether the column is optional. Default: False.
         roll_up_method (None | str | Unset): Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
+        metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
+            column IDs (e.g. "metrics/{uuid}"), this holds the legacy snake_case metric name (e.g. "correctness") for
+            display and dual-key query fallback. None for non-metric columns.
     """
 
     id: str
@@ -56,6 +59,7 @@ class ColumnInfo:
     complex_: bool | Unset = False
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
+    metric_key_alias: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -129,6 +133,12 @@ class ColumnInfo:
         else:
             roll_up_method = self.roll_up_method
 
+        metric_key_alias: None | str | Unset
+        if isinstance(self.metric_key_alias, Unset):
+            metric_key_alias = UNSET
+        else:
+            metric_key_alias = self.metric_key_alias
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "category": category, "data_type": data_type})
@@ -158,6 +168,8 @@ class ColumnInfo:
             field_dict["is_optional"] = is_optional
         if roll_up_method is not UNSET:
             field_dict["roll_up_method"] = roll_up_method
+        if metric_key_alias is not UNSET:
+            field_dict["metric_key_alias"] = metric_key_alias
 
         return field_dict
 
@@ -274,6 +286,15 @@ class ColumnInfo:
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 
+        def _parse_metric_key_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
+
         column_info = cls(
             id=id,
             category=category,
@@ -291,6 +312,7 @@ class ColumnInfo:
             complex_=complex_,
             is_optional=is_optional,
             roll_up_method=roll_up_method,
+            metric_key_alias=metric_key_alias,
         )
 
         column_info.additional_properties = d

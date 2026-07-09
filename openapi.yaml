@@ -11839,6 +11839,15 @@ components:
           title: Roll Up Method
           description: Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
+        metric_key_alias:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Metric Key Alias
+          description: Alternate metric key for this column. When scorer UUIDs are used
+            as column IDs (e.g. "metrics/{uuid}"), this holds the legacy snake_case
+            metric name (e.g. "correctness") for display and dual-key query fallback.
+            None for non-metric columns.
       type: object
       required:
         - id
