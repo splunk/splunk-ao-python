@@ -25,7 +25,6 @@ from galileo_core.schemas.logging.span import LlmMetrics, RetrieverSpan, ToolSpa
 from galileo_core.schemas.logging.step import Metrics
 from galileo_core.schemas.shared.traces_logger import TracesLogger
 from pydantic import PrivateAttr
-
 from splunk_ao.schema.logged import LoggedAgentSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.retrievers import convert_to_documents

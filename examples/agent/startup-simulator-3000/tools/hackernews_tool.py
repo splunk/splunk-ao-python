@@ -1,13 +1,13 @@
 import json
-from datetime import datetime
-
 import aiohttp
-from agent_framework.models import ToolMetadata
-from agent_framework.tools.base import BaseTool
-from agent_framework.utils.logging import get_galileo_logger  # 🔍 Splunk AO helper import - gets centralized logger
-from dotenv import load_dotenv
-
 from splunk_ao import log  # 🔍 Splunk AO decorator import for tool spans
+from agent_framework.tools.base import BaseTool
+from agent_framework.models import ToolMetadata
+from agent_framework.utils.logging import (
+    get_galileo_logger,
+)  # 🔍 Splunk AO helper import - gets centralized logger
+from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -32,10 +32,19 @@ class HackerNewsTool(BaseTool):
             tags=["news", "inspiration", "tech", "trending"],
             input_schema={
                 "type": "object",
-                "properties": {"limit": {"type": "integer", "description": "Number of stories to fetch", "default": 3}},
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of stories to fetch",
+                        "default": 3,
+                    }
+                },
                 "required": [],
             },
-            output_schema={"type": "string", "description": "JSON string containing HackerNews stories with metadata"},
+            output_schema={
+                "type": "string",
+                "description": "JSON string containing HackerNews stories with metadata",
+            },
         )
 
     # 👀 GALILEO TOOL SPAN DECORATOR: This decorator creates a tool span for HTTP API calls
@@ -79,9 +88,7 @@ class HackerNewsTool(BaseTool):
                     # Fetch individual story details
                     stories = []
                     for story_id in story_ids:
-                        async with session.get(
-                            f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-                        ) as story_response:
+                        async with session.get(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json") as story_response:
                             if story_response.status == 200:
                                 story_data = await story_response.json()
                                 if story_data and "title" in story_data:
@@ -168,9 +175,7 @@ class HackerNewsTool(BaseTool):
                 # Fetch individual story details
                 stories = []
                 for story_id in story_ids:
-                    async with session.get(
-                        f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
-                    ) as story_response:
+                    async with session.get(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json") as story_response:
                         if story_response.status == 200:
                             story_data = await story_response.json()
                             if story_data and "title" in story_data:
@@ -214,7 +219,7 @@ class HackerNewsTool(BaseTool):
 
 
 # ℹ️ TEST FUNCTION: This function can be used to test the tool independently
-async def main() -> None:
+async def main():
     """Test the HackerNews tool"""
     tool = HackerNewsTool()
     result = await tool.execute(limit=3)

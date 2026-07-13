@@ -11,7 +11,7 @@ from attrs import field as _attrs_field
 from galileo_core.constants.request_method import RequestMethod
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset, convert_dataset_row_to_record
-from splunk_ao.decorator import log, splunk_ao_context, splunk_ao_dataset_context
+from splunk_ao.decorator import splunk_ao_context, splunk_ao_dataset_context, log
 from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.projects import Project, Projects
 from splunk_ao.prompts import PromptTemplate
@@ -298,9 +298,7 @@ def process_row(row: DatasetRecord, process_func: Callable) -> str:
     try:
         # Set dataset context for OTEL spans (ground truth for scorers)
         # This ensures OTEL-instrumented frameworks get dataset fields attached to their spans
-        with splunk_ao_dataset_context(
-            dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata
-        ):
+        with splunk_ao_dataset_context(dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata):
             output = process_func(row.deserialized_input)
             log = splunk_ao_context.get_logger_instance()
             log.conclude(output)
@@ -426,7 +424,7 @@ def run_experiment(
 
     if existing_experiment:
         logging.warning(f"Experiment {existing_experiment.name} already exists, adding a timestamp")
-        now = datetime.datetime.now(datetime.UTC)
+        now = datetime.datetime.now(datetime.timezone.utc)
         experiment_name = f"{existing_experiment.name} {now:%Y-%m-%d} at {now:%H:%M:%S}.{now.microsecond // 1000:03d}"
 
     # Execute a runner function experiment (custom function flow — uses logstream pipeline)

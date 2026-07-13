@@ -429,7 +429,7 @@ class Experiment(StateManagementMixin):
 
             if existing_experiment:
                 _logger.warning(f"Experiment {existing_experiment.name} already exists, adding a timestamp")
-                now = datetime.datetime.now(datetime.UTC)
+                now = datetime.datetime.now(datetime.timezone.utc)
                 self.name = f"{existing_experiment.name} {now:%Y-%m-%d} at {now:%H:%M:%S}.{now.microsecond // 1000:03d}"
 
             # Resolve prompt template before create (needed for trigger=True)

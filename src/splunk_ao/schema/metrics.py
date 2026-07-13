@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -11,7 +11,7 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 
 
-class SplunkAOMetrics(StrEnum):
+class SplunkAOMetrics(str, Enum):
     """Built-in Galileo metric scorers.
 
     Values are human-readable UI labels used for scorer lookup via the API.

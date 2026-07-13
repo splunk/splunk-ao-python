@@ -1,12 +1,18 @@
 import json
 import os
-import time
 from sys import stdout
+import time
+from halo import Halo
 from warnings import warn
 
+from elasticsearch import (
+    ApiError,
+    Elasticsearch,
+    NotFoundError,
+    BadRequestError,
+)
 from elastic_transport._exceptions import ConnectionTimeout
-from elasticsearch import ApiError, BadRequestError, Elasticsearch, NotFoundError
-from halo import Halo
+
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_elasticsearch import ElasticsearchStore
@@ -22,14 +28,17 @@ ELASTICSEARCH_API_KEY = os.getenv("ELASTICSEARCH_API_KEY")
 ELSER_MODEL = os.getenv("ELSER_MODEL", ".elser_model_2")
 
 if ELASTICSEARCH_USER:
-    es = Elasticsearch(hosts=[ELASTICSEARCH_URL], basic_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD))
+    es = Elasticsearch(
+        hosts=[ELASTICSEARCH_URL],
+        basic_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD),
+    )
 elif ELASTICSEARCH_API_KEY:
     es = Elasticsearch(hosts=[ELASTICSEARCH_URL], api_key=ELASTICSEARCH_API_KEY)
 else:
     raise ValueError("Please provide either ELASTICSEARCH_USER or ELASTICSEARCH_API_KEY")
 
 
-def install_elser() -> None:
+def install_elser():
     # This script is re-entered on ctrl-c or someone just running it twice.
     # Hence, both steps need to be careful about being potentially redundant.
 
@@ -65,17 +74,20 @@ def is_elser_fully_allocated():
     return allocation_status.get("state") == "fully_allocated"
 
 
-def main() -> None:
+def main():
     install_elser()
 
     print(f"Loading data from ${FILE}")
 
     metadata_keys = ["name", "summary", "url", "category", "updated_at"]
     workplace_docs = []
-    with open(FILE) as f:
+    with open(FILE, "rt") as f:
         for doc in json.loads(f.read()):
             workplace_docs.append(
-                Document(page_content=doc["content"], metadata={k: doc.get(k) for k in metadata_keys})
+                Document(
+                    page_content=doc["content"],
+                    metadata={k: doc.get(k) for k in metadata_keys},
+                )
             )
 
     print(f"Loaded {len(workplace_docs)} documents")
@@ -116,7 +128,7 @@ def main() -> None:
     except (ConnectionTimeout, ApiError) as e:
         if isinstance(e, ApiError) and e.status_code != 408:
             raise
-        warn(f"Error occurred, will retry after ML jobs complete: {e}", stacklevel=2)
+        warn(f"Error occurred, will retry after ML jobs complete: {e}")
         await_ml_tasks()
         es.indices.delete(index=INDEX, ignore_unavailable=True)
         store.add_documents(list(docs))
@@ -127,7 +139,7 @@ def main() -> None:
     print(f"Documents added to index {INDEX}")
 
 
-def await_ml_tasks(max_timeout=1200, interval=5) -> None:
+def await_ml_tasks(max_timeout=1200, interval=5):
     """
     Waits for all machine learning tasks to complete within a specified timeout period.
 

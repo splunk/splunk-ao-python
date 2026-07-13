@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from enum import StrEnum
+from datetime import datetime, timezone
+from enum import Enum
 from typing import Any, Literal
 from uuid import UUID
 
@@ -17,15 +17,15 @@ try:
 except ImportError:
     HAS_NATIVE_CONTROL_SPAN = False
 
-    class ControlAppliesTo(StrEnum):
+    class ControlAppliesTo(str, Enum):
         llm_call = "llm_call"
         tool_call = "tool_call"
 
-    class ControlCheckStage(StrEnum):
+    class ControlCheckStage(str, Enum):
         pre = "pre"
         post = "post"
 
-    class ControlAction(StrEnum):
+    class ControlAction(str, Enum):
         deny = "deny"
         steer = "steer"
         observe = "observe"
@@ -55,7 +55,7 @@ except ImportError:
         )
         name: str = Field(default="control", description="Human-readable control name.")
         created_at: datetime = Field(
-            default_factory=lambda: datetime.now(tz=UTC), description="Timestamp of the control execution."
+            default_factory=lambda: datetime.now(tz=timezone.utc), description="Timestamp of the control execution."
         )
         user_metadata: dict[str, str] = Field(default_factory=dict, description="Metadata associated with the span.")
         tags: list[str] = Field(default_factory=list, description="Tags associated with the span.")

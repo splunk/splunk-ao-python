@@ -1,11 +1,10 @@
 """Agent logic for the Google ADK example."""
 
 from dotenv import load_dotenv
-from google.adk.agents.llm_agent import Agent
-from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 from opentelemetry.sdk import trace as trace_sdk
-
 from splunk_ao import otel
+from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+from google.adk.agents.llm_agent import Agent
 
 load_dotenv()
 
@@ -32,8 +31,6 @@ root_agent = Agent(
     model="gemini-3-flash-preview",
     name="root_agent",
     description="Tells the current time in a specified city.",
-    instruction=(
-        "You are a helpful assistant that tells the current time in cities.Use the 'get_current_time' tool for this purpose."
-    ),
+    instruction=("You are a helpful assistant that tells the current time in cities." "Use the 'get_current_time' tool for this purpose."),
     tools=[get_current_time],
 )

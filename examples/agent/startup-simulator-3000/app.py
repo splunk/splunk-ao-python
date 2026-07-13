@@ -3,14 +3,13 @@
 import asyncio
 import json
 import os
-
-from agent import SimpleAgent
-from agent_framework.llm.models import LLMConfig
-from agent_framework.llm.openai_provider import OpenAIProvider
-from agent_framework.utils.logging import get_galileo_logger
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
+from agent import SimpleAgent
+from agent_framework.llm.openai_provider import OpenAIProvider
+from agent_framework.llm.models import LLMConfig
+from agent_framework.utils.logging import get_galileo_logger
 
 # Load environment variables
 load_dotenv()
@@ -39,7 +38,12 @@ def generate_startup():
         api_request = {
             "endpoint": "/api/generate",
             "method": "POST",
-            "inputs": {"industry": industry, "audience": audience, "random_word": random_word, "mode": mode},
+            "inputs": {
+                "industry": industry,
+                "audience": audience,
+                "random_word": random_word,
+                "mode": mode,
+            },
         }
         print(f"API Request: {json.dumps(api_request, indent=2)}")
 
@@ -88,9 +92,7 @@ def generate_startup():
                 "status": "success",
                 "result_length": len(final_output),
                 "mode": mode,
-                "agent_result_preview": (
-                    str(agent_result)[:200] + "..." if len(str(agent_result)) > 200 else str(agent_result)
-                ),
+                "agent_result_preview": (str(agent_result)[:200] + "..." if len(str(agent_result)) > 200 else str(agent_result)),
             }
             print(f"API Response: {json.dumps(api_response, indent=2)}")
 
@@ -161,7 +163,8 @@ async def run_agent(industry: str, audience: str, random_word: str, mode: str = 
         )
 
     # Run the agent with individual parameters (Splunk AO logging handled by individual traces)
-    return await agent.run(task, industry=industry, audience=audience, random_word=random_word)
+    result = await agent.run(task, industry=industry, audience=audience, random_word=random_word)
+    return result
 
 
 if __name__ == "__main__":

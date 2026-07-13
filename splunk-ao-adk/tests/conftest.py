@@ -8,10 +8,9 @@ from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes as CoreRoutes
 from galileo_core.schemas.core.user import User
 from galileo_core.schemas.core.user_role import UserRole
-from test_support.config import fast_config_validation
-
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
+from test_support.config import fast_config_validation
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
 

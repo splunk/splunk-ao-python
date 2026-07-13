@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from splunk_ao.logger import SplunkAOLogger
@@ -33,7 +33,7 @@ def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock
     logger.start_trace(input="test")
 
     # Create timestamps in reverse order to test that the logger doesn't alter them
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     timestamps = [now - timedelta(seconds=i) for i in range(5)]
 
     for ts in timestamps:
@@ -59,11 +59,11 @@ def test_mixed_default_and_user_timestamps(mock_projects_client: Mock, mock_logs
     logger.add_llm_span(input="test", output="test", model="test")
 
     # 2. Add a user-provided span with a timestamp in the past
-    past_timestamp = datetime.now(UTC) - timedelta(seconds=10)
+    past_timestamp = datetime.now(timezone.utc) - timedelta(seconds=10)
     logger.add_llm_span(input="test", output="test", model="test", created_at=past_timestamp)
 
     # 3. Add a user-provided span with a timestamp in the future
-    future_timestamp = datetime.now(UTC) + timedelta(seconds=10)
+    future_timestamp = datetime.now(timezone.utc) + timedelta(seconds=10)
     logger.add_llm_span(input="test", output="test", model="test", created_at=future_timestamp)
 
     # 4. Add a final default span

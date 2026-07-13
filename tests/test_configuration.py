@@ -244,7 +244,7 @@ class TestConfigurationEnvFileLoading:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test that malformed .env file logs error but doesn't crash the application."""
-        _, _log_stream = capture_logs
+        _, log_stream = capture_logs
 
         # Create malformed env file (will cause parsing to fail)
         mock_env_file.write_text("INVALID_LINE_WITHOUT_EQUALS\n")
@@ -313,7 +313,7 @@ class TestConfigurationConnect:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test connect() raises ConfigurationError when API key is missing."""
-        _, _log_stream = capture_logs
+        _, log_stream = capture_logs
 
         # Set only console URL
         monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.splunkao.ai")

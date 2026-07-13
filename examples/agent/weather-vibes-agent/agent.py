@@ -8,14 +8,12 @@ Usage:
     python galileo_agent.py -l "Tokyo" -u imperial -m relaxing
 """
 
-import argparse
 import asyncio
+import argparse
 import os
 import sys
 from pathlib import Path
-
 from dotenv import load_dotenv
-
 from splunk_ao import log, splunk_ao_context
 
 # Load environment variables & set up path
@@ -23,7 +21,12 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Quick environment check
-required_keys = ["OPENAI_API_KEY", "WEATHERAPI_KEY", "YOUTUBE_API_KEY", "SPLUNK_AO_API_KEY"]
+required_keys = [
+    "OPENAI_API_KEY",
+    "WEATHERAPI_KEY",
+    "YOUTUBE_API_KEY",
+    "SPLUNK_AO_API_KEY",
+]
 if any(not os.getenv(key) for key in required_keys):
     missing = [key for key in required_keys if not os.getenv(key)]
     print(f"Missing API keys: {', '.join(missing)}")
@@ -45,19 +48,22 @@ from agent.weather_vibes_agent import WeatherVibesAgent
 @log(span_type="tool", name="weather_tool")
 async def get_weather(weather_tool, location, days=1):
     """Get weather data with Splunk AO tracing"""
-    return await weather_tool.execute(location=location, days=days)
+    result = await weather_tool.execute(location=location, days=days)
+    return result
 
 
 @log(span_type="tool", name="recommendations_tool")
 async def get_recommendations(recommendations_tool, weather, max_items=5):
     """Get recommendations with Splunk AO tracing"""
-    return await recommendations_tool.execute(weather=weather, max_items=max_items)
+    result = await recommendations_tool.execute(weather=weather, max_items=max_items)
+    return result
 
 
 @log(span_type="tool", name="youtube_tool")
 async def find_weather_video(youtube_tool, weather_condition, mood_override=None):
     """Find YouTube videos with Splunk AO tracing"""
-    return await youtube_tool.execute(weather_condition=weather_condition, mood_override=mood_override)
+    result = await youtube_tool.execute(weather_condition=weather_condition, mood_override=mood_override)
+    return result
 
 
 @log(span_type="workflow", name="weather_vibes_workflow")
@@ -92,14 +98,21 @@ async def process_request(agent, request):
         # Execute tools
         weather_result = await get_weather(agent.weather_tool, location, days=1)
         if "error" in weather_result:
-            return {"error": 500, "message": f"Weather API error: {weather_result['message']}"}
+            return {
+                "error": 500,
+                "message": f"Weather API error: {weather_result['message']}",
+            }
 
         recommendations = await get_recommendations(agent.recommendations_tool, weather_result, max_recommendations)
 
         video_result = await find_weather_video(agent.youtube_tool, weather_result["condition"], video_mood)
 
         # Prepare response
-        result = {"weather": weather_result, "recommendations": recommendations, "video": video_result}
+        result = {
+            "weather": weather_result,
+            "recommendations": recommendations,
+            "video": video_result,
+        }
 
         # Filter weather details if not verbose
         if not verbose and "weather" in result:
@@ -122,12 +135,12 @@ async def process_request(agent, request):
         return response
 
     except Exception as e:
-        return {"error": 500, "message": f"Error: {e!s}"}
+        return {"error": 500, "message": f"Error: {str(e)}"}
 
 
 # Log the inputs using the Splunk AO decorator
 @log(span_type="workflow", name="weather_vibes_agent")
-async def run_agent_with_inputs(location, units, mood, recommendations, verbose) -> None:
+async def run_agent_with_inputs(location, units, mood, recommendations, verbose):
     """Run the agent with specific inputs logged via the decorator"""
     print(f"Getting weather for: {location} (with Splunk AO tracing)")
 
@@ -135,8 +148,16 @@ async def run_agent_with_inputs(location, units, mood, recommendations, verbose)
     agent = WeatherVibesAgent()
     request = {
         "input": {"location": location, "units": units},
-        "config": {"verbose": verbose, "max_recommendations": recommendations, "video_mood": mood},
-        "metadata": {"user_id": "demo_user", "session_id": "demo_session", "galileo_instrumented": True},
+        "config": {
+            "verbose": verbose,
+            "max_recommendations": recommendations,
+            "video_mood": mood,
+        },
+        "metadata": {
+            "user_id": "demo_user",
+            "session_id": "demo_session",
+            "galileo_instrumented": True,
+        },
     }
 
     try:
@@ -192,14 +213,23 @@ async def run_agent_with_inputs(location, units, mood, recommendations, verbose)
 
 
 # Use splunk_ao_context to set up the trace environment with further information
-async def main() -> None:
+async def main():
     """Main entry point that uses splunk_ao_context to set up the trace environment"""
     # Parse arguments
     parser = argparse.ArgumentParser(description="Run the Splunk AO-instrumented Weather Vibes Agent")
     parser.add_argument("location", nargs="?", help="Location (e.g., 'Tokyo')")
-    parser.add_argument("-l", "--location", dest="location_alt", help="Alternative location specification")
     parser.add_argument(
-        "-u", "--units", choices=["metric", "imperial"], default="metric", help="Units (metric/imperial)"
+        "-l",
+        "--location",
+        dest="location_alt",
+        help="Alternative location specification",
+    )
+    parser.add_argument(
+        "-u",
+        "--units",
+        choices=["metric", "imperial"],
+        default="metric",
+        help="Units (metric/imperial)",
     )
     parser.add_argument("-m", "--mood", help="Video mood (e.g., 'relaxing', 'upbeat')")
     parser.add_argument("-r", "--recommendations", type=int, default=5, help="Number of recommendations")

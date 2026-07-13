@@ -1,6 +1,5 @@
+from typing import Dict, Any
 from pathlib import Path
-from typing import Any
-
 import jinja2
 
 
@@ -9,7 +8,9 @@ class PromptTemplate:
 
     def __init__(self, template_path: str):
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"), trim_blocks=True, lstrip_blocks=True
+            loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.template = self.env.get_template(template_path)
 
@@ -22,7 +23,7 @@ class PromptLibrary:
     """Central repository for prompt templates"""
 
     def __init__(self):
-        self.templates: dict[str, PromptTemplate] = {}
+        self.templates: Dict[str, PromptTemplate] = {}
         self._load_templates()
 
     def _load_templates(self) -> None:

@@ -6,6 +6,9 @@ import chromadb
 import chromadb.utils.embedding_functions as ef
 import openai
 from fastapi import FastAPI
+from splunk_ao.otel import start_galileo_span
+from splunk_ao_core.schemas.logging.span import RetrieverSpan
+from splunk_ao_core.schemas.shared.document import Document
 from langgraph.graph import END, START, StateGraph
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from openinference.instrumentation.openai import OpenAIInstrumentor
@@ -16,10 +19,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pydantic import BaseModel
-from splunk_ao_core.schemas.logging.span import RetrieverSpan
-from splunk_ao_core.schemas.shared.document import Document
-
-from splunk_ao.otel import start_galileo_span
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -71,8 +70,14 @@ OpenAIInstrumentor().instrument(tracer_provider=provider)
 # Clients
 # ---------------------------------------------------------------------------
 oai = openai.OpenAI()
-chroma = chromadb.HttpClient(host=os.getenv("CHROMADB_HOST", "localhost"), port=int(os.getenv("CHROMADB_PORT", "8000")))
-embedding_fn = ef.OpenAIEmbeddingFunction(api_key=os.getenv("OPENAI_API_KEY"), model_name="text-embedding-3-small")
+chroma = chromadb.HttpClient(
+    host=os.getenv("CHROMADB_HOST", "localhost"),
+    port=int(os.getenv("CHROMADB_PORT", "8000")),
+)
+embedding_fn = ef.OpenAIEmbeddingFunction(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_name="text-embedding-3-small",
+)
 
 CHROMA_COLLECTION = "financial_docs"
 
@@ -115,7 +120,7 @@ def retrieve_documents(state: GraphState) -> GraphState:
             logger.exception("ChromaDB query failed, continuing with empty context")
             docs, ids = [], []
 
-        retriever_span.output = [Document(content=d, metadata={"id": i}) for d, i in zip(docs, ids, strict=False)]
+        retriever_span.output = [Document(content=d, metadata={"id": i}) for d, i in zip(docs, ids)]
         span.set_attribute("retriever.result_count", len(docs))
         logger.info("Retrieved %d documents", len(docs))
 
@@ -141,10 +146,17 @@ def generate_answer(state: GraphState) -> GraphState:
                 "If the context doesn't contain enough information, say so."
             ),
         },
-        {"role": "user", "content": f"Context:\n{context_block}\n\nQuestion: {question}"},
+        {
+            "role": "user",
+            "content": f"Context:\n{context_block}\n\nQuestion: {question}",
+        },
     ]
 
-    response = oai.chat.completions.create(model="gpt-4o-mini", messages=messages, temperature=0.2)
+    response = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=0.2,
+    )
     # message.content is Optional[str] — guard against content filters or
     # tool-call responses where the model returns no text.
     answer = response.choices[0].message.content or ""
@@ -195,7 +207,13 @@ def process(req: ProcessRequest):
     serves as the workflow container in the Splunk AO trace UI.
     """
     result = workflow.invoke(
-        {"question": req.question, "category": req.category, "documents": [], "sources": [], "answer": ""}
+        {
+            "question": req.question,
+            "category": req.category,
+            "documents": [],
+            "sources": [],
+            "answer": "",
+        }
     )
     return {"answer": result["answer"], "sources": result.get("sources", [])}
 

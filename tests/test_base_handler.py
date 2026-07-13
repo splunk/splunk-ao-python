@@ -38,9 +38,7 @@ class TestSplunkAOBaseHandler:
         assert handler._nodes == {}
 
         # Custom initialization
-        handler = SplunkAOBaseHandler(
-            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
-        )
+        handler = SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
         assert handler._start_new_trace is False
         assert handler._flush_on_chain_end is False
 

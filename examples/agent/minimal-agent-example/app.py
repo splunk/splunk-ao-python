@@ -1,12 +1,14 @@
-import json
 import os
-from collections.abc import Callable
-
 import streamlit as st
-from dotenv import load_dotenv
+from splunk_ao import (
+    log,
+    splunk_ao_context,
+    openai,
+)
 from pydantic import BaseModel
-
-from splunk_ao import log, openai, splunk_ao_context
+import json
+from typing import Callable
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -40,9 +42,14 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "destination": {"type": "string", "description": "City and country e.g. Bogotá, Colombia"}
+                    "destination": {
+                        "type": "string",
+                        "description": "City and country e.g. Bogotá, Colombia",
+                    },
                 },
-                "required": ["destination"],
+                "required": [
+                    "destination",
+                ],
                 "additionalProperties": False,
             },
             "strict": True,
@@ -56,8 +63,14 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "destination": {"type": "string", "description": "City and country e.g. Bogotá, Colombia"},
-                    "days": {"type": "integer", "description": "Number of days for the itinerary"},
+                    "destination": {
+                        "type": "string",
+                        "description": "City and country e.g. Bogotá, Colombia",
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of days for the itinerary",
+                    },
                 },
                 "required": ["destination", "days"],
                 "additionalProperties": False,
@@ -73,9 +86,14 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "destination": {"type": "string", "description": "City and country e.g. Bogotá, Colombia"}
+                    "destination": {
+                        "type": "string",
+                        "description": "City and country e.g. Bogotá, Colombia",
+                    },
                 },
-                "required": ["destination"],
+                "required": [
+                    "destination",
+                ],
                 "additionalProperties": False,
             },
             "strict": True,
@@ -89,8 +107,14 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "destination": {"type": "string", "description": "City and country e.g. Bogotá, Colombia"},
-                    "days": {"type": "integer", "description": "Number of days for the itinerary"},
+                    "destination": {
+                        "type": "string",
+                        "description": "City and country e.g. Bogotá, Colombia",
+                    },
+                    "days": {
+                        "type": "integer",
+                        "description": "Number of days for the itinerary",
+                    },
                 },
                 "required": ["destination", "days"],
                 "additionalProperties": False,
@@ -114,12 +138,12 @@ def get_weather_forecast(destination: str) -> str:
 # LLM call: Generate a destination overview.
 # =============================================================================
 def generate_destination_overview(destination: str) -> str:
-    prompt = (
-        f"Provide a brief overview of {destination}, including its top attractions, "
-        "cultural highlights, and essential travel tips."
-    )
+    prompt = f"Provide a brief overview of {destination}, including its top attractions, " "cultural highlights, and essential travel tips."
     # Call the OpenAI API (assuming proper API key configuration)
-    response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": prompt}])
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+    )
     # Extract and return the text from the response.
     return response.choices[0].message.content.strip()
 
@@ -136,7 +160,10 @@ Important:
 - Every plan must contain a destination overview and an itinerary.
 - Only include a travel budget and weather info if the user requests it.
 """
-    response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": prompt}])
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+    )
     return response.choices[0].message.content.strip()
 
 
@@ -150,7 +177,10 @@ def estimate_travel_budget(destination: str, days: int, itinerary: str | None = 
         "food, transportation, and activities. Provide a rough breakdown of the costs (in USD)."
         f"{itinerary_prompt}"
     )
-    response = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": prompt}])
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+    )
     return response.choices[0].message.content.strip()
 
 
@@ -174,7 +204,9 @@ Important:
 """
 
     response = client.chat.completions.create(
-        model="gpt-4-turbo", messages=[{"role": "user", "content": function_calling_prompt}], tools=tools
+        model="gpt-4-turbo",
+        messages=[{"role": "user", "content": function_calling_prompt}],
+        tools=tools,
     )
 
     # Extract function call responses
@@ -200,9 +232,7 @@ Important:
         if function_name == "generate_destination_overview":
             destination_overview_request = DestinationOverviewRequest(**function_args)
             info_callback(f"Generating a destination overview for {destination_overview_request.destination}...")
-            destination_overview = (
-                destination_overview + "\n" + generate_destination_overview(destination_overview_request.destination)
-            )
+            destination_overview = destination_overview + "\n" + generate_destination_overview(destination_overview_request.destination)
 
         elif function_name == "generate_itinerary":
             itinerary_request = ItineraryRequest(**function_args)
@@ -216,7 +246,9 @@ Important:
                 budget
                 + "\n"
                 + estimate_travel_budget(
-                    destination=budget_request.destination, days=budget_request.days, itinerary=itinerary
+                    destination=budget_request.destination,
+                    days=budget_request.days,
+                    itinerary=itinerary,
                 )
             )
 
@@ -247,14 +279,17 @@ Itinerary: {itinerary}
         + "\n\nPlease package the information above into a plan that I can use for my next trip."
     )
 
-    response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": assembly_prompt}])
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": assembly_prompt}],
+    )
     return response.choices[0].message.content.strip()
 
 
 # =============================================================================
 # Main Streamlit App
 # =============================================================================
-def main() -> None:
+def main():
     st.title("Travel Itinerary Planner")
     st.write("Plan your next adventure with our AI-powered travel planner.")
 
@@ -273,7 +308,7 @@ def main() -> None:
         # Create an empty container for results so that previous outputs are cleared on re-run.
         result_container = st.empty()
 
-        def info_callback(message) -> None:
+        def info_callback(message):
             info_placeholder.info(message)
 
         if plan_trip_clicked:

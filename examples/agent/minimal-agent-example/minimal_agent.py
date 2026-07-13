@@ -1,14 +1,11 @@
-import json
 import os
+import json
 import warnings
-
-import openai
-import questionary
+from splunk_ao import log, splunk_ao_context, openai as splunk_ao_openai
 from dotenv import load_dotenv
 from rich.console import Console
-
-from splunk_ao import log, splunk_ao_context
-from splunk_ao import openai as splunk_ao_openai
+import questionary
+import openai
 
 # Suppress Pydantic serializer warnings
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -47,7 +44,7 @@ def convert_text_to_arithmetic_expression(text):
 
 # Tool: Calculator for arithmetic operations
 @log(span_type="tool", name="calculate")
-def calculate(expression) -> str | None:
+def calculate(expression):
     """Perform a calculation based on the given expression."""
     console.print(f"Calculating: {expression}")
 
@@ -56,12 +53,12 @@ def calculate(expression) -> str | None:
         console.print(f"Result: {result}")
         return f"The result of {expression} is {result}"
     except Exception as e:
-        return f"Error calculating {expression}: {e!s}"
+        return f"Error calculating {expression}: {str(e)}"
 
 
 # Load tools from tools.json
 def get_tools():
-    with open(os.path.join(os.path.dirname(__file__), "tools.json")) as f:
+    with open(os.path.join(os.path.dirname(__file__), "tools.json"), "r") as f:
         return json.load(f)
 
 
@@ -86,7 +83,11 @@ def process_query(query):
     # Agent loop - continue until the LLM decides we're done
     while True:
         # Get next tool call from LLM
-        response = client.chat.completions.create(model="gpt-4o", messages=messages, tools=tools)
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=tools,
+        )
 
         # Convert the assistant message to a serializable dictionary
         assistant_message = response.choices[0].message
@@ -100,7 +101,10 @@ def process_query(query):
                     {
                         "id": tool_call.id,
                         "type": "function",
-                        "function": {"name": tool_call.function.name, "arguments": tool_call.function.arguments},
+                        "function": {
+                            "name": tool_call.function.name,
+                            "arguments": tool_call.function.arguments,
+                        },
                     }
                 )
             assistant_dict["tool_calls"] = tool_calls_list
@@ -142,10 +146,15 @@ def process_query(query):
             results.append(result)
 
     # Create a summary
-    return "\n".join(results) if results else "No results produced."
+    if results:
+        summary = "\n".join(results)
+    else:
+        summary = "No results produced."
+
+    return summary
 
 
-def main() -> None:
+def main():
     console.print("[bold]Minimal Number Converter & Calculator[/bold]")
 
     query = questionary.text("Enter your query:", default="What's 4 + seven?").ask()

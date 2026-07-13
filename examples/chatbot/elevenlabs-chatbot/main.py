@@ -70,7 +70,7 @@ def on_user_transcript(transcript: str) -> None:
 # =============================================================================
 
 
-def run_voice_conversation() -> None:
+def run_voice_conversation():
     """Run a voice conversation with ElevenLabs + Splunk AO logging.
 
     This function:

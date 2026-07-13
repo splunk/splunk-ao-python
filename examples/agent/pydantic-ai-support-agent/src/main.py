@@ -2,19 +2,20 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
+from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 
-from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
-
 # Set up Splunk AO observability
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
 add_splunk_ao_span_processor(
-    tracer_provider=provider, processor=SplunkAOSpanProcessor(project="pydantic-ai-support", logstream="default")
+    tracer_provider=provider,
+    processor=SplunkAOSpanProcessor(project="pydantic-ai-support", logstream="default"),
 )
 
 # Enable instrumentation on all PydanticAI agents
@@ -52,15 +53,42 @@ class SupportTicket:
 
 # --- Mock Database ---
 CUSTOMERS_DB: dict[str, Customer] = {
-    "C001": Customer("C001", "Alice Johnson", "alice@example.com", "enterprise", datetime(2022, 1, 15)),
+    "C001": Customer(
+        "C001",
+        "Alice Johnson",
+        "alice@example.com",
+        "enterprise",
+        datetime(2022, 1, 15),
+    ),
     "C002": Customer("C002", "Bob Smith", "bob@example.com", "premium", datetime(2023, 6, 20)),
     "C003": Customer("C003", "Carol White", "carol@example.com", "standard", datetime(2024, 3, 10)),
 }
 
 ORDERS_DB: dict[str, Order] = {
-    "ORD-1001": Order("ORD-1001", "C001", "Enterprise License", 5000.00, "delivered", datetime(2024, 11, 1)),
-    "ORD-1002": Order("ORD-1002", "C001", "Support Package", 1200.00, "shipped", datetime(2024, 12, 15)),
-    "ORD-1003": Order("ORD-1003", "C002", "Premium Subscription", 299.99, "pending", datetime(2025, 1, 5)),
+    "ORD-1001": Order(
+        "ORD-1001",
+        "C001",
+        "Enterprise License",
+        5000.00,
+        "delivered",
+        datetime(2024, 11, 1),
+    ),
+    "ORD-1002": Order(
+        "ORD-1002",
+        "C001",
+        "Support Package",
+        1200.00,
+        "shipped",
+        datetime(2024, 12, 15),
+    ),
+    "ORD-1003": Order(
+        "ORD-1003",
+        "C002",
+        "Premium Subscription",
+        299.99,
+        "pending",
+        datetime(2025, 1, 5),
+    ),
 }
 
 TICKETS_DB: dict[str, SupportTicket] = {}
@@ -76,7 +104,7 @@ class SupportDeps:
 # --- Response Model ---
 class SupportResponse(BaseModel):
     message: str
-    ticket_id: str | None = None
+    ticket_id: Optional[str] = None
     refund_processed: bool = False
 
 
@@ -100,7 +128,9 @@ async def get_customer_info(ctx: RunContext[SupportDeps]) -> str:
     customer = CUSTOMERS_DB.get(ctx.deps.customer_id)
     if not customer:
         return "Customer not found."
-    return f"Customer: {customer.name}\nEmail: {customer.email}\nTier: {customer.tier}\nAccount since: {customer.account_created.strftime('%Y-%m-%d')}"
+    return (
+        f"Customer: {customer.name}\n" f"Email: {customer.email}\n" f"Tier: {customer.tier}\n" f"Account since: {customer.account_created.strftime('%Y-%m-%d')}"
+    )
 
 
 @support_agent.tool
@@ -154,7 +184,11 @@ async def create_support_ticket(ctx: RunContext[SupportDeps], subject: str, prio
     TICKET_COUNTER += 1
     ticket_id = f"TKT-{TICKET_COUNTER}"
     ticket = SupportTicket(
-        id=ticket_id, customer_id=ctx.deps.customer_id, subject=subject, priority=priority, status="open"
+        id=ticket_id,
+        customer_id=ctx.deps.customer_id,
+        subject=subject,
+        priority=priority,
+        status="open",
     )
     TICKETS_DB[ticket_id] = ticket
     return f"Support ticket created: {ticket_id} (Priority: {priority})"
