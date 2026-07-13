@@ -8,7 +8,7 @@ import pytest
 
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, log, splunk_ao_context
+from splunk_ao import Message, MessageRole, splunk_ao_context, log
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.decorator import _parent_id_context, _trace_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock

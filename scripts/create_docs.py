@@ -553,7 +553,8 @@ def _convert_rst_code_blocks(text: str) -> str:
 def _sanitize_description(text: str) -> str:
     """Convert RST code blocks and escape MDX-unsafe curly braces in description text."""
     text = _convert_rst_code_blocks(text)
-    return _escape_curly_braces(text)
+    text = _escape_curly_braces(text)
+    return text
 
 
 def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
@@ -631,7 +632,7 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
                     continue
                 if "```" in code:
                     parts.append(code)
-                elif code.startswith((">>>", "...")):
+                elif code.startswith(">>>") or code.startswith("..."):
                     parts.append("```python")
                     parts.append(code[4:])
                     parts.append("```")
@@ -709,7 +710,7 @@ def write_class(parts: list[str], cls: Any) -> None:
                     continue
                 if "```" in code:
                     parts.append(code)
-                elif code.startswith((">>>", "...")):
+                elif code.startswith(">>>") or code.startswith("..."):
                     parts.append("```python")
                     parts.append(code[4:])
                     parts.append("```")

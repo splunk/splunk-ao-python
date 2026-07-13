@@ -11,12 +11,11 @@ Run the retrieval service first: uvicorn retrieval_service:app --reload --port 8
 Then run this: python main_distributed_tracing.py
 """
 
-import asyncio
-
-import httpx
 from dotenv import load_dotenv
-
-from splunk_ao import get_tracing_headers, log, openai
+import httpx
+import asyncio
+from splunk_ao import log, get_tracing_headers
+from splunk_ao import openai
 
 load_dotenv()
 
@@ -95,12 +94,14 @@ def analyze_question(question: str) -> dict:
     """
     question_lower = question.lower()
 
-    return {
+    analysis = {
         "needs_company_info": any(word in question_lower for word in ["company", "work", "employer"]),
         "needs_location_info": any(word in question_lower for word in ["location", "where", "city", "live"]),
         "needs_education_info": any(word in question_lower for word in ["education", "school", "degree", "study"]),
         "question_type": "factual",
     }
+
+    return analysis
 
 
 @log
@@ -117,15 +118,18 @@ def format_context(analysis: dict, docs: list[str]) -> str:
 # ============================================================================
 
 
-async def main() -> None:
+async def main():
     """Run the distributed tracing example"""
 
-    questions = ["What did Galileo Galilei research?", "Where did Galileo Galilei work?"]
+    questions = [
+        "What did Galileo Galilei research?",
+        "Where did Galileo Galilei work?",
+    ]
 
     for question in questions:
-        print(f"\n{'=' * 60}")
+        print(f"\n{'='*60}")
         print(f"Question: {question}")
-        print(f"{'=' * 60}")
+        print(f"{'='*60}")
         answer = await orchestrator_agent(question)
         print(f"Answer: {answer}\n")
 

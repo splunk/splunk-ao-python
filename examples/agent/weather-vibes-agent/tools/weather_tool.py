@@ -3,11 +3,10 @@ Weather tool for fetching current weather conditions using WeatherAPI.com.
 """
 
 import os
-from typing import Any
-
-import requests
-from agent_framework.tools.base import BaseTool
+from typing import Dict, Any
 from pydantic import BaseModel
+from agent_framework.tools.base import BaseTool
+import requests
 
 
 class WeatherInput(BaseModel):
@@ -31,7 +30,7 @@ class WeatherTool(BaseTool):
             raise ValueError("WeatherAPI.com API key not found in environment")
         self.base_url = "http://api.weatherapi.com/v1/forecast.json"
 
-    async def execute(self, location: str, days: int = 1) -> dict[str, Any]:
+    async def execute(self, location: str, days: int = 1) -> Dict[str, Any]:
         """
         Execute the tool to get current weather and forecast.
 
@@ -97,4 +96,7 @@ class WeatherTool(BaseTool):
 
             return weather_info
         except Exception as e:
-            return {"error": str(e), "message": f"Failed to get weather for location: {location}"}
+            return {
+                "error": str(e),
+                "message": f"Failed to get weather for location: {location}",
+            }

@@ -1,16 +1,25 @@
 import json
 import os
-from functools import cache
 
-from elasticsearch_client import elasticsearch_client, get_elasticsearch_chat_message_history
+from elasticsearch_client import (
+    elasticsearch_client,
+    get_elasticsearch_chat_message_history,
+)
 from flask import current_app, render_template, stream_with_context
+from functools import cache
+from langchain_elasticsearch import (
+    ElasticsearchStore,
+    SparseVectorStrategy,
+)
 from langchain_core.messages.ai import AIMessageChunk
-from langchain_elasticsearch import ElasticsearchStore, SparseVectorStrategy
+
 from langgraph.graph import START, StateGraph
-from llm_integrations import get_llm
+from splunk_ao.handlers.langchain import SplunkAOCallback
+
+
 from utils import State
 
-from splunk_ao.handlers.langchain import SplunkAOCallback
+from llm_integrations import get_llm
 
 # Make sure to set your Splunk AO logging env variables
 callback = SplunkAOCallback()
@@ -24,7 +33,9 @@ SOURCE_TAG = "[SOURCE]"
 DONE_TAG = "[DONE]"
 
 store = ElasticsearchStore(
-    es_connection=elasticsearch_client, index_name=INDEX, strategy=SparseVectorStrategy(model_id=ELSER_MODEL)
+    es_connection=elasticsearch_client,
+    index_name=INDEX,
+    strategy=SparseVectorStrategy(model_id=ELSER_MODEL),
 )
 
 store_retriever = store.as_retriever()
@@ -50,7 +61,9 @@ def ask_question(question, session_id):
         if len(chat_history.messages) > 0:
             # create a condensed question
             condense_question_prompt = render_template(
-                "condense_question_prompt.txt", question=question, chat_history=chat_history.messages
+                "condense_question_prompt.txt",
+                question=question,
+                chat_history=chat_history.messages,
             )
             condensed_question = llm.invoke(condense_question_prompt).content
         else:
@@ -66,7 +79,12 @@ def ask_question(question, session_id):
         question = state["question"]
         docs = state["context"]
 
-        qa_prompt = render_template("rag_prompt.txt", question=question, docs=docs, chat_history=chat_history.messages)
+        qa_prompt = render_template(
+            "rag_prompt.txt",
+            question=question,
+            docs=docs,
+            chat_history=chat_history.messages,
+        )
 
         response = llm.invoke(qa_prompt)
         return {"answer": response.content}
@@ -77,7 +95,9 @@ def ask_question(question, session_id):
     retrieved = False
     answer = ""
     for mode, step in graph.stream(
-        {"question": question}, stream_mode=["updates", "messages"], config={"callbacks": [callback]}
+        {"question": question},
+        stream_mode=["updates", "messages"],
+        config={"callbacks": [callback]},
     ):
         if mode == "updates":
             if not retrieved and "retrieve" in step:

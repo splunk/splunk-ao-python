@@ -10,8 +10,9 @@ analyze patterns in your AI application.
 """
 
 import os
+from typing import Optional
 
-from splunk_ao import Message, MessageRole, SplunkAOLogger
+from splunk_ao import SplunkAOLogger, Message, MessageRole
 
 
 class SplunkAOHandler:
@@ -22,8 +23,8 @@ class SplunkAOHandler:
     """
 
     def __init__(self):
-        self._logger: SplunkAOLogger | None = None
-        self._session_id: str | None = None
+        self._logger: Optional[SplunkAOLogger] = None
+        self._session_id: Optional[str] = None
         self._turn_count = 0
 
         # Load Splunk AO config from environment
@@ -32,7 +33,7 @@ class SplunkAOHandler:
 
         self._init_logger()
 
-    def _init_logger(self) -> None:
+    def _init_logger(self):
         """Initialize the Splunk AO Logger.
 
         The logger connects to a specific project and log stream in Splunk AO.
@@ -40,12 +41,15 @@ class SplunkAOHandler:
         or by feature area.
         """
         try:
-            self._logger = SplunkAOLogger(project=self._project_name, log_stream=self._log_stream)
+            self._logger = SplunkAOLogger(
+                project=self._project_name,
+                log_stream=self._log_stream,
+            )
             print(f"[SPLUNK_AO] Logger initialized for project: {self._project_name}")
         except Exception as e:
             print(f"[SPLUNK_AO] Logger init failed: {e}")
 
-    def start_conversation(self, session_id: str) -> None:
+    def start_conversation(self, session_id: str):
         """Start a new conversation session in Splunk AO.
 
         A session groups all the turns of a single conversation together,
@@ -102,7 +106,7 @@ class SplunkAOHandler:
             except Exception as e:
                 print(f"[SPLUNK_AO] Logging error: {e}")
 
-    def end_conversation(self) -> None:
+    def end_conversation(self):
         """End the conversation session and cleanup.
 
         Ensures all logs are flushed and the session is properly closed.
@@ -120,7 +124,7 @@ class SplunkAOHandler:
 
 
 # Singleton instance for the Splunk AO handler
-_splunk_ao_handler: SplunkAOHandler | None = None
+_splunk_ao_handler: Optional[SplunkAOHandler] = None
 
 
 def get_splunk_ao_handler() -> SplunkAOHandler:

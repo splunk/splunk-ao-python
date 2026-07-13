@@ -1,9 +1,10 @@
 import json
 
-from dotenv import load_dotenv
-
 from splunk_ao import log, splunk_ao_context
+
 from splunk_ao.openai import OpenAI
+
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv(override=True)
@@ -25,7 +26,10 @@ def retrieve_horoscope_data(sign):
             "Next Tuesday you will find a four-leaf clover.",
             "Next Tuesday you will have a great conversation with a stranger.",
         ],
-        "Gemini": ["Next Tuesday you will learn to juggle.", "Next Tuesday you will discover a new favorite book."],
+        "Gemini": [
+            "Next Tuesday you will learn to juggle.",
+            "Next Tuesday you will discover a new favorite book.",
+        ],
     }
     return horoscopes.get(sign, ["No horoscope available."])
 
@@ -48,12 +52,15 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "sign": {"type": "string", "description": "An astrological sign like Taurus or Aquarius"}
+                    "sign": {
+                        "type": "string",
+                        "description": "An astrological sign like Taurus or Aquarius",
+                    },
                 },
                 "required": ["sign"],
             },
         },
-    }
+    },
 ]
 
 # Map tool names to their implementations
@@ -68,7 +75,11 @@ def call_llm(messages):
     """
     Call the LLM with the provided messages and tools.
     """
-    return client.chat.completions.create(model="gpt-5.1", tools=tools, messages=messages)
+    return client.chat.completions.create(
+        model="gpt-5.1",
+        tools=tools,
+        messages=messages,
+    )
 
 
 def get_users_horoscope(sign: str) -> str:
@@ -104,7 +115,10 @@ def get_users_horoscope(sign: str) -> str:
                     {
                         "id": call.id,
                         "type": "function",
-                        "function": {"name": call.function.name, "arguments": call.function.arguments},
+                        "function": {
+                            "name": call.function.name,
+                            "arguments": call.function.arguments,
+                        },
                     }
                     for call in completion_tool_calls
                 ],
@@ -121,7 +135,12 @@ def get_users_horoscope(sign: str) -> str:
 
             # Add the tool result to the message history
             message_history.append(
-                {"role": "tool", "content": tool_result, "tool_call_id": call.id, "name": call.function.name}
+                {
+                    "role": "tool",
+                    "content": tool_result,
+                    "tool_call_id": call.id,
+                    "name": call.function.name,
+                }
             )
 
         # Now we call the model again, with the tool results included
@@ -131,7 +150,7 @@ def get_users_horoscope(sign: str) -> str:
     return response.choices[0].message.content
 
 
-def main() -> None:
+def main():
     """
     Get the user's horoscope
     """

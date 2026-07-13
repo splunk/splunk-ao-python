@@ -4,29 +4,28 @@ Simple Agent for Startup Pitch Generation
 This agent generates startup pitches using different tools based on the selected mode.
 """
 
-import json
 import os
+import json
+from typing import Dict, Any, List, Optional
 from datetime import datetime
-from typing import Any
+from dotenv import load_dotenv
+from splunk_ao import SplunkAOLogger
+from splunk_ao.openai import openai
 
 from agent_framework.agent import Agent
-from agent_framework.llm.models import LLMConfig
+from agent_framework.models import VerbosityLevel, ToolSelectionHooks
 from agent_framework.llm.openai_provider import OpenAIProvider
-from agent_framework.models import ToolSelectionHooks, VerbosityLevel
+from agent_framework.llm.models import LLMConfig
 from agent_framework.utils.logging import ConsoleAgentLogger
 from agent_framework.utils.tool_hooks import LoggingToolSelectionHooks
-from dotenv import load_dotenv
-from tools.hackernews_tool import HackerNewsTool
-from tools.keyword_extraction import KeywordExtractorTool
-from tools.news_api_tool import NewsAPITool
-from tools.serious_startup_simulator import SeriousStartupSimulatorTool
 
 # Import all available tools
 from tools.startup_simulator import StartupSimulatorTool
+from tools.serious_startup_simulator import SeriousStartupSimulatorTool
+from tools.hackernews_tool import HackerNewsTool
+from tools.news_api_tool import NewsAPITool
 from tools.text_analysis import TextAnalyzerTool
-
-from splunk_ao import SplunkAOLogger
-from splunk_ao.openai import openai
+from tools.keyword_extraction import KeywordExtractorTool
 
 # Load environment variables
 load_dotenv()
@@ -49,10 +48,10 @@ class SimpleAgent(Agent):
     def __init__(
         self,
         verbosity: VerbosityLevel = VerbosityLevel.LOW,
-        logger: ConsoleAgentLogger | None = None,
-        tool_selection_hooks: ToolSelectionHooks | None = None,
-        metadata: dict[str, Any] | None = None,
-        llm_provider: OpenAIProvider | None = None,
+        logger: Optional[ConsoleAgentLogger] = None,
+        tool_selection_hooks: Optional[ToolSelectionHooks] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        llm_provider: Optional[OpenAIProvider] = None,
         mode: str = "silly",
     ):
         # Create default LLM config if not provided
@@ -65,8 +64,7 @@ class SimpleAgent(Agent):
             agent_id=f"startup-agent-{mode}",
             verbosity=verbosity,
             logger=logger or ConsoleAgentLogger(f"startup-agent-{mode}"),
-            tool_selection_hooks=tool_selection_hooks
-            or LoggingToolSelectionHooks(logger or ConsoleAgentLogger(f"startup-agent-{mode}")),
+            tool_selection_hooks=tool_selection_hooks or LoggingToolSelectionHooks(logger or ConsoleAgentLogger(f"startup-agent-{mode}")),
             metadata=metadata or {},
             llm_provider=llm_provider,
         )
@@ -99,16 +97,23 @@ class SimpleAgent(Agent):
         self.tool_registry.register(metadata=TextAnalyzerTool.get_metadata(), implementation=TextAnalyzerTool)
 
         # Keyword extraction tool - finds important words/phrases in text
-        self.tool_registry.register(metadata=KeywordExtractorTool.get_metadata(), implementation=KeywordExtractorTool)
+        self.tool_registry.register(
+            metadata=KeywordExtractorTool.get_metadata(),
+            implementation=KeywordExtractorTool,
+        )
 
         # Startup simulator tool - generates silly, creative startup pitches
         # Used in "silly" mode
-        self.tool_registry.register(metadata=StartupSimulatorTool.get_metadata(), implementation=StartupSimulatorTool)
+        self.tool_registry.register(
+            metadata=StartupSimulatorTool.get_metadata(),
+            implementation=StartupSimulatorTool,
+        )
 
         # Serious startup simulator tool - generates professional business plans
         # Used in "serious" mode
         self.tool_registry.register(
-            metadata=SeriousStartupSimulatorTool.get_metadata(), implementation=SeriousStartupSimulatorTool
+            metadata=SeriousStartupSimulatorTool.get_metadata(),
+            implementation=SeriousStartupSimulatorTool,
         )
 
         # HackerNews tool - fetches trending tech stories for inspiration
@@ -119,7 +124,7 @@ class SimpleAgent(Agent):
         # Used in "serious" mode to get professional context
         self.tool_registry.register(metadata=NewsAPITool.get_metadata(), implementation=NewsAPITool)
 
-    async def _format_result(self, task: str, results: list[tuple[str, Any]], galileo_logger: SplunkAOLogger) -> str:
+    async def _format_result(self, task: str, results: List[tuple[str, Any]], galileo_logger: SplunkAOLogger) -> str:
         """
         Format the final result from tool executions.
 
@@ -339,7 +344,10 @@ class SimpleAgent(Agent):
             raise e
 
     async def _execute_news_api_tool(
-        self, category: str = "business", limit: int = 5, galileo_logger: SplunkAOLogger = None
+        self,
+        category: str = "business",
+        limit: int = 5,
+        galileo_logger: SplunkAOLogger = None,
     ) -> str:
         """
         Execute the NewsAPI tool to get business news for context.
@@ -456,7 +464,10 @@ class SimpleAgent(Agent):
             if startup_tool_class:
                 startup_tool = startup_tool_class()
                 startup_result = await startup_tool.execute(
-                    industry=industry, audience=audience, random_word=random_word, hn_context=hn_context
+                    industry=industry,
+                    audience=audience,
+                    random_word=random_word,
+                    hn_context=hn_context,
                 )
 
                 # Add LLM span for tool completion
@@ -467,11 +478,7 @@ class SimpleAgent(Agent):
                         model="startup_simulator",
                         num_input_tokens=len(industry) + len(audience) + len(random_word) + len(hn_context),
                         num_output_tokens=len(startup_result),
-                        total_tokens=len(industry)
-                        + len(audience)
-                        + len(random_word)
-                        + len(hn_context)
-                        + len(startup_result),
+                        total_tokens=len(industry) + len(audience) + len(random_word) + len(hn_context) + len(startup_result),
                         duration_ns=0,
                     )
 
@@ -545,7 +552,10 @@ class SimpleAgent(Agent):
             if startup_tool_class:
                 startup_tool = startup_tool_class()
                 startup_result = await startup_tool.execute(
-                    industry=industry, audience=audience, random_word=random_word, news_context=news_context
+                    industry=industry,
+                    audience=audience,
+                    random_word=random_word,
+                    news_context=news_context,
                 )
 
                 # Add LLM span for tool completion
@@ -556,11 +566,7 @@ class SimpleAgent(Agent):
                         model="serious_startup_simulator",
                         num_input_tokens=len(industry) + len(audience) + len(random_word) + len(news_context),
                         num_output_tokens=len(startup_result),
-                        total_tokens=len(industry)
-                        + len(audience)
-                        + len(random_word)
-                        + len(news_context)
-                        + len(startup_result),
+                        total_tokens=len(industry) + len(audience) + len(random_word) + len(news_context) + len(startup_result),
                         duration_ns=0,
                     )
 
@@ -614,7 +620,11 @@ class SimpleAgent(Agent):
 
         # Store parameters for tool execution
         # These will be passed to individual tools as needed
-        self.task_parameters = {"industry": industry, "audience": audience, "random_word": random_word}
+        self.task_parameters = {
+            "industry": industry,
+            "audience": audience,
+            "random_word": random_word,
+        }
 
         # Log workflow start as JSON for observability
         # This helps us understand the agent's decision-making process
@@ -655,9 +665,7 @@ class SimpleAgent(Agent):
             if self.mode == "serious":
                 # Step 1: Get news context first
                 print("🔍 Step 1: Fetching business news for context...")
-                news_context = await self._execute_news_api_tool(
-                    category="business", limit=5, galileo_logger=galileo_logger
-                )
+                news_context = await self._execute_news_api_tool(category="business", limit=5, galileo_logger=galileo_logger)
                 results.append(("news_api", news_context))
 
                 # Step 2: Generate serious startup pitch using the news context

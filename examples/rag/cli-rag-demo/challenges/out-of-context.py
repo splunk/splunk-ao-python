@@ -1,9 +1,7 @@
 import os
-
-import questionary
 from dotenv import load_dotenv
-
-from splunk_ao import log, openai, splunk_ao_context
+from splunk_ao import openai, log, splunk_ao_context
+import questionary
 
 load_dotenv()
 
@@ -27,13 +25,23 @@ def retrieve_documents(query: str):
         "eiffel tower": [
             {
                 "content": "The Eiffel Tower is an iron lattice tower located in Paris, France. It was designed by Gustave Eiffel.",
-                "metadata": {"id": "doc1", "source": "travel_guide", "category": "landmarks", "relevance": "high"},
+                "metadata": {
+                    "id": "doc1",
+                    "source": "travel_guide",
+                    "category": "landmarks",
+                    "relevance": "high",
+                },
             }
         ],
         "python language": [
             {
                 "content": "Python is a high-level programming language known for its readability and simple syntax.",
-                "metadata": {"id": "doc1", "source": "programming_guide", "category": "languages", "relevance": "high"},
+                "metadata": {
+                    "id": "doc1",
+                    "source": "programming_guide",
+                    "category": "languages",
+                    "relevance": "high",
+                },
             }
         ],
         "climate change": [
@@ -52,7 +60,12 @@ def retrieve_documents(query: str):
         "artificial intelligence": [
             {
                 "content": "Artificial intelligence involves creating systems capable of performing tasks that typically require human intelligence.",
-                "metadata": {"id": "doc1", "source": "technology_overview", "category": "ai", "relevance": "high"},
+                "metadata": {
+                    "id": "doc1",
+                    "source": "technology_overview",
+                    "category": "ai",
+                    "relevance": "high",
+                },
             }
         ],
         "quantum computing": [
@@ -100,7 +113,7 @@ def rag_with_hallucination(query: str):
     # Format documents for better readability in the prompt
     formatted_docs = ""
     for i, doc in enumerate(documents):
-        formatted_docs += f"Document {i + 1} (Source: {doc['metadata']['source']}):\n{doc['content']}\n\n"
+        formatted_docs += f"Document {i+1} (Source: {doc['metadata']['source']}):\n{doc['content']}\n\n"
 
     # This prompt doesn't strongly constrain the model to only use the provided context
     weak_prompt = f"""
@@ -123,7 +136,7 @@ def rag_with_hallucination(query: str):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Error generating response: {e!s}"
+        return f"Error generating response: {str(e)}"
 
 
 @log(name="rag_with_constraint")
@@ -137,7 +150,7 @@ def rag_with_constraint(query: str):
     # Format documents for better readability in the prompt
     formatted_docs = ""
     for i, doc in enumerate(documents):
-        formatted_docs += f"Document {i + 1} (Source: {doc['metadata']['source']}):\n{doc['content']}\n\n"
+        formatted_docs += f"Document {i+1} (Source: {doc['metadata']['source']}):\n{doc['content']}\n\n"
 
     # This prompt strongly constrains the model to only use the provided context
     strong_prompt = f"""
@@ -167,11 +180,11 @@ def rag_with_constraint(query: str):
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f"Error generating response: {e!s}"
+        return f"Error generating response: {str(e)}"
 
 
 @log
-def main() -> None:
+def main():
     print("Out-of-Context RAG Demo")
     print("This demo shows how RAG systems can generate out-of-context information and how to prevent it.")
 
@@ -197,7 +210,7 @@ def main() -> None:
 
     print("\nSuggested queries (these will demonstrate the problem):")
     for i, q in enumerate(suggested_queries):
-        print(f"{i + 1}. {q}")
+        print(f"{i+1}. {q}")
 
     # Main interaction loop
     while True:
@@ -234,7 +247,7 @@ def main() -> None:
                 break
 
         except Exception as e:
-            print(f"Error: {e!s}")
+            print(f"Error: {str(e)}")
 
 
 if __name__ == "__main__":

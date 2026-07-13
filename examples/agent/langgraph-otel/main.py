@@ -14,20 +14,25 @@ dotenv.load_dotenv()
 # "instrument" your code so you can see exactly what's happening during execution.
 
 # Core OpenTelemetry imports
-# OpenAI imports for LLM integration
-import openai
-
-# LangGraph imports - this is what we're actually instrumenting
-from langgraph.graph import END, StateGraph
+from opentelemetry.sdk import trace as trace_sdk  # SDK for creating traces
+from opentelemetry import trace as trace_api  # API for interacting with traces
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,
+)  # Efficiently batches spans before export
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter,
+)  # Sends traces via HTTP
 
 # OpenInference is a specialized instrumentation library that understands AI frameworks
 # It automatically creates meaningful spans for LangChain/LangGraph operations
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from openinference.instrumentation.openai import OpenAIInstrumentor
-from opentelemetry import trace as trace_api  # API for interacting with traces
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # Sends traces via HTTP
-from opentelemetry.sdk import trace as trace_sdk  # SDK for creating traces
-from opentelemetry.sdk.trace.export import BatchSpanProcessor  # Efficiently batches spans before export
+
+# LangGraph imports - this is what we're actually instrumenting
+from langgraph.graph import StateGraph, END
+
+# OpenAI imports for LLM integration
+import openai
 
 # ============================================================================
 # STEP 1: CONFIGURE API AUTHENTICATION
@@ -163,7 +168,10 @@ def generate_response(state: AgentState):
 
         # Make the OpenAI API call - OpenAI instrumentation handles tracing
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=[{"role": "user", "content": user_input}], max_tokens=300, temperature=0.7
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": user_input}],
+            max_tokens=300,
+            temperature=0.7,
         )
 
         # Extract the response content
@@ -175,7 +183,7 @@ def generate_response(state: AgentState):
 
     except Exception as e:
         print(f"❌ Error calling OpenAI: {e}")
-        return {"llm_response": f"Error: {e!s}"}
+        return {"llm_response": f"Error: {str(e)}"}
 
 
 # Node 3: Format Answer

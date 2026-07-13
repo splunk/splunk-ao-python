@@ -1,7 +1,7 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class Routes(StrEnum):
+class Routes(str, Enum):
     healthcheck = "healthcheck"
     login = "login"
     api_key_login = "login/api_key"

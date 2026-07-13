@@ -1,7 +1,6 @@
-from typing import Any
-
-from agent_framework.models import ToolMetadata
+from typing import Dict, Any
 from agent_framework.tools.base import BaseTool
+from agent_framework.models import ToolMetadata
 
 
 class KeywordExtractorTool(BaseTool):
@@ -16,19 +15,27 @@ class KeywordExtractorTool(BaseTool):
             tags=["text", "keywords", "extraction"],
             input_schema={
                 "type": "object",
-                "properties": {"text": {"type": "string", "description": "Text to extract keywords from"}},
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Text to extract keywords from",
+                    }
+                },
                 "required": ["text"],
             },
             output_schema={
                 "type": "object",
                 "properties": {
                     "keywords": {"type": "array", "items": {"type": "string"}},
-                    "importance_scores": {"type": "object", "additionalProperties": {"type": "number"}},
+                    "importance_scores": {
+                        "type": "object",
+                        "additionalProperties": {"type": "number"},
+                    },
                 },
             },
         )
 
-    async def execute(self, text: str) -> dict[str, Any]:
+    async def execute(self, text: str) -> Dict[str, Any]:
         """Extract keywords from text"""
         # Simple implementation - in real world would use NLP
         words = text.lower().split()
@@ -46,4 +53,7 @@ class KeywordExtractorTool(BaseTool):
         max_freq = max(freq for _, freq in keywords) if keywords else 1
         importance_scores = {word: freq / max_freq for word, freq in keywords}
 
-        return {"keywords": [word for word, _ in keywords], "importance_scores": importance_scores}
+        return {
+            "keywords": [word for word, _ in keywords],
+            "importance_scores": importance_scores,
+        }

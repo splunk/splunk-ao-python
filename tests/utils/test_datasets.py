@@ -25,7 +25,7 @@ def test_get_dataset_and_records_with_id(mock_get_records, mock_get_dataset, dat
     mock_get_dataset.return_value = mock_dataset
 
     # Execute
-    dataset, _records = get_dataset_and_records(id="test-id")
+    dataset, records = get_dataset_and_records(id="test-id")
 
     # Assert
     mock_get_dataset.assert_called_once_with(id="test-id")
@@ -43,7 +43,7 @@ def test_get_dataset_and_records_with_name(mock_get_records, mock_get_dataset, d
     mock_get_dataset.return_value = mock_dataset
 
     # Execute
-    dataset, _records = get_dataset_and_records(name="test-dataset")
+    dataset, records = get_dataset_and_records(name="test-dataset")
 
     # Assert
     mock_get_dataset.assert_called_once_with(name="test-dataset")

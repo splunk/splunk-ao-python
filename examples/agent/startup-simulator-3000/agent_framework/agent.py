@@ -1,24 +1,32 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
-
+from datetime import datetime
 from splunk_ao import log  # 🔍 Splunk AO import - this is the main Splunk AO logging library
-
-from .exceptions import ToolExecutionError, ToolNotFoundError
-from .llm.base import LLMProvider
-from .llm.models import LLMMessage
-from .models import AgentConfig, TaskAnalysis, TaskExecution, ToolContext, ToolSelectionHooks, VerbosityLevel
-from .utils.formatting import (
-    display_analysis,
-    display_chain_of_thought,
-    display_error,
-    display_execution_plan,
-    display_final_result,
-    display_task_header,
-)
 from .utils.logging import AgentLogger
 from .utils.tool_registry import ToolRegistry
+
+from .models import (
+    TaskExecution,
+    VerbosityLevel,
+    TaskAnalysis,
+    ToolContext,
+    ToolSelectionHooks,
+    AgentConfig,
+)
+from .llm.base import LLMProvider
+from .llm.models import LLMMessage
+
+from .utils.formatting import (
+    display_task_header,
+    display_analysis,
+    display_chain_of_thought,
+    display_execution_plan,
+    display_error,
+    display_final_result,
+)
+
+from .exceptions import ToolNotFoundError, ToolExecutionError
 
 
 class Agent(ABC):
@@ -27,25 +35,27 @@ class Agent(ABC):
     def __init__(
         self,
         *args,
-        agent_id: str | None = None,
+        agent_id: Optional[str] = None,
         verbosity: VerbosityLevel = VerbosityLevel.LOW,
-        logger: AgentLogger | None = None,
-        tool_selection_hooks: ToolSelectionHooks | None = None,
-        metadata: dict[str, Any] | None = None,
-        llm_provider: LLMProvider | None = None,
+        logger: Optional[AgentLogger] = None,
+        tool_selection_hooks: Optional[ToolSelectionHooks] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        llm_provider: Optional[LLMProvider] = None,
         **kwargs,
     ):
         self.agent_id = agent_id or str(uuid4())
         self.config = AgentConfig(
-            verbosity=verbosity, tool_selection_hooks=tool_selection_hooks, metadata=metadata or {}
+            verbosity=verbosity,
+            tool_selection_hooks=tool_selection_hooks,
+            metadata=metadata or {},
         )
         self.llm_provider = llm_provider
         self.tool_registry = ToolRegistry()
-        self.current_task: TaskExecution | None = None
-        self.state: dict[str, Any] = {}
-        self.message_history: list[dict[str, Any]] = []
+        self.current_task: Optional[TaskExecution] = None
+        self.state: Dict[str, Any] = {}
+        self.message_history: List[Dict[str, Any]] = []
         self.logger = logger
-        self._current_plan: TaskAnalysis | None = None
+        self._current_plan: Optional[TaskAnalysis] = None
 
     def _setup_logger(self, logger: AgentLogger) -> None:
         """Create and set up the logger after tools are registered"""
@@ -61,7 +71,7 @@ class Agent(ABC):
         if self.config.verbosity.value >= level.value:
             print(message)
 
-    def _create_tool_context(self, tool_name: str, inputs: dict[str, Any]) -> ToolContext:
+    def _create_tool_context(self, tool_name: str, inputs: Dict[str, Any]) -> ToolContext:
         """Create a context object for tool execution"""
         if not self.current_task:
             raise ValueError("No active task")
@@ -87,8 +97,12 @@ class Agent(ABC):
     # This means every tool call will be tracked in your Splunk AO dashboard
     @log(span_type="tool", name="tool_execution")
     async def call_tool(
-        self, tool_name: str, inputs: dict[str, Any], execution_reasoning: str, context: dict[str, Any]
-    ) -> dict[str, Any]:
+        self,
+        tool_name: str,
+        inputs: Dict[str, Any],
+        execution_reasoning: str,
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """Execute a tool and log the call with selection reasoning"""
         tool = self.tool_registry.get_tool(tool_name)
         if not tool:
@@ -128,7 +142,7 @@ class Agent(ABC):
                 await tool.hooks.after_execution(tool_context, None, error=e)
             raise
 
-    async def _execute_tool(self, tool_name: str, inputs: dict[str, Any]) -> dict[str, Any]:
+    async def _execute_tool(self, tool_name: str, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool with given inputs"""
         tool_impl = self.tool_registry.get_implementation(tool_name)
         if not tool_impl:
@@ -145,7 +159,7 @@ class Agent(ABC):
         except Exception as e:
             raise ToolExecutionError(tool_name, e)
 
-    def _create_planning_prompt(self, task: str) -> list[LLMMessage]:
+    def _create_planning_prompt(self, task: str) -> List[LLMMessage]:
         """Create prompt for task planning"""
         tools_description = "\n".join(
             [
@@ -217,9 +231,7 @@ class Agent(ABC):
             display_task_header(task)
 
         try:
-            plan: TaskAnalysis = await self.llm_provider.generate_structured(
-                messages, TaskAnalysis, self.llm_provider.config
-            )
+            plan: TaskAnalysis = await self.llm_provider.generate_structured(messages, TaskAnalysis, self.llm_provider.config)
 
             # Log the planning response
             if self.logger:
@@ -246,7 +258,11 @@ class Agent(ABC):
     async def run(self, task: str) -> str:
         """Execute a task and return the result"""
         self.current_task = TaskExecution(
-            task_id=str(uuid4()), agent_id=self.agent_id, input=task, start_time=datetime.now(), steps=[]
+            task_id=str(uuid4()),
+            agent_id=self.agent_id,
+            input=task,
+            start_time=datetime.now(),
+            steps=[],
         )
 
         if self.logger:
@@ -284,7 +300,7 @@ class Agent(ABC):
                 self.current_task.status = "completed"
             self._current_plan = None  # Clear the plan
 
-    async def _execute_step(self, step: dict[str, Any], task: str, plan: TaskAnalysis) -> Any:
+    async def _execute_step(self, step: Dict[str, Any], task: str, plan: TaskAnalysis) -> Any:
         """Execute a single step in the plan"""
         tool_name = step["tool"]
         if not self.tool_registry.get_tool(tool_name):
@@ -301,18 +317,21 @@ class Agent(ABC):
             await hooks.after_selection(tool_context, tool_name, 1.0, [step["reasoning"]])
 
         # Then execute the tool
-        return await self.call_tool(
+        result = await self.call_tool(
             tool_name=tool_name,
             inputs=inputs,
             execution_reasoning=step["reasoning"],
             context={"task": task, "plan": plan},
         )
 
-    @abstractmethod
-    async def _format_result(self, task: str, results: list[tuple[str, dict[str, Any]]]) -> str:
-        """Format the final result from tool executions"""
+        return result
 
-    async def _map_inputs_to_tool(self, tool_name: str, task: str, input_mapping: dict[str, str]) -> dict[str, Any]:
+    @abstractmethod
+    async def _format_result(self, task: str, results: List[tuple[str, Dict[str, Any]]]) -> str:
+        """Format the final result from tool executions"""
+        pass
+
+    async def _map_inputs_to_tool(self, tool_name: str, task: str, input_mapping: Dict[str, str]) -> Dict[str, Any]:
         """Map inputs based on tool schema"""
         tool = self.tool_registry.get_tool(tool_name)
         if not tool:
@@ -358,9 +377,9 @@ class Agent(ABC):
             elif self.state.has_variable(input_name):
                 mapped_inputs[input_name] = self.state.get_variable(input_name)
             elif input_schema.get("type") == "string":
-                if (input_name == "news_context" and hasattr(self, "context_data")) or (
-                    input_name == "hn_context" and hasattr(self, "context_data")
-                ):
+                if input_name == "news_context" and hasattr(self, "context_data"):
+                    mapped_inputs[input_name] = getattr(self, "context_data", "")
+                elif input_name == "hn_context" and hasattr(self, "context_data"):
                     mapped_inputs[input_name] = getattr(self, "context_data", "")
                 elif hasattr(self, "task_parameters") and input_name in self.task_parameters:
                     mapped_inputs[input_name] = self.task_parameters[input_name]

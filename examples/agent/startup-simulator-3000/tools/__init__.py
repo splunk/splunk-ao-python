@@ -1,7 +1,7 @@
 """Tools used by the simple agent"""
 
-from .hackernews_tool import HackerNewsTool
-from .keyword_extraction import KeywordExtractorTool
 from .text_analysis import TextAnalyzerTool
+from .keyword_extraction import KeywordExtractorTool
+from .hackernews_tool import HackerNewsTool
 
-__all__ = ["HackerNewsTool", "KeywordExtractorTool", "TextAnalyzerTool"]
+__all__ = ["TextAnalyzerTool", "KeywordExtractorTool", "HackerNewsTool"]

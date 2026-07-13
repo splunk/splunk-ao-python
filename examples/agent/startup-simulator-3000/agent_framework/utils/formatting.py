@@ -1,13 +1,12 @@
 """Utilities for formatting and displaying output"""
 
 import json
-from typing import Any
-
+from typing import Any, Dict, List
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.syntax import Syntax
+from rich.markdown import Markdown
 from rich.table import Table
+from rich.syntax import Syntax
 
 console = Console()
 
@@ -17,17 +16,23 @@ def format_json(data: Any) -> str:
     return json.dumps(data, indent=2, default=str)
 
 
-def display_task_header(task: str) -> None:
+def display_task_header(task: str):
     """Display a task header"""
-    console.print(Panel(f"[bold blue]Task:[/bold blue] {task}", title="🤖 Agent Task", border_style="blue"))
+    console.print(
+        Panel(
+            f"[bold blue]Task:[/bold blue] {task}",
+            title="🤖 Agent Task",
+            border_style="blue",
+        )
+    )
 
 
-def display_analysis(analysis: str) -> None:
+def display_analysis(analysis: str):
     """Display task analysis"""
     console.print(Panel(Markdown(analysis), title="📋 Task Analysis", border_style="green"))
 
 
-def display_chain_of_thought(steps: list[str]) -> None:
+def display_chain_of_thought(steps: List[str]):
     """Display chain of thought reasoning"""
     table = Table(title="🤔 Chain of Thought", show_header=False, border_style="cyan")
     table.add_column("Step", style="dim")
@@ -39,7 +44,7 @@ def display_chain_of_thought(steps: list[str]) -> None:
     console.print(table)
 
 
-def display_execution_plan(plan: list[dict[str, Any]]) -> None:
+def display_execution_plan(plan: List[Dict[str, Any]]):
     """Display execution plan"""
     table = Table(title="📝 Execution Plan", border_style="magenta")
     table.add_column("Tool", style="bold cyan")
@@ -51,7 +56,7 @@ def display_execution_plan(plan: list[dict[str, Any]]) -> None:
     console.print(table)
 
 
-def display_tool_result(tool_name: str, result: dict[str, Any]) -> None:
+def display_tool_result(tool_name: str, result: Dict[str, Any]):
     """Display tool execution result"""
     if isinstance(result, (dict, list)):
         result_display = Syntax(format_json(result), "json", theme="monokai", word_wrap=True)
@@ -61,11 +66,18 @@ def display_tool_result(tool_name: str, result: dict[str, Any]) -> None:
     console.print(Panel(result_display, title=f"🔧 {tool_name} Result", border_style="yellow"))
 
 
-def display_final_result(result: str) -> None:
+def display_final_result(result: str):
     """Display final combined result"""
-    console.print(Panel(Markdown(result), title="✨ Final Result", border_style="green", padding=(1, 2)))
+    console.print(
+        Panel(
+            Markdown(result),
+            title="✨ Final Result",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
 
-def display_error(error: str) -> None:
+def display_error(error: str):
     """Display error message"""
     console.print(Panel(f"[bold red]Error:[/bold red] {error}", title="❌ Error", border_style="red"))

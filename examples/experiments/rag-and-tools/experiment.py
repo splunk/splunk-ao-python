@@ -1,18 +1,23 @@
 import os
 
-from app import get_users_horoscope
-
 from splunk_ao import SplunkAOMetrics
 from splunk_ao.experiments import run_experiment
 
+from app import get_users_horoscope
 
-def main() -> None:
+
+def main():
     """
     Run the horoscope experiment
     """
     # Define a dataset of astrological signs to use
     # in the experiment
-    dataset = [{"input": "Aquarius"}, {"input": "Taurus"}, {"input": "Gemini"}, {"input": "Leo"}]
+    dataset = [
+        {"input": "Aquarius"},
+        {"input": "Taurus"},
+        {"input": "Gemini"},
+        {"input": "Leo"},
+    ]
 
     # Run the experiment
     results = run_experiment(

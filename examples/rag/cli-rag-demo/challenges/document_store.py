@@ -1,26 +1,25 @@
+from sentence_transformers import SentenceTransformer, CrossEncoder
+import faiss
+from datasets import load_dataset
+import numpy as np
+from splunk_ao import log
+from typing import List, Dict, Optional
 import re
 from pathlib import Path
-
-import faiss
-import numpy as np
-from datasets import load_dataset
-from sentence_transformers import CrossEncoder, SentenceTransformer
-
-from splunk_ao import log
 
 
 class DocumentStore:
     def __init__(
         self,
         source: str = "wikipedia",  # "wikipedia" or "custom"
-        custom_documents_path: str | None = None,
+        custom_documents_path: Optional[str] = None,
         num_docs: int = 1000,
         k: int = 3,
         chunk_size: int = 512,
         reranking_threshold: float = 0.6,
         use_reranking: bool = False,
         reranking_multiplier: int = 4,
-        wikipedia_query: str | None = None,
+        wikipedia_query: Optional[str] = None,
     ):
         self.source = source
         self.documents = []
@@ -41,7 +40,10 @@ class DocumentStore:
                 # Load Wikipedia dataset with configurable parameters
                 print(f"Loading {num_docs} Wikipedia articles...")
                 dataset = load_dataset(
-                    "wikipedia", "20220301.simple", split=f"train[:{num_docs}]", trust_remote_code=True
+                    "wikipedia",
+                    "20220301.simple",
+                    split=f"train[:{num_docs}]",
+                    trust_remote_code=True,
                 )
 
                 if wikipedia_query:
@@ -88,16 +90,12 @@ class DocumentStore:
         if not self.documents:
             raise ValueError("No documents were successfully loaded")
 
-        print(
-            f"Processed {len(self.documents)} chunks from {len({doc['metadata']['source'] for doc in self.documents})} documents"
-        )
-        print(
-            f"Average chunk length: {sum(doc['metadata']['length'] for doc in self.documents) / len(self.documents):.0f} characters"
-        )
+        print(f"Processed {len(self.documents)} chunks from {len(set(doc['metadata']['source'] for doc in self.documents))} documents")
+        print(f"Average chunk length: {sum(doc['metadata']['length'] for doc in self.documents) / len(self.documents):.0f} characters")
 
         self._build_index()
 
-    def _process_wikipedia_documents(self, dataset, chunk_size: int) -> None:
+    def _process_wikipedia_documents(self, dataset, chunk_size: int):
         """Process Wikipedia documents into chunks"""
         for item in dataset:
             # Skip empty or very short articles
@@ -123,13 +121,13 @@ class DocumentStore:
                     }
                 )
 
-    def _load_custom_documents(self, documents_path: str, chunk_size: int) -> None:
+    def _load_custom_documents(self, documents_path: str, chunk_size: int):
         """Helper method to load custom documents from a file"""
         documents_path = Path(documents_path)
         if not documents_path.exists():
             raise FileNotFoundError(f"Custom documents file not found: {documents_path}")
 
-        with open(documents_path) as f:
+        with open(documents_path, "r") as f:
             text = f.read()
 
         # Split into paragraphs and process as documents
@@ -149,7 +147,7 @@ class DocumentStore:
                     {
                         "text": chunk,
                         "metadata": {
-                            "source": f"Document {i + 1}",
+                            "source": f"Document {i+1}",
                             "chunk_id": j,
                             "total_chunks": len(chunks),
                             "relevance": "medium",
@@ -160,7 +158,7 @@ class DocumentStore:
                     }
                 )
 
-    def _chunk_text(self, text: str, chunk_size: int) -> list[str]:
+    def _chunk_text(self, text: str, chunk_size: int) -> List[str]:
         """
         Split text into chunks of approximately chunk_size tokens.
         Uses sentence boundaries where possible to maintain context.
@@ -192,7 +190,7 @@ class DocumentStore:
 
         return chunks
 
-    def _build_index(self) -> None:
+    def _build_index(self):
         print("Building FAISS index...")
         texts = [doc["text"] for doc in self.documents]
         self.embeddings = self.encoder.encode(texts)
@@ -202,13 +200,11 @@ class DocumentStore:
         faiss.normalize_L2(self.embeddings)
 
         # Create an index that's optimized for cosine similarity
-        self.index = faiss.IndexFlatIP(
-            dimension
-        )  # Inner product is equivalent to cosine similarity for normalized vectors
+        self.index = faiss.IndexFlatIP(dimension)  # Inner product is equivalent to cosine similarity for normalized vectors
         self.index.add(self.embeddings.astype("float32"))
         print("Index built successfully")
 
-    def _rerank_documents(self, docs: list[dict], query: str) -> list[dict]:
+    def _rerank_documents(self, docs: List[Dict], query: str) -> List[Dict]:
         """
         Rerank documents using a cross-encoder model, which provides more accurate
         relevance scoring by considering query and document together.
@@ -225,15 +221,13 @@ class DocumentStore:
         score_range = max_score - min_score
 
         reranked_docs = []
-        for doc, score in zip(docs, cross_scores, strict=False):
+        for doc, score in zip(docs, cross_scores):
             # Normalize score to 0-1 range
             normalized_score = (score - min_score) / score_range if score_range > 0 else 0.5
 
             if normalized_score >= self.reranking_threshold:
                 doc["metadata"]["combined_score"] = normalized_score
-                doc["metadata"]["relevance"] = (
-                    "high" if normalized_score > 0.8 else "medium" if normalized_score > 0.6 else "low"
-                )
+                doc["metadata"]["relevance"] = "high" if normalized_score > 0.8 else "medium" if normalized_score > 0.6 else "low"
                 reranked_docs.append(doc)
 
         # Sort by combined score
@@ -253,7 +247,7 @@ class DocumentStore:
 
         # Process results
         results = []
-        for score, idx in zip(scores[0], indices[0], strict=False):
+        for score, idx in zip(scores[0], indices[0]):
             doc = self.documents[idx].copy()
             doc["metadata"] = doc["metadata"].copy()
             doc["metadata"]["score"] = float(score)
@@ -263,17 +257,16 @@ class DocumentStore:
         if self.use_reranking:
             print(f"Reranking top {initial_k} results...")
             return self._rerank_documents(results, query)
-        # For basic search, just update relevance based on score
-        for doc in results:
-            doc["metadata"]["relevance"] = (
-                "high" if doc["metadata"]["score"] > 0.8 else "medium" if doc["metadata"]["score"] > 0.6 else "low"
-            )
-        return results[: self.k]
+        else:
+            # For basic search, just update relevance based on score
+            for doc in results:
+                doc["metadata"]["relevance"] = "high" if doc["metadata"]["score"] > 0.8 else "medium" if doc["metadata"]["score"] > 0.6 else "low"
+            return results[: self.k]
 
 
 def format_documents(documents: list) -> str:
     return "\n\n".join(
-        f"Document {i + 1} (Source: {doc['metadata']['source']}, Chunk {doc['metadata']['chunk_id'] + 1}/{doc['metadata']['total_chunks']}, "
+        f"Document {i+1} (Source: {doc['metadata']['source']}, Chunk {doc['metadata']['chunk_id'] + 1}/{doc['metadata']['total_chunks']}, "
         f"Relevance: {doc['metadata']['relevance']}, "
         f"Score: {doc['metadata'].get('combined_score', doc['metadata'].get('score', 'N/A')):.3f}):\n{doc['text']}"
         for i, doc in enumerate(documents)

@@ -26,8 +26,15 @@ tools: list[dict[str, Any]] = [
         "parameters": {
             "type": "object",
             "properties": {
-                "location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"},
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "The temperature unit"},
+                "location": {
+                    "type": "string",
+                    "description": "The city and state, e.g. San Francisco, CA",
+                },
+                "unit": {
+                    "type": "string",
+                    "enum": ["celsius", "fahrenheit"],
+                    "description": "The temperature unit",
+                },
             },
             "required": ["location"],
         },
@@ -39,7 +46,10 @@ tools: list[dict[str, Any]] = [
         "parameters": {
             "type": "object",
             "properties": {
-                "symbol": {"type": "string", "description": "The stock ticker symbol, e.g. AAPL, GOOGL, MSFT"}
+                "symbol": {
+                    "type": "string",
+                    "description": "The stock ticker symbol, e.g. AAPL, GOOGL, MSFT",
+                },
             },
             "required": ["symbol"],
         },
@@ -63,7 +73,7 @@ def get_stock_price(symbol: str) -> str:
     return json.dumps({"symbol": symbol.upper(), "price": price, "currency": "USD"})
 
 
-def main() -> None:
+def main():
     user_message = "What's the weather like in San Francisco and what's the current stock price of Apple?"
     input_list = []
 
