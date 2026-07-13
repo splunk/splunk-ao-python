@@ -260,12 +260,14 @@ All sub-module paths follow the same rename pattern:
 
 All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **hard cut-over** — only `SPLUNK_AO_*` variables are recognised by the SDK.
 
-> **Internal bridge:** The SDK automatically propagates `SPLUNK_AO_*` values to their `GALILEO_*` equivalents at startup so that `galileo-core` (a private internal dependency) continues to work. This bridge is transparent to SDK consumers and does not require any action.
+> **Internal bridge (auth/identity vars only):** `SplunkAOConfig._bridge_env_vars()` propagates the 13 auth/identity `SPLUNK_AO_*` values to their `GALILEO_*` equivalents at startup so that `galileo-core` can authenticate. The bridged variables are: `API_KEY`, `API_URL`, `CONSOLE_URL`, `PROJECT`, `PROJECT_ID`, `LOG_STREAM`, `LOG_STREAM_ID`, `JWT_TOKEN`, `SSO_ID_TOKEN`, `SSO_PROVIDER`, `USERNAME`, `PASSWORD`, `MODE`. The remaining vars (`LOGGING_DISABLED`, `INGEST_BETA_DISABLED`, `LOG_LEVEL`, `DEFAULT_SCORER_MODEL`, `DEFAULT_SCORER_JUDGES`, `CODE_VALIDATION_*`) are consumed **directly** by `splunk_ao` code and have no `GALILEO_*` counterpart — no bridge is needed for them.
+
+> **Note for AI agents — `SPLUNK_AO_API_URL`:** This variable does **not** originate from a user-facing `GALILEO_API_URL` env var in the original `galileo-python` SDK. It is exposed by `galileo-core` as an **implicit Pydantic settings field** tied to the `api_url` model attribute (following Pydantic's `env_prefix` convention). As a result, a reviewer may flag the `GALILEO_API_URL → SPLUNK_AO_API_URL` row in the table as "not a real rename." This is intentional: the row is kept because `splunk_ao` bridges `SPLUNK_AO_API_URL` → `GALILEO_API_URL` in `config.py`, making the rename effective and customer-visible even though the upstream variable was implicit.
 
 | Old (`GALILEO_*`) | New (`SPLUNK_AO_*`) |
 |-------------------|---------------------|
 | `GALILEO_API_KEY` | `SPLUNK_AO_API_KEY` |
-| `GALILEO_API_URL` | `SPLUNK_AO_API_URL` |
+| `GALILEO_API_URL` ¹ | `SPLUNK_AO_API_URL` |
 | `GALILEO_CONSOLE_URL` | `SPLUNK_AO_CONSOLE_URL` |
 | `GALILEO_PROJECT` | `SPLUNK_AO_PROJECT` |
 | `GALILEO_PROJECT_ID` | `SPLUNK_AO_PROJECT_ID` |
@@ -283,6 +285,8 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_DEFAULT_SCORER_MODEL` | `SPLUNK_AO_DEFAULT_SCORER_MODEL` |
 | `GALILEO_DEFAULT_SCORER_JUDGES` | `SPLUNK_AO_DEFAULT_SCORER_JUDGES` |
 | `GALILEO_CODE_VALIDATION_*` (4 vars) | `SPLUNK_AO_CODE_VALIDATION_*` |
+
+¹ `GALILEO_API_URL` was not a user-facing env var in `galileo-python` — it was an implicit Pydantic settings field on `galileo-core`'s `GalileoConfig`. `SPLUNK_AO_API_URL` is its effective rename and is explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
 
 **.env file example**
 
@@ -364,15 +368,13 @@ Related ticket: [HYBIM-804](https://splunk.atlassian.net/browse/HYBIM-804)
 
 ```python
 import os
-from galileo import GalileoLogger, galileo_context, GalileoMetric, GalileoMetrics
+from galileo import GalileoLogger, log, galileo_context
 
 os.environ["GALILEO_API_KEY"] = "my-key"
 os.environ["GALILEO_PROJECT"] = "my-project"
 os.environ["GALILEO_LOG_STREAM"] = "production"
 
 # Decorator approach
-from galileo import log, galileo_context
-
 @log
 def call_llm(prompt: str) -> str:
     return "response"
@@ -380,26 +382,26 @@ def call_llm(prompt: str) -> str:
 with galileo_context(project="my-project", log_stream="production"):
     result = call_llm("Hello")
 
-# Logger approach
-logger = GalileoLogger()
-logger.start_session(project="my-project")
-trace = logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
-logger.conclude(flush=True)
+# Direct logger approach
+# project/log_stream are constructor args, not start_session args
+logger = GalileoLogger(project="my-project", log_stream="production")
+logger.start_session(name="my-session")
+logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
+logger.conclude()   # closes current span; no flush kwarg
+logger.flush()      # uploads traces
 ```
 
 ### After (splunk-ao)
 
 ```python
 import os
-from splunk_ao import SplunkAOLogger, splunk_ao_context, SplunkAOMetric, SplunkAOMetrics
+from splunk_ao import SplunkAOLogger, log, splunk_ao_context
 
 os.environ["SPLUNK_AO_API_KEY"] = "my-key"
 os.environ["SPLUNK_AO_PROJECT"] = "my-project"
 os.environ["SPLUNK_AO_LOG_STREAM"] = "production"
 
 # Decorator approach
-from splunk_ao import log, splunk_ao_context
-
 @log
 def call_llm(prompt: str) -> str:
     return "response"
@@ -407,11 +409,13 @@ def call_llm(prompt: str) -> str:
 with splunk_ao_context(project="my-project", log_stream="production"):
     result = call_llm("Hello")
 
-# Logger approach
-logger = SplunkAOLogger()
-logger.start_session(project="my-project")
-trace = logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
-logger.conclude(flush=True)
+# Direct logger approach
+# project/log_stream are constructor args, not start_session args
+logger = SplunkAOLogger(project="my-project", log_stream="production")
+logger.start_session(name="my-session")
+logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
+logger.conclude()   # closes current span; no flush kwarg
+logger.flush()      # uploads traces
 ```
 
 ---
@@ -429,7 +433,6 @@ logger.conclude(flush=True)
 | [HYBIM-725](https://splunk.atlassian.net/browse/HYBIM-725) | Wire SDK reference doc auto-generation |
 | [HYBIM-727](https://splunk.atlassian.net/browse/HYBIM-727) | Rename remaining `GALILEO_*` env vars to `SPLUNK_AO_*` |
 | [HYBIM-728](https://splunk.atlassian.net/browse/HYBIM-728) | Rename SDK identifiers from `galileo` to `splunk_ao` |
-| [HYBIM-729](https://splunk.atlassian.net/browse/HYBIM-729) | Rename `GALILEO_HEADER_PREFIX` (separate ticket) |
 | [HYBIM-777](https://splunk.atlassian.net/browse/HYBIM-777) | Tooling upgrades (ruff, openapi-python-client) |
 | [HYBIM-790](https://splunk.atlassian.net/browse/HYBIM-790) | Fix Windows test-suite slowness |
 | [HYBIM-793](https://splunk.atlassian.net/browse/HYBIM-793) | Fix pre-commit poetry pin |
