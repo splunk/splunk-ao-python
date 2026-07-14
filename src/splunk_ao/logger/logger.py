@@ -5,7 +5,6 @@ import copy
 import inspect
 import json
 import logging
-import os
 import time
 import uuid
 from collections.abc import Callable
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
     from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge
 
 import backoff
-import httpx
 
 from galileo_core.helpers.execution import async_run
 from galileo_core.schemas.logging.agent import AgentType
@@ -34,7 +32,6 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.traces_logger import TracesLogger
-from splunk_ao.config import SplunkAOConfig
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.exceptions import SplunkAOLoggerException
@@ -70,7 +67,7 @@ from splunk_ao.schema.trace import (
     TracesIngestRequest,
     TraceUpdateRequest,
 )
-from splunk_ao.traces import IngestTraces, Traces
+from splunk_ao.traces import Traces
 from splunk_ao.utils.decorators import (
     async_warn_catch_exception,
     nop_async,
@@ -106,8 +103,6 @@ DEFAULT_TERMINATE_TIMEOUT_SECONDS = 90
 _SLOW_SHUTDOWN_WARN_THRESHOLD_SECONDS = 1.0
 STUB_TRACE_NAME = "stub_trace"  # Name for stub traces created from distributed tracing headers
 
-# Cached result of the ingest service healthz probe. Key "result" is absent until first check.
-_ingest_service_cache: dict[str, bool] = {}
 _logger = logging.getLogger("splunk_ao.logger")
 
 
@@ -186,7 +181,7 @@ class SplunkAOLogger(TracesLogger):
     _session_external_id: str | None = None
 
     _logger = logging.getLogger("splunk_ao.logger")
-    _traces_client: Union["Traces", "IngestTraces"] | None = None
+    _traces_client: Union["Traces", None] = None
     _task_handler: ThreadPoolTaskHandler
     _trace_completion_submitted: bool
 
@@ -392,62 +387,13 @@ class SplunkAOLogger(TracesLogger):
         else:
             self.log_stream_id = log_stream_obj.id
 
-    @classmethod
-    def _is_ingest_service_available(cls) -> bool:
-        """Check whether the ingest service is reachable, caching the result for the process lifetime.
-
-        The cache is bypassed (and cleared) whenever SPLUNK_AO_INGEST_BETA_DISABLED is set so that
-        toggling the flag within the same process takes effect immediately.
-        """
-        if os.environ.get("SPLUNK_AO_INGEST_BETA_DISABLED", "").lower() in ("1", "true", "yes"):
-            _ingest_service_cache.clear()
-            return False
-
-        if "result" not in _ingest_service_cache:
-            try:
-                api_url = str(SplunkAOConfig.get().api_url).rstrip("/")
-                if "localhost" in api_url:
-                    api_url = api_url.replace("8088", "8081")
-                resp = httpx.get(f"{api_url}/ingest/healthz", timeout=2.0)
-                _ingest_service_cache["result"] = resp.is_success
-                if _ingest_service_cache["result"]:
-                    _logger.info("Ingest service healthy at %s, using IngestTraces client", api_url)
-                else:
-                    _logger.debug("Ingest service healthz returned %s, using standard client", resp.status_code)
-            except Exception:
-                _ingest_service_cache["result"] = False
-                _logger.debug("Ingest service healthz check failed, using standard client")
-        return _ingest_service_cache["result"]
-
     @nop_sync
-    def _create_traces_client(self) -> Traces | IngestTraces:
-        """Create the appropriate traces client.
-
-        Uses the dedicated Go ingest service (IngestTraces) when available,
-        detected by probing {api_url}/ingest/healthz. Falls back to the standard
-        API client if the healthz check fails or if SPLUNK_AO_INGEST_BETA_DISABLED is set.
-        """
+    def _create_traces_client(self) -> Traces:
+        """Create the client retained for session CRUD and legacy ingestion paths."""
         if not self.project_id:
             self._init_project()
         if not (self.log_stream_id or self.experiment_id):
             self._init_log_stream()
-
-        if self._is_ingest_service_available():
-            config = SplunkAOConfig.get()
-            api_key_secret = config.api_key
-            api_key = api_key_secret.get_secret_value() if api_key_secret else os.environ.get("SPLUNK_AO_API_KEY", "")
-            ingest_url = str(config.api_url)
-            if "localhost" in ingest_url:
-                ingest_url = ingest_url.replace("8088", "8081")
-            if api_key:
-                return IngestTraces(
-                    project_id=self.project_id,
-                    base_url=ingest_url,
-                    api_key=api_key,
-                    log_stream_id=self.log_stream_id,
-                    experiment_id=self.experiment_id,
-                )
-            _logger.debug("No API key available, falling back to standard Traces client")
 
         if self.log_stream_id:
             return Traces(project_id=self.project_id, log_stream_id=self.log_stream_id)
