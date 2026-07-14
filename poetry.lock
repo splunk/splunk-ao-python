@@ -6537,4 +6537,4 @@ otel = ["grpcio", "opentelemetry-api", "opentelemetry-exporter-otlp", "opentelem
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "8d55e955585f032151c0b7c1a65d1a3e0890a8584ef31125af09f38d2bb4d783"
+content-hash = "96b393f6ccf730ae5d7a78ca817ccfaec873557609998198cb4ee8598957caed"
