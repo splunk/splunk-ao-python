@@ -9,6 +9,8 @@ import os
 import time
 import uuid
 from collections.abc import Callable
+from contextvars import ContextVar, Token
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Union
 
@@ -17,6 +19,11 @@ if TYPE_CHECKING:
 
 import backoff
 import httpx
+from opentelemetry import context as otel_context
+from opentelemetry import trace as otel_trace
+from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
+from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
+from pydantic import PrivateAttr
 
 from galileo_core.helpers.execution import async_run
 from galileo_core.schemas.logging.agent import AgentType
@@ -109,6 +116,36 @@ STUB_TRACE_NAME = "stub_trace"  # Name for stub traces created from distributed 
 # Cached result of the ingest service healthz probe. Key "result" is absent until first check.
 _ingest_service_cache: dict[str, bool] = {}
 _logger = logging.getLogger("splunk_ao.logger")
+_otel_id_generator = RandomIdGenerator()
+
+
+@dataclass(frozen=True)
+class OtelIds:
+    """Stable OTel identity and parentage for one proprietary logger step."""
+
+    span_context: SpanContext
+    parent_span_context: SpanContext | None
+
+
+@dataclass(frozen=True)
+class ActiveOtelContext:
+    """An attached OTel context for one genuinely open managed step."""
+
+    logger_id: int
+    step_id: uuid.UUID
+    span_context: SpanContext
+    token: Token
+
+
+@dataclass(frozen=True)
+class OtelContextState:
+    """Request-local state for all active proprietary logger contexts."""
+
+    base_context: otel_context.Context
+    active_contexts: tuple[ActiveOtelContext, ...]
+
+
+_otel_context_state: ContextVar[OtelContextState | None] = ContextVar("_otel_context_state", default=None)
 
 
 class SplunkAOLogger(TracesLogger):
@@ -189,6 +226,7 @@ class SplunkAOLogger(TracesLogger):
     _traces_client: Union["Traces", "IngestTraces"] | None = None
     _task_handler: ThreadPoolTaskHandler
     _trace_completion_submitted: bool
+    _otel_ids: dict[uuid.UUID, OtelIds] = PrivateAttr(default_factory=dict)
 
     def __init__(
         self,
@@ -354,6 +392,170 @@ class SplunkAOLogger(TracesLogger):
         atexit.register(self.terminate)
         self._auto_enable_agent_control_if_available()
 
+    def _set_current_parent(self, parent: StepWithChildSpans | None) -> None:
+        """Set the proprietary parent and mirror its open chain in OTel context."""
+        super()._set_current_parent(parent)
+        self._sync_otel_context(parent)
+
+    def reset_parent_tracking(self) -> None:
+        """Clear proprietary and OTel tracking for the current request context."""
+        current_parent = self.current_parent()
+        root = current_parent
+        while root is not None and root._parent is not None:
+            root = root._parent
+
+        self._set_current_parent(None)
+        if root is not None:
+            self._discard_otel_subtree(root)
+
+    def _assign_otel_context(
+        self, otel_trace_id: int, parent_span_context: SpanContext | None, trace_state: TraceState
+    ) -> SpanContext:
+        """Create a sampled local SpanContext without changing the active context."""
+        return SpanContext(
+            trace_id=otel_trace_id,
+            span_id=_otel_id_generator.generate_span_id(),
+            is_remote=False,
+            trace_flags=TraceFlags(TraceFlags.SAMPLED),
+            trace_state=trace_state,
+        )
+
+    def _record_otel_ids(
+        self, step: BaseStep, parent_step: BaseStep | None = None, parent_span_context: SpanContext | None = None
+    ) -> OtelIds:
+        """Assign stable OTel identity using the step's actual Galileo parent."""
+        if parent_step is not None:
+            parent_ids = self._otel_ids.get(parent_step.id)
+            if parent_ids is None:
+                raise RuntimeError(f"Missing OTel context for parent step {parent_step.id}.")
+            parent_span_context = parent_ids.span_context
+        elif parent_span_context is None:
+            active_context = otel_trace.get_current_span().get_span_context()
+            parent_span_context = active_context if active_context.is_valid else None
+
+        if parent_span_context is None:
+            otel_trace_id = _otel_id_generator.generate_trace_id()
+            trace_state = TraceState()
+        else:
+            otel_trace_id = parent_span_context.trace_id
+            trace_state = parent_span_context.trace_state
+
+        ids = OtelIds(
+            span_context=self._assign_otel_context(otel_trace_id, parent_span_context, trace_state),
+            parent_span_context=parent_span_context,
+        )
+        self._otel_ids[step.id] = ids
+        return ids
+
+    def _open_otel_step_ids(self, current_parent: StepWithChildSpans | None) -> tuple[uuid.UUID, ...]:
+        """Return the root-to-current proprietary chain that has OTel identities."""
+        path: list[uuid.UUID] = []
+        current = current_parent
+        while current is not None:
+            if current.id in self._otel_ids:
+                path.append(current.id)
+            current = current._parent
+        return tuple(reversed(path))
+
+    def _sync_otel_context(self, current_parent: StepWithChildSpans | None) -> None:
+        """Reconcile this logger's open chain with request-local OTel context."""
+        desired_step_ids = self._open_otel_step_ids(current_parent)
+        logger_id = id(self)
+        state = _otel_context_state.get()
+        active_contexts = state.active_contexts if state is not None else ()
+        logger_contexts = tuple(active for active in active_contexts if active.logger_id == logger_id)
+
+        if not desired_step_ids and not logger_contexts:
+            return
+
+        logger_is_current = (
+            bool(desired_step_ids)
+            and len(active_contexts) >= len(desired_step_ids)
+            and all(
+                active.logger_id == logger_id and active.step_id == step_id
+                for active, step_id in zip(active_contexts[-len(desired_step_ids) :], desired_step_ids, strict=True)
+            )
+        )
+        if desired_step_ids and logger_is_current:
+            current_span_context = otel_trace.get_current_span().get_span_context()
+            if current_span_context == self._otel_ids[desired_step_ids[-1]].span_context:
+                return
+
+        base_context = state.base_context if state is not None else otel_context.get_current()
+        remaining_contexts = tuple(active for active in active_contexts if active.logger_id != logger_id)
+        desired_contexts = tuple(
+            (logger_id, step_id, self._otel_ids[step_id].span_context) for step_id in desired_step_ids
+        )
+        contexts_to_restore = (
+            tuple((active.logger_id, active.step_id, active.span_context) for active in remaining_contexts)
+            + desired_contexts
+        )
+
+        detach_failed = False
+        for active in reversed(active_contexts):
+            try:
+                active.token.var.reset(active.token)
+            except (RuntimeError, ValueError):
+                # ContextVar tokens cannot be reset from a copied execution
+                # context. Restore the recorded base before rebuilding below.
+                detach_failed = True
+
+        if detach_failed:
+            otel_context.attach(base_context)
+
+        rebuilt_contexts: list[ActiveOtelContext] = []
+        for owner_id, step_id, span_context in contexts_to_restore:
+            ctx = otel_trace.set_span_in_context(NonRecordingSpan(span_context))
+            rebuilt_contexts.append(
+                ActiveOtelContext(
+                    logger_id=owner_id, step_id=step_id, span_context=span_context, token=otel_context.attach(ctx)
+                )
+            )
+
+        if rebuilt_contexts:
+            _otel_context_state.set(
+                OtelContextState(base_context=base_context, active_contexts=tuple(rebuilt_contexts))
+            )
+        else:
+            _otel_context_state.set(None)
+
+    def _discard_otel_subtree(self, step: BaseStep) -> None:
+        """Remove stable identities for a completed proprietary subtree."""
+        self._discard_otel_identity_tree(step.id)
+
+    def _discard_otel_identity_tree(self, step_id: uuid.UUID) -> None:
+        """Remove one identity and all identities parented to it."""
+        ids = self._otel_ids.pop(step_id, None)
+        if ids is None:
+            return
+
+        child_ids = tuple(
+            child_id
+            for child_id, child_ids in self._otel_ids.items()
+            if child_ids.parent_span_context == ids.span_context
+        )
+        for child_id in child_ids:
+            self._discard_otel_identity_tree(child_id)
+
+    def _release_otel_context(self, finished_step: BaseStep) -> None:
+        """Release identity bookkeeping after active context has moved upward."""
+        self._discard_otel_subtree(finished_step)
+
+    def _current_span_id(self) -> uuid.UUID:
+        """Return the current proprietary parent ID for internal lifecycle tests."""
+        current_parent = self.current_parent()
+        if current_parent is None:
+            raise ValueError("No active trace or span.")
+        return current_parent.id
+
+    @staticmethod
+    def _current_otel_span_id() -> int:
+        """Return the active OTel span ID."""
+        span_context = otel_trace.get_current_span().get_span_context()
+        if not span_context.is_valid:
+            raise ValueError("No active OTel span.")
+        return span_context.span_id
+
     def _auto_enable_agent_control_if_available(self) -> None:
         """Best-effort Agent Control bridge registration for optional installs."""
         try:
@@ -481,6 +683,7 @@ class SplunkAOLogger(TracesLogger):
 
         # Set trace as current parent using parent pointers
         stub_trace._parent = None  # Root trace has no parent
+        self._record_otel_ids(stub_trace)
         self._set_current_parent(stub_trace)
 
         if self.span_id:
@@ -494,6 +697,7 @@ class SplunkAOLogger(TracesLogger):
             )
             # Set parent pointer and update current parent
             stub_span._parent = stub_trace
+            self._record_otel_ids(stub_span, parent_step=stub_trace)
             self._set_current_parent(stub_span)
 
     def add_trace(
@@ -534,6 +738,8 @@ class SplunkAOLogger(TracesLogger):
         trace._parent = None
         self.traces.append(trace)
         self._set_current_parent(trace)
+        self._record_otel_ids(trace)
+        self._sync_otel_context(trace)
         return trace
 
     @staticmethod
@@ -1260,12 +1466,15 @@ class SplunkAOLogger(TracesLogger):
             )
         )
         self.traces.append(trace)
+        self._record_otel_ids(trace)
+        self._record_otel_ids(trace.spans[0], parent_step=trace)
         self._set_current_parent(None)
 
         if self.mode == "distributed":
             self.traces = [trace]
             self._ingest_step_streaming(trace, is_complete=False)
 
+        self._release_otel_context(trace)
         return trace
 
     @nop_sync
@@ -1374,6 +1583,7 @@ class SplunkAOLogger(TracesLogger):
         if metadata:
             metadata = {k: SplunkAOLogger._convert_metadata_value(v) for k, v in metadata.items()}
 
+        parent = self.current_parent()
         span = LoggedLlmSpan(
             input=input,
             redacted_input=redacted_input,
@@ -1399,6 +1609,7 @@ class SplunkAOLogger(TracesLogger):
             step_number=step_number,
         )
         self.add_child_span_to_parent(span)
+        self._record_otel_ids(span, parent_step=parent)
 
         if self.mode == "distributed":
             self._ingest_step_streaming(span)
@@ -1480,7 +1691,9 @@ class SplunkAOLogger(TracesLogger):
             "step_number": step_number,
             "id": uuid.uuid4(),
         }
+        parent = self.current_parent()
         span = super().add_retriever_span(**kwargs)
+        self._record_otel_ids(span, parent_step=parent)
 
         if self.mode == "distributed":
             self._ingest_step_streaming(span)
@@ -1569,7 +1782,9 @@ class SplunkAOLogger(TracesLogger):
             "step_number": step_number,
             "id": uuid.uuid4(),
         }
+        parent = self.current_parent()
         span = super().add_tool_span(**kwargs)
+        self._record_otel_ids(span, parent_step=parent)
 
         if self.mode == "distributed":
             self._ingest_step_streaming(span)
@@ -1580,6 +1795,7 @@ class SplunkAOLogger(TracesLogger):
         parent = self.current_parent()
         span._parent = parent
         self.add_child_span_to_parent(span)
+        self._record_otel_ids(span, parent_step=parent)
         self._set_current_parent(span)
         if status_code is not None:
             span.status_code = status_code
@@ -1829,6 +2045,7 @@ class SplunkAOLogger(TracesLogger):
         span = LoggedControlSpan(**span_kwargs)
         span._parent = current_parent
         self.add_child_span_to_parent(span)
+        self._record_otel_ids(span, parent_step=current_parent)
 
         if self.mode == "distributed":
             self._ingest_step_streaming(span)
@@ -1915,6 +2132,7 @@ class SplunkAOLogger(TracesLogger):
             finished_step, current_parent = self._conclude(
                 output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
             )
+            self._release_otel_context(finished_step)
             if self.mode == "distributed":
                 # In distributed mode, conclude() marks the trace as complete immediately
                 # Batch mode keeps traces in memory and sends them all during flush()
@@ -1930,6 +2148,7 @@ class SplunkAOLogger(TracesLogger):
                 finished_step, current_parent = self._conclude(
                     output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
                 )
+                self._release_otel_context(finished_step)
                 if self.mode == "distributed":
                     # Mark each concluded trace/span as complete
                     self._update_step_streaming(finished_step, is_complete=True)
@@ -1963,6 +2182,7 @@ class SplunkAOLogger(TracesLogger):
                 # Reset parent tracking in the main thread (async_run uses thread pool).
                 # Using finally ensures cleanup even if ingestion fails.
                 self._set_current_parent(None)
+                self._otel_ids.clear()
         except Exception as e:
             if on_error is not None:
                 # Guard the callback so a buggy on_error never crashes the caller.
@@ -1996,6 +2216,7 @@ class SplunkAOLogger(TracesLogger):
         finally:
             # Reset parent tracking. Using finally ensures cleanup even if ingestion fails.
             self._set_current_parent(None)
+            self._otel_ids.clear()
 
     @async_warn_catch_exception(exceptions=(Exception,))
     async def _wait_for_all_tasks_async(self, timeout_seconds: int) -> None:
@@ -2205,6 +2426,7 @@ class SplunkAOLogger(TracesLogger):
                 self._wait_for_all_tasks_sync(timeout_seconds=terminate_timeout_seconds)
                 self.traces = []
                 self._set_current_parent(None)
+                self._otel_ids.clear()
             else:
                 # Batch mode: try flush() but don't fail if async_run has issues during shutdown
                 try:

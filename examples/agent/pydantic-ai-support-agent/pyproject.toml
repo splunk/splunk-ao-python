@@ -5,6 +5,6 @@ description = "An example project for using Splunk AO with PydanticAI."
 readme = "README.md"
 requires-python = ">=3.11, <3.14"
 dependencies = [
-    "splunk-ao[otel]",
+    "splunk-ao",
     "pydantic-ai>=1.0.0",
 ]

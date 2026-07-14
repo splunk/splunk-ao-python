@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 INSTALL_ERR_MSG = (
-    "OpenTelemetry packages are not installed. "
-    "Install optional OpenTelemetry dependencies with: pip install galileo[otel]"
+    "OpenTelemetry packages required by splunk-ao are not installed. "
+    "Reinstall splunk-ao to restore its required dependencies."
 )
 
 
@@ -237,10 +237,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
             When OpenTelemetry dependencies are not installed.
         """
         if not OTEL_AVAILABLE:
-            raise ImportError(
-                "OpenTelemetry packages are not installed. "
-                "Install optional OpenTelemetry dependencies with: pip install galileo[otel]"
-            )
+            raise ImportError(INSTALL_ERR_MSG)
 
         # Resolve project and logstream: param first, then context var, then env var with default fallback
         ctx_project = project if project is not None else _project_context.get(None)
