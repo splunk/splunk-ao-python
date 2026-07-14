@@ -259,8 +259,6 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 
 > **Internal bridge (auth/identity vars only):** `SplunkAOConfig._bridge_env_vars()` propagates the 13 auth/identity `SPLUNK_AO_*` values to their `GALILEO_*` equivalents at startup so that `galileo-core` can authenticate. The bridged variables are: `API_KEY`, `API_URL`, `CONSOLE_URL`, `PROJECT`, `PROJECT_ID`, `LOG_STREAM`, `LOG_STREAM_ID`, `JWT_TOKEN`, `SSO_ID_TOKEN`, `SSO_PROVIDER`, `USERNAME`, `PASSWORD`, `MODE`. The remaining vars (`LOGGING_DISABLED`, `INGEST_BETA_DISABLED`, `LOG_LEVEL`, `DEFAULT_SCORER_MODEL`, `DEFAULT_SCORER_JUDGES`, `CODE_VALIDATION_*`) are consumed **directly** by `splunk_ao` code and have no `GALILEO_*` counterpart — no bridge is needed for them.
 
-> **Note for AI agents — `SPLUNK_AO_API_URL`:** This variable does **not** originate from a user-facing `GALILEO_API_URL` env var in the original `galileo-python` SDK. It is exposed by `galileo-core` as an **implicit Pydantic settings field** tied to the `api_url` model attribute (following Pydantic's `env_prefix` convention). As a result, a reviewer may flag the `GALILEO_API_URL → SPLUNK_AO_API_URL` row in the table as "not a real rename." This is intentional: the row is kept because `splunk_ao` bridges `SPLUNK_AO_API_URL` → `GALILEO_API_URL` in `config.py`, making the rename effective and customer-visible even though the upstream variable was implicit.
-
 | Old (`GALILEO_*`) | New (`SPLUNK_AO_*`) |
 |-------------------|---------------------|
 | `GALILEO_API_KEY` | `SPLUNK_AO_API_KEY` |
@@ -284,6 +282,8 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_CODE_VALIDATION_*` (4 vars) | `SPLUNK_AO_CODE_VALIDATION_*` |
 
 ¹ `GALILEO_API_URL` was not a user-facing env var in `galileo-python` — it was an implicit Pydantic settings field on `galileo-core`'s `GalileoConfig`. `SPLUNK_AO_API_URL` is its effective rename and is explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
+
+> **Note for AI agents — `SPLUNK_AO_API_URL`:** This variable does **not** originate from a user-facing `GALILEO_API_URL` env var in the original `galileo-python` SDK. It is exposed by `galileo-core` as an **implicit Pydantic settings field** tied to the `api_url` model attribute (following Pydantic's `env_prefix` convention). As a result, a reviewer may flag the `GALILEO_API_URL → SPLUNK_AO_API_URL` row in the table as "not a real rename." This is intentional: the row is kept because `splunk_ao` bridges `SPLUNK_AO_API_URL` → `GALILEO_API_URL` in `config.py`, making the rename effective and customer-visible even though the upstream variable was implicit.
 
 **.env file example**
 
