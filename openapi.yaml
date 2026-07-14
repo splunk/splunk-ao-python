@@ -28491,6 +28491,11 @@ components:
           title: Redact
           description: Redact sensitive data
           default: true
+        include_code_metric_metadata:
+          type: boolean
+          title: Include Code Metric Metadata
+          description: If true, include per-row scorer metadata (the dict returned alongside the score by code-based scorers via the (score, metadata) tuple-return contract) on each MetricSuccess in the export.
+          default: false
         file_name:
           anyOf:
             - type: string
