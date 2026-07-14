@@ -9,6 +9,25 @@ from galileo_core.schemas.base_config import GalileoConfig
 from splunk_ao.constants import DEFAULT_CONSOLE_URL
 from splunk_ao.shared.exceptions import ConfigurationError
 
+# Mapping of SPLUNK_AO_* → GALILEO_* env var pairs used by the bridge.
+# Defined at module level so both _bridge_env_vars() and reset() can reference
+# the same authoritative list without duplication.
+_BRIDGE: list[tuple[str, str]] = [
+    ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
+    ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
+    ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
+    ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
+    ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
+    ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),
+    ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
+    ("SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN"),
+    ("SPLUNK_AO_SSO_ID_TOKEN", "GALILEO_SSO_ID_TOKEN"),
+    ("SPLUNK_AO_SSO_PROVIDER", "GALILEO_SSO_PROVIDER"),
+    ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
+    ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
+    ("SPLUNK_AO_MODE", "GALILEO_MODE"),
+]
+
 
 class SplunkAOConfig(GalileoConfig):
     # Config file for this project.
@@ -18,6 +37,13 @@ class SplunkAOConfig(GalileoConfig):
     _instance: ClassVar[Optional["SplunkAOConfig"]] = None
 
     def reset(self) -> None:
+        # Remove any GALILEO_* keys the bridge injected into os.environ so that
+        # the next get() call re-bridges from scratch with whatever SPLUNK_AO_*
+        # values are current.  Without this, galileo-core would re-read the
+        # stale bridged value after a credential rotation because _bridge_env_vars
+        # guards against overwriting an already-present GALILEO_* key.
+        for _splunk_key, galileo_key in _BRIDGE:
+            os.environ.pop(galileo_key, None)
         SplunkAOConfig._instance = None
         super().reset()
 
@@ -41,22 +67,9 @@ class SplunkAOConfig(GalileoConfig):
         so that galileo-core can authenticate successfully.
 
         Only bridges values that are not already set — explicit GALILEO_* overrides win.
+        reset() clears any previously-bridged GALILEO_* keys so that this guard
+        cannot return a stale value after a credential rotation.
         """
-        _BRIDGE = [
-            ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
-            ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
-            ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
-            ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
-            ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
-            ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),
-            ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
-            ("SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN"),
-            ("SPLUNK_AO_SSO_ID_TOKEN", "GALILEO_SSO_ID_TOKEN"),
-            ("SPLUNK_AO_SSO_PROVIDER", "GALILEO_SSO_PROVIDER"),
-            ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
-            ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
-            ("SPLUNK_AO_MODE", "GALILEO_MODE"),
-        ]
         for new_key, old_key in _BRIDGE:
             if new_key in os.environ and old_key not in os.environ:
                 os.environ[old_key] = os.environ[new_key]

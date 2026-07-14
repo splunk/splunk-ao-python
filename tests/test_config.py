@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from splunk_ao.config import SplunkAOConfig
+from splunk_ao.config import _BRIDGE, SplunkAOConfig
 from splunk_ao.shared.exceptions import ConfigurationError
 
 # Auth env vars cleared in tests that exercise the missing-auth guard.
@@ -232,3 +232,99 @@ def test_incomplete_auth_config_rejected_with_specific_guidance(
     assert expected_present in message, f"Expected error to reference {expected_present}: {message}"
     assert expected_missing in message, f"Expected error to reference {expected_missing}: {message}"
     assert "is set but" in message, f"Expected targeted incomplete-config phrasing: {message}"
+
+
+# ---------------------------------------------------------------------------
+# Regression tests: stale bridge after reset() + credential change (HYBIM-787)
+# ---------------------------------------------------------------------------
+
+
+def test_reset_clears_bridged_galileo_env_vars() -> None:
+    """reset() must remove every GALILEO_* key the bridge may have written.
+
+    Before the fix, galileo-core env vars persisted across reset() calls, so
+    the _bridge_env_vars guard ("skip if GALILEO_* already set") would silently
+    reuse the stale value on the next get().
+
+    We patch GalileoConfig.reset to a no-op so the test only exercises the
+    env-var cleanup logic we added, without needing a fully-initialised Pydantic
+    model instance.
+    """
+    galileo_keys = [galileo_key for _splunk_key, galileo_key in _BRIDGE]
+
+    # Seed all GALILEO_* keys to simulate a prior bridge run, and suppress the
+    # parent reset() so we can isolate the env-var cleanup we added.
+    with (
+        patch.dict(os.environ, {k: "stale-value" for k in galileo_keys}, clear=False),
+        patch("galileo_core.schemas.base_config.GalileoConfig.reset"),
+    ):
+        mock_instance = MagicMock(spec=SplunkAOConfig)
+        SplunkAOConfig.reset(mock_instance)
+
+        for galileo_key in galileo_keys:
+            assert galileo_key not in os.environ, (
+                f"reset() must remove {galileo_key} from os.environ; "
+                f"found stale value '{os.environ.get(galileo_key)}'"
+            )
+
+
+def test_bridge_picks_up_new_credential_after_reset(monkeypatch) -> None:
+    """After reset(), _bridge_env_vars must copy the *new* SPLUNK_AO_* value.
+
+    Regression test for HYBIM-787: get() → reset() → rotate credential → get()
+    must result in the updated GALILEO_* value, not the original stale one.
+
+    We patch GalileoConfig.reset to a no-op so the test only exercises the
+    env-var cleanup + re-bridge behaviour without needing a fully-initialised
+    Pydantic model instance.
+    """
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "key-first")
+    monkeypatch.delenv("GALILEO_API_KEY", raising=False)
+
+    # First bridge — mirrors key-first into GALILEO_API_KEY.
+    SplunkAOConfig._bridge_env_vars()
+    assert os.environ.get("GALILEO_API_KEY") == "key-first", "Bridge must copy key-first on first call"
+
+    # reset() — this is the core of the fix under test.
+    with patch("galileo_core.schemas.base_config.GalileoConfig.reset"):
+        mock_instance = MagicMock(spec=SplunkAOConfig)
+        SplunkAOConfig.reset(mock_instance)
+
+    assert "GALILEO_API_KEY" not in os.environ, "reset() must remove stale GALILEO_API_KEY"
+
+    # Rotate the credential.
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "key-rotated")
+
+    # Second bridge — must pick up the new key now that reset() cleared the old one.
+    SplunkAOConfig._bridge_env_vars()
+    assert os.environ.get("GALILEO_API_KEY") == "key-rotated", (
+        "After reset() + credential rotation, bridge must copy the new key; "
+        "got stale value instead"
+    )
+    # Cleanup: monkeypatch will restore SPLUNK_AO_API_KEY, but the bridge wrote
+    # GALILEO_API_KEY directly to os.environ — remove it so it doesn't leak.
+    os.environ.pop("GALILEO_API_KEY", None)
+
+
+def test_reset_removes_all_bridgeable_galileo_vars() -> None:
+    """reset() removes all GALILEO_* keys the bridge *could* have written.
+
+    This is acceptable because no consumer of this SDK sets GALILEO_* directly
+    (the bridge owns those keys).  This test documents the known behaviour so
+    that any future change to this contract is deliberate and reviewed.
+    """
+    galileo_keys = [galileo_key for _splunk_key, galileo_key in _BRIDGE]
+
+    with (
+        patch.dict(os.environ, {k: "user-set" for k in galileo_keys}, clear=False),
+        patch("galileo_core.schemas.base_config.GalileoConfig.reset"),
+    ):
+        mock_instance = MagicMock(spec=SplunkAOConfig)
+        SplunkAOConfig.reset(mock_instance)
+
+        # All GALILEO_* keys are removed — this is the documented trade-off of Option 2.
+        for galileo_key in galileo_keys:
+            assert galileo_key not in os.environ, (
+                f"reset() is expected to remove {galileo_key} "
+                f"(bridge owns all GALILEO_* keys; no SDK consumer sets them directly)"
+            )
