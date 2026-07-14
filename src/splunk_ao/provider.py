@@ -20,7 +20,7 @@ from splunk_ao.resources.models import (
     AzureIntegrationCreate,
     BaseAwsIntegrationCreate,
     HTTPValidationError,
-    IntegrationName,
+    IntegrationProvider,
     OpenAIIntegrationCreate,
 )
 from splunk_ao.resources.types import Unset
@@ -83,8 +83,8 @@ class Provider(StateManagementMixin, ABC):
         return f"{self.__class__.__name__}(name='{self.name}', id='{self.id}', is_selected={self.is_selected})"
 
     @abstractmethod
-    def _get_integration_name(self) -> IntegrationName:
-        """Get the IntegrationName enum for this provider."""
+    def _get_integration_name(self) -> IntegrationProvider:
+        """Get the IntegrationProvider enum for this provider."""
         raise NotImplementedError
 
     def refresh(self) -> None:
@@ -312,8 +312,8 @@ class OpenAIProvider(Provider):
         self._temp_token = token
         self._temp_organization_id = organization_id
 
-    def _get_integration_name(self) -> IntegrationName:
-        return IntegrationName.OPENAI
+    def _get_integration_name(self) -> IntegrationProvider:
+        return IntegrationProvider.OPENAI
 
     def create(self) -> OpenAIProvider:
         """
@@ -439,8 +439,8 @@ class AzureProvider(Provider):
         self._temp_token = token
         self._temp_endpoint = endpoint
 
-    def _get_integration_name(self) -> IntegrationName:
-        return IntegrationName.AZURE
+    def _get_integration_name(self) -> IntegrationProvider:
+        return IntegrationProvider.AZURE
 
     def create(self) -> AzureProvider:
         """
@@ -578,8 +578,8 @@ class BedrockProvider(Provider):
         self._temp_region = region
         self._temp_token_dict = {"aws_access_key_id": aws_access_key_id, "aws_secret_access_key": aws_secret_access_key}
 
-    def _get_integration_name(self) -> IntegrationName:
-        return IntegrationName.AWS_BEDROCK
+    def _get_integration_name(self) -> IntegrationProvider:
+        return IntegrationProvider.AWS_BEDROCK
 
     def create(self) -> BedrockProvider:
         """
@@ -720,8 +720,8 @@ class AnthropicProvider(Provider):
         # Store temporarily for create() call only
         self._temp_token = token
 
-    def _get_integration_name(self) -> IntegrationName:
-        return IntegrationName.ANTHROPIC
+    def _get_integration_name(self) -> IntegrationProvider:
+        return IntegrationProvider.ANTHROPIC
 
     def create(self) -> AnthropicProvider:
         """
@@ -831,9 +831,9 @@ class GenericProvider(Provider):
     It does not support creation or updates through the SDK.
     """
 
-    _integration_name: IntegrationName
+    _integration_name: IntegrationProvider
 
-    def _get_integration_name(self) -> IntegrationName:
+    def _get_integration_name(self) -> IntegrationProvider:
         return self._integration_name
 
 
