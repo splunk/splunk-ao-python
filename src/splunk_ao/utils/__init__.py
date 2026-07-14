@@ -1,8 +1,8 @@
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 
 def _get_timestamp() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 def _now_ns() -> int:

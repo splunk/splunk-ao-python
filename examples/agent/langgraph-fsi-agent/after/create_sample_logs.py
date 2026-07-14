@@ -1,5 +1,4 @@
 # A script to generate log streams
-# ruff: noqa: E402  -- load_dotenv() must precede all other imports
 
 from dotenv import load_dotenv
 

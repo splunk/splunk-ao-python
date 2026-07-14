@@ -1,14 +1,14 @@
-import json
 import os
-from datetime import datetime
-
+import json
 import aiohttp
-from agent_framework.models import ToolMetadata
-from agent_framework.tools.base import BaseTool
-from agent_framework.utils.logging import get_galileo_logger  # 🔍 Splunk AO helper import - gets centralized logger
-from dotenv import load_dotenv
-
 from splunk_ao import log  # 🔍 Splunk AO decorator import for tool spans
+from agent_framework.tools.base import BaseTool
+from agent_framework.models import ToolMetadata
+from agent_framework.utils.logging import (
+    get_galileo_logger,
+)  # 🔍 Splunk AO helper import - gets centralized logger
+from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -34,12 +34,23 @@ class NewsAPITool(BaseTool):
             input_schema={
                 "type": "object",
                 "properties": {
-                    "category": {"type": "string", "description": "News category to fetch", "default": "business"},
-                    "limit": {"type": "integer", "description": "Number of articles to fetch", "default": 5},
+                    "category": {
+                        "type": "string",
+                        "description": "News category to fetch",
+                        "default": "business",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of articles to fetch",
+                        "default": 5,
+                    },
                 },
                 "required": [],
             },
-            output_schema={"type": "string", "description": "JSON string containing news articles with metadata"},
+            output_schema={
+                "type": "string",
+                "description": "JSON string containing news articles with metadata",
+            },
         )
 
     # 👀 GALILEO TOOL SPAN DECORATOR: This decorator creates a tool span for HTTP API calls
@@ -50,7 +61,11 @@ class NewsAPITool(BaseTool):
         """Fetch business news from NewsAPI"""
 
         # Log inputs
-        inputs = {"category": category, "limit": limit, "timestamp": datetime.now().isoformat()}
+        inputs = {
+            "category": category,
+            "limit": limit,
+            "timestamp": datetime.now().isoformat(),
+        }
         print(f"News API Tool Inputs: {json.dumps(inputs, indent=2)}")
 
         # 👀 GALILEO LOGGER SETUP: Get the Splunk AO logger for this execution
@@ -78,28 +93,34 @@ class NewsAPITool(BaseTool):
 
             # Fetch news from NewsAPI
             url = "https://newsapi.org/v2/top-headlines"
-            params = {"country": "us", "category": category, "apiKey": api_key, "pageSize": limit}
+            params = {
+                "country": "us",
+                "category": category,
+                "apiKey": api_key,
+                "pageSize": limit,
+            }
 
-            async with aiohttp.ClientSession() as session, session.get(url, params=params) as response:
-                if response.status != 200:
-                    raise Exception(f"Failed to fetch news: {response.status}")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as response:
+                    if response.status != 200:
+                        raise Exception(f"Failed to fetch news: {response.status}")
 
-                data = await response.json()
+                    data = await response.json()
 
-                if data.get("status") != "ok":
-                    raise Exception(f"NewsAPI error: {data.get('message', 'Unknown error')}")
+                    if data.get("status") != "ok":
+                        raise Exception(f"NewsAPI error: {data.get('message', 'Unknown error')}")
 
-                articles = data.get("articles", [])
+                    articles = data.get("articles", [])
 
-                # Format articles for context
-                formatted_articles = []
-                for article in articles[:limit]:
-                    title = article.get("title", "No title")
-                    description = article.get("description", "No description")
-                    source = article.get("source", {}).get("name", "Unknown source")
-                    formatted_articles.append(f"• {title} ({source}) - {description}")
+                    # Format articles for context
+                    formatted_articles = []
+                    for article in articles[:limit]:
+                        title = article.get("title", "No title")
+                        description = article.get("description", "No description")
+                        source = article.get("source", {}).get("name", "Unknown source")
+                        formatted_articles.append(f"• {title} ({source}) - {description}")
 
-                context = "\n".join(formatted_articles)
+                    context = "\n".join(formatted_articles)
 
             # Create structured output
             output = {
@@ -163,28 +184,34 @@ class NewsAPITool(BaseTool):
 
         # Fetch news from NewsAPI
         url = "https://newsapi.org/v2/top-headlines"
-        params = {"country": "us", "category": category, "apiKey": api_key, "pageSize": limit}
+        params = {
+            "country": "us",
+            "category": category,
+            "apiKey": api_key,
+            "pageSize": limit,
+        }
 
-        async with aiohttp.ClientSession() as session, session.get(url, params=params) as response:
-            if response.status != 200:
-                raise Exception(f"Failed to fetch news: {response.status}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                if response.status != 200:
+                    raise Exception(f"Failed to fetch news: {response.status}")
 
-            data = await response.json()
+                data = await response.json()
 
-            if data.get("status") != "ok":
-                raise Exception(f"NewsAPI error: {data.get('message', 'Unknown error')}")
+                if data.get("status") != "ok":
+                    raise Exception(f"NewsAPI error: {data.get('message', 'Unknown error')}")
 
-            articles = data.get("articles", [])
+                articles = data.get("articles", [])
 
-            # Format articles for context
-            formatted_articles = []
-            for article in articles[:limit]:
-                title = article.get("title", "No title")
-                description = article.get("description", "No description")
-                source = article.get("source", {}).get("name", "Unknown source")
-                formatted_articles.append(f"• {title} ({source}) - {description}")
+                # Format articles for context
+                formatted_articles = []
+                for article in articles[:limit]:
+                    title = article.get("title", "No title")
+                    description = article.get("description", "No description")
+                    source = article.get("source", {}).get("name", "Unknown source")
+                    formatted_articles.append(f"• {title} ({source}) - {description}")
 
-            context = "\n".join(formatted_articles)
+                context = "\n".join(formatted_articles)
 
         # Create structured output
         output = {
@@ -209,7 +236,7 @@ class NewsAPITool(BaseTool):
 
 
 # ℹ️ TEST FUNCTION: This function can be used to test the tool independently
-async def main() -> None:
+async def main():
     """Test the News API tool"""
     tool = NewsAPITool()
     result = await tool.execute(category="business", limit=3)

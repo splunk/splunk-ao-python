@@ -28,12 +28,12 @@ Set the following environment variable for your LLM:
 
 """
 
-import os
 from datetime import datetime
+import os
 
 from dotenv import load_dotenv
 
-from splunk_ao import log, splunk_ao_context
+from splunk_ao import splunk_ao_context, log
 from splunk_ao.openai import OpenAI
 
 # Load the environment variables from the .env file

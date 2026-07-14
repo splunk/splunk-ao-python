@@ -10,15 +10,16 @@ import json
 import os
 import time
 
-from app import chat_with_llm
 from dotenv import load_dotenv
 
 from splunk_ao import SplunkAOMetrics
 from splunk_ao.datasets import create_dataset, get_dataset
 from splunk_ao.experiments import get_experiment, run_experiment
 
+from app import chat_with_llm
 
-def setup_module() -> None:
+
+def setup_module():
     """
     Setup function that runs once when this test module is executed.
 
@@ -35,7 +36,9 @@ def setup_module() -> None:
         raise ValueError("SPLUNK_AO_PROJECT and SPLUNK_AO_API_KEY environment variables are required")
 
     # Check to see if we already have the dataset, if not we can create it.
-    dataset = get_dataset(name="simple-chatbot-unit-test-dataset")
+    dataset = get_dataset(
+        name="simple-chatbot-unit-test-dataset",
+    )
 
     # If we don't have the dataset, create it with some canned data. Some of these questions
     # are designed to be factual, while others are designed to be nonsensical or not
@@ -43,13 +46,16 @@ def setup_module() -> None:
     # of the model when running the experiment.
     if dataset is None:
         # Load dataset content from JSON file
-        with open("../dataset.json", encoding="utf-8") as f:
+        with open("../dataset.json", "r", encoding="utf-8") as f:
             dataset_content = json.load(f)
 
-        dataset = create_dataset(name="simple-chatbot-unit-test-dataset", content=dataset_content)
+        dataset = create_dataset(
+            name="simple-chatbot-unit-test-dataset",
+            content=dataset_content,
+        )
 
 
-def test_run_experiment_with_dataset() -> None:
+def test_run_experiment_with_dataset():
     """
     This test will run the dataset against our chatbot app using the Splunk AO experiments framework.
     This is designed to show how you can run experiments with a dataset against a real-world application
@@ -68,7 +74,10 @@ def test_run_experiment_with_dataset() -> None:
         experiment_name="simple-chatbot-experiment",
         dataset_name="simple-chatbot-unit-test-dataset",
         function=chat_with_llm,
-        metrics=[SplunkAOMetrics.correctness, SplunkAOMetrics.instruction_adherence],
+        metrics=[
+            SplunkAOMetrics.correctness,
+            SplunkAOMetrics.instruction_adherence,
+        ],
         project=os.getenv("SPLUNK_AO_PROJECT"),
     )
 
@@ -76,7 +85,8 @@ def test_run_experiment_with_dataset() -> None:
     # We need to use the project ID and experiment name from the response as we only have the project name, and the experiment name
     # is generated with a timestamp, so we can't use the name directly.
     experiment = get_experiment(
-        project_id=experiment_response["experiment"].project_id, experiment_name=experiment_response["experiment"].name
+        project_id=experiment_response["experiment"].project_id,
+        experiment_name=experiment_response["experiment"].name,
     )
     while (
         experiment.aggregate_metrics is None

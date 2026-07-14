@@ -23,9 +23,6 @@ class Message(CoreMessage):
             and self.tool_call_id == value.tool_call_id
         )
 
-    def __hash__(self) -> int:
-        return hash((self.content, self.role, self.tool_call_id))
-
 
 # Without rebuilding the model, Message class we create here would not know and validate
 # constituent classes defined in core which build up message.

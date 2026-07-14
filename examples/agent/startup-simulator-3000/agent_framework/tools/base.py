@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
-
+from typing import Any, Dict, ClassVar, Type
 from ..models import ToolMetadata
 
 
@@ -8,10 +7,11 @@ class BaseTool(ABC):
     """Base class for all tools"""
 
     # Tool metadata as class variables
-    metadata: ClassVar[type[ToolMetadata]]
+    metadata: ClassVar[Type[ToolMetadata]]
 
     def __init__(self):
         """Initialize the base tool"""
+        pass
 
     @classmethod
     def get_metadata(cls) -> ToolMetadata:
@@ -20,6 +20,6 @@ class BaseTool(ABC):
         return cls.metadata()  # This will use the default values defined in the metadata class
 
     @abstractmethod
-    async def execute(self, **inputs: Any) -> dict[str, Any]:
+    async def execute(self, **inputs: Any) -> Dict[str, Any]:
         """Execute the tool with given inputs"""
         raise NotImplementedError("Tool must implement execute method")

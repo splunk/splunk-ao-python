@@ -4,10 +4,9 @@ Retrieval Service - A separate FastAPI service that handles information retrieva
 Run this service with: uvicorn retrieval_service:app --reload --port 8000
 """
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
-
+from dotenv import load_dotenv
 from splunk_ao import log
 from splunk_ao.middleware.tracing import TracingMiddleware
 
@@ -37,9 +36,7 @@ def retrieval_service(query: str) -> list[str]:
     # Mock knowledge base
     knowledge_base = {
         "birthplace": ["Galileo Galilei was born in Pisa, Italy in 1564"],
-        "profession": [
-            "Galileo Galilei taught geometry, mechanics, and astronomy at the University of Padua for many years"
-        ],
+        "profession": ["Galileo Galilei taught geometry, mechanics, and astronomy at the University of Padua for many years"],
         "research": [
             "Using improved telescopes that he built, Galileo Galilei made scientific observations that transformed our understanding of the universe."
         ],

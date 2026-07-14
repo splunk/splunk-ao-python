@@ -25,13 +25,14 @@ Set the following environment variable for your LLM:
 
 """
 
-import os
 from datetime import datetime
+import os
 
 from anthropic import Anthropic
+
 from dotenv import load_dotenv
 
-from splunk_ao import log, splunk_ao_context
+from splunk_ao import splunk_ao_context, log
 
 # Load the environment variables from the .env file
 # This will override any existing environment variables with the same name
@@ -101,7 +102,10 @@ def send_chat_to_anthropic() -> str:
 
     # Send the chat history to the Anthropic API and get the response
     response = client.messages.create(
-        max_tokens=1024, messages=chat_history_anthropic, system=system_prompt, model=MODEL_NAME
+        max_tokens=1024,
+        messages=chat_history_anthropic,
+        system=system_prompt,
+        model=MODEL_NAME,
     )
 
     # Print the response to the console

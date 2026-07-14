@@ -1,7 +1,7 @@
 import logging
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -257,7 +257,7 @@ class SplunkAOBaseHandler:
             node.span_params["start_time"] = time.perf_counter_ns()
 
         if "created_at" not in node.span_params:
-            node.span_params["created_at"] = datetime.now(tz=UTC)
+            node.span_params["created_at"] = datetime.now(tz=timezone.utc)
 
         found_node = self._nodes.get(node_id)
         if found_node:

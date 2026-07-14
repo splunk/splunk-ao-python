@@ -1,14 +1,17 @@
 import dotenv
 from agent import create_agent
-from langchain_core.messages import HumanMessage
 from traceloop.sdk import Traceloop
+from langchain_core.messages import HumanMessage
 
 dotenv.load_dotenv()
 
 Traceloop.init(
     app_name="LangGraph-Traceloop-Demo",
     disable_batch=False,  # Enable batching for better performance
-    resource_attributes={"service.version": "1.0.0", "deployment.environment": "development"},
+    resource_attributes={
+        "service.version": "1.0.0",
+        "deployment.environment": "development",
+    },
 )
 
 
@@ -45,7 +48,7 @@ After completing all steps, provide the final formatted answer."""
     messages = result.get("messages", [])
     for i, msg in enumerate(messages):
         msg_type = type(msg).__name__
-        print(f"\n--- Message {i + 1} ({msg_type}) ---")
+        print(f"\n--- Message {i+1} ({msg_type}) ---")
 
         if hasattr(msg, "content") and msg.content:
             print(f"Content: {msg.content[:200]}...")

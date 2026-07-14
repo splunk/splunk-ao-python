@@ -7,18 +7,16 @@ with custom parameters including project, experiment, dataset, and prompt config
 
 import argparse
 from datetime import datetime
-
-from dotenv import load_dotenv
-
 from splunk_ao import Message, MessageRole
-from splunk_ao.datasets import get_dataset
+from splunk_ao.prompts import get_prompt, create_prompt
 from splunk_ao.experiments import run_experiment
-from splunk_ao.prompts import create_prompt, get_prompt
+from splunk_ao.datasets import get_dataset
+from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def main() -> None:
+def main():
     """
     Main function to run Splunk AO experiments with command-line parameters.
 
@@ -36,10 +34,16 @@ def main() -> None:
     )
     parser.add_argument("--project", default="test project", help="Project name")
     parser.add_argument("--experiment", default="test experiment", help="Experiment name")
-    parser.add_argument("--prompt-name", default="default", help='Prompt name (optional, defaults to "default")')
+    parser.add_argument(
+        "--prompt-name",
+        default="default",
+        help='Prompt name (optional, defaults to "default")',
+    )
     parser.add_argument("--dataset", default="default", help="Dataset name")
     parser.add_argument(
-        "--prompt-content", default="You are an assistant. Respond to the user input.", help="Prompt content"
+        "--prompt-content",
+        default="You are an assistant. Respond to the user input.",
+        help="Prompt content",
     )
     args = parser.parse_args()
     project = args.project
@@ -53,7 +57,10 @@ def main() -> None:
             prompt = create_prompt(
                 name=prompt_name,
                 template=[
-                    Message(role=MessageRole.system, content=prompt_content),
+                    Message(
+                        role=MessageRole.system,
+                        content=prompt_content,
+                    ),
                     Message(role=MessageRole.user, content="{{input}}"),
                 ],
             )
@@ -67,7 +74,10 @@ def main() -> None:
                 prompt = create_prompt(
                     name=new_prompt_name,
                     template=[
-                        Message(role=MessageRole.system, content=prompt_content),
+                        Message(
+                            role=MessageRole.system,
+                            content=prompt_content,
+                        ),
                         Message(role=MessageRole.user, content="{{input}}"),
                     ],
                 )
@@ -80,7 +90,11 @@ def main() -> None:
         experiment_name,
         dataset=dataset,
         prompt_template=prompt,
-        prompt_settings={"max_tokens": 256, "model_alias": "GPT-4o", "temperature": 0.8},
+        prompt_settings={
+            "max_tokens": 256,
+            "model_alias": "GPT-4o",
+            "temperature": 0.8,
+        },
         metrics=["correctness"],
         project=project,
     )

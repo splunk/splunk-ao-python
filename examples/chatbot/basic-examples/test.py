@@ -1,10 +1,9 @@
 import os
 import time
-
 import openai  # Using the standard OpenAI library
-from dotenv import load_dotenv
-
 from splunk_ao import SplunkAOLogger  # Import SplunkAOLogger for logging
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -12,7 +11,10 @@ load_dotenv()
 logger = SplunkAOLogger(project="chatbot", log_stream="test")
 
 # Initialize the standard OpenAI client
-client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), organization=os.environ.get("OPENAI_ORGANIZATION"))
+client = openai.OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    organization=os.environ.get("OPENAI_ORGANIZATION"),
+)
 
 # Start a trace
 # prompt = f"Explain the following topic succinctly: Newton's First Law"
@@ -27,7 +29,10 @@ trace = logger.start_trace(input=prompt)
 start_time = time.time_ns()
 
 # Make the OpenAI API call directly
-response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "system", "content": prompt}])
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "system", "content": prompt}],
+)
 
 # Record the end time for the LLM call
 end_time = time.time_ns()
