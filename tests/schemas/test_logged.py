@@ -337,9 +337,12 @@ class TestJsonRoundtripNoCoercion:
 
     def test_logged_trace_roundtrip_with_control_span(self) -> None:
         from splunk_ao.logger.control import ControlSpan
+        # Given: a native Core ControlSpan payload
         control_payload = ControlSpan(input="selected text").model_dump(mode="python")
         trace = LoggedTrace(input="query", spans=[control_payload])
+        # When: the trace is serialized and restored
         restored = LoggedTrace.model_validate(trace.model_dump(mode="json"))
+        # Then: the discriminated union resolves the control span cleanly
         assert restored.spans[0].type == "control"
         assert type(restored.spans[0]) is LoggedControlSpan
         assert restored.spans[0].model_dump(mode="json")["input"] == "selected text"
@@ -347,6 +350,7 @@ class TestJsonRoundtripNoCoercion:
     @pytest.mark.parametrize("field_name", ["id", "session_id", "trace_id", "parent_id"])
     def test_control_span_rejects_non_uuidish_id_fields(self, field_name: str) -> None:
         from splunk_ao.logger.control import ControlSpan
+        # When/Then: non-UUID-ish ID fields are rejected by the native Core schema
         with pytest.raises(ValidationError):
             ControlSpan(input="selected text", **{field_name: 123})
 

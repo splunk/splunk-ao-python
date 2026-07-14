@@ -474,13 +474,16 @@ def test_agent_control_event_streams_immediately_in_distributed_mode(
 def test_add_control_span_uses_model_default_name(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
+    # Given: a logger with an active parent
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
     logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
+    # When: adding a control span without an explicit name
     control_span = logger.add_control_span(input="selected text", name=None)
+    # Then: the Core model default is applied and the span is preserved
     assert control_span is not None
     assert isinstance(control_span, ControlSpan)
     assert control_span.name == ControlSpan.model_fields["name"].default
