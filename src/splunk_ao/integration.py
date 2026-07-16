@@ -10,7 +10,7 @@ from splunk_ao.resources.api.integrations import (
     list_integrations_integrations_get,
 )
 from splunk_ao.resources.models.integration_db import IntegrationDB
-from splunk_ao.resources.models.integration_name import IntegrationName
+from splunk_ao.resources.models.integration_provider import IntegrationProvider
 from splunk_ao.resources.types import Unset
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
@@ -195,7 +195,7 @@ class Integration(StateManagementMixin):
                 logger.info("Integration.list: listing all available integration types")
                 response = list_available_integrations_integrations_available_get.sync(client=config.api_client)
                 if response and response.integrations:
-                    # Convert IntegrationName enums to strings
+                    # Convert IntegrationProvider enums to strings
                     available_integrations = [str(integration) for integration in response.integrations]
                     logger.info(f"Integration.list: found {len(available_integrations)} available types")
                     return available_integrations
@@ -323,13 +323,13 @@ class Integration(StateManagementMixin):
 
         # Create appropriate provider instance based on name using __new__ to bypass __init__
         provider: Provider
-        if name == IntegrationName.OPENAI:
+        if name == IntegrationProvider.OPENAI:
             provider = OpenAIProvider.__new__(OpenAIProvider)
-        elif name == IntegrationName.AZURE:
+        elif name == IntegrationProvider.AZURE:
             provider = AzureProvider.__new__(AzureProvider)
-        elif name == IntegrationName.AWS_BEDROCK:
+        elif name == IntegrationProvider.AWS_BEDROCK:
             provider = BedrockProvider.__new__(BedrockProvider)
-        elif name == IntegrationName.ANTHROPIC:
+        elif name == IntegrationProvider.ANTHROPIC:
             provider = AnthropicProvider.__new__(AnthropicProvider)
         else:
             # For unsupported providers, use GenericProvider
