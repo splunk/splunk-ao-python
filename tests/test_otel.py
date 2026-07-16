@@ -254,7 +254,7 @@ class TestOTelUnavailable:
     """Test behavior when OpenTelemetry is not available."""
 
     @patch("splunk_ao.otel.OTEL_AVAILABLE", False)
-    def test_galileo_span_processor_raises_import_error_when_otel_unavailable(self):
+    def test_splunk_ao_span_processor_raises_import_error_when_otel_unavailable(self):
         """Test that SplunkAOSpanProcessor raises ImportError when OpenTelemetry is not available."""
         with pytest.raises(ImportError, match=re.escape(INSTALL_ERR_MSG)):
             SplunkAOSpanProcessor(project="test")
@@ -569,7 +569,7 @@ class TestSetToolSpanAttributes:
         assert mock_otel_span.set_attribute.call_count == 6
 
 
-class TestStartGalileoSpan:
+class TestStartSplunkAOSpan:
     """Test suite for start_splunk_ao_span context manager."""
 
     @pytest.fixture(autouse=True)
@@ -604,7 +604,7 @@ class TestStartGalileoSpan:
 
         # Then: the span has gen_ai.system set and tool-specific attributes
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.system"] == "galileo-otel"
+        assert calls["gen_ai.system"] == "splunk-ao-otel"
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "my-tool"
         assert calls["gen_ai.tool.call.arguments"] == "tool input data"
@@ -632,7 +632,7 @@ class TestStartGalileoSpan:
 
         # Then: gen_ai.system, operation name, tool name, tool arguments, and input are set (no output or tool_call_id)
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.system"] == "galileo-otel"
+        assert calls["gen_ai.system"] == "splunk-ao-otel"
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "minimal-tool"
         assert calls["gen_ai.tool.call.arguments"] == "just input"

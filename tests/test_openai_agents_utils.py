@@ -298,8 +298,8 @@ class TestMapSpanType:
 
     def test_galileo_custom_span(self) -> None:
         """Test mapping SplunkAOCustomSpan."""
-        galileo_span = WorkflowSpan(name="Test", input="input", output="output", status_code=200)
-        assert _map_span_type(SplunkAOCustomSpan(galileo_span, {})) == "splunk_ao_custom"
+        splunk_ao_span = WorkflowSpan(name="Test", input="input", output="output", status_code=200)
+        assert _map_span_type(SplunkAOCustomSpan(splunk_ao_span, {})) == "splunk_ao_custom"
 
     @pytest.mark.parametrize(
         "type_attr,expected_type", [("function", "tool"), ("generation", "llm"), ("agent", "workflow")]

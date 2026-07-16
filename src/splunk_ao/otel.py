@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 from requests import Session
 
 from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.decorator import (
     _dataset_input_context,
@@ -318,32 +318,32 @@ def add_splunk_ao_span_processor(tracer_provider: TracerProvider, processor: Spl
     _TRACE_PROVIDER_CONTEXT_VAR.set(tracer_provider)
 
 
-def _set_retriever_span_attributes(span: trace.Span, galileo_span: RetrieverSpan) -> None:
+def _set_retriever_span_attributes(span: trace.Span, splunk_ao_span: RetrieverSpan) -> None:
     span.set_attribute("db.operation", "search")
-    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "user", "content": galileo_span.input}]))
+    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "user", "content": splunk_ao_span.input}]))
     span.set_attribute(
         "gen_ai.output.messages",
         json.dumps(
             [
                 {
                     "role": "assistant",
-                    "content": {"documents": document_adapter.dump_python(galileo_span.output, mode="json")},
+                    "content": {"documents": document_adapter.dump_python(splunk_ao_span.output, mode="json")},
                 }
             ]
         ),
     )
 
 
-def _set_tool_span_attributes(span: trace.Span, galileo_span: ToolSpan) -> None:
+def _set_tool_span_attributes(span: trace.Span, splunk_ao_span: ToolSpan) -> None:
     span.set_attribute("gen_ai.operation.name", "execute_tool")
-    span.set_attribute("gen_ai.tool.name", galileo_span.name)
-    span.set_attribute("gen_ai.tool.call.arguments", galileo_span.input)
-    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "tool", "content": galileo_span.input}]))
-    if galileo_span.output is not None:
-        span.set_attribute("gen_ai.tool.call.result", galileo_span.output)
-        span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "tool", "content": galileo_span.output}]))
-    if galileo_span.tool_call_id is not None:
-        span.set_attribute("gen_ai.tool.call.id", galileo_span.tool_call_id)
+    span.set_attribute("gen_ai.tool.name", splunk_ao_span.name)
+    span.set_attribute("gen_ai.tool.call.arguments", splunk_ao_span.input)
+    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "tool", "content": splunk_ao_span.input}]))
+    if splunk_ao_span.output is not None:
+        span.set_attribute("gen_ai.tool.call.result", splunk_ao_span.output)
+        span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "tool", "content": splunk_ao_span.output}]))
+    if splunk_ao_span.tool_call_id is not None:
+        span.set_attribute("gen_ai.tool.call.id", splunk_ao_span.tool_call_id)
 
 
 def _apply_dataset_attributes(
@@ -358,15 +358,15 @@ def _apply_dataset_attributes(
         span.set_attribute("splunk_ao.dataset.metadata", json.dumps(dataset_metadata))
 
 
-def _set_workflow_span_attributes(span: trace.Span, galileo_span: WorkflowSpan) -> None:
+def _set_workflow_span_attributes(span: trace.Span, splunk_ao_span: WorkflowSpan) -> None:
     """Set OpenTelemetry attributes for WorkflowSpan."""
     # Handle input - Union[str, Sequence[Message]]
-    if isinstance(galileo_span.input, str):
-        input_messages = [{"role": "user", "content": galileo_span.input}]
+    if isinstance(splunk_ao_span.input, str):
+        input_messages = [{"role": "user", "content": splunk_ao_span.input}]
     else:
         # Sequence[Message] - serialize each message
         input_messages = []
-        for msg in list(galileo_span.input):
+        for msg in list(splunk_ao_span.input):
             if hasattr(msg, "model_dump"):
                 input_messages.append(msg.model_dump(exclude_none=True))
             else:
@@ -374,10 +374,10 @@ def _set_workflow_span_attributes(span: trace.Span, galileo_span: WorkflowSpan) 
     span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
 
     # Handle output - Union[str, Message, Sequence[Document], None]
-    if galileo_span.output is None:
+    if splunk_ao_span.output is None:
         return
 
-    output_value = galileo_span.output
+    output_value = splunk_ao_span.output
     # Type annotation to handle flexible content types (string or dict)
     # Content can be: str (simple output), dict (documents), or dict (Message model_dump)
     output_messages: list[dict[str, Any]] = []
@@ -401,22 +401,22 @@ def _set_workflow_span_attributes(span: trace.Span, galileo_span: WorkflowSpan) 
 
 
 @contextmanager
-def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
-    with tracer.start_as_current_span(galileo_span.name) as span:
+    with tracer.start_as_current_span(splunk_ao_span.name) as span:
         yield span
-        span.set_attribute("gen_ai.system", "galileo-otel")
+        span.set_attribute("gen_ai.system", "splunk-ao-otel")
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
-            span, galileo_span.dataset_input, galileo_span.dataset_output, galileo_span.dataset_metadata
+            span, splunk_ao_span.dataset_input, splunk_ao_span.dataset_output, splunk_ao_span.dataset_metadata
         )
-        if isinstance(galileo_span, RetrieverSpan):
-            _set_retriever_span_attributes(span, galileo_span)
-        elif isinstance(galileo_span, ToolSpan):
-            _set_tool_span_attributes(span, galileo_span)
-        elif isinstance(galileo_span, WorkflowSpan):
-            _set_workflow_span_attributes(span, galileo_span)
+        if isinstance(splunk_ao_span, RetrieverSpan):
+            _set_retriever_span_attributes(span, splunk_ao_span)
+        elif isinstance(splunk_ao_span, ToolSpan):
+            _set_tool_span_attributes(span, splunk_ao_span)
+        elif isinstance(splunk_ao_span, WorkflowSpan):
+            _set_workflow_span_attributes(span, splunk_ao_span)

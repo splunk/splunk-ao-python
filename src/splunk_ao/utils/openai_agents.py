@@ -13,7 +13,7 @@ from agents import (
 )
 from agents.tracing import ResponseSpanData
 
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.schema.handlers import SPAN_TYPE
 from splunk_ao.utils.serialization import serialize_to_str
 
@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 
 
 class SplunkAOCustomSpan(CustomSpanData):
-    def __init__(self, span: GalileoSpan, data: dict[str, Any]):
+    def __init__(self, span: SplunkAOSpan, data: dict[str, Any]):
         self.span = span
         super().__init__(span.name, data)
 
