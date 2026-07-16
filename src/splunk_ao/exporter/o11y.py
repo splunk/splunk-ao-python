@@ -13,7 +13,7 @@ from splunk_ao.exporter.config import (
 
 
 def _o11y_auth_header(config: O11yConfig) -> tuple[str, str]:
-    return "X-SF-Token", config.sf_token.get_secret_value()
+    return "X-SF-Token", config.require_ingest_token().get_secret_value()
 
 
 def resolve_o11y_exporter_config(config: O11yConfig, routing: RoutingAttrs) -> ExporterConfig:

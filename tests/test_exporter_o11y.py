@@ -2,9 +2,12 @@
 
 from typing import Any
 
+import pytest
+
 from splunk_ao.deployment import O11yConfig
 from splunk_ao.exporter.config import RoutingAttrs
 from splunk_ao.exporter.o11y import build_o11y_exporter, resolve_o11y_exporter_config
+from splunk_ao.shared.exceptions import MissingConfigurationError
 
 
 def make_routing(**kwargs: str) -> RoutingAttrs:
@@ -23,6 +26,29 @@ def test_o11y_exporter_uses_unmasked_sf_ingest_token_header() -> None:
     result = resolve_o11y_exporter_config(cfg, routing=make_routing(project_name="proj1"))
 
     assert result.headers["X-SF-Token"] == "my-sf-token"
+
+
+def test_o11y_exporter_config_rejects_crud_only_o11y_config() -> None:
+    cfg = O11yConfig(realm="eu0", sf_api_token="api-token")
+
+    with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
+        resolve_o11y_exporter_config(cfg, routing=make_routing())
+
+
+def test_build_o11y_exporter_rejects_crud_only_config_before_factory_call() -> None:
+    factory_calls = 0
+
+    def exporter_factory(**kwargs: Any) -> object:
+        nonlocal factory_calls
+        factory_calls += 1
+        return object()
+
+    with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
+        build_o11y_exporter(
+            O11yConfig(realm="eu0", sf_api_token="api-token"), make_routing(), _exporter_factory=exporter_factory
+        )
+
+    assert factory_calls == 0
 
 
 def test_o11y_exporter_project_header_present() -> None:
