@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+from enum import StrEnum
 
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.resources.api.trace import (
@@ -18,7 +18,7 @@ from splunk_ao.schema.filters import FilterType
 logger = logging.getLogger(__name__)
 
 
-class RecordType(str, Enum):
+class RecordType(StrEnum):
     SPAN = "spans"
     TRACE = "traces"
     SESSION = "sessions"

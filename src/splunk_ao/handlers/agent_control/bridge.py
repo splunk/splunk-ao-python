@@ -5,7 +5,7 @@ import logging
 import threading
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import ModuleType
 from typing import Any
 
@@ -53,9 +53,9 @@ def _load_agent_control_modules() -> _AgentControlModules:
 def _normalize_datetime(value: Any) -> datetime:
     if isinstance(value, datetime):
         if value.tzinfo is None:
-            return value.replace(tzinfo=timezone.utc)
+            return value.replace(tzinfo=UTC)
         return value
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def _duration_ms_to_ns(value: Any) -> int | None:
