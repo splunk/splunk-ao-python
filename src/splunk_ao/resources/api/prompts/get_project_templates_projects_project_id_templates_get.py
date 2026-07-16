@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,7 +31,7 @@ def _get_kwargs(project_id: str) -> dict[str, Any]:
         "path": "/projects/{project_id}/templates".format(project_id=project_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -39,7 +39,7 @@ def _get_kwargs(project_id: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, list["BasePromptTemplateResponse"]]:
+) -> HTTPValidationError | list[BasePromptTemplateResponse]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, list["BasePromptTemplateResponse"]]]:
+) -> Response[HTTPValidationError | list[BasePromptTemplateResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, list["BasePromptTemplateResponse"]]]:
+) -> Response[HTTPValidationError | list[BasePromptTemplateResponse]]:
     """Get Project Templates
 
      Get all prompt templates for a project.
@@ -109,7 +109,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['BasePromptTemplateResponse']]]
+        Response[HTTPValidationError | list[BasePromptTemplateResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -119,9 +119,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    project_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, list["BasePromptTemplateResponse"]]]:
+def sync(project_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | list[BasePromptTemplateResponse]]:
     """Get Project Templates
 
      Get all prompt templates for a project.
@@ -144,7 +142,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['BasePromptTemplateResponse']]
+        HTTPValidationError | list[BasePromptTemplateResponse]
     """
 
     return sync_detailed(project_id=project_id, client=client).parsed
@@ -152,7 +150,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, list["BasePromptTemplateResponse"]]]:
+) -> Response[HTTPValidationError | list[BasePromptTemplateResponse]]:
     """Get Project Templates
 
      Get all prompt templates for a project.
@@ -175,7 +173,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['BasePromptTemplateResponse']]]
+        Response[HTTPValidationError | list[BasePromptTemplateResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -187,7 +185,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, list["BasePromptTemplateResponse"]]]:
+) -> Optional[HTTPValidationError | list[BasePromptTemplateResponse]]:
     """Get Project Templates
 
      Get all prompt templates for a project.
@@ -210,7 +208,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['BasePromptTemplateResponse']]
+        HTTPValidationError | list[BasePromptTemplateResponse]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client)).parsed

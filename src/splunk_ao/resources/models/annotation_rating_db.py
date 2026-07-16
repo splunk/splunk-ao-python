@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -25,19 +26,17 @@ T = TypeVar("T", bound="AnnotationRatingDB")
 class AnnotationRatingDB:
     """
     Attributes:
-        rating (Union['ChoiceRating', 'LikeDislikeRating', 'ScoreRating', 'StarRating', 'TagsRating', 'TextRating',
-            'TreeChoiceRating']):
+        rating (ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating |
+            TreeChoiceRating):
         created_at (datetime.datetime):
-        created_by (Union[None, str]):
-        explanation (Union[None, Unset, str]):
+        created_by (None | str):
+        explanation (None | str | Unset):
     """
 
-    rating: Union[
-        "ChoiceRating", "LikeDislikeRating", "ScoreRating", "StarRating", "TagsRating", "TextRating", "TreeChoiceRating"
-    ]
+    rating: ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating | TreeChoiceRating
     created_at: datetime.datetime
-    created_by: Union[None, str]
-    explanation: Union[None, Unset, str] = UNSET
+    created_by: None | str
+    explanation: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -66,10 +65,10 @@ class AnnotationRatingDB:
 
         created_at = self.created_at.isoformat()
 
-        created_by: Union[None, str]
+        created_by: None | str
         created_by = self.created_by
 
-        explanation: Union[None, Unset, str]
+        explanation: None | str | Unset
         if isinstance(self.explanation, Unset):
             explanation = UNSET
         else:
@@ -97,15 +96,7 @@ class AnnotationRatingDB:
 
         def _parse_rating(
             data: object,
-        ) -> Union[
-            "ChoiceRating",
-            "LikeDislikeRating",
-            "ScoreRating",
-            "StarRating",
-            "TagsRating",
-            "TextRating",
-            "TreeChoiceRating",
-        ]:
+        ) -> ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating | TreeChoiceRating:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -162,21 +153,21 @@ class AnnotationRatingDB:
 
         rating = _parse_rating(d.pop("rating"))
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        def _parse_created_by(data: object) -> Union[None, str]:
+        def _parse_created_by(data: object) -> None | str:
             if data is None:
                 return data
-            return cast(Union[None, str], data)
+            return cast(None | str, data)
 
         created_by = _parse_created_by(d.pop("created_by"))
 
-        def _parse_explanation(data: object) -> Union[None, Unset, str]:
+        def _parse_explanation(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         explanation = _parse_explanation(d.pop("explanation", UNSET))
 

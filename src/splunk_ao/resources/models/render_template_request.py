@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,11 +19,11 @@ class RenderTemplateRequest:
     """
     Attributes:
         template (str):
-        data (Union['DatasetData', 'StringData']):
+        data (DatasetData | StringData):
     """
 
     template: str
-    data: Union["DatasetData", "StringData"]
+    data: DatasetData | StringData
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,7 +51,7 @@ class RenderTemplateRequest:
         d = dict(src_dict)
         template = d.pop("template")
 
-        def _parse_data(data: object) -> Union["DatasetData", "StringData"]:
+        def _parse_data(data: object) -> DatasetData | StringData:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

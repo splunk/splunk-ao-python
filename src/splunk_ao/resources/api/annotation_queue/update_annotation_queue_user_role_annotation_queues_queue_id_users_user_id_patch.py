@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,7 +36,7 @@ def _get_kwargs(queue_id: str, user_id: str, *, body: AnnotationQueueUserCollabo
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -44,7 +44,7 @@ def _get_kwargs(queue_id: str, user_id: str, *, body: AnnotationQueueUserCollabo
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, UserAnnotationQueueCollaborator]:
+) -> HTTPValidationError | UserAnnotationQueueCollaborator:
     if response.status_code == 200:
         response_200 = UserAnnotationQueueCollaborator.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]:
+) -> Response[HTTPValidationError | UserAnnotationQueueCollaborator]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, user_id: str, *, client: ApiClient, body: AnnotationQueueUserCollaboratorUpdate
-) -> Response[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]:
+) -> Response[HTTPValidationError | UserAnnotationQueueCollaborator]:
     """Update Annotation Queue User Role
 
      Update a user's role for an annotation queue.
@@ -101,7 +101,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]
+        Response[HTTPValidationError | UserAnnotationQueueCollaborator]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, user_id=user_id, body=body)
@@ -113,7 +113,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, user_id: str, *, client: ApiClient, body: AnnotationQueueUserCollaboratorUpdate
-) -> Optional[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]:
+) -> Optional[HTTPValidationError | UserAnnotationQueueCollaborator]:
     """Update Annotation Queue User Role
 
      Update a user's role for an annotation queue.
@@ -128,7 +128,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, UserAnnotationQueueCollaborator]
+        HTTPValidationError | UserAnnotationQueueCollaborator
     """
 
     return sync_detailed(queue_id=queue_id, user_id=user_id, client=client, body=body).parsed
@@ -136,7 +136,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, user_id: str, *, client: ApiClient, body: AnnotationQueueUserCollaboratorUpdate
-) -> Response[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]:
+) -> Response[HTTPValidationError | UserAnnotationQueueCollaborator]:
     """Update Annotation Queue User Role
 
      Update a user's role for an annotation queue.
@@ -151,7 +151,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]
+        Response[HTTPValidationError | UserAnnotationQueueCollaborator]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, user_id=user_id, body=body)
@@ -163,7 +163,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, user_id: str, *, client: ApiClient, body: AnnotationQueueUserCollaboratorUpdate
-) -> Optional[Union[HTTPValidationError, UserAnnotationQueueCollaborator]]:
+) -> Optional[HTTPValidationError | UserAnnotationQueueCollaborator]:
     """Update Annotation Queue User Role
 
      Update a user's role for an annotation queue.
@@ -178,7 +178,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, UserAnnotationQueueCollaborator]
+        HTTPValidationError | UserAnnotationQueueCollaborator
     """
 
     return (await asyncio_detailed(queue_id=queue_id, user_id=user_id, client=client, body=body)).parsed

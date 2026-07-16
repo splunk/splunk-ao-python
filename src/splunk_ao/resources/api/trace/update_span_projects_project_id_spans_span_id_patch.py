@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,15 +36,13 @@ def _get_kwargs(project_id: str, span_id: str, *, body: LogSpanUpdateRequest) ->
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, LogSpanUpdateResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | LogSpanUpdateResponse:
     if response.status_code == 200:
         response_200 = LogSpanUpdateResponse.from_dict(response.json())
 
@@ -75,7 +73,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, LogSpanUpdateResponse]]:
+) -> Response[HTTPValidationError | LogSpanUpdateResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +84,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, span_id: str, *, client: ApiClient, body: LogSpanUpdateRequest
-) -> Response[Union[HTTPValidationError, LogSpanUpdateResponse]]:
+) -> Response[HTTPValidationError | LogSpanUpdateResponse]:
     """Update Span
 
      Update a span with the given ID.
@@ -101,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogSpanUpdateResponse]]
+        Response[HTTPValidationError | LogSpanUpdateResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, span_id=span_id, body=body)
@@ -113,7 +111,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, span_id: str, *, client: ApiClient, body: LogSpanUpdateRequest
-) -> Optional[Union[HTTPValidationError, LogSpanUpdateResponse]]:
+) -> Optional[HTTPValidationError | LogSpanUpdateResponse]:
     """Update Span
 
      Update a span with the given ID.
@@ -128,7 +126,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogSpanUpdateResponse]
+        HTTPValidationError | LogSpanUpdateResponse
     """
 
     return sync_detailed(project_id=project_id, span_id=span_id, client=client, body=body).parsed
@@ -136,7 +134,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, span_id: str, *, client: ApiClient, body: LogSpanUpdateRequest
-) -> Response[Union[HTTPValidationError, LogSpanUpdateResponse]]:
+) -> Response[HTTPValidationError | LogSpanUpdateResponse]:
     """Update Span
 
      Update a span with the given ID.
@@ -151,7 +149,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogSpanUpdateResponse]]
+        Response[HTTPValidationError | LogSpanUpdateResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, span_id=span_id, body=body)
@@ -163,7 +161,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, span_id: str, *, client: ApiClient, body: LogSpanUpdateRequest
-) -> Optional[Union[HTTPValidationError, LogSpanUpdateResponse]]:
+) -> Optional[HTTPValidationError | LogSpanUpdateResponse]:
     """Update Span
 
      Update a span with the given ID.
@@ -178,7 +176,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogSpanUpdateResponse]
+        HTTPValidationError | LogSpanUpdateResponse
     """
 
     return (await asyncio_detailed(project_id=project_id, span_id=span_id, client=client, body=body)).parsed

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -30,13 +30,13 @@ def _get_kwargs(template_id: str, group_id: str) -> dict[str, Any]:
         "path": "/templates/{template_id}/groups/{group_id}".format(template_id=template_id, group_id=group_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -64,7 +64,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,7 +73,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Response[Union[Any, HTTPValidationError]]:
+def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -87,7 +87,7 @@ def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Resp
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id, group_id=group_id)
@@ -97,7 +97,7 @@ def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Resp
     return _build_response(client=client, response=response)
 
 
-def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -111,7 +111,7 @@ def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Unio
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(template_id=template_id, group_id=group_id, client=client).parsed
@@ -119,7 +119,7 @@ def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Unio
 
 async def asyncio_detailed(
     template_id: str, group_id: str, *, client: ApiClient
-) -> Response[Union[Any, HTTPValidationError]]:
+) -> Response[Any | HTTPValidationError]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -133,7 +133,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id, group_id=group_id)
@@ -143,7 +143,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -157,7 +157,7 @@ async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Opti
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return (await asyncio_detailed(template_id=template_id, group_id=group_id, client=client)).parsed

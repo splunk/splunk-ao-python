@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, Optional
 
 import httpx
 
@@ -36,15 +36,13 @@ def _get_kwargs(project_id: str, *, body: LogRecordsExportRequest) -> dict[str, 
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[ExportPresignedUrlResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> ExportPresignedUrlResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = ExportPresignedUrlResponse.from_dict(response.json())
 
@@ -75,7 +73,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
+) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -93,7 +91,7 @@ def stream_detailed(project_id: str, *, client: ApiClient, body: LogRecordsExpor
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: LogRecordsExportRequest
-) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
+) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
     """Export Records Url
 
     Args:
@@ -106,7 +104,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]
+        Response[ExportPresignedUrlResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -118,7 +116,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, body: LogRecordsExportRequest
-) -> Optional[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
+) -> Optional[ExportPresignedUrlResponse | HTTPValidationError]:
     """Export Records Url
 
     Args:
@@ -131,7 +129,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExportPresignedUrlResponse, HTTPValidationError]
+        ExportPresignedUrlResponse | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -139,7 +137,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: LogRecordsExportRequest
-) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
+) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
     """Export Records Url
 
     Args:
@@ -152,7 +150,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]
+        Response[ExportPresignedUrlResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -164,7 +162,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: LogRecordsExportRequest
-) -> Optional[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
+) -> Optional[ExportPresignedUrlResponse | HTTPValidationError]:
     """Export Records Url
 
     Args:
@@ -177,7 +175,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExportPresignedUrlResponse, HTTPValidationError]
+        ExportPresignedUrlResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

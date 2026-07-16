@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -38,15 +38,13 @@ def _get_kwargs(scorer_id: str, *, dataset_id: str) -> dict[str, Any]:
         "params": params,
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, ScorerHealthScoresResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ScorerHealthScoresResponse:
     if response.status_code == 200:
         response_200 = ScorerHealthScoresResponse.from_dict(response.json())
 
@@ -77,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, ScorerHealthScoresResponse]]:
+) -> Response[HTTPValidationError | ScorerHealthScoresResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     scorer_id: str, *, client: ApiClient, dataset_id: str
-) -> Response[Union[HTTPValidationError, ScorerHealthScoresResponse]]:
+) -> Response[HTTPValidationError | ScorerHealthScoresResponse]:
     """Get Scorer Health Scores
 
      Return all persisted health scores for a scorer against a dataset, ordered by version ASC.
@@ -104,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerHealthScoresResponse]]
+        Response[HTTPValidationError | ScorerHealthScoresResponse]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, dataset_id=dataset_id)
@@ -116,7 +114,7 @@ def sync_detailed(
 
 def sync(
     scorer_id: str, *, client: ApiClient, dataset_id: str
-) -> Optional[Union[HTTPValidationError, ScorerHealthScoresResponse]]:
+) -> Optional[HTTPValidationError | ScorerHealthScoresResponse]:
     """Get Scorer Health Scores
 
      Return all persisted health scores for a scorer against a dataset, ordered by version ASC.
@@ -132,7 +130,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerHealthScoresResponse]
+        HTTPValidationError | ScorerHealthScoresResponse
     """
 
     return sync_detailed(scorer_id=scorer_id, client=client, dataset_id=dataset_id).parsed
@@ -140,7 +138,7 @@ def sync(
 
 async def asyncio_detailed(
     scorer_id: str, *, client: ApiClient, dataset_id: str
-) -> Response[Union[HTTPValidationError, ScorerHealthScoresResponse]]:
+) -> Response[HTTPValidationError | ScorerHealthScoresResponse]:
     """Get Scorer Health Scores
 
      Return all persisted health scores for a scorer against a dataset, ordered by version ASC.
@@ -156,7 +154,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerHealthScoresResponse]]
+        Response[HTTPValidationError | ScorerHealthScoresResponse]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, dataset_id=dataset_id)
@@ -168,7 +166,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     scorer_id: str, *, client: ApiClient, dataset_id: str
-) -> Optional[Union[HTTPValidationError, ScorerHealthScoresResponse]]:
+) -> Optional[HTTPValidationError | ScorerHealthScoresResponse]:
     """Get Scorer Health Scores
 
      Return all persisted health scores for a scorer against a dataset, ordered by version ASC.
@@ -184,7 +182,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerHealthScoresResponse]
+        HTTPValidationError | ScorerHealthScoresResponse
     """
 
     return (await asyncio_detailed(scorer_id=scorer_id, client=client, dataset_id=dataset_id)).parsed

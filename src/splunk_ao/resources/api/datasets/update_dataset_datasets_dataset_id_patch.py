@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,13 +36,13 @@ def _get_kwargs(dataset_id: str, *, body: UpdateDatasetRequest) -> dict[str, Any
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DatasetDB, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetDB | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DatasetDB.from_dict(response.json())
 
@@ -71,7 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Dat
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[DatasetDB, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[DatasetDB | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +82,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 def sync_detailed(
     dataset_id: str, *, client: ApiClient, body: UpdateDatasetRequest
-) -> Response[Union[DatasetDB, HTTPValidationError]]:
+) -> Response[DatasetDB | HTTPValidationError]:
     """Update Dataset
 
     Args:
@@ -94,7 +94,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetDB, HTTPValidationError]]
+        Response[DatasetDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, body=body)
@@ -106,7 +106,7 @@ def sync_detailed(
 
 def sync(
     dataset_id: str, *, client: ApiClient, body: UpdateDatasetRequest
-) -> Optional[Union[DatasetDB, HTTPValidationError]]:
+) -> Optional[DatasetDB | HTTPValidationError]:
     """Update Dataset
 
     Args:
@@ -118,7 +118,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetDB, HTTPValidationError]
+        DatasetDB | HTTPValidationError
     """
 
     return sync_detailed(dataset_id=dataset_id, client=client, body=body).parsed
@@ -126,7 +126,7 @@ def sync(
 
 async def asyncio_detailed(
     dataset_id: str, *, client: ApiClient, body: UpdateDatasetRequest
-) -> Response[Union[DatasetDB, HTTPValidationError]]:
+) -> Response[DatasetDB | HTTPValidationError]:
     """Update Dataset
 
     Args:
@@ -138,7 +138,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetDB, HTTPValidationError]]
+        Response[DatasetDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, body=body)
@@ -150,7 +150,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     dataset_id: str, *, client: ApiClient, body: UpdateDatasetRequest
-) -> Optional[Union[DatasetDB, HTTPValidationError]]:
+) -> Optional[DatasetDB | HTTPValidationError]:
     """Update Dataset
 
     Args:
@@ -162,7 +162,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetDB, HTTPValidationError]
+        DatasetDB | HTTPValidationError
     """
 
     return (await asyncio_detailed(dataset_id=dataset_id, client=client, body=body)).parsed

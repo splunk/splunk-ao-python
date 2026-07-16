@@ -37,25 +37,29 @@ from pathlib import Path
 # Patterns to find in the auto-generated file
 # ---------------------------------------------------------------------------
 
-# Inside from_dict — bare initialisation + for-loop produced by the generator:
+# Inside from_dict — pattern produced by the generator:
 #
-#     detail = []
 #     _detail = d.pop("detail", UNSET)
-#     for detail_item_data in _detail or []:
-#         detail_item = ValidationError.from_dict(detail_item_data)
+#     detail: list[ValidationError] | Unset = UNSET
+#     if _detail is not UNSET:
+#         detail = []
+#         for detail_item_data in _detail:
+#             detail_item = ValidationError.from_dict(detail_item_data)
 #                                                                      <- blank line
-#         detail.append(detail_item)
+#             detail.append(detail_item)
 #
 # The class-level field annotation already comes out as
-# `Union[Unset, list["ValidationError"]] = UNSET` from the generator, so it
+# `list[ValidationError] | Unset = UNSET` from the generator, so it
 # does NOT need to be patched — only the from_dict body is rewritten here.
 _LOOP_RE = re.compile(
-    r"(?P<indent>[ \t]+)detail = \[\]\n"
-    r"(?P=indent)_detail = d\.pop\(\"detail\", UNSET\)\n"
-    r"(?P=indent)for detail_item_data in _detail or \[\]:\n"
-    r"(?P=indent)    detail_item = ValidationError\.from_dict\(detail_item_data\)\n"
+    r"(?P<indent>[ \t]+)_detail = d\.pop\(\"detail\", UNSET\)\n"
+    r"(?P=indent)detail: list\[ValidationError\] \| Unset = UNSET\n"
+    r"(?P=indent)if _detail is not UNSET:\n"
+    r"(?P=indent)    detail = \[\]\n"
+    r"(?P=indent)    for detail_item_data in _detail:\n"
+    r"(?P=indent)        detail_item = ValidationError\.from_dict\(detail_item_data\)\n"
     r"[ \t]*\n"
-    r"(?P=indent)    detail\.append\(detail_item\)",
+    r"(?P=indent)        detail\.append\(detail_item\)",
     re.MULTILINE,
 )
 
@@ -65,8 +69,8 @@ def _loop_replacement(indent: str) -> str:
     i4 = indent + "    "
     return "\n".join(
         [
-            f"{i}detail: Union[Unset, list[ValidationError]] = UNSET",
             f'{i}_detail = d.pop("detail", UNSET)',
+            f"{i}detail: list[ValidationError] | Unset = UNSET",
             f"{i}if isinstance(_detail, list):",
             f"{i4}detail = [ValidationError.from_dict(item) for item in _detail]",
             f"{i}elif isinstance(_detail, str) and _detail:",

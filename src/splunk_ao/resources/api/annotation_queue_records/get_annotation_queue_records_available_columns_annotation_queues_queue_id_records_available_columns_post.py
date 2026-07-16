@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,7 +31,7 @@ def _get_kwargs(queue_id: str) -> dict[str, Any]:
         "path": "/annotation_queues/{queue_id}/records/available_columns".format(queue_id=queue_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -39,7 +39,7 @@ def _get_kwargs(queue_id: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]:
+) -> HTTPValidationError | LogRecordsAvailableColumnsResponse:
     if response.status_code == 200:
         response_200 = LogRecordsAvailableColumnsResponse.from_dict(response.json())
 
@@ -70,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]:
+) -> Response[HTTPValidationError | LogRecordsAvailableColumnsResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]:
+) -> Response[HTTPValidationError | LogRecordsAvailableColumnsResponse]:
     """Get Annotation Queue Records Available Columns
 
      Get available columns for records in an annotation queue.
@@ -111,7 +111,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]
+        Response[HTTPValidationError | LogRecordsAvailableColumnsResponse]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id)
@@ -121,9 +121,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    queue_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]:
+def sync(queue_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | LogRecordsAvailableColumnsResponse]:
     """Get Annotation Queue Records Available Columns
 
      Get available columns for records in an annotation queue.
@@ -153,7 +151,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]
+        HTTPValidationError | LogRecordsAvailableColumnsResponse
     """
 
     return sync_detailed(queue_id=queue_id, client=client).parsed
@@ -161,7 +159,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]:
+) -> Response[HTTPValidationError | LogRecordsAvailableColumnsResponse]:
     """Get Annotation Queue Records Available Columns
 
      Get available columns for records in an annotation queue.
@@ -191,7 +189,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]
+        Response[HTTPValidationError | LogRecordsAvailableColumnsResponse]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id)
@@ -203,7 +201,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]]:
+) -> Optional[HTTPValidationError | LogRecordsAvailableColumnsResponse]:
     """Get Annotation Queue Records Available Columns
 
      Get available columns for records in an annotation queue.
@@ -233,7 +231,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogRecordsAvailableColumnsResponse]
+        HTTPValidationError | LogRecordsAvailableColumnsResponse
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client)).parsed

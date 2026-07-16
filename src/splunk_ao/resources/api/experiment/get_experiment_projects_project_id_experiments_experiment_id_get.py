@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -33,13 +33,13 @@ def _get_kwargs(project_id: str, experiment_id: str) -> dict[str, Any]:
         ),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[ExperimentResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> ExperimentResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = ExperimentResponse.from_dict(response.json())
 
@@ -70,7 +70,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Exp
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[ExperimentResponse, HTTPValidationError]]:
+) -> Response[ExperimentResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[ExperimentResponse, HTTPValidationError]]:
+) -> Response[ExperimentResponse | HTTPValidationError]:
     """Get Experiment
 
      Retrieve a specific experiment.
@@ -95,7 +95,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExperimentResponse, HTTPValidationError]]
+        Response[ExperimentResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -107,7 +107,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Optional[Union[ExperimentResponse, HTTPValidationError]]:
+) -> Optional[ExperimentResponse | HTTPValidationError]:
     """Get Experiment
 
      Retrieve a specific experiment.
@@ -121,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExperimentResponse, HTTPValidationError]
+        ExperimentResponse | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, experiment_id=experiment_id, client=client).parsed
@@ -129,7 +129,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[ExperimentResponse, HTTPValidationError]]:
+) -> Response[ExperimentResponse | HTTPValidationError]:
     """Get Experiment
 
      Retrieve a specific experiment.
@@ -143,7 +143,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExperimentResponse, HTTPValidationError]]
+        Response[ExperimentResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -155,7 +155,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Optional[Union[ExperimentResponse, HTTPValidationError]]:
+) -> Optional[ExperimentResponse | HTTPValidationError]:
     """Get Experiment
 
      Retrieve a specific experiment.
@@ -169,7 +169,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExperimentResponse, HTTPValidationError]
+        ExperimentResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, experiment_id=experiment_id, client=client)).parsed

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -33,15 +33,13 @@ def _get_kwargs(project_id: str, experiment_id: str) -> dict[str, Any]:
         ),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, MetricSettingsResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | MetricSettingsResponse:
     if response.status_code == 200:
         response_200 = MetricSettingsResponse.from_dict(response.json())
 
@@ -72,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, MetricSettingsResponse]]:
+) -> Response[HTTPValidationError | MetricSettingsResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, MetricSettingsResponse]]:
+) -> Response[HTTPValidationError | MetricSettingsResponse]:
     """Get Metric Settings
 
     Args:
@@ -95,7 +93,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MetricSettingsResponse]]
+        Response[HTTPValidationError | MetricSettingsResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -107,7 +105,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, MetricSettingsResponse]]:
+) -> Optional[HTTPValidationError | MetricSettingsResponse]:
     """Get Metric Settings
 
     Args:
@@ -119,7 +117,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MetricSettingsResponse]
+        HTTPValidationError | MetricSettingsResponse
     """
 
     return sync_detailed(project_id=project_id, experiment_id=experiment_id, client=client).parsed
@@ -127,7 +125,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, MetricSettingsResponse]]:
+) -> Response[HTTPValidationError | MetricSettingsResponse]:
     """Get Metric Settings
 
     Args:
@@ -139,7 +137,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MetricSettingsResponse]]
+        Response[HTTPValidationError | MetricSettingsResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -151,7 +149,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, MetricSettingsResponse]]:
+) -> Optional[HTTPValidationError | MetricSettingsResponse]:
     """Get Metric Settings
 
     Args:
@@ -163,7 +161,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MetricSettingsResponse]
+        HTTPValidationError | MetricSettingsResponse
     """
 
     return (await asyncio_detailed(project_id=project_id, experiment_id=experiment_id, client=client)).parsed

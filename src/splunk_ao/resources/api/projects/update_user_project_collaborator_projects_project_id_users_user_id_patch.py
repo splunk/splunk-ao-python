@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,13 +36,13 @@ def _get_kwargs(project_id: str, user_id: str, *, body: CollaboratorUpdate) -> d
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, UserCollaborator]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | UserCollaborator:
     if response.status_code == 200:
         response_200 = UserCollaborator.from_dict(response.json())
 
@@ -71,9 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, UserCollaborator]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | UserCollaborator]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +82,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, user_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[Union[HTTPValidationError, UserCollaborator]]:
+) -> Response[HTTPValidationError | UserCollaborator]:
     """Update User Project Collaborator
 
      Update the sharing permissions of a user on a project.
@@ -99,7 +97,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, UserCollaborator]]
+        Response[HTTPValidationError | UserCollaborator]
     """
 
     kwargs = _get_kwargs(project_id=project_id, user_id=user_id, body=body)
@@ -111,7 +109,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, user_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[Union[HTTPValidationError, UserCollaborator]]:
+) -> Optional[HTTPValidationError | UserCollaborator]:
     """Update User Project Collaborator
 
      Update the sharing permissions of a user on a project.
@@ -126,7 +124,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, UserCollaborator]
+        HTTPValidationError | UserCollaborator
     """
 
     return sync_detailed(project_id=project_id, user_id=user_id, client=client, body=body).parsed
@@ -134,7 +132,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, user_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[Union[HTTPValidationError, UserCollaborator]]:
+) -> Response[HTTPValidationError | UserCollaborator]:
     """Update User Project Collaborator
 
      Update the sharing permissions of a user on a project.
@@ -149,7 +147,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, UserCollaborator]]
+        Response[HTTPValidationError | UserCollaborator]
     """
 
     kwargs = _get_kwargs(project_id=project_id, user_id=user_id, body=body)
@@ -161,7 +159,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, user_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[Union[HTTPValidationError, UserCollaborator]]:
+) -> Optional[HTTPValidationError | UserCollaborator]:
     """Update User Project Collaborator
 
      Update the sharing permissions of a user on a project.
@@ -176,7 +174,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, UserCollaborator]
+        HTTPValidationError | UserCollaborator
     """
 
     return (await asyncio_detailed(project_id=project_id, user_id=user_id, client=client, body=body)).parsed

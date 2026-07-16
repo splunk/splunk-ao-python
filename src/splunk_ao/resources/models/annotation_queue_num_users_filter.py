@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,19 +17,19 @@ class AnnotationQueueNumUsersFilter:
     """
     Attributes:
         operator (AnnotationQueueNumUsersFilterOperator):
-        value (Union[float, int, list[float], list[int]]):
-        name (Union[Literal['num_users'], Unset]):  Default: 'num_users'.
+        value (float | int | list[float] | list[int]):
+        name (Literal['num_users'] | Unset):  Default: 'num_users'.
     """
 
     operator: AnnotationQueueNumUsersFilterOperator
-    value: Union[float, int, list[float], list[int]]
-    name: Union[Literal["num_users"], Unset] = "num_users"
+    value: float | int | list[float] | list[int]
+    name: Literal["num_users"] | Unset = "num_users"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         operator = self.operator.value
 
-        value: Union[float, int, list[float], list[int]]
+        value: float | int | list[float] | list[int]
         if isinstance(self.value, list):
             value = self.value
 
@@ -52,7 +54,7 @@ class AnnotationQueueNumUsersFilter:
         d = dict(src_dict)
         operator = AnnotationQueueNumUsersFilterOperator(d.pop("operator"))
 
-        def _parse_value(data: object) -> Union[float, int, list[float], list[int]]:
+        def _parse_value(data: object) -> float | int | list[float] | list[int]:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -69,11 +71,11 @@ class AnnotationQueueNumUsersFilter:
                 return value_type_3
             except:  # noqa: E722
                 pass
-            return cast(Union[float, int, list[float], list[int]], data)
+            return cast(float | int | list[float] | list[int], data)
 
         value = _parse_value(d.pop("value"))
 
-        name = cast(Union[Literal["num_users"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["num_users"] | Unset, d.pop("name", UNSET))
         if name != "num_users" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'num_users', got '{name}'")
 

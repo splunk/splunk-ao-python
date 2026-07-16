@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,15 +22,13 @@ T = TypeVar("T", bound="AnnotationQueueRecordsByFilterTree")
 class AnnotationQueueRecordsByFilterTree:
     """
     Attributes:
-        filter_tree (Union['AndNodeLogRecordsFilter', 'FilterLeafLogRecordsFilter', 'NotNodeLogRecordsFilter',
-            'OrNodeLogRecordsFilter']):
-        type_ (Union[Literal['filter_tree'], Unset]):  Default: 'filter_tree'.
+        filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter |
+            OrNodeLogRecordsFilter):
+        type_ (Literal['filter_tree'] | Unset):  Default: 'filter_tree'.
     """
 
-    filter_tree: Union[
-        "AndNodeLogRecordsFilter", "FilterLeafLogRecordsFilter", "NotNodeLogRecordsFilter", "OrNodeLogRecordsFilter"
-    ]
-    type_: Union[Literal["filter_tree"], Unset] = "filter_tree"
+    filter_tree: AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter
+    type_: Literal["filter_tree"] | Unset = "filter_tree"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,9 +67,7 @@ class AnnotationQueueRecordsByFilterTree:
 
         def _parse_filter_tree(
             data: object,
-        ) -> Union[
-            "AndNodeLogRecordsFilter", "FilterLeafLogRecordsFilter", "NotNodeLogRecordsFilter", "OrNodeLogRecordsFilter"
-        ]:
+        ) -> AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -110,7 +108,7 @@ class AnnotationQueueRecordsByFilterTree:
 
         filter_tree = _parse_filter_tree(d.pop("filter_tree"))
 
-        type_ = cast(Union[Literal["filter_tree"], Unset], d.pop("type", UNSET))
+        type_ = cast(Literal["filter_tree"] | Unset, d.pop("type", UNSET))
         if type_ != "filter_tree" and not isinstance(type_, Unset):
             raise ValueError(f"type must match const 'filter_tree', got '{type_}'")
 
