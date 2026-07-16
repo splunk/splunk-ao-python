@@ -101,6 +101,14 @@ def test_o11y_config_from_env() -> None:
     assert cfg.sf_api_token.get_secret_value() == "api-tok"
 
 
+def test_o11y_config_from_env_accepts_crud_only_api_token() -> None:
+    with env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_API_TOKEN="api-tok"):
+        cfg = O11yConfig.from_env()
+
+    assert cfg.sf_token is None
+    assert cfg.crud_token.get_secret_value() == "api-tok"
+
+
 def test_otlp_endpoint_derived_from_realm() -> None:
     cfg = O11yConfig(realm="us1", sf_token="tok")
     assert cfg.otlp_endpoint == "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp"
@@ -116,16 +124,19 @@ def test_crud_token_falls_back_to_sf_token() -> None:
     assert cfg.crud_token.get_secret_value() == "tok"
 
 
-def test_missing_realm_raises() -> None:
-    with env(SPLUNK_AO_SF_TOKEN="tok"):
+@pytest.mark.parametrize("token_var", ["SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"])
+def test_missing_realm_raises(token_var: str) -> None:
+    with env(**{token_var: "tok"}):
         with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_REALM"):
             O11yConfig.from_env()
 
 
-def test_missing_sf_token_raises() -> None:
+def test_missing_both_o11y_tokens_raises() -> None:
     with env(SPLUNK_AO_REALM="us1"):
-        with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
+        with pytest.raises(MissingConfigurationError) as exc_info:
             O11yConfig.from_env()
+    assert "SPLUNK_AO_SF_TOKEN" in str(exc_info.value)
+    assert "SPLUNK_AO_SF_API_TOKEN" in str(exc_info.value)
 
 
 def test_missing_o11y_config_names_both_required_variables() -> None:
@@ -134,6 +145,18 @@ def test_missing_o11y_config_names_both_required_variables() -> None:
             O11yConfig.from_env()
     assert "SPLUNK_AO_REALM" in str(exc_info.value)
     assert "SPLUNK_AO_SF_TOKEN" in str(exc_info.value)
+    assert "SPLUNK_AO_SF_API_TOKEN" in str(exc_info.value)
+
+
+def test_require_ingest_token_returns_sf_token() -> None:
+    cfg = O11yConfig(realm="us1", sf_token="ingest-tok", sf_api_token="api-tok")
+    assert cfg.require_ingest_token().get_secret_value() == "ingest-tok"
+
+
+def test_require_ingest_token_rejects_crud_only_config() -> None:
+    cfg = O11yConfig(realm="us1", sf_api_token="api-tok")
+    with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
+        cfg.require_ingest_token()
 
 
 def test_api_root_derives_from_realm() -> None:

@@ -44,6 +44,7 @@ class O11yApiClient(ApiClient):
     def stream_request(self, method: RequestMethod, path: str, *args: Any, **kwargs: Any) -> Iterator[Response]:
         return super().stream_request(method, self._prefixed(path), *args, **kwargs)
 
+
 # Mapping of SPLUNK_AO_* → GALILEO_* env var pairs used by the bridge.
 # Defined at module level so both _bridge_env_vars() and reset() can reference
 # the same authoritative list without duplication.
@@ -175,7 +176,8 @@ class SplunkAOConfig(GalileoConfig):
         message identifying what's missing.
 
         Auth methods supported by the underlying config model:
-          - SF tokens (o11y): SPLUNK_AO_SF_TOKEN and optional SPLUNK_AO_SF_API_TOKEN env vars
+          - SF tokens (o11y): SPLUNK_AO_REALM and at least one of
+            SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN env vars
           - API key (standalone): api_key kwarg or SPLUNK_AO_API_KEY env
           - Pre-exchanged JWT (standalone): jwt_token or SPLUNK_AO_JWT_TOKEN
           - SSO (paired): sso_id_token + sso_provider, both kwargs and env vars
@@ -192,7 +194,14 @@ class SplunkAOConfig(GalileoConfig):
                 return str(value)
             return os.environ.get(env_name)
 
-        if os.environ.get("SPLUNK_AO_SF_TOKEN") or os.environ.get("SPLUNK_AO_SF_API_TOKEN"):
+        realm = os.environ.get("SPLUNK_AO_REALM")
+        sf_token = os.environ.get("SPLUNK_AO_SF_TOKEN")
+        sf_api_token = os.environ.get("SPLUNK_AO_SF_API_TOKEN")
+        if realm or sf_token or sf_api_token:
+            if not realm:
+                return "O11y authentication requires SPLUNK_AO_REALM to be set."
+            if not sf_token and not sf_api_token:
+                return "O11y authentication requires SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN to be set."
             return None
 
         # Standalone methods — either alone is sufficient.
@@ -239,7 +248,8 @@ class SplunkAOConfig(GalileoConfig):
         # Nothing configured anywhere.
         return (
             "No Splunk AO authentication detected. Set one of: SPLUNK_AO_REALM with "
-            "SPLUNK_AO_SF_TOKEN; SPLUNK_AO_API_KEY; SPLUNK_AO_SSO_ID_TOKEN with SPLUNK_AO_SSO_PROVIDER; "
+            "SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN; SPLUNK_AO_API_KEY; "
+            "SPLUNK_AO_SSO_ID_TOKEN with SPLUNK_AO_SSO_PROVIDER; "
             "or SPLUNK_AO_USERNAME with SPLUNK_AO_PASSWORD. "
             "Alternatively, pass the equivalent kwargs to SplunkAOConfig.get(). "
             "See https://docs.splunk.com for setup instructions."

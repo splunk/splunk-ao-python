@@ -51,11 +51,19 @@ class O11yConfig:
     """Configuration for a Splunk Observability Cloud deployment."""
 
     realm: str
-    sf_token: SecretStr
+    sf_token: SecretStr | None = None
     sf_api_token: SecretStr | None = None
 
     def __post_init__(self) -> None:
-        if not isinstance(self.sf_token, SecretStr):
+        missing = []
+        if not self.realm:
+            missing.append("SPLUNK_AO_REALM")
+        if self.sf_token is None and self.sf_api_token is None:
+            missing.append("one of SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN")
+        if missing:
+            raise MissingConfigurationError(f"O11y deployment requires {' and '.join(missing)} to be set.")
+
+        if self.sf_token is not None and not isinstance(self.sf_token, SecretStr):
             self.sf_token = SecretStr(self.sf_token)
         if self.sf_api_token is not None and not isinstance(self.sf_api_token, SecretStr):
             self.sf_api_token = SecretStr(self.sf_api_token)
@@ -65,16 +73,11 @@ class O11yConfig:
         """Load and validate o11y configuration from the environment."""
         realm = _env("SPLUNK_AO_REALM")
         sf_token = _env("SPLUNK_AO_SF_TOKEN")
-
-        if realm is None or sf_token is None:
-            missing = [
-                name for name, value in (("SPLUNK_AO_REALM", realm), ("SPLUNK_AO_SF_TOKEN", sf_token)) if value is None
-            ]
-            raise MissingConfigurationError(f"O11y deployment requires {' and '.join(missing)} to be set.")
-
         sf_api_token = _env("SPLUNK_AO_SF_API_TOKEN")
         return cls(
-            realm=realm, sf_token=SecretStr(sf_token), sf_api_token=SecretStr(sf_api_token) if sf_api_token else None
+            realm=realm or "",
+            sf_token=SecretStr(sf_token) if sf_token else None,
+            sf_api_token=SecretStr(sf_api_token) if sf_api_token else None,
         )
 
     @property
@@ -85,7 +88,20 @@ class O11yConfig:
     @property
     def crud_token(self) -> SecretStr:
         """Return the API token when set, otherwise the ingest token."""
-        return self.sf_api_token if self.sf_api_token is not None else self.sf_token
+        if self.sf_api_token is not None:
+            return self.sf_api_token
+        if self.sf_token is not None:
+            return self.sf_token
+        raise MissingConfigurationError("O11y CRUD requires SPLUNK_AO_SF_API_TOKEN or SPLUNK_AO_SF_TOKEN to be set.")
+
+    def require_ingest_token(self) -> SecretStr:
+        """Return the token required for OTLP trace export."""
+        if self.sf_token is None:
+            raise MissingConfigurationError(
+                "O11y OTLP trace export requires SPLUNK_AO_SF_TOKEN. "
+                "SPLUNK_AO_SF_API_TOKEN supports CRUD operations only."
+            )
+        return self.sf_token
 
     @property
     def api_root(self) -> str:
