@@ -493,7 +493,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
     @staticmethod
     def add_splunk_ao_custom_span(span: SplunkAOSpan) -> Span[SplunkAOCustomSpan]:
-        """Add a Galileo custom span to the trace."""
+        """Add a Splunk AO custom span to the trace."""
         trace_provider = get_trace_provider()
         current_span = get_current_span()
         custom_span = SplunkAOCustomSpan(span, span.user_metadata)

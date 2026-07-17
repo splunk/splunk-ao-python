@@ -406,7 +406,7 @@ def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, 
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
-    tracer = tracer_provider.get_tracer("galileo-tracer")
+    tracer = tracer_provider.get_tracer("splunk-ao-tracer")
     with tracer.start_as_current_span(splunk_ao_span.name) as span:
         yield span
         span.set_attribute("gen_ai.system", "splunk-ao-otel")
