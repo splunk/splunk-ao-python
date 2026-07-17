@@ -288,64 +288,114 @@ class Project(StateManagementMixin):
 
         return [cls._from_api_response(retrieved_project) for retrieved_project in retrieved_projects]
 
-    def create_log_stream(self, name: str) -> LogStream:
+    def create_agent_stream(self, name: str) -> "AgentStream":
         """
-        Create a new log stream for this project.
+        Create a new agent stream for this project.
 
         Args:
-            name (str): The name of the log stream to create.
+            name (str): The name of the agent stream to create.
 
         Returns
         -------
-            LogStream: The created log stream.
+            AgentStream: The created agent stream.
+
+        Examples
+        --------
+            project = Project.get(name="My AI Project")
+            stream = project.create_agent_stream(name="Production Traces")
+        """
+        from splunk_ao.agent_stream import AgentStream  # lazy to avoid circular import
+
+        if self.id is None:
+            raise ValueError("Project ID is not set. Cannot create agent stream for a local-only project.")
+
+        return AgentStream(name=name, project_id=self.id).create()
+
+    def create_log_stream(self, name: str) -> "AgentStream":
+        """
+        Create a new agent stream for this project.
+
+        .. deprecated::
+            Use :meth:`create_agent_stream` instead.
+
+        Args:
+            name (str): The name of the agent stream to create.
+
+        Returns
+        -------
+            AgentStream: The created agent stream.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
             log_stream = project.create_log_stream(name="Production Logs")
         """
-        if self.id is None:
-            raise ValueError("Project ID is not set. Cannot create log stream for a local-only project.")
+        import warnings
+        warnings.warn(
+            "Project.create_log_stream() is deprecated; use Project.create_agent_stream() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.create_agent_stream(name=name)
 
-        # Use the LogStream pattern to avoid duplication
-        return LogStream(name=name, project_id=self.id).create()
-
-    def list_log_streams(
+    def list_agent_streams(
         self, *, limit: Unset | int = 100, starting_token: Unset | int = 0
-    ) -> builtins.list[LogStream]:
+    ) -> "builtins.list[AgentStream]":
         """
-        List log streams for this project.
+        List agent streams for this project.
 
         Returns a single page of results. Use `starting_token` (from
         `next_starting_token` on a prior response) to fetch subsequent pages.
 
         Args:
-            limit (Union[Unset, int]): Maximum number of log streams to return per page. Defaults to 100.
-            starting_token (Union[Unset, int]): Pagination token to start from. Defaults to 0 (first page).
+            limit (Union[Unset, int]): Maximum number of agent streams per page. Defaults to 100.
+            starting_token (Union[Unset, int]): Pagination token. Defaults to 0 (first page).
 
         Returns
         -------
-            List[LogStream]: A page of log streams belonging to this project.
+            List[AgentStream]: A page of agent streams belonging to this project.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
-            log_streams = project.list_log_streams()
-            for stream in log_streams:
-                # Process each log stream
+            streams = project.list_agent_streams()
+            for stream in streams:
                 pass
-
-            # Cap the number of returned log streams
-            log_streams = project.list_log_streams(limit=3)
-
-            # Fetch the next page
-            page_2 = project.list_log_streams(starting_token=100)
         """
-        if self.id is None:
-            raise ValueError("Project ID is not set. Cannot list log streams for a local-only project.")
+        from splunk_ao.agent_stream import AgentStream  # lazy to avoid circular import
 
-        # Use the LogStream pattern to avoid duplication
-        return LogStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
+        if self.id is None:
+            raise ValueError("Project ID is not set. Cannot list agent streams for a local-only project.")
+
+        return AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
+
+    def list_log_streams(
+        self, *, limit: Unset | int = 100, starting_token: Unset | int = 0
+    ) -> "builtins.list[AgentStream]":
+        """
+        List agent streams for this project.
+
+        .. deprecated::
+            Use :meth:`list_agent_streams` instead.
+
+        Returns a single page of results. Use `starting_token` (from
+        `next_starting_token` on a prior response) to fetch subsequent pages.
+
+        Args:
+            limit (Union[Unset, int]): Maximum number of streams per page. Defaults to 100.
+            starting_token (Union[Unset, int]): Pagination token. Defaults to 0 (first page).
+
+        Returns
+        -------
+            List[AgentStream]: A page of agent streams belonging to this project.
+        """
+        import warnings
+        warnings.warn(
+            "Project.list_log_streams() is deprecated; use Project.list_agent_streams() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.list_agent_streams(limit=limit, starting_token=starting_token)
 
     def list_experiments(self) -> builtins.list[Experiment]:
         """
@@ -414,24 +464,44 @@ class Project(StateManagementMixin):
         return Prompt.list(project_id=self.id)
 
     @property
-    def logstreams(self) -> builtins.list[LogStream]:
+    def agent_streams(self) -> "builtins.list[AgentStream]":
         """
-        Property to access log streams for this project.
+        Property to access agent streams for this project.
 
-        This is a read-only property that returns the current list of log streams.
-        To create new log streams, use create_log_stream().
+        This is a read-only property that returns the current list of agent streams.
+        To create new agent streams, use :meth:`create_agent_stream`.
 
         Returns
         -------
-            List[LogStream]: A list of log streams belonging to this project.
+            List[AgentStream]: A list of agent streams belonging to this project.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
-            for stream in project.logstreams:
+            for stream in project.agent_streams:
                 print(stream.name)
         """
-        return self.list_log_streams()
+        return self.list_agent_streams()
+
+    @property
+    def logstreams(self) -> "builtins.list[AgentStream]":
+        """
+        Property to access agent streams for this project.
+
+        .. deprecated::
+            Use :attr:`agent_streams` instead.
+
+        Returns
+        -------
+            List[AgentStream]: A list of agent streams belonging to this project.
+        """
+        import warnings
+        warnings.warn(
+            "Project.logstreams is deprecated; use Project.agent_streams instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.list_agent_streams()
 
     @property
     def experiments(self) -> builtins.list[Experiment]:
@@ -895,3 +965,6 @@ from splunk_ao.dataset import Dataset  # noqa: E402
 from splunk_ao.experiment import Experiment  # noqa: E402
 from splunk_ao.log_stream import LogStream  # noqa: E402
 from splunk_ao.prompt import Prompt  # noqa: E402
+
+# AgentStream is imported lazily inside methods to avoid a secondary circular import:
+#   agent_stream → log_stream → project → agent_stream

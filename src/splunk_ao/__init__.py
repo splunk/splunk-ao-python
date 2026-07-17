@@ -16,10 +16,18 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import StepType
 from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
+from splunk_ao.agent_stream import AgentStream
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.decorator import SplunkAODecorator, log, splunk_ao_context, start_session
+from splunk_ao.evaluator import (
+    CodeEvaluator,
+    Evaluator,
+    LlmEvaluator,
+    LocalEvaluator,
+    SplunkAOEvaluator,
+)
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -34,10 +42,8 @@ from splunk_ao.exceptions import (
 from splunk_ao.experiment import Experiment
 from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
 from splunk_ao.integration import Integration
-from splunk_ao.log_stream import LogStream
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
-from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
@@ -64,6 +70,14 @@ from splunk_ao.utils.log_config import enable_console_logging
 __version__ = "0.1.0"
 
 __all__ = [
+    # New canonical names (HYBIM-730)
+    "AgentStream",
+    "CodeEvaluator",
+    "Evaluator",
+    "LlmEvaluator",
+    "LocalEvaluator",
+    "SplunkAOEvaluator",
+    # Stable / unchanged
     "APIError",
     "AgentControlTarget",
     "AgentControlTargetUnresolvedError",
@@ -74,7 +88,6 @@ __all__ = [
     "AzureProvider",
     "BadRequestError",
     "BedrockProvider",
-    "CodeMetric",
     "Collaborator",
     "CollaboratorRole",
     "Configuration",
@@ -89,13 +102,9 @@ __all__ = [
     "Experiment",
     "ForbiddenError",
     "Integration",
-    "LlmMetric",
     "LlmSpan",
-    "LocalMetric",
-    "LogStream",
     "Message",
     "MessageRole",
-    "Metric",
     "MetricSpec",
     "MissingConfigurationError",
     "Model",
@@ -118,7 +127,6 @@ __all__ = [
     "SplunkAOFutureError",
     "SplunkAOLogger",
     "SplunkAOLoggerException",
-    "SplunkAOMetric",
     "SplunkAOMetrics",
     "StepType",
     "StepWithChildSpans",
@@ -141,3 +149,42 @@ __all__ = [
     "splunk_ao_context",
     "start_session",
 ]
+
+# ---------------------------------------------------------------------------
+# PEP 562 — deprecated names emit DeprecationWarning on attribute access.
+# Old names are NOT in __all__ so they won't appear in tab-completion, but
+# they still work for existing code via __getattr__.
+# ---------------------------------------------------------------------------
+_DEPRECATED_NAMES: dict[str, tuple[str, str]] = {
+    "LogStream": ("AgentStream", "splunk_ao.agent_stream"),
+    "Metric": ("Evaluator", "splunk_ao.evaluator"),
+    "LlmMetric": ("LlmEvaluator", "splunk_ao.evaluator"),
+    "CodeMetric": ("CodeEvaluator", "splunk_ao.evaluator"),
+    "LocalMetric": ("LocalEvaluator", "splunk_ao.evaluator"),
+    "SplunkAOMetric": ("SplunkAOEvaluator", "splunk_ao.evaluator"),
+}
+
+_DEPRECATED_OBJECTS: dict[str, object] = {
+    "LogStream": AgentStream,
+    "Metric": Evaluator,
+    "LlmMetric": LlmEvaluator,
+    "CodeMetric": CodeEvaluator,
+    "LocalMetric": LocalEvaluator,
+    "SplunkAOMetric": SplunkAOEvaluator,
+}
+
+
+def __getattr__(name: str) -> object:
+    if name in _DEPRECATED_NAMES:
+        import warnings
+
+        new_name, new_module = _DEPRECATED_NAMES[name]
+        warnings.warn(
+            f"'splunk_ao.{name}' is deprecated and will be removed in a future release. "
+            f"Use '{new_name}' from '{new_module}' "
+            f"(or 'from splunk_ao import {new_name}') instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _DEPRECATED_OBJECTS[name]
+    raise AttributeError(f"module 'splunk_ao' has no attribute {name!r}")
