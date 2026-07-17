@@ -1,7 +1,5 @@
 """Tests for Splunk-AO-SDK header in API calls."""
 
-import pytest
-
 from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
