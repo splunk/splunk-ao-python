@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,19 +23,19 @@ T = TypeVar("T", bound="FilterLeafLogRecordsFilter")
 class FilterLeafLogRecordsFilter:
     """
     Attributes:
-        filter_ (Union['LogRecordsBooleanFilter', 'LogRecordsCollectionFilter', 'LogRecordsDateFilter',
-            'LogRecordsFullyAnnotatedFilter', 'LogRecordsIDFilter', 'LogRecordsNumberFilter', 'LogRecordsTextFilter']):
+        filter_ (LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
+            LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter):
     """
 
-    filter_: Union[
-        "LogRecordsBooleanFilter",
-        "LogRecordsCollectionFilter",
-        "LogRecordsDateFilter",
-        "LogRecordsFullyAnnotatedFilter",
-        "LogRecordsIDFilter",
-        "LogRecordsNumberFilter",
-        "LogRecordsTextFilter",
-    ]
+    filter_: (
+        LogRecordsBooleanFilter
+        | LogRecordsCollectionFilter
+        | LogRecordsDateFilter
+        | LogRecordsFullyAnnotatedFilter
+        | LogRecordsIDFilter
+        | LogRecordsNumberFilter
+        | LogRecordsTextFilter
+    )
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -80,15 +82,15 @@ class FilterLeafLogRecordsFilter:
 
         def _parse_filter_(
             data: object,
-        ) -> Union[
-            "LogRecordsBooleanFilter",
-            "LogRecordsCollectionFilter",
-            "LogRecordsDateFilter",
-            "LogRecordsFullyAnnotatedFilter",
-            "LogRecordsIDFilter",
-            "LogRecordsNumberFilter",
-            "LogRecordsTextFilter",
-        ]:
+        ) -> (
+            LogRecordsBooleanFilter
+            | LogRecordsCollectionFilter
+            | LogRecordsDateFilter
+            | LogRecordsFullyAnnotatedFilter
+            | LogRecordsIDFilter
+            | LogRecordsNumberFilter
+            | LogRecordsTextFilter
+        ):
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
