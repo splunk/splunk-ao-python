@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,8 +19,8 @@ T = TypeVar("T", bound="HealthScoreResult")
 class HealthScoreResult:
     """
     Attributes:
-        health_score_type (Union[HealthScoreType, None]):
-        value (Union[None, float]): Primary health score metric value, or None if no valid rows.
+        health_score_type (HealthScoreType | None):
+        value (float | None): Primary health score metric value, or None if no valid rows.
         skipped_rows (int): Rows excluded because MGT or score could not be parsed.
         secondary (HealthScoreResultSecondary): Secondary metrics (MAE, RMSE, R², per-class F1, etc.).
         total_scored_rows (int): Rows with a successful scorer result.
@@ -26,23 +28,23 @@ class HealthScoreResult:
         joined_rows (int): Rows with both a score and a MGT value (used for computation).
     """
 
-    health_score_type: Union[HealthScoreType, None]
-    value: Union[None, float]
+    health_score_type: HealthScoreType | None
+    value: float | None
     skipped_rows: int
-    secondary: "HealthScoreResultSecondary"
+    secondary: HealthScoreResultSecondary
     total_scored_rows: int
     total_mgt_rows: int
     joined_rows: int
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        health_score_type: Union[None, str]
+        health_score_type: None | str
         if isinstance(self.health_score_type, HealthScoreType):
             health_score_type = self.health_score_type.value
         else:
             health_score_type = self.health_score_type
 
-        value: Union[None, float]
+        value: float | None
         value = self.value
 
         skipped_rows = self.skipped_rows
@@ -77,7 +79,7 @@ class HealthScoreResult:
 
         d = dict(src_dict)
 
-        def _parse_health_score_type(data: object) -> Union[HealthScoreType, None]:
+        def _parse_health_score_type(data: object) -> HealthScoreType | None:
             if data is None:
                 return data
             try:
@@ -88,14 +90,14 @@ class HealthScoreResult:
                 return health_score_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[HealthScoreType, None], data)
+            return cast(HealthScoreType | None, data)
 
         health_score_type = _parse_health_score_type(d.pop("health_score_type"))
 
-        def _parse_value(data: object) -> Union[None, float]:
+        def _parse_value(data: object) -> float | None:
             if data is None:
                 return data
-            return cast(Union[None, float], data)
+            return cast(float | None, data)
 
         value = _parse_value(d.pop("value"))
 

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -28,34 +30,34 @@ class AnnotationQueuePartialSearchRequest:
 
         Attributes:
             select_columns (SelectColumns):
-            starting_token (Union[Unset, int]):  Default: 0.
-            limit (Union[Unset, int]):  Default: 100.
-            previous_last_row_id (Union[None, Unset, str]):
-            filter_tree (Union['AndNodeLogRecordsFilter', 'FilterLeafLogRecordsFilter', 'NotNodeLogRecordsFilter',
-                'OrNodeLogRecordsFilter', None, Unset]): Filter tree to apply when searching records in the queue. The
-                `fully_annotated` filter is only supported on this queue-scoped path.
-            sort (Union['LogRecordsSortClause', None, Unset]): Sort for the query. Defaults to native sort (created_at, id
+            starting_token (int | Unset):  Default: 0.
+            limit (int | Unset):  Default: 100.
+            previous_last_row_id (None | str | Unset):
+            filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
+                OrNodeLogRecordsFilter | Unset): Filter tree to apply when searching records in the queue. The `fully_annotated`
+                filter is only supported on this queue-scoped path.
+            sort (LogRecordsSortClause | None | Unset): Sort for the query. Defaults to native sort (created_at, id
                 descending).
-            truncate_fields (Union[Unset, bool]): Whether to truncate long text fields Default: False.
-            include_counts (Union[Unset, bool]): If True, include computed child counts (e.g., num_traces for sessions,
-                num_spans for traces). Default: False.
+            truncate_fields (bool | Unset): Whether to truncate long text fields Default: False.
+            include_counts (bool | Unset): If True, include computed child counts (e.g., num_traces for sessions, num_spans
+                for traces). Default: False.
     """
 
-    select_columns: "SelectColumns"
-    starting_token: Union[Unset, int] = 0
-    limit: Union[Unset, int] = 100
-    previous_last_row_id: Union[None, Unset, str] = UNSET
-    filter_tree: Union[
-        "AndNodeLogRecordsFilter",
-        "FilterLeafLogRecordsFilter",
-        "NotNodeLogRecordsFilter",
-        "OrNodeLogRecordsFilter",
-        None,
-        Unset,
-    ] = UNSET
-    sort: Union["LogRecordsSortClause", None, Unset] = UNSET
-    truncate_fields: Union[Unset, bool] = False
-    include_counts: Union[Unset, bool] = False
+    select_columns: SelectColumns
+    starting_token: int | Unset = 0
+    limit: int | Unset = 100
+    previous_last_row_id: None | str | Unset = UNSET
+    filter_tree: (
+        AndNodeLogRecordsFilter
+        | FilterLeafLogRecordsFilter
+        | None
+        | NotNodeLogRecordsFilter
+        | OrNodeLogRecordsFilter
+        | Unset
+    ) = UNSET
+    sort: LogRecordsSortClause | None | Unset = UNSET
+    truncate_fields: bool | Unset = False
+    include_counts: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,13 +73,13 @@ class AnnotationQueuePartialSearchRequest:
 
         limit = self.limit
 
-        previous_last_row_id: Union[None, Unset, str]
+        previous_last_row_id: None | str | Unset
         if isinstance(self.previous_last_row_id, Unset):
             previous_last_row_id = UNSET
         else:
             previous_last_row_id = self.previous_last_row_id
 
-        filter_tree: Union[None, Unset, dict[str, Any]]
+        filter_tree: dict[str, Any] | None | Unset
         if isinstance(self.filter_tree, Unset):
             filter_tree = UNSET
         elif isinstance(self.filter_tree, FilterLeafLogRecordsFilter):
@@ -91,7 +93,7 @@ class AnnotationQueuePartialSearchRequest:
         else:
             filter_tree = self.filter_tree
 
-        sort: Union[None, Unset, dict[str, Any]]
+        sort: dict[str, Any] | None | Unset
         if isinstance(self.sort, Unset):
             sort = UNSET
         elif isinstance(self.sort, LogRecordsSortClause):
@@ -139,25 +141,25 @@ class AnnotationQueuePartialSearchRequest:
 
         limit = d.pop("limit", UNSET)
 
-        def _parse_previous_last_row_id(data: object) -> Union[None, Unset, str]:
+        def _parse_previous_last_row_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         previous_last_row_id = _parse_previous_last_row_id(d.pop("previous_last_row_id", UNSET))
 
         def _parse_filter_tree(
             data: object,
-        ) -> Union[
-            "AndNodeLogRecordsFilter",
-            "FilterLeafLogRecordsFilter",
-            "NotNodeLogRecordsFilter",
-            "OrNodeLogRecordsFilter",
-            None,
-            Unset,
-        ]:
+        ) -> (
+            AndNodeLogRecordsFilter
+            | FilterLeafLogRecordsFilter
+            | None
+            | NotNodeLogRecordsFilter
+            | OrNodeLogRecordsFilter
+            | Unset
+        ):
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -203,20 +205,18 @@ class AnnotationQueuePartialSearchRequest:
             except:  # noqa: E722
                 pass
             return cast(
-                Union[
-                    "AndNodeLogRecordsFilter",
-                    "FilterLeafLogRecordsFilter",
-                    "NotNodeLogRecordsFilter",
-                    "OrNodeLogRecordsFilter",
-                    None,
-                    Unset,
-                ],
+                AndNodeLogRecordsFilter
+                | FilterLeafLogRecordsFilter
+                | None
+                | NotNodeLogRecordsFilter
+                | OrNodeLogRecordsFilter
+                | Unset,
                 data,
             )
 
         filter_tree = _parse_filter_tree(d.pop("filter_tree", UNSET))
 
-        def _parse_sort(data: object) -> Union["LogRecordsSortClause", None, Unset]:
+        def _parse_sort(data: object) -> LogRecordsSortClause | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -229,7 +229,7 @@ class AnnotationQueuePartialSearchRequest:
                 return sort_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["LogRecordsSortClause", None, Unset], data)
+            return cast(LogRecordsSortClause | None | Unset, data)
 
         sort = _parse_sort(d.pop("sort", UNSET))
 

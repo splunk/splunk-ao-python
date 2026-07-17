@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,23 +25,23 @@ T = TypeVar("T", bound="AnnotationQueueDetailsResponse")
 class AnnotationQueueDetailsResponse:
     """
     Attributes:
-        num_logs_fully_annotated (Union[Unset, int]): Count of queue logs that have a rating for every queue template
-            from each annotation-capable collaborator with track_progress enabled. Default: 0.
-        annotation_aggregates (Union['AnnotationQueueDetailsResponseAnnotationAggregatesType0', None, Unset]): Queue-
-            wide aggregates keyed by annotation template UUID. Null when the caller cannot view queue-wide aggregates.
-        annotation_aggregates_by_annotator (Union['AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0',
-            None, Unset]): Per-user aggregates keyed by annotation-capable collaborator UUID, then annotation template UUID.
-            Null when the caller cannot view all per-user aggregates for the queue.
-        overall_annotation_agreement (Union['AnnotationAgreementAggregate', None, Unset]): Queue-wide aggregate of
-            record-level overall annotator agreement. Null when the caller cannot view queue-wide aggregates.
+        num_logs_fully_annotated (int | Unset): Count of queue logs that have a rating for every queue template from
+            each annotation-capable collaborator with track_progress enabled. Default: 0.
+        annotation_aggregates (AnnotationQueueDetailsResponseAnnotationAggregatesType0 | None | Unset): Queue-wide
+            aggregates keyed by annotation template UUID. Null when the caller cannot view queue-wide aggregates.
+        annotation_aggregates_by_annotator (AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0 | None |
+            Unset): Per-user aggregates keyed by annotation-capable collaborator UUID, then annotation template UUID. Null
+            when the caller cannot view all per-user aggregates for the queue.
+        overall_annotation_agreement (AnnotationAgreementAggregate | None | Unset): Queue-wide aggregate of record-level
+            overall annotator agreement. Null when the caller cannot view queue-wide aggregates.
     """
 
-    num_logs_fully_annotated: Union[Unset, int] = 0
-    annotation_aggregates: Union["AnnotationQueueDetailsResponseAnnotationAggregatesType0", None, Unset] = UNSET
-    annotation_aggregates_by_annotator: Union[
-        "AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0", None, Unset
-    ] = UNSET
-    overall_annotation_agreement: Union["AnnotationAgreementAggregate", None, Unset] = UNSET
+    num_logs_fully_annotated: int | Unset = 0
+    annotation_aggregates: AnnotationQueueDetailsResponseAnnotationAggregatesType0 | None | Unset = UNSET
+    annotation_aggregates_by_annotator: (
+        AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0 | None | Unset
+    ) = UNSET
+    overall_annotation_agreement: AnnotationAgreementAggregate | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,7 +55,7 @@ class AnnotationQueueDetailsResponse:
 
         num_logs_fully_annotated = self.num_logs_fully_annotated
 
-        annotation_aggregates: Union[None, Unset, dict[str, Any]]
+        annotation_aggregates: dict[str, Any] | None | Unset
         if isinstance(self.annotation_aggregates, Unset):
             annotation_aggregates = UNSET
         elif isinstance(self.annotation_aggregates, AnnotationQueueDetailsResponseAnnotationAggregatesType0):
@@ -61,7 +63,7 @@ class AnnotationQueueDetailsResponse:
         else:
             annotation_aggregates = self.annotation_aggregates
 
-        annotation_aggregates_by_annotator: Union[None, Unset, dict[str, Any]]
+        annotation_aggregates_by_annotator: dict[str, Any] | None | Unset
         if isinstance(self.annotation_aggregates_by_annotator, Unset):
             annotation_aggregates_by_annotator = UNSET
         elif isinstance(
@@ -71,7 +73,7 @@ class AnnotationQueueDetailsResponse:
         else:
             annotation_aggregates_by_annotator = self.annotation_aggregates_by_annotator
 
-        overall_annotation_agreement: Union[None, Unset, dict[str, Any]]
+        overall_annotation_agreement: dict[str, Any] | None | Unset
         if isinstance(self.overall_annotation_agreement, Unset):
             overall_annotation_agreement = UNSET
         elif isinstance(self.overall_annotation_agreement, AnnotationAgreementAggregate):
@@ -108,7 +110,7 @@ class AnnotationQueueDetailsResponse:
 
         def _parse_annotation_aggregates(
             data: object,
-        ) -> Union["AnnotationQueueDetailsResponseAnnotationAggregatesType0", None, Unset]:
+        ) -> AnnotationQueueDetailsResponseAnnotationAggregatesType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -121,13 +123,13 @@ class AnnotationQueueDetailsResponse:
                 return annotation_aggregates_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationQueueDetailsResponseAnnotationAggregatesType0", None, Unset], data)
+            return cast(AnnotationQueueDetailsResponseAnnotationAggregatesType0 | None | Unset, data)
 
         annotation_aggregates = _parse_annotation_aggregates(d.pop("annotation_aggregates", UNSET))
 
         def _parse_annotation_aggregates_by_annotator(
             data: object,
-        ) -> Union["AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0", None, Unset]:
+        ) -> AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -142,13 +144,13 @@ class AnnotationQueueDetailsResponse:
                 return annotation_aggregates_by_annotator_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0", None, Unset], data)
+            return cast(AnnotationQueueDetailsResponseAnnotationAggregatesByAnnotatorType0 | None | Unset, data)
 
         annotation_aggregates_by_annotator = _parse_annotation_aggregates_by_annotator(
             d.pop("annotation_aggregates_by_annotator", UNSET)
         )
 
-        def _parse_overall_annotation_agreement(data: object) -> Union["AnnotationAgreementAggregate", None, Unset]:
+        def _parse_overall_annotation_agreement(data: object) -> AnnotationAgreementAggregate | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -161,7 +163,7 @@ class AnnotationQueueDetailsResponse:
                 return overall_annotation_agreement_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationAgreementAggregate", None, Unset], data)
+            return cast(AnnotationAgreementAggregate | None | Unset, data)
 
         overall_annotation_agreement = _parse_overall_annotation_agreement(d.pop("overall_annotation_agreement", UNSET))
 
