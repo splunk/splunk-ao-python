@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -17,11 +19,12 @@ T = TypeVar("T", bound="ExtendedToolSpanRecordAnnotations")
 class ExtendedToolSpanRecordAnnotations:
     """Annotations keyed by template ID and annotator ID"""
 
-    additional_properties: dict[str, "ExtendedToolSpanRecordAnnotationsAdditionalProperty"] = _attrs_field(
+    additional_properties: dict[str, ExtendedToolSpanRecordAnnotationsAdditionalProperty] = _attrs_field(
         init=False, factory=dict
     )
 
     def to_dict(self) -> dict[str, Any]:
+
         field_dict: dict[str, Any] = {}
         for prop_name, prop in self.additional_properties.items():
             field_dict[prop_name] = prop.to_dict()
@@ -50,10 +53,10 @@ class ExtendedToolSpanRecordAnnotations:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> "ExtendedToolSpanRecordAnnotationsAdditionalProperty":
+    def __getitem__(self, key: str) -> ExtendedToolSpanRecordAnnotationsAdditionalProperty:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: "ExtendedToolSpanRecordAnnotationsAdditionalProperty") -> None:
+    def __setitem__(self, key: str, value: ExtendedToolSpanRecordAnnotationsAdditionalProperty) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

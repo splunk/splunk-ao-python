@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,11 +16,11 @@ class ExperimentGroupIDFilter:
     """
     Attributes:
         value (str):
-        name (Union[Literal['experiment_group_id'], Unset]):  Default: 'experiment_group_id'.
+        name (Literal['experiment_group_id'] | Unset):  Default: 'experiment_group_id'.
     """
 
     value: str
-    name: Union[Literal["experiment_group_id"], Unset] = "experiment_group_id"
+    name: Literal["experiment_group_id"] | Unset = "experiment_group_id"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,7 +41,7 @@ class ExperimentGroupIDFilter:
         d = dict(src_dict)
         value = d.pop("value")
 
-        name = cast(Union[Literal["experiment_group_id"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["experiment_group_id"] | Unset, d.pop("name", UNSET))
         if name != "experiment_group_id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'experiment_group_id', got '{name}'")
 

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -27,36 +28,36 @@ class AnnotationQueueResponse:
     Attributes:
         id (str):
         name (str):
-        description (Union[None, str]):
+        description (None | str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        created_by_user (Union['UserInfo', None]):
-        permissions (Union[Unset, list['Permission']]):
-        num_log_records (Union[Unset, int]):  Default: 0.
-        num_annotators (Union[Unset, int]):  Default: 0.
-        num_users (Union[Unset, int]):  Default: 0.
-        num_templates (Union[Unset, int]):  Default: 0.
-        num_logs_annotated (Union['AnnotationQueueResponseNumLogsAnnotatedType0', None, Unset]):
-        progress (Union['AnnotationQueueResponseProgressType0', None, Unset]):
-        overall_progress (Union[None, Unset, float]):
-        templates (Union[Unset, list['AnnotationTemplateDB']]):
+        created_by_user (None | UserInfo):
+        permissions (list[Permission] | Unset):
+        num_log_records (int | Unset):  Default: 0.
+        num_annotators (int | Unset):  Default: 0.
+        num_users (int | Unset):  Default: 0.
+        num_templates (int | Unset):  Default: 0.
+        num_logs_annotated (AnnotationQueueResponseNumLogsAnnotatedType0 | None | Unset):
+        progress (AnnotationQueueResponseProgressType0 | None | Unset):
+        overall_progress (float | None | Unset):
+        templates (list[AnnotationTemplateDB] | Unset):
     """
 
     id: str
     name: str
-    description: Union[None, str]
+    description: None | str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    created_by_user: Union["UserInfo", None]
-    permissions: Union[Unset, list["Permission"]] = UNSET
-    num_log_records: Union[Unset, int] = 0
-    num_annotators: Union[Unset, int] = 0
-    num_users: Union[Unset, int] = 0
-    num_templates: Union[Unset, int] = 0
-    num_logs_annotated: Union["AnnotationQueueResponseNumLogsAnnotatedType0", None, Unset] = UNSET
-    progress: Union["AnnotationQueueResponseProgressType0", None, Unset] = UNSET
-    overall_progress: Union[None, Unset, float] = UNSET
-    templates: Union[Unset, list["AnnotationTemplateDB"]] = UNSET
+    created_by_user: None | UserInfo
+    permissions: list[Permission] | Unset = UNSET
+    num_log_records: int | Unset = 0
+    num_annotators: int | Unset = 0
+    num_users: int | Unset = 0
+    num_templates: int | Unset = 0
+    num_logs_annotated: AnnotationQueueResponseNumLogsAnnotatedType0 | None | Unset = UNSET
+    progress: AnnotationQueueResponseProgressType0 | None | Unset = UNSET
+    overall_progress: float | None | Unset = UNSET
+    templates: list[AnnotationTemplateDB] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -70,20 +71,20 @@ class AnnotationQueueResponse:
 
         name = self.name
 
-        description: Union[None, str]
+        description: None | str
         description = self.description
 
         created_at = self.created_at.isoformat()
 
         updated_at = self.updated_at.isoformat()
 
-        created_by_user: Union[None, dict[str, Any]]
+        created_by_user: dict[str, Any] | None
         if isinstance(self.created_by_user, UserInfo):
             created_by_user = self.created_by_user.to_dict()
         else:
             created_by_user = self.created_by_user
 
-        permissions: Union[Unset, list[dict[str, Any]]] = UNSET
+        permissions: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.permissions, Unset):
             permissions = []
             for permissions_item_data in self.permissions:
@@ -98,7 +99,7 @@ class AnnotationQueueResponse:
 
         num_templates = self.num_templates
 
-        num_logs_annotated: Union[None, Unset, dict[str, Any]]
+        num_logs_annotated: dict[str, Any] | None | Unset
         if isinstance(self.num_logs_annotated, Unset):
             num_logs_annotated = UNSET
         elif isinstance(self.num_logs_annotated, AnnotationQueueResponseNumLogsAnnotatedType0):
@@ -106,7 +107,7 @@ class AnnotationQueueResponse:
         else:
             num_logs_annotated = self.num_logs_annotated
 
-        progress: Union[None, Unset, dict[str, Any]]
+        progress: dict[str, Any] | None | Unset
         if isinstance(self.progress, Unset):
             progress = UNSET
         elif isinstance(self.progress, AnnotationQueueResponseProgressType0):
@@ -114,13 +115,13 @@ class AnnotationQueueResponse:
         else:
             progress = self.progress
 
-        overall_progress: Union[None, Unset, float]
+        overall_progress: float | None | Unset
         if isinstance(self.overall_progress, Unset):
             overall_progress = UNSET
         else:
             overall_progress = self.overall_progress
 
-        templates: Union[Unset, list[dict[str, Any]]] = UNSET
+        templates: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.templates, Unset):
             templates = []
             for templates_item_data in self.templates:
@@ -175,18 +176,18 @@ class AnnotationQueueResponse:
 
         name = d.pop("name")
 
-        def _parse_description(data: object) -> Union[None, str]:
+        def _parse_description(data: object) -> None | str:
             if data is None:
                 return data
-            return cast(Union[None, str], data)
+            return cast(None | str, data)
 
         description = _parse_description(d.pop("description"))
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        updated_at = isoparse(d.pop("updated_at"))
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
-        def _parse_created_by_user(data: object) -> Union["UserInfo", None]:
+        def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
             try:
@@ -197,16 +198,18 @@ class AnnotationQueueResponse:
                 return created_by_user_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["UserInfo", None], data)
+            return cast(None | UserInfo, data)
 
         created_by_user = _parse_created_by_user(d.pop("created_by_user"))
 
-        permissions = []
         _permissions = d.pop("permissions", UNSET)
-        for permissions_item_data in _permissions or []:
-            permissions_item = Permission.from_dict(permissions_item_data)
+        permissions: list[Permission] | Unset = UNSET
+        if _permissions is not UNSET:
+            permissions = []
+            for permissions_item_data in _permissions:
+                permissions_item = Permission.from_dict(permissions_item_data)
 
-            permissions.append(permissions_item)
+                permissions.append(permissions_item)
 
         num_log_records = d.pop("num_log_records", UNSET)
 
@@ -216,9 +219,7 @@ class AnnotationQueueResponse:
 
         num_templates = d.pop("num_templates", UNSET)
 
-        def _parse_num_logs_annotated(
-            data: object,
-        ) -> Union["AnnotationQueueResponseNumLogsAnnotatedType0", None, Unset]:
+        def _parse_num_logs_annotated(data: object) -> AnnotationQueueResponseNumLogsAnnotatedType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -231,11 +232,11 @@ class AnnotationQueueResponse:
                 return num_logs_annotated_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationQueueResponseNumLogsAnnotatedType0", None, Unset], data)
+            return cast(AnnotationQueueResponseNumLogsAnnotatedType0 | None | Unset, data)
 
         num_logs_annotated = _parse_num_logs_annotated(d.pop("num_logs_annotated", UNSET))
 
-        def _parse_progress(data: object) -> Union["AnnotationQueueResponseProgressType0", None, Unset]:
+        def _parse_progress(data: object) -> AnnotationQueueResponseProgressType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -248,25 +249,27 @@ class AnnotationQueueResponse:
                 return progress_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationQueueResponseProgressType0", None, Unset], data)
+            return cast(AnnotationQueueResponseProgressType0 | None | Unset, data)
 
         progress = _parse_progress(d.pop("progress", UNSET))
 
-        def _parse_overall_progress(data: object) -> Union[None, Unset, float]:
+        def _parse_overall_progress(data: object) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, float], data)
+            return cast(float | None | Unset, data)
 
         overall_progress = _parse_overall_progress(d.pop("overall_progress", UNSET))
 
-        templates = []
         _templates = d.pop("templates", UNSET)
-        for templates_item_data in _templates or []:
-            templates_item = AnnotationTemplateDB.from_dict(templates_item_data)
+        templates: list[AnnotationTemplateDB] | Unset = UNSET
+        if _templates is not UNSET:
+            templates = []
+            for templates_item_data in _templates:
+                templates_item = AnnotationTemplateDB.from_dict(templates_item_data)
 
-            templates.append(templates_item)
+                templates.append(templates_item)
 
         annotation_queue_response = cls(
             id=id,

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(job_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, JobDB]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | JobDB:
     if response.status_code == 200:
         response_200 = JobDB.from_dict(response.json())
 
@@ -66,7 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, JobDB]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | JobDB]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +75,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, JobDB]]:
+def sync_detailed(job_id: str, *, client: ApiClient) -> Response[HTTPValidationError | JobDB]:
     """Get Job
 
      Get a job by id.
@@ -88,7 +88,7 @@ def sync_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValid
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, JobDB]]
+        Response[HTTPValidationError | JobDB]
     """
 
     kwargs = _get_kwargs(job_id=job_id)
@@ -98,7 +98,7 @@ def sync_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValid
     return _build_response(client=client, response=response)
 
 
-def sync(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, JobDB]]:
+def sync(job_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | JobDB]:
     """Get Job
 
      Get a job by id.
@@ -111,13 +111,13 @@ def sync(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationErro
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, JobDB]
+        HTTPValidationError | JobDB
     """
 
     return sync_detailed(job_id=job_id, client=client).parsed
 
 
-async def asyncio_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, JobDB]]:
+async def asyncio_detailed(job_id: str, *, client: ApiClient) -> Response[HTTPValidationError | JobDB]:
     """Get Job
 
      Get a job by id.
@@ -130,7 +130,7 @@ async def asyncio_detailed(job_id: str, *, client: ApiClient) -> Response[Union[
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, JobDB]]
+        Response[HTTPValidationError | JobDB]
     """
 
     kwargs = _get_kwargs(job_id=job_id)
@@ -140,7 +140,7 @@ async def asyncio_detailed(job_id: str, *, client: ApiClient) -> Response[Union[
     return _build_response(client=client, response=response)
 
 
-async def asyncio(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, JobDB]]:
+async def asyncio(job_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | JobDB]:
     """Get Job
 
      Get a job by id.
@@ -153,7 +153,7 @@ async def asyncio(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValid
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, JobDB]
+        HTTPValidationError | JobDB
     """
 
     return (await asyncio_detailed(job_id=job_id, client=client)).parsed

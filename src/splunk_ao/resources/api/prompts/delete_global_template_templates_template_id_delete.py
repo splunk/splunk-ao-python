@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(template_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DeletePromptResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DeletePromptResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DeletePromptResponse.from_dict(response.json())
 
@@ -68,7 +68,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Del
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Response[DeletePromptResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,7 +77,7 @@ def _build_response(
     )
 
 
-def sync_detailed(template_id: str, *, client: ApiClient) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+def sync_detailed(template_id: str, *, client: ApiClient) -> Response[DeletePromptResponse | HTTPValidationError]:
     """Delete Global Template
 
      Delete a global prompt template given a template ID.
@@ -100,7 +100,7 @@ def sync_detailed(template_id: str, *, client: ApiClient) -> Response[Union[Dele
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeletePromptResponse, HTTPValidationError]]
+        Response[DeletePromptResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id)
@@ -110,7 +110,7 @@ def sync_detailed(template_id: str, *, client: ApiClient) -> Response[Union[Dele
     return _build_response(client=client, response=response)
 
 
-def sync(template_id: str, *, client: ApiClient) -> Optional[Union[DeletePromptResponse, HTTPValidationError]]:
+def sync(template_id: str, *, client: ApiClient) -> Optional[DeletePromptResponse | HTTPValidationError]:
     """Delete Global Template
 
      Delete a global prompt template given a template ID.
@@ -133,7 +133,7 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[Union[DeletePromptR
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeletePromptResponse, HTTPValidationError]
+        DeletePromptResponse | HTTPValidationError
     """
 
     return sync_detailed(template_id=template_id, client=client).parsed
@@ -141,7 +141,7 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[Union[DeletePromptR
 
 async def asyncio_detailed(
     template_id: str, *, client: ApiClient
-) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Response[DeletePromptResponse | HTTPValidationError]:
     """Delete Global Template
 
      Delete a global prompt template given a template ID.
@@ -164,7 +164,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeletePromptResponse, HTTPValidationError]]
+        Response[DeletePromptResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id)
@@ -174,7 +174,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(template_id: str, *, client: ApiClient) -> Optional[Union[DeletePromptResponse, HTTPValidationError]]:
+async def asyncio(template_id: str, *, client: ApiClient) -> Optional[DeletePromptResponse | HTTPValidationError]:
     """Delete Global Template
 
      Delete a global prompt template given a template ID.
@@ -197,7 +197,7 @@ async def asyncio(template_id: str, *, client: ApiClient) -> Optional[Union[Dele
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeletePromptResponse, HTTPValidationError]
+        DeletePromptResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(template_id=template_id, client=client)).parsed
