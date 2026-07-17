@@ -12,6 +12,8 @@ from splunk_ao.schema.content_blocks import IngestMessageContent
 
 
 class Message(CoreMessage):
+    __hash__ = None  # type: ignore[assignment]
+
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(exclude_none=True)
 

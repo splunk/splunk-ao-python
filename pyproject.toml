@@ -280,6 +280,8 @@ ignore = [
 "src/splunk_ao/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
 "src/splunk_ao/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 "src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
+"src/splunk_ao/experiment.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
+"src/splunk_ao/metric.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 
 [tool.ruff.lint.isort]
 known-first-party = ["galileo_core"]
