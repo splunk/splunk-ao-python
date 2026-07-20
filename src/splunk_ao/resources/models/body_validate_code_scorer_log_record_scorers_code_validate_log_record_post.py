@@ -1,11 +1,12 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from io import BytesIO
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, Unset
+from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost")
 
@@ -13,8 +14,9 @@ T = TypeVar("T", bound="BodyValidateCodeScorerLogRecordScorersCodeValidateLogRec
 @_attrs_define
 class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     """
-    Attributes:
-        file (str):
+    Attributes
+    ----------
+        file (File):
         log_stream_id (Union[None, Unset, str]):
         experiment_id (Union[None, Unset, str]):
         limit (Union[Unset, int]):  Default: 100.
@@ -25,53 +27,38 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
         scoreable_node_types (Union[None, Unset, list[str], str]):
     """
 
-    file: str
-    log_stream_id: Union[None, Unset, str] = UNSET
-    experiment_id: Union[None, Unset, str] = UNSET
-    limit: Union[Unset, int] = 100
-    starting_token: Union[None, Unset, int] = UNSET
-    filters: Union[None, Unset, str] = UNSET
-    sort: Union[None, Unset, str] = UNSET
-    required_scorers: Union[None, Unset, list[str], str] = UNSET
-    scoreable_node_types: Union[None, Unset, list[str], str] = UNSET
+    file: File
+    log_stream_id: None | Unset | str = UNSET
+    experiment_id: None | Unset | str = UNSET
+    limit: Unset | int = 100
+    starting_token: None | Unset | int = UNSET
+    filters: None | Unset | str = UNSET
+    sort: None | Unset | str = UNSET
+    required_scorers: None | Unset | list[str] | str = UNSET
+    scoreable_node_types: None | Unset | list[str] | str = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        file = self.file
+        file = self.file.to_tuple()
 
-        log_stream_id: Union[None, Unset, str]
-        if isinstance(self.log_stream_id, Unset):
-            log_stream_id = UNSET
-        else:
-            log_stream_id = self.log_stream_id
+        log_stream_id: None | Unset | str
+        log_stream_id = UNSET if isinstance(self.log_stream_id, Unset) else self.log_stream_id
 
-        experiment_id: Union[None, Unset, str]
-        if isinstance(self.experiment_id, Unset):
-            experiment_id = UNSET
-        else:
-            experiment_id = self.experiment_id
+        experiment_id: None | Unset | str
+        experiment_id = UNSET if isinstance(self.experiment_id, Unset) else self.experiment_id
 
         limit = self.limit
 
-        starting_token: Union[None, Unset, int]
-        if isinstance(self.starting_token, Unset):
-            starting_token = UNSET
-        else:
-            starting_token = self.starting_token
+        starting_token: None | Unset | int
+        starting_token = UNSET if isinstance(self.starting_token, Unset) else self.starting_token
 
-        filters: Union[None, Unset, str]
-        if isinstance(self.filters, Unset):
-            filters = UNSET
-        else:
-            filters = self.filters
+        filters: None | Unset | str
+        filters = UNSET if isinstance(self.filters, Unset) else self.filters
 
-        sort: Union[None, Unset, str]
-        if isinstance(self.sort, Unset):
-            sort = UNSET
-        else:
-            sort = self.sort
+        sort: None | Unset | str
+        sort = UNSET if isinstance(self.sort, Unset) else self.sort
 
-        required_scorers: Union[None, Unset, list[str], str]
+        required_scorers: None | Unset | list[str] | str
         if isinstance(self.required_scorers, Unset):
             required_scorers = UNSET
         elif isinstance(self.required_scorers, list):
@@ -80,7 +67,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
         else:
             required_scorers = self.required_scorers
 
-        scoreable_node_types: Union[None, Unset, list[str], str]
+        scoreable_node_types: None | Unset | list[str] | str
         if isinstance(self.scoreable_node_types, Unset):
             scoreable_node_types = UNSET
         elif isinstance(self.scoreable_node_types, list):
@@ -114,7 +101,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     def to_multipart(self) -> types.RequestFiles:
         files: types.RequestFiles = []
 
-        files.append(("file", (None, str(self.file).encode(), "text/plain")))
+        files.append(("file", self.file.to_tuple()))
 
         if not isinstance(self.log_stream_id, Unset):
             if isinstance(self.log_stream_id, str):
@@ -182,56 +169,56 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        file = d.pop("file")
+        file = File(payload=BytesIO(d.pop("file")))
 
-        def _parse_log_stream_id(data: object) -> Union[None, Unset, str]:
+        def _parse_log_stream_id(data: object) -> None | Unset | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | Unset | str, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
 
-        def _parse_experiment_id(data: object) -> Union[None, Unset, str]:
+        def _parse_experiment_id(data: object) -> None | Unset | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | Unset | str, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
 
         limit = d.pop("limit", UNSET)
 
-        def _parse_starting_token(data: object) -> Union[None, Unset, int]:
+        def _parse_starting_token(data: object) -> None | Unset | int:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(None | Unset | int, data)
 
         starting_token = _parse_starting_token(d.pop("starting_token", UNSET))
 
-        def _parse_filters(data: object) -> Union[None, Unset, str]:
+        def _parse_filters(data: object) -> None | Unset | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | Unset | str, data)
 
         filters = _parse_filters(d.pop("filters", UNSET))
 
-        def _parse_sort(data: object) -> Union[None, Unset, str]:
+        def _parse_sort(data: object) -> None | Unset | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | Unset | str, data)
 
         sort = _parse_sort(d.pop("sort", UNSET))
 
-        def _parse_required_scorers(data: object) -> Union[None, Unset, list[str], str]:
+        def _parse_required_scorers(data: object) -> None | Unset | list[str] | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -239,16 +226,15 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
-                required_scorers_type_1 = cast(list[str], data)
+                return cast(list[str], data)
 
-                return required_scorers_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, list[str], str], data)
+            return cast(None | Unset | list[str] | str, data)
 
         required_scorers = _parse_required_scorers(d.pop("required_scorers", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> Union[None, Unset, list[str], str]:
+        def _parse_scoreable_node_types(data: object) -> None | Unset | list[str] | str:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -256,12 +242,11 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
-                scoreable_node_types_type_1 = cast(list[str], data)
+                return cast(list[str], data)
 
-                return scoreable_node_types_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, list[str], str], data)
+            return cast(None | Unset | list[str] | str, data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 

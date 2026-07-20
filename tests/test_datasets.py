@@ -21,7 +21,9 @@ from splunk_ao.datasets import (
     list_dataset_projects,
 )
 from splunk_ao.resources.models import (
+    BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
     BodyCreateDatasetDatasetsPost,
+    BodyValidateCodeScorerScorersCodeValidatePost,
     DatasetContent,
     DatasetDB,
     DatasetFormat,
@@ -38,7 +40,7 @@ from splunk_ao.resources.models import (
 from splunk_ao.resources.models.dataset_row import DatasetRow
 from splunk_ao.resources.models.dataset_row_values_dict import DatasetRowValuesDict
 from splunk_ao.resources.models.http_validation_error import HTTPValidationError
-from splunk_ao.resources.types import UNSET, Response
+from splunk_ao.resources.types import UNSET, File, Response
 from splunk_ao.schema.datasets import DatasetRecord
 
 
@@ -1758,3 +1760,31 @@ def test_get_content_remaps_output_to_ground_truth(get_content_mock: Mock) -> No
     assert "ground_truth" in row_values
     assert "output" not in row_values
     assert row_values["ground_truth"] == "Europe"
+
+
+def test_create_dataset_body_serializes_file_as_multipart_upload() -> None:
+    # Given: a dataset body constructed with a File payload
+    file = File(payload=Mock(), file_name="dataset.jsonl", mime_type="application/octet-stream")
+    body = BodyCreateDatasetDatasetsPost(file=file, name="dataset.jsonl")
+
+    # When: serializing the body to multipart form data
+    multipart_data = dict(body.to_multipart())
+
+    # Then: the file field is emitted as a binary multipart upload
+    assert multipart_data["file"] == file.to_tuple()
+
+
+def test_code_scorer_bodies_serialize_files_as_multipart_uploads() -> None:
+    # Given: generated code-scorer bodies constructed with File payloads
+    file = File(payload=Mock(), file_name="scorer.py", mime_type="text/x-python")
+    bodies = [
+        BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost(file=file, validation_result="{}"),
+        BodyValidateCodeScorerScorersCodeValidatePost(file=file),
+    ]
+
+    for body in bodies:
+        # When: serializing the body to multipart form data
+        multipart_data = dict(body.to_multipart())
+
+        # Then: the file field is emitted as a binary multipart upload
+        assert multipart_data["file"] == file.to_tuple()
