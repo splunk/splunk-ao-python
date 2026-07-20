@@ -15,10 +15,10 @@ def make_routing(**kwargs: str) -> RoutingAttrs:
 
 
 def test_o11y_exporter_endpoint_derived_from_realm() -> None:
-    cfg = O11yConfig(realm="us1", sf_token="tok")
+    cfg = O11yConfig(realm="lab0", sf_token="tok")
     result = resolve_o11y_exporter_config(cfg, routing=make_routing(project_name="proj1"))
 
-    assert result.endpoint == "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp"
+    assert result.endpoint == "https://ingest.lab0.observability.splunkcloud.com/v2/trace/otlp"
 
 
 def test_o11y_exporter_uses_unmasked_sf_ingest_token_header() -> None:
