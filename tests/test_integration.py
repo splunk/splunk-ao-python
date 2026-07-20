@@ -32,6 +32,7 @@ def create_mock_integration(name: IntegrationProvider, is_selected: bool = False
     mock = MagicMock(spec=IntegrationDB)
     mock.id = str(uuid4())
     mock.name = name
+    mock.provider = name
     mock.created_at = datetime.now()
     mock.updated_at = datetime.now()
     mock.created_by = str(uuid4())
