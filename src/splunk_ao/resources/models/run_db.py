@@ -33,6 +33,7 @@ class RunDB:
         project_id (Union[None, Unset, str]):
         dataset_hash (Union[None, Unset, str]):
         dataset_version_id (Union[None, Unset, str]):
+        prompt_template_version_id (Union[None, Unset, str]):
         task_type (Union[None, TaskType, Unset]):
         run_tags (Union[Unset, list['RunTagDB']]):
         example_content_id (Union[None, Unset, str]):
@@ -52,6 +53,7 @@ class RunDB:
     project_id: Union[None, Unset, str] = UNSET
     dataset_hash: Union[None, Unset, str] = UNSET
     dataset_version_id: Union[None, Unset, str] = UNSET
+    prompt_template_version_id: Union[None, Unset, str] = UNSET
     task_type: Union[None, TaskType, Unset] = UNSET
     run_tags: Union[Unset, list["RunTagDB"]] = UNSET
     example_content_id: Union[None, Unset, str] = UNSET
@@ -99,6 +101,12 @@ class RunDB:
             dataset_version_id = UNSET
         else:
             dataset_version_id = self.dataset_version_id
+
+        prompt_template_version_id: Union[None, Unset, str]
+        if isinstance(self.prompt_template_version_id, Unset):
+            prompt_template_version_id = UNSET
+        else:
+            prompt_template_version_id = self.prompt_template_version_id
 
         task_type: Union[None, Unset, int]
         if isinstance(self.task_type, Unset):
@@ -151,6 +159,8 @@ class RunDB:
             field_dict["dataset_hash"] = dataset_hash
         if dataset_version_id is not UNSET:
             field_dict["dataset_version_id"] = dataset_version_id
+        if prompt_template_version_id is not UNSET:
+            field_dict["prompt_template_version_id"] = prompt_template_version_id
         if task_type is not UNSET:
             field_dict["task_type"] = task_type
         if run_tags is not UNSET:
@@ -222,6 +232,15 @@ class RunDB:
 
         dataset_version_id = _parse_dataset_version_id(d.pop("dataset_version_id", UNSET))
 
+        def _parse_prompt_template_version_id(data: object) -> Union[None, Unset, str]:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(Union[None, Unset, str], data)
+
+        prompt_template_version_id = _parse_prompt_template_version_id(d.pop("prompt_template_version_id", UNSET))
+
         def _parse_task_type(data: object) -> Union[None, TaskType, Unset]:
             if data is None:
                 return data
@@ -272,6 +291,7 @@ class RunDB:
             project_id=project_id,
             dataset_hash=dataset_hash,
             dataset_version_id=dataset_version_id,
+            prompt_template_version_id=prompt_template_version_id,
             task_type=task_type,
             run_tags=run_tags,
             example_content_id=example_content_id,
