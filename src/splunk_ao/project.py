@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
@@ -310,7 +310,9 @@ class Project(StateManagementMixin):
         if self.id is None:
             raise ValueError("Project ID is not set. Cannot create agent stream for a local-only project.")
 
-        return AgentStream(name=name, project_id=self.id).create()
+        # cast: LogStream.create() returns LogStream, but self is AgentStream so
+        # the runtime type is correct.  cast tells mypy to trust us.
+        return cast("AgentStream", AgentStream(name=name, project_id=self.id).create())
 
     def create_log_stream(self, name: str) -> "AgentStream":
         """
@@ -368,7 +370,9 @@ class Project(StateManagementMixin):
         if self.id is None:
             raise ValueError("Project ID is not set. Cannot list agent streams for a local-only project.")
 
-        return AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
+        # cast: LogStream.list() is typed -> list[LogStream]; runtime values are
+        # AgentStream instances because cls is AgentStream.
+        return cast("builtins.list[AgentStream]", AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token))
 
     def list_log_streams(
         self, *, limit: Unset | int = 100, starting_token: Unset | int = 0

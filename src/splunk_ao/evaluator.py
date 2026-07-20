@@ -85,15 +85,8 @@ class Evaluator(Metric):
 
     evaluators = BuiltInEvaluators()
 
-    # Keep ``metrics`` attribute as deprecated alias
-    @property
-    def metrics(self) -> BuiltInEvaluators:
-        warnings.warn(
-            "Evaluator.metrics is deprecated; use Evaluator.evaluators instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.__class__.evaluators
+    # ``metrics`` class attribute is inherited from Metric and intentionally
+    # left as-is.  The new canonical accessor is ``Evaluator.evaluators``.
 
 
 class LlmEvaluator(LlmMetric):
