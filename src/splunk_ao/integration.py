@@ -362,12 +362,12 @@ class Integration(StateManagementMixin):
     # Convenience properties for accessing configured integrations by type
 
     @classmethod
-    def _get_integration_by_name(cls, integration_name: str) -> Provider | UnconfiguredProvider:
+    def _get_integration_by_name(cls, integration_provider: str) -> Provider | UnconfiguredProvider:
         """
         Get a configured integration by name.
 
         Args:
-            integration_name (str): The integration name (e.g., "openai", "azure").
+            integration_provider (str): The integration name (e.g., "openai", "azure").
 
         Returns
         -------
@@ -380,15 +380,15 @@ class Integration(StateManagementMixin):
             providers_list = cls.list()
             # Type narrowing: list() without all=True returns list[Provider]
             if providers_list and isinstance(providers_list[0], str):
-                return UnconfiguredProvider(integration_name)
+                return UnconfiguredProvider(integration_provider)
 
             # Cast is safe because we checked for strings above
             providers = cast(list[Provider], providers_list)
-            matching = [p for p in providers if p._get_integration_provider().value == integration_name]
+            matching = [p for p in providers if p._get_integration_provider().value == integration_provider]
 
             if not matching:
-                logger.debug(f"Integration.{integration_name}: No '{integration_name}' integration configured.")
-                return UnconfiguredProvider(integration_name)
+                logger.debug(f"Integration.{integration_provider}: No '{integration_provider}' integration configured.")
+                return UnconfiguredProvider(integration_provider)
 
             # If multiple matches, prefer the selected one
             selected = [p for p in matching if p.is_selected]
@@ -398,8 +398,8 @@ class Integration(StateManagementMixin):
             # Otherwise return the first one
             return matching[0]
         except Exception as e:
-            logger.error(f"Integration._get_integration_by_name: failed to get {integration_name}: {e}")
-            return UnconfiguredProvider(integration_name)
+            logger.error(f"Integration._get_integration_by_name: failed to get {integration_provider}: {e}")
+            return UnconfiguredProvider(integration_provider)
 
     @classproperty
     def openai(cls) -> Provider | UnconfiguredProvider:

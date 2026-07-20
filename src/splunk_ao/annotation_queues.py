@@ -152,7 +152,7 @@ class AnnotationQueueUser:
 
 class AnnotationQueue:
     """
-    Represents an annotation queue in the Galileo platform.
+    Represents an annotation queue in the Splunk AO platform.
 
     Annotation queues are organization-level resources used to assign log records
     to annotators and track annotation progress.

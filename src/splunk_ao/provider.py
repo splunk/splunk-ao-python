@@ -866,9 +866,9 @@ class UnconfiguredProvider:
 
     _integration_provider: str
 
-    def __init__(self, integration_name: str) -> None:
+    def __init__(self, integration_provider: str) -> None:
         # Use object.__setattr__ to bypass our custom __setattr__
-        object.__setattr__(self, "_integration_provider", integration_name)
+        object.__setattr__(self, "_integration_provider", integration_provider)
 
     def __bool__(self) -> bool:
         """Allow truthiness checks: 'if Integration.azure:' returns False."""
