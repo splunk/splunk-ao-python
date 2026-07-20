@@ -319,30 +319,30 @@ class Integration(StateManagementMixin):
             Provider: A provider-specific instance (OpenAIProvider, AzureProvider, etc.).
                      For unsupported integration types, returns a GenericProvider.
         """
-        name = str(integration_db.name)
+        provider_name = integration_db.provider
 
-        # Create appropriate provider instance based on name using __new__ to bypass __init__
+        # Create appropriate provider instance based on provider using __new__ to bypass __init__
         provider: Provider
-        if name == IntegrationProvider.OPENAI:
+        if provider_name == IntegrationProvider.OPENAI:
             provider = OpenAIProvider.__new__(OpenAIProvider)
-        elif name == IntegrationProvider.AZURE:
+        elif provider_name == IntegrationProvider.AZURE:
             provider = AzureProvider.__new__(AzureProvider)
-        elif name == IntegrationProvider.AWS_BEDROCK:
+        elif provider_name == IntegrationProvider.AWS_BEDROCK:
             provider = BedrockProvider.__new__(BedrockProvider)
-        elif name == IntegrationProvider.ANTHROPIC:
+        elif provider_name == IntegrationProvider.ANTHROPIC:
             provider = AnthropicProvider.__new__(AnthropicProvider)
         else:
             # For unsupported providers, use GenericProvider
             provider = GenericProvider.__new__(GenericProvider)
-            # Store the integration name enum for _get_integration_name()
-            provider._integration_name = integration_db.name
+            # Store the integration provider enum for _get_integration_provider()
+            provider._integration_provider = provider_name
 
         # Initialize the StateManagementMixin parent class
         StateManagementMixin.__init__(provider)
 
         # Populate provider attributes from IntegrationDB
         provider.id = str(integration_db.id)
-        provider.name = name
+        provider.name = str(integration_db.name)
         provider.created_at = integration_db.created_at
         provider.updated_at = integration_db.updated_at
         provider.created_by = integration_db.created_by
@@ -384,7 +384,7 @@ class Integration(StateManagementMixin):
 
             # Cast is safe because we checked for strings above
             providers = cast(list[Provider], providers_list)
-            matching = [p for p in providers if p.name == integration_name]
+            matching = [p for p in providers if p._get_integration_provider().value == integration_name]
 
             if not matching:
                 logger.debug(f"Integration.{integration_name}: No '{integration_name}' integration configured.")
