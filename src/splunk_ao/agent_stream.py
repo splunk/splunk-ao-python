@@ -49,7 +49,7 @@ class AgentStream(LogStream):
 
 
 # Convenience: expose the deprecated ``LogStream`` name with a warning
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     if name == "LogStream":
         warnings.warn(
             "splunk_ao.agent_stream.LogStream is deprecated; "

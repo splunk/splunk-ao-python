@@ -177,7 +177,7 @@ def delete_evaluator(name: str) -> None:
 # Deprecated aliases for old ``metrics`` module function names
 # ---------------------------------------------------------------------------
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     _deprecated = {
         "create_custom_llm_metric": ("create_custom_llm_evaluator", create_custom_llm_evaluator),
         "get_metrics": ("get_evaluators", get_evaluators),

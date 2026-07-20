@@ -86,8 +86,8 @@ class Evaluator(Metric):
     evaluators = BuiltInEvaluators()
 
     # Keep ``metrics`` attribute as deprecated alias
-    @property  # type: ignore[override]
-    def metrics(self):  # type: ignore[override]
+    @property
+    def metrics(self) -> BuiltInEvaluators:
         warnings.warn(
             "Evaluator.metrics is deprecated; use Evaluator.evaluators instead.",
             DeprecationWarning,
@@ -168,7 +168,7 @@ class SplunkAOEvaluator(SplunkAOMetric):
 # Deprecated aliases for the old Metric-prefixed names
 # ---------------------------------------------------------------------------
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     _deprecated = {
         "Metric": ("Evaluator", Evaluator),
         "LlmMetric": ("LlmEvaluator", LlmEvaluator),

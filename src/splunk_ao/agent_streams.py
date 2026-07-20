@@ -190,7 +190,7 @@ def enable_evaluators(
 # Deprecated aliases for the old ``log_streams`` convenience functions
 # ---------------------------------------------------------------------------
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     _deprecated = {
         "get_log_stream": ("get_agent_stream", get_agent_stream),
         "list_log_streams": ("list_agent_streams", list_agent_streams),

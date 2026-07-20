@@ -16,6 +16,7 @@ from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 
 if TYPE_CHECKING:
+    from splunk_ao.agent_stream import AgentStream
     from splunk_ao.dataset import Dataset
     from splunk_ao.experiment import Experiment
     from splunk_ao.log_stream import LogStream
