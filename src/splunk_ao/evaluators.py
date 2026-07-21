@@ -1,53 +1,153 @@
-"""
-Evaluators service layer — the renamed successor to Metrics (HYBIM-730).
-
-Provides ``Evaluators`` (service class) and the module-level convenience
-functions ``create_custom_llm_evaluator``, ``get_evaluators``, and
-``delete_evaluator``.
-
-The old ``metrics`` module and its symbols remain available but are deprecated.
-"""
-from __future__ import annotations
-
 import datetime
-import warnings
+import logging
 
-from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
-from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
-from splunk_ao.resources.models.output_type_enum import OutputTypeEnum
-from splunk_ao.resources.models.log_records_metrics_response import LogRecordsMetricsResponse
 from galileo_core.schemas.logging.step import StepType
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.resources.api.data import (
+    create_llm_scorer_version_scorers_scorer_id_version_llm_post,
+    create_scorers_post,
+    delete_scorer_scorers_scorer_id_delete,
+)
+from splunk_ao.resources.api.trace import query_metrics_projects_project_id_metrics_search_post
+from splunk_ao.resources.models import (
+    HTTPValidationError,
+    LogRecordsMetricsQueryRequest,
+    LogRecordsMetricsResponse,
+    ScorerTypes,
+)
+from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
+from splunk_ao.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
+from splunk_ao.resources.models.create_scorer_request import CreateScorerRequest
+from splunk_ao.resources.models.output_type_enum import OutputTypeEnum
+from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
+from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
 
-__all__ = [
-    "Evaluators",
-    "create_custom_llm_evaluator",
-    "delete_evaluator",
-    "get_evaluators",
-]
+_logger = logging.getLogger(__name__)
 
 
-class Evaluators(Metrics):
-    """
-    Low-level service class for managing evaluators.
+class Evaluators:
+    config: SplunkAOConfig
 
-    ``Evaluators`` is the new name for the ``Metrics`` service class.
-    Inherits all methods from ``Metrics`` unchanged.
+    def __init__(self) -> None:
+        self.config = SplunkAOConfig.get()
 
-    Examples
-    --------
-        from splunk_ao.evaluators import Evaluators
+    def delete_evaluator(self, name: str) -> None:
+        scorers_to_delete = Scorers().list(name=name)
+        if not scorers_to_delete:
+            raise ValueError(f"Scorer with name {name} not found.")
 
-        svc = Evaluators()
-        svc.delete_metric(name="old-evaluator")
-    """
+        for scorer in scorers_to_delete:
+            response = delete_scorer_scorers_scorer_id_delete.sync(scorer_id=scorer.id, client=self.config.api_client)
+
+            if isinstance(response, HTTPValidationError):
+                raise ValueError(response.detail)
+            if response is None:
+                raise ValueError("Failed to delete metric.")
+
+    def create_custom_llm_evaluator(
+        self,
+        name: str,
+        user_prompt: str,
+        node_level: StepType = StepType.llm,
+        cot_enabled: bool = True,
+        model_name: str = "gpt-4.1-mini",
+        num_judges: int = 3,
+        description: str = "",
+        tags: list[str] | None = None,
+        output_type: OutputTypeEnum = OutputTypeEnum.BOOLEAN,
+        ground_truth: bool = False,
+    ) -> BaseScorerVersionResponse:
+        """
+        Create a custom LLM metric.
+
+        Parameters
+        ----------
+        name: str
+            Name of the metric.
+        user_prompt: str
+            User prompt for the metric.
+        node_level: StepType
+            Node level for the metric.
+        cot_enabled: bool
+            Whether chain-of-thought is enabled.
+        model_name: str
+            Model name to use.
+        num_judges: int
+            Number of judges for the metric.
+        description: str
+            Description of the metric.
+        tags: List[str]
+            Tags associated with the metric.
+        output_type: OutputTypeEnum
+            Output type for the metric.
+        ground_truth: bool
+            Whether the scorer requires ground truth (``reference_output``) from the dataset.
+            When True, the judge LLM receives the row's ground-truth value in its prompt.
+
+        Returns
+        -------
+        BaseScorerVersionResponse
+            Response containing the created metric details.
+        """
+        if tags is None:
+            tags = []
+        create_scorer_request = CreateScorerRequest(
+            name=name,
+            scorer_type=ScorerTypes.LLM,
+            description=description,
+            tags=tags,
+            defaults=ScorerDefaults(model_name=model_name, num_judges=num_judges, cot_enabled=cot_enabled),
+            scoreable_node_types=[node_level],
+            output_type=output_type,
+            ground_truth=ground_truth,
+        )
+
+        scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
+
+        version_req = CreateLLMScorerVersionRequest(user_prompt=user_prompt)
+        version_resp = create_llm_scorer_version_scorers_scorer_id_version_llm_post.sync(
+            scorer_id=scorer.id, body=version_req, client=self.config.api_client
+        )
+
+        _logger.info("Created custom LLM metric: %s", name)
+
+        return version_resp
+
+    def query(
+        self,
+        project_id: str,
+        start_time: datetime.datetime,
+        end_time: datetime.datetime,
+        experiment_id: str | None = None,
+        log_stream_id: str | None = None,
+        filters: list[FilterType] | None = None,
+        group_by: str | None = None,
+        interval: int = 5,
+    ) -> LogRecordsMetricsResponse:
+        body = LogRecordsMetricsQueryRequest(
+            start_time=start_time,
+            end_time=end_time,
+            experiment_id=experiment_id,
+            log_stream_id=log_stream_id,
+            filters=filters or [],
+            group_by=group_by,
+            interval=interval,
+        )
+
+        response = query_metrics_projects_project_id_metrics_search_post.sync(
+            client=self.config.api_client, project_id=str(project_id), body=body
+        )
+
+        if isinstance(response, HTTPValidationError):
+            raise ValueError(response.detail)
+        if response is None:
+            raise ValueError("Failed to query for metrics.")
+
+        return response
 
 
-# ---------------------------------------------------------------------------
-# Module-level convenience functions
-# ---------------------------------------------------------------------------
-
-
+# Public functions
 def create_custom_llm_evaluator(
     name: str,
     user_prompt: str,
@@ -61,50 +161,41 @@ def create_custom_llm_evaluator(
     ground_truth: bool = False,
 ) -> BaseScorerVersionResponse:
     """
-    Create a custom LLM evaluator.
-
-    This is the renamed equivalent of ``create_custom_llm_metric`` from
-    ``splunk_ao.metrics``.
+    Create a custom LLM metric.
 
     Parameters
     ----------
-    name:
-        Name of the evaluator.
-    user_prompt:
-        Prompt template for the evaluator.
-    node_level:
-        Node level. Defaults to ``StepType.llm``.
-    cot_enabled:
-        Whether chain-of-thought reasoning is enabled.
-    model_name:
-        Model alias to use for judging.
-    num_judges:
-        Number of judge LLMs to use.
-    description:
-        Human-readable description.
-    tags:
-        Tags to associate with the evaluator.
-    output_type:
-        Output type (boolean, percentage, etc.).
-    ground_truth:
-        Whether the evaluator requires a ground-truth reference value.
+    name: str
+        Name of the metric.
+    user_prompt: str
+        User prompt for the metric.
+    node_level: StepType
+        Node level for the metric.
+    cot_enabled: bool
+        Whether chain-of-thought is enabled.
+    model_name: str
+        Model name to use.
+    num_judges: int
+        Number of judges for the metric.
+    description: str
+        Description of the metric.
+    tags: List[str]
+        Tags associated with the metric.
+    output_type: OutputTypeEnum
+        Output type for the metric.
+    ground_truth: bool
+        Whether the scorer requires ground truth (``reference_output``) from the dataset.
+        When True, the judge LLM receives the row's ground-truth value in its prompt.
 
     Returns
     -------
     BaseScorerVersionResponse
-        The created evaluator version details.
+        Response containing the created metric details.
     """
-    return create_custom_llm_metric(
-        name=name,
-        user_prompt=user_prompt,
-        node_level=node_level,
-        cot_enabled=cot_enabled,
-        model_name=model_name,
-        num_judges=num_judges,
-        description=description,
-        tags=tags,
-        output_type=output_type,
-        ground_truth=ground_truth,
+    if tags is None:
+        tags = []
+    return Evaluators().create_custom_llm_evaluator(
+        name, user_prompt, node_level, cot_enabled, model_name, num_judges, description, tags, output_type, ground_truth
     )
 
 
@@ -113,46 +204,43 @@ def get_evaluators(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     experiment_id: str | None = None,
-    agent_stream_id: str | None = None,
+    log_stream_id: str | None = None,
     filters: list[FilterType] | None = None,
     group_by: str | None = None,
     interval: int = 5,
 ) -> LogRecordsMetricsResponse:
-    """
-    Query evaluator results for a project.
-
-    This is the renamed equivalent of ``get_metrics`` from ``splunk_ao.metrics``.
+    """Queries for metrics in a project.
 
     Parameters
     ----------
-    project_id:
-        Project UUID.
-    start_time:
-        Start of the query window.
-    end_time:
-        End of the query window.
-    experiment_id:
-        Filter by experiment ID (optional).
-    agent_stream_id:
-        Filter by agent stream ID (optional).
-    filters:
-        Additional query filters.
-    group_by:
-        Field to group results by.
-    interval:
-        Time interval in seconds.
+    project_id
+        The unique identifier of the project.
+    start_time
+        The start of the time range for the query.
+    end_time
+        The end of the time range for the query.
+    experiment_id
+        Filter records by a specific experiment ID.
+    log_stream_id
+        Filter records by a specific run ID.
+    filters
+        A list of filters to apply to the query.
+    group_by
+        The field to group the results by.
+    interval
+        The time interval for the query in seconds.
 
     Returns
     -------
     LogRecordsMetricsResponse
-        Evaluator query results.
+        A LogRecordsMetricsResponse object containing the query results, or None if the query fails.
     """
-    return get_metrics(
+    return Evaluators().query(
         project_id=project_id,
         start_time=start_time,
         end_time=end_time,
         experiment_id=experiment_id,
-        log_stream_id=agent_stream_id,
+        log_stream_id=log_stream_id,
         filters=filters,
         group_by=group_by,
         interval=interval,
@@ -161,34 +249,11 @@ def get_evaluators(
 
 def delete_evaluator(name: str) -> None:
     """
-    Delete an evaluator by name.
-
-    This is the renamed equivalent of ``delete_metric`` from ``splunk_ao.metrics``.
+    Deletes a metric by its name.
 
     Parameters
     ----------
-    name:
-        The evaluator name to delete.
+    name
+        The name of the metric to delete.
     """
-    return delete_metric(name=name)
-
-
-# ---------------------------------------------------------------------------
-# Deprecated aliases for old ``metrics`` module function names
-# ---------------------------------------------------------------------------
-
-def __getattr__(name: str) -> object:
-    _deprecated = {
-        "create_custom_llm_metric": ("create_custom_llm_evaluator", create_custom_llm_evaluator),
-        "get_metrics": ("get_evaluators", get_evaluators),
-        "delete_metric": ("delete_evaluator", delete_evaluator),
-    }
-    if name in _deprecated:
-        new_name, obj = _deprecated[name]
-        warnings.warn(
-            f"splunk_ao.evaluators.{name} is deprecated; use {new_name} instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return obj
-    raise AttributeError(f"module 'splunk_ao.evaluators' has no attribute {name!r}")
+    Evaluators().delete_evaluator(name)

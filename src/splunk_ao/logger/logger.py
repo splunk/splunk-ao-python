@@ -38,7 +38,7 @@ from splunk_ao.config import SplunkAOConfig
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.exceptions import SplunkAOLoggerException
-from splunk_ao.log_streams import LogStreams
+from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 from splunk_ao.projects import Projects
@@ -383,7 +383,7 @@ class SplunkAOLogger(TracesLogger):
     @nop_sync
     def _init_log_stream(self) -> None:
         """Initializes the log stream ID."""
-        log_streams_client = LogStreams()
+        log_streams_client = AgentStreams()
         log_stream_obj = log_streams_client.get(name=self.log_stream_name, project_id=self.project_id)
         if log_stream_obj is None:
             # Create log stream if it doesn't exist

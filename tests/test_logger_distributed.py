@@ -61,7 +61,7 @@ def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog)
         mock_traces_client.update_span.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -96,7 +96,7 @@ def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_
 
 @patch("splunk_ao.logger.logger.IngestTraces")
 @patch("splunk_ao.logger.logger.Traces")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
     mock_projects_client: Mock, mock_logstreams_client: Mock, mock_traces_client: Mock, mock_ingest_traces_client: Mock
@@ -115,7 +115,7 @@ def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
     mock_traces_client.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_nested_distributed_spans_submit_independently(
@@ -142,7 +142,7 @@ def test_nested_distributed_spans_submit_independently(
     assert span_tasks[1].request.parent_id == workflow.id
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -209,7 +209,7 @@ def test_add_llm_span(mock_traces_client: Mock, mock_projects_client: Mock, mock
     assert request.spans[0].step_number == 1
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -263,7 +263,7 @@ def test_conclude_trace(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert request.duration_ns == 1_000_000
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_span(
@@ -350,7 +350,7 @@ def test_conclude_trace_with_span(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_and_start_new_trace(
@@ -469,7 +469,7 @@ def test_conclude_trace_and_start_new_trace(
     assert request.traces[0].metrics.duration_ns is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_nested_span(
@@ -602,7 +602,7 @@ def test_conclude_trace_with_nested_span(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_all_with_nested_span(
@@ -725,7 +725,7 @@ def test_conclude_all_with_nested_span(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_agent_span(
@@ -861,7 +861,7 @@ def test_conclude_trace_with_agent_span(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_trace_with_multiple_nested_spans(
@@ -1084,7 +1084,7 @@ def test_trace_with_multiple_nested_spans(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_trace_with_nested_span_and_sibling(
@@ -1238,7 +1238,7 @@ def test_trace_with_nested_span_and_sibling(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span_and_conclude_existing_trace(
@@ -1316,7 +1316,7 @@ def test_add_llm_span_and_conclude_existing_trace(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_nested_span_and_conclude_existing_trace(
@@ -1440,7 +1440,7 @@ def test_add_nested_span_and_conclude_existing_trace(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_llm_span_and_conclude_existing_workflow_span(
@@ -1521,7 +1521,7 @@ def test_add_llm_span_and_conclude_existing_workflow_span(
     assert request.status_code == 200
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_nested_span_and_conclude_existing_span(
@@ -1648,7 +1648,7 @@ def test_add_nested_span_and_conclude_existing_span(
     assert request.status_code == 200
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_catch_error_trace_span_ids_in_batch_mode(
@@ -1667,7 +1667,7 @@ def test_catch_error_trace_span_ids_in_batch_mode(
         SplunkAOLogger(project="my_project", log_stream="my_log_stream", span_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9e")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_catch_error_mismatched_trace_span_ids(
@@ -1702,7 +1702,7 @@ def test_catch_error_mismatched_trace_span_ids(
     assert logger._parent_stack[1].id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9e")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_with_workflow_span(
@@ -1727,7 +1727,7 @@ def test_get_tracing_headers_with_workflow_span(
     assert headers["Splunk-AO-Parent-ID"] == str(workflow_span.id)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_with_agent_span(
@@ -1752,7 +1752,7 @@ def test_get_tracing_headers_with_agent_span(
     assert headers["Splunk-AO-Parent-ID"] == str(agent_span.id)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_batch_mode_error(
@@ -1772,7 +1772,7 @@ def test_get_tracing_headers_batch_mode_error(
     assert "only supported in distributed mode" in str(exc_info.value)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_tracing_headers_no_trace_error(
@@ -1791,7 +1791,7 @@ def test_get_tracing_headers_no_trace_error(
     assert "Start trace before getting tracing headers" in str(exc_info.value)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_output_and_duration_streaming(
@@ -1840,7 +1840,7 @@ def test_update_trace_output_and_duration_streaming(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_update_span_output_and_duration_streaming(
@@ -1891,7 +1891,7 @@ def test_update_span_output_and_duration_streaming(
     assert request.status_code == 200
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_with_none_duration(
@@ -1930,7 +1930,7 @@ def test_update_trace_with_none_duration(
     assert request.duration_ns is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_update_span_with_none_duration(
@@ -1971,7 +1971,7 @@ def test_update_span_with_none_duration(
     assert request.duration_ns is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_update_trace_and_span_with_duration_in_nested_structure(
@@ -2024,7 +2024,7 @@ def test_update_trace_and_span_with_duration_in_nested_structure(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_inherits_last_llm_child_output(
@@ -2075,7 +2075,7 @@ def test_conclude_trace_inherits_last_llm_child_output(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_with_multiple_llm_children_inherits_last(
@@ -2128,7 +2128,7 @@ def test_conclude_trace_with_multiple_llm_children_inherits_last(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_inherits_last_workflow_span_output(
@@ -2185,7 +2185,7 @@ def test_conclude_trace_inherits_last_workflow_span_output(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_trace_explicit_output_overrides_child(
@@ -2229,7 +2229,7 @@ def test_conclude_trace_explicit_output_overrides_child(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_workflow_span_inherits_last_child_output(
@@ -2283,7 +2283,7 @@ def test_conclude_workflow_span_inherits_last_child_output(
     assert request.duration_ns == 3_000_000
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_concludes_unconcluded_trace(
@@ -2342,7 +2342,7 @@ def test_distributed_flush_concludes_unconcluded_trace(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_no_op_if_already_concluded(
@@ -2398,7 +2398,7 @@ def test_distributed_flush_no_op_if_already_concluded(
     assert request.is_complete
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_distributed_flush_waits_for_tasks(
@@ -2432,7 +2432,7 @@ def test_distributed_flush_waits_for_tasks(
     assert logger._task_handler.all_tasks_completed()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_terminate_stops_task_handler_when_agent_control_unregister_fails(
@@ -2461,7 +2461,7 @@ def test_terminate_stops_task_handler_when_agent_control_unregister_fails(
     task_handler.terminate.assert_called_once()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_batch_mode_flush_still_uses_get_last_output(

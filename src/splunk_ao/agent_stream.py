@@ -1,61 +1,973 @@
-"""
-Agent Streams — the renamed successor to Log Streams (HYBIM-730).
-
-``AgentStream`` is the canonical name going forward.  ``LogStream`` is kept
-as a deprecated alias in ``splunk_ao.__init__`` and will be removed in a
-future major release.
-
-The underlying implementation is shared with ``splunk_ao.log_stream``; the
-API endpoints still use the ``/log_streams`` path (server-side rename is
-tracked separately).
-"""
 from __future__ import annotations
 
-import warnings
+import builtins
+import logging
+from collections.abc import Iterator
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
-from splunk_ao.log_stream import LogStream
+from splunk_ao.config import SplunkAOConfig
+from splunk_ao.decorator import splunk_ao_context
+from splunk_ao.export import ExportClient
+from splunk_ao.agent_streams import AgentStreams
+from splunk_ao.resources.api.trace import (
+    sessions_available_columns_projects_project_id_sessions_available_columns_post,
+    spans_available_columns_projects_project_id_spans_available_columns_post,
+    traces_available_columns_projects_project_id_traces_available_columns_post,
+)
+from splunk_ao.resources.models import LLMExportFormat, LogRecordsSortClause, RootType
+from splunk_ao.resources.models.http_validation_error import HTTPValidationError
+from splunk_ao.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
+from splunk_ao.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
+from splunk_ao.resources.types import Unset
+from splunk_ao.schema.filters import FilterType
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.search import RecordType, Search
+from splunk_ao.shared.base import StateManagementMixin, SyncState
+from splunk_ao.shared.exceptions import ValidationError
+from splunk_ao.shared.project_resolver import _resolve_project
+from splunk_ao.shared.query_result import QueryResult
+
+if TYPE_CHECKING:
+    from splunk_ao.shared.column import ColumnCollection
+
+logger = logging.getLogger(__name__)
+
+# Mapping from RecordType (plural) to RootType (singular)
+RECORD_TYPE_TO_ROOT_TYPE = {
+    RecordType.SPAN: RootType.SPAN,
+    RecordType.TRACE: RootType.TRACE,
+    RecordType.SESSION: RootType.SESSION,
+}
+
 
 __all__ = ["AgentStream"]
 
 
-class AgentStream(LogStream):
+class AgentStream(StateManagementMixin):
     """
-    Object-centric interface for Splunk AO agent streams.
+    Object-centric interface for Galileo log streams.
 
-    ``AgentStream`` is the new name for what was previously called a
-    *Log Stream*.  All functionality is identical; only the name has
-    changed.  Use ``AgentStream`` for all new code.
+    This class provides an intuitive way to work with Galileo log streams,
+    offering methods for managing log streams and their associated metrics.
 
-    See ``splunk_ao.log_stream.LogStream`` for the full API reference —
-    every method, property, and class-method is inherited unchanged.
+    Attributes
+    ----------
+        created_at (datetime.datetime): When the log stream was created.
+        created_by (str): The user who created the log stream.
+        id (str): The unique log stream identifier.
+        name (str): The log stream name.
+        project_id (str): The ID of the project this log stream belongs to.
+        project_name (str | None): The name of the project. May be None if the log stream
+            was retrieved using project_id only, as the API doesn't return this field.
+        updated_at (datetime.datetime): When the log stream was last updated.
+        additional_properties (dict): Additional properties of the log stream.
 
     Examples
     --------
-        from splunk_ao import AgentStream
+        # Create a new log stream and persist it
+        log_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
 
-        # Create and persist a new agent stream
-        stream = AgentStream(name="prod-traces", project_name="my-project").create()
+        # Get an existing log stream
+        log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
-        # Retrieve an existing stream
-        stream = AgentStream.get(name="prod-traces", project_name="my-project")
+        # AgentStreams can also be created through Project instances
+        from splunk_ao.project import Project
 
-        # List streams for a project
-        streams = AgentStream.list(project_name="my-project")
+        project = Project.get(name="My AI Project")
+        log_stream = project.create_log_stream(name="Production Logs")
 
-        # Enable evaluators on the stream
-        from splunk_ao import SplunkAOMetrics
-        stream.set_metrics([SplunkAOMetrics.correctness, SplunkAOMetrics.completeness])
+        # Enable metrics on the log stream
+        from splunk_ao.schema.metrics import SplunkAOMetrics
+        local_metrics = log_stream.enable_evaluators([
+            SplunkAOMetrics.correctness,
+            SplunkAOMetrics.completeness,
+            "context_relevance"
+        ])
+
+        # Refresh log stream state from API
+        log_stream.refresh()
     """
 
+    created_at: datetime | None
+    created_by: str | None
+    id: str | None
+    name: str
+    project_id: str | None
+    project_name: str | None  # May not be available when retrieved from API
+    updated_at: datetime | None
+    additional_properties: dict[str, Any]  # TODO: We need to validate if we will keep this one.
 
-# Convenience: expose the deprecated ``LogStream`` name with a warning
-def __getattr__(name: str) -> object:
-    if name == "LogStream":
-        warnings.warn(
-            "splunk_ao.agent_stream.LogStream is deprecated; "
-            "import AgentStream from splunk_ao.agent_stream instead.",
-            DeprecationWarning,
-            stacklevel=2,
+    def __str__(self) -> str:
+        """String representation of the log stream."""
+        return f"AgentStream(name='{self.name}', id='{self.id}', project_id='{self.project_id}')"
+
+    def __repr__(self) -> str:
+        """Detailed string representation of the log stream."""
+        return f"AgentStream(name='{self.name}', id='{self.id}', project_id='{self.project_id}', created_at='{self.created_at}')"
+
+    def __init__(self, name: str, *, project_id: str | None = None, project_name: str | None = None) -> None:
+        """
+        Initialize a AgentStream instance locally.
+
+        Creates a local log stream object that exists only in memory until .create()
+        is called to persist it to the API.
+
+        Args:
+            name (str): The name of the log stream to create.
+            project_id (Optional[str]): The project ID. If neither project_id nor project_name is provided,
+                       falls back to SPLUNK_AO_PROJECT_ID or SPLUNK_AO_PROJECT environment variables.
+            project_name (Optional[str]): The project name. If neither project_id nor project_name is provided,
+                         falls back to SPLUNK_AO_PROJECT environment variable.
+
+        Raises
+        ------
+            ValidationError: If name is not provided.
+            ValueError: If project cannot be resolved at create() time (no explicit param and no env fallback).
+
+        Examples
+        --------
+            # Create by project ID
+            log_stream = AgentStream(name="Production Logs", project_id="project-123")
+
+            # Create by project name
+            log_stream = AgentStream(name="Production Logs", project_name="My AI Project")
+
+            # Create using SPLUNK_AO_PROJECT environment variable
+            log_stream = AgentStream(name="Production Logs")
+        """
+        super().__init__()
+
+        if not name:
+            raise ValidationError("'name' must be provided to create a log stream.")
+
+        # Initialize attributes locally
+        self.name = name
+        self.project_id = project_id
+        self.project_name = project_name  # May be None; not returned by API
+        self.id = None
+        self.created_at = None
+        self.created_by = None
+        self.updated_at = None
+        self.additional_properties = {}
+
+        # Set initial state
+        self._set_state(SyncState.LOCAL_ONLY)
+
+    def create(self) -> AgentStream:
+        """
+        Persist this log stream to the API.
+
+        Returns
+        -------
+            AgentStream: This log stream instance with updated attributes from the API.
+
+        Raises
+        ------
+            NotFoundError: If the project cannot be found (no explicit param and no env fallback).
+            Exception: If the API call fails.
+
+        Examples
+        --------
+            log_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
+            assert log_stream.is_synced()
+        """
+        if not self.name:
+            raise ValueError("Log stream name is not set. Cannot create log stream without a name.")
+
+        # Note: project_id and project_name can both be None here — resolution happens below
+        # via _resolve_project, which reads SPLUNK_AO_PROJECT_ID / SPLUNK_AO_PROJECT env vars.
+
+        try:
+            logger.info(f"AgentStream.create: name='{self.name}' project_id='{self.project_id}' - started")
+
+            # _resolve_project raises NotFoundError when no project can be found, matching
+            # the contract of AgentStream.get() and AgentStream.list().
+            project_obj = _resolve_project(self.project_id, self.project_name)
+
+            # Update project info from resolved project
+            self.project_id = project_obj.id
+            if self.project_name is None:
+                self.project_name = project_obj.name
+
+            agent_streams_svc = AgentStreams()
+            created_log_stream = agent_streams_svc.create(
+                name=self.name,
+                project_id=self.project_id,  # always set by _resolve_project above
+            )
+
+            # Update attributes from response
+            self.created_at = created_log_stream.created_at
+            self.created_by = created_log_stream.created_by
+            self.id = created_log_stream.id
+            self.name = created_log_stream.name
+            self.project_id = created_log_stream.project_id
+            self.updated_at = created_log_stream.updated_at
+            self.additional_properties = created_log_stream.additional_properties
+            # Note: project_name is preserved if it was set, but API doesn't return it
+
+            # Set state to synced
+            self._set_state(SyncState.SYNCED)
+            logger.info(f"AgentStream.create: id='{self.id}' - completed")
+            return self
+        except Exception as e:
+            self._set_state(SyncState.FAILED_SYNC, error=e)
+            logger.error(f"AgentStream.create: name='{self.name}' - failed: {e}")
+            raise
+
+    @classmethod
+    def _create_empty(cls) -> AgentStream:
+        """Internal constructor bypassing __init__ for API hydration."""
+        instance = cls.__new__(cls)
+        super(AgentStream, instance).__init__()
+        return instance
+
+    @classmethod
+    def _from_api_response(cls, retrieved_log_stream: Any) -> AgentStream:
+        """
+        Factory method to create a AgentStream instance from an API response.
+
+        Args:
+            retrieved_log_stream: The log stream data retrieved from the API.
+
+        Returns
+        -------
+            AgentStream: A new AgentStream instance populated with the API data.
+        """
+        instance = cls._create_empty()
+        instance.created_at = retrieved_log_stream.created_at
+        instance.created_by = retrieved_log_stream.created_by
+        instance.id = retrieved_log_stream.id
+        instance.name = retrieved_log_stream.name
+        instance.project_id = retrieved_log_stream.project_id
+        instance.updated_at = retrieved_log_stream.updated_at
+        instance.additional_properties = retrieved_log_stream.additional_properties
+        instance.project_name = None  # API doesn't return project_name
+        # Set state to synced since we just retrieved from API
+        instance._set_state(SyncState.SYNCED)
+        return instance
+
+    @classmethod
+    def get(cls, *, name: str, project_id: str | None = None, project_name: str | None = None) -> AgentStream | None:
+        """
+        Get an existing log stream by name.
+
+        Args:
+            name (str): The log stream name.
+            project_id (Optional[str]): The project ID. If neither project_id nor project_name is provided,
+                       falls back to SPLUNK_AO_PROJECT_ID or SPLUNK_AO_PROJECT environment variables.
+            project_name (Optional[str]): The project name. If neither project_id nor project_name is provided,
+                         falls back to SPLUNK_AO_PROJECT environment variable.
+
+        Returns
+        -------
+            Optional[AgentStream]: The log stream if found, None otherwise.
+
+        Raises
+        ------
+            NotFoundError: If the project cannot be found (no explicit param and no env fallback).
+
+        Examples
+        --------
+            # Get by project name
+            log_stream = AgentStream.get(
+                name="Production Logs",
+                project_name="My AI Project"
+            )
+
+            # Get by project ID
+            log_stream = AgentStream.get(
+                name="Production Logs",
+                project_id="project-123"
+            )
+
+            # Get using SPLUNK_AO_PROJECT environment variable
+            log_stream = AgentStream.get(name="Production Logs")
+        """
+        project_obj = _resolve_project(project_id, project_name)
+
+        agent_streams_svc = AgentStreams()
+        retrieved_log_stream = agent_streams_svc.get(name=name, project_id=project_obj.id)
+        if retrieved_log_stream is None:
+            return None
+
+        instance = cls._from_api_response(retrieved_log_stream)
+        # Set project_name from resolved project
+        instance.project_name = project_obj.name
+        return instance
+
+    @classmethod
+    def list(
+        cls,
+        *,
+        project_id: str | None = None,
+        project_name: str | None = None,
+        limit: Unset | int = 100,
+        starting_token: Unset | int = 0,
+    ) -> list[AgentStream]:
+        """
+        List log streams for a project.
+
+        Returns a single page of results. Use `starting_token` (from
+        `next_starting_token` on a prior response) to fetch subsequent pages.
+
+        Args:
+            project_id (Optional[str]): The project ID. If neither project_id nor project_name is provided,
+                       falls back to SPLUNK_AO_PROJECT_ID or SPLUNK_AO_PROJECT environment variables.
+            project_name (Optional[str]): The project name. If neither project_id nor project_name is provided,
+                         falls back to SPLUNK_AO_PROJECT environment variable.
+            limit (Union[Unset, int]): Maximum number of log streams to return per page. Defaults to 100.
+            starting_token (Union[Unset, int]): Pagination token to start from. Defaults to 0 (first page).
+
+        Returns
+        -------
+            List[AgentStream]: A page of log streams for the project.
+
+        Raises
+        ------
+            NotFoundError: If the project cannot be found (no explicit param and no env fallback).
+
+        Examples
+        --------
+            # List by project name
+            log_streams = AgentStream.list(project_name="My AI Project")
+
+            # List by project ID
+            log_streams = AgentStream.list(project_id="project-123")
+
+            # List using SPLUNK_AO_PROJECT environment variable
+            log_streams = AgentStream.list()
+
+            # Cap the number of returned log streams
+            log_streams = AgentStream.list(project_name="My AI Project", limit=3)
+
+            # Fetch the next page
+            page_2 = AgentStream.list(project_name="My AI Project", starting_token=100)
+        """
+        project_obj = _resolve_project(project_id, project_name)
+
+        agent_streams_svc = AgentStreams()
+        retrieved_log_streams = agent_streams_svc.list(
+            project_id=project_obj.id, limit=limit, starting_token=starting_token
         )
-        return LogStream
-    raise AttributeError(f"module 'splunk_ao.agent_stream' has no attribute {name!r}")
+
+        instances = [cls._from_api_response(retrieved_log_stream) for retrieved_log_stream in retrieved_log_streams]
+        # Set project_name from resolved project for all instances
+        for instance in instances:
+            instance.project_name = project_obj.name
+        return instances
+
+    def refresh(self) -> None:
+        """
+        Refresh this log stream's state from the API.
+
+        Updates all attributes with the latest values from the remote API
+        and sets the state to SYNCED.
+
+        Raises
+        ------
+            ValueError: If the log stream ID or project_id is not set.
+            Exception: If the API call fails or the log stream no longer exists.
+
+        Examples
+        --------
+            log_stream.refresh()
+            assert log_stream.is_synced()
+        """
+        if self.id is None:
+            raise ValueError("Log stream ID is not set. Cannot refresh a local-only log stream.")
+
+        if self.project_id is None:
+            raise ValueError("Project ID is not set. Cannot refresh log stream without project_id.")
+
+        try:
+            logger.debug(f"AgentStream.refresh: id='{self.id}' - started")
+            agent_streams_svc = AgentStreams()
+            retrieved_log_stream = agent_streams_svc.get(id=self.id, project_id=self.project_id)
+
+            if retrieved_log_stream is None:
+                raise ValueError(f"Log stream with id '{self.id}' no longer exists")
+
+            # Update all attributes from response
+            self.created_at = retrieved_log_stream.created_at
+            self.created_by = retrieved_log_stream.created_by
+            self.id = retrieved_log_stream.id
+            self.name = retrieved_log_stream.name
+            self.project_id = retrieved_log_stream.project_id
+            self.updated_at = retrieved_log_stream.updated_at
+            self.additional_properties = retrieved_log_stream.additional_properties
+            # Note: project_name is preserved from before refresh since API doesn't return it
+
+            # Set state to synced
+            self._set_state(SyncState.SYNCED)
+            logger.debug(f"AgentStream.refresh: id='{self.id}' - completed")
+        except Exception as e:
+            self._set_state(SyncState.FAILED_SYNC, error=e)
+            logger.error(f"AgentStream.refresh: id='{self.id}' - failed: {e}")
+            raise
+
+    def get_metrics(self) -> builtins.list[str]:
+        """
+        Get the list of metrics currently enabled on this log stream.
+
+        Returns
+        -------
+            list[str]: List of metric names currently enabled.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My Project")
+            current_metrics = log_stream.get_metrics()
+            print(f"Currently enabled: {current_metrics}")
+        """
+        logger.info(f"AgentStream.get_metrics: id='{self.id}' - started")
+        config = SplunkAOConfig.get()
+
+        settings = get_settings_projects_project_id_runs_run_id_scorer_settings_get.sync(
+            project_id=self.project_id, run_id=self.id, client=config.api_client
+        )
+
+        if settings is None or not hasattr(settings, "scorers"):
+            logger.info(f"AgentStream.get_metrics: id='{self.id}' - no metrics enabled")
+            return []
+
+        # Extract metric names from scorer configs
+        metric_names = [scorer.name for scorer in settings.scorers]
+        logger.info(f"AgentStream.get_metrics: id='{self.id}' found {len(metric_names)} metrics - completed")
+        return metric_names
+
+    def set_metrics(
+        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
+    ) -> builtins.list[LocalMetricConfig]:
+        """
+        Set (replace) the metrics on this log stream.
+
+        This replaces any existing metrics with the new list. Alias for enable_metrics
+        with clearer naming intent.
+
+        Args:
+            metrics: List of metrics to set. Supports:
+                - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+                - Metric objects (including from Metric.get(id="..."))
+                - LocalMetricConfig objects for custom scoring functions
+                - String names of built-in metrics
+
+        Returns
+        -------
+            List[LocalMetricConfig]: Local metric configurations that must be
+                computed client-side.
+
+        Raises
+        ------
+            ValueError: If any specified metrics are unknown.
+
+        Examples
+        --------
+            from splunk_ao import Metric, AgentStream
+
+            log_stream = AgentStream.get(name="Production Logs", project_name="My Project")
+
+            # Set metrics (replaces existing)
+            log_stream.set_metrics([
+                Metric.metrics.correctness,
+                Metric.metrics.completeness,
+                Metric.get(id="metric-from-console-uuid"),  # From console
+            ])
+        """
+        try:
+            logger.info(f"AgentStream.enable_evaluators: id='{self.id}' metrics={[str(m) for m in metrics]} - started")
+            agent_streams_svc = AgentStreams()
+            log_stream = agent_streams_svc.get(name=self.name, project_id=self.project_id)
+            if log_stream is None:
+                raise ValueError(f"Log stream '{self.name}' not found")
+            result = log_stream.enable_evaluators(metrics)
+            # Set state to synced after successful operation
+            self._set_state(SyncState.SYNCED)
+            logger.info(f"AgentStream.enable_evaluators: id='{self.id}' - completed")
+            return result
+        except Exception as e:
+            self._set_state(SyncState.FAILED_SYNC, error=e)
+            logger.error(f"AgentStream.enable_evaluators: id='{self.id}' - failed: {e}")
+            raise
+
+    def query(
+        self,
+        record_type: RecordType,
+        filters: builtins.list[FilterType] | None = None,
+        sort: LogRecordsSortClause | None = None,
+        limit: int = 100,
+        starting_token: int = 0,
+    ) -> QueryResult:
+        """
+        Query records in this log stream.
+
+        This method provides a convenient way to search spans, traces, or sessions
+        within the current log stream without needing to specify project_id or log_stream_id.
+
+        Args:
+            record_type: The type of records to query (SPAN, TRACE, or SESSION).
+            filters: A list of filters to apply to the query.
+            sort: A sort clause to order the query results.
+            limit: The maximum number of records to return.
+            starting_token: The token for the next page of results.
+
+        Returns
+        -------
+            QueryResult: A list-like object containing the query results with pagination support.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            from splunk_ao.search import RecordType
+
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+
+            # Query with column-based filters and sort
+            results = log_stream.query(
+                record_type=RecordType.SPAN,
+                filters=[
+                    log_stream.span_columns["input"].contains("largest"),
+                    log_stream.span_columns["metrics/completeness_gpt"].greater_than(0.8),
+                    log_stream.span_columns["created_at"].after("2024-01-01")
+                ],
+                sort=log_stream.span_columns["created_at"].descending(),
+                limit=50
+            )
+
+            # Access results like a list
+            for record in results:
+                print(record["id"], record["input"])
+
+            # Get specific record
+            first_record = results[0]
+
+            # Pagination
+            if results.has_next_page:
+                next_results = results.next_page()
+        """
+        if self.id is None:
+            raise ValueError("Log stream ID is not set. Cannot query a local-only log stream.")
+        if self.project_id is None:
+            raise ValueError("Project ID is not set. Cannot query log stream without project_id.")
+
+        logger.debug(f"AgentStream.query: id='{self.id}' record_type='{record_type.value}' limit={limit} - started")
+
+        # Capture project_id and log_stream_id for use in pagination function
+        project_id = self.project_id
+        log_stream_id = self.id
+
+        search_service = Search()
+        response = search_service.query(
+            project_id=project_id,
+            record_type=record_type,
+            log_stream_id=log_stream_id,
+            filters=filters,
+            sort=sort,
+            limit=limit,
+            starting_token=starting_token,
+        )
+
+        # Create a query function that returns raw response for pagination
+        def query_fn(
+            record_type: RecordType,
+            filters: builtins.list[FilterType] | None,
+            sort: LogRecordsSortClause | None,
+            limit: int,
+            starting_token: int,
+        ) -> Any:
+            return Search().query(
+                project_id=project_id,
+                record_type=record_type,
+                log_stream_id=log_stream_id,
+                filters=filters,
+                sort=sort,
+                limit=limit,
+                starting_token=starting_token,
+            )
+
+        # Wrap the response in QueryResult for easy access and pagination
+        return QueryResult(response=response, query_fn=query_fn, record_type=record_type, filters=filters, sort=sort)
+
+    def get_spans(
+        self,
+        filters: builtins.list[FilterType] | None = None,
+        sort: LogRecordsSortClause | None = None,
+        limit: int = 100,
+        starting_token: int = 0,
+    ) -> QueryResult:
+        """
+        Query spans in this log stream.
+
+        This is a convenience method that queries for spans specifically.
+
+        Args:
+            filters: A list of filters to apply to the query.
+            sort: A sort clause to order the query results.
+            limit: The maximum number of records to return.
+            starting_token: The token for the next page of results.
+
+        Returns
+        -------
+            QueryResult: A list-like object containing the span query results with pagination support.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+
+            # Get spans with filters and sorting
+            spans = log_stream.get_spans(
+                filters=[
+                    log_stream.span_columns["input"].contains("world"),
+                    log_stream.span_columns["metrics/num_input_tokens"].greater_than(10)
+                ],
+                sort=log_stream.span_columns["created_at"].descending(),
+                limit=50
+            )
+
+            # Iterate over results
+            for span in spans:
+                print(span["id"], span["input"])
+
+            # Pagination
+            if spans.has_next_page:
+                more_spans = spans.next_page()
+        """
+        logger.debug(f"AgentStream.get_spans: id='{self.id}' limit={limit} - started")
+        return self.query(
+            record_type=RecordType.SPAN, filters=filters, sort=sort, limit=limit, starting_token=starting_token
+        )
+
+    def get_traces(
+        self,
+        filters: builtins.list[FilterType] | None = None,
+        sort: LogRecordsSortClause | None = None,
+        limit: int = 100,
+        starting_token: int = 0,
+    ) -> QueryResult:
+        """
+        Query traces in this log stream.
+
+        This is a convenience method that queries for traces specifically.
+
+        Args:
+            filters: A list of filters to apply to the query.
+            sort: A sort clause to order the query results.
+            limit: The maximum number of records to return.
+            starting_token: The token for the next page of results.
+
+        Returns
+        -------
+            QueryResult: A list-like object containing the trace query results with pagination support.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+
+            # Get traces with filters
+            traces = log_stream.get_traces(
+                filters=[
+                    log_stream.trace_columns["input"].contains("largest"),
+                    log_stream.trace_columns["created_at"].after("2024-01-01")
+                ],
+                sort=log_stream.trace_columns["created_at"].descending(),
+                limit=50
+            )
+
+            # Access like a list
+            for trace in traces:
+                print(trace["id"], trace["input"])
+        """
+        logger.debug(f"AgentStream.get_traces: id='{self.id}' limit={limit} - started")
+        return self.query(
+            record_type=RecordType.TRACE, filters=filters, sort=sort, limit=limit, starting_token=starting_token
+        )
+
+    def get_sessions(
+        self,
+        filters: builtins.list[FilterType] | None = None,
+        sort: LogRecordsSortClause | None = None,
+        limit: int = 100,
+        starting_token: int = 0,
+    ) -> QueryResult:
+        """
+        Query sessions in this log stream.
+
+        This is a convenience method that queries for sessions specifically.
+
+        Args:
+            filters: A list of filters to apply to the query.
+            sort: A sort clause to order the query results.
+            limit: The maximum number of records to return.
+            starting_token: The token for the next page of results.
+
+        Returns
+        -------
+            QueryResult: A list-like object containing the session query results with pagination support.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+
+            # Get sessions with filters
+            sessions = log_stream.get_sessions(
+                filters=[
+                    log_stream.session_columns["model"].equals("gpt-4o-mini"),
+                    log_stream.session_columns["metrics/num_traces"].greater_than(5)
+                ],
+                sort=log_stream.session_columns["created_at"].descending(),
+                limit=50
+            )
+
+            # Work with results
+            for session in sessions:
+                print(session["id"], session["model"])
+        """
+        logger.debug(f"AgentStream.get_sessions: id='{self.id}' limit={limit} - started")
+        return self.query(
+            record_type=RecordType.SESSION, filters=filters, sort=sort, limit=limit, starting_token=starting_token
+        )
+
+    def export_records(
+        self,
+        record_type: RecordType = RecordType.TRACE,
+        filters: builtins.list[FilterType] | None = None,
+        sort: LogRecordsSortClause = LogRecordsSortClause(column_id="created_at", ascending=False),
+        export_format: LLMExportFormat = LLMExportFormat.JSONL,
+        column_ids: builtins.list[str] | None = None,
+        redact: bool = True,
+    ) -> Iterator[dict[str, Any]]:
+        """
+        Export records from this log stream.
+
+        This method provides a convenient way to export records without needing
+        to specify project_id or log_stream_id.
+
+        Args:
+            record_type: The type of records to export (SPAN, TRACE, or SESSION).
+            filters: A list of filters to apply to the export.
+            sort: A sort clause to order the exported records.
+            export_format: The desired format for the exported data.
+            column_ids: A list of column IDs to include in the export.
+            redact: Redact sensitive data from the response.
+
+        Returns
+        -------
+            Iterator[dict[str, Any]]: An iterator that yields each record as a dictionary.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            from splunk_ao.search import RecordType
+
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+
+            # Export records with filters
+            for record in log_stream.export_records(
+                record_type=RecordType.SPAN,
+                filters=[
+                    log_stream.span_columns["model"].one_of(["gpt-4", "gpt-3.5-turbo", "gpt-4o-mini"]),
+                    log_stream.span_columns["metrics/num_input_tokens"].greater_than(1)
+                ],
+                sort=log_stream.span_columns["created_at"].descending()
+            ):
+                print(record)
+        """
+        if self.id is None:
+            raise ValueError("Log stream ID is not set. Cannot export from a local-only log stream.")
+        if self.project_id is None:
+            raise ValueError("Project ID is not set. Cannot export log stream without project_id.")
+
+        # Convert RecordType to RootType for the export client
+        root_type = RECORD_TYPE_TO_ROOT_TYPE[record_type]
+
+        logger.info(
+            f"AgentStream.export_records: id='{self.id}' record_type='{record_type.value}' "
+            f"export_format='{export_format.value}' - started"
+        )
+        export_client = ExportClient()
+        return export_client.records(
+            project_id=self.project_id,
+            root_type=root_type,
+            filters=filters,
+            sort=sort,
+            export_format=export_format,
+            log_stream_id=self.id,
+            column_ids=column_ids,
+            redact=redact,
+        )
+
+    def context(self) -> Any:
+        """
+        Get a galileo context manager for this log stream.
+
+        This is a convenient method that returns a pre-configured splunk_ao_context
+        for this log stream, eliminating the need to specify project and log stream names.
+
+        Returns
+        -------
+            A context manager for Galileo logging configured with this log stream.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(
+                name="Production Logs",
+                project_name="My AI Project"
+            )
+
+            with log_stream.context():
+                # Your logging code here
+                response = openai_client.chat.completions.create(...)
+        """
+        return splunk_ao_context(project=self.project.name if self.project else None, log_stream=self.name)
+
+    def _get_columns(self, api_func: Any, error_msg: str) -> LogRecordsAvailableColumnsResponse:
+        """Helper method to retrieve available columns from the API."""
+        if self.id is None:
+            raise ValueError("Log stream ID is not set. Cannot get columns from a local-only log stream.")
+        if self.project_id is None:
+            raise ValueError("Project ID is not set. Cannot get columns without project_id.")
+
+        config = SplunkAOConfig.get()
+        body = LogRecordsAvailableColumnsRequest(log_stream_id=self.id)
+        response = api_func.sync(project_id=self.project_id, client=config.api_client, body=body)
+        if isinstance(response, HTTPValidationError):
+            raise response
+        if not response:
+            raise ValueError(error_msg)
+        return response
+
+    @property
+    def project(self) -> Project | None:
+        """Get the project this log stream belongs to."""
+        return Project.get(id=self.project_id)
+
+    @property
+    def span_columns(self) -> ColumnCollection:
+        """
+        Get available columns for spans in this log stream.
+
+        Returns
+        -------
+            ColumnCollection: A collection of columns available for spans, accessible by column ID.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            columns = log_stream.span_columns
+
+            # Access a specific column
+            input_column = columns["input"]
+
+            # Filter using columns
+            spans = log_stream.get_spans(
+                filters=[columns["input"].contains("world")],
+                sort=columns["created_at"].descending()
+            )
+        """
+        response = self._get_columns(
+            spans_available_columns_projects_project_id_spans_available_columns_post, "Unable to retrieve span columns"
+        )
+        columns = [Column(col) for col in response.columns]
+        return ColumnCollection(columns)
+
+    @property
+    def session_columns(self) -> ColumnCollection:
+        """
+        Get available columns for sessions in this log stream.
+
+        Returns
+        -------
+            ColumnCollection: A collection of columns available for sessions, accessible by column ID.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            columns = log_stream.session_columns
+
+            # Access a specific column
+            model_column = columns["model"]
+
+            # Filter using columns
+            sessions = log_stream.get_sessions(
+                filters=[columns["model"].equals("gpt-4o-mini")],
+                sort=columns["created_at"].descending()
+            )
+        """
+        response = self._get_columns(
+            sessions_available_columns_projects_project_id_sessions_available_columns_post,
+            "Unable to retrieve session columns",
+        )
+        columns = [Column(col) for col in response.columns]
+        return ColumnCollection(columns)
+
+    @property
+    def trace_columns(self) -> ColumnCollection:
+        """
+        Get available columns for traces in this log stream.
+
+        Returns
+        -------
+            ColumnCollection: A collection of columns available for traces, accessible by column ID.
+
+        Raises
+        ------
+            ValueError: If the log stream lacks required id or project_id attributes.
+
+        Examples
+        --------
+            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            columns = log_stream.trace_columns
+
+            # Access a specific column
+            input_column = columns["input"]
+
+            # Filter using columns
+            traces = log_stream.get_traces(
+                filters=[columns["input"].contains("largest")],
+                sort=columns["created_at"].descending()
+            )
+        """
+        response = self._get_columns(
+            traces_available_columns_projects_project_id_traces_available_columns_post,
+            "Unable to retrieve trace columns",
+        )
+        columns = [Column(col) for col in response.columns]
+        return ColumnCollection(columns)
+
+
+# Import at end to avoid circular import (project.py imports AgentStream)
+from splunk_ao.project import Project  # noqa: E402
+from splunk_ao.resources.api.run_scorer_settings import (  # noqa: E402
+    get_settings_projects_project_id_runs_run_id_scorer_settings_get,
+)
+from splunk_ao.shared.column import Column, ColumnCollection  # noqa: E402

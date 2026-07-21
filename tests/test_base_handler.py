@@ -11,7 +11,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 class TestSplunkAOBaseHandler:
     @pytest.fixture
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     def splunk_ao_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):

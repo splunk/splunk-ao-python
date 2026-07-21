@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from splunk_ao.agent_stream import AgentStream
     from splunk_ao.dataset import Dataset
     from splunk_ao.experiment import Experiment
-    from splunk_ao.log_stream import LogStream
     from splunk_ao.prompt import Prompt
 
 logger = logging.getLogger(__name__)
@@ -56,14 +55,14 @@ class Project(StateManagementMixin):
         projects = Project.list()
 
         # Create a log stream for the project
-        log_stream = project.create_log_stream(name="Production Logs")
+        log_stream = project.create_agent_stream(name="Production Logs")
 
         # List log streams for the project
-        log_streams = project.list_log_streams()
+        log_streams = project.list_agent_streams()
 
         # Access related resources via properties
-        for log_stream in project.logstreams:
-            print(log_stream.name)
+        for stream in project.agent_streams:
+            print(stream.name)
 
         for experiment in project.experiments:
             print(experiment.name)
@@ -305,41 +304,11 @@ class Project(StateManagementMixin):
             project = Project.get(name="My AI Project")
             stream = project.create_agent_stream(name="Production Traces")
         """
-        from splunk_ao.agent_stream import AgentStream  # lazy to avoid circular import
-
         if self.id is None:
             raise ValueError("Project ID is not set. Cannot create agent stream for a local-only project.")
 
-        # cast: LogStream.create() returns LogStream, but self is AgentStream so
-        # the runtime type is correct.  cast tells mypy to trust us.
-        return cast("AgentStream", AgentStream(name=name, project_id=self.id).create())
+        return AgentStream(name=name, project_id=self.id).create()
 
-    def create_log_stream(self, name: str) -> "AgentStream":
-        """
-        Create a new agent stream for this project.
-
-        .. deprecated::
-            Use :meth:`create_agent_stream` instead.
-
-        Args:
-            name (str): The name of the agent stream to create.
-
-        Returns
-        -------
-            AgentStream: The created agent stream.
-
-        Examples
-        --------
-            project = Project.get(name="My AI Project")
-            log_stream = project.create_log_stream(name="Production Logs")
-        """
-        import warnings
-        warnings.warn(
-            "Project.create_log_stream() is deprecated; use Project.create_agent_stream() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.create_agent_stream(name=name)
 
     def list_agent_streams(
         self, *, limit: Unset | int = 100, starting_token: Unset | int = 0
@@ -365,42 +334,11 @@ class Project(StateManagementMixin):
             for stream in streams:
                 pass
         """
-        from splunk_ao.agent_stream import AgentStream  # lazy to avoid circular import
-
         if self.id is None:
             raise ValueError("Project ID is not set. Cannot list agent streams for a local-only project.")
 
-        # cast: LogStream.list() is typed -> list[LogStream]; runtime values are
-        # AgentStream instances because cls is AgentStream.
-        return cast("builtins.list[AgentStream]", AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token))
+        return AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
 
-    def list_log_streams(
-        self, *, limit: Unset | int = 100, starting_token: Unset | int = 0
-    ) -> "builtins.list[AgentStream]":
-        """
-        List agent streams for this project.
-
-        .. deprecated::
-            Use :meth:`list_agent_streams` instead.
-
-        Returns a single page of results. Use `starting_token` (from
-        `next_starting_token` on a prior response) to fetch subsequent pages.
-
-        Args:
-            limit (Union[Unset, int]): Maximum number of streams per page. Defaults to 100.
-            starting_token (Union[Unset, int]): Pagination token. Defaults to 0 (first page).
-
-        Returns
-        -------
-            List[AgentStream]: A page of agent streams belonging to this project.
-        """
-        import warnings
-        warnings.warn(
-            "Project.list_log_streams() is deprecated; use Project.list_agent_streams() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.list_agent_streams(limit=limit, starting_token=starting_token)
 
     def list_experiments(self) -> builtins.list[Experiment]:
         """
@@ -488,25 +426,6 @@ class Project(StateManagementMixin):
         """
         return self.list_agent_streams()
 
-    @property
-    def logstreams(self) -> "builtins.list[AgentStream]":
-        """
-        Property to access agent streams for this project.
-
-        .. deprecated::
-            Use :attr:`agent_streams` instead.
-
-        Returns
-        -------
-            List[AgentStream]: A list of agent streams belonging to this project.
-        """
-        import warnings
-        warnings.warn(
-            "Project.logstreams is deprecated; use Project.agent_streams instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.list_agent_streams()
 
     @property
     def experiments(self) -> builtins.list[Experiment]:
@@ -965,11 +884,8 @@ class Project(StateManagementMixin):
         return self
 
 
-# Import at end to avoid circular import (log_stream.py imports Project)
+# Import at end to avoid circular import (agent_stream.py imports Project)
+from splunk_ao.agent_stream import AgentStream  # noqa: E402
 from splunk_ao.dataset import Dataset  # noqa: E402
 from splunk_ao.experiment import Experiment  # noqa: E402
-from splunk_ao.log_stream import LogStream  # noqa: E402
 from splunk_ao.prompt import Prompt  # noqa: E402
-
-# AgentStream is imported lazily inside methods to avoid a secondary circular import:
-#   agent_stream → log_stream → project → agent_stream
