@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 
 from requests import Session
 
-from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import AgentSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.decorator import (
@@ -26,6 +26,9 @@ from splunk_ao.utils.retrievers import document_adapter
 
 logger = logging.getLogger(__name__)
 
+# Semantic-convention attribute key for marking the invocation-level GenAI root span.
+# Mirrors the constant from opentelemetry-util-genai (splunk-otel-python-contrib PR #236).
+GEN_AI_CONVERSATION_ROOT = "gen_ai.conversation_root"
 
 INSTALL_ERR_MSG = (
     "OpenTelemetry packages are not installed. "
@@ -407,9 +410,18 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
+    # Capture root status BEFORE entering the span context so we see the caller's
+    # OTel parent (or absence of one).  A Workflow/Agent span with no valid OTel
+    # parent is, by definition, the conversation root for this trace.
+    _is_conversation_root = (
+        not trace.get_current_span().get_span_context().is_valid
+        and isinstance(galileo_span, (WorkflowSpan, AgentSpan))
+    )
     with tracer.start_as_current_span(galileo_span.name) as span:
         yield span
         span.set_attribute("gen_ai.system", "galileo-otel")
+        if _is_conversation_root:
+            span.set_attribute(GEN_AI_CONVERSATION_ROOT, True)
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
             span, galileo_span.dataset_input, galileo_span.dataset_output, galileo_span.dataset_metadata

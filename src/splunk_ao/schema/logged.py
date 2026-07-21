@@ -61,6 +61,9 @@ class LoggedWorkflowSpan(WorkflowSpan):
     output: IngestOutputType | None = _OUTPUT_FIELD
     redacted_output: IngestOutputType | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
+    # When True, marks this span as the invocation-level GenAI root for the trace
+    # (mirrors gen_ai.conversation_root from the OTel semantic conventions).
+    conversation_root: bool | None = Field(default=None)
 
 
 class LoggedAgentSpan(AgentSpan):
@@ -71,6 +74,9 @@ class LoggedAgentSpan(AgentSpan):
     output: IngestOutputType | None = _OUTPUT_FIELD
     redacted_output: IngestOutputType | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
+    # When True, marks this span as the invocation-level GenAI root for the trace
+    # (mirrors gen_ai.conversation_root from the OTel semantic conventions).
+    conversation_root: bool | None = Field(default=None)
 
 
 class LoggedLlmSpan(LlmSpan):
