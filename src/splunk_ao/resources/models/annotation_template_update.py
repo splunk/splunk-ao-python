@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -12,17 +14,17 @@ class AnnotationTemplateUpdate:
     """
     Attributes:
         name (str):
-        criteria (Union[None, str]):
+        criteria (None | str):
     """
 
     name: str
-    criteria: Union[None, str]
+    criteria: None | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
 
-        criteria: Union[None, str]
+        criteria: None | str
         criteria = self.criteria
 
         field_dict: dict[str, Any] = {}
@@ -36,10 +38,10 @@ class AnnotationTemplateUpdate:
         d = dict(src_dict)
         name = d.pop("name")
 
-        def _parse_criteria(data: object) -> Union[None, str]:
+        def _parse_criteria(data: object) -> None | str:
             if data is None:
                 return data
-            return cast(Union[None, str], data)
+            return cast(None | str, data)
 
         criteria = _parse_criteria(d.pop("criteria"))
 

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -44,7 +44,7 @@ def _get_kwargs(*, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipa
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[GeneratedScorerValidationResponse, HTTPValidationError]:
+) -> GeneratedScorerValidationResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = GeneratedScorerValidationResponse.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[GeneratedScorerValidationResponse, HTTPValidationError]]:
+) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
-) -> Response[Union[GeneratedScorerValidationResponse, HTTPValidationError]]:
+) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
     Args:
@@ -97,7 +97,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GeneratedScorerValidationResponse, HTTPValidationError]]
+        Response[GeneratedScorerValidationResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -109,7 +109,7 @@ def sync_detailed(
 
 def sync(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
-) -> Optional[Union[GeneratedScorerValidationResponse, HTTPValidationError]]:
+) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
     Args:
@@ -120,7 +120,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GeneratedScorerValidationResponse, HTTPValidationError]
+        GeneratedScorerValidationResponse | HTTPValidationError
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -128,7 +128,7 @@ def sync(
 
 async def asyncio_detailed(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
-) -> Response[Union[GeneratedScorerValidationResponse, HTTPValidationError]]:
+) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
     Args:
@@ -139,7 +139,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GeneratedScorerValidationResponse, HTTPValidationError]]
+        Response[GeneratedScorerValidationResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -151,7 +151,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
-) -> Optional[Union[GeneratedScorerValidationResponse, HTTPValidationError]]:
+) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
     Args:
@@ -162,7 +162,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GeneratedScorerValidationResponse, HTTPValidationError]
+        GeneratedScorerValidationResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed
