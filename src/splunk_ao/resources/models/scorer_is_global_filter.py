@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,13 +19,13 @@ class ScorerIsGlobalFilter:
 
         Attributes:
             value (bool):
-            name (Union[Literal['is_global'], Unset]):  Default: 'is_global'.
-            operator (Union[Unset, ScorerIsGlobalFilterOperator]):  Default: ScorerIsGlobalFilterOperator.EQ.
+            name (Literal['is_global'] | Unset):  Default: 'is_global'.
+            operator (ScorerIsGlobalFilterOperator | Unset):  Default: ScorerIsGlobalFilterOperator.EQ.
     """
 
     value: bool
-    name: Union[Literal["is_global"], Unset] = "is_global"
-    operator: Union[Unset, ScorerIsGlobalFilterOperator] = ScorerIsGlobalFilterOperator.EQ
+    name: Literal["is_global"] | Unset = "is_global"
+    operator: ScorerIsGlobalFilterOperator | Unset = ScorerIsGlobalFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,7 +33,7 @@ class ScorerIsGlobalFilter:
 
         name = self.name
 
-        operator: Union[Unset, str] = UNSET
+        operator: str | Unset = UNSET
         if not isinstance(self.operator, Unset):
             operator = self.operator.value
 
@@ -50,12 +52,12 @@ class ScorerIsGlobalFilter:
         d = dict(src_dict)
         value = d.pop("value")
 
-        name = cast(Union[Literal["is_global"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["is_global"] | Unset, d.pop("name", UNSET))
         if name != "is_global" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'is_global', got '{name}'")
 
         _operator = d.pop("operator", UNSET)
-        operator: Union[Unset, ScorerIsGlobalFilterOperator]
+        operator: ScorerIsGlobalFilterOperator | Unset
         if isinstance(_operator, Unset):
             operator = UNSET
         else:

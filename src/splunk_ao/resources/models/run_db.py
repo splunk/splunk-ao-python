@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.task_type import TaskType
 from ..types import UNSET, Unset
@@ -29,15 +30,15 @@ class RunDB:
         updated_at (datetime.datetime):
         last_updated_by (str):
         creator (UserDB):
-        name (Union[None, Unset, str]):
-        project_id (Union[None, Unset, str]):
-        dataset_hash (Union[None, Unset, str]):
-        dataset_version_id (Union[None, Unset, str]):
-        task_type (Union[None, TaskType, Unset]):
-        run_tags (Union[Unset, list['RunTagDB']]):
-        example_content_id (Union[None, Unset, str]):
-        logged_splits (Union[Unset, list[str]]):
-        logged_inference_names (Union[Unset, list[str]]):
+        name (None | str | Unset):
+        project_id (None | str | Unset):
+        dataset_hash (None | str | Unset):
+        dataset_version_id (None | str | Unset):
+        task_type (None | TaskType | Unset):
+        run_tags (list[RunTagDB] | Unset):
+        example_content_id (None | str | Unset):
+        logged_splits (list[str] | Unset):
+        logged_inference_names (list[str] | Unset):
     """
 
     created_by: str
@@ -47,16 +48,16 @@ class RunDB:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     last_updated_by: str
-    creator: "UserDB"
-    name: Union[None, Unset, str] = UNSET
-    project_id: Union[None, Unset, str] = UNSET
-    dataset_hash: Union[None, Unset, str] = UNSET
-    dataset_version_id: Union[None, Unset, str] = UNSET
-    task_type: Union[None, TaskType, Unset] = UNSET
-    run_tags: Union[Unset, list["RunTagDB"]] = UNSET
-    example_content_id: Union[None, Unset, str] = UNSET
-    logged_splits: Union[Unset, list[str]] = UNSET
-    logged_inference_names: Union[Unset, list[str]] = UNSET
+    creator: UserDB
+    name: None | str | Unset = UNSET
+    project_id: None | str | Unset = UNSET
+    dataset_hash: None | str | Unset = UNSET
+    dataset_version_id: None | str | Unset = UNSET
+    task_type: None | TaskType | Unset = UNSET
+    run_tags: list[RunTagDB] | Unset = UNSET
+    example_content_id: None | str | Unset = UNSET
+    logged_splits: list[str] | Unset = UNSET
+    logged_inference_names: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,31 +77,31 @@ class RunDB:
 
         creator = self.creator.to_dict()
 
-        name: Union[None, Unset, str]
+        name: None | str | Unset
         if isinstance(self.name, Unset):
             name = UNSET
         else:
             name = self.name
 
-        project_id: Union[None, Unset, str]
+        project_id: None | str | Unset
         if isinstance(self.project_id, Unset):
             project_id = UNSET
         else:
             project_id = self.project_id
 
-        dataset_hash: Union[None, Unset, str]
+        dataset_hash: None | str | Unset
         if isinstance(self.dataset_hash, Unset):
             dataset_hash = UNSET
         else:
             dataset_hash = self.dataset_hash
 
-        dataset_version_id: Union[None, Unset, str]
+        dataset_version_id: None | str | Unset
         if isinstance(self.dataset_version_id, Unset):
             dataset_version_id = UNSET
         else:
             dataset_version_id = self.dataset_version_id
 
-        task_type: Union[None, Unset, int]
+        task_type: int | None | Unset
         if isinstance(self.task_type, Unset):
             task_type = UNSET
         elif isinstance(self.task_type, TaskType):
@@ -108,24 +109,24 @@ class RunDB:
         else:
             task_type = self.task_type
 
-        run_tags: Union[Unset, list[dict[str, Any]]] = UNSET
+        run_tags: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.run_tags, Unset):
             run_tags = []
             for run_tags_item_data in self.run_tags:
                 run_tags_item = run_tags_item_data.to_dict()
                 run_tags.append(run_tags_item)
 
-        example_content_id: Union[None, Unset, str]
+        example_content_id: None | str | Unset
         if isinstance(self.example_content_id, Unset):
             example_content_id = UNSET
         else:
             example_content_id = self.example_content_id
 
-        logged_splits: Union[Unset, list[str]] = UNSET
+        logged_splits: list[str] | Unset = UNSET
         if not isinstance(self.logged_splits, Unset):
             logged_splits = self.logged_splits
 
-        logged_inference_names: Union[Unset, list[str]] = UNSET
+        logged_inference_names: list[str] | Unset = UNSET
         if not isinstance(self.logged_inference_names, Unset):
             logged_inference_names = self.logged_inference_names
 
@@ -178,51 +179,51 @@ class RunDB:
 
         id = d.pop("id")
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        updated_at = isoparse(d.pop("updated_at"))
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
         last_updated_by = d.pop("last_updated_by")
 
         creator = UserDB.from_dict(d.pop("creator"))
 
-        def _parse_name(data: object) -> Union[None, Unset, str]:
+        def _parse_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_project_id(data: object) -> Union[None, Unset, str]:
+        def _parse_project_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
 
-        def _parse_dataset_hash(data: object) -> Union[None, Unset, str]:
+        def _parse_dataset_hash(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         dataset_hash = _parse_dataset_hash(d.pop("dataset_hash", UNSET))
 
-        def _parse_dataset_version_id(data: object) -> Union[None, Unset, str]:
+        def _parse_dataset_version_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         dataset_version_id = _parse_dataset_version_id(d.pop("dataset_version_id", UNSET))
 
-        def _parse_task_type(data: object) -> Union[None, TaskType, Unset]:
+        def _parse_task_type(data: object) -> None | TaskType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -235,23 +236,25 @@ class RunDB:
                 return task_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, TaskType, Unset], data)
+            return cast(None | TaskType | Unset, data)
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 
-        run_tags = []
         _run_tags = d.pop("run_tags", UNSET)
-        for run_tags_item_data in _run_tags or []:
-            run_tags_item = RunTagDB.from_dict(run_tags_item_data)
+        run_tags: list[RunTagDB] | Unset = UNSET
+        if _run_tags is not UNSET:
+            run_tags = []
+            for run_tags_item_data in _run_tags:
+                run_tags_item = RunTagDB.from_dict(run_tags_item_data)
 
-            run_tags.append(run_tags_item)
+                run_tags.append(run_tags_item)
 
-        def _parse_example_content_id(data: object) -> Union[None, Unset, str]:
+        def _parse_example_content_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         example_content_id = _parse_example_content_id(d.pop("example_content_id", UNSET))
 

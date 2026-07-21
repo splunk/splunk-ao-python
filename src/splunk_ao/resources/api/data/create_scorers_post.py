@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -38,7 +38,7 @@ def _get_kwargs(*, body: CreateScorerRequest) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, ScorerResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ScorerResponse:
     if response.status_code == 200:
         response_200 = ScorerResponse.from_dict(response.json())
 
@@ -67,9 +67,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | ScorerResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,9 +76,7 @@ def _build_response(
     )
 
 
-def sync_detailed(
-    *, client: ApiClient, body: CreateScorerRequest
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+def sync_detailed(*, client: ApiClient, body: CreateScorerRequest) -> Response[HTTPValidationError | ScorerResponse]:
     """Create
 
     Args:
@@ -91,7 +87,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerResponse]]
+        Response[HTTPValidationError | ScorerResponse]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -101,7 +97,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: CreateScorerRequest) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
+def sync(*, client: ApiClient, body: CreateScorerRequest) -> Optional[HTTPValidationError | ScorerResponse]:
     """Create
 
     Args:
@@ -112,7 +108,7 @@ def sync(*, client: ApiClient, body: CreateScorerRequest) -> Optional[Union[HTTP
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerResponse]
+        HTTPValidationError | ScorerResponse
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -120,7 +116,7 @@ def sync(*, client: ApiClient, body: CreateScorerRequest) -> Optional[Union[HTTP
 
 async def asyncio_detailed(
     *, client: ApiClient, body: CreateScorerRequest
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+) -> Response[HTTPValidationError | ScorerResponse]:
     """Create
 
     Args:
@@ -131,7 +127,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerResponse]]
+        Response[HTTPValidationError | ScorerResponse]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -141,9 +137,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(
-    *, client: ApiClient, body: CreateScorerRequest
-) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
+async def asyncio(*, client: ApiClient, body: CreateScorerRequest) -> Optional[HTTPValidationError | ScorerResponse]:
     """Create
 
     Args:
@@ -154,7 +148,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerResponse]
+        HTTPValidationError | ScorerResponse
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

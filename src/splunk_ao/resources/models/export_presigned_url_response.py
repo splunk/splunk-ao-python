@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 T = TypeVar("T", bound="ExportPresignedUrlResponse")
 
@@ -48,7 +49,7 @@ class ExportPresignedUrlResponse:
         d = dict(src_dict)
         url = d.pop("url")
 
-        url_expires_at = isoparse(d.pop("url_expires_at"))
+        url_expires_at = datetime.datetime.fromisoformat(d.pop("url_expires_at"))
 
         file_name = d.pop("file_name")
 

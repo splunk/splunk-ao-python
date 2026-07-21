@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import typing
@@ -50,7 +52,7 @@ except ImportError:
         def __init__(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
             raise ImportError(INSTALL_ERR_MSG)
 
-        def export(self, spans: typing.Sequence[Any]) -> "Any":
+        def export(self, spans: typing.Sequence[Any]) -> Any:
             raise ImportError(INSTALL_ERR_MSG)
 
     class Span:  # type: ignore[no-redef]
@@ -80,7 +82,7 @@ class TracerProvider(Protocol):
         instrumenting_library_version: str | None = None,
         schema_url: str | None = None,
         attributes: Any | None = None,
-    ) -> "Tracer": ...
+    ) -> Tracer: ...
 
 
 _TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
@@ -144,7 +146,7 @@ class SplunkAOOTLPExporter(OTLPSpanExporter):
 
         super().__init__(endpoint=endpoint, headers=exporter_headers, **kwargs)
 
-    def export(self, spans: typing.Sequence[Any]) -> "Any":
+    def export(self, spans: typing.Sequence[Any]) -> Any:
         """Override export to set resource attributes from span attributes before serialization."""
         is_experiment = False
         for span in spans:

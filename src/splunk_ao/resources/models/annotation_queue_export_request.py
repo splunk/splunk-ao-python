@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,24 +22,24 @@ class AnnotationQueueExportRequest:
     """Request to export selected annotation queue records.
 
     Attributes:
-        record_selector (Union['AnnotationQueueRecordsByFilterTree', 'AnnotationQueueRecordsByRecordIDs']): Selector to
-            specify which queue records to export (either by record IDs or filter tree)
-        column_ids (Union[None, Unset, list[str]]): Column IDs to include in the export. Applies only to CSV exports.
-        export_format (Union[Unset, LLMExportFormat]):
-        redact (Union[Unset, bool]): Redact sensitive data Default: True.
-        file_name (Union[None, Unset, str]): Optional filename for the exported file
-        export_computed_metrics_only (Union[Unset, bool]): When true, export only enabled scorer metrics with computed
-            values (success or roll_up). For session exports, omit entire sessions unless every enabled metric at session,
-            trace, or span level is ready (success, roll_up, or not_applicable). Not supported with export_format=jsonl_flat
+        record_selector (AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs): Selector to specify
+            which queue records to export (either by record IDs or filter tree)
+        column_ids (list[str] | None | Unset): Column IDs to include in the export. Applies only to CSV exports.
+        export_format (LLMExportFormat | Unset):
+        redact (bool | Unset): Redact sensitive data Default: True.
+        file_name (None | str | Unset): Optional filename for the exported file
+        export_computed_metrics_only (bool | Unset): When true, export only enabled scorer metrics with computed values
+            (success or roll_up). For session exports, omit entire sessions unless every enabled metric at session, trace,
+            or span level is ready (success, roll_up, or not_applicable). Not supported with export_format=jsonl_flat
             (returns 422); use jsonl or csv instead. Default: False.
     """
 
-    record_selector: Union["AnnotationQueueRecordsByFilterTree", "AnnotationQueueRecordsByRecordIDs"]
-    column_ids: Union[None, Unset, list[str]] = UNSET
-    export_format: Union[Unset, LLMExportFormat] = UNSET
-    redact: Union[Unset, bool] = True
-    file_name: Union[None, Unset, str] = UNSET
-    export_computed_metrics_only: Union[Unset, bool] = False
+    record_selector: AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs
+    column_ids: list[str] | None | Unset = UNSET
+    export_format: LLMExportFormat | Unset = UNSET
+    redact: bool | Unset = True
+    file_name: None | str | Unset = UNSET
+    export_computed_metrics_only: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,7 +51,7 @@ class AnnotationQueueExportRequest:
         else:
             record_selector = self.record_selector.to_dict()
 
-        column_ids: Union[None, Unset, list[str]]
+        column_ids: list[str] | None | Unset
         if isinstance(self.column_ids, Unset):
             column_ids = UNSET
         elif isinstance(self.column_ids, list):
@@ -58,13 +60,13 @@ class AnnotationQueueExportRequest:
         else:
             column_ids = self.column_ids
 
-        export_format: Union[Unset, str] = UNSET
+        export_format: str | Unset = UNSET
         if not isinstance(self.export_format, Unset):
             export_format = self.export_format.value
 
         redact = self.redact
 
-        file_name: Union[None, Unset, str]
+        file_name: None | str | Unset
         if isinstance(self.file_name, Unset):
             file_name = UNSET
         else:
@@ -97,7 +99,7 @@ class AnnotationQueueExportRequest:
 
         def _parse_record_selector(
             data: object,
-        ) -> Union["AnnotationQueueRecordsByFilterTree", "AnnotationQueueRecordsByRecordIDs"]:
+        ) -> AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -114,7 +116,7 @@ class AnnotationQueueExportRequest:
 
         record_selector = _parse_record_selector(d.pop("record_selector"))
 
-        def _parse_column_ids(data: object) -> Union[None, Unset, list[str]]:
+        def _parse_column_ids(data: object) -> list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -127,12 +129,12 @@ class AnnotationQueueExportRequest:
                 return column_ids_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, list[str]], data)
+            return cast(list[str] | None | Unset, data)
 
         column_ids = _parse_column_ids(d.pop("column_ids", UNSET))
 
         _export_format = d.pop("export_format", UNSET)
-        export_format: Union[Unset, LLMExportFormat]
+        export_format: LLMExportFormat | Unset
         if isinstance(_export_format, Unset):
             export_format = UNSET
         else:
@@ -140,12 +142,12 @@ class AnnotationQueueExportRequest:
 
         redact = d.pop("redact", UNSET)
 
-        def _parse_file_name(data: object) -> Union[None, Unset, str]:
+        def _parse_file_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         file_name = _parse_file_name(d.pop("file_name", UNSET))
 

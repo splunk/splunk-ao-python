@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,14 +19,14 @@ T = TypeVar("T", bound="IntegrationCostsResponse")
 class IntegrationCostsResponse:
     """
     Attributes:
-        features (Union[Unset, list['FeatureIntegrationCosts']]):
+        features (list[FeatureIntegrationCosts] | Unset):
     """
 
-    features: Union[Unset, list["FeatureIntegrationCosts"]] = UNSET
+    features: list[FeatureIntegrationCosts] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        features: Union[Unset, list[dict[str, Any]]] = UNSET
+        features: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.features, Unset):
             features = []
             for features_item_data in self.features:
@@ -44,12 +46,14 @@ class IntegrationCostsResponse:
         from ..models.feature_integration_costs import FeatureIntegrationCosts
 
         d = dict(src_dict)
-        features = []
         _features = d.pop("features", UNSET)
-        for features_item_data in _features or []:
-            features_item = FeatureIntegrationCosts.from_dict(features_item_data)
+        features: list[FeatureIntegrationCosts] | Unset = UNSET
+        if _features is not UNSET:
+            features = []
+            for features_item_data in _features:
+                features_item = FeatureIntegrationCosts.from_dict(features_item_data)
 
-            features.append(features_item)
+                features.append(features_item)
 
         integration_costs_response = cls(features=features)
 

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(scorer_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DeleteScorerResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DeleteScorerResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DeleteScorerResponse.from_dict(response.json())
 
@@ -68,7 +68,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Del
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[DeleteScorerResponse, HTTPValidationError]]:
+) -> Response[DeleteScorerResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,7 +77,7 @@ def _build_response(
     )
 
 
-def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[Union[DeleteScorerResponse, HTTPValidationError]]:
+def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[DeleteScorerResponse | HTTPValidationError]:
     """Delete Scorer
 
     Args:
@@ -88,7 +88,7 @@ def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[Union[Delete
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeleteScorerResponse, HTTPValidationError]]
+        Response[DeleteScorerResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id)
@@ -98,7 +98,7 @@ def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[Union[Delete
     return _build_response(client=client, response=response)
 
 
-def sync(scorer_id: str, *, client: ApiClient) -> Optional[Union[DeleteScorerResponse, HTTPValidationError]]:
+def sync(scorer_id: str, *, client: ApiClient) -> Optional[DeleteScorerResponse | HTTPValidationError]:
     """Delete Scorer
 
     Args:
@@ -109,7 +109,7 @@ def sync(scorer_id: str, *, client: ApiClient) -> Optional[Union[DeleteScorerRes
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeleteScorerResponse, HTTPValidationError]
+        DeleteScorerResponse | HTTPValidationError
     """
 
     return sync_detailed(scorer_id=scorer_id, client=client).parsed
@@ -117,7 +117,7 @@ def sync(scorer_id: str, *, client: ApiClient) -> Optional[Union[DeleteScorerRes
 
 async def asyncio_detailed(
     scorer_id: str, *, client: ApiClient
-) -> Response[Union[DeleteScorerResponse, HTTPValidationError]]:
+) -> Response[DeleteScorerResponse | HTTPValidationError]:
     """Delete Scorer
 
     Args:
@@ -128,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeleteScorerResponse, HTTPValidationError]]
+        Response[DeleteScorerResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id)
@@ -138,7 +138,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(scorer_id: str, *, client: ApiClient) -> Optional[Union[DeleteScorerResponse, HTTPValidationError]]:
+async def asyncio(scorer_id: str, *, client: ApiClient) -> Optional[DeleteScorerResponse | HTTPValidationError]:
     """Delete Scorer
 
     Args:
@@ -149,7 +149,7 @@ async def asyncio(scorer_id: str, *, client: ApiClient) -> Optional[Union[Delete
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeleteScorerResponse, HTTPValidationError]
+        DeleteScorerResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(scorer_id=scorer_id, client=client)).parsed

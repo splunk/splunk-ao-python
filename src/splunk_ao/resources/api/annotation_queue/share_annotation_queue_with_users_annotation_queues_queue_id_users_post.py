@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -23,7 +23,7 @@ from ...models.user_annotation_queue_collaborator import UserAnnotationQueueColl
 from ...types import Response
 
 
-def _get_kwargs(queue_id: str, *, body: list["AnnotationQueueUserCollaboratorCreate"]) -> dict[str, Any]:
+def _get_kwargs(queue_id: str, *, body: list[AnnotationQueueUserCollaboratorCreate]) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -47,7 +47,7 @@ def _get_kwargs(queue_id: str, *, body: list["AnnotationQueueUserCollaboratorCre
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]:
+) -> HTTPValidationError | list[UserAnnotationQueueCollaborator]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -83,7 +83,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]]:
+) -> Response[HTTPValidationError | list[UserAnnotationQueueCollaborator]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -93,8 +93,8 @@ def _build_response(
 
 
 def sync_detailed(
-    queue_id: str, *, client: ApiClient, body: list["AnnotationQueueUserCollaboratorCreate"]
-) -> Response[Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]]:
+    queue_id: str, *, client: ApiClient, body: list[AnnotationQueueUserCollaboratorCreate]
+) -> Response[HTTPValidationError | list[UserAnnotationQueueCollaborator]]:
     """Share Annotation Queue With Users
 
      Share an annotation queue with users by granting them specific roles.
@@ -106,14 +106,14 @@ def sync_detailed(
 
     Args:
         queue_id (str):
-        body (list['AnnotationQueueUserCollaboratorCreate']):
+        body (list[AnnotationQueueUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['UserAnnotationQueueCollaborator']]]
+        Response[HTTPValidationError | list[UserAnnotationQueueCollaborator]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -124,8 +124,8 @@ def sync_detailed(
 
 
 def sync(
-    queue_id: str, *, client: ApiClient, body: list["AnnotationQueueUserCollaboratorCreate"]
-) -> Optional[Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]]:
+    queue_id: str, *, client: ApiClient, body: list[AnnotationQueueUserCollaboratorCreate]
+) -> Optional[HTTPValidationError | list[UserAnnotationQueueCollaborator]]:
     """Share Annotation Queue With Users
 
      Share an annotation queue with users by granting them specific roles.
@@ -137,22 +137,22 @@ def sync(
 
     Args:
         queue_id (str):
-        body (list['AnnotationQueueUserCollaboratorCreate']):
+        body (list[AnnotationQueueUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['UserAnnotationQueueCollaborator']]
+        HTTPValidationError | list[UserAnnotationQueueCollaborator]
     """
 
     return sync_detailed(queue_id=queue_id, client=client, body=body).parsed
 
 
 async def asyncio_detailed(
-    queue_id: str, *, client: ApiClient, body: list["AnnotationQueueUserCollaboratorCreate"]
-) -> Response[Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]]:
+    queue_id: str, *, client: ApiClient, body: list[AnnotationQueueUserCollaboratorCreate]
+) -> Response[HTTPValidationError | list[UserAnnotationQueueCollaborator]]:
     """Share Annotation Queue With Users
 
      Share an annotation queue with users by granting them specific roles.
@@ -164,14 +164,14 @@ async def asyncio_detailed(
 
     Args:
         queue_id (str):
-        body (list['AnnotationQueueUserCollaboratorCreate']):
+        body (list[AnnotationQueueUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['UserAnnotationQueueCollaborator']]]
+        Response[HTTPValidationError | list[UserAnnotationQueueCollaborator]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -182,8 +182,8 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    queue_id: str, *, client: ApiClient, body: list["AnnotationQueueUserCollaboratorCreate"]
-) -> Optional[Union[HTTPValidationError, list["UserAnnotationQueueCollaborator"]]]:
+    queue_id: str, *, client: ApiClient, body: list[AnnotationQueueUserCollaboratorCreate]
+) -> Optional[HTTPValidationError | list[UserAnnotationQueueCollaborator]]:
     """Share Annotation Queue With Users
 
      Share an annotation queue with users by granting them specific roles.
@@ -195,14 +195,14 @@ async def asyncio(
 
     Args:
         queue_id (str):
-        body (list['AnnotationQueueUserCollaboratorCreate']):
+        body (list[AnnotationQueueUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['UserAnnotationQueueCollaborator']]
+        HTTPValidationError | list[UserAnnotationQueueCollaborator]
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client, body=body)).parsed
