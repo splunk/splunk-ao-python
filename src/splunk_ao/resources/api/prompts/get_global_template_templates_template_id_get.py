@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -37,9 +37,7 @@ def _get_kwargs(template_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[BasePromptTemplateResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> BasePromptTemplateResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = BasePromptTemplateResponse.from_dict(response.json())
 
@@ -70,7 +68,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,9 +77,7 @@ def _build_response(
     )
 
 
-def sync_detailed(
-    template_id: str, *, client: ApiClient
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+def sync_detailed(template_id: str, *, client: ApiClient) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     """Get Global Template
 
      Get a global prompt template given a template ID.
@@ -106,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BasePromptTemplateResponse, HTTPValidationError]]
+        Response[BasePromptTemplateResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id)
@@ -116,7 +112,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(template_id: str, *, client: ApiClient) -> Optional[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+def sync(template_id: str, *, client: ApiClient) -> Optional[BasePromptTemplateResponse | HTTPValidationError]:
     """Get Global Template
 
      Get a global prompt template given a template ID.
@@ -141,7 +137,7 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[Union[BasePromptTem
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BasePromptTemplateResponse, HTTPValidationError]
+        BasePromptTemplateResponse | HTTPValidationError
     """
 
     return sync_detailed(template_id=template_id, client=client).parsed
@@ -149,7 +145,7 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[Union[BasePromptTem
 
 async def asyncio_detailed(
     template_id: str, *, client: ApiClient
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     """Get Global Template
 
      Get a global prompt template given a template ID.
@@ -174,7 +170,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BasePromptTemplateResponse, HTTPValidationError]]
+        Response[BasePromptTemplateResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(template_id=template_id)
@@ -184,9 +180,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(
-    template_id: str, *, client: ApiClient
-) -> Optional[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+async def asyncio(template_id: str, *, client: ApiClient) -> Optional[BasePromptTemplateResponse | HTTPValidationError]:
     """Get Global Template
 
      Get a global prompt template given a template ID.
@@ -211,7 +205,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BasePromptTemplateResponse, HTTPValidationError]
+        BasePromptTemplateResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(template_id=template_id, client=client)).parsed

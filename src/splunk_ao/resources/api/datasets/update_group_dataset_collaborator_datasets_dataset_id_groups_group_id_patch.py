@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -42,7 +42,7 @@ def _get_kwargs(dataset_id: str, group_id: str, *, body: CollaboratorUpdate) -> 
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[GroupCollaborator, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> GroupCollaborator | HTTPValidationError:
     if response.status_code == 200:
         response_200 = GroupCollaborator.from_dict(response.json())
 
@@ -73,7 +73,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Gro
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[GroupCollaborator, HTTPValidationError]]:
+) -> Response[GroupCollaborator | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +84,7 @@ def _build_response(
 
 def sync_detailed(
     dataset_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[Union[GroupCollaborator, HTTPValidationError]]:
+) -> Response[GroupCollaborator | HTTPValidationError]:
     """Update Group Dataset Collaborator
 
      Update the sharing permissions of a group on a dataset.
@@ -99,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GroupCollaborator, HTTPValidationError]]
+        Response[GroupCollaborator | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, group_id=group_id, body=body)
@@ -111,7 +111,7 @@ def sync_detailed(
 
 def sync(
     dataset_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[Union[GroupCollaborator, HTTPValidationError]]:
+) -> Optional[GroupCollaborator | HTTPValidationError]:
     """Update Group Dataset Collaborator
 
      Update the sharing permissions of a group on a dataset.
@@ -126,7 +126,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GroupCollaborator, HTTPValidationError]
+        GroupCollaborator | HTTPValidationError
     """
 
     return sync_detailed(dataset_id=dataset_id, group_id=group_id, client=client, body=body).parsed
@@ -134,7 +134,7 @@ def sync(
 
 async def asyncio_detailed(
     dataset_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[Union[GroupCollaborator, HTTPValidationError]]:
+) -> Response[GroupCollaborator | HTTPValidationError]:
     """Update Group Dataset Collaborator
 
      Update the sharing permissions of a group on a dataset.
@@ -149,7 +149,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[GroupCollaborator, HTTPValidationError]]
+        Response[GroupCollaborator | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, group_id=group_id, body=body)
@@ -161,7 +161,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     dataset_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[Union[GroupCollaborator, HTTPValidationError]]:
+) -> Optional[GroupCollaborator | HTTPValidationError]:
     """Update Group Dataset Collaborator
 
      Update the sharing permissions of a group on a dataset.
@@ -176,7 +176,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[GroupCollaborator, HTTPValidationError]
+        GroupCollaborator | HTTPValidationError
     """
 
     return (await asyncio_detailed(dataset_id=dataset_id, group_id=group_id, client=client, body=body)).parsed

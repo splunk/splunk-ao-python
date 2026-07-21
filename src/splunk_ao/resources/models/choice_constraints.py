@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,12 +17,12 @@ class ChoiceConstraints:
     Attributes:
         annotation_type (Literal['choice']):
         choices (list[str]):
-        allow_other (Union[Unset, bool]):  Default: False.
+        allow_other (bool | Unset):  Default: False.
     """
 
     annotation_type: Literal["choice"]
     choices: list[str]
-    allow_other: Union[Unset, bool] = False
+    allow_other: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

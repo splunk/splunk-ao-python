@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -24,16 +26,14 @@ class PartialExtendedToolSpanRecordMetricInfoType0:
 
     additional_properties: dict[
         str,
-        Union[
-            "MetricComputing",
-            "MetricError",
-            "MetricFailed",
-            "MetricNotApplicable",
-            "MetricNotComputed",
-            "MetricPending",
-            "MetricRollUp",
-            "MetricSuccess",
-        ],
+        MetricComputing
+        | MetricError
+        | MetricFailed
+        | MetricNotApplicable
+        | MetricNotComputed
+        | MetricPending
+        | MetricRollUp
+        | MetricSuccess,
     ] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -85,16 +85,16 @@ class PartialExtendedToolSpanRecordMetricInfoType0:
 
             def _parse_additional_property(
                 data: object,
-            ) -> Union[
-                "MetricComputing",
-                "MetricError",
-                "MetricFailed",
-                "MetricNotApplicable",
-                "MetricNotComputed",
-                "MetricPending",
-                "MetricRollUp",
-                "MetricSuccess",
-            ]:
+            ) -> (
+                MetricComputing
+                | MetricError
+                | MetricFailed
+                | MetricNotApplicable
+                | MetricNotComputed
+                | MetricPending
+                | MetricRollUp
+                | MetricSuccess
+            ):
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -170,31 +170,29 @@ class PartialExtendedToolSpanRecordMetricInfoType0:
 
     def __getitem__(
         self, key: str
-    ) -> Union[
-        "MetricComputing",
-        "MetricError",
-        "MetricFailed",
-        "MetricNotApplicable",
-        "MetricNotComputed",
-        "MetricPending",
-        "MetricRollUp",
-        "MetricSuccess",
-    ]:
+    ) -> (
+        MetricComputing
+        | MetricError
+        | MetricFailed
+        | MetricNotApplicable
+        | MetricNotComputed
+        | MetricPending
+        | MetricRollUp
+        | MetricSuccess
+    ):
         return self.additional_properties[key]
 
     def __setitem__(
         self,
         key: str,
-        value: Union[
-            "MetricComputing",
-            "MetricError",
-            "MetricFailed",
-            "MetricNotApplicable",
-            "MetricNotComputed",
-            "MetricPending",
-            "MetricRollUp",
-            "MetricSuccess",
-        ],
+        value: MetricComputing
+        | MetricError
+        | MetricFailed
+        | MetricNotApplicable
+        | MetricNotComputed
+        | MetricPending
+        | MetricRollUp
+        | MetricSuccess,
     ) -> None:
         self.additional_properties[key] = value
 

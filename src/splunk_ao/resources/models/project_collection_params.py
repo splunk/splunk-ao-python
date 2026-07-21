@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -30,37 +32,35 @@ T = TypeVar("T", bound="ProjectCollectionParams")
 class ProjectCollectionParams:
     """
     Attributes:
-        filters (Union[Unset, list[Union['ProjectBookmarkFilter', 'ProjectCreatedAtFilter', 'ProjectCreatorFilter',
-            'ProjectIDFilter', 'ProjectNameFilter', 'ProjectRunsFilter', 'ProjectTypeFilter', 'ProjectUpdatedAtFilter']]]):
-        sort (Union['ProjectBookmarkSort', 'ProjectCreatedAtSortV1', 'ProjectNameSortV1', 'ProjectRunsSort',
-            'ProjectTypeSort', 'ProjectUpdatedAtSortV1', None, Unset]):  Default: None.
+        filters (list[ProjectBookmarkFilter | ProjectCreatedAtFilter | ProjectCreatorFilter | ProjectIDFilter |
+            ProjectNameFilter | ProjectRunsFilter | ProjectTypeFilter | ProjectUpdatedAtFilter] | Unset):
+        sort (None | ProjectBookmarkSort | ProjectCreatedAtSortV1 | ProjectNameSortV1 | ProjectRunsSort |
+            ProjectTypeSort | ProjectUpdatedAtSortV1 | Unset):  Default: None.
     """
 
-    filters: Union[
-        Unset,
+    filters: (
         list[
-            Union[
-                "ProjectBookmarkFilter",
-                "ProjectCreatedAtFilter",
-                "ProjectCreatorFilter",
-                "ProjectIDFilter",
-                "ProjectNameFilter",
-                "ProjectRunsFilter",
-                "ProjectTypeFilter",
-                "ProjectUpdatedAtFilter",
-            ]
-        ],
-    ] = UNSET
-    sort: Union[
-        "ProjectBookmarkSort",
-        "ProjectCreatedAtSortV1",
-        "ProjectNameSortV1",
-        "ProjectRunsSort",
-        "ProjectTypeSort",
-        "ProjectUpdatedAtSortV1",
-        None,
-        Unset,
-    ] = None
+            ProjectBookmarkFilter
+            | ProjectCreatedAtFilter
+            | ProjectCreatorFilter
+            | ProjectIDFilter
+            | ProjectNameFilter
+            | ProjectRunsFilter
+            | ProjectTypeFilter
+            | ProjectUpdatedAtFilter
+        ]
+        | Unset
+    ) = UNSET
+    sort: (
+        None
+        | ProjectBookmarkSort
+        | ProjectCreatedAtSortV1
+        | ProjectNameSortV1
+        | ProjectRunsSort
+        | ProjectTypeSort
+        | ProjectUpdatedAtSortV1
+        | Unset
+    ) = None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -78,7 +78,7 @@ class ProjectCollectionParams:
         from ..models.project_updated_at_filter import ProjectUpdatedAtFilter
         from ..models.project_updated_at_sort_v1 import ProjectUpdatedAtSortV1
 
-        filters: Union[Unset, list[dict[str, Any]]] = UNSET
+        filters: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
             for filters_item_data in self.filters:
@@ -102,7 +102,7 @@ class ProjectCollectionParams:
 
                 filters.append(filters_item)
 
-        sort: Union[None, Unset, dict[str, Any]]
+        sort: dict[str, Any] | None | Unset
         if isinstance(self.sort, Unset):
             sort = UNSET
         elif isinstance(self.sort, ProjectNameSortV1):
@@ -148,100 +148,114 @@ class ProjectCollectionParams:
         from ..models.project_updated_at_sort_v1 import ProjectUpdatedAtSortV1
 
         d = dict(src_dict)
-        filters = []
         _filters = d.pop("filters", UNSET)
-        for filters_item_data in _filters or []:
+        filters: (
+            list[
+                ProjectBookmarkFilter
+                | ProjectCreatedAtFilter
+                | ProjectCreatorFilter
+                | ProjectIDFilter
+                | ProjectNameFilter
+                | ProjectRunsFilter
+                | ProjectTypeFilter
+                | ProjectUpdatedAtFilter
+            ]
+            | Unset
+        ) = UNSET
+        if _filters is not UNSET:
+            filters = []
+            for filters_item_data in _filters:
 
-            def _parse_filters_item(
-                data: object,
-            ) -> Union[
-                "ProjectBookmarkFilter",
-                "ProjectCreatedAtFilter",
-                "ProjectCreatorFilter",
-                "ProjectIDFilter",
-                "ProjectNameFilter",
-                "ProjectRunsFilter",
-                "ProjectTypeFilter",
-                "ProjectUpdatedAtFilter",
-            ]:
-                try:
+                def _parse_filters_item(
+                    data: object,
+                ) -> (
+                    ProjectBookmarkFilter
+                    | ProjectCreatedAtFilter
+                    | ProjectCreatorFilter
+                    | ProjectIDFilter
+                    | ProjectNameFilter
+                    | ProjectRunsFilter
+                    | ProjectTypeFilter
+                    | ProjectUpdatedAtFilter
+                ):
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_0 = ProjectIDFilter.from_dict(data)
+
+                        return filters_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_1 = ProjectNameFilter.from_dict(data)
+
+                        return filters_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_2 = ProjectTypeFilter.from_dict(data)
+
+                        return filters_item_type_2
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_3 = ProjectCreatorFilter.from_dict(data)
+
+                        return filters_item_type_3
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_4 = ProjectCreatedAtFilter.from_dict(data)
+
+                        return filters_item_type_4
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_5 = ProjectUpdatedAtFilter.from_dict(data)
+
+                        return filters_item_type_5
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_6 = ProjectRunsFilter.from_dict(data)
+
+                        return filters_item_type_6
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    filters_item_type_0 = ProjectIDFilter.from_dict(data)
+                    filters_item_type_7 = ProjectBookmarkFilter.from_dict(data)
 
-                    return filters_item_type_0
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_1 = ProjectNameFilter.from_dict(data)
+                    return filters_item_type_7
 
-                    return filters_item_type_1
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_2 = ProjectTypeFilter.from_dict(data)
+                filters_item = _parse_filters_item(filters_item_data)
 
-                    return filters_item_type_2
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_3 = ProjectCreatorFilter.from_dict(data)
-
-                    return filters_item_type_3
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_4 = ProjectCreatedAtFilter.from_dict(data)
-
-                    return filters_item_type_4
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_5 = ProjectUpdatedAtFilter.from_dict(data)
-
-                    return filters_item_type_5
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_6 = ProjectRunsFilter.from_dict(data)
-
-                    return filters_item_type_6
-                except:  # noqa: E722
-                    pass
-                if not isinstance(data, dict):
-                    raise TypeError()
-                filters_item_type_7 = ProjectBookmarkFilter.from_dict(data)
-
-                return filters_item_type_7
-
-            filters_item = _parse_filters_item(filters_item_data)
-
-            filters.append(filters_item)
+                filters.append(filters_item)
 
         def _parse_sort(
             data: object,
-        ) -> Union[
-            "ProjectBookmarkSort",
-            "ProjectCreatedAtSortV1",
-            "ProjectNameSortV1",
-            "ProjectRunsSort",
-            "ProjectTypeSort",
-            "ProjectUpdatedAtSortV1",
-            None,
-            Unset,
-        ]:
+        ) -> (
+            None
+            | ProjectBookmarkSort
+            | ProjectCreatedAtSortV1
+            | ProjectNameSortV1
+            | ProjectRunsSort
+            | ProjectTypeSort
+            | ProjectUpdatedAtSortV1
+            | Unset
+        ):
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -295,16 +309,14 @@ class ProjectCollectionParams:
             except:  # noqa: E722
                 pass
             return cast(
-                Union[
-                    "ProjectBookmarkSort",
-                    "ProjectCreatedAtSortV1",
-                    "ProjectNameSortV1",
-                    "ProjectRunsSort",
-                    "ProjectTypeSort",
-                    "ProjectUpdatedAtSortV1",
-                    None,
-                    Unset,
-                ],
+                None
+                | ProjectBookmarkSort
+                | ProjectCreatedAtSortV1
+                | ProjectNameSortV1
+                | ProjectRunsSort
+                | ProjectTypeSort
+                | ProjectUpdatedAtSortV1
+                | Unset,
                 data,
             )
 

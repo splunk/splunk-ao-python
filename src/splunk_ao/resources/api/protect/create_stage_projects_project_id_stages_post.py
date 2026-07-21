@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -42,7 +42,7 @@ def _get_kwargs(project_id: str, *, body: StageWithRulesets) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, StageDB]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | StageDB:
     if response.status_code == 200:
         response_200 = StageDB.from_dict(response.json())
 
@@ -71,7 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, StageDB]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | StageDB]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +82,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: StageWithRulesets
-) -> Response[Union[HTTPValidationError, StageDB]]:
+) -> Response[HTTPValidationError | StageDB]:
     """Create Stage
 
     Args:
@@ -94,7 +94,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, StageDB]]
+        Response[HTTPValidationError | StageDB]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -104,9 +104,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    project_id: str, *, client: ApiClient, body: StageWithRulesets
-) -> Optional[Union[HTTPValidationError, StageDB]]:
+def sync(project_id: str, *, client: ApiClient, body: StageWithRulesets) -> Optional[HTTPValidationError | StageDB]:
     """Create Stage
 
     Args:
@@ -118,7 +116,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, StageDB]
+        HTTPValidationError | StageDB
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -126,7 +124,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: StageWithRulesets
-) -> Response[Union[HTTPValidationError, StageDB]]:
+) -> Response[HTTPValidationError | StageDB]:
     """Create Stage
 
     Args:
@@ -138,7 +136,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, StageDB]]
+        Response[HTTPValidationError | StageDB]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -150,7 +148,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: StageWithRulesets
-) -> Optional[Union[HTTPValidationError, StageDB]]:
+) -> Optional[HTTPValidationError | StageDB]:
     """Create Stage
 
     Args:
@@ -162,7 +160,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, StageDB]
+        HTTPValidationError | StageDB
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

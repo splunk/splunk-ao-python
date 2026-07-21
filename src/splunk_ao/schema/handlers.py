@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 from uuid import UUID
 
@@ -8,7 +8,7 @@ NODE_TYPE = LANGCHAIN_NODE_TYPE
 INTEGRATION = Literal["langchain", "crewai", "google_adk"]
 
 
-class NodeType(str, Enum):
+class NodeType(StrEnum):
     AGENT = "agent"
     CHAIN = "chain"
     CHAT = "chat"

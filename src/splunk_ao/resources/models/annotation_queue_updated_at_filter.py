@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.annotation_queue_updated_at_filter_operator import AnnotationQueueUpdatedAtFilterOperator
 from ..types import UNSET, Unset
@@ -18,12 +19,12 @@ class AnnotationQueueUpdatedAtFilter:
     Attributes:
         operator (AnnotationQueueUpdatedAtFilterOperator):
         value (datetime.datetime):
-        name (Union[Literal['updated_at'], Unset]):  Default: 'updated_at'.
+        name (Literal['updated_at'] | Unset):  Default: 'updated_at'.
     """
 
     operator: AnnotationQueueUpdatedAtFilterOperator
     value: datetime.datetime
-    name: Union[Literal["updated_at"], Unset] = "updated_at"
+    name: Literal["updated_at"] | Unset = "updated_at"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,9 +47,9 @@ class AnnotationQueueUpdatedAtFilter:
         d = dict(src_dict)
         operator = AnnotationQueueUpdatedAtFilterOperator(d.pop("operator"))
 
-        value = isoparse(d.pop("value"))
+        value = datetime.datetime.fromisoformat(d.pop("value"))
 
-        name = cast(Union[Literal["updated_at"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["updated_at"] | Unset, d.pop("name", UNSET))
         if name != "updated_at" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'updated_at', got '{name}'")
 

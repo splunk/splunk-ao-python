@@ -9,7 +9,7 @@ dependencies = [
     "langgraph-prebuilt>=0.6.0",
     "openai",
     "python-dotenv>=1.1.0",
-    "splunk-ao[otel]",
+    "splunk-ao",
     "opentelemetry-instrumentation-langchain>=0.48.1",
     "opentelemetry-instrumentation-openai-v2>=2.1b0",
 ]
