@@ -6,9 +6,15 @@ import typing
 from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, NoReturn, Protocol, cast
+from typing import Any, Protocol, cast
 from urllib.parse import urljoin
 
+from opentelemetry import context, trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import Span, SpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.trace import Tracer
 from requests import Session
 
 from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
@@ -27,50 +33,6 @@ from splunk_ao.utils.env_helpers import _get_log_stream_or_default, _get_project
 from splunk_ao.utils.retrievers import document_adapter
 
 logger = logging.getLogger(__name__)
-
-
-INSTALL_ERR_MSG = (
-    "OpenTelemetry packages are not installed. "
-    "Install optional OpenTelemetry dependencies with: pip install galileo[otel]"
-)
-
-
-try:
-    from opentelemetry import context, trace
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-        OTLPSpanExporter,  # pyright: ignore[reportAssignmentType]
-    )
-    from opentelemetry.sdk.resources import Resource  # pyright: ignore[reportAssignmentType]
-    from opentelemetry.sdk.trace import Span, SpanProcessor  # pyright: ignore[reportAssignmentType]
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor  # pyright: ignore[reportAssignmentType]
-    from opentelemetry.trace import Tracer  # pyright: ignore[reportAssignmentType]
-
-    OTEL_AVAILABLE = True
-except ImportError:
-    # Create stub classes if OpenTelemetry is not available
-    class OTLPSpanExporter:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
-            raise ImportError(INSTALL_ERR_MSG)
-
-        def export(self, spans: typing.Sequence[Any]) -> Any:
-            raise ImportError(INSTALL_ERR_MSG)
-
-    class Span:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
-            raise ImportError(INSTALL_ERR_MSG)
-
-        def set_attribute(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
-            raise ImportError(INSTALL_ERR_MSG)
-
-    class SpanProcessor:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
-            raise ImportError(INSTALL_ERR_MSG)
-
-    class Resource:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs) -> NoReturn:  # type: ignore[no-untyped-def]
-            raise ImportError(INSTALL_ERR_MSG)
-
-    OTEL_AVAILABLE = False
 
 
 class TracerProvider(Protocol):
@@ -231,17 +193,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         SpanProcessor : type, optional
             Custom span processor class. Defaults to BatchSpanProcessor for optimal performance.
 
-        Raises
-        ------
-        ImportError
-            When OpenTelemetry dependencies are not installed.
         """
-        if not OTEL_AVAILABLE:
-            raise ImportError(
-                "OpenTelemetry packages are not installed. "
-                "Install optional OpenTelemetry dependencies with: pip install galileo[otel]"
-            )
-
         # Resolve project and logstream: param first, then context var, then env var with default fallback
         ctx_project = project if project is not None else _project_context.get(None)
         ctx_logstream = logstream if logstream is not None else _log_stream_context.get(None)
