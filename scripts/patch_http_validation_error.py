@@ -37,7 +37,7 @@ from pathlib import Path
 # Patterns to find in the auto-generated file
 # ---------------------------------------------------------------------------
 
-# Inside from_dict — 0.29.0 generator output:
+# Inside from_dict — pattern produced by the generator (openapi-python-client 0.29+):
 #
 #     _detail = d.pop("detail", UNSET)
 #     detail: list[ValidationError] | Unset = UNSET
@@ -48,9 +48,9 @@ from pathlib import Path
 #                                                                      <- blank line
 #             detail.append(detail_item)
 #
-# Changes from 0.26.x: _detail = d.pop(...) now comes BEFORE the type-annotated
-# init; the loop body is wrapped in `if _detail is not UNSET:`; the `or []` is
-# gone; type annotation uses `list[...] | Unset` instead of `Union[Unset, list[...]]`.
+# The class-level field annotation already comes out as
+# `list[ValidationError] | Unset = UNSET` from the generator, so it
+# does NOT need to be patched — only the from_dict body is rewritten here.
 _LOOP_RE = re.compile(
     r"(?P<indent>[ \t]+)_detail = d\.pop\(\"detail\", UNSET\)\n"
     r"(?P=indent)detail: list\[ValidationError\] \| Unset = UNSET\n"

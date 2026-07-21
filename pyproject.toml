@@ -41,7 +41,8 @@ langchain = { version = ">=0.0.0,<2.0.0", optional = true }
 openai = { version = ">=2.8.0,<3.0.0", optional = true }
 openai-agents = { version = ">=0.4.0,<1.0.0", optional = true }
 litellm = { version = ">=1.83.14,<2.0.0", optional = true, python = ">=3.11,<3.14" }
-galileo-core = "^4.3.0"
+galileo-core = "^4.4.0"
+httpx = ">=0.27.0,<0.29.0"
 starlette = { version = ">=0.27.0", optional = true }
 backoff = "^2.2.1"
 crewai = { version = ">=0.152.0,<2.0.0", optional = true, python = ">=3.11,<3.14" }
@@ -64,7 +65,7 @@ pytest-xdist = "^3.7.0"
 pytest-socket = "^0.7"
 pytest-asyncio = "^1.0.0"
 requests-mock = "^1.11.0"
-galileo-core = { extras = ["testing"], version = "^4.3.0" }
+galileo-core = { extras = ["testing"], version = "^4.4.0" }
 
 pytest-env = "^1.1.5"
 pytest-timeout = "^2.3"
@@ -79,7 +80,7 @@ mypy = "^1.16.0"
 invoke = "^2.2.0"
 openai = ">=2.8.0,<3.0.0"
 fastapi = "^0.115.0"
-ruff = "^0.15.20"
+ruff = "^0.15.22"
 openapi-python-client = "^0.29.0"
 yq = "^3.4.3"
 pyyaml = "^6.0.2"
@@ -260,26 +261,11 @@ ignore = [
     "PT",       # Pytest style rules (can be overly strict)
     "T201",     # Print statements (allowed in tests for debugging)
     "D",        # All docstring rules (not critical for tests)
-    "PLC0415",  # Import not at top-level (needed for pytest.importorskip conditional imports)
-    "RUF043",   # Regex metacharacters in match= (common in test parametrize patterns)
-    "E402",     # Module level import not at top (needed after pytest.importorskip)
 ]
 # Allow print statements in examples (they're documentation) and scripts (utility tools)
 "examples/**/*.py" = [
     "T201",     # Print statements (allowed in examples)
     "D",        # All docstring rules (examples focus on usage, not documentation)
-    "ANN",      # Type annotations (examples are concise demos, not typed production code)
-    "PLC0415",  # Import not at top-level (conditional/optional imports common in examples)
-    "E402",     # Module level import not at top (common in example scripts)
-    "RUF003",   # Ambiguous unicode character in comment (ℹ info symbol used intentionally)
-    "ASYNC",    # Async rules (examples may use simplified async patterns)
-    "S",        # Security rules (examples are not production code)
-    "RUF012",   # Mutable class attributes (examples use simple patterns)
-    "ISC001",   # Implicit string concatenation (style preference in examples)
-    "E722",     # Bare except (examples often use simplified error handling)
-    "SIM",      # Simplify rules (examples prioritize clarity over brevity)
-    "B",        # Bugbear rules (examples may use simplified patterns)
-    "ARG",      # Unused arguments (examples often have placeholder callbacks)
 ]
 "scripts/**/*.py" = [
     "T201",     # Print statements (allowed in scripts)
@@ -293,9 +279,9 @@ ignore = [
 "src/splunk_ao/handlers/crewai/handler.py" = ["PLC0415"]  # Version-specific conditional imports
 "src/splunk_ao/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
 "src/splunk_ao/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
+"src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
 "src/splunk_ao/experiment.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 "src/splunk_ao/metric.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
-"src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
 
 [tool.ruff.lint.isort]
 known-first-party = ["galileo_core"]

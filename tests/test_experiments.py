@@ -814,16 +814,19 @@ class TestExperiments:
                         name="length",
                         scorer_fn=lambda step: len(step.input),
                         scorable_types=["workflow"],
-                        aggregator_fn=sum,
+                        aggregator_fn=lambda lengths: sum(lengths),
                     ),
                     LocalMetricConfig[str](
                         name="output",
                         scorer_fn=lambda step: step.output,
                         scorable_types=["workflow"],
-                        aggregator_fn=",".join,
+                        aggregator_fn=lambda outputs: ",".join(outputs),
                     ),
                     LocalMetricConfig[float](
-                        name="decimal", scorer_fn=lambda step: 4.53, scorable_types=["workflow"], aggregator_fn=mean
+                        name="decimal",
+                        scorer_fn=lambda step: 4.53,
+                        scorable_types=["workflow"],
+                        aggregator_fn=lambda values: mean(values),
                     ),
                     LocalMetricConfig[bool](
                         name="bool",
@@ -842,10 +845,14 @@ class TestExperiments:
                 complex_trace_function,
                 [
                     LocalMetricConfig[int](
-                        name="length", scorer_fn=lambda step: len(step.input[0].content), aggregator_fn=sum
+                        name="length",
+                        scorer_fn=lambda step: len(step.input[0].content),
+                        aggregator_fn=lambda lengths: sum(lengths),
                     ),
                     LocalMetricConfig[str](
-                        name="output", scorer_fn=lambda step: step.output.content, aggregator_fn=",".join
+                        name="output",
+                        scorer_fn=lambda step: step.output.content,
+                        aggregator_fn=lambda outputs: ",".join(outputs),
                     ),
                 ],
                 2,
@@ -1186,9 +1193,9 @@ class TestExperiments:
         # Return dataset_content on first call (starting_token=0), then None to signal end of pagination
         mock_get_dataset_instance = mock_get_dataset.return_value
         mock_get_dataset_instance.get_content = MagicMock(
-            side_effect=lambda starting_token=0, limit=1000: (
-                dataset_content_with_question if starting_token == 0 else None
-            )
+            side_effect=lambda starting_token=0, limit=1000: dataset_content_with_question
+            if starting_token == 0
+            else None
         )
 
         def runner(input) -> str:
@@ -1416,7 +1423,7 @@ class TestExperiments:
         from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs(
-            "project_id", "experiment_id", ["metric1", LocalMetricConfig(name="length", scorer_fn=len)]
+            "project_id", "experiment_id", ["metric1", LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))]
         )
         assert len(scorers) == 1  # Should return one valid scorer
         assert len(local_scorers) == 1  # Should return one local scorer
@@ -1476,7 +1483,7 @@ class TestExperiments:
         mock_scorers_instance.get_scorer_version.assert_called_once_with(scorer_id="3", version=2)
 
         # Test mixed input types
-        local_metric = LocalMetricConfig(name="length", scorer_fn=len)
+        local_metric = LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))
 
         from splunk_ao.utils.metrics import create_metric_configs
 

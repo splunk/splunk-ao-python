@@ -298,12 +298,10 @@ def process_row(row: DatasetRecord, process_func: Callable) -> str:
     try:
         # Set dataset context for OTEL spans (ground truth for scorers)
         # This ensures OTEL-instrumented frameworks get dataset fields attached to their spans
-        with splunk_ao_dataset_context(
-            dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata
-        ):
+        with splunk_ao_dataset_context(dataset_input=row.input, dataset_output=row.output, dataset_metadata=row.metadata):
             output = process_func(row.deserialized_input)
-            log = splunk_ao_context.get_logger_instance()
-            log.conclude(output)
+            logger_instance = splunk_ao_context.get_logger_instance()
+            logger_instance.conclude(output)
     except Exception as exc:
         output = f"error during executing: {process_func.__name__}: {exc}"
         _logger.error(output)

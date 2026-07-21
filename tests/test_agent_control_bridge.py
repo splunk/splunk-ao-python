@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import builtins
 import dataclasses
 import datetime
-import importlib
 import sys
 import types
 import uuid
@@ -13,9 +11,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-import splunk_ao.logger.control as control_module
-import splunk_ao.logger.logger as logger_module
-import splunk_ao.schema.logged as logged_module
 from splunk_ao.handlers.agent_control import setup_agent_control_bridge
 from splunk_ao.logger.control import ControlResult, ControlSpan
 from splunk_ao.logger.logger import SplunkAOLogger
@@ -129,7 +124,7 @@ def _make_event(logger: SplunkAOLogger, **overrides: object) -> FakeControlExecu
         "action": "observe",
         "matched": True,
         "confidence": 0.91,
-        "timestamp": datetime.datetime.now(tz=datetime.UTC),
+        "timestamp": datetime.datetime.now(tz=datetime.timezone.utc),
         "execution_duration_ms": 12.5,
         "evaluator_name": "regex",
         "selector_path": "input",
@@ -476,52 +471,23 @@ def test_agent_control_event_streams_immediately_in_distributed_mode(
 @patch("splunk_ao.logger.logger.LogStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_add_control_span_uses_model_default_name_in_fallback_mode(
-    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, monkeypatch: pytest.MonkeyPatch
+def test_add_control_span_uses_model_default_name(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
 ) -> None:
-    # Given: the logger is using the fallback ControlSpan model
+    # Given: a logger with an active parent
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    original_import = builtins.__import__
-
-    def assert_fallback_default_name() -> None:
-        logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
-        logger.start_trace(input="trace input")
-        workflow = logger.add_workflow_span(input="workflow input", name="workflow")
-
-        # When: adding a control span without an explicit name
-        control_span = logger.add_control_span(input="selected text", name=None)
-
-        # Then: the fallback model default is applied and the span is preserved
-        assert control_span is not None
-        assert control_module.HAS_NATIVE_CONTROL_SPAN is False
-        assert isinstance(control_span, logged_module.LoggedControlSpan)
-        assert isinstance(control_span, control_module.ControlSpan)
-        assert control_span.name == "control"
-        assert workflow.spans == [control_span]
-
-    if not control_module.HAS_NATIVE_CONTROL_SPAN:
-        assert_fallback_default_name()
-        return
-
-    def force_fallback_import(name, globals=None, locals=None, fromlist=(), level=0):
-        if name == "galileo_core.schemas.logging.control":
-            raise ImportError("forced fallback for test")
-        return original_import(name, globals, locals, fromlist, level)
-
-    try:
-        with monkeypatch.context() as context:
-            context.setattr(builtins, "__import__", force_fallback_import)
-            importlib.reload(control_module)
-            importlib.reload(logged_module)
-            context.setattr(logger_module, "LoggedControlSpan", logged_module.LoggedControlSpan)
-
-            assert_fallback_default_name()
-    finally:
-        importlib.reload(control_module)
-        importlib.reload(logged_module)
-        logger_module.LoggedControlSpan = logged_module.LoggedControlSpan
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger.start_trace(input="trace input")
+    workflow = logger.add_workflow_span(input="workflow input", name="workflow")
+    # When: adding a control span without an explicit name
+    control_span = logger.add_control_span(input="selected text", name=None)
+    # Then: the Core model default is applied and the span is preserved
+    assert control_span is not None
+    assert isinstance(control_span, ControlSpan)
+    assert control_span.name == ControlSpan.model_fields["name"].default
+    assert workflow.spans == [control_span]
 
 
 @patch("splunk_ao.logger.logger.LogStreams")

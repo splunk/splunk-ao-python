@@ -2,21 +2,19 @@
 This module provides functionality to compare the performance of two LLMs using Splunk AO experiments.
 """
 
-import argparse
-import json
 import os
+import json
 import sys
+import argparse
+from typing import List, Dict, Any
 from datetime import datetime
-from typing import Any
-
-import anthropic
 from dotenv import load_dotenv
+import anthropic
 from openai import OpenAI
-
 from splunk_ao import Message, MessageRole
-from splunk_ao.datasets import create_dataset
-from splunk_ao.experiments import run_experiment
 from splunk_ao.prompts import create_prompt, get_prompt_template
+from splunk_ao.experiments import run_experiment
+from splunk_ao.datasets import create_dataset
 
 load_dotenv()
 
@@ -77,7 +75,7 @@ class ExperimentCompareTwoModels:
             Focus on accuracy and financial impact assessment.
         """
 
-    def read_jsonl_file(self, file_path: str) -> list[dict[str, Any]]:
+    def read_jsonl_file(self, file_path: str) -> List[Dict[str, Any]]:
         """
         Reads a JSONL file and returns a list of transactions.
 
@@ -86,7 +84,7 @@ class ExperimentCompareTwoModels:
         """
         transactions = []
         try:
-            with open(file_path, encoding="utf-8") as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 for line_num, line in enumerate(file, 1):
                     line = line.strip()
                     if line:
@@ -105,7 +103,7 @@ class ExperimentCompareTwoModels:
         except Exception as e:
             raise Exception(f"Error reading JSONL file: {e}") from e
 
-    def create_galileo_dataset(self, transactions: list[dict[str, Any]], dataset_name: str) -> Any:
+    def create_galileo_dataset(self, transactions: List[Dict[str, Any]], dataset_name: str) -> Any:
         """
         Creates a Splunk AO dataset from a list of transactions.
 
@@ -118,7 +116,10 @@ class ExperimentCompareTwoModels:
             for transaction in transactions:
                 dataset_content.append({"transaction_data": json.dumps(transaction, ensure_ascii=False)})
 
-            dataset = create_dataset(name=dataset_name, content=dataset_content)
+            dataset = create_dataset(
+                name=dataset_name,
+                content=dataset_content,
+            )
 
             print(f"Created Splunk AO dataset '{dataset_name}' with {len(transactions)} records")
             return dataset
@@ -176,7 +177,7 @@ class ExperimentCompareTwoModels:
         except Exception as e:
             return f"Error calling Anthropic API: {e}"
 
-    def run_model_experiment(self, experiment_name: str, params: dict[str, Any]) -> None:
+    def run_model_experiment(self, experiment_name: str, params: Dict[str, Any]) -> None:
         """
         Runs a model experiment using the specified parameters.
 
@@ -188,6 +189,7 @@ class ExperimentCompareTwoModels:
             experiment_name = f"{experiment_name}_{timestamp}"
             print(f"Running experiment: {experiment_name}")
             try:
+
                 # 2 types of experiments
                 # Runner function experiment: entry point to the app or a function in the codebase.
                 # Prompt experiment
@@ -195,11 +197,7 @@ class ExperimentCompareTwoModels:
                     experiment_name=experiment_name,
                     dataset=params["dataset"],
                     prompt_template=params["prompt_template"],
-                    prompt_settings={
-                        "max_tokens": 1000,
-                        "model_alias": params["model_config"]["name"],
-                        "temperature": 0.8,
-                    },
+                    prompt_settings={"max_tokens": 1000, "model_alias": params["model_config"]["name"], "temperature": 0.8},
                     metrics=["correctness", "structural_correctness_fin_tx"],
                     project=self.galileo_project,
                 )
@@ -214,11 +212,11 @@ class ExperimentCompareTwoModels:
 
         except Exception as e:
             print(f"Error running experiment '{experiment_name}': {e}")
-            print(f"Full error details: {type(e).__name__}: {e!s}")
+            print(f"Full error details: {type(e).__name__}: {str(e)}")
             print(f"Model config: {params['model_config']}")
             print(f"LLM function: {params['llm_function'].__name__}")
 
-    def run_comparison_experiments(self, jsonl_file_path: str, dataset_name: str | None = None) -> None:
+    def run_comparison_experiments(self, jsonl_file_path: str, dataset_name: str = None) -> None:
         """
         Runs comparison experiments using the provided JSONL file and optional dataset name.
 
@@ -287,17 +285,16 @@ class ExperimentCompareTwoModels:
             return prompt_template
         except Exception:
             print(f"Creating new prompt template: {prompt_name}")
-            return create_prompt(
+            prompt_template = create_prompt(
                 name=prompt_name,
                 template=[
                     Message(role=MessageRole.system, content=self.system_prompt),
-                    Message(
-                        role=MessageRole.user, content="Process this financial transaction data: {{transaction_data}}"
-                    ),
+                    Message(role=MessageRole.user, content="Process this financial transaction data: {{transaction_data}}"),
                 ],
             )
+            return prompt_template
 
-    def get_optimal_model(self, context: dict[str, Any]) -> str:
+    def get_optimal_model(self, context: Dict[str, Any]) -> str:
         """
         Determines the optimal model based on the provided context.
 
@@ -311,7 +308,7 @@ class ExperimentCompareTwoModels:
         return max(self.model_configs.keys(), key=lambda x: self.model_configs[x]["performance_score"])
 
 
-def main() -> None:
+def main():
     """
     Main function to execute the intelligent broker system for financial data quality.
     """
@@ -319,11 +316,7 @@ def main() -> None:
 
     parser.add_argument("jsonl_file", help="Path to the JSONL file containing financial transactions")
     parser.add_argument("--dataset-name", help="Optional name for the Splunk AO dataset")
-    parser.add_argument(
-        "--project",
-        default=os.getenv("SPLUNK_AO_PROJECT"),
-        help="Splunk AO project name (defaults to SPLUNK_AO_PROJECT env var)",
-    )
+    parser.add_argument("--project", default=os.getenv("SPLUNK_AO_PROJECT"), help="Splunk AO project name (defaults to SPLUNK_AO_PROJECT env var)")
 
     args = parser.parse_args()
 

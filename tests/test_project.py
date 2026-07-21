@@ -213,8 +213,6 @@ class TestProjectSave:
         mock_projects_class.return_value = mock_service
         mock_service.get.return_value = mock_project
 
-        from splunk_ao.resources.types import UNSET as RESOURCES_UNSET
-
         updated_at = MagicMock()
         updated_response = MagicMock()
         updated_response.id = mock_project.id
@@ -222,8 +220,6 @@ class TestProjectSave:
         updated_response.created_at = mock_project.created_at
         updated_response.created_by = mock_project.created_by
         updated_response.updated_at = updated_at
-        # Use UNSET for fields not returned by the update endpoint
-        updated_response.type_ = RESOURCES_UNSET
 
         mock_detailed = MagicMock()
         mock_detailed.status_code = 200

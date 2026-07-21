@@ -26,8 +26,8 @@ def sample_run_tag():
         key="environment",
         value="production",
         tag_type="generic",
-        created_at=datetime.datetime.now(datetime.UTC),
-        updated_at=datetime.datetime.now(datetime.UTC),
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+        updated_at=datetime.datetime.now(datetime.timezone.utc),
         created_by="test_user",
     )
 

@@ -12,6 +12,8 @@ from splunk_ao.schema.content_blocks import IngestMessageContent
 
 
 class Message(CoreMessage):
+    __hash__ = None  # type: ignore[assignment]
+
     def to_dict(self) -> dict[str, Any]:
         return self.model_dump(exclude_none=True)
 
@@ -22,9 +24,6 @@ class Message(CoreMessage):
             and self.tool_calls == value.tool_calls
             and self.tool_call_id == value.tool_call_id
         )
-
-    def __hash__(self) -> int:
-        return hash((self.content, self.role, self.tool_call_id))
 
 
 # Without rebuilding the model, Message class we create here would not know and validate

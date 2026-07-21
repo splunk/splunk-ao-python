@@ -1,14 +1,8 @@
 """Tests for SDK-local ingestion models (Logged variants and content blocks)."""
 
-import builtins
-import importlib
-
 import pytest
 from pydantic import ValidationError
 
-import splunk_ao.logger.control as control_module
-import splunk_ao.logger.logger as logger_module
-import splunk_ao.schema.logged as logged_module
 from galileo_core.schemas.logging.llm import MessageRole
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
@@ -341,76 +335,24 @@ class TestJsonRoundtripNoCoercion:
         assert type(tool) is ToolSpan
         assert tool.output == "4"
 
-    def test_logged_trace_roundtrip_with_fallback_control_span(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # Given: splunk_ao.logger.control is reloaded without native ControlSpan support
-        if not control_module.HAS_NATIVE_CONTROL_SPAN:
-            control_payload = control_module.ControlSpan(input="selected text").model_dump(mode="python")
-            trace = logged_module.LoggedTrace(input="query", spans=[control_payload])
-            restored = logged_module.LoggedTrace.model_validate(trace.model_dump(mode="json"))
-
-            assert restored.spans[0].type == "control"
-            assert restored.spans[0].__class__.__name__ == "LoggedControlSpan"
-            assert restored.spans[0].model_dump(mode="json")["input"] == "selected text"
-            return
-
-        original_import = builtins.__import__
-
-        def force_fallback_import(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "galileo_core.schemas.logging.control":
-                raise ImportError("forced fallback for test")
-            return original_import(name, globals, locals, fromlist, level)
-
-        try:
-            with monkeypatch.context() as context:
-                context.setattr(builtins, "__import__", force_fallback_import)
-                importlib.reload(control_module)
-                importlib.reload(logged_module)
-
-                # When: constructing and validating a LoggedTrace containing the fallback ControlSpan payload
-                control_payload = control_module.ControlSpan(input="selected text").model_dump(mode="python")
-                trace = logged_module.LoggedTrace(input="query", spans=[control_payload])
-                restored = logged_module.LoggedTrace.model_validate(trace.model_dump(mode="json"))
-
-                # Then: the discriminated union resolves the fallback ControlSpan cleanly
-                assert control_module.HAS_NATIVE_CONTROL_SPAN is False
-                assert restored.spans[0].type == "control"
-                assert restored.spans[0].__class__.__name__ == "LoggedControlSpan"
-                assert restored.spans[0].model_dump(mode="json")["input"] == "selected text"
-        finally:
-            importlib.reload(control_module)
-            importlib.reload(logged_module)
-            logger_module.LoggedControlSpan = logged_module.LoggedControlSpan
+    def test_logged_trace_roundtrip_with_control_span(self) -> None:
+        from splunk_ao.logger.control import ControlSpan
+        # Given: a native Core ControlSpan payload
+        control_payload = ControlSpan(input="selected text").model_dump(mode="python")
+        trace = LoggedTrace(input="query", spans=[control_payload])
+        # When: the trace is serialized and restored
+        restored = LoggedTrace.model_validate(trace.model_dump(mode="json"))
+        # Then: the discriminated union resolves the control span cleanly
+        assert restored.spans[0].type == "control"
+        assert type(restored.spans[0]) is LoggedControlSpan
+        assert restored.spans[0].model_dump(mode="json")["input"] == "selected text"
 
     @pytest.mark.parametrize("field_name", ["id", "session_id", "trace_id", "parent_id"])
-    def test_fallback_control_span_rejects_non_uuidish_id_fields(
-        self, field_name: str, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        # Given: splunk_ao.logger.control is reloaded without native ControlSpan support
-        if not control_module.HAS_NATIVE_CONTROL_SPAN:
-            with pytest.raises(ValidationError):
-                control_module.ControlSpan(input="selected text", **{field_name: 123})
-            return
-
-        original_import = builtins.__import__
-
-        def force_fallback_import(name, globals=None, locals=None, fromlist=(), level=0):
-            if name == "galileo_core.schemas.logging.control":
-                raise ImportError("forced fallback for test")
-            return original_import(name, globals, locals, fromlist, level)
-
-        try:
-            with monkeypatch.context() as context:
-                context.setattr(builtins, "__import__", force_fallback_import)
-                importlib.reload(control_module)
-
-                # When/Then: non-UUID-ish id fields are rejected by the fallback schema
-                assert control_module.HAS_NATIVE_CONTROL_SPAN is False
-                with pytest.raises(ValidationError):
-                    control_module.ControlSpan(input="selected text", **{field_name: 123})
-        finally:
-            importlib.reload(control_module)
-            importlib.reload(logged_module)
-            logger_module.LoggedControlSpan = logged_module.LoggedControlSpan
+    def test_control_span_rejects_non_uuidish_id_fields(self, field_name: str) -> None:
+        from splunk_ao.logger.control import ControlSpan
+        # When/Then: non-UUID-ish ID fields are rejected by the native Core schema
+        with pytest.raises(ValidationError):
+            ControlSpan(input="selected text", **{field_name: 123})
 
 
 class TestLoggedAndCoreParity:

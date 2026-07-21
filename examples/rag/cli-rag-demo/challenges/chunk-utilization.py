@@ -1,17 +1,15 @@
 import os
-import random
-import sys
-from time import perf_counter_ns
-
-import faiss
-import questionary
 from dotenv import load_dotenv
+from splunk_ao import openai, SplunkAOLogger
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.panel import Panel
+from rich.markdown import Markdown
+import questionary
+import sys
+import faiss
 from sentence_transformers import SentenceTransformer
-
-from splunk_ao import SplunkAOLogger, openai
+import random
+from time import perf_counter_ns
 
 load_dotenv()
 
@@ -23,7 +21,10 @@ logging_enabled = os.environ.get("SPLUNK_AO_API_KEY") is not None
 
 
 # Initialize Splunk AO logger
-logger = SplunkAOLogger(project="chunk-utilization", log_stream="dev")
+logger = SplunkAOLogger(
+    project="chunk-utilization",
+    log_stream="dev",
+)
 
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -40,7 +41,7 @@ class DocumentStore:
         self._initialize_documents()
         self._build_index()
 
-    def _initialize_documents(self) -> None:
+    def _initialize_documents(self):
         # Solar System documents
         self.documents.extend(
             [
@@ -60,14 +61,22 @@ class DocumentStore:
                     "text": (
                         "The four inner system planets—Mercury, Venus, Earth and Mars—are terrestrial planets, being composed primarily of rock and metal. The four giant planets of the outer system are substantially larger and more massive than the terrestrials. The two largest, Jupiter and Saturn, are gas giants, being composed mainly of hydrogen and helium; the next two, Uranus and Neptune, are ice giants."
                     ),
-                    "metadata": {"source": "astronomy_textbook", "category": "planetary systems", "relevance": "high"},
+                    "metadata": {
+                        "source": "astronomy_textbook",
+                        "category": "planetary systems",
+                        "relevance": "high",
+                    },
                 },
                 {
                     "id": "solar_system_3",
                     "text": (
                         "The history of Solar System observation dates back to ancient times when astronomers first noticed that certain lights moved across the sky in a different way than the fixed stars. Ancient Greeks called these lights 'planetai' or wanderers, giving rise to our modern term 'planet'."
                     ),
-                    "metadata": {"source": "astronomy_history", "category": "astronomy history", "relevance": "low"},
+                    "metadata": {
+                        "source": "astronomy_history",
+                        "category": "astronomy history",
+                        "relevance": "low",
+                    },
                 },
             ]
         )
@@ -80,7 +89,11 @@ class DocumentStore:
                     "text": (
                         "Photosynthesis is the process by which plants, algae, and certain bacteria convert light energy, typically from the Sun, into chemical energy in the form of glucose or other sugars. These organisms are called photoautotrophs since they can create their own food."
                     ),
-                    "metadata": {"source": "biology_textbook", "category": "cellular processes", "relevance": "high"},
+                    "metadata": {
+                        "source": "biology_textbook",
+                        "category": "cellular processes",
+                        "relevance": "high",
+                    },
                 },
                 {
                     "id": "photosynthesis_2",
@@ -98,7 +111,11 @@ class DocumentStore:
                     "text": (
                         "The evolution of photosynthesis occurred early in Earth's history, with the earliest photosynthetic organisms appearing between 3.4 and 2.9 billion years ago. This development dramatically changed Earth's atmosphere by introducing oxygen."
                     ),
-                    "metadata": {"source": "evolutionary_biology", "category": "evolution", "relevance": "low"},
+                    "metadata": {
+                        "source": "evolutionary_biology",
+                        "category": "evolution",
+                        "relevance": "low",
+                    },
                 },
             ]
         )
@@ -106,7 +123,7 @@ class DocumentStore:
         # Add more topics similarly...
         # (Blockchain, Renaissance, and Machine Learning documents would be added here)
 
-    def _build_index(self) -> None:
+    def _build_index(self):
         # Generate embeddings for all documents
         texts = [doc["text"] for doc in self.documents]
         self.document_embeddings = encoder.encode(texts)
@@ -121,7 +138,7 @@ class DocumentStore:
         query_vector = encoder.encode([query])[0].reshape(1, -1)
 
         # Search the index
-        _distances, indices = self.index.search(query_vector.astype("float32"), k)
+        distances, indices = self.index.search(query_vector.astype("float32"), k)
 
         # Get the retrieved documents
         retrieved_docs = []
@@ -174,7 +191,10 @@ def retrieve_verbose_documents(query: str, mixed_relevance: bool = False):
         return documents
     except Exception as e:
         logger.add_retriever_span(
-            input=query, output=str(e), duration_ns=perf_counter_ns() - start_time, status_code=500
+            input=query,
+            output=str(e),
+            duration_ns=perf_counter_ns() - start_time,
+            status_code=500,
         )
         raise e
 
@@ -190,7 +210,7 @@ def rag_with_poor_utilization(query: str, mixed_relevance: bool = False):
         # Format documents for the prompt
         formatted_docs = ""
         for i, doc in enumerate(documents):
-            formatted_docs += f"Document {i + 1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}):\n{doc['content']}\n\n"
+            formatted_docs += f"Document {i+1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}):\n{doc['content']}\n\n"
 
         # Basic prompt
         basic_prompt = f"""
@@ -225,9 +245,13 @@ def rag_with_poor_utilization(query: str, mixed_relevance: bool = False):
 
         return result
     except Exception as e:
-        error_msg = f"Error generating response: {e!s}"
+        error_msg = f"Error generating response: {str(e)}"
         logger.add_llm_span(
-            input=query, output=error_msg, model="gpt-4", duration_ns=perf_counter_ns() - start_time, status_code=500
+            input=query,
+            output=error_msg,
+            model="gpt-4",
+            duration_ns=perf_counter_ns() - start_time,
+            status_code=500,
         )
         return error_msg
 
@@ -243,7 +267,7 @@ def rag_with_better_utilization(query: str, mixed_relevance: bool = False):
         # Format documents for the prompt
         formatted_docs = ""
         for i, doc in enumerate(documents):
-            formatted_docs += f"Document {i + 1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}):\n{doc['content']}\n\n"
+            formatted_docs += f"Document {i+1} (Source: {doc['metadata']['source']}, Relevance: {doc['metadata']['relevance']}):\n{doc['content']}\n\n"
 
         # Enhanced prompt
         enhanced_prompt = f"""
@@ -291,14 +315,18 @@ def rag_with_better_utilization(query: str, mixed_relevance: bool = False):
 
         return result
     except Exception as e:
-        error_msg = f"Error generating response: {e!s}"
+        error_msg = f"Error generating response: {str(e)}"
         logger.add_llm_span(
-            input=query, output=error_msg, model="gpt-4", duration_ns=perf_counter_ns() - start_time, status_code=500
+            input=query,
+            output=error_msg,
+            model="gpt-4",
+            duration_ns=perf_counter_ns() - start_time,
+            status_code=500,
         )
         return error_msg
 
 
-def main() -> None:
+def main():
     start_time = perf_counter_ns()
     try:
         # Start trace with a meaningful name, actual input will be added when we get the query
@@ -337,16 +365,18 @@ def main() -> None:
             "What are the different types of machine learning?",
         ]
 
-        console.print(
-            "\n[bold yellow]Suggested queries (these will demonstrate the chunk utilization problem):[/bold yellow]"
-        )
+        console.print("\n[bold yellow]Suggested queries (these will demonstrate the chunk utilization problem):[/bold yellow]")
         for i, q in enumerate(suggested_queries):
-            console.print(f"[yellow]{i + 1}. {q}[/yellow]")
+            console.print(f"[yellow]{i+1}. {q}[/yellow]")
 
         # Choose workflow
         workflow = questionary.select(
             "Choose which workflow to run:",
-            choices=["Poor Chunk Utilization (Bad State)", "Improved Chunk Utilization (Good State)", "Exit"],
+            choices=[
+                "Poor Chunk Utilization (Bad State)",
+                "Improved Chunk Utilization (Good State)",
+                "Exit",
+            ],
         ).ask()
 
         if workflow == "Exit":
@@ -374,7 +404,8 @@ def main() -> None:
 
             # Ask about mixed relevance
             mixed_relevance = questionary.confirm(
-                "Would you like to include mixed relevance results (some less relevant documents)?", default=False
+                "Would you like to include mixed relevance results (some less relevant documents)?",
+                default=False,
             ).ask()
 
             try:
@@ -386,7 +417,7 @@ def main() -> None:
                     console.print(
                         Panel(
                             f"[bold]Source:[/bold] {doc['metadata']['source']}\n[bold]Relevance:[/bold] [{relevance_color}]{doc['metadata']['relevance']}[/{relevance_color}]\n\n[dim]{doc['content']}[/dim]",
-                            title=f"Document {i + 1} ({len(doc['content'])} characters)",
+                            title=f"Document {i+1} ({len(doc['content'])} characters)",
                             border_style="cyan",
                         )
                     )
@@ -414,12 +445,19 @@ def main() -> None:
                     break
 
             except Exception as e:
-                console.print(f"[bold red]Error:[/bold red] {e!s}")
+                console.print(f"[bold red]Error:[/bold red] {str(e)}")
 
         # Final conclusion of the demo
-        logger.conclude(output="Demo completed successfully", duration_ns=perf_counter_ns() - start_time)
+        logger.conclude(
+            output="Demo completed successfully",
+            duration_ns=perf_counter_ns() - start_time,
+        )
     except Exception as e:
-        logger.conclude(output=f"Demo failed: {e!s}", duration_ns=perf_counter_ns() - start_time, status_code=500)
+        logger.conclude(
+            output=f"Demo failed: {str(e)}",
+            duration_ns=perf_counter_ns() - start_time,
+            status_code=500,
+        )
         raise e
 
 

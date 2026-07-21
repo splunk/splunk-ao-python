@@ -2,17 +2,17 @@
 Weather Vibes Agent implementation using the Simple Agent Framework.
 """
 
+import os
 import json
 import logging
-import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Dict, Any
+from jinja2 import Environment, FileSystemLoader
 
 from agent_framework.agent import Agent
-from agent_framework.models import ToolMetadata
 from agent_framework.state import AgentState
-from jinja2 import Environment, FileSystemLoader
+from agent_framework.models import ToolMetadata
 from openai import OpenAI
 
 # Configure proper path for imports
@@ -21,10 +21,10 @@ project_root = current_dir.parent
 sys.path.insert(0, str(project_root))
 
 # import tools
-from agent.descriptor import WEATHER_VIBES_DESCRIPTOR
-from tools.recommendation_tool import RecommendationsTool
 from tools.weather_tool import WeatherTool
+from tools.recommendation_tool import RecommendationsTool
 from tools.youtube_tool import YouTubeTool
+from agent.descriptor import WEATHER_VIBES_DESCRIPTOR
 
 # Configure standard logging
 logger = logging.getLogger("weather_vibes_agent")
@@ -48,7 +48,9 @@ def create_tool_metadata(name, description, tags=None):
 # Add metadata method to the tool classes if they don't have it
 if not hasattr(WeatherTool, "metadata"):
     WeatherTool.metadata = create_tool_metadata(
-        "get_weather", "Get the current weather conditions for a location", ["weather", "utility"]
+        "get_weather",
+        "Get the current weather conditions for a location",
+        ["weather", "utility"],
     )
 
 if not hasattr(RecommendationsTool, "metadata"):
@@ -60,7 +62,9 @@ if not hasattr(RecommendationsTool, "metadata"):
 
 if not hasattr(YouTubeTool, "metadata"):
     YouTubeTool.metadata = create_tool_metadata(
-        "find_weather_video", "Find a YouTube video that matches the weather vibe", ["youtube", "entertainment"]
+        "find_weather_video",
+        "Find a YouTube video that matches the weather vibe",
+        ["youtube", "entertainment"],
     )
 
 
@@ -121,7 +125,8 @@ class WeatherVibesAgent(Agent):
             self.tool_registry.register(metadata=WeatherTool.metadata(), implementation=self.weather_tool)
 
             self.tool_registry.register(
-                metadata=RecommendationsTool.metadata(), implementation=self.recommendations_tool
+                metadata=RecommendationsTool.metadata(),
+                implementation=self.recommendations_tool,
             )
 
             self.tool_registry.register(metadata=YouTubeTool.metadata(), implementation=self.youtube_tool)
@@ -140,7 +145,7 @@ class WeatherVibesAgent(Agent):
             favorite_locations=getattr(self.state, "favorite_locations", []),
         )
 
-    async def _format_result(self, result: Any) -> dict[str, Any]:
+    async def _format_result(self, result: Any) -> Dict[str, Any]:
         """
         Format the result from processing.
 
@@ -155,23 +160,24 @@ class WeatherVibesAgent(Agent):
         """
         if isinstance(result, dict):
             return result
-        if hasattr(result, "model_dump"):
+        elif hasattr(result, "model_dump"):
             # Handle pydantic models
             return result.model_dump()
-        if hasattr(result, "__dict__"):
+        elif hasattr(result, "__dict__"):
             # Handle objects with __dict__
             return result.__dict__
-        # Default case
-        return {"result": str(result)}
+        else:
+            # Default case
+            return {"result": str(result)}
 
-    async def get_acp_descriptor(self) -> dict[str, Any]:
+    async def get_acp_descriptor(self) -> Dict[str, Any]:
         """
         Return the ACP descriptor for this agent.
         This implements the ACP agent discovery capability.
         """
         return self.descriptor
 
-    async def process_acp_request(self, request: dict[str, Any]) -> dict[str, Any]:
+    async def process_acp_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process an ACP request and generate a response.
         This implements the ACP run execution capability.
@@ -201,7 +207,10 @@ class WeatherVibesAgent(Agent):
             # Validate input
             if not location:
                 logger.error("Invalid input: 'location' field is required")
-                return {"error": 400, "message": "Invalid input: 'location' field is required"}
+                return {
+                    "error": 400,
+                    "message": "Invalid input: 'location' field is required",
+                }
 
             # Update search history
             if not hasattr(self.state, "search_history"):
@@ -219,22 +228,25 @@ class WeatherVibesAgent(Agent):
             weather_result = await self.weather_tool.execute(location=location, days=1)
             if "error" in weather_result:
                 logger.error(f"Weather API error: {weather_result['message']}")
-                return {"error": 500, "message": f"Weather API error: {weather_result['message']}"}
+                return {
+                    "error": 500,
+                    "message": f"Weather API error: {weather_result['message']}",
+                }
 
             # Step 2: Get recommendations
             logger.info("Getting recommendations based on weather")
-            recommendations = await self.recommendations_tool.execute(
-                weather=weather_result, max_items=max_recommendations
-            )
+            recommendations = await self.recommendations_tool.execute(weather=weather_result, max_items=max_recommendations)
 
             # Step 3: Get matching YouTube video
             logger.info(f"Finding YouTube video matching weather condition: {weather_result['condition']}")
-            video_result = await self.youtube_tool.execute(
-                weather_condition=weather_result["condition"], mood_override=video_mood
-            )
+            video_result = await self.youtube_tool.execute(weather_condition=weather_result["condition"], mood_override=video_mood)
 
             # Prepare the response
-            result = {"weather": weather_result, "recommendations": recommendations, "video": video_result}
+            result = {
+                "weather": weather_result,
+                "recommendations": recommendations,
+                "video": video_result,
+            }
 
             # If not verbose, filter out some weather details
             if not verbose and "weather" in result:
@@ -261,5 +273,5 @@ class WeatherVibesAgent(Agent):
             return response
 
         except Exception as e:
-            logger.error(f"Error processing request: {e!s}")
-            return {"error": 500, "message": f"Error processing request: {e!s}"}
+            logger.error(f"Error processing request: {str(e)}")
+            return {"error": 500, "message": f"Error processing request: {str(e)}"}

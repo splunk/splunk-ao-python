@@ -1,11 +1,9 @@
-import json
 import os
+import json
 import time
-
 import openai  # Using the standard OpenAI library
-from dotenv import load_dotenv
-
 from splunk_ao import SplunkAOLogger  # Import SplunkAOLogger for logging
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -13,7 +11,10 @@ load_dotenv()
 logger = SplunkAOLogger(project="hallucination", log_stream="dev")
 
 # Initialize the standard OpenAI client
-client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), organization=os.environ.get("OPENAI_ORGANIZATION"))
+client = openai.OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    organization=os.environ.get("OPENAI_ORGANIZATION"),
+)
 
 # Questions that might lead to hallucinations
 QUESTIONS = [
@@ -32,7 +33,11 @@ def generate_response(question: str, system_prompt: str) -> str:
     start_time = time.time_ns()
 
     response = client.chat.completions.create(
-        model="gpt-4o", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": question}]
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question},
+        ],
     )
 
     # Record the end time for the LLM call
@@ -64,7 +69,7 @@ def run_hallucination_demo():
 
         question_results = {"question": question, "responses": []}
 
-        print(f"\n\n{'=' * 80}\nQUESTION: {question}\n{'=' * 80}")
+        print(f"\n\n{'='*80}\nQUESTION: {question}\n{'='*80}")
 
         for prompt_name, system_prompt in SYSTEM_PROMPTS.items():
             # Generate response

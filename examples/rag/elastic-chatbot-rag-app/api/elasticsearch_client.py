@@ -10,7 +10,8 @@ ELASTICSEARCH_API_KEY = os.getenv("ELASTICSEARCH_API_KEY")
 
 if ELASTICSEARCH_USER:
     elasticsearch_client = Elasticsearch(
-        hosts=[ELASTICSEARCH_URL], basic_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD)
+        hosts=[ELASTICSEARCH_URL],
+        basic_auth=(ELASTICSEARCH_USER, ELASTICSEARCH_PASSWORD),
     )
 elif ELASTICSEARCH_API_KEY:
     elasticsearch_client = Elasticsearch(hosts=[ELASTICSEARCH_URL], api_key=ELASTICSEARCH_API_KEY)

@@ -24,14 +24,66 @@
 
 ### Setup
 
-Set the following environment variables:
+Configure the environment for your Agent Observability deployment. Do not mix
+O11y Cloud and standalone deployment variables; the SDK detects the deployment
+from the variables that are present and rejects ambiguous configurations.
 
-- `SPLUNK_AO_API_KEY`: Your Agent Observability API key
-- `SPLUNK_AO_PROJECT`: (Optional) Project name
-- `SPLUNK_AO_LOG_STREAM`: (Optional) Log stream name
-- `SPLUNK_AO_LOGGING_DISABLED`: (Optional) Disable collecting and sending logs to Agent Observability.
+#### O11y Cloud user
 
-Note: if you would like to point to an environment other than `app.galileo.ai`, you'll need to set the `SPLUNK_AO_CONSOLE_URL` environment variable.
+Set your Splunk Observability Cloud realm and access token:
+
+```shell
+export SPLUNK_AO_REALM="us1"
+export SPLUNK_AO_SF_TOKEN="your-splunk-ingest-token"
+```
+
+`SPLUNK_AO_SF_TOKEN` is required to export telemetry. It is also used for CRUD
+operations when it contains the necessary API permissions and no dedicated API
+token is configured.
+
+You may configure a separate token for CRUD operations:
+
+```shell
+export SPLUNK_AO_SF_API_TOKEN="your-splunk-api-token"
+```
+
+When both tokens are set, `SPLUNK_AO_SF_API_TOKEN` is preferred for CRUD and
+`SPLUNK_AO_SF_TOKEN` is used for telemetry ingestion. For CRUD only use, you
+may set `SPLUNK_AO_REALM` and `SPLUNK_AO_SF_API_TOKEN` without setting
+`SPLUNK_AO_SF_TOKEN`. Note that attempting to export telemetry without
+`SPLUNK_AO_SF_TOKEN` raises a configuration error.
+
+The SDK derives the console, API and OTLP ingest endpoints from the
+realm. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
+Cloud.
+
+#### Standalone Agent Observability user
+
+Set your Agent Observability API key and console URL:
+
+```shell
+export SPLUNK_AO_API_KEY="your-agent-observability-api-key"
+export SPLUNK_AO_CONSOLE_URL="https://app.galileo.ai"
+```
+
+The SDK derives the API endpoint from the console URL. Set
+`SPLUNK_AO_API_URL` only when your deployment uses a separate API URL that
+cannot be derived from the console URL:
+
+```shell
+export SPLUNK_AO_API_URL="https://api.galileo.ai"
+```
+
+For either deployment, project and log-stream routing can be supplied through
+the SDK APIs or environment variables:
+
+```shell
+export SPLUNK_AO_PROJECT="your-project-name"
+export SPLUNK_AO_LOG_STREAM="your-log-stream-name"
+```
+
+Set `SPLUNK_AO_LOGGING_DISABLED=true` to disable telemetry collection and
+export.
 
 ### Usage
 

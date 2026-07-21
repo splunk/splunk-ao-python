@@ -13,7 +13,12 @@ WEATHER_VIBES_DESCRIPTOR = {
         "description": "An agent that provides weather information, item recommendations, and matching YouTube videos.",
     },
     "specs": {
-        "capabilities": {"threads": True, "interrupts": False, "callbacks": False, "streaming": True},
+        "capabilities": {
+            "threads": True,
+            "interrupts": False,
+            "callbacks": False,
+            "streaming": True,
+        },
         "input": {
             "type": "object",
             "description": "Input for the Weather Vibes agent",
@@ -76,7 +81,10 @@ WEATHER_VIBES_DESCRIPTOR = {
                     "default": 5,
                     "description": "Maximum number of recommendations to provide",
                 },
-                "video_mood": {"type": "string", "description": "Optional mood override for video selection"},
+                "video_mood": {
+                    "type": "string",
+                    "description": "Optional mood override for video selection",
+                },
             },
         },
         "thread_state": {

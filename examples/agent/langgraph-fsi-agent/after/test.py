@@ -108,12 +108,7 @@ def test_run_experiment_with_dataset():
         experiment_name="langgraph-fsi-experiment",
         dataset_name=DATASET_NAME,
         function=send_message_to_supervisor_agent,
-        metrics=[
-            SplunkAOMetrics.action_advancement,
-            SplunkAOMetrics.action_completion,
-            SplunkAOMetrics.tool_error_rate,
-            SplunkAOMetrics.tool_selection_quality,
-        ],
+        metrics=[SplunkAOMetrics.action_advancement, SplunkAOMetrics.action_completion, SplunkAOMetrics.tool_error_rate, SplunkAOMetrics.tool_selection_quality],
         project=os.getenv("SPLUNK_AO_PROJECT"),
     )
 

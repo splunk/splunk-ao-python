@@ -1,13 +1,13 @@
 import os
-from typing import Annotated, TypedDict
-
+from typing import TypedDict, Annotated
 import dotenv
+
 import openai
-from langchain_core.messages import BaseMessage
-from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, add_messages
 from langgraph.prebuilt import ToolNode
+from langchain_core.tools import tool
+from langchain_core.messages import BaseMessage
+from langchain_openai import ChatOpenAI
 
 dotenv.load_dotenv()
 
@@ -60,7 +60,10 @@ def generate_response_tool(user_input: str) -> str:
 
         # Make the OpenAI API call - Traceloop automatically traces this
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=[{"role": "user", "content": user_input}], max_tokens=300, temperature=0.7
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": user_input}],
+            max_tokens=300,
+            temperature=0.7,
         )
 
         # Extract the response content
@@ -69,13 +72,14 @@ def generate_response_tool(user_input: str) -> str:
         if not llm_response:
             print("No response from OpenAI")
             return "Error: No response from OpenAI"
-        print(f"Received response: '{llm_response[:100]}...'")
+        else:
+            print(f"Received response: '{llm_response[:100]}...'")
 
         return llm_response
 
     except Exception as e:
         print(f"Error calling OpenAI: {e}")
-        return f"Error: {e!s}"
+        return f"Error: {str(e)}"
 
 
 @tool
@@ -144,7 +148,7 @@ def agent_node(state: AgentState):
     return {"messages": [response]}
 
 
-def should_continue(state: AgentState) -> str:
+def should_continue(state: AgentState):
     """
     Determines whether to continue with tool calls or end.
     """
@@ -179,10 +183,19 @@ def create_agent():
     workflow.set_entry_point("agent")
 
     # Add conditional edges
-    workflow.add_conditional_edges("agent", should_continue, {"tools": "tools", "end": END})
+    workflow.add_conditional_edges(
+        "agent",
+        should_continue,
+        {
+            "tools": "tools",
+            "end": END,
+        },
+    )
 
     # After tools are called, go back to the agent
     workflow.add_edge("tools", "agent")
 
     # Compile the workflow
-    return workflow.compile()
+    app = workflow.compile()
+
+    return app

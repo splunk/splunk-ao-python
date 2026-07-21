@@ -47,10 +47,13 @@ from splunk_ao.schema.message import Message
 from splunk_ao.schema.metrics import SplunkAOMetrics
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import (
+    AmbiguousConfigurationError,
     APIError,
     ConfigurationError,
+    MissingConfigurationError,
     ResourceConflictError,
     ResourceNotFoundError,
+    SplunkAOConfigError,
     SplunkAOFutureError,
     ValidationError,
 )
@@ -65,6 +68,7 @@ __all__ = [
     "AgentControlTarget",
     "AgentControlTargetUnresolvedError",
     "AgentSpan",
+    "AmbiguousConfigurationError",
     "AnthropicProvider",
     "AuthenticationError",
     "AzureProvider",
@@ -93,6 +97,7 @@ __all__ = [
     "MessageRole",
     "Metric",
     "MetricSpec",
+    "MissingConfigurationError",
     "Model",
     "NotFoundError",
     "OpenAIProvider",
@@ -108,6 +113,7 @@ __all__ = [
     "Span",
     "SplunkAOAPIError",
     "SplunkAOAgentControlBridge",
+    "SplunkAOConfigError",
     "SplunkAODecorator",
     "SplunkAOFutureError",
     "SplunkAOLogger",

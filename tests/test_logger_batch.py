@@ -1179,7 +1179,7 @@ def test_get_last_output_llm_message_raw() -> None:
     trace.spans = [llm_span]
 
     # When: getting the last output
-    output, _redacted_output = SplunkAOLogger._get_last_output(trace)
+    output, redacted_output = SplunkAOLogger._get_last_output(trace)
 
     # Then: the raw Message is returned (caller coerces for Trace destinations)
     assert isinstance(output, Message)

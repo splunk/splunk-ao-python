@@ -1,7 +1,6 @@
-from dotenv import load_dotenv
-
 from splunk_ao import SplunkAOLogger
 from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
+from dotenv import load_dotenv
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -23,9 +22,7 @@ session_id = logger.start_session(name="Test session", metadata=metadata)
 trace = logger.start_trace(input=input_prompt, metadata=metadata)
 
 # Add an LLM span to the trace with optional metadata
-logger.add_llm_span(
-    input=[{"role": "system", "content": input_prompt}], output=output_answer, model="gpt-5-mini", metadata=metadata
-)
+logger.add_llm_span(input=[{"role": "system", "content": input_prompt}], output=output_answer, model="gpt-5-mini", metadata=metadata)
 
 # Conclude the trace with the final output
 logger.conclude(output_answer)

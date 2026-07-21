@@ -1,4 +1,4 @@
-google-adk
+google-adk>=1.28.1
 openinference-instrumentation-google-adk
 python-dotenv
 splunk-ao

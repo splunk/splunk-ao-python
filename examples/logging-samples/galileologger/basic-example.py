@@ -1,8 +1,8 @@
-# Load environment variables from .env file
-from dotenv import load_dotenv
-
 from splunk_ao import SplunkAOLogger
 from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
 
 load_dotenv()
 

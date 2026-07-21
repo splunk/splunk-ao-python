@@ -1,14 +1,17 @@
-import asyncio
-import json
 import os
-from datetime import datetime
-
-from agent_framework.models import ToolMetadata
+import json
+from splunk_ao.openai import (
+    openai,
+)  # 🔍 Splunk AO-wrapped OpenAI client for automatic logging
+from typing import Dict
 from agent_framework.tools.base import BaseTool
-from agent_framework.utils.logging import get_galileo_logger  # 🔍 Splunk AO helper import - gets centralized logger
+from agent_framework.models import ToolMetadata
+from agent_framework.utils.logging import (
+    get_galileo_logger,
+)  # 🔍 Splunk AO helper import - gets centralized logger
+import asyncio
 from dotenv import load_dotenv
-
-from splunk_ao.openai import openai  # 🔍 Splunk AO-wrapped OpenAI client for automatic logging
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -24,9 +27,7 @@ class SeriousStartupSimulatorTool(BaseTool):
     def __init__(self):
         super().__init__()
         self.name = "serious_startup_simulator"
-        self.description = (
-            "Generate a professional startup business plan based on industry, audience, and market trends"
-        )
+        self.description = "Generate a professional startup business plan based on industry, audience, and market trends"
         # 👀 GALILEO INITIALIZATION: Get the centralized Splunk AO logger instance
         # This ensures all tools use the same Splunk AO configuration and connection
         self.galileo_logger = get_galileo_logger()
@@ -40,10 +41,19 @@ class SeriousStartupSimulatorTool(BaseTool):
             input_schema={
                 "type": "object",
                 "properties": {
-                    "industry": {"type": "string", "description": "Industry for the startup"},
+                    "industry": {
+                        "type": "string",
+                        "description": "Industry for the startup",
+                    },
                     "audience": {"type": "string", "description": "Target audience"},
-                    "random_word": {"type": "string", "description": "A word to incorporate"},
-                    "news_context": {"type": "string", "description": "Recent news context for market analysis"},
+                    "random_word": {
+                        "type": "string",
+                        "description": "A word to incorporate",
+                    },
+                    "news_context": {
+                        "type": "string",
+                        "description": "Recent news context for market analysis",
+                    },
                 },
                 "required": ["industry", "audience", "random_word"],
             },
@@ -128,9 +138,7 @@ class SeriousStartupSimulatorTool(BaseTool):
                 "timestamp": datetime.now().isoformat(),
                 "model": "gpt-4",
                 "input_tokens": (response.usage.prompt_tokens if hasattr(response.usage, "prompt_tokens") else 0),
-                "output_tokens": (
-                    response.usage.completion_tokens if hasattr(response.usage, "completion_tokens") else 0
-                ),
+                "output_tokens": (response.usage.completion_tokens if hasattr(response.usage, "completion_tokens") else 0),
                 "total_tokens": (response.usage.total_tokens if hasattr(response.usage, "total_tokens") else 0),
             }
 
@@ -187,9 +195,7 @@ class SeriousStartupSimulatorTool(BaseTool):
 
             raise e
 
-    async def _execute_without_galileo(
-        self, industry: str, audience: str, random_word: str, news_context: str = ""
-    ) -> str:
+    async def _execute_without_galileo(self, industry: str, audience: str, random_word: str, news_context: str = "") -> str:
         """Fallback execution without Splunk AO logging"""
         # ℹ️ FALLBACK METHOD: This method runs when Splunk AO is not available
         # It performs the same functionality but without any observability logging
@@ -241,19 +247,25 @@ class SeriousStartupSimulatorTool(BaseTool):
 
         return json.dumps(galileo_output, indent=2)
 
-    def _parse_business_pitch(self, content: str) -> dict[str, str]:
+    def _parse_business_pitch(self, content: str) -> Dict[str, str]:
         """Parse the business pitch into structured components"""
         # This method could be enhanced to extract specific business plan sections
         # For now, it returns a simple structure
-        return {"executive_summary": (content[:200] + "..." if len(content) > 200 else content), "full_pitch": content}
+        return {
+            "executive_summary": (content[:200] + "..." if len(content) > 200 else content),
+            "full_pitch": content,
+        }
 
 
 # ℹ️ TEST FUNCTION: This function can be used to test the tool independently
-async def main() -> None:
+async def main():
     """Test the Serious Startup Simulator tool"""
     tool = SeriousStartupSimulatorTool()
     result = await tool.execute(
-        industry="Finance", audience="Investors", random_word="fintech", news_context="Sample news context for testing"
+        industry="Finance",
+        audience="Investors",
+        random_word="fintech",
+        news_context="Sample news context for testing",
     )
     print(f"Result: {result}")
 

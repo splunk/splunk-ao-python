@@ -2,13 +2,12 @@ import json
 import os
 
 from dotenv import load_dotenv
+from splunk_ao import splunk_ao_context
+from splunk_ao.handlers.langchain.middleware import SplunkAOMiddleware
 from langchain.agents.factory import create_agent
 from langchain.tools import tool
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
-
-from splunk_ao import splunk_ao_context
-from splunk_ao.handlers.langchain.middleware import SplunkAOMiddleware
 
 # Load environment variables (e.g., API keys)
 load_dotenv()
@@ -43,10 +42,7 @@ def get_stock_price(symbol: str) -> str:
 def main() -> None:
     # Use the Splunk AO context manager to specify project and log stream
     # All traces created within this context will be associated with this project
-    with splunk_ao_context(
-        project=os.getenv("SPLUNK_AO_PROJECT", "langchain-middleware"),
-        log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "agent_execution"),
-    ):
+    with splunk_ao_context(project=os.getenv("SPLUNK_AO_PROJECT", "langchain-middleware"), log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "agent_execution")):
         # Create an agent with SplunkAOMiddleware for automatic logging
         # SplunkAOMiddleware automatically captures:
         # - Agent lifecycle events (start/completion)
@@ -65,15 +61,7 @@ def main() -> None:
         # 3. Understand it needs Apple's stock price
         # 4. Call the get_stock_price tool
         # 5. Synthesize the results into a coherent response
-        result = agent.invoke(
-            {
-                "messages": [
-                    HumanMessage(
-                        content="What's the weather like in San Francisco and what's the current stock price of Apple?"
-                    )
-                ]
-            }
-        )
+        result = agent.invoke({"messages": [HumanMessage(content="What's the weather like in San Francisco and what's the current stock price of Apple?")]})
         print(f"\nAgent Response:\n{result}")
 
 

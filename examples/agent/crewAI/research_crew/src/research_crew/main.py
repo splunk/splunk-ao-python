@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # src/research_crew/main.py
 import os
-
-from dotenv import load_dotenv
-
 from research_crew.crew import ResearchCrew
+from dotenv import load_dotenv
 from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
 load_dotenv()
@@ -13,7 +11,7 @@ load_dotenv()
 os.makedirs("output", exist_ok=True)
 
 
-def run() -> None:
+def run():
     # Create the event listener for Splunk AO CrewAI integration
     CrewAIEventListener()
 

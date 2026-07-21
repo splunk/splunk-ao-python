@@ -7,17 +7,16 @@ This script demonstrates how to use the application programmatically
 import asyncio
 import json
 import os
-
-from agent import SimpleAgent
-from agent_framework.llm.models import LLMConfig
-from agent_framework.llm.openai_provider import OpenAIProvider
 from dotenv import load_dotenv
+from agent import SimpleAgent
+from agent_framework.llm.openai_provider import OpenAIProvider
+from agent_framework.llm.models import LLMConfig
 
 # Load environment variables
 load_dotenv()
 
 
-async def demo_silly_mode() -> None:
+async def demo_silly_mode():
     """Demonstrate silly mode startup generation"""
     print("🎭 DEMO: Silly Mode Startup Generation")
     print("=" * 50)
@@ -64,7 +63,7 @@ async def demo_silly_mode() -> None:
         print(f"❌ Error: {e}")
 
 
-async def demo_serious_mode() -> None:
+async def demo_serious_mode():
     """Demonstrate serious mode startup generation"""
     print("\n💼 DEMO: Serious Mode Startup Generation")
     print("=" * 50)
@@ -111,7 +110,7 @@ async def demo_serious_mode() -> None:
         print(f"❌ Error: {e}")
 
 
-async def demo_individual_tools() -> None:
+async def demo_individual_tools():
     """Demonstrate individual tool usage"""
     print("\n🔧 DEMO: Individual Tool Usage")
     print("=" * 50)
@@ -138,7 +137,7 @@ async def demo_individual_tools() -> None:
         print(f"❌ Error: {e}")
 
 
-def check_environment() -> None:
+def check_environment():
     """Check if environment is properly configured"""
     print("🔍 Environment Check")
     print("=" * 50)
@@ -166,7 +165,7 @@ def check_environment() -> None:
     print()
 
 
-async def main() -> None:
+async def main():
     """Run all demos"""
     print("🚀 Startup Simulator 3000 - Demo Script")
     print("=" * 60)
