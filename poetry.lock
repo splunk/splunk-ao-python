@@ -2067,26 +2067,43 @@ xai = ["langchain-xai"]
 
 [[package]]
 name = "langchain-core"
-version = "1.2.7"
+version = "1.5.0"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main", "test"]
 files = [
-    {file = "langchain_core-1.2.7-py3-none-any.whl", hash = "sha256:452f4fef7a3d883357b22600788d37e3d8854ef29da345b7ac7099f33c31828b"},
-    {file = "langchain_core-1.2.7.tar.gz", hash = "sha256:e1460639f96c352b4a41c375f25aeb8d16ffc1769499fb1c20503aad59305ced"},
+    {file = "langchain_core-1.5.0-py3-none-any.whl", hash = "sha256:f122efee35446632b38687119fca33711abbf3b6b555e31156762298fbe78a65"},
+    {file = "langchain_core-1.5.0.tar.gz", hash = "sha256:e1fa09d55b354192c8f60dade06a55bd6add2318c822a684555b8d4a30a16143"},
 ]
 markers = {main = "extra == \"langchain\" or extra == \"all\""}
 
 [package.dependencies]
 jsonpatch = ">=1.33.0,<2.0.0"
+langchain-protocol = ">=0.0.17"
 langsmith = ">=0.3.45,<1.0.0"
-packaging = ">=23.2.0,<26.0.0"
+packaging = ">=23.2.0"
 pydantic = ">=2.7.4,<3.0.0"
 pyyaml = ">=5.3.0,<7.0.0"
 tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<10.0.0"
 typing-extensions = ">=4.7.0,<5.0.0"
 uuid-utils = ">=0.12.0,<1.0"
+
+[[package]]
+name = "langchain-protocol"
+version = "0.0.18"
+description = "Python bindings for the LangChain agent streaming protocol"
+optional = false
+python-versions = "<4.0.0,>=3.10.0"
+groups = ["main", "test"]
+files = [
+    {file = "langchain_protocol-0.0.18-py3-none-any.whl", hash = "sha256:70b53a86fbf9cedc863555effe44da192ab02d556ddbf2cf95b8873adcf41b5a"},
+    {file = "langchain_protocol-0.0.18.tar.gz", hash = "sha256:ec3e11782f1ed0c9db38e5a9ed01b0e7a0d3fba406faa8aef6594b73c56a63e6"},
+]
+markers = {main = "extra == \"langchain\" or extra == \"all\""}
+
+[package.dependencies]
+typing-extensions = ">=4.13.0,<5.0.0"
 
 [[package]]
 name = "langgraph"
@@ -6518,4 +6535,4 @@ openai = ["openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "a1f0189688a23654644d4913e99cf5053d29419a43bd85e824a3ff22dc589d59"
+content-hash = "c4099812ddce621e54f25f61df3e939a1d5a78e6818f928b400ccde864528b06"
