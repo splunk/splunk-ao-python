@@ -37,7 +37,7 @@ from pathlib import Path
 # Patterns to find in the auto-generated file
 # ---------------------------------------------------------------------------
 
-# Inside from_dict — pattern produced by the generator:
+# Inside from_dict — pattern produced by the generator (openapi-python-client 0.29+):
 #
 #     _detail = d.pop("detail", UNSET)
 #     detail: list[ValidationError] | Unset = UNSET

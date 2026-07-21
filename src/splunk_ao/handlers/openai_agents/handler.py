@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from agents import Span, Trace, TracingProcessor
@@ -66,7 +66,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             run_id=trace.trace_id,
             span_params={
                 "start_time": _get_timestamp(),
-                "start_time_iso": datetime.now(timezone.utc).isoformat(),
+                "start_time_iso": datetime.now(UTC).isoformat(),
                 "name": trace.name,
                 "metadata": convert_to_string_dict(trace.metadata),
             },
@@ -242,7 +242,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         # Extract initial data based on type
         initial_params: dict[str, Any] = {
             "name": span_name,
-            "start_time_iso": span.started_at or datetime.now(timezone.utc).isoformat(),
+            "start_time_iso": span.started_at or datetime.now(UTC).isoformat(),
         }
         if splunk_ao_type in ["llm", "chat"]:
             llm_data = _extract_llm_data(span.span_data)
@@ -316,7 +316,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
         # Update node with final data
         splunk_ao_type = node.node_type
-        end_params: dict[str, Any] = {"end_time_iso": span.ended_at or datetime.now(timezone.utc).isoformat()}
+        end_params: dict[str, Any] = {"end_time_iso": span.ended_at or datetime.now(UTC).isoformat()}
         end_params["duration_ns"] = convert_time_delta_to_ns(
             datetime.fromisoformat(span.ended_at) - datetime.fromisoformat(node.span_params["start_time_iso"])
         )

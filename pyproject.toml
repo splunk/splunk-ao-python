@@ -80,8 +80,8 @@ mypy = "^1.16.0"
 invoke = "^2.2.0"
 openai = ">=2.8.0,<3.0.0"
 fastapi = "^0.115.0"
-ruff = "^0.12.3"
-openapi-python-client = "^0.26.1"
+ruff = "^0.15.22"
+openapi-python-client = "^0.29.0"
 yq = "^3.4.3"
 pyyaml = "^6.0.2"
 pytest-timeout = "^2.4.0"
@@ -280,6 +280,8 @@ ignore = [
 "src/splunk_ao/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
 "src/splunk_ao/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 "src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
+"src/splunk_ao/experiment.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
+"src/splunk_ao/metric.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 
 [tool.ruff.lint.isort]
 known-first-party = ["galileo_core"]

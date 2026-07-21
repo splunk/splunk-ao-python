@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import UUID4, BaseModel, Field
@@ -10,7 +10,7 @@ from splunk_ao.schema.logged import LoggedSpan, LoggedTrace
 SPAN_TYPE = Literal["llm", "retriever", "tool", "workflow", "agent"]
 
 
-class LoggingMethod(str, Enum):
+class LoggingMethod(StrEnum):
     playground = "playground"
     python_client = "python_client"
     typescript_client = "typescript_client"
@@ -118,7 +118,7 @@ class SessionCreateResponse(BaseLogStreamOrExperimentModel):
     log_stream_id: UUID4 | None = Field(default=None, description="Log stream id associated with the session.")
 
 
-class LogRecordsSearchFilterOperator(str, Enum):
+class LogRecordsSearchFilterOperator(StrEnum):
     eq = "eq"
     ne = "ne"
     contains = "contains"
@@ -131,7 +131,7 @@ class LogRecordsSearchFilterOperator(str, Enum):
     between = "between"
 
 
-class LogRecordsSearchFilterType(str, Enum):
+class LogRecordsSearchFilterType(StrEnum):
     id = "id"
     date = "date"
     number = "number"
