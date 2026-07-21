@@ -408,9 +408,7 @@ class SplunkAOLogger(TracesLogger):
         if root is not None:
             self._discard_otel_subtree(root)
 
-    def _assign_otel_context(
-        self, otel_trace_id: int, parent_span_context: SpanContext | None, trace_state: TraceState
-    ) -> SpanContext:
+    def _assign_otel_context(self, otel_trace_id: int, trace_state: TraceState) -> SpanContext:
         """Create a sampled local SpanContext without changing the active context."""
         return SpanContext(
             trace_id=otel_trace_id,
@@ -422,30 +420,36 @@ class SplunkAOLogger(TracesLogger):
 
     def _record_otel_ids(
         self, step: BaseStep, parent_step: BaseStep | None = None, parent_span_context: SpanContext | None = None
-    ) -> OtelIds:
-        """Assign stable OTel identity using the step's actual Galileo parent."""
-        if parent_step is not None:
-            parent_ids = self._otel_ids.get(parent_step.id)
-            if parent_ids is None:
-                raise RuntimeError(f"Missing OTel context for parent step {parent_step.id}.")
-            parent_span_context = parent_ids.span_context
-        elif parent_span_context is None:
-            active_context = otel_trace.get_current_span().get_span_context()
-            parent_span_context = active_context if active_context.is_valid else None
+    ) -> OtelIds | None:
+        """Assign stable OTel identity without disrupting proprietary logging."""
+        try:
+            if parent_step is not None:
+                parent_ids = self._otel_ids.get(parent_step.id)
+                if parent_ids is None:
+                    raise RuntimeError(f"Missing OTel context for parent step {parent_step.id}.")
+                parent_span_context = parent_ids.span_context
+            elif parent_span_context is None:
+                active_context = otel_trace.get_current_span().get_span_context()
+                parent_span_context = active_context if active_context.is_valid else None
 
-        if parent_span_context is None:
-            otel_trace_id = _otel_id_generator.generate_trace_id()
-            trace_state = TraceState()
-        else:
-            otel_trace_id = parent_span_context.trace_id
-            trace_state = parent_span_context.trace_state
+            if parent_span_context is None:
+                otel_trace_id = _otel_id_generator.generate_trace_id()
+                trace_state = TraceState()
+            else:
+                otel_trace_id = parent_span_context.trace_id
+                trace_state = parent_span_context.trace_state
 
-        ids = OtelIds(
-            span_context=self._assign_otel_context(otel_trace_id, parent_span_context, trace_state),
-            parent_span_context=parent_span_context,
-        )
-        self._otel_ids[step.id] = ids
-        return ids
+            ids = OtelIds(
+                span_context=self._assign_otel_context(otel_trace_id, trace_state),
+                parent_span_context=parent_span_context,
+            )
+            self._otel_ids[step.id] = ids
+            return ids
+        except Exception:
+            self._logger.warning(
+                "Failed to assign OTel identity for step %s; continuing proprietary logging.", step.id, exc_info=True
+            )
+            return None
 
     def _open_otel_step_ids(self, current_parent: StepWithChildSpans | None) -> tuple[uuid.UUID, ...]:
         """Return the root-to-current proprietary chain that has OTel identities."""
@@ -458,6 +462,18 @@ class SplunkAOLogger(TracesLogger):
         return tuple(reversed(path))
 
     def _sync_otel_context(self, current_parent: StepWithChildSpans | None) -> None:
+        """Reconcile active OTel context without disrupting proprietary logging."""
+        try:
+            self._sync_otel_context_impl(current_parent)
+        except Exception:
+            parent_id = current_parent.id if current_parent is not None else None
+            self._logger.warning(
+                "Failed to synchronize OTel context for parent %s; continuing proprietary logging.",
+                parent_id,
+                exc_info=True,
+            )
+
+    def _sync_otel_context_impl(self, current_parent: StepWithChildSpans | None) -> None:
         """Reconcile this logger's open chain with request-local OTel context."""
         desired_step_ids = self._open_otel_step_ids(current_parent)
         logger_id = id(self)
@@ -538,8 +554,15 @@ class SplunkAOLogger(TracesLogger):
             self._discard_otel_identity_tree(child_id)
 
     def _release_otel_context(self, finished_step: BaseStep) -> None:
-        """Release identity bookkeeping after active context has moved upward."""
-        self._discard_otel_subtree(finished_step)
+        """Release OTel bookkeeping without disrupting proprietary completion."""
+        try:
+            self._discard_otel_subtree(finished_step)
+        except Exception:
+            self._logger.warning(
+                "Failed to release OTel context for step %s; continuing proprietary logging.",
+                finished_step.id,
+                exc_info=True,
+            )
 
     def _current_span_id(self) -> uuid.UUID:
         """Return the current proprietary parent ID for internal lifecycle tests."""

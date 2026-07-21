@@ -1,6 +1,7 @@
 import asyncio
 import atexit
 from collections.abc import Callable, Generator
+from unittest.mock import Mock
 
 import pytest
 from opentelemetry import context, propagate, trace
@@ -105,6 +106,93 @@ def test_completed_leaf_siblings_share_parent_and_do_not_become_active(
     logger.conclude(output="done")
 
 
+def test_otel_identity_failure_does_not_interrupt_span_creation_or_streaming(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    ingest_step = Mock()
+    warning = Mock()
+
+    def fail_assignment(*args, **kwargs) -> SpanContext:
+        raise RuntimeError("identity failure")
+
+    logger.mode = "distributed"
+    with monkeypatch.context() as patch:
+        patch.setattr(SplunkAOLogger, "_assign_otel_context", fail_assignment)
+        patch.setattr(SplunkAOLogger, "_ingest_step_streaming", ingest_step)
+        patch.setattr(logger._logger, "warning", warning)
+        span = logger.add_llm_span(input="prompt", output="answer", model="model")
+    logger.mode = "batch"
+
+    assert span is not None
+    assert span in root.spans
+    assert span.id not in logger._otel_ids
+    ingest_step.assert_called_once_with(span)
+    assert "Failed to assign OTel identity" in warning.call_args.args[0]
+
+    logger.conclude(output="done")
+
+
+def test_otel_sync_failure_does_not_interrupt_parentable_span_creation_or_streaming(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    ingest_step = Mock()
+    warning = Mock()
+
+    logger.mode = "distributed"
+    with monkeypatch.context() as patch:
+        patch.setattr(SplunkAOLogger, "_sync_otel_context_impl", Mock(side_effect=RuntimeError("sync failure")))
+        patch.setattr(SplunkAOLogger, "_ingest_step_streaming", ingest_step)
+        patch.setattr(logger._logger, "warning", warning)
+        workflow = logger.add_workflow_span(input="workflow")
+    logger.mode = "batch"
+
+    assert workflow is not None
+    assert workflow in root.spans
+    assert logger.current_parent() is workflow
+    assert workflow.id in logger._otel_ids
+    ingest_step.assert_called_once_with(workflow)
+    assert "Failed to synchronize OTel context" in warning.call_args.args[0]
+
+    logger._sync_otel_context(workflow)
+    logger.conclude(output="workflow-output")
+    logger.conclude(output="trace-output")
+
+
+def test_otel_sync_and_release_failures_do_not_interrupt_conclusion_or_streaming(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    workflow = logger.add_workflow_span(input="workflow")
+    update_step = Mock()
+    warning = Mock()
+
+    logger.mode = "distributed"
+    with monkeypatch.context() as patch:
+        patch.setattr(SplunkAOLogger, "_sync_otel_context_impl", Mock(side_effect=RuntimeError("sync failure")))
+        patch.setattr(SplunkAOLogger, "_discard_otel_subtree", Mock(side_effect=RuntimeError("release failure")))
+        patch.setattr(SplunkAOLogger, "_update_step_streaming", update_step)
+        patch.setattr(logger._logger, "warning", warning)
+        parent = logger.conclude(output="workflow-output")
+    logger.mode = "batch"
+
+    assert parent is root
+    assert logger.current_parent() is root
+    assert workflow.output == "workflow-output"
+    update_step.assert_called_once_with(workflow, is_complete=True)
+    warning_messages = [call.args[0] for call in warning.call_args_list]
+    assert any("Failed to synchronize OTel context" in message for message in warning_messages)
+    assert any("Failed to release OTel context" in message for message in warning_messages)
+
+    logger._sync_otel_context(root)
+    logger._release_otel_context(workflow)
+    logger.conclude(output="trace-output")
+
+
 @pytest.mark.parametrize("parent_kind", ["tool", "retriever"])
 def test_promoted_parent_becomes_active_and_parents_children(
     make_logger: Callable[[], SplunkAOLogger], parent_kind: str
@@ -153,23 +241,22 @@ def test_single_llm_trace_assigns_both_contexts_and_cleans_up(
     make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     logger = make_logger()
-    assigned: list[tuple[SpanContext | None, SpanContext]] = []
-    original = SplunkAOLogger._assign_otel_context
+    assigned = []
+    original_release = SplunkAOLogger._release_otel_context
 
-    def recording_assign(
-        self: SplunkAOLogger, otel_trace_id: int, parent_span_context: SpanContext | None, trace_state
-    ) -> SpanContext:
-        span_context = original(self, otel_trace_id, parent_span_context, trace_state)
-        assigned.append((parent_span_context, span_context))
-        return span_context
+    def recording_release(self, finished_step) -> None:
+        assigned.append(dict(self._otel_ids))
+        original_release(self, finished_step)
 
-    monkeypatch.setattr(SplunkAOLogger, "_assign_otel_context", recording_assign)
-    logger.add_single_llm_span_trace(input="q", output="a", model="model")
+    monkeypatch.setattr(SplunkAOLogger, "_release_otel_context", recording_release)
+    single_trace = logger.add_single_llm_span_trace(input="q", output="a", model="model")
 
-    assert len(assigned) == 2
-    assert assigned[0][0] is None
-    assert assigned[1][0] == assigned[0][1]
-    assert assigned[1][1].trace_id == assigned[0][1].trace_id
+    assert len(assigned) == 1
+    trace_ids = assigned[0][single_trace.id]
+    llm_ids = assigned[0][single_trace.spans[0].id]
+    assert trace_ids.parent_span_context is None
+    assert llm_ids.parent_span_context == trace_ids.span_context
+    assert llm_ids.span_context.trace_id == trace_ids.span_context.trace_id
     assert logger._otel_ids == {}
     assert not trace.get_current_span().get_span_context().is_valid
 
