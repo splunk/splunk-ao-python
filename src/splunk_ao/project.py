@@ -872,7 +872,7 @@ class Project(StateManagementMixin):
         # Sync fields returned by the update endpoint.
         # bookmark and permissions are NOT returned by ProjectUpdateResponse,
         # so we intentionally preserve their current local values.
-        # created_by, name, and type_ are optional in the response; skip them if absent.
+        # created_by and name are optional in the response; skip them if absent.
         attrs: dict[str, object] = {
             "created_at": response.created_at,
             "id": response.id,
@@ -882,8 +882,6 @@ class Project(StateManagementMixin):
             attrs["created_by"] = response.created_by
         if not isinstance(response.name, Unset):
             attrs["name"] = response.name
-        if not isinstance(response.type_, Unset):
-            attrs["type"] = response.type_
         self._sync_attrs(**attrs)
         self._set_state(SyncState.SYNCED)
         logger.info(f"Project.save: id='{self.id}' - completed")

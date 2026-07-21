@@ -27,12 +27,14 @@ INTEGRATION_TYPES = [
 ]
 
 
-def create_mock_integration(name: IntegrationProvider, is_selected: bool = False) -> IntegrationDB:
+def create_mock_integration(
+    provider: IntegrationProvider, is_selected: bool = False, name: str | None = None
+) -> IntegrationDB:
     """Create a mock integration DB response."""
     mock = MagicMock(spec=IntegrationDB)
     mock.id = str(uuid4())
-    mock.name = name
-    mock.provider = name
+    mock.name = name or provider.value
+    mock.provider = provider
     mock.created_at = datetime.now()
     mock.updated_at = datetime.now()
     mock.created_by = str(uuid4())
@@ -155,6 +157,20 @@ class TestIntegrationConvenienceProperties:
 
         assert isinstance(result, OpenAIProvider)
         assert result.name == "openai"
+
+    @patch("splunk_ao.integration.SplunkAOConfig.get")
+    @patch("splunk_ao.integration.list_integrations_integrations_get")
+    def test_property_matches_provider_when_display_name_differs(self, mock_list, mock_config):
+        """Integration.openai matches provider slug instead of display name."""
+        # Given: an API integration with a custom display name
+        mock_list.sync.return_value = [create_mock_integration(IntegrationProvider.OPENAI, name="Production OpenAI")]
+
+        # When: looking up the convenience property by provider type
+        result = Integration.openai
+
+        # Then: the configured provider is returned with its display name preserved
+        assert isinstance(result, OpenAIProvider)
+        assert result.name == "Production OpenAI"
 
     @patch("splunk_ao.integration.SplunkAOConfig.get")
     @patch("splunk_ao.integration.list_integrations_integrations_get")
