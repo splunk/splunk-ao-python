@@ -21,8 +21,6 @@ class ScorersConfiguration:
             cost (Union[Unset, bool]):  Default: True.
             pii (Union[Unset, bool]):  Default: False.
             input_pii (Union[Unset, bool]):  Default: False.
-            bleu (Union[Unset, bool]):  Default: True.
-            rouge (Union[Unset, bool]):  Default: True.
             protect_status (Union[Unset, bool]):  Default: True.
             context_relevance (Union[Unset, bool]):  Default: False.
             toxicity (Union[Unset, bool]):  Default: False.
@@ -43,10 +41,8 @@ class ScorersConfiguration:
             tool_selection_quality_luna (Union[Unset, bool]):  Default: False.
             action_completion_luna (Union[Unset, bool]):  Default: False.
             action_advancement_luna (Union[Unset, bool]):  Default: False.
-            uncertainty (Union[Unset, bool]):  Default: False.
             factuality (Union[Unset, bool]):  Default: False.
             groundedness (Union[Unset, bool]):  Default: False.
-            prompt_perplexity (Union[Unset, bool]):  Default: False.
             chunk_attribution_utilization_gpt (Union[Unset, bool]):  Default: False.
             completeness_gpt (Union[Unset, bool]):  Default: False.
             instruction_adherence (Union[Unset, bool]):  Default: False.
@@ -66,8 +62,6 @@ class ScorersConfiguration:
     cost: Union[Unset, bool] = True
     pii: Union[Unset, bool] = False
     input_pii: Union[Unset, bool] = False
-    bleu: Union[Unset, bool] = True
-    rouge: Union[Unset, bool] = True
     protect_status: Union[Unset, bool] = True
     context_relevance: Union[Unset, bool] = False
     toxicity: Union[Unset, bool] = False
@@ -88,10 +82,8 @@ class ScorersConfiguration:
     tool_selection_quality_luna: Union[Unset, bool] = False
     action_completion_luna: Union[Unset, bool] = False
     action_advancement_luna: Union[Unset, bool] = False
-    uncertainty: Union[Unset, bool] = False
     factuality: Union[Unset, bool] = False
     groundedness: Union[Unset, bool] = False
-    prompt_perplexity: Union[Unset, bool] = False
     chunk_attribution_utilization_gpt: Union[Unset, bool] = False
     completeness_gpt: Union[Unset, bool] = False
     instruction_adherence: Union[Unset, bool] = False
@@ -115,10 +107,6 @@ class ScorersConfiguration:
         pii = self.pii
 
         input_pii = self.input_pii
-
-        bleu = self.bleu
-
-        rouge = self.rouge
 
         protect_status = self.protect_status
 
@@ -160,13 +148,9 @@ class ScorersConfiguration:
 
         action_advancement_luna = self.action_advancement_luna
 
-        uncertainty = self.uncertainty
-
         factuality = self.factuality
 
         groundedness = self.groundedness
-
-        prompt_perplexity = self.prompt_perplexity
 
         chunk_attribution_utilization_gpt = self.chunk_attribution_utilization_gpt
 
@@ -205,10 +189,6 @@ class ScorersConfiguration:
             field_dict["pii"] = pii
         if input_pii is not UNSET:
             field_dict["input_pii"] = input_pii
-        if bleu is not UNSET:
-            field_dict["bleu"] = bleu
-        if rouge is not UNSET:
-            field_dict["rouge"] = rouge
         if protect_status is not UNSET:
             field_dict["protect_status"] = protect_status
         if context_relevance is not UNSET:
@@ -249,14 +229,10 @@ class ScorersConfiguration:
             field_dict["action_completion_luna"] = action_completion_luna
         if action_advancement_luna is not UNSET:
             field_dict["action_advancement_luna"] = action_advancement_luna
-        if uncertainty is not UNSET:
-            field_dict["uncertainty"] = uncertainty
         if factuality is not UNSET:
             field_dict["factuality"] = factuality
         if groundedness is not UNSET:
             field_dict["groundedness"] = groundedness
-        if prompt_perplexity is not UNSET:
-            field_dict["prompt_perplexity"] = prompt_perplexity
         if chunk_attribution_utilization_gpt is not UNSET:
             field_dict["chunk_attribution_utilization_gpt"] = chunk_attribution_utilization_gpt
         if completeness_gpt is not UNSET:
@@ -296,10 +272,6 @@ class ScorersConfiguration:
         pii = d.pop("pii", UNSET)
 
         input_pii = d.pop("input_pii", UNSET)
-
-        bleu = d.pop("bleu", UNSET)
-
-        rouge = d.pop("rouge", UNSET)
 
         protect_status = d.pop("protect_status", UNSET)
 
@@ -341,13 +313,9 @@ class ScorersConfiguration:
 
         action_advancement_luna = d.pop("action_advancement_luna", UNSET)
 
-        uncertainty = d.pop("uncertainty", UNSET)
-
         factuality = d.pop("factuality", UNSET)
 
         groundedness = d.pop("groundedness", UNSET)
-
-        prompt_perplexity = d.pop("prompt_perplexity", UNSET)
 
         chunk_attribution_utilization_gpt = d.pop("chunk_attribution_utilization_gpt", UNSET)
 
@@ -380,8 +348,6 @@ class ScorersConfiguration:
             cost=cost,
             pii=pii,
             input_pii=input_pii,
-            bleu=bleu,
-            rouge=rouge,
             protect_status=protect_status,
             context_relevance=context_relevance,
             toxicity=toxicity,
@@ -402,10 +368,8 @@ class ScorersConfiguration:
             tool_selection_quality_luna=tool_selection_quality_luna,
             action_completion_luna=action_completion_luna,
             action_advancement_luna=action_advancement_luna,
-            uncertainty=uncertainty,
             factuality=factuality,
             groundedness=groundedness,
-            prompt_perplexity=prompt_perplexity,
             chunk_attribution_utilization_gpt=chunk_attribution_utilization_gpt,
             completeness_gpt=completeness_gpt,
             instruction_adherence=instruction_adherence,
