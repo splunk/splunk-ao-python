@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter
 
@@ -33,6 +32,8 @@ class SpanSink:
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Drain all registered processors through the owned provider."""
+        if self._shutdown:
+            raise RuntimeError("SpanSink is shut down")
         return self._provider.force_flush(timeout_millis)
 
     def shutdown(self) -> None:
@@ -54,9 +55,9 @@ def build_batch_processor(exporter: SpanExporter, config: BatchConfig | None = N
     )
 
 
-def build_span_sink(exporter: SpanExporter, resource: Resource, batch_config: BatchConfig | None = None) -> SpanSink:
+def build_span_sink(exporter: SpanExporter, batch_config: BatchConfig | None = None) -> SpanSink:
     """Build an SDK-owned sink without replacing the global tracer provider."""
     processor = build_batch_processor(exporter, batch_config)
-    provider = TracerProvider(resource=resource)
+    provider = TracerProvider()
     provider.add_span_processor(processor)
     return SpanSink(processor, provider)

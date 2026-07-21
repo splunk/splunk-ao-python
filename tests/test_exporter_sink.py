@@ -26,7 +26,7 @@ class RecordingExporter(SpanExporter):
         self.shutdown_calls += 1
 
 
-def make_readable_span(index: int = 1) -> ReadableSpan:
+def make_readable_span(index: int = 1, resource: Resource | None = None) -> ReadableSpan:
     context = SpanContext(
         trace_id=index,
         span_id=index,
@@ -34,7 +34,13 @@ def make_readable_span(index: int = 1) -> ReadableSpan:
         trace_flags=TraceFlags(TraceFlags.SAMPLED),
         trace_state=TraceState(),
     )
-    return ReadableSpan(name=f"span-{index}", context=context, resource=Resource({}), start_time=1, end_time=2)
+    return ReadableSpan(
+        name=f"span-{index}",
+        context=context,
+        resource=resource if resource is not None else Resource({}),
+        start_time=1,
+        end_time=2,
+    )
 
 
 @pytest.fixture
@@ -65,7 +71,7 @@ def test_batch_processor_accepts_custom_config(shutdown_workers: list[Any]) -> N
 
 def test_span_sink_does_not_replace_global(shutdown_workers: list[Any]) -> None:
     original_global = trace.get_tracer_provider()
-    sink = build_span_sink(RecordingExporter(), Resource({}))
+    sink = build_span_sink(RecordingExporter())
     shutdown_workers.append(sink)
 
     assert trace.get_tracer_provider() is original_global
@@ -73,7 +79,7 @@ def test_span_sink_does_not_replace_global(shutdown_workers: list[Any]) -> None:
 
 def test_span_sink_exports_spans_on_force_flush(shutdown_workers: list[Any]) -> None:
     exporter = RecordingExporter()
-    sink = build_span_sink(exporter, Resource({}))
+    sink = build_span_sink(exporter)
     shutdown_workers.append(sink)
 
     sink.emit(make_readable_span())
@@ -82,9 +88,22 @@ def test_span_sink_exports_spans_on_force_flush(shutdown_workers: list[Any]) -> 
     assert len(exporter.exported) == 1
 
 
+def test_span_sink_preserves_resource_already_attached_to_span(shutdown_workers: list[Any]) -> None:
+    exporter = RecordingExporter()
+    sink = build_span_sink(exporter)
+    shutdown_workers.append(sink)
+    routing_resource = Resource({"splunk_ao.project.name": "project"})
+
+    sink.emit(make_readable_span(resource=routing_resource))
+    assert sink.force_flush()
+
+    assert exporter.exported[0].resource is routing_resource
+    assert exporter.exported[0].resource.attributes["splunk_ao.project.name"] == "project"
+
+
 def test_spans_not_exported_before_force_flush(shutdown_workers: list[Any]) -> None:
     exporter = RecordingExporter()
-    sink = build_span_sink(exporter, Resource({}), BatchConfig(schedule_delay_millis=60_000))
+    sink = build_span_sink(exporter, BatchConfig(schedule_delay_millis=60_000))
     shutdown_workers.append(sink)
 
     for index in range(1, 6):
@@ -137,11 +156,19 @@ def test_span_sink_shutdown_is_idempotent() -> None:
 
 
 def test_span_sink_rejects_emit_after_shutdown() -> None:
-    sink = build_span_sink(RecordingExporter(), Resource({}))
+    sink = build_span_sink(RecordingExporter())
     sink.shutdown()
 
     with pytest.raises(RuntimeError, match="shut down"):
         sink.emit(make_readable_span())
+
+
+def test_span_sink_rejects_force_flush_after_shutdown() -> None:
+    sink = build_span_sink(RecordingExporter())
+    sink.shutdown()
+
+    with pytest.raises(RuntimeError, match="shut down"):
+        sink.force_flush()
 
 
 class AnyProcessor:
