@@ -97,9 +97,9 @@ class TestSplunkAOOTLPExporter:
     @pytest.mark.parametrize(
         "api_url,expected_endpoint",
         [
-            ("https://api.galileo.ai", "https://api.galileo.ai/otel/traces"),
-            ("https://api.galileo.ai/", "https://api.galileo.ai/otel/traces"),
-            ("http://localhost:8080", "http://localhost:8080/otel/traces"),
+            ("https://api.galileo.ai", "https://api.galileo.ai/otel/v1/traces"),
+            ("https://api.galileo.ai/", "https://api.galileo.ai/otel/v1/traces"),
+            ("http://localhost:8080", "http://localhost:8080/otel/v1/traces"),
         ],
     )
     def test_url_construction(self, mock_otlp_init, api_url, expected_endpoint, mock_config, clear_env_vars):

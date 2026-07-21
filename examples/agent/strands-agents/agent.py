@@ -1,16 +1,17 @@
 import os
 
+# Load environment variables from the .env file
+from dotenv import load_dotenv
 from strands import Agent, tool
 from strands.telemetry import StrandsTelemetry
 from strands_tools import calculator, current_time
 
-# Load environment variables from the .env file
-from dotenv import load_dotenv
-
 load_dotenv(override=True)
 
 # Export the Splunk AO OTel API endpoint for OTel
-os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = os.environ.get("SPLUNK_AO_API_ENDPOINT", "https://api.galileo.ai/otel/traces")
+os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = os.environ.get(
+    "SPLUNK_AO_API_ENDPOINT", "https://api.galileo.ai/otel/v1/traces"
+)
 
 # Export the Splunk AO OTel headers pointing to the correct API key, project, and log stream
 headers = {
