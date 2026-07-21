@@ -21,7 +21,7 @@ class O11yApiClient(ApiClient):
     """API client for Splunk Observability Cloud AO endpoints."""
 
     sf_token: SecretStr
-    path_prefix: str = "/v2/ao"
+    path_prefix: str = "/ao/api"
 
     @property
     def auth_header(self) -> dict[str, str]:
