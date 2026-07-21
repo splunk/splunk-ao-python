@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..models.feedback_rating_db import FeedbackRatingDB
     from ..models.hallucination_segment import HallucinationSegment
     from ..models.metric_critique_columnar import MetricCritiqueColumnar
+    from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
     from ..models.segment import Segment
 
 
@@ -40,10 +41,14 @@ class MetricSuccess:
         cost (float | None | Unset):
         model_alias (None | str | Unset):
         num_judges (int | None | Unset):
+        multijudge_average (float | None | Unset):
         input_tokens (int | None | Unset):
         output_tokens (int | None | Unset):
         total_tokens (int | None | Unset):
         critique (MetricCritiqueColumnar | None | Unset):
+        metadata (MetricSuccessMetadataType0 | None | Unset): Optional per-row context returned alongside the score by
+            code-based scorers that return a (score, metadata) tuple. Sourced from the {metric_name}_metadata auxiliary key,
+            which is stored as a JSON string in ClickHouse.
         display_value (None | str | Unset):
         rationale (None | str | Unset):
     """
@@ -117,10 +122,12 @@ class MetricSuccess:
     cost: float | None | Unset = UNSET
     model_alias: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
+    multijudge_average: float | None | Unset = UNSET
     input_tokens: int | None | Unset = UNSET
     output_tokens: int | None | Unset = UNSET
     total_tokens: int | None | Unset = UNSET
     critique: MetricCritiqueColumnar | None | Unset = UNSET
+    metadata: MetricSuccessMetadataType0 | None | Unset = UNSET
     display_value: None | str | Unset = UNSET
     rationale: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -131,6 +138,7 @@ class MetricSuccess:
         from ..models.feedback_rating_db import FeedbackRatingDB
         from ..models.hallucination_segment import HallucinationSegment
         from ..models.metric_critique_columnar import MetricCritiqueColumnar
+        from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
         from ..models.segment import Segment
 
         value: (
@@ -279,6 +287,12 @@ class MetricSuccess:
         else:
             num_judges = self.num_judges
 
+        multijudge_average: float | None | Unset
+        if isinstance(self.multijudge_average, Unset):
+            multijudge_average = UNSET
+        else:
+            multijudge_average = self.multijudge_average
+
         input_tokens: int | None | Unset
         if isinstance(self.input_tokens, Unset):
             input_tokens = UNSET
@@ -304,6 +318,14 @@ class MetricSuccess:
             critique = self.critique.to_dict()
         else:
             critique = self.critique
+
+        metadata: dict[str, Any] | None | Unset
+        if isinstance(self.metadata, Unset):
+            metadata = UNSET
+        elif isinstance(self.metadata, MetricSuccessMetadataType0):
+            metadata = self.metadata.to_dict()
+        else:
+            metadata = self.metadata
 
         display_value: None | str | Unset
         if isinstance(self.display_value, Unset):
@@ -334,6 +356,8 @@ class MetricSuccess:
             field_dict["model_alias"] = model_alias
         if num_judges is not UNSET:
             field_dict["num_judges"] = num_judges
+        if multijudge_average is not UNSET:
+            field_dict["multijudge_average"] = multijudge_average
         if input_tokens is not UNSET:
             field_dict["input_tokens"] = input_tokens
         if output_tokens is not UNSET:
@@ -342,6 +366,8 @@ class MetricSuccess:
             field_dict["total_tokens"] = total_tokens
         if critique is not UNSET:
             field_dict["critique"] = critique
+        if metadata is not UNSET:
+            field_dict["metadata"] = metadata
         if display_value is not UNSET:
             field_dict["display_value"] = display_value
         if rationale is not UNSET:
@@ -356,6 +382,7 @@ class MetricSuccess:
         from ..models.feedback_rating_db import FeedbackRatingDB
         from ..models.hallucination_segment import HallucinationSegment
         from ..models.metric_critique_columnar import MetricCritiqueColumnar
+        from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
         from ..models.segment import Segment
 
         d = dict(src_dict)
@@ -943,6 +970,15 @@ class MetricSuccess:
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
 
+        def _parse_multijudge_average(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        multijudge_average = _parse_multijudge_average(d.pop("multijudge_average", UNSET))
+
         def _parse_input_tokens(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -987,6 +1023,23 @@ class MetricSuccess:
 
         critique = _parse_critique(d.pop("critique", UNSET))
 
+        def _parse_metadata(data: object) -> MetricSuccessMetadataType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                metadata_type_0 = MetricSuccessMetadataType0.from_dict(data)
+
+                return metadata_type_0
+            except:  # noqa: E722
+                pass
+            return cast(MetricSuccessMetadataType0 | None | Unset, data)
+
+        metadata = _parse_metadata(d.pop("metadata", UNSET))
+
         def _parse_display_value(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -1014,10 +1067,12 @@ class MetricSuccess:
             cost=cost,
             model_alias=model_alias,
             num_judges=num_judges,
+            multijudge_average=multijudge_average,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             total_tokens=total_tokens,
             critique=critique,
+            metadata=metadata,
             display_value=display_value,
             rationale=rationale,
         )

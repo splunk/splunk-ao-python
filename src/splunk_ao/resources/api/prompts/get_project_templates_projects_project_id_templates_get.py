@@ -95,12 +95,10 @@ def sync_detailed(
     ----------
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
-    List[GetTemplateResponse]
+    List[BasePromptTemplateResponse]
         List of prompt template responses.
 
     Args:
@@ -130,12 +128,10 @@ def sync(project_id: str, *, client: ApiClient) -> Optional[HTTPValidationError 
     ----------
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
-    List[GetTemplateResponse]
+    List[BasePromptTemplateResponse]
         List of prompt template responses.
 
     Args:
@@ -163,12 +159,10 @@ async def asyncio_detailed(
     ----------
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
-    List[GetTemplateResponse]
+    List[BasePromptTemplateResponse]
         List of prompt template responses.
 
     Args:
@@ -200,12 +194,10 @@ async def asyncio(
     ----------
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
-    List[GetTemplateResponse]
+    List[BasePromptTemplateResponse]
         List of prompt template responses.
 
     Args:

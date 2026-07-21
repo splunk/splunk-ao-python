@@ -109,11 +109,9 @@ def sync_detailed(
     Parameters
     ----------
     params : ListPromptTemplateParams
-        Query parameters for filtering and sorting
+        Query parameters for filtering and sorting.
     pagination : PaginationRequestMixin
-        Pagination parameters
-    ctx : Context
-        User context containing database session and user information
+        Pagination parameters.
 
     Returns
     -------
@@ -154,11 +152,9 @@ def sync(
     Parameters
     ----------
     params : ListPromptTemplateParams
-        Query parameters for filtering and sorting
+        Query parameters for filtering and sorting.
     pagination : PaginationRequestMixin
-        Pagination parameters
-    ctx : Context
-        User context containing database session and user information
+        Pagination parameters.
 
     Returns
     -------
@@ -195,11 +191,9 @@ async def asyncio_detailed(
     Parameters
     ----------
     params : ListPromptTemplateParams
-        Query parameters for filtering and sorting
+        Query parameters for filtering and sorting.
     pagination : PaginationRequestMixin
-        Pagination parameters
-    ctx : Context
-        User context containing database session and user information
+        Pagination parameters.
 
     Returns
     -------
@@ -240,11 +234,9 @@ async def asyncio(
     Parameters
     ----------
     params : ListPromptTemplateParams
-        Query parameters for filtering and sorting
+        Query parameters for filtering and sorting.
     pagination : PaginationRequestMixin
-        Pagination parameters
-    ctx : Context
-        User context containing database session and user information
+        Pagination parameters.
 
     Returns
     -------

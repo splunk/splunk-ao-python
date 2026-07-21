@@ -30,8 +30,6 @@ class RunDB:
         updated_at (datetime.datetime):
         last_updated_by (str):
         creator (UserDB):
-        logged_splits (list[str]):
-        logged_inference_names (list[str]):
         name (None | str | Unset):
         project_id (None | str | Unset):
         dataset_hash (None | str | Unset):
@@ -39,6 +37,8 @@ class RunDB:
         task_type (None | TaskType | Unset):
         run_tags (list[RunTagDB] | Unset):
         example_content_id (None | str | Unset):
+        logged_splits (list[str] | Unset):
+        logged_inference_names (list[str] | Unset):
     """
 
     created_by: str
@@ -49,8 +49,6 @@ class RunDB:
     updated_at: datetime.datetime
     last_updated_by: str
     creator: UserDB
-    logged_splits: list[str]
-    logged_inference_names: list[str]
     name: None | str | Unset = UNSET
     project_id: None | str | Unset = UNSET
     dataset_hash: None | str | Unset = UNSET
@@ -58,6 +56,8 @@ class RunDB:
     task_type: None | TaskType | Unset = UNSET
     run_tags: list[RunTagDB] | Unset = UNSET
     example_content_id: None | str | Unset = UNSET
+    logged_splits: list[str] | Unset = UNSET
+    logged_inference_names: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,10 +76,6 @@ class RunDB:
         last_updated_by = self.last_updated_by
 
         creator = self.creator.to_dict()
-
-        logged_splits = self.logged_splits
-
-        logged_inference_names = self.logged_inference_names
 
         name: None | str | Unset
         if isinstance(self.name, Unset):
@@ -126,6 +122,14 @@ class RunDB:
         else:
             example_content_id = self.example_content_id
 
+        logged_splits: list[str] | Unset = UNSET
+        if not isinstance(self.logged_splits, Unset):
+            logged_splits = self.logged_splits
+
+        logged_inference_names: list[str] | Unset = UNSET
+        if not isinstance(self.logged_inference_names, Unset):
+            logged_inference_names = self.logged_inference_names
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -138,8 +142,6 @@ class RunDB:
                 "updated_at": updated_at,
                 "last_updated_by": last_updated_by,
                 "creator": creator,
-                "logged_splits": logged_splits,
-                "logged_inference_names": logged_inference_names,
             }
         )
         if name is not UNSET:
@@ -156,6 +158,10 @@ class RunDB:
             field_dict["run_tags"] = run_tags
         if example_content_id is not UNSET:
             field_dict["example_content_id"] = example_content_id
+        if logged_splits is not UNSET:
+            field_dict["logged_splits"] = logged_splits
+        if logged_inference_names is not UNSET:
+            field_dict["logged_inference_names"] = logged_inference_names
 
         return field_dict
 
@@ -180,10 +186,6 @@ class RunDB:
         last_updated_by = d.pop("last_updated_by")
 
         creator = UserDB.from_dict(d.pop("creator"))
-
-        logged_splits = cast(list[str], d.pop("logged_splits"))
-
-        logged_inference_names = cast(list[str], d.pop("logged_inference_names"))
 
         def _parse_name(data: object) -> None | str | Unset:
             if data is None:
@@ -256,6 +258,10 @@ class RunDB:
 
         example_content_id = _parse_example_content_id(d.pop("example_content_id", UNSET))
 
+        logged_splits = cast(list[str], d.pop("logged_splits", UNSET))
+
+        logged_inference_names = cast(list[str], d.pop("logged_inference_names", UNSET))
+
         run_db = cls(
             created_by=created_by,
             num_samples=num_samples,
@@ -265,8 +271,6 @@ class RunDB:
             updated_at=updated_at,
             last_updated_by=last_updated_by,
             creator=creator,
-            logged_splits=logged_splits,
-            logged_inference_names=logged_inference_names,
             name=name,
             project_id=project_id,
             dataset_hash=dataset_hash,
@@ -274,6 +278,8 @@ class RunDB:
             task_type=task_type,
             run_tags=run_tags,
             example_content_id=example_content_id,
+            logged_splits=logged_splits,
+            logged_inference_names=logged_inference_names,
         )
 
         run_db.additional_properties = d

@@ -19,6 +19,7 @@ class LogTracesIngestResponse:
         project_name (str): Project name associated with the traces.
         records_count (int): Total number of records ingested
         traces_count (int): total number of traces ingested
+        spans_count (int): total number of spans ingested
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
@@ -31,6 +32,7 @@ class LogTracesIngestResponse:
     project_name: str
     records_count: int
     traces_count: int
+    spans_count: int
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
@@ -46,6 +48,8 @@ class LogTracesIngestResponse:
         records_count = self.records_count
 
         traces_count = self.traces_count
+
+        spans_count = self.spans_count
 
         log_stream_id: None | str | Unset
         if isinstance(self.log_stream_id, Unset):
@@ -88,6 +92,7 @@ class LogTracesIngestResponse:
                 "project_name": project_name,
                 "records_count": records_count,
                 "traces_count": traces_count,
+                "spans_count": spans_count,
             }
         )
         if log_stream_id is not UNSET:
@@ -113,6 +118,8 @@ class LogTracesIngestResponse:
         records_count = d.pop("records_count")
 
         traces_count = d.pop("traces_count")
+
+        spans_count = d.pop("spans_count")
 
         def _parse_log_stream_id(data: object) -> None | str | Unset:
             if data is None:
@@ -172,6 +179,7 @@ class LogTracesIngestResponse:
             project_name=project_name,
             records_count=records_count,
             traces_count=traces_count,
+            spans_count=spans_count,
             log_stream_id=log_stream_id,
             experiment_id=experiment_id,
             metrics_testing_id=metrics_testing_id,

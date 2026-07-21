@@ -22,14 +22,10 @@ from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(
-    scorer_version_id: str, *, scorer_id: str, starting_token: int | Unset = 0, limit: int | Unset = 100
-) -> dict[str, Any]:
+def _get_kwargs(scorer_version_id: str, *, starting_token: int | Unset = 0, limit: int | Unset = 100) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
-
-    params["scorer_id"] = scorer_id
 
     params["starting_token"] = starting_token
 
@@ -93,12 +89,7 @@ def _build_response(
 
 
 def sync_detailed(
-    scorer_version_id: str,
-    *,
-    client: ApiClient,
-    scorer_id: str,
-    starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
+    scorer_version_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> Response[GetProjectsPaginatedResponseV2 | HTTPValidationError]:
     """List Projects For Scorer Version Route
 
@@ -106,7 +97,6 @@ def sync_detailed(
 
     Args:
         scorer_version_id (str):
-        scorer_id (str):
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
 
@@ -118,9 +108,7 @@ def sync_detailed(
         Response[GetProjectsPaginatedResponseV2 | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(
-        scorer_version_id=scorer_version_id, scorer_id=scorer_id, starting_token=starting_token, limit=limit
-    )
+    kwargs = _get_kwargs(scorer_version_id=scorer_version_id, starting_token=starting_token, limit=limit)
 
     response = client.request(**kwargs)
 
@@ -128,12 +116,7 @@ def sync_detailed(
 
 
 def sync(
-    scorer_version_id: str,
-    *,
-    client: ApiClient,
-    scorer_id: str,
-    starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
+    scorer_version_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> Optional[GetProjectsPaginatedResponseV2 | HTTPValidationError]:
     """List Projects For Scorer Version Route
 
@@ -141,7 +124,6 @@ def sync(
 
     Args:
         scorer_version_id (str):
-        scorer_id (str):
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
 
@@ -154,21 +136,12 @@ def sync(
     """
 
     return sync_detailed(
-        scorer_version_id=scorer_version_id,
-        client=client,
-        scorer_id=scorer_id,
-        starting_token=starting_token,
-        limit=limit,
+        scorer_version_id=scorer_version_id, client=client, starting_token=starting_token, limit=limit
     ).parsed
 
 
 async def asyncio_detailed(
-    scorer_version_id: str,
-    *,
-    client: ApiClient,
-    scorer_id: str,
-    starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
+    scorer_version_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> Response[GetProjectsPaginatedResponseV2 | HTTPValidationError]:
     """List Projects For Scorer Version Route
 
@@ -176,7 +149,6 @@ async def asyncio_detailed(
 
     Args:
         scorer_version_id (str):
-        scorer_id (str):
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
 
@@ -188,9 +160,7 @@ async def asyncio_detailed(
         Response[GetProjectsPaginatedResponseV2 | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(
-        scorer_version_id=scorer_version_id, scorer_id=scorer_id, starting_token=starting_token, limit=limit
-    )
+    kwargs = _get_kwargs(scorer_version_id=scorer_version_id, starting_token=starting_token, limit=limit)
 
     response = await client.arequest(**kwargs)
 
@@ -198,12 +168,7 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    scorer_version_id: str,
-    *,
-    client: ApiClient,
-    scorer_id: str,
-    starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
+    scorer_version_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> Optional[GetProjectsPaginatedResponseV2 | HTTPValidationError]:
     """List Projects For Scorer Version Route
 
@@ -211,7 +176,6 @@ async def asyncio(
 
     Args:
         scorer_version_id (str):
-        scorer_id (str):
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
 
@@ -225,10 +189,6 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            scorer_version_id=scorer_version_id,
-            client=client,
-            scorer_id=scorer_id,
-            starting_token=starting_token,
-            limit=limit,
+            scorer_version_id=scorer_version_id, client=client, starting_token=starting_token, limit=limit
         )
     ).parsed

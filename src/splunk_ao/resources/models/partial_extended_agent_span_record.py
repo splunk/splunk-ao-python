@@ -35,9 +35,6 @@ if TYPE_CHECKING:
     from ..models.partial_extended_agent_span_record_metric_info_type_0 import (
         PartialExtendedAgentSpanRecordMetricInfoType0,
     )
-    from ..models.partial_extended_agent_span_record_overall_annotation_agreement import (
-        PartialExtendedAgentSpanRecordOverallAnnotationAgreement,
-    )
     from ..models.partial_extended_agent_span_record_user_metadata import PartialExtendedAgentSpanRecordUserMetadata
     from ..models.text_content_part import TextContentPart
 
@@ -90,9 +87,12 @@ class PartialExtendedAgentSpanRecord:
             information keyed by template ID
         annotation_agreement (PartialExtendedAgentSpanRecordAnnotationAgreement | Unset): Annotation agreement scores
             keyed by template ID
-        overall_annotation_agreement (PartialExtendedAgentSpanRecordOverallAnnotationAgreement | Unset): Average
-            annotation agreement per queue (keyed by queue ID)
+        overall_annotation_agreement (float | None | Unset): Average annotation agreement across all templates in the
+            queue
         annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
+        fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+        progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
+        error_message (str | Unset): Runner error text written directly to CH span Default: ''.
         metric_info (None | PartialExtendedAgentSpanRecordMetricInfoType0 | Unset): Detailed information about the
             metrics associated with this trace or span
         files (None | PartialExtendedAgentSpanRecordFilesType0 | Unset): File metadata keyed by file ID for files
@@ -137,8 +137,11 @@ class PartialExtendedAgentSpanRecord:
     file_modalities: list[ContentModality] | Unset = UNSET
     annotation_aggregates: PartialExtendedAgentSpanRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: PartialExtendedAgentSpanRecordAnnotationAgreement | Unset = UNSET
-    overall_annotation_agreement: PartialExtendedAgentSpanRecordOverallAnnotationAgreement | Unset = UNSET
+    overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
+    fully_annotated: bool | None | Unset = UNSET
+    progress_message: str | Unset = ""
+    error_message: str | Unset = ""
     metric_info: None | PartialExtendedAgentSpanRecordMetricInfoType0 | Unset = UNSET
     files: None | PartialExtendedAgentSpanRecordFilesType0 | Unset = UNSET
     parent_id: None | Unset | UUID = UNSET
@@ -395,13 +398,25 @@ class PartialExtendedAgentSpanRecord:
         if not isinstance(self.annotation_agreement, Unset):
             annotation_agreement = self.annotation_agreement.to_dict()
 
-        overall_annotation_agreement: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.overall_annotation_agreement, Unset):
-            overall_annotation_agreement = self.overall_annotation_agreement.to_dict()
+        overall_annotation_agreement: float | None | Unset
+        if isinstance(self.overall_annotation_agreement, Unset):
+            overall_annotation_agreement = UNSET
+        else:
+            overall_annotation_agreement = self.overall_annotation_agreement
 
         annotation_queue_ids: list[str] | Unset = UNSET
         if not isinstance(self.annotation_queue_ids, Unset):
             annotation_queue_ids = self.annotation_queue_ids
+
+        fully_annotated: bool | None | Unset
+        if isinstance(self.fully_annotated, Unset):
+            fully_annotated = UNSET
+        else:
+            fully_annotated = self.fully_annotated
+
+        progress_message = self.progress_message
+
+        error_message = self.error_message
 
         metric_info: dict[str, Any] | None | Unset
         if isinstance(self.metric_info, Unset):
@@ -506,6 +521,12 @@ class PartialExtendedAgentSpanRecord:
             field_dict["overall_annotation_agreement"] = overall_annotation_agreement
         if annotation_queue_ids is not UNSET:
             field_dict["annotation_queue_ids"] = annotation_queue_ids
+        if fully_annotated is not UNSET:
+            field_dict["fully_annotated"] = fully_annotated
+        if progress_message is not UNSET:
+            field_dict["progress_message"] = progress_message
+        if error_message is not UNSET:
+            field_dict["error_message"] = error_message
         if metric_info is not UNSET:
             field_dict["metric_info"] = metric_info
         if files is not UNSET:
@@ -544,9 +565,6 @@ class PartialExtendedAgentSpanRecord:
         from ..models.partial_extended_agent_span_record_files_type_0 import PartialExtendedAgentSpanRecordFilesType0
         from ..models.partial_extended_agent_span_record_metric_info_type_0 import (
             PartialExtendedAgentSpanRecordMetricInfoType0,
-        )
-        from ..models.partial_extended_agent_span_record_overall_annotation_agreement import (
-            PartialExtendedAgentSpanRecordOverallAnnotationAgreement,
         )
         from ..models.partial_extended_agent_span_record_user_metadata import PartialExtendedAgentSpanRecordUserMetadata
         from ..models.text_content_part import TextContentPart
@@ -1030,16 +1048,29 @@ class PartialExtendedAgentSpanRecord:
         else:
             annotation_agreement = PartialExtendedAgentSpanRecordAnnotationAgreement.from_dict(_annotation_agreement)
 
-        _overall_annotation_agreement = d.pop("overall_annotation_agreement", UNSET)
-        overall_annotation_agreement: PartialExtendedAgentSpanRecordOverallAnnotationAgreement | Unset
-        if isinstance(_overall_annotation_agreement, Unset):
-            overall_annotation_agreement = UNSET
-        else:
-            overall_annotation_agreement = PartialExtendedAgentSpanRecordOverallAnnotationAgreement.from_dict(
-                _overall_annotation_agreement
-            )
+        def _parse_overall_annotation_agreement(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        overall_annotation_agreement = _parse_overall_annotation_agreement(d.pop("overall_annotation_agreement", UNSET))
 
         annotation_queue_ids = cast(list[str], d.pop("annotation_queue_ids", UNSET))
+
+        def _parse_fully_annotated(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
+
+        progress_message = d.pop("progress_message", UNSET)
+
+        error_message = d.pop("error_message", UNSET)
 
         def _parse_metric_info(data: object) -> None | PartialExtendedAgentSpanRecordMetricInfoType0 | Unset:
             if data is None:
@@ -1255,6 +1286,9 @@ class PartialExtendedAgentSpanRecord:
             annotation_agreement=annotation_agreement,
             overall_annotation_agreement=overall_annotation_agreement,
             annotation_queue_ids=annotation_queue_ids,
+            fully_annotated=fully_annotated,
+            progress_message=progress_message,
+            error_message=error_message,
             metric_info=metric_info,
             files=files,
             parent_id=parent_id,

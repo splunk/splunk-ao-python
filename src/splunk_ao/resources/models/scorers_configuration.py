@@ -39,6 +39,7 @@ class ScorersConfiguration:
             context_adherence_luna (bool | Unset):  Default: False.
             context_relevance_luna (bool | Unset):  Default: False.
             chunk_relevance_luna (bool | Unset):  Default: False.
+            completeness_luna (bool | Unset):  Default: False.
             completeness_nli (bool | Unset):  Default: False.
             tool_error_rate_luna (bool | Unset):  Default: False.
             tool_selection_quality_luna (bool | Unset):  Default: False.
@@ -83,6 +84,7 @@ class ScorersConfiguration:
     context_adherence_luna: bool | Unset = False
     context_relevance_luna: bool | Unset = False
     chunk_relevance_luna: bool | Unset = False
+    completeness_luna: bool | Unset = False
     completeness_nli: bool | Unset = False
     tool_error_rate_luna: bool | Unset = False
     tool_selection_quality_luna: bool | Unset = False
@@ -147,6 +149,8 @@ class ScorersConfiguration:
         context_relevance_luna = self.context_relevance_luna
 
         chunk_relevance_luna = self.chunk_relevance_luna
+
+        completeness_luna = self.completeness_luna
 
         completeness_nli = self.completeness_nli
 
@@ -235,6 +239,8 @@ class ScorersConfiguration:
             field_dict["context_relevance_luna"] = context_relevance_luna
         if chunk_relevance_luna is not UNSET:
             field_dict["chunk_relevance_luna"] = chunk_relevance_luna
+        if completeness_luna is not UNSET:
+            field_dict["completeness_luna"] = completeness_luna
         if completeness_nli is not UNSET:
             field_dict["completeness_nli"] = completeness_nli
         if tool_error_rate_luna is not UNSET:
@@ -325,6 +331,8 @@ class ScorersConfiguration:
 
         chunk_relevance_luna = d.pop("chunk_relevance_luna", UNSET)
 
+        completeness_luna = d.pop("completeness_luna", UNSET)
+
         completeness_nli = d.pop("completeness_nli", UNSET)
 
         tool_error_rate_luna = d.pop("tool_error_rate_luna", UNSET)
@@ -390,6 +398,7 @@ class ScorersConfiguration:
             context_adherence_luna=context_adherence_luna,
             context_relevance_luna=context_relevance_luna,
             chunk_relevance_luna=chunk_relevance_luna,
+            completeness_luna=completeness_luna,
             completeness_nli=completeness_nli,
             tool_error_rate_luna=tool_error_rate_luna,
             tool_selection_quality_luna=tool_selection_quality_luna,

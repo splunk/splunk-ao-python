@@ -8,6 +8,7 @@ from attrs import field as _attrs_field
 
 from ..models.annotation_queue_action import AnnotationQueueAction
 from ..models.api_key_action import ApiKeyAction
+from ..models.control_resource_action import ControlResourceAction
 from ..models.dataset_action import DatasetAction
 from ..models.fine_tuned_scorer_action import FineTunedScorerAction
 from ..models.generated_scorer_action import GeneratedScorerAction
@@ -17,6 +18,7 @@ from ..models.integration_action import IntegrationAction
 from ..models.organization_action import OrganizationAction
 from ..models.project_action import ProjectAction
 from ..models.registered_scorer_action import RegisteredScorerAction
+from ..models.scorer_action import ScorerAction
 from ..models.user_action import UserAction
 from ..types import UNSET, Unset
 
@@ -27,9 +29,9 @@ T = TypeVar("T", bound="Permission")
 class Permission:
     """
     Attributes:
-        action (AnnotationQueueAction | ApiKeyAction | DatasetAction | FineTunedScorerAction | GeneratedScorerAction |
-            GroupAction | GroupMemberAction | IntegrationAction | OrganizationAction | ProjectAction |
-            RegisteredScorerAction | UserAction):
+        action (AnnotationQueueAction | ApiKeyAction | ControlResourceAction | DatasetAction | FineTunedScorerAction |
+            GeneratedScorerAction | GroupAction | GroupMemberAction | IntegrationAction | OrganizationAction | ProjectAction
+            | RegisteredScorerAction | ScorerAction | UserAction):
         allowed (bool):
         message (None | str | Unset):
     """
@@ -37,6 +39,7 @@ class Permission:
     action: (
         AnnotationQueueAction
         | ApiKeyAction
+        | ControlResourceAction
         | DatasetAction
         | FineTunedScorerAction
         | GeneratedScorerAction
@@ -46,6 +49,7 @@ class Permission:
         | OrganizationAction
         | ProjectAction
         | RegisteredScorerAction
+        | ScorerAction
         | UserAction
     )
     allowed: bool
@@ -62,6 +66,8 @@ class Permission:
             action = self.action.value
         elif isinstance(self.action, ProjectAction):
             action = self.action.value
+        elif isinstance(self.action, ScorerAction):
+            action = self.action.value
         elif isinstance(self.action, RegisteredScorerAction):
             action = self.action.value
         elif isinstance(self.action, ApiKeyAction):
@@ -75,6 +81,8 @@ class Permission:
         elif isinstance(self.action, IntegrationAction):
             action = self.action.value
         elif isinstance(self.action, OrganizationAction):
+            action = self.action.value
+        elif isinstance(self.action, AnnotationQueueAction):
             action = self.action.value
         else:
             action = self.action.value
@@ -104,6 +112,7 @@ class Permission:
         ) -> (
             AnnotationQueueAction
             | ApiKeyAction
+            | ControlResourceAction
             | DatasetAction
             | FineTunedScorerAction
             | GeneratedScorerAction
@@ -113,6 +122,7 @@ class Permission:
             | OrganizationAction
             | ProjectAction
             | RegisteredScorerAction
+            | ScorerAction
             | UserAction
         ):
             try:
@@ -150,7 +160,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_4 = RegisteredScorerAction(data)
+                action_type_4 = ScorerAction(data)
 
                 return action_type_4
             except:  # noqa: E722
@@ -158,7 +168,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_5 = ApiKeyAction(data)
+                action_type_5 = RegisteredScorerAction(data)
 
                 return action_type_5
             except:  # noqa: E722
@@ -166,7 +176,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_6 = GeneratedScorerAction(data)
+                action_type_6 = ApiKeyAction(data)
 
                 return action_type_6
             except:  # noqa: E722
@@ -174,7 +184,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_7 = FineTunedScorerAction(data)
+                action_type_7 = GeneratedScorerAction(data)
 
                 return action_type_7
             except:  # noqa: E722
@@ -182,7 +192,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_8 = DatasetAction(data)
+                action_type_8 = FineTunedScorerAction(data)
 
                 return action_type_8
             except:  # noqa: E722
@@ -190,7 +200,7 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_9 = IntegrationAction(data)
+                action_type_9 = DatasetAction(data)
 
                 return action_type_9
             except:  # noqa: E722
@@ -198,16 +208,32 @@ class Permission:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                action_type_10 = OrganizationAction(data)
+                action_type_10 = IntegrationAction(data)
 
                 return action_type_10
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                action_type_11 = OrganizationAction(data)
+
+                return action_type_11
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                action_type_12 = AnnotationQueueAction(data)
+
+                return action_type_12
+            except:  # noqa: E722
+                pass
             if not isinstance(data, str):
                 raise TypeError()
-            action_type_11 = AnnotationQueueAction(data)
+            action_type_13 = ControlResourceAction(data)
 
-            return action_type_11
+            return action_type_13
 
         action = _parse_action(d.pop("action"))
 

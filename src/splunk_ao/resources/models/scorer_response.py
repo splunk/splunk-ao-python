@@ -22,7 +22,9 @@ if TYPE_CHECKING:
     from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
     from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
     from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
+    from ..models.permission import Permission
     from ..models.scorer_defaults import ScorerDefaults
+    from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
 
 
 T = TypeVar("T", bound="ScorerResponse")
@@ -36,6 +38,7 @@ class ScorerResponse:
         name (str):
         scorer_type (ScorerTypes):
         tags (list[str]):
+        permissions (list[Permission] | Unset):
         defaults (None | ScorerDefaults | Unset):
         latest_version (BaseScorerVersionDB | None | Unset):
         model_type (ModelType | None | Unset):
@@ -48,6 +51,7 @@ class ScorerResponse:
         input_type (InputTypeEnum | None | Unset):
         multimodal_capabilities (list[MultimodalCapability] | None | Unset):
         required_scorers (list[str] | None | Unset):
+        required_metric_ids (list[str] | None | Unset):
         deprecated (bool | None | Unset):
         roll_up_method (None | RollUpMethodDisplayOptions | Unset):
         roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
@@ -60,13 +64,17 @@ class ScorerResponse:
         updated_at (datetime.datetime | None | Unset):
         metric_color_picker_config (MetricColorPickerBoolean | MetricColorPickerCategorical |
             MetricColorPickerMultiLabel | MetricColorPickerNumeric | None | Unset):
+        color_threshold_config (MetricColorPickerNumeric | None | Unset):
         metric_name (None | str | Unset):
+        is_global (bool | Unset):  Default: False.
+        scope_projects (list[ScorerScopeProjectRef] | Unset):
     """
 
     id: str
     name: str
     scorer_type: ScorerTypes
     tags: list[str]
+    permissions: list[Permission] | Unset = UNSET
     defaults: None | ScorerDefaults | Unset = UNSET
     latest_version: BaseScorerVersionDB | None | Unset = UNSET
     model_type: ModelType | None | Unset = UNSET
@@ -79,6 +87,7 @@ class ScorerResponse:
     input_type: InputTypeEnum | None | Unset = UNSET
     multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
     required_scorers: list[str] | None | Unset = UNSET
+    required_metric_ids: list[str] | None | Unset = UNSET
     deprecated: bool | None | Unset = UNSET
     roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
@@ -96,7 +105,10 @@ class ScorerResponse:
         | None
         | Unset
     ) = UNSET
+    color_threshold_config: MetricColorPickerNumeric | None | Unset = UNSET
     metric_name: None | str | Unset = UNSET
+    is_global: bool | Unset = False
+    scope_projects: list[ScorerScopeProjectRef] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -115,6 +127,13 @@ class ScorerResponse:
         scorer_type = self.scorer_type.value
 
         tags = self.tags
+
+        permissions: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.permissions, Unset):
+            permissions = []
+            for permissions_item_data in self.permissions:
+                permissions_item = permissions_item_data.to_dict()
+                permissions.append(permissions_item)
 
         defaults: dict[str, Any] | None | Unset
         if isinstance(self.defaults, Unset):
@@ -212,6 +231,15 @@ class ScorerResponse:
         else:
             required_scorers = self.required_scorers
 
+        required_metric_ids: list[str] | None | Unset
+        if isinstance(self.required_metric_ids, Unset):
+            required_metric_ids = UNSET
+        elif isinstance(self.required_metric_ids, list):
+            required_metric_ids = self.required_metric_ids
+
+        else:
+            required_metric_ids = self.required_metric_ids
+
         deprecated: bool | None | Unset
         if isinstance(self.deprecated, Unset):
             deprecated = UNSET
@@ -286,15 +314,34 @@ class ScorerResponse:
         else:
             metric_color_picker_config = self.metric_color_picker_config
 
+        color_threshold_config: dict[str, Any] | None | Unset
+        if isinstance(self.color_threshold_config, Unset):
+            color_threshold_config = UNSET
+        elif isinstance(self.color_threshold_config, MetricColorPickerNumeric):
+            color_threshold_config = self.color_threshold_config.to_dict()
+        else:
+            color_threshold_config = self.color_threshold_config
+
         metric_name: None | str | Unset
         if isinstance(self.metric_name, Unset):
             metric_name = UNSET
         else:
             metric_name = self.metric_name
 
+        is_global = self.is_global
+
+        scope_projects: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.scope_projects, Unset):
+            scope_projects = []
+            for scope_projects_item_data in self.scope_projects:
+                scope_projects_item = scope_projects_item_data.to_dict()
+                scope_projects.append(scope_projects_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "name": name, "scorer_type": scorer_type, "tags": tags})
+        if permissions is not UNSET:
+            field_dict["permissions"] = permissions
         if defaults is not UNSET:
             field_dict["defaults"] = defaults
         if latest_version is not UNSET:
@@ -319,6 +366,8 @@ class ScorerResponse:
             field_dict["multimodal_capabilities"] = multimodal_capabilities
         if required_scorers is not UNSET:
             field_dict["required_scorers"] = required_scorers
+        if required_metric_ids is not UNSET:
+            field_dict["required_metric_ids"] = required_metric_ids
         if deprecated is not UNSET:
             field_dict["deprecated"] = deprecated
         if roll_up_method is not UNSET:
@@ -339,8 +388,14 @@ class ScorerResponse:
             field_dict["updated_at"] = updated_at
         if metric_color_picker_config is not UNSET:
             field_dict["metric_color_picker_config"] = metric_color_picker_config
+        if color_threshold_config is not UNSET:
+            field_dict["color_threshold_config"] = color_threshold_config
         if metric_name is not UNSET:
             field_dict["metric_name"] = metric_name
+        if is_global is not UNSET:
+            field_dict["is_global"] = is_global
+        if scope_projects is not UNSET:
+            field_dict["scope_projects"] = scope_projects
 
         return field_dict
 
@@ -352,7 +407,9 @@ class ScorerResponse:
         from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
+        from ..models.permission import Permission
         from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -362,6 +419,15 @@ class ScorerResponse:
         scorer_type = ScorerTypes(d.pop("scorer_type"))
 
         tags = cast(list[str], d.pop("tags"))
+
+        _permissions = d.pop("permissions", UNSET)
+        permissions: list[Permission] | Unset = UNSET
+        if _permissions is not UNSET:
+            permissions = []
+            for permissions_item_data in _permissions:
+                permissions_item = Permission.from_dict(permissions_item_data)
+
+                permissions.append(permissions_item)
 
         def _parse_defaults(data: object) -> None | ScorerDefaults | Unset:
             if data is None:
@@ -548,6 +614,23 @@ class ScorerResponse:
 
         required_scorers = _parse_required_scorers(d.pop("required_scorers", UNSET))
 
+        def _parse_required_metric_ids(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                required_metric_ids_type_0 = cast(list[str], data)
+
+                return required_metric_ids_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        required_metric_ids = _parse_required_metric_ids(d.pop("required_metric_ids", UNSET))
+
         def _parse_deprecated(data: object) -> bool | None | Unset:
             if data is None:
                 return data
@@ -712,6 +795,23 @@ class ScorerResponse:
 
         metric_color_picker_config = _parse_metric_color_picker_config(d.pop("metric_color_picker_config", UNSET))
 
+        def _parse_color_threshold_config(data: object) -> MetricColorPickerNumeric | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                color_threshold_config_type_0 = MetricColorPickerNumeric.from_dict(data)
+
+                return color_threshold_config_type_0
+            except:  # noqa: E722
+                pass
+            return cast(MetricColorPickerNumeric | None | Unset, data)
+
+        color_threshold_config = _parse_color_threshold_config(d.pop("color_threshold_config", UNSET))
+
         def _parse_metric_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -721,11 +821,23 @@ class ScorerResponse:
 
         metric_name = _parse_metric_name(d.pop("metric_name", UNSET))
 
+        is_global = d.pop("is_global", UNSET)
+
+        _scope_projects = d.pop("scope_projects", UNSET)
+        scope_projects: list[ScorerScopeProjectRef] | Unset = UNSET
+        if _scope_projects is not UNSET:
+            scope_projects = []
+            for scope_projects_item_data in _scope_projects:
+                scope_projects_item = ScorerScopeProjectRef.from_dict(scope_projects_item_data)
+
+                scope_projects.append(scope_projects_item)
+
         scorer_response = cls(
             id=id,
             name=name,
             scorer_type=scorer_type,
             tags=tags,
+            permissions=permissions,
             defaults=defaults,
             latest_version=latest_version,
             model_type=model_type,
@@ -738,6 +850,7 @@ class ScorerResponse:
             input_type=input_type,
             multimodal_capabilities=multimodal_capabilities,
             required_scorers=required_scorers,
+            required_metric_ids=required_metric_ids,
             deprecated=deprecated,
             roll_up_method=roll_up_method,
             roll_up_config=roll_up_config,
@@ -748,7 +861,10 @@ class ScorerResponse:
             created_at=created_at,
             updated_at=updated_at,
             metric_color_picker_config=metric_color_picker_config,
+            color_threshold_config=color_threshold_config,
             metric_name=metric_name,
+            is_global=is_global,
+            scope_projects=scope_projects,
         )
 
         scorer_response.additional_properties = d

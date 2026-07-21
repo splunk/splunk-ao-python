@@ -86,15 +86,13 @@ def sync_detailed(template_id: str, *, client: ApiClient) -> Response[BasePrompt
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
     principal : Principal
         Principal object.
 
     Returns
     -------
     BasePromptTemplateResponse
-        Details about the created prompt template.
+        Details about the prompt template.
 
     Args:
         template_id (str):
@@ -123,15 +121,13 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[BasePromptTemplateR
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
     principal : Principal
         Principal object.
 
     Returns
     -------
     BasePromptTemplateResponse
-        Details about the created prompt template.
+        Details about the prompt template.
 
     Args:
         template_id (str):
@@ -158,15 +154,13 @@ async def asyncio_detailed(
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
     principal : Principal
         Principal object.
 
     Returns
     -------
     BasePromptTemplateResponse
-        Details about the created prompt template.
+        Details about the prompt template.
 
     Args:
         template_id (str):
@@ -195,15 +189,13 @@ async def asyncio(template_id: str, *, client: ApiClient) -> Optional[BasePrompt
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
     principal : Principal
         Principal object.
 
     Returns
     -------
     BasePromptTemplateResponse
-        Details about the created prompt template.
+        Details about the prompt template.
 
     Args:
         template_id (str):

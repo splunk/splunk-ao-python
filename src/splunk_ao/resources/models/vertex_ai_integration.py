@@ -26,6 +26,7 @@ class VertexAIIntegration:
         gcs_config (None | Unset | VertexAIGCSConfigResponse):
         id (None | str | Unset):
         name (Literal['vertex_ai'] | Unset):  Default: 'vertex_ai'.
+        provider (Literal['vertex_ai'] | Unset):  Default: 'vertex_ai'.
         extra (None | Unset | VertexAIIntegrationExtraType0):
     """
 
@@ -33,6 +34,7 @@ class VertexAIIntegration:
     gcs_config: None | Unset | VertexAIGCSConfigResponse = UNSET
     id: None | str | Unset = UNSET
     name: Literal["vertex_ai"] | Unset = "vertex_ai"
+    provider: Literal["vertex_ai"] | Unset = "vertex_ai"
     extra: None | Unset | VertexAIIntegrationExtraType0 = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -65,6 +67,8 @@ class VertexAIIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -84,6 +88,8 @@ class VertexAIIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -144,6 +150,10 @@ class VertexAIIntegration:
         if name != "vertex_ai" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'vertex_ai', got '{name}'")
 
+        provider = cast(Literal["vertex_ai"] | Unset, d.pop("provider", UNSET))
+        if provider != "vertex_ai" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'vertex_ai', got '{provider}'")
+
         def _parse_extra(data: object) -> None | Unset | VertexAIIntegrationExtraType0:
             if data is None:
                 return data
@@ -162,7 +172,12 @@ class VertexAIIntegration:
         extra = _parse_extra(d.pop("extra", UNSET))
 
         vertex_ai_integration = cls(
-            multi_modal_config=multi_modal_config, gcs_config=gcs_config, id=id, name=name, extra=extra
+            multi_modal_config=multi_modal_config,
+            gcs_config=gcs_config,
+            id=id,
+            name=name,
+            provider=provider,
+            extra=extra,
         )
 
         vertex_ai_integration.additional_properties = d

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.integration_provider import IntegrationProvider
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -21,6 +22,8 @@ class IntegrationModelsResponse:
     """
     Attributes:
         integration_name (str):
+        integration_id (str):
+        provider (IntegrationProvider):
         models (list[str]):
         scorer_models (list[str]):
         recommended_models (IntegrationModelsResponseRecommendedModels | Unset):
@@ -30,6 +33,8 @@ class IntegrationModelsResponse:
     """
 
     integration_name: str
+    integration_id: str
+    provider: IntegrationProvider
     models: list[str]
     scorer_models: list[str]
     recommended_models: IntegrationModelsResponseRecommendedModels | Unset = UNSET
@@ -40,6 +45,10 @@ class IntegrationModelsResponse:
 
     def to_dict(self) -> dict[str, Any]:
         integration_name = self.integration_name
+
+        integration_id = self.integration_id
+
+        provider = self.provider.value
 
         models = self.models
 
@@ -62,7 +71,15 @@ class IntegrationModelsResponse:
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({"integration_name": integration_name, "models": models, "scorer_models": scorer_models})
+        field_dict.update(
+            {
+                "integration_name": integration_name,
+                "integration_id": integration_id,
+                "provider": provider,
+                "models": models,
+                "scorer_models": scorer_models,
+            }
+        )
         if recommended_models is not UNSET:
             field_dict["recommended_models"] = recommended_models
         if supports_num_judges is not UNSET:
@@ -81,6 +98,10 @@ class IntegrationModelsResponse:
 
         d = dict(src_dict)
         integration_name = d.pop("integration_name")
+
+        integration_id = d.pop("integration_id")
+
+        provider = IntegrationProvider(d.pop("provider"))
 
         models = cast(list[str], d.pop("models"))
 
@@ -108,6 +129,8 @@ class IntegrationModelsResponse:
 
         integration_models_response = cls(
             integration_name=integration_name,
+            integration_id=integration_id,
+            provider=provider,
             models=models,
             scorer_models=scorer_models,
             recommended_models=recommended_models,

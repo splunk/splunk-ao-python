@@ -19,6 +19,7 @@ from splunk_ao.utils.headers_data import get_sdk_header
 from ... import errors
 from ...models.extended_trace_record_with_children import ExtendedTraceRecordWithChildren
 from ...models.http_validation_error import HTTPValidationError
+from ...models.stub_trace_record import StubTraceRecord
 from ...types import UNSET, Response, Unset
 
 
@@ -46,9 +47,87 @@ def _get_kwargs(project_id: str, trace_id: str, *, include_presigned_urls: bool 
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> ExtendedTraceRecordWithChildren | HTTPValidationError:
+) -> ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError:
     if response.status_code == 200:
-        response_200 = ExtendedTraceRecordWithChildren.from_dict(response.json())
+
+        def _parse_response_200(data: object) -> ExtendedTraceRecordWithChildren | StubTraceRecord:
+            # Discriminator-aware parsing for Extended*Record types
+            if isinstance(data, dict) and "type" in data:
+                type_value = data.get("type")
+
+                # Hardcoded discriminator mapping for Extended*Record types
+                if type_value == "trace":
+                    try:
+                        from ..models.extended_trace_record import ExtendedTraceRecord
+
+                        return ExtendedTraceRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "agent":
+                    try:
+                        from ..models.extended_agent_span_record import ExtendedAgentSpanRecord
+
+                        return ExtendedAgentSpanRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "workflow":
+                    try:
+                        from ..models.extended_workflow_span_record import ExtendedWorkflowSpanRecord
+
+                        return ExtendedWorkflowSpanRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "llm":
+                    try:
+                        from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
+
+                        return ExtendedLlmSpanRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "tool":
+                    try:
+                        from ..models.extended_tool_span_record import ExtendedToolSpanRecord
+
+                        return ExtendedToolSpanRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "retriever":
+                    try:
+                        from ..models.extended_retriever_span_record import ExtendedRetrieverSpanRecord
+
+                        return ExtendedRetrieverSpanRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+                elif type_value == "session":
+                    try:
+                        from ..models.extended_session_record import ExtendedSessionRecord
+
+                        return ExtendedSessionRecord.from_dict(data)
+                    except:  # noqa: E722
+                        pass
+
+            # Fallback to standard union parsing
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_0 = ExtendedTraceRecordWithChildren.from_dict(data)
+
+                return response_200_type_0
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_1 = StubTraceRecord.from_dict(data)
+
+                return response_200_type_1
+            except:  # noqa: E722
+                pass
+            # If we reach here, none of the parsers succeeded
+            discriminator_info = f" (type={data.get('type')})" if isinstance(data, dict) and "type" in data else ""
+            raise ValueError(f"Could not parse union type for response_200{discriminator_info}")
+
+        response_200 = _parse_response_200(response.json())
 
         return response_200
 
@@ -77,7 +156,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedTraceRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,7 +167,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedTraceRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
     Args:
@@ -101,7 +180,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedTraceRecordWithChildren | HTTPValidationError]
+        Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
@@ -113,7 +192,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedTraceRecordWithChildren | HTTPValidationError]:
+) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
     Args:
@@ -126,7 +205,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedTraceRecordWithChildren | HTTPValidationError
+        ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError
     """
 
     return sync_detailed(
@@ -136,7 +215,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedTraceRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
     Args:
@@ -149,7 +228,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedTraceRecordWithChildren | HTTPValidationError]
+        Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
@@ -161,7 +240,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedTraceRecordWithChildren | HTTPValidationError]:
+) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
     Args:
@@ -174,7 +253,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedTraceRecordWithChildren | HTTPValidationError
+        ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError
     """
 
     return (

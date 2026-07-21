@@ -18,17 +18,32 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
+from ...models.scorer_action import ScorerAction
 from ...models.scorer_response import ScorerResponse
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(scorer_id: str) -> dict[str, Any]:
+def _get_kwargs(scorer_id: str, *, actions: list[ScorerAction] | Unset = UNSET) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+
+    params: dict[str, Any] = {}
+
+    json_actions: list[str] | Unset = UNSET
+    if not isinstance(actions, Unset):
+        json_actions = []
+        for actions_item_data in actions:
+            actions_item = actions_item_data.value
+            json_actions.append(actions_item)
+
+    params["actions"] = json_actions
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": RequestMethod.GET,
         "return_raw_response": True,
         "path": "/scorers/{scorer_id}".format(scorer_id=scorer_id),
+        "params": params,
     }
 
     headers["X-Galileo-SDK"] = get_sdk_header()
@@ -75,11 +90,15 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[HTTPValidationError | ScorerResponse]:
+def sync_detailed(
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+) -> Response[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -89,18 +108,22 @@ def sync_detailed(scorer_id: str, *, client: ApiClient) -> Response[HTTPValidati
         Response[HTTPValidationError | ScorerResponse]
     """
 
-    kwargs = _get_kwargs(scorer_id=scorer_id)
+    kwargs = _get_kwargs(scorer_id=scorer_id, actions=actions)
 
     response = client.request(**kwargs)
 
     return _build_response(client=client, response=response)
 
 
-def sync(scorer_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | ScorerResponse]:
+def sync(
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+) -> Optional[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,14 +133,18 @@ def sync(scorer_id: str, *, client: ApiClient) -> Optional[HTTPValidationError |
         HTTPValidationError | ScorerResponse
     """
 
-    return sync_detailed(scorer_id=scorer_id, client=client).parsed
+    return sync_detailed(scorer_id=scorer_id, client=client, actions=actions).parsed
 
 
-async def asyncio_detailed(scorer_id: str, *, client: ApiClient) -> Response[HTTPValidationError | ScorerResponse]:
+async def asyncio_detailed(
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+) -> Response[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -127,18 +154,22 @@ async def asyncio_detailed(scorer_id: str, *, client: ApiClient) -> Response[HTT
         Response[HTTPValidationError | ScorerResponse]
     """
 
-    kwargs = _get_kwargs(scorer_id=scorer_id)
+    kwargs = _get_kwargs(scorer_id=scorer_id, actions=actions)
 
     response = await client.arequest(**kwargs)
 
     return _build_response(client=client, response=response)
 
 
-async def asyncio(scorer_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | ScorerResponse]:
+async def asyncio(
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+) -> Optional[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -148,4 +179,4 @@ async def asyncio(scorer_id: str, *, client: ApiClient) -> Optional[HTTPValidati
         HTTPValidationError | ScorerResponse
     """
 
-    return (await asyncio_detailed(scorer_id=scorer_id, client=client)).parsed
+    return (await asyncio_detailed(scorer_id=scorer_id, client=client, actions=actions)).parsed

@@ -101,8 +101,6 @@ def sync_detailed(
             examples=
             [BasePromptTemplateVersion.test_data() | BasePromptTemplate.test_data()],
         )
-    db_read : Session, optional
-        Session object to execute DB reads, by default Depends(get_db_read)
 
     Returns
     -------
@@ -150,8 +148,6 @@ def sync(
             examples=
             [BasePromptTemplateVersion.test_data() | BasePromptTemplate.test_data()],
         )
-    db_read : Session, optional
-        Session object to execute DB reads, by default Depends(get_db_read)
 
     Returns
     -------
@@ -195,8 +191,6 @@ async def asyncio_detailed(
             examples=
             [BasePromptTemplateVersion.test_data() | BasePromptTemplate.test_data()],
         )
-    db_read : Session, optional
-        Session object to execute DB reads, by default Depends(get_db_read)
 
     Returns
     -------
@@ -244,8 +238,6 @@ async def asyncio(
             examples=
             [BasePromptTemplateVersion.test_data() | BasePromptTemplate.test_data()],
         )
-    db_read : Session, optional
-        Session object to execute DB reads, by default Depends(get_db_read)
 
     Returns
     -------

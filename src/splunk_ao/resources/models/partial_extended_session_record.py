@@ -30,9 +30,6 @@ if TYPE_CHECKING:
     )
     from ..models.partial_extended_session_record_files_type_0 import PartialExtendedSessionRecordFilesType0
     from ..models.partial_extended_session_record_metric_info_type_0 import PartialExtendedSessionRecordMetricInfoType0
-    from ..models.partial_extended_session_record_overall_annotation_agreement import (
-        PartialExtendedSessionRecordOverallAnnotationAgreement,
-    )
     from ..models.partial_extended_session_record_user_metadata import PartialExtendedSessionRecordUserMetadata
     from ..models.text_content_part import TextContentPart
 
@@ -82,14 +79,18 @@ class PartialExtendedSessionRecord:
             information keyed by template ID
         annotation_agreement (PartialExtendedSessionRecordAnnotationAgreement | Unset): Annotation agreement scores
             keyed by template ID
-        overall_annotation_agreement (PartialExtendedSessionRecordOverallAnnotationAgreement | Unset): Average
-            annotation agreement per queue (keyed by queue ID)
+        overall_annotation_agreement (float | None | Unset): Average annotation agreement across all templates in the
+            queue
         annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
+        fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+        progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
+        error_message (str | Unset): Runner error text written directly to CH span Default: ''.
         metric_info (None | PartialExtendedSessionRecordMetricInfoType0 | Unset): Detailed information about the metrics
             associated with this trace or span
         files (None | PartialExtendedSessionRecordFilesType0 | Unset): File metadata keyed by file ID for files
             associated with this record
         previous_session_id (None | str | Unset):
+        num_traces (int | None | Unset):
     """
 
     type_: Literal["session"] | Unset = "session"
@@ -126,11 +127,15 @@ class PartialExtendedSessionRecord:
     file_modalities: list[ContentModality] | Unset = UNSET
     annotation_aggregates: PartialExtendedSessionRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: PartialExtendedSessionRecordAnnotationAgreement | Unset = UNSET
-    overall_annotation_agreement: PartialExtendedSessionRecordOverallAnnotationAgreement | Unset = UNSET
+    overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
+    fully_annotated: bool | None | Unset = UNSET
+    progress_message: str | Unset = ""
+    error_message: str | Unset = ""
     metric_info: None | PartialExtendedSessionRecordMetricInfoType0 | Unset = UNSET
     files: None | PartialExtendedSessionRecordFilesType0 | Unset = UNSET
     previous_session_id: None | str | Unset = UNSET
+    num_traces: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -379,13 +384,25 @@ class PartialExtendedSessionRecord:
         if not isinstance(self.annotation_agreement, Unset):
             annotation_agreement = self.annotation_agreement.to_dict()
 
-        overall_annotation_agreement: dict[str, Any] | Unset = UNSET
-        if not isinstance(self.overall_annotation_agreement, Unset):
-            overall_annotation_agreement = self.overall_annotation_agreement.to_dict()
+        overall_annotation_agreement: float | None | Unset
+        if isinstance(self.overall_annotation_agreement, Unset):
+            overall_annotation_agreement = UNSET
+        else:
+            overall_annotation_agreement = self.overall_annotation_agreement
 
         annotation_queue_ids: list[str] | Unset = UNSET
         if not isinstance(self.annotation_queue_ids, Unset):
             annotation_queue_ids = self.annotation_queue_ids
+
+        fully_annotated: bool | None | Unset
+        if isinstance(self.fully_annotated, Unset):
+            fully_annotated = UNSET
+        else:
+            fully_annotated = self.fully_annotated
+
+        progress_message = self.progress_message
+
+        error_message = self.error_message
 
         metric_info: dict[str, Any] | None | Unset
         if isinstance(self.metric_info, Unset):
@@ -408,6 +425,12 @@ class PartialExtendedSessionRecord:
             previous_session_id = UNSET
         else:
             previous_session_id = self.previous_session_id
+
+        num_traces: int | None | Unset
+        if isinstance(self.num_traces, Unset):
+            num_traces = UNSET
+        else:
+            num_traces = self.num_traces
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -476,12 +499,20 @@ class PartialExtendedSessionRecord:
             field_dict["overall_annotation_agreement"] = overall_annotation_agreement
         if annotation_queue_ids is not UNSET:
             field_dict["annotation_queue_ids"] = annotation_queue_ids
+        if fully_annotated is not UNSET:
+            field_dict["fully_annotated"] = fully_annotated
+        if progress_message is not UNSET:
+            field_dict["progress_message"] = progress_message
+        if error_message is not UNSET:
+            field_dict["error_message"] = error_message
         if metric_info is not UNSET:
             field_dict["metric_info"] = metric_info
         if files is not UNSET:
             field_dict["files"] = files
         if previous_session_id is not UNSET:
             field_dict["previous_session_id"] = previous_session_id
+        if num_traces is not UNSET:
+            field_dict["num_traces"] = num_traces
 
         return field_dict
 
@@ -508,9 +539,6 @@ class PartialExtendedSessionRecord:
         from ..models.partial_extended_session_record_files_type_0 import PartialExtendedSessionRecordFilesType0
         from ..models.partial_extended_session_record_metric_info_type_0 import (
             PartialExtendedSessionRecordMetricInfoType0,
-        )
-        from ..models.partial_extended_session_record_overall_annotation_agreement import (
-            PartialExtendedSessionRecordOverallAnnotationAgreement,
         )
         from ..models.partial_extended_session_record_user_metadata import PartialExtendedSessionRecordUserMetadata
         from ..models.text_content_part import TextContentPart
@@ -986,16 +1014,29 @@ class PartialExtendedSessionRecord:
         else:
             annotation_agreement = PartialExtendedSessionRecordAnnotationAgreement.from_dict(_annotation_agreement)
 
-        _overall_annotation_agreement = d.pop("overall_annotation_agreement", UNSET)
-        overall_annotation_agreement: PartialExtendedSessionRecordOverallAnnotationAgreement | Unset
-        if isinstance(_overall_annotation_agreement, Unset):
-            overall_annotation_agreement = UNSET
-        else:
-            overall_annotation_agreement = PartialExtendedSessionRecordOverallAnnotationAgreement.from_dict(
-                _overall_annotation_agreement
-            )
+        def _parse_overall_annotation_agreement(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        overall_annotation_agreement = _parse_overall_annotation_agreement(d.pop("overall_annotation_agreement", UNSET))
 
         annotation_queue_ids = cast(list[str], d.pop("annotation_queue_ids", UNSET))
+
+        def _parse_fully_annotated(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
+
+        progress_message = d.pop("progress_message", UNSET)
+
+        error_message = d.pop("error_message", UNSET)
 
         def _parse_metric_info(data: object) -> None | PartialExtendedSessionRecordMetricInfoType0 | Unset:
             if data is None:
@@ -1040,6 +1081,15 @@ class PartialExtendedSessionRecord:
 
         previous_session_id = _parse_previous_session_id(d.pop("previous_session_id", UNSET))
 
+        def _parse_num_traces(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_traces = _parse_num_traces(d.pop("num_traces", UNSET))
+
         partial_extended_session_record = cls(
             type_=type_,
             input_=input_,
@@ -1073,9 +1123,13 @@ class PartialExtendedSessionRecord:
             annotation_agreement=annotation_agreement,
             overall_annotation_agreement=overall_annotation_agreement,
             annotation_queue_ids=annotation_queue_ids,
+            fully_annotated=fully_annotated,
+            progress_message=progress_message,
+            error_message=error_message,
             metric_info=metric_info,
             files=files,
             previous_session_id=previous_session_id,
+            num_traces=num_traces,
         )
 
         partial_extended_session_record.additional_properties = d

@@ -21,11 +21,13 @@ class MistralIntegration:
     Attributes:
         id (None | str | Unset):
         name (Literal['mistral'] | Unset):  Default: 'mistral'.
+        provider (Literal['mistral'] | Unset):  Default: 'mistral'.
         extra (MistralIntegrationExtraType0 | None | Unset):
     """
 
     id: None | str | Unset = UNSET
     name: Literal["mistral"] | Unset = "mistral"
+    provider: Literal["mistral"] | Unset = "mistral"
     extra: MistralIntegrationExtraType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -39,6 +41,8 @@ class MistralIntegration:
             id = self.id
 
         name = self.name
+
+        provider = self.provider
 
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
@@ -55,6 +59,8 @@ class MistralIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -79,6 +85,10 @@ class MistralIntegration:
         if name != "mistral" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'mistral', got '{name}'")
 
+        provider = cast(Literal["mistral"] | Unset, d.pop("provider", UNSET))
+        if provider != "mistral" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'mistral', got '{provider}'")
+
         def _parse_extra(data: object) -> MistralIntegrationExtraType0 | None | Unset:
             if data is None:
                 return data
@@ -96,7 +106,7 @@ class MistralIntegration:
 
         extra = _parse_extra(d.pop("extra", UNSET))
 
-        mistral_integration = cls(id=id, name=name, extra=extra)
+        mistral_integration = cls(id=id, name=name, provider=provider, extra=extra)
 
         mistral_integration.additional_properties = d
         return mistral_integration

@@ -37,6 +37,8 @@ class RunDBThin:
         task_type (None | TaskType | Unset):
         run_tags (list[RunTagDB] | Unset):
         example_content_id (None | str | Unset):
+        logged_splits (list[str] | Unset):
+        logged_inference_names (list[str] | Unset):
     """
 
     created_by: str
@@ -54,6 +56,8 @@ class RunDBThin:
     task_type: None | TaskType | Unset = UNSET
     run_tags: list[RunTagDB] | Unset = UNSET
     example_content_id: None | str | Unset = UNSET
+    logged_splits: list[str] | Unset = UNSET
+    logged_inference_names: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -118,6 +122,14 @@ class RunDBThin:
         else:
             example_content_id = self.example_content_id
 
+        logged_splits: list[str] | Unset = UNSET
+        if not isinstance(self.logged_splits, Unset):
+            logged_splits = self.logged_splits
+
+        logged_inference_names: list[str] | Unset = UNSET
+        if not isinstance(self.logged_inference_names, Unset):
+            logged_inference_names = self.logged_inference_names
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -146,6 +158,10 @@ class RunDBThin:
             field_dict["run_tags"] = run_tags
         if example_content_id is not UNSET:
             field_dict["example_content_id"] = example_content_id
+        if logged_splits is not UNSET:
+            field_dict["logged_splits"] = logged_splits
+        if logged_inference_names is not UNSET:
+            field_dict["logged_inference_names"] = logged_inference_names
 
         return field_dict
 
@@ -242,6 +258,10 @@ class RunDBThin:
 
         example_content_id = _parse_example_content_id(d.pop("example_content_id", UNSET))
 
+        logged_splits = cast(list[str], d.pop("logged_splits", UNSET))
+
+        logged_inference_names = cast(list[str], d.pop("logged_inference_names", UNSET))
+
         run_db_thin = cls(
             created_by=created_by,
             num_samples=num_samples,
@@ -258,6 +278,8 @@ class RunDBThin:
             task_type=task_type,
             run_tags=run_tags,
             example_content_id=example_content_id,
+            logged_splits=logged_splits,
+            logged_inference_names=logged_inference_names,
         )
 
         run_db_thin.additional_properties = d

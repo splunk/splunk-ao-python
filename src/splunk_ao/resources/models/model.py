@@ -36,8 +36,6 @@ class Model:
         input_token_limit (int | None | Unset):
         output_token_limit (int | None | Unset):
         token_limit (int | None | Unset):
-        output_price (float | Unset):  Default: 0.0.
-        input_price (float | Unset):  Default: 0.0.
         cost_by (ModelCostBy | Unset):
         is_chat (bool | Unset):  Default: False.
         provides_log_probs (bool | Unset):  Default: False.
@@ -65,8 +63,6 @@ class Model:
     input_token_limit: int | None | Unset = UNSET
     output_token_limit: int | None | Unset = UNSET
     token_limit: int | None | Unset = UNSET
-    output_price: float | Unset = 0.0
-    input_price: float | Unset = 0.0
     cost_by: ModelCostBy | Unset = UNSET
     is_chat: bool | Unset = False
     provides_log_probs: bool | Unset = False
@@ -135,10 +131,6 @@ class Model:
             token_limit = UNSET
         else:
             token_limit = self.token_limit
-
-        output_price = self.output_price
-
-        input_price = self.input_price
 
         cost_by: str | Unset = UNSET
         if not isinstance(self.cost_by, Unset):
@@ -209,10 +201,6 @@ class Model:
             field_dict["output_token_limit"] = output_token_limit
         if token_limit is not UNSET:
             field_dict["token_limit"] = token_limit
-        if output_price is not UNSET:
-            field_dict["output_price"] = output_price
-        if input_price is not UNSET:
-            field_dict["input_price"] = input_price
         if cost_by is not UNSET:
             field_dict["cost_by"] = cost_by
         if is_chat is not UNSET:
@@ -316,10 +304,6 @@ class Model:
 
         token_limit = _parse_token_limit(d.pop("token_limit", UNSET))
 
-        output_price = d.pop("output_price", UNSET)
-
-        input_price = d.pop("input_price", UNSET)
-
         _cost_by = d.pop("cost_by", UNSET)
         cost_by: ModelCostBy | Unset
         if isinstance(_cost_by, Unset):
@@ -410,8 +394,6 @@ class Model:
             input_token_limit=input_token_limit,
             output_token_limit=output_token_limit,
             token_limit=token_limit,
-            output_price=output_price,
-            input_price=input_price,
             cost_by=cost_by,
             is_chat=is_chat,
             provides_log_probs=provides_log_probs,

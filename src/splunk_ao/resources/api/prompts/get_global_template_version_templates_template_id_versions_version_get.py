@@ -92,8 +92,6 @@ def sync_detailed(
         Prompt template id.
     version : int
         Version number.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -132,8 +130,6 @@ def sync(
         Prompt template id.
     version : int
         Version number.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -168,8 +164,6 @@ async def asyncio_detailed(
         Prompt template id.
     version : int
         Version number.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -208,8 +202,6 @@ async def asyncio(
         Prompt template id.
     version : int
         Version number.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------

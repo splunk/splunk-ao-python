@@ -22,12 +22,14 @@ class WriterIntegration:
         organization_id (str):
         id (None | str | Unset):
         name (Literal['writer'] | Unset):  Default: 'writer'.
+        provider (Literal['writer'] | Unset):  Default: 'writer'.
         extra (None | Unset | WriterIntegrationExtraType0):
     """
 
     organization_id: str
     id: None | str | Unset = UNSET
     name: Literal["writer"] | Unset = "writer"
+    provider: Literal["writer"] | Unset = "writer"
     extra: None | Unset | WriterIntegrationExtraType0 = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -44,6 +46,8 @@ class WriterIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -59,6 +63,8 @@ class WriterIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -84,6 +90,10 @@ class WriterIntegration:
         if name != "writer" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'writer', got '{name}'")
 
+        provider = cast(Literal["writer"] | Unset, d.pop("provider", UNSET))
+        if provider != "writer" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'writer', got '{provider}'")
+
         def _parse_extra(data: object) -> None | Unset | WriterIntegrationExtraType0:
             if data is None:
                 return data
@@ -101,7 +111,7 @@ class WriterIntegration:
 
         extra = _parse_extra(d.pop("extra", UNSET))
 
-        writer_integration = cls(organization_id=organization_id, id=id, name=name, extra=extra)
+        writer_integration = cls(organization_id=organization_id, id=id, name=name, provider=provider, extra=extra)
 
         writer_integration.additional_properties = d
         return writer_integration

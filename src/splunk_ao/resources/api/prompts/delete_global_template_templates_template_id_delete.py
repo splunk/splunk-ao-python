@@ -86,8 +86,6 @@ def sync_detailed(template_id: str, *, client: ApiClient) -> Response[DeleteProm
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -121,8 +119,6 @@ def sync(template_id: str, *, client: ApiClient) -> Optional[DeletePromptRespons
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -154,8 +150,6 @@ async def asyncio_detailed(
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------
@@ -189,8 +183,6 @@ async def asyncio(template_id: str, *, client: ApiClient) -> Optional[DeleteProm
     ----------
     template_id : UUID4
         Prompt template id.
-    ctx : Context
-        Request context including authentication information
 
     Returns
     -------

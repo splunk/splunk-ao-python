@@ -42,6 +42,7 @@ class AzureIntegration:
             integration. If provided, we will not try to get this list from Azure.
         id (None | str | Unset):
         name (Literal['azure'] | Unset):  Default: 'azure'.
+        provider (Literal['azure'] | Unset):  Default: 'azure'.
         extra (AzureIntegrationExtraType0 | None | Unset):
     """
 
@@ -59,6 +60,7 @@ class AzureIntegration:
     available_deployments: list[AzureModelDeployment] | None | Unset = UNSET
     id: None | str | Unset = UNSET
     name: Literal["azure"] | Unset = "azure"
+    provider: Literal["azure"] | Unset = "azure"
     extra: AzureIntegrationExtraType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -144,6 +146,8 @@ class AzureIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -181,6 +185,8 @@ class AzureIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -331,6 +337,10 @@ class AzureIntegration:
         if name != "azure" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'azure', got '{name}'")
 
+        provider = cast(Literal["azure"] | Unset, d.pop("provider", UNSET))
+        if provider != "azure" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'azure', got '{provider}'")
+
         def _parse_extra(data: object) -> AzureIntegrationExtraType0 | None | Unset:
             if data is None:
                 return data
@@ -363,6 +373,7 @@ class AzureIntegration:
             available_deployments=available_deployments,
             id=id,
             name=name,
+            provider=provider,
             extra=extra,
         )
 

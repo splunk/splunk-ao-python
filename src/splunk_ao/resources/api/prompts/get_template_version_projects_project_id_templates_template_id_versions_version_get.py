@@ -94,8 +94,6 @@ def sync_detailed(
         Template ID.
     version : int
         Version number to fetch.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
@@ -135,8 +133,6 @@ def sync(
         Template ID.
     version : int
         Version number to fetch.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
@@ -172,8 +168,6 @@ async def asyncio_detailed(
         Template ID.
     version : int
         Version number to fetch.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------
@@ -213,8 +207,6 @@ async def asyncio(
         Template ID.
     version : int
         Version number to fetch.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context)
 
     Returns
     -------

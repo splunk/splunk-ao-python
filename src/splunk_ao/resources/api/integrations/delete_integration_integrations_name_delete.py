@@ -18,11 +18,11 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
-from ...models.integration_name import IntegrationName
+from ...models.integration_provider import IntegrationProvider
 from ...types import Response
 
 
-def _get_kwargs(name: IntegrationName) -> dict[str, Any]:
+def _get_kwargs(name: IntegrationProvider) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -74,13 +74,13 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(name: IntegrationName, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
+def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -97,13 +97,13 @@ def sync_detailed(name: IntegrationName, *, client: ApiClient) -> Response[Any |
     return _build_response(client=client, response=response)
 
 
-def sync(name: IntegrationName, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
+def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,13 +116,13 @@ def sync(name: IntegrationName, *, client: ApiClient) -> Optional[Any | HTTPVali
     return sync_detailed(name=name, client=client).parsed
 
 
-async def asyncio_detailed(name: IntegrationName, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
+async def asyncio_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -139,13 +139,13 @@ async def asyncio_detailed(name: IntegrationName, *, client: ApiClient) -> Respo
     return _build_response(client=client, response=response)
 
 
-async def asyncio(name: IntegrationName, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
+async def asyncio(name: IntegrationProvider, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

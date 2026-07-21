@@ -97,8 +97,6 @@ def sync_detailed(
         Prompt template to update.
     principal : Principal
         Principal object.
-    ctx : Context
-        Request context including authentication information.
 
     Returns
     -------
@@ -139,8 +137,6 @@ def sync(
         Prompt template to update.
     principal : Principal
         Principal object.
-    ctx : Context
-        Request context including authentication information.
 
     Returns
     -------
@@ -177,8 +173,6 @@ async def asyncio_detailed(
         Prompt template to update.
     principal : Principal
         Principal object.
-    ctx : Context
-        Request context including authentication information.
 
     Returns
     -------
@@ -219,8 +213,6 @@ async def asyncio(
         Prompt template to update.
     principal : Principal
         Principal object.
-    ctx : Context
-        Request context including authentication information.
 
     Returns
     -------

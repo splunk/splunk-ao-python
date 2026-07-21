@@ -21,11 +21,11 @@ from ...models.get_integration_status_integrations_name_status_get_response_get_
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
 )
 from ...models.http_validation_error import HTTPValidationError
-from ...models.integration_name import IntegrationName
+from ...models.integration_provider import IntegrationProvider
 from ...types import Response
 
 
-def _get_kwargs(name: IntegrationName) -> dict[str, Any]:
+def _get_kwargs(name: IntegrationProvider) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -91,7 +91,7 @@ def _build_response(
 
 
 def sync_detailed(
-    name: IntegrationName, *, client: ApiClient
+    name: IntegrationProvider, *, client: ApiClient
 ) -> Response[
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
@@ -101,7 +101,7 @@ def sync_detailed(
      Checks if the integration status is active or not.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -119,7 +119,7 @@ def sync_detailed(
 
 
 def sync(
-    name: IntegrationName, *, client: ApiClient
+    name: IntegrationProvider, *, client: ApiClient
 ) -> Optional[
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
@@ -129,7 +129,7 @@ def sync(
      Checks if the integration status is active or not.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -143,7 +143,7 @@ def sync(
 
 
 async def asyncio_detailed(
-    name: IntegrationName, *, client: ApiClient
+    name: IntegrationProvider, *, client: ApiClient
 ) -> Response[
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
@@ -153,7 +153,7 @@ async def asyncio_detailed(
      Checks if the integration status is active or not.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -171,7 +171,7 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    name: IntegrationName, *, client: ApiClient
+    name: IntegrationProvider, *, client: ApiClient
 ) -> Optional[
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
@@ -181,7 +181,7 @@ async def asyncio(
      Checks if the integration status is active or not.
 
     Args:
-        name (IntegrationName):
+        name (IntegrationProvider):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

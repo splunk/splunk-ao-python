@@ -22,12 +22,14 @@ class OpenAIIntegration:
         organization_id (None | str | Unset):
         id (None | str | Unset):
         name (Literal['openai'] | Unset):  Default: 'openai'.
+        provider (Literal['openai'] | Unset):  Default: 'openai'.
         extra (None | OpenAIIntegrationExtraType0 | Unset):
     """
 
     organization_id: None | str | Unset = UNSET
     id: None | str | Unset = UNSET
     name: Literal["openai"] | Unset = "openai"
+    provider: Literal["openai"] | Unset = "openai"
     extra: None | OpenAIIntegrationExtraType0 | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -48,6 +50,8 @@ class OpenAIIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -65,6 +69,8 @@ class OpenAIIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -98,6 +104,10 @@ class OpenAIIntegration:
         if name != "openai" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'openai', got '{name}'")
 
+        provider = cast(Literal["openai"] | Unset, d.pop("provider", UNSET))
+        if provider != "openai" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'openai', got '{provider}'")
+
         def _parse_extra(data: object) -> None | OpenAIIntegrationExtraType0 | Unset:
             if data is None:
                 return data
@@ -115,7 +125,7 @@ class OpenAIIntegration:
 
         extra = _parse_extra(d.pop("extra", UNSET))
 
-        open_ai_integration = cls(organization_id=organization_id, id=id, name=name, extra=extra)
+        open_ai_integration = cls(organization_id=organization_id, id=id, name=name, provider=provider, extra=extra)
 
         open_ai_integration.additional_properties = d
         return open_ai_integration

@@ -21,11 +21,13 @@ class NvidiaIntegration:
     Attributes:
         id (None | str | Unset):
         name (Literal['nvidia'] | Unset):  Default: 'nvidia'.
+        provider (Literal['nvidia'] | Unset):  Default: 'nvidia'.
         extra (None | NvidiaIntegrationExtraType0 | Unset):
     """
 
     id: None | str | Unset = UNSET
     name: Literal["nvidia"] | Unset = "nvidia"
+    provider: Literal["nvidia"] | Unset = "nvidia"
     extra: None | NvidiaIntegrationExtraType0 | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -39,6 +41,8 @@ class NvidiaIntegration:
             id = self.id
 
         name = self.name
+
+        provider = self.provider
 
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
@@ -55,6 +59,8 @@ class NvidiaIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -79,6 +85,10 @@ class NvidiaIntegration:
         if name != "nvidia" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'nvidia', got '{name}'")
 
+        provider = cast(Literal["nvidia"] | Unset, d.pop("provider", UNSET))
+        if provider != "nvidia" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'nvidia', got '{provider}'")
+
         def _parse_extra(data: object) -> None | NvidiaIntegrationExtraType0 | Unset:
             if data is None:
                 return data
@@ -96,7 +106,7 @@ class NvidiaIntegration:
 
         extra = _parse_extra(d.pop("extra", UNSET))
 
-        nvidia_integration = cls(id=id, name=name, extra=extra)
+        nvidia_integration = cls(id=id, name=name, provider=provider, extra=extra)
 
         nvidia_integration.additional_properties = d
         return nvidia_integration

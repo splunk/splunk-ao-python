@@ -37,6 +37,10 @@ class LogRecordsExportRequest:
         export_format (LLMExportFormat | Unset):
         redact (bool | Unset): Redact sensitive data Default: True.
         file_name (None | str | Unset): Optional filename for the exported file
+        export_computed_metrics_only (bool | Unset): When true, export only enabled scorer metrics with computed values
+            (success or roll_up). For session exports, omit entire sessions unless every enabled metric at session, trace,
+            or span level is ready (success, roll_up, or not_applicable). Not supported with export_format=jsonl_flat
+            (returns 422); use jsonl or csv instead. Default: False.
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
@@ -45,6 +49,9 @@ class LogRecordsExportRequest:
             Filters to apply on the export
         sort (LogRecordsSortClause | None | Unset): Sort clause for the export.  Defaults to native sort (created_at, id
             descending).
+        include_code_metric_metadata (bool | Unset): If True, include per-row scorer metadata (the dict returned
+            alongside the score by code-based scorers via the (score, metadata) tuple-return contract) on each MetricSuccess
+            in the export. Off by default to keep payloads small for callers that don't need it. Default: False.
     """
 
     root_type: RootType
@@ -52,6 +59,7 @@ class LogRecordsExportRequest:
     export_format: LLMExportFormat | Unset = UNSET
     redact: bool | Unset = True
     file_name: None | str | Unset = UNSET
+    export_computed_metrics_only: bool | Unset = False
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
@@ -68,6 +76,7 @@ class LogRecordsExportRequest:
         | Unset
     ) = UNSET
     sort: LogRecordsSortClause | None | Unset = UNSET
+    include_code_metric_metadata: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -101,6 +110,8 @@ class LogRecordsExportRequest:
             file_name = UNSET
         else:
             file_name = self.file_name
+
+        export_computed_metrics_only = self.export_computed_metrics_only
 
         log_stream_id: None | str | Unset
         if isinstance(self.log_stream_id, Unset):
@@ -150,6 +161,8 @@ class LogRecordsExportRequest:
         else:
             sort = self.sort
 
+        include_code_metric_metadata = self.include_code_metric_metadata
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"root_type": root_type})
@@ -161,6 +174,8 @@ class LogRecordsExportRequest:
             field_dict["redact"] = redact
         if file_name is not UNSET:
             field_dict["file_name"] = file_name
+        if export_computed_metrics_only is not UNSET:
+            field_dict["export_computed_metrics_only"] = export_computed_metrics_only
         if log_stream_id is not UNSET:
             field_dict["log_stream_id"] = log_stream_id
         if experiment_id is not UNSET:
@@ -171,6 +186,8 @@ class LogRecordsExportRequest:
             field_dict["filters"] = filters
         if sort is not UNSET:
             field_dict["sort"] = sort
+        if include_code_metric_metadata is not UNSET:
+            field_dict["include_code_metric_metadata"] = include_code_metric_metadata
 
         return field_dict
 
@@ -222,6 +239,8 @@ class LogRecordsExportRequest:
             return cast(None | str | Unset, data)
 
         file_name = _parse_file_name(d.pop("file_name", UNSET))
+
+        export_computed_metrics_only = d.pop("export_computed_metrics_only", UNSET)
 
         def _parse_log_stream_id(data: object) -> None | str | Unset:
             if data is None:
@@ -353,17 +372,21 @@ class LogRecordsExportRequest:
 
         sort = _parse_sort(d.pop("sort", UNSET))
 
+        include_code_metric_metadata = d.pop("include_code_metric_metadata", UNSET)
+
         log_records_export_request = cls(
             root_type=root_type,
             column_ids=column_ids,
             export_format=export_format,
             redact=redact,
             file_name=file_name,
+            export_computed_metrics_only=export_computed_metrics_only,
             log_stream_id=log_stream_id,
             experiment_id=experiment_id,
             metrics_testing_id=metrics_testing_id,
             filters=filters,
             sort=sort,
+            include_code_metric_metadata=include_code_metric_metadata,
         )
 
         log_records_export_request.additional_properties = d

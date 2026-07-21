@@ -21,6 +21,10 @@ class LlmMetrics:
         num_output_tokens (int | None | Unset): Number of output tokens.
         num_total_tokens (int | None | Unset): Total number of tokens.
         time_to_first_token_ns (int | None | Unset): Time until the first token was generated in nanoseconds.
+        num_image_input_tokens (int | None | Unset): Number of image input tokens.
+        num_audio_input_tokens (int | None | Unset): Number of audio input tokens.
+        num_audio_output_tokens (int | None | Unset): Number of audio output tokens.
+        num_image_output_tokens (int | None | Unset): Number of image output tokens.
     """
 
     duration_ns: int | None | Unset = UNSET
@@ -28,6 +32,10 @@ class LlmMetrics:
     num_output_tokens: int | None | Unset = UNSET
     num_total_tokens: int | None | Unset = UNSET
     time_to_first_token_ns: int | None | Unset = UNSET
+    num_image_input_tokens: int | None | Unset = UNSET
+    num_audio_input_tokens: int | None | Unset = UNSET
+    num_audio_output_tokens: int | None | Unset = UNSET
+    num_image_output_tokens: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -61,6 +69,30 @@ class LlmMetrics:
         else:
             time_to_first_token_ns = self.time_to_first_token_ns
 
+        num_image_input_tokens: int | None | Unset
+        if isinstance(self.num_image_input_tokens, Unset):
+            num_image_input_tokens = UNSET
+        else:
+            num_image_input_tokens = self.num_image_input_tokens
+
+        num_audio_input_tokens: int | None | Unset
+        if isinstance(self.num_audio_input_tokens, Unset):
+            num_audio_input_tokens = UNSET
+        else:
+            num_audio_input_tokens = self.num_audio_input_tokens
+
+        num_audio_output_tokens: int | None | Unset
+        if isinstance(self.num_audio_output_tokens, Unset):
+            num_audio_output_tokens = UNSET
+        else:
+            num_audio_output_tokens = self.num_audio_output_tokens
+
+        num_image_output_tokens: int | None | Unset
+        if isinstance(self.num_image_output_tokens, Unset):
+            num_image_output_tokens = UNSET
+        else:
+            num_image_output_tokens = self.num_image_output_tokens
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -74,6 +106,14 @@ class LlmMetrics:
             field_dict["num_total_tokens"] = num_total_tokens
         if time_to_first_token_ns is not UNSET:
             field_dict["time_to_first_token_ns"] = time_to_first_token_ns
+        if num_image_input_tokens is not UNSET:
+            field_dict["num_image_input_tokens"] = num_image_input_tokens
+        if num_audio_input_tokens is not UNSET:
+            field_dict["num_audio_input_tokens"] = num_audio_input_tokens
+        if num_audio_output_tokens is not UNSET:
+            field_dict["num_audio_output_tokens"] = num_audio_output_tokens
+        if num_image_output_tokens is not UNSET:
+            field_dict["num_image_output_tokens"] = num_image_output_tokens
 
         return field_dict
 
@@ -126,12 +166,52 @@ class LlmMetrics:
 
         time_to_first_token_ns = _parse_time_to_first_token_ns(d.pop("time_to_first_token_ns", UNSET))
 
+        def _parse_num_image_input_tokens(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_image_input_tokens = _parse_num_image_input_tokens(d.pop("num_image_input_tokens", UNSET))
+
+        def _parse_num_audio_input_tokens(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_audio_input_tokens = _parse_num_audio_input_tokens(d.pop("num_audio_input_tokens", UNSET))
+
+        def _parse_num_audio_output_tokens(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_audio_output_tokens = _parse_num_audio_output_tokens(d.pop("num_audio_output_tokens", UNSET))
+
+        def _parse_num_image_output_tokens(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_image_output_tokens = _parse_num_image_output_tokens(d.pop("num_image_output_tokens", UNSET))
+
         llm_metrics = cls(
             duration_ns=duration_ns,
             num_input_tokens=num_input_tokens,
             num_output_tokens=num_output_tokens,
             num_total_tokens=num_total_tokens,
             time_to_first_token_ns=time_to_first_token_ns,
+            num_image_input_tokens=num_image_input_tokens,
+            num_audio_input_tokens=num_audio_input_tokens,
+            num_audio_output_tokens=num_audio_output_tokens,
+            num_image_output_tokens=num_image_output_tokens,
         )
 
         llm_metrics.additional_properties = d

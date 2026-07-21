@@ -90,12 +90,10 @@ def sync_detailed(
         Prompt template ID.
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context).
 
     Returns
     -------
-    GetTemplateResponse
+    BasePromptTemplateResponse
         Prompt template response.
 
     Args:
@@ -130,12 +128,10 @@ def sync(
         Prompt template ID.
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context).
 
     Returns
     -------
-    GetTemplateResponse
+    BasePromptTemplateResponse
         Prompt template response.
 
     Args:
@@ -166,12 +162,10 @@ async def asyncio_detailed(
         Prompt template ID.
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context).
 
     Returns
     -------
-    GetTemplateResponse
+    BasePromptTemplateResponse
         Prompt template response.
 
     Args:
@@ -206,12 +200,10 @@ async def asyncio(
         Prompt template ID.
     project_id : UUID4
         Project ID.
-    ctx : Context, optional
-        User context with database session, by default Depends(get_user_context).
 
     Returns
     -------
-    GetTemplateResponse
+    BasePromptTemplateResponse
         Prompt template response.
 
     Args:

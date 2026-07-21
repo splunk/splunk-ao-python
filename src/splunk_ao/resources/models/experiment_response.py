@@ -45,11 +45,14 @@ class ExperimentResponse:
         created_by_user (None | Unset | UserInfo):
         num_spans (int | None | Unset):
         num_traces (int | None | Unset):
+        num_sessions (int | None | Unset):
         dataset (ExperimentDataset | None | Unset):
         aggregate_metrics (ExperimentResponseAggregateMetrics | Unset):
         structured_aggregate_metrics (ExperimentResponseStructuredAggregateMetricsType0 | None | Unset): Structured
-            aggregate metrics keyed by raw metric name with full statistical aggregates. Present only when
-            use_clickhouse_run_aggregates flag is enabled.
+            aggregate metrics with full statistical aggregates (avg, min, max, sum, count). Keys are scorer UUIDs for
+            scorer-backed metrics (matching available_columns column IDs after stripping the 'metrics/' prefix) and raw
+            strings for system metrics (e.g. 'duration_ns', 'cost'). Present only when use_clickhouse_run_aggregates flag is
+            enabled.
         aggregate_feedback (ExperimentResponseAggregateFeedback | Unset): Aggregate feedback information related to the
             experiment (traces only)
         rating_aggregates (ExperimentResponseRatingAggregates | Unset): Annotation aggregates keyed by template ID and
@@ -64,6 +67,9 @@ class ExperimentResponse:
         prompt (ExperimentPrompt | None | Unset):
         tags (ExperimentResponseTags | Unset):
         status (ExperimentStatus | Unset):
+        experiment_group_id (None | str | Unset):
+        experiment_group_name (None | str | Unset):
+        experiment_group_is_system (bool | None | Unset):
     """
 
     id: str
@@ -76,6 +82,7 @@ class ExperimentResponse:
     created_by_user: None | Unset | UserInfo = UNSET
     num_spans: int | None | Unset = UNSET
     num_traces: int | None | Unset = UNSET
+    num_sessions: int | None | Unset = UNSET
     dataset: ExperimentDataset | None | Unset = UNSET
     aggregate_metrics: ExperimentResponseAggregateMetrics | Unset = UNSET
     structured_aggregate_metrics: ExperimentResponseStructuredAggregateMetricsType0 | None | Unset = UNSET
@@ -91,6 +98,9 @@ class ExperimentResponse:
     prompt: ExperimentPrompt | None | Unset = UNSET
     tags: ExperimentResponseTags | Unset = UNSET
     status: ExperimentStatus | Unset = UNSET
+    experiment_group_id: None | str | Unset = UNSET
+    experiment_group_name: None | str | Unset = UNSET
+    experiment_group_is_system: bool | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -148,6 +158,12 @@ class ExperimentResponse:
             num_traces = UNSET
         else:
             num_traces = self.num_traces
+
+        num_sessions: int | None | Unset
+        if isinstance(self.num_sessions, Unset):
+            num_sessions = UNSET
+        else:
+            num_sessions = self.num_sessions
 
         dataset: dict[str, Any] | None | Unset
         if isinstance(self.dataset, Unset):
@@ -239,6 +255,24 @@ class ExperimentResponse:
         if not isinstance(self.status, Unset):
             status = self.status.to_dict()
 
+        experiment_group_id: None | str | Unset
+        if isinstance(self.experiment_group_id, Unset):
+            experiment_group_id = UNSET
+        else:
+            experiment_group_id = self.experiment_group_id
+
+        experiment_group_name: None | str | Unset
+        if isinstance(self.experiment_group_name, Unset):
+            experiment_group_name = UNSET
+        else:
+            experiment_group_name = self.experiment_group_name
+
+        experiment_group_is_system: bool | None | Unset
+        if isinstance(self.experiment_group_is_system, Unset):
+            experiment_group_is_system = UNSET
+        else:
+            experiment_group_is_system = self.experiment_group_is_system
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "project_id": project_id, "task_type": task_type})
@@ -256,6 +290,8 @@ class ExperimentResponse:
             field_dict["num_spans"] = num_spans
         if num_traces is not UNSET:
             field_dict["num_traces"] = num_traces
+        if num_sessions is not UNSET:
+            field_dict["num_sessions"] = num_sessions
         if dataset is not UNSET:
             field_dict["dataset"] = dataset
         if aggregate_metrics is not UNSET:
@@ -286,6 +322,12 @@ class ExperimentResponse:
             field_dict["tags"] = tags
         if status is not UNSET:
             field_dict["status"] = status
+        if experiment_group_id is not UNSET:
+            field_dict["experiment_group_id"] = experiment_group_id
+        if experiment_group_name is not UNSET:
+            field_dict["experiment_group_name"] = experiment_group_name
+        if experiment_group_is_system is not UNSET:
+            field_dict["experiment_group_is_system"] = experiment_group_is_system
 
         return field_dict
 
@@ -381,6 +423,15 @@ class ExperimentResponse:
             return cast(int | None | Unset, data)
 
         num_traces = _parse_num_traces(d.pop("num_traces", UNSET))
+
+        def _parse_num_sessions(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        num_sessions = _parse_num_sessions(d.pop("num_sessions", UNSET))
 
         def _parse_dataset(data: object) -> ExperimentDataset | None | Unset:
             if data is None:
@@ -549,6 +600,33 @@ class ExperimentResponse:
         else:
             status = ExperimentStatus.from_dict(_status)
 
+        def _parse_experiment_group_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        experiment_group_id = _parse_experiment_group_id(d.pop("experiment_group_id", UNSET))
+
+        def _parse_experiment_group_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        experiment_group_name = _parse_experiment_group_name(d.pop("experiment_group_name", UNSET))
+
+        def _parse_experiment_group_is_system(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        experiment_group_is_system = _parse_experiment_group_is_system(d.pop("experiment_group_is_system", UNSET))
+
         experiment_response = cls(
             id=id,
             project_id=project_id,
@@ -560,6 +638,7 @@ class ExperimentResponse:
             created_by_user=created_by_user,
             num_spans=num_spans,
             num_traces=num_traces,
+            num_sessions=num_sessions,
             dataset=dataset,
             aggregate_metrics=aggregate_metrics,
             structured_aggregate_metrics=structured_aggregate_metrics,
@@ -575,6 +654,9 @@ class ExperimentResponse:
             prompt=prompt,
             tags=tags,
             status=status,
+            experiment_group_id=experiment_group_id,
+            experiment_group_name=experiment_group_name,
+            experiment_group_is_system=experiment_group_is_system,
         )
 
         experiment_response.additional_properties = d

@@ -29,6 +29,7 @@ class AwsSageMakerIntegration:
         models (list[Model] | Unset):
         id (None | str | Unset):
         name (Literal['aws_sagemaker'] | Unset):  Default: 'aws_sagemaker'.
+        provider (Literal['aws_sagemaker'] | Unset):  Default: 'aws_sagemaker'.
         extra (AwsSageMakerIntegrationExtraType0 | None | Unset):
     """
 
@@ -38,6 +39,7 @@ class AwsSageMakerIntegration:
     models: list[Model] | Unset = UNSET
     id: None | str | Unset = UNSET
     name: Literal["aws_sagemaker"] | Unset = "aws_sagemaker"
+    provider: Literal["aws_sagemaker"] | Unset = "aws_sagemaker"
     extra: AwsSageMakerIntegrationExtraType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -74,6 +76,8 @@ class AwsSageMakerIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -97,6 +101,8 @@ class AwsSageMakerIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -157,6 +163,10 @@ class AwsSageMakerIntegration:
         if name != "aws_sagemaker" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'aws_sagemaker', got '{name}'")
 
+        provider = cast(Literal["aws_sagemaker"] | Unset, d.pop("provider", UNSET))
+        if provider != "aws_sagemaker" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'aws_sagemaker', got '{provider}'")
+
         def _parse_extra(data: object) -> AwsSageMakerIntegrationExtraType0 | None | Unset:
             if data is None:
                 return data
@@ -181,6 +191,7 @@ class AwsSageMakerIntegration:
             models=models,
             id=id,
             name=name,
+            provider=provider,
             extra=extra,
         )
 

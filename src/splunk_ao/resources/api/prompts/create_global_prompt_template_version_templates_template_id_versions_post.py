@@ -95,10 +95,8 @@ def sync_detailed(
     ----------
     template_id : UUID4
         Prompt template ID.
-    ctx : Context
-        Request context including authentication information
     base_prompt_template_version : BasePromptTemplateVersion
-        Version details to create
+        Version details to create.
 
     Returns
     -------
@@ -135,10 +133,8 @@ def sync(
     ----------
     template_id : UUID4
         Prompt template ID.
-    ctx : Context
-        Request context including authentication information
     base_prompt_template_version : BasePromptTemplateVersion
-        Version details to create
+        Version details to create.
 
     Returns
     -------
@@ -171,10 +167,8 @@ async def asyncio_detailed(
     ----------
     template_id : UUID4
         Prompt template ID.
-    ctx : Context
-        Request context including authentication information
     base_prompt_template_version : BasePromptTemplateVersion
-        Version details to create
+        Version details to create.
 
     Returns
     -------
@@ -211,10 +205,8 @@ async def asyncio(
     ----------
     template_id : UUID4
         Prompt template ID.
-    ctx : Context
-        Request context including authentication information
     base_prompt_template_version : BasePromptTemplateVersion
-        Version details to create
+        Version details to create.
 
     Returns
     -------

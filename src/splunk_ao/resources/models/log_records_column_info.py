@@ -41,11 +41,11 @@ class LogRecordsColumnInfo:
         filterable (bool | Unset): Whether the column is filterable.
         is_empty (bool | Unset): Indicates whether the column is empty and should be hidden. Default: False.
         applicable_types (list[StepType] | Unset): List of types applicable for this column.
-        complex_ (bool | Unset): Whether the column requires special handling in the UI. Setting this to True will hide
-            the column in the UI until the UI adds support for it. Default: False.
         is_optional (bool | Unset): Whether the column is optional. Default: False.
         roll_up_method (None | str | Unset): Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
+        metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
+            column IDs, this holds the legacy metric_name string for dual-key ClickHouse query fallback.
         scorer_config (None | ScorerConfig | Unset): For metric columns only: Scorer config that produced the metric.
         scorer_id (None | str | Unset): For metric columns only: Scorer id that produced the metric. This is deprecated
             and will be removed in future versions.
@@ -54,8 +54,6 @@ class LogRecordsColumnInfo:
         threshold (MetricThreshold | None | Unset): Thresholds for the column, if this is a metrics column.
         label_color (LogRecordsColumnInfoLabelColorType0 | None | Unset): Type of label color for the column, if this is
             a multilabel metric column.
-        metric_key_alias (None | str | Unset): Alternate metric key for this column. When store_metric_ids is ON, this
-            holds the legacy metric_name string. Used for dual-key ClickHouse queries.
     """
 
     id: str
@@ -71,16 +69,15 @@ class LogRecordsColumnInfo:
     filterable: bool | Unset = UNSET
     is_empty: bool | Unset = False
     applicable_types: list[StepType] | Unset = UNSET
-    complex_: bool | Unset = False
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
+    metric_key_alias: None | str | Unset = UNSET
     scorer_config: None | ScorerConfig | Unset = UNSET
     scorer_id: None | str | Unset = UNSET
     insight_type: InsightType | None | Unset = UNSET
     filter_type: LogRecordsFilterType | None | Unset = UNSET
     threshold: MetricThreshold | None | Unset = UNSET
     label_color: LogRecordsColumnInfoLabelColorType0 | None | Unset = UNSET
-    metric_key_alias: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -147,8 +144,6 @@ class LogRecordsColumnInfo:
                 applicable_types_item = applicable_types_item_data.value
                 applicable_types.append(applicable_types_item)
 
-        complex_ = self.complex_
-
         is_optional = self.is_optional
 
         roll_up_method: None | str | Unset
@@ -156,6 +151,12 @@ class LogRecordsColumnInfo:
             roll_up_method = UNSET
         else:
             roll_up_method = self.roll_up_method
+
+        metric_key_alias: None | str | Unset
+        if isinstance(self.metric_key_alias, Unset):
+            metric_key_alias = UNSET
+        else:
+            metric_key_alias = self.metric_key_alias
 
         scorer_config: dict[str, Any] | None | Unset
         if isinstance(self.scorer_config, Unset):
@@ -203,12 +204,6 @@ class LogRecordsColumnInfo:
         else:
             label_color = self.label_color
 
-        metric_key_alias: None | str | Unset
-        if isinstance(self.metric_key_alias, Unset):
-            metric_key_alias = UNSET
-        else:
-            metric_key_alias = self.metric_key_alias
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "category": category, "data_type": data_type})
@@ -232,12 +227,12 @@ class LogRecordsColumnInfo:
             field_dict["is_empty"] = is_empty
         if applicable_types is not UNSET:
             field_dict["applicable_types"] = applicable_types
-        if complex_ is not UNSET:
-            field_dict["complex"] = complex_
         if is_optional is not UNSET:
             field_dict["is_optional"] = is_optional
         if roll_up_method is not UNSET:
             field_dict["roll_up_method"] = roll_up_method
+        if metric_key_alias is not UNSET:
+            field_dict["metric_key_alias"] = metric_key_alias
         if scorer_config is not UNSET:
             field_dict["scorer_config"] = scorer_config
         if scorer_id is not UNSET:
@@ -250,8 +245,6 @@ class LogRecordsColumnInfo:
             field_dict["threshold"] = threshold
         if label_color is not UNSET:
             field_dict["label_color"] = label_color
-        if metric_key_alias is not UNSET:
-            field_dict["metric_key_alias"] = metric_key_alias
 
         return field_dict
 
@@ -358,8 +351,6 @@ class LogRecordsColumnInfo:
 
                 applicable_types.append(applicable_types_item)
 
-        complex_ = d.pop("complex", UNSET)
-
         is_optional = d.pop("is_optional", UNSET)
 
         def _parse_roll_up_method(data: object) -> None | str | Unset:
@@ -370,6 +361,15 @@ class LogRecordsColumnInfo:
             return cast(None | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
+
+        def _parse_metric_key_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
         def _parse_scorer_config(data: object) -> None | ScorerConfig | Unset:
             if data is None:
@@ -465,15 +465,6 @@ class LogRecordsColumnInfo:
 
         label_color = _parse_label_color(d.pop("label_color", UNSET))
 
-        def _parse_metric_key_alias(data: object) -> None | str | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(None | str | Unset, data)
-
-        metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
-
         log_records_column_info = cls(
             id=id,
             category=category,
@@ -488,16 +479,15 @@ class LogRecordsColumnInfo:
             filterable=filterable,
             is_empty=is_empty,
             applicable_types=applicable_types,
-            complex_=complex_,
             is_optional=is_optional,
             roll_up_method=roll_up_method,
+            metric_key_alias=metric_key_alias,
             scorer_config=scorer_config,
             scorer_id=scorer_id,
             insight_type=insight_type,
             filter_type=filter_type,
             threshold=threshold,
             label_color=label_color,
-            metric_key_alias=metric_key_alias,
         )
 
         log_records_column_info.additional_properties = d

@@ -30,6 +30,7 @@ class AwsBedrockIntegration:
             ID) to inference profile ARN or ID
         id (None | str | Unset):
         name (Literal['aws_bedrock'] | Unset):  Default: 'aws_bedrock'.
+        provider (Literal['aws_bedrock'] | Unset):  Default: 'aws_bedrock'.
         extra (AwsBedrockIntegrationExtraType0 | None | Unset):
     """
 
@@ -39,6 +40,7 @@ class AwsBedrockIntegration:
     inference_profiles: AwsBedrockIntegrationInferenceProfiles | Unset = UNSET
     id: None | str | Unset = UNSET
     name: Literal["aws_bedrock"] | Unset = "aws_bedrock"
+    provider: Literal["aws_bedrock"] | Unset = "aws_bedrock"
     extra: AwsBedrockIntegrationExtraType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -72,6 +74,8 @@ class AwsBedrockIntegration:
 
         name = self.name
 
+        provider = self.provider
+
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
             extra = UNSET
@@ -95,6 +99,8 @@ class AwsBedrockIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -154,6 +160,10 @@ class AwsBedrockIntegration:
         if name != "aws_bedrock" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'aws_bedrock', got '{name}'")
 
+        provider = cast(Literal["aws_bedrock"] | Unset, d.pop("provider", UNSET))
+        if provider != "aws_bedrock" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'aws_bedrock', got '{provider}'")
+
         def _parse_extra(data: object) -> AwsBedrockIntegrationExtraType0 | None | Unset:
             if data is None:
                 return data
@@ -178,6 +188,7 @@ class AwsBedrockIntegration:
             inference_profiles=inference_profiles,
             id=id,
             name=name,
+            provider=provider,
             extra=extra,
         )
 

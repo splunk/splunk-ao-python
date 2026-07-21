@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from io import BytesIO
 from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, File, FileTypes, Unset
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="BodyCreateDatasetDatasetsPost")
 
@@ -21,20 +20,22 @@ class BodyCreateDatasetDatasetsPost:
         hidden (bool | Unset):  Default: False.
         name (None | str | Unset):
         append_suffix_if_duplicate (bool | Unset):  Default: False.
-        file (File | None | Unset):
+        file (None | str | Unset):
         copy_from_dataset_id (None | str | Unset):
         copy_from_dataset_version_index (int | None | Unset):
         project_id (None | str | Unset):
+        column_mapping (None | str | Unset):
     """
 
     draft: bool | Unset = False
     hidden: bool | Unset = False
     name: None | str | Unset = UNSET
     append_suffix_if_duplicate: bool | Unset = False
-    file: File | None | Unset = UNSET
+    file: None | str | Unset = UNSET
     copy_from_dataset_id: None | str | Unset = UNSET
     copy_from_dataset_version_index: int | None | Unset = UNSET
     project_id: None | str | Unset = UNSET
+    column_mapping: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,12 +51,9 @@ class BodyCreateDatasetDatasetsPost:
 
         append_suffix_if_duplicate = self.append_suffix_if_duplicate
 
-        file: FileTypes | None | Unset
+        file: None | str | Unset
         if isinstance(self.file, Unset):
             file = UNSET
-        elif isinstance(self.file, File):
-            file = self.file.to_tuple()
-
         else:
             file = self.file
 
@@ -77,6 +75,12 @@ class BodyCreateDatasetDatasetsPost:
         else:
             project_id = self.project_id
 
+        column_mapping: None | str | Unset
+        if isinstance(self.column_mapping, Unset):
+            column_mapping = UNSET
+        else:
+            column_mapping = self.column_mapping
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -96,6 +100,8 @@ class BodyCreateDatasetDatasetsPost:
             field_dict["copy_from_dataset_version_index"] = copy_from_dataset_version_index
         if project_id is not UNSET:
             field_dict["project_id"] = project_id
+        if column_mapping is not UNSET:
+            field_dict["column_mapping"] = column_mapping
 
         return field_dict
 
@@ -120,8 +126,8 @@ class BodyCreateDatasetDatasetsPost:
             )
 
         if not isinstance(self.file, Unset):
-            if isinstance(self.file, File):
-                files.append(("file", self.file.to_tuple()))
+            if isinstance(self.file, str):
+                files.append(("file", (None, str(self.file).encode(), "text/plain")))
             else:
                 files.append(("file", (None, str(self.file).encode(), "text/plain")))
 
@@ -153,6 +159,12 @@ class BodyCreateDatasetDatasetsPost:
             else:
                 files.append(("project_id", (None, str(self.project_id).encode(), "text/plain")))
 
+        if not isinstance(self.column_mapping, Unset):
+            if isinstance(self.column_mapping, str):
+                files.append(("column_mapping", (None, str(self.column_mapping).encode(), "text/plain")))
+            else:
+                files.append(("column_mapping", (None, str(self.column_mapping).encode(), "text/plain")))
+
         for prop_name, prop in self.additional_properties.items():
             files.append((prop_name, (None, str(prop).encode(), "text/plain")))
 
@@ -176,20 +188,12 @@ class BodyCreateDatasetDatasetsPost:
 
         append_suffix_if_duplicate = d.pop("append_suffix_if_duplicate", UNSET)
 
-        def _parse_file(data: object) -> File | None | Unset:
+        def _parse_file(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            try:
-                if not isinstance(data, bytes):
-                    raise TypeError()
-                file_type_0 = File(payload=BytesIO(data))
-
-                return file_type_0
-            except:  # noqa: E722
-                pass
-            return cast(File | None | Unset, data)
+            return cast(None | str | Unset, data)
 
         file = _parse_file(d.pop("file", UNSET))
 
@@ -222,6 +226,15 @@ class BodyCreateDatasetDatasetsPost:
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
 
+        def _parse_column_mapping(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        column_mapping = _parse_column_mapping(d.pop("column_mapping", UNSET))
+
         body_create_dataset_datasets_post = cls(
             draft=draft,
             hidden=hidden,
@@ -231,6 +244,7 @@ class BodyCreateDatasetDatasetsPost:
             copy_from_dataset_id=copy_from_dataset_id,
             copy_from_dataset_version_index=copy_from_dataset_version_index,
             project_id=project_id,
+            column_mapping=column_mapping,
         )
 
         body_create_dataset_datasets_post.additional_properties = d

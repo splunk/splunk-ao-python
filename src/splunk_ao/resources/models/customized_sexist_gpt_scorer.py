@@ -68,7 +68,9 @@ class CustomizedSexistGPTScorer:
         output_type (None | OutputTypeEnum | Unset):
         input_type (InputTypeEnum | None | Unset):
         multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        requires_tools_in_llm_span (bool | Unset):  Default: False.
         required_scorers (list[str] | None | Unset):
+        required_metric_ids (list[str] | None | Unset):
         roll_up_strategy (None | RollUpStrategy | Unset):
         roll_up_methods (list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset):
         prompt (None | str | Unset):
@@ -78,6 +80,7 @@ class CustomizedSexistGPTScorer:
         luna_output_type (LunaOutputTypeEnum | None | Unset):
         class_name_to_vocab_ix (CustomizedSexistGPTScorerClassNameToVocabIxType0 |
             CustomizedSexistGPTScorerClassNameToVocabIxType1 | None | Unset):
+        scorer_path_name (None | str | Unset):
     """
 
     scorer_name: Literal["_customized_sexist_gpt"] | Unset = "_customized_sexist_gpt"
@@ -107,7 +110,9 @@ class CustomizedSexistGPTScorer:
     output_type: None | OutputTypeEnum | Unset = UNSET
     input_type: InputTypeEnum | None | Unset = UNSET
     multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    requires_tools_in_llm_span: bool | Unset = False
     required_scorers: list[str] | None | Unset = UNSET
+    required_metric_ids: list[str] | None | Unset = UNSET
     roll_up_strategy: None | RollUpStrategy | Unset = UNSET
     roll_up_methods: list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset = UNSET
     prompt: None | str | Unset = UNSET
@@ -121,6 +126,7 @@ class CustomizedSexistGPTScorer:
         | None
         | Unset
     ) = UNSET
+    scorer_path_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -313,6 +319,8 @@ class CustomizedSexistGPTScorer:
         else:
             multimodal_capabilities = self.multimodal_capabilities
 
+        requires_tools_in_llm_span = self.requires_tools_in_llm_span
+
         required_scorers: list[str] | None | Unset
         if isinstance(self.required_scorers, Unset):
             required_scorers = UNSET
@@ -321,6 +329,15 @@ class CustomizedSexistGPTScorer:
 
         else:
             required_scorers = self.required_scorers
+
+        required_metric_ids: list[str] | None | Unset
+        if isinstance(self.required_metric_ids, Unset):
+            required_metric_ids = UNSET
+        elif isinstance(self.required_metric_ids, list):
+            required_metric_ids = self.required_metric_ids
+
+        else:
+            required_metric_ids = self.required_metric_ids
 
         roll_up_strategy: None | str | Unset
         if isinstance(self.roll_up_strategy, Unset):
@@ -392,6 +409,12 @@ class CustomizedSexistGPTScorer:
         else:
             class_name_to_vocab_ix = self.class_name_to_vocab_ix
 
+        scorer_path_name: None | str | Unset
+        if isinstance(self.scorer_path_name, Unset):
+            scorer_path_name = UNSET
+        else:
+            scorer_path_name = self.scorer_path_name
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -449,8 +472,12 @@ class CustomizedSexistGPTScorer:
             field_dict["input_type"] = input_type
         if multimodal_capabilities is not UNSET:
             field_dict["multimodal_capabilities"] = multimodal_capabilities
+        if requires_tools_in_llm_span is not UNSET:
+            field_dict["requires_tools_in_llm_span"] = requires_tools_in_llm_span
         if required_scorers is not UNSET:
             field_dict["required_scorers"] = required_scorers
+        if required_metric_ids is not UNSET:
+            field_dict["required_metric_ids"] = required_metric_ids
         if roll_up_strategy is not UNSET:
             field_dict["roll_up_strategy"] = roll_up_strategy
         if roll_up_methods is not UNSET:
@@ -467,6 +494,8 @@ class CustomizedSexistGPTScorer:
             field_dict["luna_output_type"] = luna_output_type
         if class_name_to_vocab_ix is not UNSET:
             field_dict["class_name_to_vocab_ix"] = class_name_to_vocab_ix
+        if scorer_path_name is not UNSET:
+            field_dict["scorer_path_name"] = scorer_path_name
 
         return field_dict
 
@@ -800,6 +829,8 @@ class CustomizedSexistGPTScorer:
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
+        requires_tools_in_llm_span = d.pop("requires_tools_in_llm_span", UNSET)
+
         def _parse_required_scorers(data: object) -> list[str] | None | Unset:
             if data is None:
                 return data
@@ -816,6 +847,23 @@ class CustomizedSexistGPTScorer:
             return cast(list[str] | None | Unset, data)
 
         required_scorers = _parse_required_scorers(d.pop("required_scorers", UNSET))
+
+        def _parse_required_metric_ids(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                required_metric_ids_type_0 = cast(list[str], data)
+
+                return required_metric_ids_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        required_metric_ids = _parse_required_metric_ids(d.pop("required_metric_ids", UNSET))
 
         def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | Unset:
             if data is None:
@@ -970,6 +1018,15 @@ class CustomizedSexistGPTScorer:
 
         class_name_to_vocab_ix = _parse_class_name_to_vocab_ix(d.pop("class_name_to_vocab_ix", UNSET))
 
+        def _parse_scorer_path_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        scorer_path_name = _parse_scorer_path_name(d.pop("scorer_path_name", UNSET))
+
         customized_sexist_gpt_scorer = cls(
             scorer_name=scorer_name,
             model_alias=model_alias,
@@ -998,7 +1055,9 @@ class CustomizedSexistGPTScorer:
             output_type=output_type,
             input_type=input_type,
             multimodal_capabilities=multimodal_capabilities,
+            requires_tools_in_llm_span=requires_tools_in_llm_span,
             required_scorers=required_scorers,
+            required_metric_ids=required_metric_ids,
             roll_up_strategy=roll_up_strategy,
             roll_up_methods=roll_up_methods,
             prompt=prompt,
@@ -1007,6 +1066,7 @@ class CustomizedSexistGPTScorer:
             luna_input_type=luna_input_type,
             luna_output_type=luna_output_type,
             class_name_to_vocab_ix=class_name_to_vocab_ix,
+            scorer_path_name=scorer_path_name,
         )
 
         customized_sexist_gpt_scorer.additional_properties = d

@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from ..models.dataset_delete_row import DatasetDeleteRow
     from ..models.dataset_filter_rows import DatasetFilterRows
     from ..models.dataset_prepend_row import DatasetPrependRow
+    from ..models.dataset_remove_column import DatasetRemoveColumn
+    from ..models.dataset_rename_column import DatasetRenameColumn
     from ..models.dataset_update_row import DatasetUpdateRow
 
 
@@ -30,7 +32,7 @@ class UpdateDatasetContentRequest:
 
         Attributes:
             edits (list[DatasetAppendRow | DatasetCopyRecordData | DatasetDeleteRow | DatasetFilterRows | DatasetPrependRow
-                | DatasetUpdateRow]):
+                | DatasetRemoveColumn | DatasetRenameColumn | DatasetUpdateRow]):
     """
 
     edits: list[
@@ -39,15 +41,19 @@ class UpdateDatasetContentRequest:
         | DatasetDeleteRow
         | DatasetFilterRows
         | DatasetPrependRow
+        | DatasetRemoveColumn
+        | DatasetRenameColumn
         | DatasetUpdateRow
     ]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.dataset_append_row import DatasetAppendRow
+        from ..models.dataset_copy_record_data import DatasetCopyRecordData
         from ..models.dataset_delete_row import DatasetDeleteRow
         from ..models.dataset_filter_rows import DatasetFilterRows
         from ..models.dataset_prepend_row import DatasetPrependRow
+        from ..models.dataset_remove_column import DatasetRemoveColumn
         from ..models.dataset_update_row import DatasetUpdateRow
 
         edits = []
@@ -62,6 +68,10 @@ class UpdateDatasetContentRequest:
             elif isinstance(edits_item_data, DatasetDeleteRow):
                 edits_item = edits_item_data.to_dict()
             elif isinstance(edits_item_data, DatasetFilterRows):
+                edits_item = edits_item_data.to_dict()
+            elif isinstance(edits_item_data, DatasetCopyRecordData):
+                edits_item = edits_item_data.to_dict()
+            elif isinstance(edits_item_data, DatasetRemoveColumn):
                 edits_item = edits_item_data.to_dict()
             else:
                 edits_item = edits_item_data.to_dict()
@@ -81,6 +91,8 @@ class UpdateDatasetContentRequest:
         from ..models.dataset_delete_row import DatasetDeleteRow
         from ..models.dataset_filter_rows import DatasetFilterRows
         from ..models.dataset_prepend_row import DatasetPrependRow
+        from ..models.dataset_remove_column import DatasetRemoveColumn
+        from ..models.dataset_rename_column import DatasetRenameColumn
         from ..models.dataset_update_row import DatasetUpdateRow
 
         d = dict(src_dict)
@@ -96,6 +108,8 @@ class UpdateDatasetContentRequest:
                 | DatasetDeleteRow
                 | DatasetFilterRows
                 | DatasetPrependRow
+                | DatasetRemoveColumn
+                | DatasetRenameColumn
                 | DatasetUpdateRow
             ):
                 try:
@@ -138,11 +152,27 @@ class UpdateDatasetContentRequest:
                     return edits_item_type_4
                 except:  # noqa: E722
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    edits_item_type_5 = DatasetCopyRecordData.from_dict(data)
+
+                    return edits_item_type_5
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    edits_item_type_6 = DatasetRemoveColumn.from_dict(data)
+
+                    return edits_item_type_6
+                except:  # noqa: E722
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                edits_item_type_5 = DatasetCopyRecordData.from_dict(data)
+                edits_item_type_7 = DatasetRenameColumn.from_dict(data)
 
-                return edits_item_type_5
+                return edits_item_type_7
 
             edits_item = _parse_edits_item(edits_item_data)
 

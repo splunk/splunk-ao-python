@@ -33,14 +33,11 @@ class ColumnInfo:
         filterable (bool | Unset): Whether the column is filterable.
         is_empty (bool | Unset): Indicates whether the column is empty and should be hidden. Default: False.
         applicable_types (list[StepType] | Unset): List of types applicable for this column.
-        complex_ (bool | Unset): Whether the column requires special handling in the UI. Setting this to True will hide
-            the column in the UI until the UI adds support for it. Default: False.
         is_optional (bool | Unset): Whether the column is optional. Default: False.
         roll_up_method (None | str | Unset): Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
         metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
-            column IDs (e.g. "metrics/{uuid}"), this holds the legacy snake_case metric name (e.g. "correctness") for
-            display and dual-key query fallback. None for non-metric columns.
+            column IDs, this holds the legacy metric_name string for dual-key ClickHouse query fallback.
     """
 
     id: str
@@ -56,7 +53,6 @@ class ColumnInfo:
     filterable: bool | Unset = UNSET
     is_empty: bool | Unset = False
     applicable_types: list[StepType] | Unset = UNSET
-    complex_: bool | Unset = False
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
@@ -123,8 +119,6 @@ class ColumnInfo:
                 applicable_types_item = applicable_types_item_data.value
                 applicable_types.append(applicable_types_item)
 
-        complex_ = self.complex_
-
         is_optional = self.is_optional
 
         roll_up_method: None | str | Unset
@@ -162,8 +156,6 @@ class ColumnInfo:
             field_dict["is_empty"] = is_empty
         if applicable_types is not UNSET:
             field_dict["applicable_types"] = applicable_types
-        if complex_ is not UNSET:
-            field_dict["complex"] = complex_
         if is_optional is not UNSET:
             field_dict["is_optional"] = is_optional
         if roll_up_method is not UNSET:
@@ -273,8 +265,6 @@ class ColumnInfo:
 
                 applicable_types.append(applicable_types_item)
 
-        complex_ = d.pop("complex", UNSET)
-
         is_optional = d.pop("is_optional", UNSET)
 
         def _parse_roll_up_method(data: object) -> None | str | Unset:
@@ -309,7 +299,6 @@ class ColumnInfo:
             filterable=filterable,
             is_empty=is_empty,
             applicable_types=applicable_types,
-            complex_=complex_,
             is_optional=is_optional,
             roll_up_method=roll_up_method,
             metric_key_alias=metric_key_alias,

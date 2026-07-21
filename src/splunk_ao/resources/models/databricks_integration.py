@@ -21,11 +21,13 @@ class DatabricksIntegration:
     Attributes:
         id (None | str | Unset):
         name (Literal['databricks'] | Unset):  Default: 'databricks'.
+        provider (Literal['databricks'] | Unset):  Default: 'databricks'.
         extra (DatabricksIntegrationExtraType0 | None | Unset):
     """
 
     id: None | str | Unset = UNSET
     name: Literal["databricks"] | Unset = "databricks"
+    provider: Literal["databricks"] | Unset = "databricks"
     extra: DatabricksIntegrationExtraType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -39,6 +41,8 @@ class DatabricksIntegration:
             id = self.id
 
         name = self.name
+
+        provider = self.provider
 
         extra: dict[str, Any] | None | Unset
         if isinstance(self.extra, Unset):
@@ -55,6 +59,8 @@ class DatabricksIntegration:
             field_dict["id"] = id
         if name is not UNSET:
             field_dict["name"] = name
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if extra is not UNSET:
             field_dict["extra"] = extra
 
@@ -79,6 +85,10 @@ class DatabricksIntegration:
         if name != "databricks" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'databricks', got '{name}'")
 
+        provider = cast(Literal["databricks"] | Unset, d.pop("provider", UNSET))
+        if provider != "databricks" and not isinstance(provider, Unset):
+            raise ValueError(f"provider must match const 'databricks', got '{provider}'")
+
         def _parse_extra(data: object) -> DatabricksIntegrationExtraType0 | None | Unset:
             if data is None:
                 return data
@@ -96,7 +106,7 @@ class DatabricksIntegration:
 
         extra = _parse_extra(d.pop("extra", UNSET))
 
-        databricks_integration = cls(id=id, name=name, extra=extra)
+        databricks_integration = cls(id=id, name=name, provider=provider, extra=extra)
 
         databricks_integration.additional_properties = d
         return databricks_integration

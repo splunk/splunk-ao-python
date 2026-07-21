@@ -20,15 +20,29 @@ from ... import errors
 from ...models.http_validation_error import HTTPValidationError
 from ...models.list_scorers_request import ListScorersRequest
 from ...models.list_scorers_response import ListScorersResponse
+from ...models.scorer_action import ScorerAction
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *, body: ListScorersRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    *,
+    body: ListScorersRequest,
+    actions: list[ScorerAction] | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
+
+    json_actions: list[str] | Unset = UNSET
+    if not isinstance(actions, Unset):
+        json_actions = []
+        for actions_item_data in actions:
+            actions_item = actions_item_data.value
+            json_actions.append(actions_item)
+
+    params["actions"] = json_actions
 
     params["starting_token"] = starting_token
 
@@ -94,11 +108,18 @@ def _build_response(
 
 
 def sync_detailed(
-    *, client: ApiClient, body: ListScorersRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    *,
+    client: ApiClient,
+    body: ListScorersRequest,
+    actions: list[ScorerAction] | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -111,7 +132,7 @@ def sync_detailed(
         Response[HTTPValidationError | ListScorersResponse]
     """
 
-    kwargs = _get_kwargs(body=body, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(body=body, actions=actions, starting_token=starting_token, limit=limit)
 
     response = client.request(**kwargs)
 
@@ -119,11 +140,18 @@ def sync_detailed(
 
 
 def sync(
-    *, client: ApiClient, body: ListScorersRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    *,
+    client: ApiClient,
+    body: ListScorersRequest,
+    actions: list[ScorerAction] | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -136,15 +164,22 @@ def sync(
         HTTPValidationError | ListScorersResponse
     """
 
-    return sync_detailed(client=client, body=body, starting_token=starting_token, limit=limit).parsed
+    return sync_detailed(client=client, body=body, actions=actions, starting_token=starting_token, limit=limit).parsed
 
 
 async def asyncio_detailed(
-    *, client: ApiClient, body: ListScorersRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    *,
+    client: ApiClient,
+    body: ListScorersRequest,
+    actions: list[ScorerAction] | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -157,7 +192,7 @@ async def asyncio_detailed(
         Response[HTTPValidationError | ListScorersResponse]
     """
 
-    kwargs = _get_kwargs(body=body, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(body=body, actions=actions, starting_token=starting_token, limit=limit)
 
     response = await client.arequest(**kwargs)
 
@@ -165,11 +200,18 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    *, client: ApiClient, body: ListScorersRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    *,
+    client: ApiClient,
+    body: ListScorersRequest,
+    actions: list[ScorerAction] | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
+        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
+            scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -182,4 +224,6 @@ async def asyncio(
         HTTPValidationError | ListScorersResponse
     """
 
-    return (await asyncio_detailed(client=client, body=body, starting_token=starting_token, limit=limit)).parsed
+    return (
+        await asyncio_detailed(client=client, body=body, actions=actions, starting_token=starting_token, limit=limit)
+    ).parsed

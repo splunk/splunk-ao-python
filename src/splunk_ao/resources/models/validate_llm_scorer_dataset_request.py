@@ -10,7 +10,9 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.chain_poll_template import ChainPollTemplate
+    from ..models.file_content_part import FileContentPart
     from ..models.generated_scorer_configuration import GeneratedScorerConfiguration
+    from ..models.text_content_part import TextContentPart
     from ..models.validate_llm_scorer_dataset_request_sort_type_0 import ValidateLLMScorerDatasetRequestSortType0
 
 
@@ -29,6 +31,9 @@ class ValidateLLMScorerDatasetRequest:
         scorer_configuration (GeneratedScorerConfiguration):
         user_prompt (str):
         dataset_id (str):
+        normalized_input (list[FileContentPart | TextContentPart] | None | Unset): Optional multimodal content parts.
+            When set, replaces the text-only query/response formatting in the validation job so that file content is passed
+            through to the LLM.
         dataset_version_index (int | None | Unset):
         limit (int | Unset): Maximum number of dataset rows to process. Default: 100.
         starting_token (int | None | Unset): Pagination offset into dataset rows.
@@ -41,6 +46,7 @@ class ValidateLLMScorerDatasetRequest:
     scorer_configuration: GeneratedScorerConfiguration
     user_prompt: str
     dataset_id: str
+    normalized_input: list[FileContentPart | TextContentPart] | None | Unset = UNSET
     dataset_version_index: int | None | Unset = UNSET
     limit: int | Unset = 100
     starting_token: int | None | Unset = UNSET
@@ -48,6 +54,7 @@ class ValidateLLMScorerDatasetRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.text_content_part import TextContentPart
         from ..models.validate_llm_scorer_dataset_request_sort_type_0 import ValidateLLMScorerDatasetRequestSortType0
 
         query = self.query
@@ -61,6 +68,23 @@ class ValidateLLMScorerDatasetRequest:
         user_prompt = self.user_prompt
 
         dataset_id = self.dataset_id
+
+        normalized_input: list[dict[str, Any]] | None | Unset
+        if isinstance(self.normalized_input, Unset):
+            normalized_input = UNSET
+        elif isinstance(self.normalized_input, list):
+            normalized_input = []
+            for normalized_input_type_0_item_data in self.normalized_input:
+                normalized_input_type_0_item: dict[str, Any]
+                if isinstance(normalized_input_type_0_item_data, TextContentPart):
+                    normalized_input_type_0_item = normalized_input_type_0_item_data.to_dict()
+                else:
+                    normalized_input_type_0_item = normalized_input_type_0_item_data.to_dict()
+
+                normalized_input.append(normalized_input_type_0_item)
+
+        else:
+            normalized_input = self.normalized_input
 
         dataset_version_index: int | None | Unset
         if isinstance(self.dataset_version_index, Unset):
@@ -96,6 +120,8 @@ class ValidateLLMScorerDatasetRequest:
                 "dataset_id": dataset_id,
             }
         )
+        if normalized_input is not UNSET:
+            field_dict["normalized_input"] = normalized_input
         if dataset_version_index is not UNSET:
             field_dict["dataset_version_index"] = dataset_version_index
         if limit is not UNSET:
@@ -110,7 +136,9 @@ class ValidateLLMScorerDatasetRequest:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.chain_poll_template import ChainPollTemplate
+        from ..models.file_content_part import FileContentPart
         from ..models.generated_scorer_configuration import GeneratedScorerConfiguration
+        from ..models.text_content_part import TextContentPart
         from ..models.validate_llm_scorer_dataset_request_sort_type_0 import ValidateLLMScorerDatasetRequestSortType0
 
         d = dict(src_dict)
@@ -125,6 +153,46 @@ class ValidateLLMScorerDatasetRequest:
         user_prompt = d.pop("user_prompt")
 
         dataset_id = d.pop("dataset_id")
+
+        def _parse_normalized_input(data: object) -> list[FileContentPart | TextContentPart] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                normalized_input_type_0 = []
+                _normalized_input_type_0 = data
+                for normalized_input_type_0_item_data in _normalized_input_type_0:
+
+                    def _parse_normalized_input_type_0_item(data: object) -> FileContentPart | TextContentPart:
+                        try:
+                            if not isinstance(data, dict):
+                                raise TypeError()
+                            normalized_input_type_0_item_type_0 = TextContentPart.from_dict(data)
+
+                            return normalized_input_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        normalized_input_type_0_item_type_1 = FileContentPart.from_dict(data)
+
+                        return normalized_input_type_0_item_type_1
+
+                    normalized_input_type_0_item = _parse_normalized_input_type_0_item(
+                        normalized_input_type_0_item_data
+                    )
+
+                    normalized_input_type_0.append(normalized_input_type_0_item)
+
+                return normalized_input_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[FileContentPart | TextContentPart] | None | Unset, data)
+
+        normalized_input = _parse_normalized_input(d.pop("normalized_input", UNSET))
 
         def _parse_dataset_version_index(data: object) -> int | None | Unset:
             if data is None:
@@ -170,6 +238,7 @@ class ValidateLLMScorerDatasetRequest:
             scorer_configuration=scorer_configuration,
             user_prompt=user_prompt,
             dataset_id=dataset_id,
+            normalized_input=normalized_input,
             dataset_version_index=dataset_version_index,
             limit=limit,
             starting_token=starting_token,

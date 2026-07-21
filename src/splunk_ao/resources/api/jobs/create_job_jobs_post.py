@@ -81,6 +81,8 @@ def _build_response(
 def sync_detailed(*, client: ApiClient, body: CreateJobRequest) -> Response[CreateJobResponse | HTTPValidationError]:
     """Create Job
 
+     Create a job for a project run and enqueue it for processing.
+
     Args:
         body (CreateJobRequest):
 
@@ -102,6 +104,8 @@ def sync_detailed(*, client: ApiClient, body: CreateJobRequest) -> Response[Crea
 def sync(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResponse | HTTPValidationError]:
     """Create Job
 
+     Create a job for a project run and enqueue it for processing.
+
     Args:
         body (CreateJobRequest):
 
@@ -120,6 +124,8 @@ async def asyncio_detailed(
     *, client: ApiClient, body: CreateJobRequest
 ) -> Response[CreateJobResponse | HTTPValidationError]:
     """Create Job
+
+     Create a job for a project run and enqueue it for processing.
 
     Args:
         body (CreateJobRequest):
@@ -141,6 +147,8 @@ async def asyncio_detailed(
 
 async def asyncio(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResponse | HTTPValidationError]:
     """Create Job
+
+     Create a job for a project run and enqueue it for processing.
 
     Args:
         body (CreateJobRequest):
