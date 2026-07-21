@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,13 +22,13 @@ class ScorerScopeProjectsFilter:
 
         Attributes:
             project_ids (list[str]):
-            name (Union[Literal['scope_projects'], Unset]):  Default: 'scope_projects'.
-            include_global (Union[Unset, bool]):  Default: False.
+            name (Literal['scope_projects'] | Unset):  Default: 'scope_projects'.
+            include_global (bool | Unset):  Default: False.
     """
 
     project_ids: list[str]
-    name: Union[Literal["scope_projects"], Unset] = "scope_projects"
-    include_global: Union[Unset, bool] = False
+    name: Literal["scope_projects"] | Unset = "scope_projects"
+    include_global: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -51,7 +53,7 @@ class ScorerScopeProjectsFilter:
         d = dict(src_dict)
         project_ids = cast(list[str], d.pop("project_ids"))
 
-        name = cast(Union[Literal["scope_projects"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["scope_projects"] | Unset, d.pop("name", UNSET))
         if name != "scope_projects" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'scope_projects', got '{name}'")
 

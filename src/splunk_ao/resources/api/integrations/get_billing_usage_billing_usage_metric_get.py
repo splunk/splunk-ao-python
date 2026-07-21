@@ -1,6 +1,6 @@
 import datetime
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from uuid import UUID
 
 import httpx
@@ -32,7 +32,7 @@ def _get_kwargs(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     interval: CostInterval,
-    project_id: Union[None, UUID, Unset] = UNSET,
+    project_id: None | Unset | UUID = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -47,7 +47,7 @@ def _get_kwargs(
     json_interval = interval.value
     params["interval"] = json_interval
 
-    json_project_id: Union[None, Unset, str]
+    json_project_id: None | str | Unset
     if isinstance(project_id, Unset):
         json_project_id = UNSET
     elif isinstance(project_id, UUID):
@@ -71,7 +71,7 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[BillingUsageResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> BillingUsageResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = BillingUsageResponse.from_dict(response.json())
 
@@ -102,7 +102,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Bil
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[BillingUsageResponse, HTTPValidationError]]:
+) -> Response[BillingUsageResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -118,8 +118,8 @@ def sync_detailed(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     interval: CostInterval,
-    project_id: Union[None, UUID, Unset] = UNSET,
-) -> Response[Union[BillingUsageResponse, HTTPValidationError]]:
+    project_id: None | Unset | UUID = UNSET,
+) -> Response[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
@@ -127,14 +127,14 @@ def sync_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
-        project_id (Union[None, UUID, Unset]): Optional project filter
+        project_id (None | Unset | UUID): Optional project filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BillingUsageResponse, HTTPValidationError]]
+        Response[BillingUsageResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -153,8 +153,8 @@ def sync(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     interval: CostInterval,
-    project_id: Union[None, UUID, Unset] = UNSET,
-) -> Optional[Union[BillingUsageResponse, HTTPValidationError]]:
+    project_id: None | Unset | UUID = UNSET,
+) -> Optional[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
@@ -162,14 +162,14 @@ def sync(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
-        project_id (Union[None, UUID, Unset]): Optional project filter
+        project_id (None | Unset | UUID): Optional project filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BillingUsageResponse, HTTPValidationError]
+        BillingUsageResponse | HTTPValidationError
     """
 
     return sync_detailed(
@@ -184,8 +184,8 @@ async def asyncio_detailed(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     interval: CostInterval,
-    project_id: Union[None, UUID, Unset] = UNSET,
-) -> Response[Union[BillingUsageResponse, HTTPValidationError]]:
+    project_id: None | Unset | UUID = UNSET,
+) -> Response[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
@@ -193,14 +193,14 @@ async def asyncio_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
-        project_id (Union[None, UUID, Unset]): Optional project filter
+        project_id (None | Unset | UUID): Optional project filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BillingUsageResponse, HTTPValidationError]]
+        Response[BillingUsageResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -219,8 +219,8 @@ async def asyncio(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     interval: CostInterval,
-    project_id: Union[None, UUID, Unset] = UNSET,
-) -> Optional[Union[BillingUsageResponse, HTTPValidationError]]:
+    project_id: None | Unset | UUID = UNSET,
+) -> Optional[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
@@ -228,14 +228,14 @@ async def asyncio(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
-        project_id (Union[None, UUID, Unset]): Optional project filter
+        project_id (None | Unset | UUID): Optional project filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BillingUsageResponse, HTTPValidationError]
+        BillingUsageResponse | HTTPValidationError
     """
 
     return (

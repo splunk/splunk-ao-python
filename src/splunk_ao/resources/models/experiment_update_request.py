@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,33 +16,33 @@ class ExperimentUpdateRequest:
     """
     Attributes:
         name (str):
-        task_type (Union[Literal[16], Literal[17], Unset]):  Default: 16.
-        experiment_group_id (Union[None, Unset, str]):
-        experiment_group_name (Union[None, Unset, str]):
+        task_type (Literal[16] | Literal[17] | Unset):  Default: 16.
+        experiment_group_id (None | str | Unset):
+        experiment_group_name (None | str | Unset):
     """
 
     name: str
-    task_type: Union[Literal[16], Literal[17], Unset] = 16
-    experiment_group_id: Union[None, Unset, str] = UNSET
-    experiment_group_name: Union[None, Unset, str] = UNSET
+    task_type: Literal[16] | Literal[17] | Unset = 16
+    experiment_group_id: None | str | Unset = UNSET
+    experiment_group_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
 
-        task_type: Union[Literal[16], Literal[17], Unset]
+        task_type: Literal[16] | Literal[17] | Unset
         if isinstance(self.task_type, Unset):
             task_type = UNSET
         else:
             task_type = self.task_type
 
-        experiment_group_id: Union[None, Unset, str]
+        experiment_group_id: None | str | Unset
         if isinstance(self.experiment_group_id, Unset):
             experiment_group_id = UNSET
         else:
             experiment_group_id = self.experiment_group_id
 
-        experiment_group_name: Union[None, Unset, str]
+        experiment_group_name: None | str | Unset
         if isinstance(self.experiment_group_name, Unset):
             experiment_group_name = UNSET
         else:
@@ -63,7 +65,7 @@ class ExperimentUpdateRequest:
         d = dict(src_dict)
         name = d.pop("name")
 
-        def _parse_task_type(data: object) -> Union[Literal[16], Literal[17], Unset]:
+        def _parse_task_type(data: object) -> Literal[16] | Literal[17] | Unset:
             if isinstance(data, Unset):
                 return data
             task_type_type_0 = cast(Literal[16], data)
@@ -77,21 +79,21 @@ class ExperimentUpdateRequest:
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 
-        def _parse_experiment_group_id(data: object) -> Union[None, Unset, str]:
+        def _parse_experiment_group_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         experiment_group_id = _parse_experiment_group_id(d.pop("experiment_group_id", UNSET))
 
-        def _parse_experiment_group_name(data: object) -> Union[None, Unset, str]:
+        def _parse_experiment_group_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         experiment_group_name = _parse_experiment_group_name(d.pop("experiment_group_name", UNSET))
 

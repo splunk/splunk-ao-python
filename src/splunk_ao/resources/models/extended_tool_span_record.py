@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.content_modality import ContentModality
 from ..types import UNSET, Unset
@@ -33,51 +34,49 @@ class ExtendedToolSpanRecord:
         project_id (str): Galileo ID of the project associated with this trace or span
         run_id (str): Galileo ID of the run (log stream or experiment) associated with this trace or span
         parent_id (str): Galileo ID of the parent of this span
-        type_ (Union[Literal['tool'], Unset]): Type of the trace, span or session. Default: 'tool'.
-        input_ (Union[Unset, str]): Input to the trace or span. Default: ''.
-        redacted_input (Union[None, Unset, str]): Redacted input of the trace or span.
-        output (Union[None, Unset, str]): Output of the trace or span.
-        redacted_output (Union[None, Unset, str]): Redacted output of the trace or span.
-        name (Union[Unset, str]): Name of the trace, span or session. Default: ''.
-        created_at (Union[Unset, datetime.datetime]): Timestamp of the trace or span's creation.
-        user_metadata (Union[Unset, ExtendedToolSpanRecordUserMetadata]): Metadata associated with this trace or span.
-        tags (Union[Unset, list[str]]): Tags associated with this trace or span.
-        status_code (Union[None, Unset, int]): Status code of the trace or span. Used for logging failure or error
-            states.
-        metrics (Union[Unset, Metrics]):
-        external_id (Union[None, Unset, str]): A user-provided session, trace or span ID.
-        dataset_input (Union[None, Unset, str]): Input to the dataset associated with this trace
-        dataset_output (Union[None, Unset, str]): Output from the dataset associated with this trace
-        dataset_metadata (Union[Unset, ExtendedToolSpanRecordDatasetMetadata]): Metadata from the dataset associated
-            with this trace
-        trace_id (Union[None, Unset, str]): Galileo ID of the trace containing the span (or the same value as id for a
-            trace)
-        updated_at (Union[None, Unset, datetime.datetime]): Timestamp of the session or trace or span's last update
-        has_children (Union[None, Unset, bool]): Whether or not this trace or span has child spans
-        metrics_batch_id (Union[None, Unset, str]): Galileo ID of the metrics batch associated with this trace or span
-        session_batch_id (Union[None, Unset, str]): Galileo ID of the metrics batch associated with this trace or span
-        feedback_rating_info (Union[Unset, ExtendedToolSpanRecordFeedbackRatingInfo]): Feedback information related to
-            the record
-        annotations (Union[Unset, ExtendedToolSpanRecordAnnotations]): Annotations keyed by template ID and annotator ID
-        file_ids (Union[Unset, list[str]]): IDs of files associated with this record
-        file_modalities (Union[Unset, list[ContentModality]]): Modalities of files associated with this record
-        annotation_aggregates (Union[Unset, ExtendedToolSpanRecordAnnotationAggregates]): Annotation aggregate
-            information keyed by template ID
-        annotation_agreement (Union[Unset, ExtendedToolSpanRecordAnnotationAgreement]): Annotation agreement scores
+        type_ (Literal['tool'] | Unset): Type of the trace, span or session. Default: 'tool'.
+        input_ (str | Unset): Input to the trace or span. Default: ''.
+        redacted_input (None | str | Unset): Redacted input of the trace or span.
+        output (None | str | Unset): Output of the trace or span.
+        redacted_output (None | str | Unset): Redacted output of the trace or span.
+        name (str | Unset): Name of the trace, span or session. Default: ''.
+        created_at (datetime.datetime | Unset): Timestamp of the trace or span's creation.
+        user_metadata (ExtendedToolSpanRecordUserMetadata | Unset): Metadata associated with this trace or span.
+        tags (list[str] | Unset): Tags associated with this trace or span.
+        status_code (int | None | Unset): Status code of the trace or span. Used for logging failure or error states.
+        metrics (Metrics | Unset):
+        external_id (None | str | Unset): A user-provided session, trace or span ID.
+        dataset_input (None | str | Unset): Input to the dataset associated with this trace
+        dataset_output (None | str | Unset): Output from the dataset associated with this trace
+        dataset_metadata (ExtendedToolSpanRecordDatasetMetadata | Unset): Metadata from the dataset associated with this
+            trace
+        trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
+        updated_at (datetime.datetime | None | Unset): Timestamp of the session or trace or span's last update
+        has_children (bool | None | Unset): Whether or not this trace or span has child spans
+        metrics_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
+        session_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
+        feedback_rating_info (ExtendedToolSpanRecordFeedbackRatingInfo | Unset): Feedback information related to the
+            record
+        annotations (ExtendedToolSpanRecordAnnotations | Unset): Annotations keyed by template ID and annotator ID
+        file_ids (list[str] | Unset): IDs of files associated with this record
+        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+        annotation_aggregates (ExtendedToolSpanRecordAnnotationAggregates | Unset): Annotation aggregate information
             keyed by template ID
-        overall_annotation_agreement (Union[None, Unset, float]): Average annotation agreement across all templates in
-            the queue
-        annotation_queue_ids (Union[Unset, list[str]]): IDs of annotation queues this record is in
-        fully_annotated (Union[None, Unset, bool]): Whether every field is annotated by every annotator in the queue
-        progress_message (Union[Unset, str]): Runner progress text written directly to CH span Default: ''.
-        error_message (Union[Unset, str]): Runner error text written directly to CH span Default: ''.
-        metric_info (Union['ExtendedToolSpanRecordMetricInfoType0', None, Unset]): Detailed information about the
-            metrics associated with this trace or span
-        files (Union['ExtendedToolSpanRecordFilesType0', None, Unset]): File metadata keyed by file ID for files
-            associated with this record
-        is_complete (Union[Unset, bool]): Whether the parent trace is complete or not Default: True.
-        step_number (Union[None, Unset, int]): Topological step number of the span.
-        tool_call_id (Union[None, Unset, str]): ID of the tool call.
+        annotation_agreement (ExtendedToolSpanRecordAnnotationAgreement | Unset): Annotation agreement scores keyed by
+            template ID
+        overall_annotation_agreement (float | None | Unset): Average annotation agreement across all templates in the
+            queue
+        annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
+        fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+        progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
+        error_message (str | Unset): Runner error text written directly to CH span Default: ''.
+        metric_info (ExtendedToolSpanRecordMetricInfoType0 | None | Unset): Detailed information about the metrics
+            associated with this trace or span
+        files (ExtendedToolSpanRecordFilesType0 | None | Unset): File metadata keyed by file ID for files associated
+            with this record
+        is_complete (bool | Unset): Whether the parent trace is complete or not Default: True.
+        step_number (int | None | Unset): Topological step number of the span.
+        tool_call_id (None | str | Unset): ID of the tool call.
     """
 
     id: str
@@ -85,42 +84,42 @@ class ExtendedToolSpanRecord:
     project_id: str
     run_id: str
     parent_id: str
-    type_: Union[Literal["tool"], Unset] = "tool"
-    input_: Union[Unset, str] = ""
-    redacted_input: Union[None, Unset, str] = UNSET
-    output: Union[None, Unset, str] = UNSET
-    redacted_output: Union[None, Unset, str] = UNSET
-    name: Union[Unset, str] = ""
-    created_at: Union[Unset, datetime.datetime] = UNSET
-    user_metadata: Union[Unset, "ExtendedToolSpanRecordUserMetadata"] = UNSET
-    tags: Union[Unset, list[str]] = UNSET
-    status_code: Union[None, Unset, int] = UNSET
-    metrics: Union[Unset, "Metrics"] = UNSET
-    external_id: Union[None, Unset, str] = UNSET
-    dataset_input: Union[None, Unset, str] = UNSET
-    dataset_output: Union[None, Unset, str] = UNSET
-    dataset_metadata: Union[Unset, "ExtendedToolSpanRecordDatasetMetadata"] = UNSET
-    trace_id: Union[None, Unset, str] = UNSET
-    updated_at: Union[None, Unset, datetime.datetime] = UNSET
-    has_children: Union[None, Unset, bool] = UNSET
-    metrics_batch_id: Union[None, Unset, str] = UNSET
-    session_batch_id: Union[None, Unset, str] = UNSET
-    feedback_rating_info: Union[Unset, "ExtendedToolSpanRecordFeedbackRatingInfo"] = UNSET
-    annotations: Union[Unset, "ExtendedToolSpanRecordAnnotations"] = UNSET
-    file_ids: Union[Unset, list[str]] = UNSET
-    file_modalities: Union[Unset, list[ContentModality]] = UNSET
-    annotation_aggregates: Union[Unset, "ExtendedToolSpanRecordAnnotationAggregates"] = UNSET
-    annotation_agreement: Union[Unset, "ExtendedToolSpanRecordAnnotationAgreement"] = UNSET
-    overall_annotation_agreement: Union[None, Unset, float] = UNSET
-    annotation_queue_ids: Union[Unset, list[str]] = UNSET
-    fully_annotated: Union[None, Unset, bool] = UNSET
-    progress_message: Union[Unset, str] = ""
-    error_message: Union[Unset, str] = ""
-    metric_info: Union["ExtendedToolSpanRecordMetricInfoType0", None, Unset] = UNSET
-    files: Union["ExtendedToolSpanRecordFilesType0", None, Unset] = UNSET
-    is_complete: Union[Unset, bool] = True
-    step_number: Union[None, Unset, int] = UNSET
-    tool_call_id: Union[None, Unset, str] = UNSET
+    type_: Literal["tool"] | Unset = "tool"
+    input_: str | Unset = ""
+    redacted_input: None | str | Unset = UNSET
+    output: None | str | Unset = UNSET
+    redacted_output: None | str | Unset = UNSET
+    name: str | Unset = ""
+    created_at: datetime.datetime | Unset = UNSET
+    user_metadata: ExtendedToolSpanRecordUserMetadata | Unset = UNSET
+    tags: list[str] | Unset = UNSET
+    status_code: int | None | Unset = UNSET
+    metrics: Metrics | Unset = UNSET
+    external_id: None | str | Unset = UNSET
+    dataset_input: None | str | Unset = UNSET
+    dataset_output: None | str | Unset = UNSET
+    dataset_metadata: ExtendedToolSpanRecordDatasetMetadata | Unset = UNSET
+    trace_id: None | str | Unset = UNSET
+    updated_at: datetime.datetime | None | Unset = UNSET
+    has_children: bool | None | Unset = UNSET
+    metrics_batch_id: None | str | Unset = UNSET
+    session_batch_id: None | str | Unset = UNSET
+    feedback_rating_info: ExtendedToolSpanRecordFeedbackRatingInfo | Unset = UNSET
+    annotations: ExtendedToolSpanRecordAnnotations | Unset = UNSET
+    file_ids: list[str] | Unset = UNSET
+    file_modalities: list[ContentModality] | Unset = UNSET
+    annotation_aggregates: ExtendedToolSpanRecordAnnotationAggregates | Unset = UNSET
+    annotation_agreement: ExtendedToolSpanRecordAnnotationAgreement | Unset = UNSET
+    overall_annotation_agreement: float | None | Unset = UNSET
+    annotation_queue_ids: list[str] | Unset = UNSET
+    fully_annotated: bool | None | Unset = UNSET
+    progress_message: str | Unset = ""
+    error_message: str | Unset = ""
+    metric_info: ExtendedToolSpanRecordMetricInfoType0 | None | Unset = UNSET
+    files: ExtendedToolSpanRecordFilesType0 | None | Unset = UNSET
+    is_complete: bool | Unset = True
+    step_number: int | None | Unset = UNSET
+    tool_call_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -141,19 +140,19 @@ class ExtendedToolSpanRecord:
 
         input_ = self.input_
 
-        redacted_input: Union[None, Unset, str]
+        redacted_input: None | str | Unset
         if isinstance(self.redacted_input, Unset):
             redacted_input = UNSET
         else:
             redacted_input = self.redacted_input
 
-        output: Union[None, Unset, str]
+        output: None | str | Unset
         if isinstance(self.output, Unset):
             output = UNSET
         else:
             output = self.output
 
-        redacted_output: Union[None, Unset, str]
+        redacted_output: None | str | Unset
         if isinstance(self.redacted_output, Unset):
             redacted_output = UNSET
         else:
@@ -161,57 +160,57 @@ class ExtendedToolSpanRecord:
 
         name = self.name
 
-        created_at: Union[Unset, str] = UNSET
+        created_at: str | Unset = UNSET
         if not isinstance(self.created_at, Unset):
             created_at = self.created_at.isoformat()
 
-        user_metadata: Union[Unset, dict[str, Any]] = UNSET
+        user_metadata: dict[str, Any] | Unset = UNSET
         if not isinstance(self.user_metadata, Unset):
             user_metadata = self.user_metadata.to_dict()
 
-        tags: Union[Unset, list[str]] = UNSET
+        tags: list[str] | Unset = UNSET
         if not isinstance(self.tags, Unset):
             tags = self.tags
 
-        status_code: Union[None, Unset, int]
+        status_code: int | None | Unset
         if isinstance(self.status_code, Unset):
             status_code = UNSET
         else:
             status_code = self.status_code
 
-        metrics: Union[Unset, dict[str, Any]] = UNSET
+        metrics: dict[str, Any] | Unset = UNSET
         if not isinstance(self.metrics, Unset):
             metrics = self.metrics.to_dict()
 
-        external_id: Union[None, Unset, str]
+        external_id: None | str | Unset
         if isinstance(self.external_id, Unset):
             external_id = UNSET
         else:
             external_id = self.external_id
 
-        dataset_input: Union[None, Unset, str]
+        dataset_input: None | str | Unset
         if isinstance(self.dataset_input, Unset):
             dataset_input = UNSET
         else:
             dataset_input = self.dataset_input
 
-        dataset_output: Union[None, Unset, str]
+        dataset_output: None | str | Unset
         if isinstance(self.dataset_output, Unset):
             dataset_output = UNSET
         else:
             dataset_output = self.dataset_output
 
-        dataset_metadata: Union[Unset, dict[str, Any]] = UNSET
+        dataset_metadata: dict[str, Any] | Unset = UNSET
         if not isinstance(self.dataset_metadata, Unset):
             dataset_metadata = self.dataset_metadata.to_dict()
 
-        trace_id: Union[None, Unset, str]
+        trace_id: None | str | Unset
         if isinstance(self.trace_id, Unset):
             trace_id = UNSET
         else:
             trace_id = self.trace_id
 
-        updated_at: Union[None, Unset, str]
+        updated_at: None | str | Unset
         if isinstance(self.updated_at, Unset):
             updated_at = UNSET
         elif isinstance(self.updated_at, datetime.datetime):
@@ -219,62 +218,62 @@ class ExtendedToolSpanRecord:
         else:
             updated_at = self.updated_at
 
-        has_children: Union[None, Unset, bool]
+        has_children: bool | None | Unset
         if isinstance(self.has_children, Unset):
             has_children = UNSET
         else:
             has_children = self.has_children
 
-        metrics_batch_id: Union[None, Unset, str]
+        metrics_batch_id: None | str | Unset
         if isinstance(self.metrics_batch_id, Unset):
             metrics_batch_id = UNSET
         else:
             metrics_batch_id = self.metrics_batch_id
 
-        session_batch_id: Union[None, Unset, str]
+        session_batch_id: None | str | Unset
         if isinstance(self.session_batch_id, Unset):
             session_batch_id = UNSET
         else:
             session_batch_id = self.session_batch_id
 
-        feedback_rating_info: Union[Unset, dict[str, Any]] = UNSET
+        feedback_rating_info: dict[str, Any] | Unset = UNSET
         if not isinstance(self.feedback_rating_info, Unset):
             feedback_rating_info = self.feedback_rating_info.to_dict()
 
-        annotations: Union[Unset, dict[str, Any]] = UNSET
+        annotations: dict[str, Any] | Unset = UNSET
         if not isinstance(self.annotations, Unset):
             annotations = self.annotations.to_dict()
 
-        file_ids: Union[Unset, list[str]] = UNSET
+        file_ids: list[str] | Unset = UNSET
         if not isinstance(self.file_ids, Unset):
             file_ids = self.file_ids
 
-        file_modalities: Union[Unset, list[str]] = UNSET
+        file_modalities: list[str] | Unset = UNSET
         if not isinstance(self.file_modalities, Unset):
             file_modalities = []
             for file_modalities_item_data in self.file_modalities:
                 file_modalities_item = file_modalities_item_data.value
                 file_modalities.append(file_modalities_item)
 
-        annotation_aggregates: Union[Unset, dict[str, Any]] = UNSET
+        annotation_aggregates: dict[str, Any] | Unset = UNSET
         if not isinstance(self.annotation_aggregates, Unset):
             annotation_aggregates = self.annotation_aggregates.to_dict()
 
-        annotation_agreement: Union[Unset, dict[str, Any]] = UNSET
+        annotation_agreement: dict[str, Any] | Unset = UNSET
         if not isinstance(self.annotation_agreement, Unset):
             annotation_agreement = self.annotation_agreement.to_dict()
 
-        overall_annotation_agreement: Union[None, Unset, float]
+        overall_annotation_agreement: float | None | Unset
         if isinstance(self.overall_annotation_agreement, Unset):
             overall_annotation_agreement = UNSET
         else:
             overall_annotation_agreement = self.overall_annotation_agreement
 
-        annotation_queue_ids: Union[Unset, list[str]] = UNSET
+        annotation_queue_ids: list[str] | Unset = UNSET
         if not isinstance(self.annotation_queue_ids, Unset):
             annotation_queue_ids = self.annotation_queue_ids
 
-        fully_annotated: Union[None, Unset, bool]
+        fully_annotated: bool | None | Unset
         if isinstance(self.fully_annotated, Unset):
             fully_annotated = UNSET
         else:
@@ -284,7 +283,7 @@ class ExtendedToolSpanRecord:
 
         error_message = self.error_message
 
-        metric_info: Union[None, Unset, dict[str, Any]]
+        metric_info: dict[str, Any] | None | Unset
         if isinstance(self.metric_info, Unset):
             metric_info = UNSET
         elif isinstance(self.metric_info, ExtendedToolSpanRecordMetricInfoType0):
@@ -292,7 +291,7 @@ class ExtendedToolSpanRecord:
         else:
             metric_info = self.metric_info
 
-        files: Union[None, Unset, dict[str, Any]]
+        files: dict[str, Any] | None | Unset
         if isinstance(self.files, Unset):
             files = UNSET
         elif isinstance(self.files, ExtendedToolSpanRecordFilesType0):
@@ -302,13 +301,13 @@ class ExtendedToolSpanRecord:
 
         is_complete = self.is_complete
 
-        step_number: Union[None, Unset, int]
+        step_number: int | None | Unset
         if isinstance(self.step_number, Unset):
             step_number = UNSET
         else:
             step_number = self.step_number
 
-        tool_call_id: Union[None, Unset, str]
+        tool_call_id: None | str | Unset
         if isinstance(self.tool_call_id, Unset):
             tool_call_id = UNSET
         else:
@@ -417,50 +416,50 @@ class ExtendedToolSpanRecord:
 
         parent_id = d.pop("parent_id")
 
-        type_ = cast(Union[Literal["tool"], Unset], d.pop("type", UNSET))
+        type_ = cast(Literal["tool"] | Unset, d.pop("type", UNSET))
         if type_ != "tool" and not isinstance(type_, Unset):
             raise ValueError(f"type must match const 'tool', got '{type_}'")
 
         input_ = d.pop("input", UNSET)
 
-        def _parse_redacted_input(data: object) -> Union[None, Unset, str]:
+        def _parse_redacted_input(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         redacted_input = _parse_redacted_input(d.pop("redacted_input", UNSET))
 
-        def _parse_output(data: object) -> Union[None, Unset, str]:
+        def _parse_output(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         output = _parse_output(d.pop("output", UNSET))
 
-        def _parse_redacted_output(data: object) -> Union[None, Unset, str]:
+        def _parse_redacted_output(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         redacted_output = _parse_redacted_output(d.pop("redacted_output", UNSET))
 
         name = d.pop("name", UNSET)
 
         _created_at = d.pop("created_at", UNSET)
-        created_at: Union[Unset, datetime.datetime]
+        created_at: datetime.datetime | Unset
         if isinstance(_created_at, Unset):
             created_at = UNSET
         else:
-            created_at = isoparse(_created_at)
+            created_at = datetime.datetime.fromisoformat(_created_at)
 
         _user_metadata = d.pop("user_metadata", UNSET)
-        user_metadata: Union[Unset, ExtendedToolSpanRecordUserMetadata]
+        user_metadata: ExtendedToolSpanRecordUserMetadata | Unset
         if isinstance(_user_metadata, Unset):
             user_metadata = UNSET
         else:
@@ -468,66 +467,66 @@ class ExtendedToolSpanRecord:
 
         tags = cast(list[str], d.pop("tags", UNSET))
 
-        def _parse_status_code(data: object) -> Union[None, Unset, int]:
+        def _parse_status_code(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
 
         _metrics = d.pop("metrics", UNSET)
-        metrics: Union[Unset, Metrics]
+        metrics: Metrics | Unset
         if isinstance(_metrics, Unset):
             metrics = UNSET
         else:
             metrics = Metrics.from_dict(_metrics)
 
-        def _parse_external_id(data: object) -> Union[None, Unset, str]:
+        def _parse_external_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
 
-        def _parse_dataset_input(data: object) -> Union[None, Unset, str]:
+        def _parse_dataset_input(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
 
-        def _parse_dataset_output(data: object) -> Union[None, Unset, str]:
+        def _parse_dataset_output(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
 
         _dataset_metadata = d.pop("dataset_metadata", UNSET)
-        dataset_metadata: Union[Unset, ExtendedToolSpanRecordDatasetMetadata]
+        dataset_metadata: ExtendedToolSpanRecordDatasetMetadata | Unset
         if isinstance(_dataset_metadata, Unset):
             dataset_metadata = UNSET
         else:
             dataset_metadata = ExtendedToolSpanRecordDatasetMetadata.from_dict(_dataset_metadata)
 
-        def _parse_trace_id(data: object) -> Union[None, Unset, str]:
+        def _parse_trace_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         trace_id = _parse_trace_id(d.pop("trace_id", UNSET))
 
-        def _parse_updated_at(data: object) -> Union[None, Unset, datetime.datetime]:
+        def _parse_updated_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -535,51 +534,51 @@ class ExtendedToolSpanRecord:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                updated_at_type_0 = isoparse(data)
+                updated_at_type_0 = datetime.datetime.fromisoformat(data)
 
                 return updated_at_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, datetime.datetime], data)
+            return cast(datetime.datetime | None | Unset, data)
 
         updated_at = _parse_updated_at(d.pop("updated_at", UNSET))
 
-        def _parse_has_children(data: object) -> Union[None, Unset, bool]:
+        def _parse_has_children(data: object) -> bool | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, bool], data)
+            return cast(bool | None | Unset, data)
 
         has_children = _parse_has_children(d.pop("has_children", UNSET))
 
-        def _parse_metrics_batch_id(data: object) -> Union[None, Unset, str]:
+        def _parse_metrics_batch_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         metrics_batch_id = _parse_metrics_batch_id(d.pop("metrics_batch_id", UNSET))
 
-        def _parse_session_batch_id(data: object) -> Union[None, Unset, str]:
+        def _parse_session_batch_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         session_batch_id = _parse_session_batch_id(d.pop("session_batch_id", UNSET))
 
         _feedback_rating_info = d.pop("feedback_rating_info", UNSET)
-        feedback_rating_info: Union[Unset, ExtendedToolSpanRecordFeedbackRatingInfo]
+        feedback_rating_info: ExtendedToolSpanRecordFeedbackRatingInfo | Unset
         if isinstance(_feedback_rating_info, Unset):
             feedback_rating_info = UNSET
         else:
             feedback_rating_info = ExtendedToolSpanRecordFeedbackRatingInfo.from_dict(_feedback_rating_info)
 
         _annotations = d.pop("annotations", UNSET)
-        annotations: Union[Unset, ExtendedToolSpanRecordAnnotations]
+        annotations: ExtendedToolSpanRecordAnnotations | Unset
         if isinstance(_annotations, Unset):
             annotations = UNSET
         else:
@@ -587,44 +586,46 @@ class ExtendedToolSpanRecord:
 
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
-        file_modalities = []
         _file_modalities = d.pop("file_modalities", UNSET)
-        for file_modalities_item_data in _file_modalities or []:
-            file_modalities_item = ContentModality(file_modalities_item_data)
+        file_modalities: list[ContentModality] | Unset = UNSET
+        if _file_modalities is not UNSET:
+            file_modalities = []
+            for file_modalities_item_data in _file_modalities:
+                file_modalities_item = ContentModality(file_modalities_item_data)
 
-            file_modalities.append(file_modalities_item)
+                file_modalities.append(file_modalities_item)
 
         _annotation_aggregates = d.pop("annotation_aggregates", UNSET)
-        annotation_aggregates: Union[Unset, ExtendedToolSpanRecordAnnotationAggregates]
+        annotation_aggregates: ExtendedToolSpanRecordAnnotationAggregates | Unset
         if isinstance(_annotation_aggregates, Unset):
             annotation_aggregates = UNSET
         else:
             annotation_aggregates = ExtendedToolSpanRecordAnnotationAggregates.from_dict(_annotation_aggregates)
 
         _annotation_agreement = d.pop("annotation_agreement", UNSET)
-        annotation_agreement: Union[Unset, ExtendedToolSpanRecordAnnotationAgreement]
+        annotation_agreement: ExtendedToolSpanRecordAnnotationAgreement | Unset
         if isinstance(_annotation_agreement, Unset):
             annotation_agreement = UNSET
         else:
             annotation_agreement = ExtendedToolSpanRecordAnnotationAgreement.from_dict(_annotation_agreement)
 
-        def _parse_overall_annotation_agreement(data: object) -> Union[None, Unset, float]:
+        def _parse_overall_annotation_agreement(data: object) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, float], data)
+            return cast(float | None | Unset, data)
 
         overall_annotation_agreement = _parse_overall_annotation_agreement(d.pop("overall_annotation_agreement", UNSET))
 
         annotation_queue_ids = cast(list[str], d.pop("annotation_queue_ids", UNSET))
 
-        def _parse_fully_annotated(data: object) -> Union[None, Unset, bool]:
+        def _parse_fully_annotated(data: object) -> bool | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, bool], data)
+            return cast(bool | None | Unset, data)
 
         fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
 
@@ -632,7 +633,7 @@ class ExtendedToolSpanRecord:
 
         error_message = d.pop("error_message", UNSET)
 
-        def _parse_metric_info(data: object) -> Union["ExtendedToolSpanRecordMetricInfoType0", None, Unset]:
+        def _parse_metric_info(data: object) -> ExtendedToolSpanRecordMetricInfoType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -645,11 +646,11 @@ class ExtendedToolSpanRecord:
                 return metric_info_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["ExtendedToolSpanRecordMetricInfoType0", None, Unset], data)
+            return cast(ExtendedToolSpanRecordMetricInfoType0 | None | Unset, data)
 
         metric_info = _parse_metric_info(d.pop("metric_info", UNSET))
 
-        def _parse_files(data: object) -> Union["ExtendedToolSpanRecordFilesType0", None, Unset]:
+        def _parse_files(data: object) -> ExtendedToolSpanRecordFilesType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -662,27 +663,27 @@ class ExtendedToolSpanRecord:
                 return files_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["ExtendedToolSpanRecordFilesType0", None, Unset], data)
+            return cast(ExtendedToolSpanRecordFilesType0 | None | Unset, data)
 
         files = _parse_files(d.pop("files", UNSET))
 
         is_complete = d.pop("is_complete", UNSET)
 
-        def _parse_step_number(data: object) -> Union[None, Unset, int]:
+        def _parse_step_number(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
 
-        def _parse_tool_call_id(data: object) -> Union[None, Unset, str]:
+        def _parse_tool_call_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         tool_call_id = _parse_tool_call_id(d.pop("tool_call_id", UNSET))
 

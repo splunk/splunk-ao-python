@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.collaborator_role import CollaboratorRole
 from ..types import UNSET, Unset
@@ -25,26 +26,26 @@ class UserAnnotationQueueCollaborator:
         role (CollaboratorRole):
         created_at (datetime.datetime):
         user_id (str):
-        first_name (Union[None, str]):
-        last_name (Union[None, str]):
+        first_name (None | str):
+        last_name (None | str):
         email (str):
         annotation_queue_id (str):
-        permissions (Union[Unset, list['Permission']]):
-        track_progress (Union[Unset, bool]):  Default: True.
-        progress (Union[None, Unset, float]):
+        permissions (list[Permission] | Unset):
+        track_progress (bool | Unset):  Default: True.
+        progress (float | None | Unset):
     """
 
     id: str
     role: CollaboratorRole
     created_at: datetime.datetime
     user_id: str
-    first_name: Union[None, str]
-    last_name: Union[None, str]
+    first_name: None | str
+    last_name: None | str
     email: str
     annotation_queue_id: str
-    permissions: Union[Unset, list["Permission"]] = UNSET
-    track_progress: Union[Unset, bool] = True
-    progress: Union[None, Unset, float] = UNSET
+    permissions: list[Permission] | Unset = UNSET
+    track_progress: bool | Unset = True
+    progress: float | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -56,17 +57,17 @@ class UserAnnotationQueueCollaborator:
 
         user_id = self.user_id
 
-        first_name: Union[None, str]
+        first_name: None | str
         first_name = self.first_name
 
-        last_name: Union[None, str]
+        last_name: None | str
         last_name = self.last_name
 
         email = self.email
 
         annotation_queue_id = self.annotation_queue_id
 
-        permissions: Union[Unset, list[dict[str, Any]]] = UNSET
+        permissions: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.permissions, Unset):
             permissions = []
             for permissions_item_data in self.permissions:
@@ -75,7 +76,7 @@ class UserAnnotationQueueCollaborator:
 
         track_progress = self.track_progress
 
-        progress: Union[None, Unset, float]
+        progress: float | None | Unset
         if isinstance(self.progress, Unset):
             progress = UNSET
         else:
@@ -113,21 +114,21 @@ class UserAnnotationQueueCollaborator:
 
         role = CollaboratorRole(d.pop("role"))
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
         user_id = d.pop("user_id")
 
-        def _parse_first_name(data: object) -> Union[None, str]:
+        def _parse_first_name(data: object) -> None | str:
             if data is None:
                 return data
-            return cast(Union[None, str], data)
+            return cast(None | str, data)
 
         first_name = _parse_first_name(d.pop("first_name"))
 
-        def _parse_last_name(data: object) -> Union[None, str]:
+        def _parse_last_name(data: object) -> None | str:
             if data is None:
                 return data
-            return cast(Union[None, str], data)
+            return cast(None | str, data)
 
         last_name = _parse_last_name(d.pop("last_name"))
 
@@ -135,21 +136,23 @@ class UserAnnotationQueueCollaborator:
 
         annotation_queue_id = d.pop("annotation_queue_id")
 
-        permissions = []
         _permissions = d.pop("permissions", UNSET)
-        for permissions_item_data in _permissions or []:
-            permissions_item = Permission.from_dict(permissions_item_data)
+        permissions: list[Permission] | Unset = UNSET
+        if _permissions is not UNSET:
+            permissions = []
+            for permissions_item_data in _permissions:
+                permissions_item = Permission.from_dict(permissions_item_data)
 
-            permissions.append(permissions_item)
+                permissions.append(permissions_item)
 
         track_progress = d.pop("track_progress", UNSET)
 
-        def _parse_progress(data: object) -> Union[None, Unset, float]:
+        def _parse_progress(data: object) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, float], data)
+            return cast(float | None | Unset, data)
 
         progress = _parse_progress(d.pop("progress", UNSET))
 
