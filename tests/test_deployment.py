@@ -205,16 +205,16 @@ def test_missing_standalone_config_names_both_required_variables() -> None:
 
 def test_otlp_endpoint_derived_from_console_url_when_api_url_unset() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://console.demo.galileocloud.io")
-    assert cfg.otlp_endpoint == "https://api.demo.galileocloud.io/otel/traces"
+    assert cfg.otlp_endpoint == "https://api.demo.galileocloud.io/otel/v1/traces"
 
 
 def test_otlp_endpoint_derived_from_app_url() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://app.galileo.ai/")
-    assert cfg.otlp_endpoint == "https://api.galileo.ai/otel/traces"
+    assert cfg.otlp_endpoint == "https://api.galileo.ai/otel/v1/traces"
 
 
 def test_otlp_endpoint_uses_explicit_api_url_when_set() -> None:
     cfg = StandaloneConfig(
         api_key="key", console_url="https://console.demo.galileocloud.io", api_url="https://custom-api.example.com/"
     )
-    assert cfg.otlp_endpoint == "https://custom-api.example.com/otel/traces"
+    assert cfg.otlp_endpoint == "https://custom-api.example.com/otel/v1/traces"

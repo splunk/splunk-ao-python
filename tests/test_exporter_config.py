@@ -22,7 +22,7 @@ def test_standalone_exporter_endpoint() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://ao.example.com")
     result = resolve_standalone_exporter_config(cfg, routing=make_routing(project_name="proj1"))
 
-    assert result.endpoint == cfg.otlp_endpoint == "https://ao.example.com/otel/traces"
+    assert result.endpoint == cfg.otlp_endpoint == "https://ao.example.com/otel/v1/traces"
 
 
 def test_standalone_exporter_endpoint_uses_explicit_api_url() -> None:
@@ -31,7 +31,7 @@ def test_standalone_exporter_endpoint_uses_explicit_api_url() -> None:
     )
     result = resolve_standalone_exporter_config(cfg, routing=make_routing(project_name="proj1"))
 
-    assert result.endpoint == "https://custom-api.example.com/otel/traces"
+    assert result.endpoint == "https://custom-api.example.com/otel/v1/traces"
 
 
 def test_standalone_exporter_auth_header_uses_unmasked_secret() -> None:
@@ -134,7 +134,7 @@ def test_build_standalone_exporter_passes_resolved_public_config_to_factory() ->
 
     assert exporter is expected_exporter
     assert captured == {
-        "endpoint": "https://api.demo.galileocloud.io/otel/traces",
+        "endpoint": "https://api.demo.galileocloud.io/otel/v1/traces",
         "headers": {"Splunk-AO-API-Key": "key", "project": "p"},
     }
 

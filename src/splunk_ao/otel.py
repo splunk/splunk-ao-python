@@ -127,7 +127,7 @@ class SplunkAOOTLPExporter(OTLPSpanExporter):
         # Ensure base_url ends with / for proper joining
         if not base_url.endswith("/"):
             base_url += "/"
-        endpoint: str = urljoin(base_url, "otel/traces")
+        endpoint: str = urljoin(base_url, "otel/v1/traces")
         api_key = config.api_key.get_secret_value() if config.api_key else None
 
         if not api_key:

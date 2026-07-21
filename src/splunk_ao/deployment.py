@@ -149,4 +149,4 @@ class StandaloneConfig:
     def otlp_endpoint(self) -> str:
         """Return the explicit or console-derived OTLP trace endpoint."""
         base = self.api_url or self.console_url.replace("://console.", "://api.", 1).replace("://app.", "://api.", 1)
-        return f"{base.rstrip('/')}/otel/traces"
+        return f"{base.rstrip('/')}/otel/v1/traces"
