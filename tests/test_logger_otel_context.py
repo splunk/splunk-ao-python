@@ -335,6 +335,51 @@ async def test_concurrent_traces_on_same_logger_are_isolated(make_logger: Callab
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("use_async_flush", [False, True], ids=["sync", "async"])
+async def test_concurrent_flush_preserves_other_request_otel_ids(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch, use_async_flush: bool
+) -> None:
+    logger = make_logger()
+    first_started = asyncio.Event()
+    second_started = asyncio.Event()
+    flush_completed = asyncio.Event()
+
+    async def skip_ingestion() -> list[object]:
+        return []
+
+    monkeypatch.setattr(logger, "_flush_batch", skip_ingestion)
+
+    async def flush_first_request() -> None:
+        root = logger.start_trace(input="request-a")
+        first_started.set()
+        await second_started.wait()
+
+        if use_async_flush:
+            await logger.async_flush()
+        else:
+            logger.flush()
+
+        assert root.id not in logger._otel_ids
+        flush_completed.set()
+
+    async def continue_second_request() -> None:
+        await first_started.wait()
+        root = logger.start_trace(input="request-b")
+        root_context = logger._otel_ids[root.id].span_context
+        second_started.set()
+        await flush_completed.wait()
+
+        assert root.id in logger._otel_ids
+        child = logger.add_llm_span(input="prompt", output="answer", model="model")
+        assert logger._otel_ids[child.id].parent_span_context == root_context
+        logger.conclude(output="request-b-output")
+
+    await asyncio.gather(flush_first_request(), continue_second_request())
+
+    assert logger._otel_ids == {}
+
+
+@pytest.mark.asyncio
 async def test_copied_async_context_can_add_and_conclude_child(make_logger: Callable[[], SplunkAOLogger]) -> None:
     logger = make_logger()
     root = logger.start_trace(input="q")

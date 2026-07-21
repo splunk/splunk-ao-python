@@ -2202,10 +2202,10 @@ class SplunkAOLogger(TracesLogger):
                     return async_run(self._flush_distributed())
                 return async_run(self._flush_batch())
             finally:
-                # Reset parent tracking in the main thread (async_run uses thread pool).
-                # Using finally ensures cleanup even if ingestion fails.
-                self._set_current_parent(None)
-                self._otel_ids.clear()
+                # Reset only the calling request in the main thread (async_run uses
+                # a thread pool). Other async contexts may still have open traces on
+                # this reusable logger, so their stable identities must be retained.
+                self.reset_parent_tracking()
         except Exception as e:
             if on_error is not None:
                 # Guard the callback so a buggy on_error never crashes the caller.
@@ -2237,9 +2237,9 @@ class SplunkAOLogger(TracesLogger):
                 return await self._flush_distributed()
             return await self._flush_batch()
         finally:
-            # Reset parent tracking. Using finally ensures cleanup even if ingestion fails.
-            self._set_current_parent(None)
-            self._otel_ids.clear()
+            # Reset only the calling request. Other async contexts may still have
+            # open traces on this reusable logger.
+            self.reset_parent_tracking()
 
     @async_warn_catch_exception(exceptions=(Exception,))
     async def _wait_for_all_tasks_async(self, timeout_seconds: int) -> None:
@@ -2457,6 +2457,10 @@ class SplunkAOLogger(TracesLogger):
                 except RuntimeError as e:
                     # Event loop might be closed during shutdown, log warning but don't crash
                     self._logger.warning(f"Could not flush during terminate due to event loop shutdown: {e}")
+                finally:
+                    # terminate() invalidates the entire logger, unlike reusable
+                    # flush(), so no identity from another context may survive.
+                    self._otel_ids.clear()
         finally:
             try:
                 self.disable_agent_control()
