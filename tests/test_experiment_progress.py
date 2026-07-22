@@ -11,13 +11,17 @@ FIXED_PROJECT_ID = str(uuid4())
 FIXED_EXPERIMENT_ID = str(uuid4())
 
 
-def _make_status(progress_percent: float) -> ExperimentStatusInfo:
+def _make_status(progress_percent: float, *, failed: bool = False) -> ExperimentStatusInfo:
     """Build an ExperimentStatusInfo with a given log_generation progress (0-100)."""
     phase = MagicMock()
     phase.progress_percent = progress_percent / 100.0  # API uses 0.0-1.0
     response = MagicMock()
     response.status.log_generation = phase
-    return ExperimentStatusInfo(response)
+    status = ExperimentStatusInfo(response)
+    if failed:
+        # Override is_failed; is_complete stays False so the loop doesn't exit cleanly
+        type(status).is_failed = property(lambda self: True)
+    return status
 
 
 def _make_experiment() -> Experiment:
@@ -100,3 +104,40 @@ class TestMonitorProgress:
         # When/Then: monitor_progress emits a DeprecationWarning when job_id is supplied
         with pytest.warns(DeprecationWarning, match="job_id"):
             exp.monitor_progress(job_id="some-old-job-id")
+
+    @patch("splunk_ao.experiment.Experiment.get_status")
+    @patch("splunk_ao.experiment.sleep", return_value=None)
+    def test_raises_runtime_error_on_failed_experiment(self, mock_sleep, mock_get_status):
+        # Given: an experiment that enters a failed state on the second poll
+        mock_get_status.side_effect = [_make_status(30.0), _make_status(30.0, failed=True)]
+        exp = _make_experiment()
+
+        # When/Then: monitor_progress raises RuntimeError instead of polling forever
+        with pytest.raises(RuntimeError, match="failed state"):
+            exp.monitor_progress(poll_interval_seconds=0.0)
+
+    @patch("splunk_ao.experiment.Experiment.get_status")
+    @patch("splunk_ao.experiment.sleep", return_value=None)
+    def test_raises_timeout_error_when_deadline_exceeded(self, mock_sleep, mock_get_status):
+        # Given: an experiment stuck at 50% forever with a very short timeout
+        mock_get_status.return_value = _make_status(50.0)
+        exp = _make_experiment()
+
+        # When/Then: monitor_progress raises TimeoutError
+        # Use a tiny timeout and a non-zero interval so the real clock eventually trips it
+        with pytest.raises(TimeoutError, match="did not complete within"):
+            exp.monitor_progress(poll_interval_seconds=0.001, timeout_seconds=0.0)
+
+    @patch("splunk_ao.experiment.Experiment.get_status")
+    @patch("splunk_ao.experiment.sleep", return_value=None)
+    def test_positional_string_job_id_warns_and_uses_default_interval(self, mock_sleep, mock_get_status):
+        # Given: a legacy caller that passed job_id positionally as a string
+        mock_get_status.return_value = _make_status(100.0)
+        exp = _make_experiment()
+
+        # When/Then: a DeprecationWarning is emitted and the call completes without TypeError
+        with pytest.warns(DeprecationWarning, match="positional"):
+            exp.monitor_progress("some-legacy-job-id")
+
+        # And: sleep is never called (experiment was already complete on first poll)
+        mock_sleep.assert_not_called()

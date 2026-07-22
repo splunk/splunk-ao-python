@@ -1121,7 +1121,13 @@ class Experiment(StateManagementMixin):
 
         return ExperimentStatusInfo(self._experiment_response)
 
-    def monitor_progress(self, poll_interval_seconds: float = 2.0, *, job_id: str | None = None) -> None:
+    def monitor_progress(
+        self,
+        poll_interval_seconds: float = 2.0,
+        *,
+        timeout_seconds: float | None = 3600.0,
+        job_id: str | None = None,
+    ) -> None:
         """
         Monitor the progress of the experiment with a progress bar.
 
@@ -1132,6 +1138,9 @@ class Experiment(StateManagementMixin):
         ----------
         poll_interval_seconds : float, optional
             Seconds to wait between status polls. Defaults to 2.0.
+        timeout_seconds : float or None, optional
+            Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
+            (one hour). Pass None to wait indefinitely (not recommended).
         job_id : str or None, optional
             Deprecated. This parameter is ignored; it existed in a prior version
             that polled the jobs table, which has been retired.
@@ -1144,6 +1153,10 @@ class Experiment(StateManagementMixin):
         ------
         ValueError
             If the experiment lacks required id or project_id attributes.
+        RuntimeError
+            If the experiment enters a failed state.
+        TimeoutError
+            If the experiment does not complete within timeout_seconds.
 
         Examples
         --------
@@ -1155,6 +1168,16 @@ class Experiment(StateManagementMixin):
 
             experiment.monitor_progress()
         """
+        if isinstance(poll_interval_seconds, str):
+            warnings.warn(
+                "monitor_progress() received a string as its first argument. "
+                "The 'job_id' positional parameter was removed; pass job_id as a keyword argument instead. "
+                "The string value will be ignored and the default poll interval will be used.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            poll_interval_seconds = 2.0
+
         if job_id is not None:
             warnings.warn(
                 "The 'job_id' parameter of monitor_progress() is deprecated and will be removed in a future release. "
@@ -1170,10 +1193,24 @@ class Experiment(StateManagementMixin):
 
         _logger.info(f"Experiment.monitor_progress: experiment_id='{self.id}' - started")
 
+        import time
+
+        deadline = time.monotonic() + timeout_seconds if timeout_seconds is not None else None
+
         status = self.get_status()
         progress_bar = tqdm(total=100, unit="%", desc="Experiment progress")
         try:
             while not status.is_complete:
+                if status.is_failed:
+                    raise RuntimeError(
+                        f"Experiment '{self.id}' entered a failed state. "
+                        "Check the experiment results for details."
+                    )
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        f"Experiment '{self.id}' did not complete within {timeout_seconds}s. "
+                        "Increase timeout_seconds or pass None to wait indefinitely."
+                    )
                 new_progress = status.overall_progress
                 progress_bar.update(new_progress - progress_bar.n)
                 sleep(poll_interval_seconds)
