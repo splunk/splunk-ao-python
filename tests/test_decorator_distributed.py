@@ -522,7 +522,7 @@ def test_decorator_trace_duration_is_set_and_accumulates(
 
     # Verify duration is set and is a reasonable value (>= 0)
     assert first_duration is not None, "First trace duration should be set"
-    assert first_duration > 0, f"First trace duration should be >= 0, got {first_duration}ns"
+    assert first_duration >= 0, f"First trace duration should be >= 0, got {first_duration}ns"
 
     # Execute second workflow
     result2 = workflow_step_2()

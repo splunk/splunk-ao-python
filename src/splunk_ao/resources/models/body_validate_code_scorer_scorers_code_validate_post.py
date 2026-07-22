@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from io import BytesIO
 from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, Unset
+from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyValidateCodeScorerScorersCodeValidatePost")
 
@@ -16,14 +17,14 @@ T = TypeVar("T", bound="BodyValidateCodeScorerScorersCodeValidatePost")
 class BodyValidateCodeScorerScorersCodeValidatePost:
     """
     Attributes:
-        file (str):
+        file (File):
         test_input (None | str | Unset):
         test_output (None | str | Unset):
         required_scorers (list[str] | None | str | Unset):
         scoreable_node_types (list[str] | None | str | Unset):
     """
 
-    file: str
+    file: File
     test_input: None | str | Unset = UNSET
     test_output: None | str | Unset = UNSET
     required_scorers: list[str] | None | str | Unset = UNSET
@@ -31,7 +32,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        file = self.file
+        file = self.file.to_tuple()
 
         test_input: None | str | Unset
         if isinstance(self.test_input, Unset):
@@ -80,7 +81,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
     def to_multipart(self) -> types.RequestFiles:
         files: types.RequestFiles = []
 
-        files.append(("file", (None, str(self.file).encode(), "text/plain")))
+        files.append(("file", self.file.to_tuple()))
 
         if not isinstance(self.test_input, Unset):
             if isinstance(self.test_input, str):
@@ -127,7 +128,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        file = d.pop("file")
+        file = File(payload=BytesIO(d.pop("file")))
 
         def _parse_test_input(data: object) -> None | str | Unset:
             if data is None:
