@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from io import BytesIO
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, Unset
+from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost")
 
@@ -17,25 +18,31 @@ class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
     """
     Attributes:
         body (str): JSON-encoded GeneratedScorerValidationRequest
-        query_files (list[str] | Unset):
-        response_files (list[str] | Unset):
+        query_files (list[File] | Unset):
+        response_files (list[File] | Unset):
     """
 
     body: str
-    query_files: list[str] | Unset = UNSET
-    response_files: list[str] | Unset = UNSET
+    query_files: list[File] | Unset = UNSET
+    response_files: list[File] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         body = self.body
 
-        query_files: list[str] | Unset = UNSET
+        query_files: list[Any] | Unset = UNSET
         if not isinstance(self.query_files, Unset):
-            query_files = self.query_files
+            query_files = []
+            for query_files_item_data in self.query_files:
+                query_files_item = query_files_item_data.to_tuple()
+                query_files.append(query_files_item)
 
-        response_files: list[str] | Unset = UNSET
+        response_files: list[Any] | Unset = UNSET
         if not isinstance(self.response_files, Unset):
-            response_files = self.response_files
+            response_files = []
+            for response_files_item_data in self.response_files:
+                response_files_item = response_files_item_data.to_tuple()
+                response_files.append(response_files_item)
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -54,11 +61,11 @@ class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
 
         if not isinstance(self.query_files, Unset):
             for query_files_item_element in self.query_files:
-                files.append(("query_files", (None, str(query_files_item_element).encode(), "text/plain")))
+                files.append(("query_files", query_files_item_element.to_tuple()))
 
         if not isinstance(self.response_files, Unset):
             for response_files_item_element in self.response_files:
-                files.append(("response_files", (None, str(response_files_item_element).encode(), "text/plain")))
+                files.append(("response_files", response_files_item_element.to_tuple()))
 
         for prop_name, prop in self.additional_properties.items():
             files.append((prop_name, (None, str(prop).encode(), "text/plain")))
@@ -70,9 +77,17 @@ class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
         d = dict(src_dict)
         body = d.pop("body")
 
-        query_files = cast(list[str], d.pop("query_files", UNSET))
+        query_files = []
+        _query_files = d.pop("query_files", UNSET)
+        for query_files_item_data in _query_files or []:
+            query_files_item = File(payload=BytesIO(query_files_item_data))
+            query_files.append(query_files_item)
 
-        response_files = cast(list[str], d.pop("response_files", UNSET))
+        response_files = []
+        _response_files = d.pop("response_files", UNSET)
+        for response_files_item_data in _response_files or []:
+            response_files_item = File(payload=BytesIO(response_files_item_data))
+            response_files.append(response_files_item)
 
         body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post = cls(
             body=body, query_files=query_files, response_files=response_files
