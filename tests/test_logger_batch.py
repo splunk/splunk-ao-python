@@ -2126,7 +2126,7 @@ def test_ingestion_hook_without_project_or_log_stream(monkeypatch) -> None:
     """Test that ingestion_hook allows initialization without project/log_stream."""
     # Given: no project or log_stream in environment
     monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-    monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
 
     # Given: an ingestion hook
     hook = Mock()

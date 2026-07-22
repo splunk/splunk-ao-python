@@ -81,7 +81,7 @@ class LogStream(LogStreamResponse):
     from splunk_ao.schema.metrics import SplunkAOMetrics
 
     # Set environment variables first
-    # export SPLUNK_AO_LOG_STREAM="Production Logs"
+    # export SPLUNK_AO_AGENT_STREAM="Production Logs"
     # export SPLUNK_AO_PROJECT="My AI Project"
 
     # Clean and simple - just pass the metrics!
@@ -490,12 +490,12 @@ class LogStreams:
         SPLUNK_AO_PROJECT environment variable.
 
         The log stream name can be provided via the 'log_stream_name' parameter or the
-        SPLUNK_AO_LOG_STREAM environment variable.
+        SPLUNK_AO_AGENT_STREAM environment variable.
 
         Parameters
         ----------
         log_stream_name : Optional[str], optional
-            The name of the log stream. Takes precedence over the SPLUNK_AO_LOG_STREAM environment variable. Defaults to None.
+            The name of the log stream. Takes precedence over the SPLUNK_AO_AGENT_STREAM environment variable. Defaults to None.
         project_name : Optional[str], optional
             The name of the project. Takes precedence over the SPLUNK_AO_PROJECT environment variable. Defaults to None.
         metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
@@ -534,7 +534,7 @@ class LogStreams:
         )
 
         # Enable metrics using environment variables
-        # export SPLUNK_AO_LOG_STREAM="Production Logs"
+        # export SPLUNK_AO_AGENT_STREAM="Production Logs"
         # export SPLUNK_AO_PROJECT="My AI Project"
         scorer_configs, local_metrics = log_streams.enable_metrics(
             metrics=["correctness", "completeness"]
@@ -701,14 +701,14 @@ def enable_metrics(
     ------------------------------------------
     SPLUNK_AO_PROJECT : str
         The name of the Galileo project (used when project_name not provided)
-    SPLUNK_AO_LOG_STREAM : str
+    SPLUNK_AO_AGENT_STREAM : str
         The name of the log stream (used when log_stream_name not provided)
 
     Parameters
     ----------
     log_stream_name : Optional[str], optional
-        The name of the log stream. Takes precedence over SPLUNK_AO_LOG_STREAM environment variable.
-        If None, will use SPLUNK_AO_LOG_STREAM env var. Defaults to None.
+        The name of the log stream. Takes precedence over SPLUNK_AO_AGENT_STREAM environment variable.
+        If None, will use SPLUNK_AO_AGENT_STREAM env var. Defaults to None.
     project_name : Optional[str], optional
         The name of the project. Takes precedence over SPLUNK_AO_PROJECT environment variable.
         If None, will use SPLUNK_AO_PROJECT env var. Defaults to None.
@@ -753,7 +753,7 @@ def enable_metrics(
     )
 
     # Enable metrics using environment variables only
-    # export SPLUNK_AO_LOG_STREAM="Production Logs"
+    # export SPLUNK_AO_AGENT_STREAM="Production Logs"
     # export SPLUNK_AO_PROJECT="My AI Project"
     local_metrics = enable_metrics(metrics=["correctness", "completeness"])
 

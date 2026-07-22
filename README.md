@@ -79,7 +79,7 @@ the SDK APIs or environment variables:
 
 ```shell
 export SPLUNK_AO_PROJECT="your-project-name"
-export SPLUNK_AO_LOG_STREAM="your-log-stream-name"
+export SPLUNK_AO_AGENT_STREAM="your-log-stream-name"
 ```
 
 Set `SPLUNK_AO_LOGGING_DISABLED=true` to disable telemetry collection and
@@ -95,7 +95,7 @@ import os
 from splunk_ao import splunk_ao_context
 from splunk_ao.openai import openai
 
-# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
 # Initialize the Agent Observability wrapped OpenAI client
@@ -126,7 +126,7 @@ def make_nested_call():
     call_openai()
     call_openai()
 
-# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
 
 # This will create a trace with a workflow span and two nested LLM spans containing the OpenAI calls
@@ -229,7 +229,7 @@ agent_control.init(
 )
 ```
 
-The helper resolves an explicit log stream ID, `SPLUNK_AO_LOG_STREAM_ID`, or an
+The helper resolves an explicit log stream ID, `SPLUNK_AO_AGENT_STREAM_ID`, or an
 already-initialized `splunk_ao_context` logger. It does not import the Agent
 Control SDK or resolve log stream names over the network. If you use a direct
 Agent Control client instead of `agent_control.init(...)`, pass

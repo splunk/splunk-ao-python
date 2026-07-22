@@ -1314,7 +1314,7 @@ class TestSplunkAOCallbackIngestionHookWithoutCredentials:
         # Given: no Galileo API credentials are configured
         monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
         monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://console.galileo.ai/")
 
         if SplunkAOConfig._instance is not None:

@@ -18,7 +18,7 @@ class SplunkAOLoggerSingleton:
     provides a thread-safe way to retrieve or create SplunkAOLogger clients based on
     the given 'project' and 'log_stream' parameters. If the parameters are not provided,
     the class attempts to read the values from the environment variables
-    SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM. The loggers are stored in a dictionary
+    SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM. The loggers are stored in a dictionary
     using a tuple (project, log_stream) as the key.
     """
 
@@ -57,7 +57,7 @@ class SplunkAOLoggerSingleton:
         Generate a key tuple based on project, log_stream, and tracing parameters.
 
         If project or log_stream are None, the method attempts to retrieve them
-        from environment variables (SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM). If still
+        from environment variables (SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM). If still
         None, defaults to "default".
 
         Parameters

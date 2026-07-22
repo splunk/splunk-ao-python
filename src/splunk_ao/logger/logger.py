@@ -246,7 +246,7 @@ class SplunkAOLogger(TracesLogger):
         project_id: Optional[str]
             Project ID.
         log_stream: Optional[str]
-            Log stream name. If not provided, will use the log_stream_id param or the log stream name from the environment variable SPLUNK_AO_LOG_STREAM.
+            Log stream name. If not provided, will use the log_stream_id param or the log stream name from the environment variable SPLUNK_AO_AGENT_STREAM.
         log_stream_id: Optional[str]
             Log stream ID.
         experiment_id: Optional[str]

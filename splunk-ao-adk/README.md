@@ -43,7 +43,7 @@ if __name__ == "__main__":
 | Parameter | Environment Variable | Description |
 |-----------|---------------------|-------------|
 | `project` | `SPLUNK_AO_PROJECT` | Project name (required unless `ingestion_hook` provided) |
-| `log_stream` | `SPLUNK_AO_LOG_STREAM` | Log stream name (required unless `ingestion_hook` provided) |
+| `log_stream` | `SPLUNK_AO_AGENT_STREAM` | Log stream name (required unless `ingestion_hook` provided) |
 | `ingestion_hook` | - | Custom callback for trace data (bypasses Splunk AO backend) |
 
 ## Features
@@ -194,7 +194,7 @@ from google.genai import types
 
 logger = SplunkAOLogger(
     project=os.getenv("SPLUNK_AO_PROJECT", "my-project"),
-    log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "dev"),
+    log_stream=os.getenv("SPLUNK_AO_AGENT_STREAM", "dev"),
 )
 
 def my_ingestion_hook(request):

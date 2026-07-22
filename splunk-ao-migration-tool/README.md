@@ -266,8 +266,8 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_CONSOLE_URL` | `SPLUNK_AO_CONSOLE_URL` |
 | `GALILEO_PROJECT` | `SPLUNK_AO_PROJECT` |
 | `GALILEO_PROJECT_ID` | `SPLUNK_AO_PROJECT_ID` |
-| `GALILEO_LOG_STREAM` | `SPLUNK_AO_LOG_STREAM` |
-| `GALILEO_LOG_STREAM_ID` | `SPLUNK_AO_LOG_STREAM_ID` |
+| `GALILEO_LOG_STREAM` | `SPLUNK_AO_AGENT_STREAM` |
+| `GALILEO_LOG_STREAM_ID` | `SPLUNK_AO_AGENT_STREAM_ID` |
 | `GALILEO_JWT_TOKEN` | `SPLUNK_AO_JWT_TOKEN` |
 | `GALILEO_SSO_ID_TOKEN` | `SPLUNK_AO_SSO_ID_TOKEN` |
 | `GALILEO_SSO_PROVIDER` | `SPLUNK_AO_SSO_PROVIDER` |
@@ -293,7 +293,7 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 - GALILEO_LOG_STREAM=production
 + SPLUNK_AO_API_KEY=<your-key>
 + SPLUNK_AO_PROJECT=my-project
-+ SPLUNK_AO_LOG_STREAM=production
++ SPLUNK_AO_AGENT_STREAM=production
 ```
 
 ---
@@ -390,7 +390,7 @@ from splunk_ao import SplunkAOLogger, log, splunk_ao_context
 
 os.environ["SPLUNK_AO_API_KEY"] = "my-key"
 os.environ["SPLUNK_AO_PROJECT"] = "my-project"
-os.environ["SPLUNK_AO_LOG_STREAM"] = "production"
+os.environ["SPLUNK_AO_AGENT_STREAM"] = "production"
 
 # Decorator approach
 @log
