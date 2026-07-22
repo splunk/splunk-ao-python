@@ -288,8 +288,11 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
         assert getattr(exported, field) == getattr(source, field)
     assert exported.resource.schema_url == source.resource.schema_url
     assert exported.attributes["gen_ai.request.model"] == "gpt-4o"
+    assert exported.attributes["splunk_ao.request.model"] == "gpt-4o"
     assert exported.attributes["gen_ai.provider.name"] == "openai"
+    assert exported.attributes["splunk_ao.provider.name"] == "openai"
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
+    assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
     assert exported.attributes["custom.attribute"] == "preserved"
     exporter.shutdown()
 
@@ -321,7 +324,7 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
 
     calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
     assert not ROUTING_KEYS.intersection(calls)
-    assert calls["splunk_ao.session.id"] == "session-id"
+    assert calls["gen_ai.conversation.id"] == "session-id"
     assert calls["splunk_ao.dataset.input"] == "question"
     processor.shutdown()
 

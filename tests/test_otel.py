@@ -4,8 +4,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
-from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
+from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
     _dataset_input_context,
     _dataset_metadata_context,
@@ -21,8 +22,6 @@ from splunk_ao.otel import (
     _TRACE_PROVIDER_CONTEXT_VAR,
     SplunkAOOTLPExporter,
     SplunkAOSpanProcessor,
-    _set_tool_span_attributes,
-    _set_workflow_span_attributes,
     start_splunk_ao_span,
 )
 
@@ -256,13 +255,13 @@ class TestOTelContextIntegration:
 
         assert mock_span.set_attribute.call_count == 1
         actual_calls = {(args[0], args[1]) for args, _ in mock_span.set_attribute.call_args_list}
-        assert ("splunk_ao.session.id", "test-session") in actual_calls
+        assert ("gen_ai.conversation.id", "test-session") in actual_calls
         routing_keys = {"splunk_ao.project.name", "splunk_ao.logstream.name", "splunk_ao.experiment.id"}
         assert not routing_keys.intersection(key for key, _ in actual_calls)
 
 
 class TestSetToolSpanAttributes:
-    """Test suite for _set_tool_span_attributes function."""
+    """Test the canonical tool-span builder."""
 
     def test_tool_span_with_all_fields(self):
         """Test setting attributes when all ToolSpan fields are populated."""
@@ -274,41 +273,27 @@ class TestSetToolSpanAttributes:
             tool_call_id="call-123",
             status_code=200,
         )
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: all attributes are set correctly
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input data"
-        assert calls["gen_ai.tool.call.result"] == "tool output result"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input data"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output result"}])
-        assert calls["gen_ai.tool.call.id"] == "call-123"
-        assert mock_otel_span.set_attribute.call_count == 7
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert attrs["gen_ai.tool.call.arguments"] == "tool input data"
+        assert attrs["gen_ai.tool.call.result"] == "tool output result"
+        assert attrs["gen_ai.tool.call.id"] == "call-123"
+        assert "gen_ai.input.messages" not in attrs
+        assert "gen_ai.output.messages" not in attrs
 
     def test_tool_span_with_only_input(self):
         """Test setting attributes when only input is provided."""
         # Given: a ToolSpan with only input (output and tool_call_id are None)
         tool_span = ToolSpan(name="test-tool", input="tool input only", output=None, tool_call_id=None, status_code=200)
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: operation name, tool name, and input attributes are set, but not output or tool_call_id
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input only"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input only"}])
-        assert "gen_ai.tool.call.result" not in calls
-        assert "gen_ai.output.messages" not in calls
-        assert "gen_ai.tool.call.id" not in calls
-        assert mock_otel_span.set_attribute.call_count == 4
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert attrs["gen_ai.tool.call.arguments"] == "tool input only"
+        assert "gen_ai.tool.call.result" not in attrs
+        assert "gen_ai.tool.call.id" not in attrs
 
     def test_tool_span_with_output_no_tool_call_id(self):
         """Test setting attributes when output is provided but tool_call_id is None."""
@@ -316,21 +301,13 @@ class TestSetToolSpanAttributes:
         tool_span = ToolSpan(
             name="test-tool", input="tool input", output="tool output", tool_call_id=None, status_code=200
         )
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: operation name, tool name, input, and output attributes are set, but not tool_call_id
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input"
-        assert calls["gen_ai.tool.call.result"] == "tool output"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output"}])
-        assert "gen_ai.tool.call.id" not in calls
-        assert mock_otel_span.set_attribute.call_count == 6
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert attrs["gen_ai.tool.call.arguments"] == "tool input"
+        assert attrs["gen_ai.tool.call.result"] == "tool output"
+        assert "gen_ai.tool.call.id" not in attrs
 
 
 class TestStartGalileoSpan:
@@ -372,8 +349,6 @@ class TestStartGalileoSpan:
         assert calls["gen_ai.tool.name"] == "my-tool"
         assert calls["gen_ai.tool.call.arguments"] == "tool input data"
         assert calls["gen_ai.tool.call.result"] == "tool output result"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input data"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output result"}])
         assert calls["gen_ai.tool.call.id"] == "call-789"
 
     def test_start_splunk_ao_span_tool_span_with_none_output(self):
@@ -398,65 +373,82 @@ class TestStartGalileoSpan:
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "minimal-tool"
         assert calls["gen_ai.tool.call.arguments"] == "just input"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "just input"}])
         assert "gen_ai.tool.call.result" not in calls
-        assert "gen_ai.output.messages" not in calls
         assert "gen_ai.tool.call.id" not in calls
+
+    @pytest.mark.parametrize(
+        "galileo_span",
+        [
+            LlmSpan(input="prompt", output="answer", model="gpt-4o"),
+            ToolSpan(name="search", input="query", output="result"),
+            RetrieverSpan(name="retrieval", input="query", output=[Document(content="result", metadata={})]),
+            WorkflowSpan(name="workflow", input="question", output="answer"),
+            AgentSpan(name="agent", input="question", output="answer"),
+        ],
+    )
+    def test_start_span_applies_canonical_builder_for_every_supported_type(self, galileo_span):
+        expected = build_span_attributes(galileo_span, session_id="session-id")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+        token = _session_id_context.set("session-id")
+
+        try:
+            with start_splunk_ao_span(galileo_span):
+                pass
+        finally:
+            _session_id_context.reset(token)
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert {key: calls[key] for key in expected} == expected
+
+    def test_start_span_applies_canonical_attributes_when_body_raises(self):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with pytest.raises(RuntimeError, match="failure"), start_splunk_ao_span(galileo_span):
+            raise RuntimeError("failure")
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert calls["gen_ai.operation.name"] == "execute_tool"
+        assert calls["gen_ai.tool.name"] == "search"
 
 
 class TestWorkflowSpanAttributes:
     """Test suite for WorkflowSpan OpenTelemetry attribute mapping."""
 
-    @pytest.fixture
-    def mock_dependencies(self):
-        """Set up mocks for testing workflow span attributes."""
-        with patch("splunk_ao.otel.trace") as mock_trace_module, patch("splunk_ao.otel.json") as mock_json_module:
-            mock_span = Mock()
-            mock_json_module.dumps.return_value = '"test"'
-            yield {"span": mock_span, "trace": mock_trace_module, "json": mock_json_module}
-
-    def test_workflow_span_with_string_input_output(self, mock_dependencies):
+    def test_workflow_span_with_string_input_output(self):
         """Test WorkflowSpan with string input and output."""
         # Given: a WorkflowSpan with string input and output
         workflow_span = WorkflowSpan(name="test-workflow", input="input text", output="output text", status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_json = mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert attrs["gen_ai.operation.name"] == "invoke_workflow"
+        assert attrs["gen_ai.workflow.name"] == "test-workflow"
+        assert attrs["gen_ai.input.messages"] == "input text"
+        assert attrs["gen_ai.output.messages"] == "output text"
 
-        # Then: input and output should be wrapped in message format
-        assert mock_span.set_attribute.call_count == 2
-
-        # Check first call (input)
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-        mock_json.dumps.assert_any_call([{"role": "user", "content": "input text"}])
-
-        # Check second call (output)
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-        mock_json.dumps.assert_any_call([{"role": "assistant", "content": "output text"}])
-
-    def test_workflow_span_with_message_input_output(self, mock_dependencies):
+    def test_workflow_span_with_message_input_output(self):
         """Test WorkflowSpan with Message input and output."""
         # Given: a WorkflowSpan with Message input and output
         input_msg = Message(role=MessageRole.user, content="user question")
         workflow_span = WorkflowSpan(name="test-workflow", input=[input_msg], output=input_msg, status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert json.loads(attrs["gen_ai.input.messages"])[0]["content"] == "user question"
+        assert json.loads(attrs["gen_ai.output.messages"])["content"] == "user question"
 
-        # Then: input and output should serialize Message objects
-        assert mock_span.set_attribute.call_count == 2
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-
-    def test_workflow_span_with_document_sequence_output(self, mock_dependencies):
+    def test_workflow_span_with_document_sequence_output(self):
         """Test WorkflowSpan with Document sequence output."""
         # Given: a WorkflowSpan with string input and Document sequence output
         documents = [
@@ -469,37 +461,27 @@ class TestWorkflowSpanAttributes:
         workflow_span = WorkflowSpan.model_construct(
             name="test-workflow", input="query", output=documents, status_code=200
         )
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert [document["content"] for document in json.loads(attrs["gen_ai.output.messages"])] == [
+            "doc1 content",
+            "doc2 content",
+        ]
 
-        # Then: output should be wrapped in assistant message with documents
-        assert mock_span.set_attribute.call_count == 2
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-
-    def test_workflow_span_with_none_output(self, mock_dependencies):
+    def test_workflow_span_with_none_output(self):
         """Test WorkflowSpan with None output (should not set output attribute)."""
         # Given: a WorkflowSpan with None output
         workflow_span = WorkflowSpan(name="test-workflow", input="input text", output=None, status_code=200)
-        mock_span = mock_dependencies["span"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert attrs["gen_ai.input.messages"] == "input text"
+        assert "gen_ai.output.messages" not in attrs
 
-        # Then: only input attribute should be set, not output
-        assert mock_span.set_attribute.call_count == 1
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-
-    def test_workflow_span_in_start_splunk_ao_span(self, mock_dependencies):
+    def test_workflow_span_in_start_splunk_ao_span(self):
         """Test that WorkflowSpan is handled in start_splunk_ao_span context manager."""
         # Given: a WorkflowSpan
         workflow_span = WorkflowSpan(name="test-workflow", input="input", output="output", status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        mock_span = Mock()
 
         # Setup the mock tracer
         mock_tracer = Mock()

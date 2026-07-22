@@ -9,14 +9,13 @@ from typing import Any, Protocol, cast
 
 from opentelemetry import context, trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace import Tracer
 
-from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.config import SplunkAOConfig
+from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
     _dataset_input_context,
     _dataset_metadata_context,
@@ -27,12 +26,7 @@ from splunk_ao.decorator import (
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.exporter import (
-    RoutingAttrs,
-    resolve_o11y_exporter_config,
-    resolve_standalone_exporter_config,
-    routing_resource_attributes,
-)
+from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter
 from splunk_ao.utils.env_helpers import (
     _get_log_stream_from_env,
     _get_log_stream_id_from_env,
@@ -41,7 +35,6 @@ from splunk_ao.utils.env_helpers import (
     _get_project_id_from_env,
     _get_project_or_default,
 )
-from splunk_ao.utils.retrievers import document_adapter
 
 logger = logging.getLogger(__name__)
 
@@ -59,17 +52,6 @@ class TracerProvider(Protocol):
 
 
 _TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
-
-
-ROUTING_ATTRIBUTE_KEYS = frozenset(
-    {
-        "splunk_ao.project.name",
-        "splunk_ao.project.id",
-        "splunk_ao.logstream.name",
-        "splunk_ao.logstream.id",
-        "splunk_ao.experiment.id",
-    }
-)
 
 
 def _resolve_name_or_id(
@@ -129,31 +111,6 @@ def _resolve_routing(
     )
 
 
-def _with_routing_resource(span: ReadableSpan, routing_resource: Resource) -> ReadableSpan:
-    """Return an immutable copy with authoritative routing in its Resource."""
-    attributes = {key: value for key, value in (span.attributes or {}).items() if key not in ROUTING_ATTRIBUTE_KEYS}
-    source_resource = span.resource or Resource({})
-    base_resource = Resource(
-        {key: value for key, value in source_resource.attributes.items() if key not in ROUTING_ATTRIBUTE_KEYS},
-        schema_url=source_resource.schema_url,
-    )
-    return ReadableSpan(
-        name=span.name,
-        context=span.context,
-        parent=span.parent,
-        resource=base_resource.merge(routing_resource),
-        attributes=attributes,
-        events=span.events,
-        links=span.links,
-        kind=span.kind,
-        instrumentation_info=span.instrumentation_info,
-        status=span.status,
-        start_time=span.start_time,
-        end_time=span.end_time,
-        instrumentation_scope=span.instrumentation_scope,
-    )
-
-
 class SplunkAOOTLPExporter(SpanExporter):
     """
     OpenTelemetry OTLP span exporter preconfigured for Splunk AO.
@@ -197,21 +154,21 @@ class SplunkAOOTLPExporter(SpanExporter):
         deployment = config.resolve_deployment()
         self._routing = _resolve_routing(deployment, project, project_id, logstream, log_stream_id, experiment_id)
         if deployment == DeploymentMode.O11Y:
-            exporter_config = resolve_o11y_exporter_config(O11yConfig.from_env(), self._routing)
+            self._delegate = build_o11y_exporter(O11yConfig.from_env(), self._routing, _exporter_factory, **kwargs)
         else:
-            exporter_config = resolve_standalone_exporter_config(StandaloneConfig.from_env(), self._routing)
+            self._delegate = build_standalone_exporter(
+                StandaloneConfig.from_env(), self._routing, _exporter_factory, **kwargs
+            )
 
         self.project = self._routing.project_name
         self.project_id = self._routing.project_id
         self.logstream = self._routing.log_stream_name
         self.log_stream_id = self._routing.log_stream_id
         self.experiment_id = self._routing.experiment_id
-        self._routing_resource = Resource(routing_resource_attributes(self._routing))
-        self._delegate = _exporter_factory(endpoint=exporter_config.endpoint, headers=exporter_config.headers, **kwargs)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
-        """Export immutable copies with authoritative routing Resources."""
-        return self._delegate.export(tuple(_with_routing_resource(span, self._routing_resource) for span in spans))
+        """Export through the shared immutable normalization pipeline."""
+        return self._delegate.export(spans)
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Flush the delegate exporter."""
@@ -291,7 +248,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         session_id = _session_id_context.get(None)
 
         if session_id:
-            span.set_attribute("splunk_ao.session.id", session_id)
+            span.set_attribute("gen_ai.conversation.id", session_id)
 
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
@@ -340,34 +297,6 @@ def add_splunk_ao_span_processor(
     return resolved_processor
 
 
-def _set_retriever_span_attributes(span: trace.Span, galileo_span: RetrieverSpan) -> None:
-    span.set_attribute("db.operation", "search")
-    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "user", "content": galileo_span.input}]))
-    span.set_attribute(
-        "gen_ai.output.messages",
-        json.dumps(
-            [
-                {
-                    "role": "assistant",
-                    "content": {"documents": document_adapter.dump_python(galileo_span.output, mode="json")},
-                }
-            ]
-        ),
-    )
-
-
-def _set_tool_span_attributes(span: trace.Span, galileo_span: ToolSpan) -> None:
-    span.set_attribute("gen_ai.operation.name", "execute_tool")
-    span.set_attribute("gen_ai.tool.name", galileo_span.name)
-    span.set_attribute("gen_ai.tool.call.arguments", galileo_span.input)
-    span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "tool", "content": galileo_span.input}]))
-    if galileo_span.output is not None:
-        span.set_attribute("gen_ai.tool.call.result", galileo_span.output)
-        span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "tool", "content": galileo_span.output}]))
-    if galileo_span.tool_call_id is not None:
-        span.set_attribute("gen_ai.tool.call.id", galileo_span.tool_call_id)
-
-
 def _apply_dataset_attributes(
     span: trace.Span, dataset_input: str | None, dataset_output: str | None, dataset_metadata: dict[str, Any] | None
 ) -> None:
@@ -380,48 +309,6 @@ def _apply_dataset_attributes(
         span.set_attribute("splunk_ao.dataset.metadata", json.dumps(dataset_metadata))
 
 
-def _set_workflow_span_attributes(span: trace.Span, galileo_span: WorkflowSpan) -> None:
-    """Set OpenTelemetry attributes for WorkflowSpan."""
-    # Handle input - Union[str, Sequence[Message]]
-    if isinstance(galileo_span.input, str):
-        input_messages = [{"role": "user", "content": galileo_span.input}]
-    else:
-        # Sequence[Message] - serialize each message
-        input_messages = []
-        for msg in list(galileo_span.input):
-            if hasattr(msg, "model_dump"):
-                input_messages.append(msg.model_dump(exclude_none=True))
-            else:
-                input_messages.append(msg)
-    span.set_attribute("gen_ai.input.messages", json.dumps(input_messages))
-
-    # Handle output - Union[str, Message, Sequence[Document], None]
-    if galileo_span.output is None:
-        return
-
-    output_value = galileo_span.output
-    # Type annotation to handle flexible content types (string or dict)
-    # Content can be: str (simple output), dict (documents), or dict (Message model_dump)
-    output_messages: list[dict[str, Any]] = []
-
-    if isinstance(output_value, str):
-        output_messages = [{"role": "assistant", "content": output_value}]
-    elif hasattr(output_value, "model_dump"):
-        # Single Message
-        output_messages = [output_value.model_dump(exclude_none=True)]
-    else:
-        # Sequence[Document] - wrap in assistant message
-        # Use document_adapter for consistency with _set_retriever_span_attributes
-        output_messages = [
-            {
-                "role": "assistant",
-                "content": {"documents": document_adapter.dump_python(list(output_value), mode="json")},
-            }
-        ]
-
-    span.set_attribute("gen_ai.output.messages", json.dumps(output_messages))
-
-
 @contextmanager
 def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
@@ -430,14 +317,8 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
     with tracer.start_as_current_span(galileo_span.name) as span:
-        yield span
-        # Set dataset attributes for ground truth/reference output support
-        _apply_dataset_attributes(
-            span, galileo_span.dataset_input, galileo_span.dataset_output, galileo_span.dataset_metadata
-        )
-        if isinstance(galileo_span, RetrieverSpan):
-            _set_retriever_span_attributes(span, galileo_span)
-        elif isinstance(galileo_span, ToolSpan):
-            _set_tool_span_attributes(span, galileo_span)
-        elif isinstance(galileo_span, WorkflowSpan):
-            _set_workflow_span_attributes(span, galileo_span)
+        try:
+            yield span
+        finally:
+            for key, value in build_span_attributes(galileo_span, _session_id_context.get(None)).items():
+                span.set_attribute(key, value)
