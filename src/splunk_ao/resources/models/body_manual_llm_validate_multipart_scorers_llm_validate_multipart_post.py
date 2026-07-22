@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from io import BytesIO
 from typing import Any, TypeVar
@@ -6,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, File, FileTypes, Unset
+from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost")
 
@@ -14,29 +16,28 @@ T = TypeVar("T", bound="BodyManualLlmValidateMultipartScorersLlmValidateMultipar
 @_attrs_define
 class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
     """
-    Attributes
-    ----------
+    Attributes:
         body (str): JSON-encoded GeneratedScorerValidationRequest
-        query_files (Union[Unset, list[File]]):
-        response_files (Union[Unset, list[File]]):
+        query_files (list[File] | Unset):
+        response_files (list[File] | Unset):
     """
 
     body: str
-    query_files: Unset | list[File] = UNSET
-    response_files: Unset | list[File] = UNSET
+    query_files: list[File] | Unset = UNSET
+    response_files: list[File] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         body = self.body
 
-        query_files: Unset | list[FileTypes] = UNSET
+        query_files: list[Any] | Unset = UNSET
         if not isinstance(self.query_files, Unset):
             query_files = []
             for query_files_item_data in self.query_files:
                 query_files_item = query_files_item_data.to_tuple()
                 query_files.append(query_files_item)
 
-        response_files: Unset | list[FileTypes] = UNSET
+        response_files: list[Any] | Unset = UNSET
         if not isinstance(self.response_files, Unset):
             response_files = []
             for response_files_item_data in self.response_files:

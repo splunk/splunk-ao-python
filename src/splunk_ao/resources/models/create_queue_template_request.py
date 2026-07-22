@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -22,20 +24,20 @@ class CreateQueueTemplateRequest:
     2. Copy all templates from a source queue (copy_from_queue_id field)
 
         Attributes:
-            template (Union['AnnotationTemplateCreate', None, Unset]): Template to create. Required if copy_from_queue_id is
-                not provided.
-            copy_from_queue_id (Union[None, Unset, str]): Source queue ID to copy all templates from. Required if template
-                is not provided.
+            template (AnnotationTemplateCreate | None | Unset): Template to create. Required if copy_from_queue_id is not
+                provided.
+            copy_from_queue_id (None | str | Unset): Source queue ID to copy all templates from. Required if template is not
+                provided.
     """
 
-    template: Union["AnnotationTemplateCreate", None, Unset] = UNSET
-    copy_from_queue_id: Union[None, Unset, str] = UNSET
+    template: AnnotationTemplateCreate | None | Unset = UNSET
+    copy_from_queue_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.annotation_template_create import AnnotationTemplateCreate
 
-        template: Union[None, Unset, dict[str, Any]]
+        template: dict[str, Any] | None | Unset
         if isinstance(self.template, Unset):
             template = UNSET
         elif isinstance(self.template, AnnotationTemplateCreate):
@@ -43,7 +45,7 @@ class CreateQueueTemplateRequest:
         else:
             template = self.template
 
-        copy_from_queue_id: Union[None, Unset, str]
+        copy_from_queue_id: None | str | Unset
         if isinstance(self.copy_from_queue_id, Unset):
             copy_from_queue_id = UNSET
         else:
@@ -65,7 +67,7 @@ class CreateQueueTemplateRequest:
 
         d = dict(src_dict)
 
-        def _parse_template(data: object) -> Union["AnnotationTemplateCreate", None, Unset]:
+        def _parse_template(data: object) -> AnnotationTemplateCreate | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -78,16 +80,16 @@ class CreateQueueTemplateRequest:
                 return template_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["AnnotationTemplateCreate", None, Unset], data)
+            return cast(AnnotationTemplateCreate | None | Unset, data)
 
         template = _parse_template(d.pop("template", UNSET))
 
-        def _parse_copy_from_queue_id(data: object) -> Union[None, Unset, str]:
+        def _parse_copy_from_queue_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         copy_from_queue_id = _parse_copy_from_queue_id(d.pop("copy_from_queue_id", UNSET))
 

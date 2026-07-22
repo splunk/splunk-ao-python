@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 if TYPE_CHECKING:
     from ..models.scorer_version_health_score_entry_secondary_type_0 import ScorerVersionHealthScoreEntrySecondaryType0
@@ -23,7 +24,7 @@ class ScorerVersionHealthScoreEntry:
         dataset_id (str):
         health_score_type (str):
         score (float):
-        secondary (Union['ScorerVersionHealthScoreEntrySecondaryType0', None]):
+        secondary (None | ScorerVersionHealthScoreEntrySecondaryType0):
         computed_at (datetime.datetime):
     """
 
@@ -33,7 +34,7 @@ class ScorerVersionHealthScoreEntry:
     dataset_id: str
     health_score_type: str
     score: float
-    secondary: Union["ScorerVersionHealthScoreEntrySecondaryType0", None]
+    secondary: None | ScorerVersionHealthScoreEntrySecondaryType0
     computed_at: datetime.datetime
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -54,7 +55,7 @@ class ScorerVersionHealthScoreEntry:
 
         score = self.score
 
-        secondary: Union[None, dict[str, Any]]
+        secondary: dict[str, Any] | None
         if isinstance(self.secondary, ScorerVersionHealthScoreEntrySecondaryType0):
             secondary = self.secondary.to_dict()
         else:
@@ -98,7 +99,7 @@ class ScorerVersionHealthScoreEntry:
 
         score = d.pop("score")
 
-        def _parse_secondary(data: object) -> Union["ScorerVersionHealthScoreEntrySecondaryType0", None]:
+        def _parse_secondary(data: object) -> None | ScorerVersionHealthScoreEntrySecondaryType0:
             if data is None:
                 return data
             try:
@@ -109,11 +110,11 @@ class ScorerVersionHealthScoreEntry:
                 return secondary_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["ScorerVersionHealthScoreEntrySecondaryType0", None], data)
+            return cast(None | ScorerVersionHealthScoreEntrySecondaryType0, data)
 
         secondary = _parse_secondary(d.pop("secondary"))
 
-        computed_at = isoparse(d.pop("computed_at"))
+        computed_at = datetime.datetime.fromisoformat(d.pop("computed_at"))
 
         scorer_version_health_score_entry = cls(
             id=id,

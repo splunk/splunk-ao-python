@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,15 +25,13 @@ T = TypeVar("T", bound="AnnotationRatingCreate")
 class AnnotationRatingCreate:
     """
     Attributes:
-        rating (Union['ChoiceRating', 'LikeDislikeRating', 'ScoreRating', 'StarRating', 'TagsRating', 'TextRating',
-            'TreeChoiceRating']):
-        explanation (Union[None, Unset, str]):
+        rating (ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating |
+            TreeChoiceRating):
+        explanation (None | str | Unset):
     """
 
-    rating: Union[
-        "ChoiceRating", "LikeDislikeRating", "ScoreRating", "StarRating", "TagsRating", "TextRating", "TreeChoiceRating"
-    ]
-    explanation: Union[None, Unset, str] = UNSET
+    rating: ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating | TreeChoiceRating
+    explanation: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -58,7 +58,7 @@ class AnnotationRatingCreate:
         else:
             rating = self.rating.to_dict()
 
-        explanation: Union[None, Unset, str]
+        explanation: None | str | Unset
         if isinstance(self.explanation, Unset):
             explanation = UNSET
         else:
@@ -86,15 +86,7 @@ class AnnotationRatingCreate:
 
         def _parse_rating(
             data: object,
-        ) -> Union[
-            "ChoiceRating",
-            "LikeDislikeRating",
-            "ScoreRating",
-            "StarRating",
-            "TagsRating",
-            "TextRating",
-            "TreeChoiceRating",
-        ]:
+        ) -> ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating | TreeChoiceRating:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -151,12 +143,12 @@ class AnnotationRatingCreate:
 
         rating = _parse_rating(d.pop("rating"))
 
-        def _parse_explanation(data: object) -> Union[None, Unset, str]:
+        def _parse_explanation(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         explanation = _parse_explanation(d.pop("explanation", UNSET))
 

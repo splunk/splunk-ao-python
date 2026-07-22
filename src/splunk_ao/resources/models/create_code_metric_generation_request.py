@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,29 +18,29 @@ class CreateCodeMetricGenerationRequest:
 
     Attributes:
         user_message (str): Natural language, code, or combination
-        node_type (Union[None, Unset, str]): Selected scoreable node type (llm, retriever, trace, agent, workflow, tool,
+        node_type (None | str | Unset): Selected scoreable node type (llm, retriever, trace, agent, workflow, tool,
             session)
-        output_type (Union[None, OutputTypeEnum, Unset]): Selected output type (boolean, percentage, count, discrete,
+        output_type (None | OutputTypeEnum | Unset): Selected output type (boolean, percentage, count, discrete,
             categorical, multilabel, freeform)
-        model_name (Union[None, Unset, str]): Model alias to use for generation. Defaults to best available.
+        model_name (None | str | Unset): Model alias to use for generation. Defaults to best available.
     """
 
     user_message: str
-    node_type: Union[None, Unset, str] = UNSET
-    output_type: Union[None, OutputTypeEnum, Unset] = UNSET
-    model_name: Union[None, Unset, str] = UNSET
+    node_type: None | str | Unset = UNSET
+    output_type: None | OutputTypeEnum | Unset = UNSET
+    model_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         user_message = self.user_message
 
-        node_type: Union[None, Unset, str]
+        node_type: None | str | Unset
         if isinstance(self.node_type, Unset):
             node_type = UNSET
         else:
             node_type = self.node_type
 
-        output_type: Union[None, Unset, str]
+        output_type: None | str | Unset
         if isinstance(self.output_type, Unset):
             output_type = UNSET
         elif isinstance(self.output_type, OutputTypeEnum):
@@ -46,7 +48,7 @@ class CreateCodeMetricGenerationRequest:
         else:
             output_type = self.output_type
 
-        model_name: Union[None, Unset, str]
+        model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
             model_name = UNSET
         else:
@@ -69,16 +71,16 @@ class CreateCodeMetricGenerationRequest:
         d = dict(src_dict)
         user_message = d.pop("user_message")
 
-        def _parse_node_type(data: object) -> Union[None, Unset, str]:
+        def _parse_node_type(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         node_type = _parse_node_type(d.pop("node_type", UNSET))
 
-        def _parse_output_type(data: object) -> Union[None, OutputTypeEnum, Unset]:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -91,16 +93,16 @@ class CreateCodeMetricGenerationRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, OutputTypeEnum, Unset], data)
+            return cast(None | OutputTypeEnum | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_model_name(data: object) -> Union[None, Unset, str]:
+        def _parse_model_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
 
