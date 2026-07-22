@@ -18,7 +18,7 @@ class BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost:
     """
     Attributes
     ----------
-        file (str):
+        file (File):
         validation_result (str): Pre-validated result as JSON string from the validate endpoint.
     """
 

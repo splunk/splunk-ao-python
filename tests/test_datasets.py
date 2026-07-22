@@ -23,6 +23,7 @@ from splunk_ao.datasets import (
 from splunk_ao.resources.models import (
     BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
     BodyCreateDatasetDatasetsPost,
+    BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost,
     BodyValidateCodeScorerScorersCodeValidatePost,
     DatasetContent,
     DatasetDB,
@@ -1788,3 +1789,34 @@ def test_code_scorer_bodies_serialize_files_as_multipart_uploads() -> None:
 
         # Then: the file field is emitted as a binary multipart upload
         assert multipart_data["file"] == file.to_tuple()
+
+
+def test_manual_llm_validate_multipart_body_serializes_list_of_files() -> None:
+    # Given: a body with multiple query and response files
+    query_file_1 = File(payload=Mock(), file_name="query1.txt", mime_type="text/plain")
+    query_file_2 = File(payload=Mock(), file_name="query2.txt", mime_type="text/plain")
+    response_file_1 = File(payload=Mock(), file_name="resp1.txt", mime_type="text/plain")
+    body = BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost(
+        body='{"scorer_id": "abc"}',
+        query_files=[query_file_1, query_file_2],
+        response_files=[response_file_1],
+    )
+
+    # When: serializing to multipart form data
+    multipart_entries = body.to_multipart()
+
+    # Then: one ("query_files", ...) entry per file, using each File's .to_tuple()
+    query_entries = [(k, v) for k, v in multipart_entries if k == "query_files"]
+    assert len(query_entries) == 2
+    assert query_entries[0][1] == query_file_1.to_tuple()
+    assert query_entries[1][1] == query_file_2.to_tuple()
+
+    # And: one ("response_files", ...) entry for the single response file
+    response_entries = [(k, v) for k, v in multipart_entries if k == "response_files"]
+    assert len(response_entries) == 1
+    assert response_entries[0][1] == response_file_1.to_tuple()
+
+    # And: body field is present as plain text
+    body_entries = [v for k, v in multipart_entries if k == "body"]
+    assert len(body_entries) == 1
+    assert body_entries[0] == (None, b'{"scorer_id": "abc"}', "text/plain")
