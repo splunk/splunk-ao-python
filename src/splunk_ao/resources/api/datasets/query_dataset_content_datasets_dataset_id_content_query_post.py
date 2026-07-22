@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -24,7 +24,7 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    dataset_id: str, *, body: QueryDatasetParams, starting_token: Union[Unset, int] = 0, limit: Union[Unset, int] = 100
+    dataset_id: str, *, body: QueryDatasetParams | Unset, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -43,7 +43,9 @@ def _get_kwargs(
         "params": params,
     }
 
-    _kwargs["json"] = body.to_dict()
+    _kwargs["json"]: dict[str, Any] | Unset = UNSET
+    if not isinstance(body, Unset):
+        _kwargs["json"] = body.to_dict()
 
     headers["Content-Type"] = "application/json"
 
@@ -53,7 +55,7 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DatasetContent, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetContent | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DatasetContent.from_dict(response.json())
 
@@ -82,9 +84,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Dat
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[DatasetContent, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[DatasetContent | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -97,24 +97,24 @@ def sync_detailed(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: QueryDatasetParams,
-    starting_token: Union[Unset, int] = 0,
-    limit: Union[Unset, int] = 100,
-) -> Response[Union[DatasetContent, HTTPValidationError]]:
+    body: QueryDatasetParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Response[DatasetContent | HTTPValidationError]:
     """Query Dataset Content
 
     Args:
         dataset_id (str):
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (QueryDatasetParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (QueryDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetContent, HTTPValidationError]]
+        Response[DatasetContent | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, body=body, starting_token=starting_token, limit=limit)
@@ -128,24 +128,24 @@ def sync(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: QueryDatasetParams,
-    starting_token: Union[Unset, int] = 0,
-    limit: Union[Unset, int] = 100,
-) -> Optional[Union[DatasetContent, HTTPValidationError]]:
+    body: QueryDatasetParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Optional[DatasetContent | HTTPValidationError]:
     """Query Dataset Content
 
     Args:
         dataset_id (str):
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (QueryDatasetParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (QueryDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetContent, HTTPValidationError]
+        DatasetContent | HTTPValidationError
     """
 
     return sync_detailed(
@@ -157,24 +157,24 @@ async def asyncio_detailed(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: QueryDatasetParams,
-    starting_token: Union[Unset, int] = 0,
-    limit: Union[Unset, int] = 100,
-) -> Response[Union[DatasetContent, HTTPValidationError]]:
+    body: QueryDatasetParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Response[DatasetContent | HTTPValidationError]:
     """Query Dataset Content
 
     Args:
         dataset_id (str):
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (QueryDatasetParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (QueryDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetContent, HTTPValidationError]]
+        Response[DatasetContent | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id, body=body, starting_token=starting_token, limit=limit)
@@ -188,24 +188,24 @@ async def asyncio(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: QueryDatasetParams,
-    starting_token: Union[Unset, int] = 0,
-    limit: Union[Unset, int] = 100,
-) -> Optional[Union[DatasetContent, HTTPValidationError]]:
+    body: QueryDatasetParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Optional[DatasetContent | HTTPValidationError]:
     """Query Dataset Content
 
     Args:
         dataset_id (str):
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (QueryDatasetParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (QueryDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetContent, HTTPValidationError]
+        DatasetContent | HTTPValidationError
     """
 
     return (

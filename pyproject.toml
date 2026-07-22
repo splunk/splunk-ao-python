@@ -24,8 +24,7 @@ langchain = ["langchain-core", "langchain"]
 openai = ["openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)"]
 crewai = ["crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
 middleware = ["starlette"]
-otel = ["opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)", "grpcio (>=1.80.0,<2.0.0)"]
-all = ["langchain-core", "langchain", "openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)", "opentelemetry-sdk (>=1.38.0,<2.0.0)", "opentelemetry-api (>=1.38.0,<2.0.0)", "opentelemetry-exporter-otlp (>=1.38.0,<2.0.0)", "grpcio (>=1.80.0,<2.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
+all = ["langchain-core", "langchain", "openai (>=2.8.0,<3.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.4.0,<1.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'"]
 
 
 
@@ -48,13 +47,9 @@ backoff = "^2.2.1"
 crewai = { version = ">=0.152.0,<2.0.0", optional = true, python = ">=3.11,<3.14" }
 tqdm = { version = ">=4.0.0" }
 typing-extensions = { version = ">=4.5.0" }
-opentelemetry-sdk = { version = "^1.38.0", optional = true }
-opentelemetry-api = { version = "^1.38.0", optional = true }
-opentelemetry-exporter-otlp = { version = "^1.38.0", optional = true }
-# Explicit lower bound ensures pre-built cp314 wheels are available (1.80.0+).
-# Without this, resolvers could pick grpcio<1.80.0 which has no cp314 wheels,
-# forcing source compilation (~20 min) on Python 3.14 CI runners.
-grpcio = { version = ">=1.80.0,<2.0.0", optional = true }
+opentelemetry-sdk = "^1.38.0"
+opentelemetry-api = "^1.38.0"
+opentelemetry-exporter-otlp-proto-http = "^1.38.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.4.0"
@@ -80,8 +75,8 @@ mypy = "^1.16.0"
 invoke = "^2.2.0"
 openai = ">=2.8.0,<3.0.0"
 fastapi = "^0.115.0"
-ruff = "^0.12.3"
-openapi-python-client = "^0.26.1"
+ruff = "^0.15.22"
+openapi-python-client = "^0.29.0"
 yq = "^3.4.3"
 pyyaml = "^6.0.2"
 pytest-timeout = "^2.4.0"
@@ -280,6 +275,8 @@ ignore = [
 "src/splunk_ao/project.py" = ["PLC0415"]  # Bottom-of-file circular import avoidance
 "src/splunk_ao/logger/logger.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 "src/splunk_ao/logger/__init__.py" = ["PLC0415"]  # Lazy import for GalileoLogger
+"src/splunk_ao/experiment.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
+"src/splunk_ao/metric.py" = ["PLC0415"]  # Local imports to avoid circular dependencies
 
 [tool.ruff.lint.isort]
 known-first-party = ["galileo_core"]

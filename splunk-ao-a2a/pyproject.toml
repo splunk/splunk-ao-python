@@ -37,7 +37,7 @@ dev = [
     "ruff>=0.12.3",
     "mypy>=1.16.0",
     "opentelemetry-instrumentation>=0.61b0",
-    "splunk-ao[otel]>=0.1.0,<1.0.0",
+    "splunk-ao>=0.1.0,<1.0.0",
 ]
 examples = [
     "uvicorn>=0.42.0",

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import httpx
 
@@ -38,7 +38,7 @@ def _get_kwargs(project_id: str, experiment_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
     if response.status_code == 204:
         response_204 = cast(Any, None)
         return response_204
@@ -66,7 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,9 +75,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(
-    project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[Any, HTTPValidationError]]:
+def sync_detailed(project_id: str, experiment_id: str, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Experiment
 
      Delete a specific experiment.
@@ -91,7 +89,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -101,7 +99,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+def sync(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Experiment
 
      Delete a specific experiment.
@@ -115,7 +113,7 @@ def sync(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, experiment_id=experiment_id, client=client).parsed
@@ -123,7 +121,7 @@ def sync(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[
 
 async def asyncio_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient
-) -> Response[Union[Any, HTTPValidationError]]:
+) -> Response[Any | HTTPValidationError]:
     """Delete Experiment
 
      Delete a specific experiment.
@@ -137,7 +135,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id)
@@ -147,9 +145,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(
-    project_id: str, experiment_id: str, *, client: ApiClient
-) -> Optional[Union[Any, HTTPValidationError]]:
+async def asyncio(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Experiment
 
      Delete a specific experiment.
@@ -163,7 +159,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, experiment_id=experiment_id, client=client)).parsed

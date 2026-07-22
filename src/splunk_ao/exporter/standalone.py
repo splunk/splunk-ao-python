@@ -1,0 +1,28 @@
+"""Standalone Splunk AO OTLP exporter construction."""
+
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+from splunk_ao.deployment import StandaloneConfig
+from splunk_ao.exporter.config import (
+    ExporterConfig,
+    ExporterFactory,
+    RoutingAttrs,
+    build_exporter,
+    resolve_exporter_config,
+)
+
+
+def _standalone_auth_header(config: StandaloneConfig) -> tuple[str, str]:
+    return "Splunk-AO-API-Key", config.api_key.get_secret_value()
+
+
+def resolve_standalone_exporter_config(config: StandaloneConfig, routing: RoutingAttrs) -> ExporterConfig:
+    """Resolve standalone endpoint, authentication, and routing headers."""
+    return resolve_exporter_config(config.otlp_endpoint, _standalone_auth_header(config), routing)
+
+
+def build_standalone_exporter(
+    config: StandaloneConfig, routing: RoutingAttrs, _exporter_factory: ExporterFactory = OTLPSpanExporter
+) -> OTLPSpanExporter:
+    """Build an OTLP exporter authenticated for standalone Splunk AO."""
+    return build_exporter(config.otlp_endpoint, _standalone_auth_header(config), routing, _exporter_factory)

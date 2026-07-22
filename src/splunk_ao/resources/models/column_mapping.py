@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,25 +20,25 @@ T = TypeVar("T", bound="ColumnMapping")
 class ColumnMapping:
     """
     Attributes:
-        input_ (Union['ColumnMappingConfig', None, Unset, list[str]]):
-        output (Union['ColumnMappingConfig', None, Unset, list[str]]):
-        generated_output (Union['ColumnMappingConfig', None, Unset, list[str]]):
-        metadata (Union['ColumnMappingConfig', None, Unset, list[str]]):
-        mgt (Union['ColumnMappingMgtType0', None, Unset]):
+        input_ (ColumnMappingConfig | list[str] | None | Unset):
+        output (ColumnMappingConfig | list[str] | None | Unset):
+        generated_output (ColumnMappingConfig | list[str] | None | Unset):
+        metadata (ColumnMappingConfig | list[str] | None | Unset):
+        mgt (ColumnMappingMgtType0 | None | Unset):
     """
 
-    input_: Union["ColumnMappingConfig", None, Unset, list[str]] = UNSET
-    output: Union["ColumnMappingConfig", None, Unset, list[str]] = UNSET
-    generated_output: Union["ColumnMappingConfig", None, Unset, list[str]] = UNSET
-    metadata: Union["ColumnMappingConfig", None, Unset, list[str]] = UNSET
-    mgt: Union["ColumnMappingMgtType0", None, Unset] = UNSET
+    input_: ColumnMappingConfig | list[str] | None | Unset = UNSET
+    output: ColumnMappingConfig | list[str] | None | Unset = UNSET
+    generated_output: ColumnMappingConfig | list[str] | None | Unset = UNSET
+    metadata: ColumnMappingConfig | list[str] | None | Unset = UNSET
+    mgt: ColumnMappingMgtType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.column_mapping_config import ColumnMappingConfig
         from ..models.column_mapping_mgt_type_0 import ColumnMappingMgtType0
 
-        input_: Union[None, Unset, dict[str, Any], list[str]]
+        input_: dict[str, Any] | list[str] | None | Unset
         if isinstance(self.input_, Unset):
             input_ = UNSET
         elif isinstance(self.input_, ColumnMappingConfig):
@@ -47,7 +49,7 @@ class ColumnMapping:
         else:
             input_ = self.input_
 
-        output: Union[None, Unset, dict[str, Any], list[str]]
+        output: dict[str, Any] | list[str] | None | Unset
         if isinstance(self.output, Unset):
             output = UNSET
         elif isinstance(self.output, ColumnMappingConfig):
@@ -58,7 +60,7 @@ class ColumnMapping:
         else:
             output = self.output
 
-        generated_output: Union[None, Unset, dict[str, Any], list[str]]
+        generated_output: dict[str, Any] | list[str] | None | Unset
         if isinstance(self.generated_output, Unset):
             generated_output = UNSET
         elif isinstance(self.generated_output, ColumnMappingConfig):
@@ -69,7 +71,7 @@ class ColumnMapping:
         else:
             generated_output = self.generated_output
 
-        metadata: Union[None, Unset, dict[str, Any], list[str]]
+        metadata: dict[str, Any] | list[str] | None | Unset
         if isinstance(self.metadata, Unset):
             metadata = UNSET
         elif isinstance(self.metadata, ColumnMappingConfig):
@@ -80,7 +82,7 @@ class ColumnMapping:
         else:
             metadata = self.metadata
 
-        mgt: Union[None, Unset, dict[str, Any]]
+        mgt: dict[str, Any] | None | Unset
         if isinstance(self.mgt, Unset):
             mgt = UNSET
         elif isinstance(self.mgt, ColumnMappingMgtType0):
@@ -111,7 +113,7 @@ class ColumnMapping:
 
         d = dict(src_dict)
 
-        def _parse_input_(data: object) -> Union["ColumnMappingConfig", None, Unset, list[str]]:
+        def _parse_input_(data: object) -> ColumnMappingConfig | list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -132,11 +134,11 @@ class ColumnMapping:
                 return input_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union["ColumnMappingConfig", None, Unset, list[str]], data)
+            return cast(ColumnMappingConfig | list[str] | None | Unset, data)
 
         input_ = _parse_input_(d.pop("input", UNSET))
 
-        def _parse_output(data: object) -> Union["ColumnMappingConfig", None, Unset, list[str]]:
+        def _parse_output(data: object) -> ColumnMappingConfig | list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -157,11 +159,11 @@ class ColumnMapping:
                 return output_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union["ColumnMappingConfig", None, Unset, list[str]], data)
+            return cast(ColumnMappingConfig | list[str] | None | Unset, data)
 
         output = _parse_output(d.pop("output", UNSET))
 
-        def _parse_generated_output(data: object) -> Union["ColumnMappingConfig", None, Unset, list[str]]:
+        def _parse_generated_output(data: object) -> ColumnMappingConfig | list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -182,11 +184,11 @@ class ColumnMapping:
                 return generated_output_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union["ColumnMappingConfig", None, Unset, list[str]], data)
+            return cast(ColumnMappingConfig | list[str] | None | Unset, data)
 
         generated_output = _parse_generated_output(d.pop("generated_output", UNSET))
 
-        def _parse_metadata(data: object) -> Union["ColumnMappingConfig", None, Unset, list[str]]:
+        def _parse_metadata(data: object) -> ColumnMappingConfig | list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -207,11 +209,11 @@ class ColumnMapping:
                 return metadata_type_1
             except:  # noqa: E722
                 pass
-            return cast(Union["ColumnMappingConfig", None, Unset, list[str]], data)
+            return cast(ColumnMappingConfig | list[str] | None | Unset, data)
 
         metadata = _parse_metadata(d.pop("metadata", UNSET))
 
-        def _parse_mgt(data: object) -> Union["ColumnMappingMgtType0", None, Unset]:
+        def _parse_mgt(data: object) -> ColumnMappingMgtType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -224,7 +226,7 @@ class ColumnMapping:
                 return mgt_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union["ColumnMappingMgtType0", None, Unset], data)
+            return cast(ColumnMappingMgtType0 | None | Unset, data)
 
         mgt = _parse_mgt(d.pop("mgt", UNSET))
 
