@@ -1,8 +1,10 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
+from galileo_core.constants.request_method import RequestMethod
+from galileo_core.helpers.api_client import ApiClient
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -13,8 +15,6 @@ from splunk_ao.exceptions import (
     ServerError,
 )
 from splunk_ao.utils.headers_data import get_sdk_header
-from galileo_core.constants.request_method import RequestMethod
-from galileo_core.helpers.api_client import ApiClient
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
@@ -24,7 +24,7 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *, body: ListAnnotationQueueParams, starting_token: Unset | int = 0, limit: Unset | int = 100
+    *, body: ListAnnotationQueueParams | Unset, starting_token: int | Unset = 0, limit: int | Unset = 100
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -43,11 +43,13 @@ def _get_kwargs(
         "params": params,
     }
 
-    _kwargs["json"] = body.to_dict()
+    _kwargs["json"]: dict[str, Any] | Unset = UNSET
+    if not isinstance(body, Unset):
+        _kwargs["json"] = body.to_dict()
 
     headers["Content-Type"] = "application/json"
 
-    headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -57,10 +59,14 @@ def _parse_response(
     *, client: ApiClient, response: httpx.Response
 ) -> HTTPValidationError | ListAnnotationQueueResponse:
     if response.status_code == 200:
-        return ListAnnotationQueueResponse.from_dict(response.json())
+        response_200 = ListAnnotationQueueResponse.from_dict(response.json())
+
+        return response_200
 
     if response.status_code == 422:
-        return HTTPValidationError.from_dict(response.json())
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -92,28 +98,31 @@ def _build_response(
 
 
 def sync_detailed(
-    *, client: ApiClient, body: ListAnnotationQueueParams, starting_token: Unset | int = 0, limit: Unset | int = 100
+    *,
+    client: ApiClient,
+    body: ListAnnotationQueueParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListAnnotationQueueResponse]:
-    """Query Annotation Queues.
+    """Query Annotation Queues
 
      Query annotation queues in the user's organization with filtering and sorting.
 
     Response includes num_templates for each queue to support copy selection UI.
 
     Args:
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (ListAnnotationQueueParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (ListAnnotationQueueParams | Unset):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, ListAnnotationQueueResponse]]
+    Returns:
+        Response[HTTPValidationError | ListAnnotationQueueResponse]
     """
+
     kwargs = _get_kwargs(body=body, starting_token=starting_token, limit=limit)
 
     response = client.request(**kwargs)
@@ -122,54 +131,60 @@ def sync_detailed(
 
 
 def sync(
-    *, client: ApiClient, body: ListAnnotationQueueParams, starting_token: Unset | int = 0, limit: Unset | int = 100
-) -> HTTPValidationError | ListAnnotationQueueResponse | None:
-    """Query Annotation Queues.
+    *,
+    client: ApiClient,
+    body: ListAnnotationQueueParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Optional[HTTPValidationError | ListAnnotationQueueResponse]:
+    """Query Annotation Queues
 
      Query annotation queues in the user's organization with filtering and sorting.
 
     Response includes num_templates for each queue to support copy selection UI.
 
     Args:
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (ListAnnotationQueueParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (ListAnnotationQueueParams | Unset):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, ListAnnotationQueueResponse]
+    Returns:
+        HTTPValidationError | ListAnnotationQueueResponse
     """
+
     return sync_detailed(client=client, body=body, starting_token=starting_token, limit=limit).parsed
 
 
 async def asyncio_detailed(
-    *, client: ApiClient, body: ListAnnotationQueueParams, starting_token: Unset | int = 0, limit: Unset | int = 100
+    *,
+    client: ApiClient,
+    body: ListAnnotationQueueParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListAnnotationQueueResponse]:
-    """Query Annotation Queues.
+    """Query Annotation Queues
 
      Query annotation queues in the user's organization with filtering and sorting.
 
     Response includes num_templates for each queue to support copy selection UI.
 
     Args:
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (ListAnnotationQueueParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (ListAnnotationQueueParams | Unset):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Response[Union[HTTPValidationError, ListAnnotationQueueResponse]]
+    Returns:
+        Response[HTTPValidationError | ListAnnotationQueueResponse]
     """
+
     kwargs = _get_kwargs(body=body, starting_token=starting_token, limit=limit)
 
     response = await client.arequest(**kwargs)
@@ -178,26 +193,29 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    *, client: ApiClient, body: ListAnnotationQueueParams, starting_token: Unset | int = 0, limit: Unset | int = 100
-) -> HTTPValidationError | ListAnnotationQueueResponse | None:
-    """Query Annotation Queues.
+    *,
+    client: ApiClient,
+    body: ListAnnotationQueueParams | Unset,
+    starting_token: int | Unset = 0,
+    limit: int | Unset = 100,
+) -> Optional[HTTPValidationError | ListAnnotationQueueResponse]:
+    """Query Annotation Queues
 
      Query annotation queues in the user's organization with filtering and sorting.
 
     Response includes num_templates for each queue to support copy selection UI.
 
     Args:
-        starting_token (Union[Unset, int]):  Default: 0.
-        limit (Union[Unset, int]):  Default: 100.
-        body (ListAnnotationQueueParams):
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset):  Default: 100.
+        body (ListAnnotationQueueParams | Unset):
 
-    Raises
-    ------
+    Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
-    Returns
-    -------
-        Union[HTTPValidationError, ListAnnotationQueueResponse]
+    Returns:
+        HTTPValidationError | ListAnnotationQueueResponse
     """
+
     return (await asyncio_detailed(client=client, body=body, starting_token=starting_token, limit=limit)).parsed
