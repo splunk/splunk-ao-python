@@ -365,7 +365,7 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
     tracer = tracer_provider.get_tracer("galileo-tracer")
     is_conversation_root = (
         not trace.get_current_span().get_span_context().is_valid
-        and isinstance(galileo_span, (WorkflowSpan, AgentSpan))
+        and isinstance(galileo_span, WorkflowSpan | AgentSpan)
     )
     with tracer.start_as_current_span(galileo_span.name) as span:
         yield span

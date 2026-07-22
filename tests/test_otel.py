@@ -27,6 +27,7 @@ from splunk_ao.otel import (
     start_splunk_ao_span,
 )
 
+
 class TestSplunkAOOTLPExporter:
     """Test suite for SplunkAOOTLPExporter class."""
 
