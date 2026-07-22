@@ -5,22 +5,17 @@ import pytest
 
 from splunk_ao.experiment import Experiment
 from splunk_ao.shared.base import SyncState
-from splunk_ao.shared.experiment_result import ExperimentStatusInfo
 
 FIXED_PROJECT_ID = str(uuid4())
 FIXED_EXPERIMENT_ID = str(uuid4())
 
 
-def _make_status(progress_percent: float, *, failed: bool = False) -> ExperimentStatusInfo:
-    """Build an ExperimentStatusInfo with a given log_generation progress (0-100)."""
-    phase = MagicMock()
-    phase.progress_percent = progress_percent / 100.0  # API uses 0.0-1.0
-    response = MagicMock()
-    response.status.log_generation = phase
-    status = ExperimentStatusInfo(response)
-    if failed:
-        # Override is_failed; is_complete stays False so the loop doesn't exit cleanly
-        type(status).is_failed = property(lambda self: True)
+def _make_status(progress_percent: float, *, failed: bool = False) -> MagicMock:
+    """Build a status mock with the given progress, is_complete, and is_failed."""
+    status = MagicMock()
+    status.overall_progress = progress_percent
+    status.is_complete = progress_percent >= 100.0
+    status.is_failed = failed
     return status
 
 
