@@ -67,15 +67,51 @@ def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog,
             total_tokens=13,
             duration_ns=1000,
         )
+        assert logger.add_workflow_span(input="workflow input") is None
+        assert logger.add_agent_span(input="agent input") is None
         logger.conclude(output="Nice try!", duration_ns=1000)
         logger.flush()
 
         assert "Bypassing logging for start_trace. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for add_llm_span. Logging is currently disabled." in caplog.text
+        assert "Bypassing logging for add_workflow_span. Logging is currently disabled." in caplog.text
+        assert "Bypassing logging for add_agent_span. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for conclude. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for flush. Logging is currently disabled." in caplog.text
     mock_traces_client.assert_not_called()
     mock_traces_client.ingest_traces.assert_not_called()
+
+
+@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_native_conversation_root_marks_direct_trace_children(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    """Workflow and agent spans directly under a trace are conversation roots."""
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    trace = logger.start_trace(input="trace input")
+    workflow = logger.add_workflow_span(input="workflow input", metadata={"existing": "value"})
+    nested_agent = logger.add_agent_span(input="nested agent input")
+    logger.conclude()
+    logger.conclude()
+    sibling_agent = logger.add_agent_span(input="sibling agent input")
+
+    assert workflow.conversation_root is True
+    assert workflow.user_metadata == {"existing": "value", "gen_ai.conversation_root": "true"}
+    assert nested_agent.conversation_root is None
+    assert nested_agent.user_metadata is None
+    assert sibling_agent.conversation_root is True
+    assert sibling_agent.user_metadata == {"gen_ai.conversation_root": "true"}
+
+    request = TracesIngestRequest(traces=[trace])
+    serialized = request.model_dump(mode="json")
+    assert serialized["traces"][0]["spans"][0]["conversation_root"] is True
+    assert serialized["traces"][0]["spans"][0]["user_metadata"]["gen_ai.conversation_root"] == "true"
 
 
 @patch("splunk_ao.logger.logger.LogStreams")

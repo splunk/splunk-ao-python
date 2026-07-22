@@ -257,6 +257,7 @@ def test_decorator_workflow_span_output_int(
     assert payload.traces[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].output == "3"
+    assert payload.traces[0].spans[0].conversation_root is True
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
@@ -415,6 +416,7 @@ def test_decorator_agent_span_with_nested_span(
     assert payload.traces[0].spans[0].input == '{"arg1": "arg1", "arg2": "arg2"}'
     assert payload.traces[0].spans[0].output == "arg1"
     assert payload.traces[0].spans[0].agent_type == "planner"
+    assert payload.traces[0].spans[0].conversation_root is True
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0].spans[0], ToolSpan)
     assert payload.traces[0].spans[0].spans[0].input == '{"arg1": "arg1"}'
@@ -449,6 +451,8 @@ def test_decorator_nested_span(
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0], WorkflowSpan)
     assert isinstance(payload.traces[0].spans[0].spans[0], LlmSpan)
+    assert payload.traces[0].spans[0].conversation_root is True
+    assert payload.traces[0].spans[0].spans[0].conversation_root is None
     assert payload.traces[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].output == output
