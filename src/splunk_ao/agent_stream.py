@@ -75,7 +75,7 @@ class AgentStream(StateManagementMixin):
         from splunk_ao.project import Project
 
         project = Project.get(name="My AI Project")
-        log_stream = project.create_log_stream(name="Production Logs")
+        log_stream = project.create_agent_stream(name="Production Logs")
 
         # Enable metrics on the log stream
         from splunk_ao.schema.metrics import SplunkAOMetrics
@@ -467,15 +467,15 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            from splunk_ao import Metric, AgentStream
+            from splunk_ao import Evaluator, AgentStream
 
             log_stream = AgentStream.get(name="Production Logs", project_name="My Project")
 
-            # Set metrics (replaces existing)
+            # Set evaluators (replaces existing)
             log_stream.set_metrics([
-                Metric.metrics.correctness,
-                Metric.metrics.completeness,
-                Metric.get(id="metric-from-console-uuid"),  # From console
+                Evaluator.metrics.correctness,
+                Evaluator.metrics.completeness,
+                Evaluator.get(id="evaluator-from-console-uuid"),  # From console
             ])
         """
         try:

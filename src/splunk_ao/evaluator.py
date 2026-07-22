@@ -60,9 +60,9 @@ class BuiltInEvaluators:
 
     Examples
     --------
-        from splunk_ao.metric import Evaluator
+        from splunk_ao import Evaluator
 
-        # Access built-in metrics
+        # Access built-in evaluators
         Evaluator.metrics.correctness
         Evaluator.metrics.completeness
         Evaluator.metrics.toxicity
@@ -115,10 +115,10 @@ class Evaluator(StateManagementMixin, ABC):
     Examples
     --------
         # 1. Use built-in Galileo scorers
-        from splunk_ao import Evaluator, SplunkAOEvaluator, LlmEvaluator, LocalEvaluator, LogStream
+        from splunk_ao import Evaluator, SplunkAOEvaluator, LlmEvaluator, LocalEvaluator, AgentStream
 
-        log_stream = LogStream.get(name="my-stream", project_name="my-project")
-        log_stream.set_metrics([
+        agent_stream = AgentStream.get(name="my-stream", project_name="my-project")
+        agent_stream.set_metrics([
             Evaluator.metrics.correctness,
             Evaluator.metrics.completeness,
         ])
@@ -1171,10 +1171,10 @@ class SplunkAOEvaluator(Evaluator):
     Examples
     --------
         # Access built-in scorers
-        from splunk_ao import Evaluator, LogStream
+        from splunk_ao import Evaluator, AgentStream
 
-        log_stream = LogStream.get(name="my-stream", project_name="my-project")
-        log_stream.set_metrics([
+        agent_stream = AgentStream.get(name="my-stream", project_name="my-project")
+        agent_stream.set_metrics([
             Evaluator.metrics.correctness,
             Evaluator.metrics.completeness,
             Evaluator.metrics.toxicity,

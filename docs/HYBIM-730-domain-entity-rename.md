@@ -2,21 +2,26 @@
 
 **Ticket:** [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730)  
 **Branch:** `feat/HYBIM-730-domain-rename`  
-**Status:** Implemented with full backward compatibility
+**Status:** Implemented — hard cut-over, no backward compatibility
 
 ---
 
 ## Summary
 
-Two core SDK domain entities are being renamed to better reflect their purpose:
+Two core SDK domain entities were renamed to better reflect their purpose. This
+is a **hard cut-over**: the old names are gone entirely. Migration for existing
+users is handled by the separate migration guide and the `galileo` compatibility
+SDK.
 
 | Old name | New name | Scope |
 |----------|----------|-------|
-| Log Stream / `LogStream` | Agent Stream / `AgentStream` | Top-level class, service class, convenience functions |
-| Metric / `Metric` | Evaluator / `Evaluator` | Base class and all concrete subclasses |
-
-The old names remain functional but emit `DeprecationWarning` at import time.  
-They will be removed in a future major release.
+| `LogStream` / `LogStreams` | `AgentStream` / `AgentStreams` | Top-level class, service class, convenience functions |
+| `Metric` / `Metrics` | `Evaluator` / `Evaluators` | Base class and all concrete subclasses |
+| `LlmMetric` | `LlmEvaluator` | Concrete subclass |
+| `CodeMetric` | `CodeEvaluator` | Concrete subclass |
+| `LocalMetric` | `LocalEvaluator` | Concrete subclass |
+| `SplunkAOMetric` | `SplunkAOEvaluator` | Concrete subclass |
+| `BuiltInMetrics` | `BuiltInEvaluators` | Built-in scorer accessor class |
 
 > **Note:** The underlying API endpoints continue to use the previous paths
 > (`/log_streams`, `/scorers`) — server-side renaming is tracked separately.
@@ -28,7 +33,6 @@ They will be removed in a future major release.
 ### Agent Streams
 
 ```python
-# Primary class (replaces LogStream)
 from splunk_ao import AgentStream
 
 # Create and persist a new agent stream
@@ -41,197 +45,168 @@ stream = AgentStream.get(name="prod-traces", project_name="my-project")
 streams = AgentStream.list(project_name="my-project")
 
 # Enable evaluators on the stream
-from splunk_ao import SplunkAOMetrics
-stream.set_metrics([SplunkAOMetrics.correctness, SplunkAOMetrics.completeness])
+from splunk_ao.schema.metrics import SplunkAOMetrics
+stream.enable_evaluators([SplunkAOMetrics.correctness, SplunkAOMetrics.completeness])
 ```
 
 ```python
-# Service class (replaces LogStreams in splunk_ao.log_streams)
+# Service class
 from splunk_ao.agent_streams import AgentStreams
 
 svc = AgentStreams()
 stream = svc.get(name="prod-traces", project_name="my-project")
 streams = svc.list(project_name="my-project")
+new_stream = svc.create(name="new-stream", project_name="my-project")
 ```
 
 ```python
-# Convenience functions (replaces functions in splunk_ao.log_streams)
-from splunk_ao.agent_streams import (
-    get_agent_stream,
-    list_agent_streams,
-    create_agent_stream,
-    enable_evaluators,
-)
+# Module-level convenience functions
+from splunk_ao.agent_streams import get_agent_stream, list_agent_streams, create_agent_stream, enable_evaluators
 
-stream = get_agent_stream(name="prod-traces", project_name="my-project")
+stream  = get_agent_stream(name="prod-traces", project_name="my-project")
 streams = list_agent_streams(project_name="my-project")
-stream = create_agent_stream(name="new-stream", project_name="my-project")
+stream  = create_agent_stream(name="new-stream", project_name="my-project")
+```
 
-# Enable evaluators (formerly enable_metrics)
-local_evals = enable_evaluators(
-    agent_stream_name="prod-traces",
-    project_name="my-project",
-    metrics=[SplunkAOMetrics.correctness, "completeness"],
-)
+```python
+# Project methods
+from splunk_ao.project import Project
+
+project = Project.get(name="My AI Project")
+stream  = project.create_agent_stream(name="Production Traces")
+streams = project.list_agent_streams()
+for s in project.agent_streams:
+    print(s.name)
 ```
 
 ### Evaluators
 
 ```python
-# Base class (replaces Metric)
-from splunk_ao import Evaluator, LlmEvaluator, CodeEvaluator, LocalEvaluator, SplunkAOEvaluator
+from splunk_ao import Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
 
-# Get an existing evaluator by name or ID
-ev = Evaluator.get(name="factuality-checker")
+# Access built-in scorers
+ev = Evaluator.metrics.correctness
+ev = Evaluator.metrics.completeness
 
-# List all evaluators
-evaluators = Evaluator.list()
-
-# Access built-in evaluators
-ev = Evaluator.evaluators.correctness
-ev = Evaluator.evaluators.completeness
+# Get a custom evaluator by name or id
+ev = Evaluator.get(name="my-evaluator")
+ev = Evaluator.get(id="<uuid>")
 
 # Create a custom LLM evaluator
 llm_ev = LlmEvaluator(
     name="response_quality",
-    prompt="Rate the quality 1-10: {input} -> {output}",
+    prompt="Rate the quality of this response on a scale of 1-10: {response}",
     model="gpt-4o-mini",
-    judges=3,
 ).create()
 
-# Create a code-based evaluator
-code_ev = CodeEvaluator(
-    name="custom_scorer",
-    code="def scorer_fn(step): return 1.0",
-).create()
+# Create a local evaluator
+def my_scorer(trace):
+    return 1.0 if "answer" in trace.output else 0.0
 
-# Create a local function-based evaluator
-def my_fn(trace):
-    return min(len(getattr(trace, "output", "") or "") / 200.0, 1.0)
-
-local_ev = LocalEvaluator(name="response_length", scorer_fn=my_fn)
+local_ev = LocalEvaluator(name="has_answer", scorer_fn=my_scorer)
 ```
 
 ```python
-# Evaluators service class (replaces Metrics in splunk_ao.metrics)
-from splunk_ao.evaluators import (
-    Evaluators,
-    create_custom_llm_evaluator,
-    get_evaluators,
-    delete_evaluator,
-)
+# Service class
+from splunk_ao.evaluators import Evaluators
 
-create_custom_llm_evaluator(name="my-eval", user_prompt="Rate this...")
-delete_evaluator(name="old-eval")
+svc = Evaluators()
+evaluators = svc.get_evaluators()
+svc.delete_evaluator(name="old-evaluator")
+svc.create_custom_llm_evaluator(name="quality", prompt="...", model="gpt-4o-mini")
 ```
-
-### Project methods
-
-```python
-from splunk_ao import Project
-
-project = Project.get(name="My AI Project")
-
-# New methods
-stream = project.create_agent_stream(name="Production Traces")
-streams = project.list_agent_streams()
-for stream in project.agent_streams:
-    print(stream.name)
-```
-
----
-
-## Backward Compatibility
-
-All old names continue to work but emit `DeprecationWarning`:
-
-```python
-import warnings
-warnings.simplefilter("always", DeprecationWarning)
-
-# These still work — but warn:
-from splunk_ao import LogStream       # warns: use AgentStream
-from splunk_ao import Metric          # warns: use Evaluator
-from splunk_ao import LlmMetric       # warns: use LlmEvaluator
-from splunk_ao import CodeMetric      # warns: use CodeEvaluator
-from splunk_ao import LocalMetric     # warns: use LocalEvaluator
-from splunk_ao import SplunkAOMetric  # warns: use SplunkAOEvaluator
-
-# Project deprecated methods — warn:
-project.create_log_stream("foo")   # warns: use create_agent_stream
-project.list_log_streams()         # warns: use list_agent_streams
-project.logstreams                 # warns: use agent_streams
-```
-
-### Migration quick-reference
-
-| Old import | New import |
-|------------|------------|
-| `from splunk_ao import LogStream` | `from splunk_ao import AgentStream` |
-| `from splunk_ao import Metric` | `from splunk_ao import Evaluator` |
-| `from splunk_ao import LlmMetric` | `from splunk_ao import LlmEvaluator` |
-| `from splunk_ao import CodeMetric` | `from splunk_ao import CodeEvaluator` |
-| `from splunk_ao import LocalMetric` | `from splunk_ao import LocalEvaluator` |
-| `from splunk_ao import SplunkAOMetric` | `from splunk_ao import SplunkAOEvaluator` |
-| `from splunk_ao.log_stream import LogStream` | `from splunk_ao.agent_stream import AgentStream` |
-| `from splunk_ao.log_streams import LogStreams` | `from splunk_ao.agent_streams import AgentStreams` |
-| `from splunk_ao.log_streams import get_log_stream` | `from splunk_ao.agent_streams import get_agent_stream` |
-| `from splunk_ao.log_streams import list_log_streams` | `from splunk_ao.agent_streams import list_agent_streams` |
-| `from splunk_ao.log_streams import create_log_stream` | `from splunk_ao.agent_streams import create_agent_stream` |
-| `from splunk_ao.log_streams import enable_metrics` | `from splunk_ao.agent_streams import enable_evaluators` |
-| `from splunk_ao.metric import Metric` | `from splunk_ao.evaluator import Evaluator` |
-| `from splunk_ao.metrics import Metrics` | `from splunk_ao.evaluators import Evaluators` |
-| `project.create_log_stream(name)` | `project.create_agent_stream(name)` |
-| `project.list_log_streams()` | `project.list_agent_streams()` |
-| `project.logstreams` | `project.agent_streams` |
 
 ---
 
 ## Files Changed
 
+### Source files deleted → replaced
+
+| Deleted | Replaced by |
+|---------|-------------|
+| `src/splunk_ao/log_stream.py` | `src/splunk_ao/agent_stream.py` |
+| `src/splunk_ao/log_streams.py` | `src/splunk_ao/agent_streams.py` |
+| `src/splunk_ao/metric.py` | `src/splunk_ao/evaluator.py` |
+| `src/splunk_ao/metrics.py` | `src/splunk_ao/evaluators.py` |
+
+All `__future__` shim files were also deleted — no backward compatibility wrappers remain.
+
+### Other source files updated
+
 | File | Change |
 |------|--------|
-| `src/splunk_ao/agent_stream.py` | **New** — `AgentStream` subclass of `LogStream` |
-| `src/splunk_ao/agent_streams.py` | **New** — `AgentStreams` service class + convenience functions |
-| `src/splunk_ao/evaluator.py` | **New** — `Evaluator`, `LlmEvaluator`, `CodeEvaluator`, `LocalEvaluator`, `SplunkAOEvaluator` |
-| `src/splunk_ao/evaluators.py` | **New** — `Evaluators` service class + convenience functions |
-| `src/splunk_ao/__future__/agent_stream.py` | **New** — deprecation shim |
-| `src/splunk_ao/__future__/evaluator.py` | **New** — deprecation shim |
-| `src/splunk_ao/__init__.py` | **Modified** — export new names; PEP 562 `__getattr__` for deprecated old names |
-| `src/splunk_ao/project.py` | **Modified** — add `create_agent_stream`, `list_agent_streams`, `agent_streams`; deprecate old methods |
-| `docs/HYBIM-730-domain-entity-rename.md` | **New** — this document |
+| `src/splunk_ao/__init__.py` | Exports only new names; deprecated `__getattr__` shims removed |
+| `src/splunk_ao/project.py` | Removed `create_log_stream`, `list_log_streams`, `logstreams`; added `create_agent_stream`, `list_agent_streams`, `agent_streams` |
+| `src/splunk_ao/__future__/__init__.py` | Updated to new class names |
+| `src/splunk_ao/export.py` | Updated to `AgentStreams` |
+| `src/splunk_ao/logger/logger.py` | Updated to `AgentStreams` |
+| `src/splunk_ao/types.py` | `MetricSpec` now references `Evaluator` |
+
+### Test files renamed and updated
+
+| Old | New |
+|-----|-----|
+| `tests/test_log_stream.py` | `tests/test_agent_stream.py` |
+| `tests/test_log_streams_metrics.py` | `tests/test_agent_streams_evaluators.py` |
+| `tests/test_log_streams_pagination.py` | `tests/test_agent_streams_pagination.py` |
+| `tests/test_metric.py` | `tests/test_evaluator.py` |
+| `tests/test_metric_types.py` | `tests/test_evaluator_types.py` |
+| `tests/test_metrics.py` | `tests/test_evaluators.py` |
+
+All `@patch` paths, imports, assertions, and parameter names updated throughout the full test suite.
+
+---
+
+## Migration
+
+For users upgrading from a version that used the old names:
+
+- **Internal users**: the `galileo` SDK provides backward compatibility.
+- **External users**: see the separate migration guide and the `splunk-ao-migration-tool`.
+
+**Quick find-and-replace reference:**
+
+```
+LogStream        → AgentStream
+LogStreams        → AgentStreams
+Metric           → Evaluator      (OO class, not schema model)
+LlmMetric        → LlmEvaluator
+CodeMetric       → CodeEvaluator
+LocalMetric      → LocalEvaluator
+SplunkAOMetric   → SplunkAOEvaluator
+BuiltInMetrics   → BuiltInEvaluators
+Metrics          → Evaluators     (service class)
+
+# Module imports
+from splunk_ao.log_stream  import …  →  from splunk_ao.agent_stream  import …
+from splunk_ao.log_streams import …  →  from splunk_ao.agent_streams import …
+from splunk_ao.metric      import …  →  from splunk_ao.evaluator     import …
+from splunk_ao.metrics     import …  →  from splunk_ao.evaluators    import …
+
+# Method names
+project.create_log_stream(…)   →  project.create_agent_stream(…)
+project.list_log_streams(…)    →  project.list_agent_streams(…)
+project.logstreams             →  project.agent_streams
+enable_metrics(…)              →  enable_evaluators(…)
+delete_metric(…)               →  delete_evaluator(…)
+get_metrics(…)                 →  get_evaluators(…)
+create_custom_llm_metric(…)    →  create_custom_llm_evaluator(…)
+```
 
 ---
 
 ## Design Decisions
 
-### Subclassing vs type aliases
-
-`AgentStream` is implemented as a subclass of `LogStream` (rather than a plain
-`= LogStream` alias) so that:
-- `AgentStream.__name__` is `"AgentStream"`
-- Instances created via `AgentStream(...)` have the new name in repr
-- Future implementation divergence is possible without API breakage
-
-The same pattern applies to `Evaluator` / `LlmEvaluator` / etc.
-
-### PEP 562 `__getattr__` in `__init__.py`
-
-Old names (`LogStream`, `Metric`, …) are **not** listed in `__all__`, so they
-are invisible to tab-completion and static analysis. They are only reachable
-via `__getattr__`, which fires a `DeprecationWarning`. This gives existing code
-a graceful migration path without polluting the new API surface.
-
-### Server-side API paths unchanged
-
-The API endpoints remain on the old paths (`/log_streams`, `/scorers`).
-`AgentStream` / `Evaluator` call into the same service layers (`LogStreams`,
-`Metrics`) as before. A separate ticket tracks the server-side rename.
+- **Hard cut-over, no shims**: Per PR review, no `DeprecationWarning` wrappers or `__getattr__` shims are included. The old module names (`log_stream`, `log_streams`, `metric`, `metrics`) no longer exist. Any import of the old names raises `ModuleNotFoundError` / `ImportError`.
+- **API endpoints unchanged**: The rename is purely client-side. The server still uses `/log_streams` and `/scorers` paths, so no backend changes are required for this release.
+- **`BuiltInEvaluators`**: A direct rename of `BuiltInMetrics`. Accessed via `Evaluator.metrics` (the attribute name `metrics` is kept for API stability; a `scorers` alias is also available for legacy internal use).
+- **`SchemaMetric` is not renamed**: `splunk_ao.schema.metrics.Metric` is the Pydantic schema model used in API payloads. It is distinct from the OO `Evaluator` class and is not renamed in this ticket.
 
 ---
 
 ## Related
 
 - [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730) — this ticket
-- [HYBIM-832](https://splunk.atlassian.net/browse/HYBIM-832) — Galileo → Splunk AO env-var rename
-- `docs/OTEL_GALILEO_TO_SPLUNK_AO_RENAME.md` — OTel layer rename
+- [HYBIM-832](https://splunk.atlassian.net/browse/HYBIM-832) — env-var rename (`GALILEO_*` → `SPLUNK_AO_*`)
+- [HYBIM-914](https://splunk.atlassian.net/browse/HYBIM-914) — env-var rename (`SPLUNK_AO_LOG_STREAM` → `SPLUNK_AO_AGENT_STREAM`)
+- PR #100 — this PR

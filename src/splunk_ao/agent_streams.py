@@ -48,7 +48,7 @@ class AgentStream(LogStreamResponse):
     --------
     ```python
     # Create a new log stream in a project
-    from splunk_ao.log_streams import create_agent_stream
+    from splunk_ao.agent_streams import create_agent_stream
 
     # Create by project ID
     log_stream = create_agent_stream(name="Production Logs", project_id="project-123")
@@ -57,11 +57,11 @@ class AgentStream(LogStreamResponse):
     log_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # Get a log stream by name
-    from splunk_ao.log_streams import get_agent_stream
+    from splunk_ao.agent_streams import get_agent_stream
     log_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # List all log streams in a project
-    from splunk_ao.log_streams import list_agent_streams
+    from splunk_ao.agent_streams import list_agent_streams
     log_streams = list_agent_streams(project_name="My AI Project")
     for stream in log_streams:
         logger.info(f"Log Stream: {stream.name} (ID: {stream.id})")
@@ -77,7 +77,7 @@ class AgentStream(LogStreamResponse):
         )
 
     # Enable metrics on a log stream - RECOMMENDED APPROACH
-    from splunk_ao.log_streams import enable_evaluators
+    from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOMetrics
 
     # Set environment variables first
@@ -168,7 +168,7 @@ class AgentStream(LogStreamResponse):
         Basic usage with built-in metrics:
 
         ```python
-        from splunk_ao.log_streams import AgentStreams
+        from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOMetrics
 
         # Get a log stream first
@@ -519,7 +519,7 @@ class AgentStreams:
         --------
         ```python
         # Enable built-in metrics with explicit parameters
-        from splunk_ao.log_streams import AgentStreams
+        from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOMetrics
 
         log_streams = AgentStreams()
@@ -741,7 +741,7 @@ def enable_evaluators(
     --------
     ```python
     # Enable built-in metrics with explicit parameters
-    from splunk_ao.log_streams import enable_evaluators
+    from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOMetrics
 
     local_metrics = enable_evaluators(
