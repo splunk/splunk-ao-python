@@ -95,14 +95,16 @@ def test_native_conversation_root_marks_direct_trace_children(
 
     logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
     trace = logger.start_trace(input="trace input")
-    workflow = logger.add_workflow_span(input="workflow input", metadata={"existing": "value"})
+    workflow = logger.add_workflow_span(
+        input="workflow input", metadata={"existing": "value", "gen_ai.conversation_root": "caller-value"}
+    )
     nested_agent = logger.add_agent_span(input="nested agent input")
     logger.conclude()
     logger.conclude()
     sibling_agent = logger.add_agent_span(input="sibling agent input")
 
     assert workflow.conversation_root is True
-    assert workflow.user_metadata == {"existing": "value", "gen_ai.conversation_root": "true"}
+    assert workflow.user_metadata == {"existing": "value", "gen_ai.conversation_root": "caller-value"}
     assert nested_agent.conversation_root is None
     assert nested_agent.user_metadata == {}
     assert sibling_agent.conversation_root is True
@@ -111,7 +113,8 @@ def test_native_conversation_root_marks_direct_trace_children(
     request = TracesIngestRequest(traces=[trace])
     serialized = request.model_dump(mode="json")
     assert serialized["traces"][0]["spans"][0]["conversation_root"] is True
-    assert serialized["traces"][0]["spans"][0]["user_metadata"]["gen_ai.conversation_root"] == "true"
+    assert serialized["traces"][0]["spans"][0]["user_metadata"]["gen_ai.conversation_root"] == "caller-value"
+    assert serialized["traces"][0]["spans"][1]["user_metadata"]["gen_ai.conversation_root"] == "true"
 
 
 @patch("splunk_ao.logger.logger.LogStreams")
