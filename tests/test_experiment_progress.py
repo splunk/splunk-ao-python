@@ -123,16 +123,3 @@ class TestMonitorProgress:
         with pytest.raises(TimeoutError, match="did not complete within"):
             exp.monitor_progress(poll_interval_seconds=0.001, timeout_seconds=0.0)
 
-    @patch("splunk_ao.experiment.Experiment.get_status")
-    @patch("splunk_ao.experiment.sleep", return_value=None)
-    def test_positional_string_job_id_warns_and_uses_default_interval(self, mock_sleep, mock_get_status):
-        # Given: a legacy caller that passed job_id positionally as a string
-        mock_get_status.return_value = _make_status(100.0)
-        exp = _make_experiment()
-
-        # When/Then: a DeprecationWarning is emitted and the call completes without TypeError
-        with pytest.warns(DeprecationWarning, match="positional"):
-            exp.monitor_progress("some-legacy-job-id")
-
-        # And: sleep is never called (experiment was already complete on first poll)
-        mock_sleep.assert_not_called()

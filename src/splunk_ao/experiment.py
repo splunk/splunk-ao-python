@@ -1138,6 +1138,10 @@ class Experiment(StateManagementMixin):
         ----------
         poll_interval_seconds : float, optional
             Seconds to wait between status polls. Defaults to 2.0.
+            Note: in a prior version, ``job_id`` was the first positional
+            parameter. That parameter has been removed; callers that passed a
+            job ID string positionally will now receive a ``TypeError`` from
+            ``sleep()``. Use ``job_id=`` as a keyword argument instead.
         timeout_seconds : float or None, optional
             Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
             (one hour). Pass None to wait indefinitely (not recommended).
@@ -1168,16 +1172,6 @@ class Experiment(StateManagementMixin):
 
             experiment.monitor_progress()
         """
-        if isinstance(poll_interval_seconds, str):
-            warnings.warn(
-                "monitor_progress() received a string as its first argument. "
-                "The 'job_id' positional parameter was removed; pass job_id as a keyword argument instead. "
-                "The string value will be ignored and the default poll interval will be used.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            poll_interval_seconds = 2.0
-
         if job_id is not None:
             warnings.warn(
                 "The 'job_id' parameter of monitor_progress() is deprecated and will be removed in a future release. "
