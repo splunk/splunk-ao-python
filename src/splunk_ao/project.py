@@ -792,15 +792,14 @@ class Project(StateManagementMixin):
         """
         Save changes to this project.
 
-        Persists any local changes (name, type) to the remote API. If the project
+        Persists any local changes to the remote API. If the project
         is LOCAL_ONLY, delegates to create(). If SYNCED, returns immediately as a
         no-op. Raises ValueError for DELETED or FAILED_SYNC states.
 
         .. note::
-            ``ProjectUpdate`` also supports ``description``, ``labels``, and ``created_by``,
-            but these are not exposed as tracked attributes on the domain object because the
-            read endpoints (get/list) do not return them consistently. ``created_by`` is
-            server-managed.
+            ``ProjectUpdate`` also supports ``description`` and ``labels``, but these
+            are not exposed as tracked attributes on the domain object because the read
+            endpoints (get/list) do not return them consistently.
 
             If the project is in FAILED_SYNC state (from a prior failed operation), this
             method raises ValueError. Call :meth:`refresh` first to re-sync, then retry.
@@ -843,11 +842,10 @@ class Project(StateManagementMixin):
 
         logger.info(f"Project.save: name='{self.name}' id='{self.id}' - started")
         config = SplunkAOConfig.get()
-        # ProjectUpdate also accepts `description`, `labels`, and `created_by`, but:
+        # ProjectUpdate also accepts `description` and `labels`, but:
         # - `description`/`labels`: not exposed on the domain object because neither the
         #   get (ProjectDBThin) nor list endpoints return them, so round-tripping would
         #   leave the object stale. Expand when read endpoints return these fields.
-        # - `created_by`: server-managed, not a user-modifiable field.
         body = ProjectUpdate(name=self.name)
 
         try:

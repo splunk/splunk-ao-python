@@ -319,30 +319,30 @@ class Integration(StateManagementMixin):
             Provider: A provider-specific instance (OpenAIProvider, AzureProvider, etc.).
                      For unsupported integration types, returns a GenericProvider.
         """
-        name = str(integration_db.name)
+        provider_name = integration_db.provider
 
-        # Create appropriate provider instance based on name using __new__ to bypass __init__
+        # Create appropriate provider instance based on provider using __new__ to bypass __init__
         provider: Provider
-        if name == IntegrationProvider.OPENAI:
+        if provider_name == IntegrationProvider.OPENAI:
             provider = OpenAIProvider.__new__(OpenAIProvider)
-        elif name == IntegrationProvider.AZURE:
+        elif provider_name == IntegrationProvider.AZURE:
             provider = AzureProvider.__new__(AzureProvider)
-        elif name == IntegrationProvider.AWS_BEDROCK:
+        elif provider_name == IntegrationProvider.AWS_BEDROCK:
             provider = BedrockProvider.__new__(BedrockProvider)
-        elif name == IntegrationProvider.ANTHROPIC:
+        elif provider_name == IntegrationProvider.ANTHROPIC:
             provider = AnthropicProvider.__new__(AnthropicProvider)
         else:
             # For unsupported providers, use GenericProvider
             provider = GenericProvider.__new__(GenericProvider)
-            # Store the integration name enum for _get_integration_name()
-            provider._integration_name = integration_db.name
+            # Store the integration provider enum for _get_integration_provider()
+            provider._integration_provider = provider_name
 
         # Initialize the StateManagementMixin parent class
         StateManagementMixin.__init__(provider)
 
         # Populate provider attributes from IntegrationDB
         provider.id = str(integration_db.id)
-        provider.name = name
+        provider.name = str(integration_db.name)
         provider.created_at = integration_db.created_at
         provider.updated_at = integration_db.updated_at
         provider.created_by = integration_db.created_by
@@ -362,12 +362,12 @@ class Integration(StateManagementMixin):
     # Convenience properties for accessing configured integrations by type
 
     @classmethod
-    def _get_integration_by_name(cls, integration_name: str) -> Provider | UnconfiguredProvider:
+    def _get_integration_by_name(cls, integration_provider: str) -> Provider | UnconfiguredProvider:
         """
         Get a configured integration by name.
 
         Args:
-            integration_name (str): The integration name (e.g., "openai", "azure").
+            integration_provider (str): The integration name (e.g., "openai", "azure").
 
         Returns
         -------
@@ -380,15 +380,15 @@ class Integration(StateManagementMixin):
             providers_list = cls.list()
             # Type narrowing: list() without all=True returns list[Provider]
             if providers_list and isinstance(providers_list[0], str):
-                return UnconfiguredProvider(integration_name)
+                return UnconfiguredProvider(integration_provider)
 
             # Cast is safe because we checked for strings above
             providers = cast(list[Provider], providers_list)
-            matching = [p for p in providers if p.name == integration_name]
+            matching = [p for p in providers if p._get_integration_provider().value == integration_provider]
 
             if not matching:
-                logger.debug(f"Integration.{integration_name}: No '{integration_name}' integration configured.")
-                return UnconfiguredProvider(integration_name)
+                logger.debug(f"Integration.{integration_provider}: No '{integration_provider}' integration configured.")
+                return UnconfiguredProvider(integration_provider)
 
             # If multiple matches, prefer the selected one
             selected = [p for p in matching if p.is_selected]
@@ -398,8 +398,8 @@ class Integration(StateManagementMixin):
             # Otherwise return the first one
             return matching[0]
         except Exception as e:
-            logger.error(f"Integration._get_integration_by_name: failed to get {integration_name}: {e}")
-            return UnconfiguredProvider(integration_name)
+            logger.error(f"Integration._get_integration_by_name: failed to get {integration_provider}: {e}")
+            return UnconfiguredProvider(integration_provider)
 
     @classproperty
     def openai(cls) -> Provider | UnconfiguredProvider:
