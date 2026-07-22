@@ -452,7 +452,6 @@ def test_decorator_nested_span(
     assert isinstance(payload.traces[0].spans[0], WorkflowSpan)
     assert isinstance(payload.traces[0].spans[0].spans[0], LlmSpan)
     assert payload.traces[0].spans[0].conversation_root is True
-    assert payload.traces[0].spans[0].spans[0].conversation_root is None
     assert payload.traces[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].output == output

@@ -476,7 +476,10 @@ class TestSetToolSpanAttributes:
         _set_tool_span_attributes(mock_otel_span, tool_span)
 
         # Then: all attributes are set correctly
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "test-tool"
         assert calls["gen_ai.tool.call.arguments"] == "tool input data"
@@ -621,7 +624,10 @@ class TestStartGalileoSpan:
             with start_splunk_ao_span(galileo_span):
                 pass
 
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
         assert calls["gen_ai.conversation_root"] is True
 
     def test_start_splunk_ao_span_does_not_mark_span_with_parent(self):

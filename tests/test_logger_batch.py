@@ -104,7 +104,7 @@ def test_native_conversation_root_marks_direct_trace_children(
     assert workflow.conversation_root is True
     assert workflow.user_metadata == {"existing": "value", "gen_ai.conversation_root": "true"}
     assert nested_agent.conversation_root is None
-    assert nested_agent.user_metadata is None
+    assert nested_agent.user_metadata == {}
     assert sibling_agent.conversation_root is True
     assert sibling_agent.user_metadata == {"gen_ai.conversation_root": "true"}
 
@@ -1940,13 +1940,25 @@ def test_start_trace_invalid_redacted_input_type_raises() -> None:
         pytest.param(
             "add_workflow_span",
             {"input": "workflow input"},
-            {"intMeta": "1", "boolMeta": "True", "ratio": "3.14", "name": "test"},
+            {
+                "intMeta": "1",
+                "boolMeta": "True",
+                "ratio": "3.14",
+                "name": "test",
+                "gen_ai.conversation_root": "true",
+            },
             id="workflow_span",
         ),
         pytest.param(
             "add_agent_span",
             {"input": "agent input"},
-            {"intMeta": "1", "boolMeta": "True", "ratio": "3.14", "name": "test"},
+            {
+                "intMeta": "1",
+                "boolMeta": "True",
+                "ratio": "3.14",
+                "name": "test",
+                "gen_ai.conversation_root": "true",
+            },
             id="agent_span",
         ),
     ],

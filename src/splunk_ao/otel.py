@@ -371,7 +371,7 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         yield span
         span.set_attribute("gen_ai.system", "galileo-otel")
         if is_conversation_root:
-            span.set_attribute(GEN_AI_CONVERSATION_ROOT, True)
+            span.set_attribute(GEN_AI_CONVERSATION_ROOT, value=True)
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
             span, galileo_span.dataset_input, galileo_span.dataset_output, galileo_span.dataset_metadata

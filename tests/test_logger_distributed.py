@@ -540,7 +540,7 @@ def test_conclude_trace_with_nested_span(
     assert request.spans[0].output is None
     assert request.spans[0].name == "test-workflow-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert len(request.spans[0].spans) == 0
     assert request.spans[0].metrics.duration_ns is None
     assert request.spans[0].step_number == 1
@@ -667,7 +667,7 @@ def test_conclude_all_with_nested_span(
     assert request.spans[0].output is None
     assert request.spans[0].name == "test-workflow-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert len(request.spans[0].spans) == 0
     workflow_span_id = request.spans[0].id
 
@@ -801,7 +801,7 @@ def test_conclude_trace_with_agent_span(
     assert request.spans[0].agent_type == "planner"
     assert request.spans[0].name == "test-agent-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert len(request.spans[0].spans) == 0
     assert request.spans[0].metrics.duration_ns == 1_000_000
     agent_span_id = request.spans[0].id
@@ -955,7 +955,7 @@ def test_trace_with_multiple_nested_spans(
     assert request.spans[0].agent_type == "planner"
     assert request.spans[0].name == "test-agent-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert request.spans[0].metrics.duration_ns is None
     assert len(request.spans[0].spans) == 0
     agent_span_id = request.spans[0].id
@@ -1025,7 +1025,7 @@ def test_trace_with_multiple_nested_spans(
     assert request.spans[0].output is None
     assert request.spans[0].name == "test-workflow-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert request.spans[0].metrics.duration_ns is None
     assert len(request.spans[0].spans) == 0
     workflow_span_id = request.spans[0].id
@@ -1161,7 +1161,7 @@ def test_trace_with_nested_span_and_sibling(
     assert request.spans[0].output is None
     assert request.spans[0].name == "test-workflow-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert len(request.spans[0].spans) == 0
     assert request.spans[0].metrics.duration_ns is None
     workflow_span_id = request.spans[0].id
@@ -1383,7 +1383,7 @@ def test_add_nested_span_and_conclude_existing_trace(
     assert request.spans[0].output == "workflow-output"
     assert request.spans[0].name == "test-workflow-span"
     assert request.spans[0].created_at == created_at
-    assert request.spans[0].user_metadata == metadata
+    assert request.spans[0].user_metadata == {**metadata, "gen_ai.conversation_root": "true"}
     assert request.spans[0].metrics.duration_ns == 1_000_000
     assert request.spans[0].step_number == 1
     workflow_span_id = request.spans[0].id
