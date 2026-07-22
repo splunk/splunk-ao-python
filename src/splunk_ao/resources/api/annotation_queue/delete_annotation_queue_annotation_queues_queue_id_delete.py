@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,7 +36,7 @@ def _get_kwargs(queue_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -64,7 +64,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,7 +73,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(queue_id: str, *, client: ApiClient) -> Response[Union[Any, HTTPValidationError]]:
+def sync_detailed(queue_id: str, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Annotation Queue
 
      Delete an annotation queue.
@@ -86,7 +86,7 @@ def sync_detailed(queue_id: str, *, client: ApiClient) -> Response[Union[Any, HT
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id)
@@ -96,7 +96,7 @@ def sync_detailed(queue_id: str, *, client: ApiClient) -> Response[Union[Any, HT
     return _build_response(client=client, response=response)
 
 
-def sync(queue_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+def sync(queue_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Annotation Queue
 
      Delete an annotation queue.
@@ -109,13 +109,13 @@ def sync(queue_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidat
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(queue_id=queue_id, client=client).parsed
 
 
-async def asyncio_detailed(queue_id: str, *, client: ApiClient) -> Response[Union[Any, HTTPValidationError]]:
+async def asyncio_detailed(queue_id: str, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Annotation Queue
 
      Delete an annotation queue.
@@ -128,7 +128,7 @@ async def asyncio_detailed(queue_id: str, *, client: ApiClient) -> Response[Unio
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id)
@@ -138,7 +138,7 @@ async def asyncio_detailed(queue_id: str, *, client: ApiClient) -> Response[Unio
     return _build_response(client=client, response=response)
 
 
-async def asyncio(queue_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+async def asyncio(queue_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Annotation Queue
 
      Delete an annotation queue.
@@ -151,7 +151,7 @@ async def asyncio(queue_id: str, *, client: ApiClient) -> Optional[Union[Any, HT
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client)).parsed

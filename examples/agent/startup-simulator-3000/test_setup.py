@@ -6,7 +6,7 @@ Run this script to check if everything is configured correctly
 
 import os
 import sys
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 from dotenv import load_dotenv
 

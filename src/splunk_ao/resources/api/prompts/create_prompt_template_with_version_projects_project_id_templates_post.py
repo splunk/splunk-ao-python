@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -42,9 +42,7 @@ def _get_kwargs(project_id: str, *, body: CreatePromptTemplateWithVersionRequest
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Union[BasePromptTemplateResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> BasePromptTemplateResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = BasePromptTemplateResponse.from_dict(response.json())
 
@@ -75,7 +73,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +84,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: CreatePromptTemplateWithVersionRequestBody
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     """Create Prompt Template With Version
 
      For a given project, create a prompt template.
@@ -121,7 +119,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BasePromptTemplateResponse, HTTPValidationError]]
+        Response[BasePromptTemplateResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -133,7 +131,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, body: CreatePromptTemplateWithVersionRequestBody
-) -> Optional[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Optional[BasePromptTemplateResponse | HTTPValidationError]:
     """Create Prompt Template With Version
 
      For a given project, create a prompt template.
@@ -168,7 +166,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BasePromptTemplateResponse, HTTPValidationError]
+        BasePromptTemplateResponse | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -176,7 +174,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: CreatePromptTemplateWithVersionRequestBody
-) -> Response[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Response[BasePromptTemplateResponse | HTTPValidationError]:
     """Create Prompt Template With Version
 
      For a given project, create a prompt template.
@@ -211,7 +209,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[BasePromptTemplateResponse, HTTPValidationError]]
+        Response[BasePromptTemplateResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -223,7 +221,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: CreatePromptTemplateWithVersionRequestBody
-) -> Optional[Union[BasePromptTemplateResponse, HTTPValidationError]]:
+) -> Optional[BasePromptTemplateResponse | HTTPValidationError]:
     """Create Prompt Template With Version
 
      For a given project, create a prompt template.
@@ -258,7 +256,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[BasePromptTemplateResponse, HTTPValidationError]
+        BasePromptTemplateResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -44,7 +44,7 @@ def _get_kwargs(queue_id: str, *, body: RemoveRecordsFromQueueRequest) -> dict[s
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[HTTPValidationError, RemoveRecordsFromQueueResponse]:
+) -> HTTPValidationError | RemoveRecordsFromQueueResponse:
     if response.status_code == 200:
         response_200 = RemoveRecordsFromQueueResponse.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]:
+) -> Response[HTTPValidationError | RemoveRecordsFromQueueResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, *, client: ApiClient, body: RemoveRecordsFromQueueRequest
-) -> Response[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]:
+) -> Response[HTTPValidationError | RemoveRecordsFromQueueResponse]:
     """Remove Records From Annotation Queue
 
      Remove records from an annotation queue.
@@ -106,7 +106,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]
+        Response[HTTPValidationError | RemoveRecordsFromQueueResponse]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -118,7 +118,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, *, client: ApiClient, body: RemoveRecordsFromQueueRequest
-) -> Optional[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]:
+) -> Optional[HTTPValidationError | RemoveRecordsFromQueueResponse]:
     """Remove Records From Annotation Queue
 
      Remove records from an annotation queue.
@@ -138,7 +138,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, RemoveRecordsFromQueueResponse]
+        HTTPValidationError | RemoveRecordsFromQueueResponse
     """
 
     return sync_detailed(queue_id=queue_id, client=client, body=body).parsed
@@ -146,7 +146,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, *, client: ApiClient, body: RemoveRecordsFromQueueRequest
-) -> Response[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]:
+) -> Response[HTTPValidationError | RemoveRecordsFromQueueResponse]:
     """Remove Records From Annotation Queue
 
      Remove records from an annotation queue.
@@ -166,7 +166,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]
+        Response[HTTPValidationError | RemoveRecordsFromQueueResponse]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -178,7 +178,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, *, client: ApiClient, body: RemoveRecordsFromQueueRequest
-) -> Optional[Union[HTTPValidationError, RemoveRecordsFromQueueResponse]]:
+) -> Optional[HTTPValidationError | RemoveRecordsFromQueueResponse]:
     """Remove Records From Annotation Queue
 
      Remove records from an annotation queue.
@@ -198,7 +198,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, RemoveRecordsFromQueueResponse]
+        HTTPValidationError | RemoveRecordsFromQueueResponse
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client, body=body)).parsed

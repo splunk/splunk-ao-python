@@ -1,8 +1,6 @@
 import asyncio
 import datetime
-import json
 import logging
-import uuid
 from unittest.mock import Mock, patch
 from uuid import UUID
 
@@ -94,25 +92,19 @@ def test_start_trace(mock_traces_client: Mock, mock_projects_client: Mock, mock_
     assert request.traces[0].metrics.duration_ns == 1_000_000
 
 
-@patch("splunk_ao.logger.logger.IngestTraces")
 @patch("splunk_ao.logger.logger.Traces")
 @patch("splunk_ao.logger.logger.LogStreams")
 @patch("splunk_ao.logger.logger.Projects")
-def test_distributed_logger_uses_ingest_client_when_ingest_service_is_available(
-    mock_projects_client: Mock, mock_logstreams_client: Mock, mock_traces_client: Mock, mock_ingest_traces_client: Mock
+def test_distributed_logger_uses_traces_client_without_health_probe(
+    mock_projects_client: Mock, mock_logstreams_client: Mock, mock_traces_client: Mock
 ) -> None:
-    # Given: the ingest service reports healthy and project/log stream lookups succeed
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    with patch.object(SplunkAOLogger, "_is_ingest_service_available", return_value=True):
-        # When: creating a distributed logger
-        logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
 
-    # Then: distributed mode uses IngestTraces when available, same as batch mode
-    assert logger._traces_client is mock_ingest_traces_client.return_value
-    mock_ingest_traces_client.assert_called_once()
-    mock_traces_client.assert_not_called()
+    assert logger._traces_client is mock_traces_client.return_value
+    mock_traces_client.assert_called_once()
 
 
 @patch("splunk_ao.logger.logger.LogStreams")

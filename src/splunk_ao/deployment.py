@@ -105,16 +105,16 @@ class O11yConfig:
 
     @property
     def api_root(self) -> str:
-        """Return the realm-derived AO API origin."""
-        return f"https://api.{self.realm}.observability.splunkcloud.com"
+        """Return the realm-derived application origin used by the AO API."""
+        return f"https://app.{self.realm}.observability.splunkcloud.com"
 
     def require_api_url(self) -> str:
         """Return the realm-derived AO CRUD API URL."""
-        return f"{self.api_root}/v2/ao"
+        return f"{self.api_root}/ao/api/"
 
     def require_console_url(self) -> str:
         """Return the realm-derived AO console URL."""
-        return f"https://app.{self.realm}.observability.splunkcloud.com/#/ao"
+        return f"https://app.{self.realm}.observability.splunkcloud.com/"
 
 
 @dataclass
@@ -149,4 +149,4 @@ class StandaloneConfig:
     def otlp_endpoint(self) -> str:
         """Return the explicit or console-derived OTLP trace endpoint."""
         base = self.api_url or self.console_url.replace("://console.", "://api.", 1).replace("://app.", "://api.", 1)
-        return f"{base.rstrip('/')}/otel/traces"
+        return f"{base.rstrip('/')}/otel/v1/traces"

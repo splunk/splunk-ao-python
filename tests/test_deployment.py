@@ -110,8 +110,8 @@ def test_o11y_config_from_env_accepts_crud_only_api_token() -> None:
 
 
 def test_otlp_endpoint_derived_from_realm() -> None:
-    cfg = O11yConfig(realm="us1", sf_token="tok")
-    assert cfg.otlp_endpoint == "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp"
+    cfg = O11yConfig(realm="lab0", sf_token="tok")
+    assert cfg.otlp_endpoint == "https://ingest.lab0.observability.splunkcloud.com/v2/trace/otlp"
 
 
 def test_crud_token_prefers_api_token() -> None:
@@ -160,19 +160,20 @@ def test_require_ingest_token_rejects_crud_only_config() -> None:
 
 
 def test_api_root_derives_from_realm() -> None:
-    cfg = O11yConfig(realm="us1", sf_token="tok")
-    assert cfg.api_root == "https://api.us1.observability.splunkcloud.com"
+    cfg = O11yConfig(realm="lab0", sf_token="tok")
+    assert cfg.api_root == "https://app.lab0.observability.splunkcloud.com"
 
 
 def test_require_api_url_derives_from_realm() -> None:
-    cfg = O11yConfig(realm="us1", sf_token="tok")
-    assert cfg.require_api_url() == "https://api.us1.observability.splunkcloud.com/v2/ao"
-    assert cfg.require_api_url() == f"{cfg.api_root}/v2/ao"
+    cfg = O11yConfig(realm="lab0", sf_token="tok")
+    assert cfg.require_api_url() == "https://app.lab0.observability.splunkcloud.com/ao/api/"
+    assert cfg.require_api_url() == f"{cfg.api_root}/ao/api/"
+    assert cfg.require_api_url() == f"{cfg.require_console_url()}ao/api/"
 
 
 def test_require_console_url_derives_from_realm() -> None:
-    cfg = O11yConfig(realm="us1", sf_token="tok")
-    assert cfg.require_console_url() == "https://app.us1.observability.splunkcloud.com/#/ao"
+    cfg = O11yConfig(realm="lab0", sf_token="tok")
+    assert cfg.require_console_url() == "https://app.lab0.observability.splunkcloud.com/"
 
 
 def test_standalone_config_happy_path() -> None:
@@ -204,16 +205,16 @@ def test_missing_standalone_config_names_both_required_variables() -> None:
 
 def test_otlp_endpoint_derived_from_console_url_when_api_url_unset() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://console.demo.galileocloud.io")
-    assert cfg.otlp_endpoint == "https://api.demo.galileocloud.io/otel/traces"
+    assert cfg.otlp_endpoint == "https://api.demo.galileocloud.io/otel/v1/traces"
 
 
 def test_otlp_endpoint_derived_from_app_url() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://app.galileo.ai/")
-    assert cfg.otlp_endpoint == "https://api.galileo.ai/otel/traces"
+    assert cfg.otlp_endpoint == "https://api.galileo.ai/otel/v1/traces"
 
 
 def test_otlp_endpoint_uses_explicit_api_url_when_set() -> None:
     cfg = StandaloneConfig(
         api_key="key", console_url="https://console.demo.galileocloud.io", api_url="https://custom-api.example.com/"
     )
-    assert cfg.otlp_endpoint == "https://custom-api.example.com/otel/traces"
+    assert cfg.otlp_endpoint == "https://custom-api.example.com/otel/v1/traces"

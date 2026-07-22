@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.core_scorer_name import CoreScorerName
 from ..models.luna_input_type_enum import LunaInputTypeEnum
@@ -34,13 +35,13 @@ class FineTunedScorerResponse:
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         created_by (str):
-        lora_weights_path (Union[None, Unset, str]):
-        luna_input_type (Union[LunaInputTypeEnum, None, Unset]):
-        luna_output_type (Union[LunaOutputTypeEnum, None, Unset]):
-        class_name_to_vocab_ix (Union['FineTunedScorerResponseClassNameToVocabIxType0',
-            'FineTunedScorerResponseClassNameToVocabIxType1', None, Unset]):
-        executor (Union[CoreScorerName, None, Unset]): Executor pipeline. Defaults to finetuned scorer pipeline but can
-            run custom galileo score pipelines.
+        lora_weights_path (None | str | Unset):
+        luna_input_type (LunaInputTypeEnum | None | Unset):
+        luna_output_type (LunaOutputTypeEnum | None | Unset):
+        class_name_to_vocab_ix (FineTunedScorerResponseClassNameToVocabIxType0 |
+            FineTunedScorerResponseClassNameToVocabIxType1 | None | Unset):
+        executor (CoreScorerName | None | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
+            custom galileo score pipelines.
     """
 
     id: str
@@ -50,13 +51,13 @@ class FineTunedScorerResponse:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: str
-    lora_weights_path: Union[None, Unset, str] = UNSET
-    luna_input_type: Union[LunaInputTypeEnum, None, Unset] = UNSET
-    luna_output_type: Union[LunaOutputTypeEnum, None, Unset] = UNSET
-    class_name_to_vocab_ix: Union[
-        "FineTunedScorerResponseClassNameToVocabIxType0", "FineTunedScorerResponseClassNameToVocabIxType1", None, Unset
-    ] = UNSET
-    executor: Union[CoreScorerName, None, Unset] = UNSET
+    lora_weights_path: None | str | Unset = UNSET
+    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    class_name_to_vocab_ix: (
+        FineTunedScorerResponseClassNameToVocabIxType0 | FineTunedScorerResponseClassNameToVocabIxType1 | None | Unset
+    ) = UNSET
+    executor: CoreScorerName | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -81,13 +82,13 @@ class FineTunedScorerResponse:
 
         created_by = self.created_by
 
-        lora_weights_path: Union[None, Unset, str]
+        lora_weights_path: None | str | Unset
         if isinstance(self.lora_weights_path, Unset):
             lora_weights_path = UNSET
         else:
             lora_weights_path = self.lora_weights_path
 
-        luna_input_type: Union[None, Unset, str]
+        luna_input_type: None | str | Unset
         if isinstance(self.luna_input_type, Unset):
             luna_input_type = UNSET
         elif isinstance(self.luna_input_type, LunaInputTypeEnum):
@@ -95,7 +96,7 @@ class FineTunedScorerResponse:
         else:
             luna_input_type = self.luna_input_type
 
-        luna_output_type: Union[None, Unset, str]
+        luna_output_type: None | str | Unset
         if isinstance(self.luna_output_type, Unset):
             luna_output_type = UNSET
         elif isinstance(self.luna_output_type, LunaOutputTypeEnum):
@@ -103,7 +104,7 @@ class FineTunedScorerResponse:
         else:
             luna_output_type = self.luna_output_type
 
-        class_name_to_vocab_ix: Union[None, Unset, dict[str, Any]]
+        class_name_to_vocab_ix: dict[str, Any] | None | Unset
         if isinstance(self.class_name_to_vocab_ix, Unset):
             class_name_to_vocab_ix = UNSET
         elif isinstance(self.class_name_to_vocab_ix, FineTunedScorerResponseClassNameToVocabIxType0):
@@ -113,7 +114,7 @@ class FineTunedScorerResponse:
         else:
             class_name_to_vocab_ix = self.class_name_to_vocab_ix
 
-        executor: Union[None, Unset, str]
+        executor: None | str | Unset
         if isinstance(self.executor, Unset):
             executor = UNSET
         elif isinstance(self.executor, CoreScorerName):
@@ -165,22 +166,22 @@ class FineTunedScorerResponse:
 
         prompt = d.pop("prompt")
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        updated_at = isoparse(d.pop("updated_at"))
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
         created_by = d.pop("created_by")
 
-        def _parse_lora_weights_path(data: object) -> Union[None, Unset, str]:
+        def _parse_lora_weights_path(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_luna_input_type(data: object) -> Union[LunaInputTypeEnum, None, Unset]:
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -193,11 +194,11 @@ class FineTunedScorerResponse:
                 return luna_input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[LunaInputTypeEnum, None, Unset], data)
+            return cast(LunaInputTypeEnum | None | Unset, data)
 
         luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
 
-        def _parse_luna_output_type(data: object) -> Union[LunaOutputTypeEnum, None, Unset]:
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -210,18 +211,18 @@ class FineTunedScorerResponse:
                 return luna_output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[LunaOutputTypeEnum, None, Unset], data)
+            return cast(LunaOutputTypeEnum | None | Unset, data)
 
         luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
 
         def _parse_class_name_to_vocab_ix(
             data: object,
-        ) -> Union[
-            "FineTunedScorerResponseClassNameToVocabIxType0",
-            "FineTunedScorerResponseClassNameToVocabIxType1",
-            None,
-            Unset,
-        ]:
+        ) -> (
+            FineTunedScorerResponseClassNameToVocabIxType0
+            | FineTunedScorerResponseClassNameToVocabIxType1
+            | None
+            | Unset
+        ):
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -243,18 +244,16 @@ class FineTunedScorerResponse:
             except:  # noqa: E722
                 pass
             return cast(
-                Union[
-                    "FineTunedScorerResponseClassNameToVocabIxType0",
-                    "FineTunedScorerResponseClassNameToVocabIxType1",
-                    None,
-                    Unset,
-                ],
+                FineTunedScorerResponseClassNameToVocabIxType0
+                | FineTunedScorerResponseClassNameToVocabIxType1
+                | None
+                | Unset,
                 data,
             )
 
         class_name_to_vocab_ix = _parse_class_name_to_vocab_ix(d.pop("class_name_to_vocab_ix", UNSET))
 
-        def _parse_executor(data: object) -> Union[CoreScorerName, None, Unset]:
+        def _parse_executor(data: object) -> CoreScorerName | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -267,7 +266,7 @@ class FineTunedScorerResponse:
                 return executor_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[CoreScorerName, None, Unset], data)
+            return cast(CoreScorerName | None | Unset, data)
 
         executor = _parse_executor(d.pop("executor", UNSET))
 
