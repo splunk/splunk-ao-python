@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,17 +21,17 @@ class BillingUsageResponse:
     """
     Attributes:
         metric (BillingUsageMetric):
-        total (Union[Unset, int]):  Default: 0.
-        projects (Union[Unset, list['ProjectBillingUsage']]):
-        available (Union[Unset, bool]):  Default: True.
-        unavailable_reason (Union[None, Unset, str]):
+        total (int | Unset):  Default: 0.
+        projects (list[ProjectBillingUsage] | Unset):
+        available (bool | Unset):  Default: True.
+        unavailable_reason (None | str | Unset):
     """
 
     metric: BillingUsageMetric
-    total: Union[Unset, int] = 0
-    projects: Union[Unset, list["ProjectBillingUsage"]] = UNSET
-    available: Union[Unset, bool] = True
-    unavailable_reason: Union[None, Unset, str] = UNSET
+    total: int | Unset = 0
+    projects: list[ProjectBillingUsage] | Unset = UNSET
+    available: bool | Unset = True
+    unavailable_reason: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -37,7 +39,7 @@ class BillingUsageResponse:
 
         total = self.total
 
-        projects: Union[Unset, list[dict[str, Any]]] = UNSET
+        projects: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.projects, Unset):
             projects = []
             for projects_item_data in self.projects:
@@ -46,7 +48,7 @@ class BillingUsageResponse:
 
         available = self.available
 
-        unavailable_reason: Union[None, Unset, str]
+        unavailable_reason: None | str | Unset
         if isinstance(self.unavailable_reason, Unset):
             unavailable_reason = UNSET
         else:
@@ -75,21 +77,23 @@ class BillingUsageResponse:
 
         total = d.pop("total", UNSET)
 
-        projects = []
         _projects = d.pop("projects", UNSET)
-        for projects_item_data in _projects or []:
-            projects_item = ProjectBillingUsage.from_dict(projects_item_data)
+        projects: list[ProjectBillingUsage] | Unset = UNSET
+        if _projects is not UNSET:
+            projects = []
+            for projects_item_data in _projects:
+                projects_item = ProjectBillingUsage.from_dict(projects_item_data)
 
-            projects.append(projects_item)
+                projects.append(projects_item)
 
         available = d.pop("available", UNSET)
 
-        def _parse_unavailable_reason(data: object) -> Union[None, Unset, str]:
+        def _parse_unavailable_reason(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         unavailable_reason = _parse_unavailable_reason(d.pop("unavailable_reason", UNSET))
 

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.content_modality import ContentModality
 from ..models.file_source import FileSource
@@ -26,22 +27,22 @@ class FileMetadata:
             modality (ContentModality): Classification of content modality
             source (FileSource): Source of the file data.
             status (FileStatus): Processing status of the file.
-            content_type (Union[None, Unset, str]):
-            url (Union[None, Unset, str]): Presigned S3 URL or external URL
-            url_expires_at (Union[None, Unset, datetime.datetime]): Expiration time
-            size_bytes (Union[None, Unset, int]):
-            filename (Union[None, Unset, str]):
+            content_type (None | str | Unset):
+            url (None | str | Unset): Presigned S3 URL or external URL
+            url_expires_at (datetime.datetime | None | Unset): Expiration time
+            size_bytes (int | None | Unset):
+            filename (None | str | Unset):
     """
 
     file_id: str
     modality: ContentModality
     source: FileSource
     status: FileStatus
-    content_type: Union[None, Unset, str] = UNSET
-    url: Union[None, Unset, str] = UNSET
-    url_expires_at: Union[None, Unset, datetime.datetime] = UNSET
-    size_bytes: Union[None, Unset, int] = UNSET
-    filename: Union[None, Unset, str] = UNSET
+    content_type: None | str | Unset = UNSET
+    url: None | str | Unset = UNSET
+    url_expires_at: datetime.datetime | None | Unset = UNSET
+    size_bytes: int | None | Unset = UNSET
+    filename: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,19 +54,19 @@ class FileMetadata:
 
         status = self.status.value
 
-        content_type: Union[None, Unset, str]
+        content_type: None | str | Unset
         if isinstance(self.content_type, Unset):
             content_type = UNSET
         else:
             content_type = self.content_type
 
-        url: Union[None, Unset, str]
+        url: None | str | Unset
         if isinstance(self.url, Unset):
             url = UNSET
         else:
             url = self.url
 
-        url_expires_at: Union[None, Unset, str]
+        url_expires_at: None | str | Unset
         if isinstance(self.url_expires_at, Unset):
             url_expires_at = UNSET
         elif isinstance(self.url_expires_at, datetime.datetime):
@@ -73,13 +74,13 @@ class FileMetadata:
         else:
             url_expires_at = self.url_expires_at
 
-        size_bytes: Union[None, Unset, int]
+        size_bytes: int | None | Unset
         if isinstance(self.size_bytes, Unset):
             size_bytes = UNSET
         else:
             size_bytes = self.size_bytes
 
-        filename: Union[None, Unset, str]
+        filename: None | str | Unset
         if isinstance(self.filename, Unset):
             filename = UNSET
         else:
@@ -112,25 +113,25 @@ class FileMetadata:
 
         status = FileStatus(d.pop("status"))
 
-        def _parse_content_type(data: object) -> Union[None, Unset, str]:
+        def _parse_content_type(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         content_type = _parse_content_type(d.pop("content_type", UNSET))
 
-        def _parse_url(data: object) -> Union[None, Unset, str]:
+        def _parse_url(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         url = _parse_url(d.pop("url", UNSET))
 
-        def _parse_url_expires_at(data: object) -> Union[None, Unset, datetime.datetime]:
+        def _parse_url_expires_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -138,30 +139,30 @@ class FileMetadata:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                url_expires_at_type_0 = isoparse(data)
+                url_expires_at_type_0 = datetime.datetime.fromisoformat(data)
 
                 return url_expires_at_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, datetime.datetime], data)
+            return cast(datetime.datetime | None | Unset, data)
 
         url_expires_at = _parse_url_expires_at(d.pop("url_expires_at", UNSET))
 
-        def _parse_size_bytes(data: object) -> Union[None, Unset, int]:
+        def _parse_size_bytes(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         size_bytes = _parse_size_bytes(d.pop("size_bytes", UNSET))
 
-        def _parse_filename(data: object) -> Union[None, Unset, str]:
+        def _parse_filename(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         filename = _parse_filename(d.pop("filename", UNSET))
 

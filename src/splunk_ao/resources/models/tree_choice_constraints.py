@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,19 +20,19 @@ class TreeChoiceConstraints:
     """
     Attributes:
         annotation_type (Literal['tree_choice']):
-        choices_tree (Union[None, Unset, list['TreeChoiceNode']]):
-        choices_tree_yaml (Union[None, Unset, str]):
+        choices_tree (list[TreeChoiceNode] | None | Unset):
+        choices_tree_yaml (None | str | Unset):
     """
 
     annotation_type: Literal["tree_choice"]
-    choices_tree: Union[None, Unset, list["TreeChoiceNode"]] = UNSET
-    choices_tree_yaml: Union[None, Unset, str] = UNSET
+    choices_tree: list[TreeChoiceNode] | None | Unset = UNSET
+    choices_tree_yaml: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         annotation_type = self.annotation_type
 
-        choices_tree: Union[None, Unset, list[dict[str, Any]]]
+        choices_tree: list[dict[str, Any]] | None | Unset
         if isinstance(self.choices_tree, Unset):
             choices_tree = UNSET
         elif isinstance(self.choices_tree, list):
@@ -42,7 +44,7 @@ class TreeChoiceConstraints:
         else:
             choices_tree = self.choices_tree
 
-        choices_tree_yaml: Union[None, Unset, str]
+        choices_tree_yaml: None | str | Unset
         if isinstance(self.choices_tree_yaml, Unset):
             choices_tree_yaml = UNSET
         else:
@@ -67,7 +69,7 @@ class TreeChoiceConstraints:
         if annotation_type != "tree_choice":
             raise ValueError(f"annotation_type must match const 'tree_choice', got '{annotation_type}'")
 
-        def _parse_choices_tree(data: object) -> Union[None, Unset, list["TreeChoiceNode"]]:
+        def _parse_choices_tree(data: object) -> list[TreeChoiceNode] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -85,16 +87,16 @@ class TreeChoiceConstraints:
                 return choices_tree_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, Unset, list["TreeChoiceNode"]], data)
+            return cast(list[TreeChoiceNode] | None | Unset, data)
 
         choices_tree = _parse_choices_tree(d.pop("choices_tree", UNSET))
 
-        def _parse_choices_tree_yaml(data: object) -> Union[None, Unset, str]:
+        def _parse_choices_tree_yaml(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         choices_tree_yaml = _parse_choices_tree_yaml(d.pop("choices_tree_yaml", UNSET))
 
