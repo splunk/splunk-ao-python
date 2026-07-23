@@ -1,8 +1,10 @@
 # opentelemetry-resourcedetector-gcp 1.13.0 (the only stable release) was yanked
 # (reason: breaks imports). All other versions satisfying google-adk's requirement
-# of >=1.9.0a0 are pre-releases. Pin to the latest pre-release to unblock CI.
-# Remove this override once a new stable release (>1.13.0) is published upstream:
+# of >=1.9.0a0 are pre-releases. Allow pre-releases only when necessary and pin
+# to the latest un-yanked version to unblock CI.
+# Remove this once a new stable release (>1.13.0) is published upstream:
 # https://github.com/open-telemetry/opentelemetry-python-contrib/pull/4861
+prerelease = "if-necessary-or-explicit"
 override-dependencies = [
     "opentelemetry-resourcedetector-gcp==1.12.0a0",
 ]
