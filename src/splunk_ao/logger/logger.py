@@ -1849,6 +1849,9 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
+        if isinstance(self.current_parent(), LoggedTrace):
+            span.conversation_root = True
+            span.user_metadata = {"gen_ai.conversation_root": "true", **(span.user_metadata or {})}
         return self._attach_parentable_span(span, status_code)
 
     @nop_sync
@@ -1932,6 +1935,9 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
+        if isinstance(self.current_parent(), LoggedTrace):
+            span.conversation_root = True
+            span.user_metadata = {"gen_ai.conversation_root": "true", **(span.user_metadata or {})}
         return self._attach_parentable_span(span, status_code)
 
     @nop_sync

@@ -247,6 +247,28 @@ def test_crew_kickoff_started_empty_inputs(crewai_callback, generated_id) -> Non
         assert call_args[1]["input"] == "-"
 
 
+def test_crew_events_inherit_conversation_root_marking(crewai_callback, mock_splunk_ao_logger) -> None:
+    """A root crew workflow is marked while its nested task workflow is not."""
+    crew_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+    crew = MockCrew(crew_id=crew_id)
+    agent = MockAgent(crew=crew)
+    task = MockTask(task_id=task_id, description="Research market trends", agent=agent)
+
+    crewai_callback._handle_crew_kickoff_started(MockSource(id=crew_id), MockEvent(crew_name="Test Crew"))
+    crewai_callback._handle_task_started(MockSource(id=task_id), MockEvent(task=task))
+    crewai_callback._handle_task_completed(MockSource(id=task_id), MockEvent(output=MockOutput("Done")))
+    crewai_callback._handle_crew_kickoff_completed(
+        MockSource(id=crew_id), MockEvent(output=MockOutput("Crew completed successfully"))
+    )
+
+    traces = mock_splunk_ao_logger.traces
+    assert len(traces) == 1
+    root_span = traces[0].spans[0]
+    assert root_span.conversation_root is True
+    assert root_span.spans[0].conversation_root is None
+
+
 @pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
 def test_crew_kickoff_completed(crewai_callback, generated_id) -> None:
     """Test crew kickoff completed event handling."""

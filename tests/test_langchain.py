@@ -79,6 +79,7 @@ class TestSplunkAOCallback:
         assert traces[0].spans[0].input == '{"query": "test question"}'
         assert traces[0].spans[0].output == '{"result": "test answer"}'
         assert traces[0].spans[0].step_number is None
+        assert traces[0].spans[0].conversation_root is True
 
     def test_on_chain_start_with_kwargs_serialised_none(
         self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger
@@ -898,10 +899,12 @@ class TestSplunkAOCallback:
         outer_span = traces[0].spans[0]
         assert outer_span.type == "workflow"
         assert outer_span.name == "OuterChain"
+        assert outer_span.conversation_root is True
         assert len(outer_span.spans) == 1
         inner_span = outer_span.spans[0]
         assert inner_span.type == "agent"
         assert inner_span.name == "OuterChain:Agent"
+        assert inner_span.conversation_root is None
 
     def test_ai_message_with_list_content(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with content as list of dicts (Responses API format)"""
