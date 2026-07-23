@@ -192,8 +192,9 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
-                return cast(list[str], data)
+                required_scorers_type_1 = cast(list[str], data)
 
+                return required_scorers_type_1
             except:  # noqa: E722
                 pass
             return cast(list[str] | None | str | Unset, data)
@@ -208,8 +209,9 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
-                return cast(list[str], data)
+                scoreable_node_types_type_1 = cast(list[str], data)
 
+                return scoreable_node_types_type_1
             except:  # noqa: E722
                 pass
             return cast(list[str] | None | str | Unset, data)

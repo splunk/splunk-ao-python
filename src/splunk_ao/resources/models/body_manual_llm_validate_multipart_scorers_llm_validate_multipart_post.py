@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, File, Unset
+from ..types import UNSET, File, FileTypes, Unset
 
 T = TypeVar("T", bound="BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost")
 
@@ -30,18 +30,20 @@ class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
     def to_dict(self) -> dict[str, Any]:
         body = self.body
 
-        query_files: list[Any] | Unset = UNSET
+        query_files: list[FileTypes] | Unset = UNSET
         if not isinstance(self.query_files, Unset):
             query_files = []
             for query_files_item_data in self.query_files:
                 query_files_item = query_files_item_data.to_tuple()
+
                 query_files.append(query_files_item)
 
-        response_files: list[Any] | Unset = UNSET
+        response_files: list[FileTypes] | Unset = UNSET
         if not isinstance(self.response_files, Unset):
             response_files = []
             for response_files_item_data in self.response_files:
                 response_files_item = response_files_item_data.to_tuple()
+
                 response_files.append(response_files_item)
 
         field_dict: dict[str, Any] = {}
@@ -77,17 +79,23 @@ class BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost:
         d = dict(src_dict)
         body = d.pop("body")
 
-        query_files = []
         _query_files = d.pop("query_files", UNSET)
-        for query_files_item_data in _query_files or []:
-            query_files_item = File(payload=BytesIO(query_files_item_data))
-            query_files.append(query_files_item)
+        query_files: list[File] | Unset = UNSET
+        if _query_files is not UNSET:
+            query_files = []
+            for query_files_item_data in _query_files:
+                query_files_item = File(payload=BytesIO(query_files_item_data))
 
-        response_files = []
+                query_files.append(query_files_item)
+
         _response_files = d.pop("response_files", UNSET)
-        for response_files_item_data in _response_files or []:
-            response_files_item = File(payload=BytesIO(response_files_item_data))
-            response_files.append(response_files_item)
+        response_files: list[File] | Unset = UNSET
+        if _response_files is not UNSET:
+            response_files = []
+            for response_files_item_data in _response_files:
+                response_files_item = File(payload=BytesIO(response_files_item_data))
+
+                response_files.append(response_files_item)
 
         body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post = cls(
             body=body, query_files=query_files, response_files=response_files
