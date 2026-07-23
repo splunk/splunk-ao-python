@@ -94,7 +94,10 @@ def get_agent_control_target(
             "Provide target_id=<id> explicitly."
         )
 
-    env_log_stream_id = _strip_optional_string(os.getenv("SPLUNK_AO_AGENT_STREAM_ID"))
+    # SPLUNK_AO_LOG_STREAM_ID is a deprecated alias; SPLUNK_AO_AGENT_STREAM_ID takes precedence.
+    env_log_stream_id = _strip_optional_string(
+        os.getenv("SPLUNK_AO_AGENT_STREAM_ID") or os.getenv("SPLUNK_AO_LOG_STREAM_ID")
+    )
     if env_log_stream_id:
         _validate_uuid(env_log_stream_id, "SPLUNK_AO_AGENT_STREAM_ID")
         return AgentControlTarget(

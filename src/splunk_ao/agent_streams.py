@@ -568,7 +568,7 @@ class AgentStreams:
 
         # Get log stream - error out if not found
         if not agent_stream_name:
-            raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_LOG_STREAM env var)")
+            raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_AGENT_STREAM env var)")
         log_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
         if not log_stream:
             raise ValueError(f"Log stream '{agent_stream_name}' not found in project '{project_obj.name}'")
