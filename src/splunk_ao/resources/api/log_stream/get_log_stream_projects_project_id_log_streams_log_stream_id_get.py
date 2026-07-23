@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -39,7 +39,7 @@ def _get_kwargs(project_id: str, log_stream_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, LogStreamResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | LogStreamResponse:
     if response.status_code == 200:
         response_200 = LogStreamResponse.from_dict(response.json())
 
@@ -70,7 +70,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
+) -> Response[HTTPValidationError | LogStreamResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, log_stream_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
+) -> Response[HTTPValidationError | LogStreamResponse]:
     """Get Log Stream
 
      Retrieve a specific log stream.
@@ -95,7 +95,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogStreamResponse]]
+        Response[HTTPValidationError | LogStreamResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, log_stream_id=log_stream_id)
@@ -107,7 +107,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, log_stream_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, LogStreamResponse]]:
+) -> Optional[HTTPValidationError | LogStreamResponse]:
     """Get Log Stream
 
      Retrieve a specific log stream.
@@ -121,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogStreamResponse]
+        HTTPValidationError | LogStreamResponse
     """
 
     return sync_detailed(project_id=project_id, log_stream_id=log_stream_id, client=client).parsed
@@ -129,7 +129,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, log_stream_id: str, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
+) -> Response[HTTPValidationError | LogStreamResponse]:
     """Get Log Stream
 
      Retrieve a specific log stream.
@@ -143,7 +143,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LogStreamResponse]]
+        Response[HTTPValidationError | LogStreamResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, log_stream_id=log_stream_id)
@@ -155,7 +155,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, log_stream_id: str, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, LogStreamResponse]]:
+) -> Optional[HTTPValidationError | LogStreamResponse]:
     """Get Log Stream
 
      Retrieve a specific log stream.
@@ -169,7 +169,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LogStreamResponse]
+        HTTPValidationError | LogStreamResponse
     """
 
     return (await asyncio_detailed(project_id=project_id, log_stream_id=log_stream_id, client=client)).parsed

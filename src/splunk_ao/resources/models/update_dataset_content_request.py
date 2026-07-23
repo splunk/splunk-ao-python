@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -29,21 +31,19 @@ class UpdateDatasetContentRequest:
         - EditMode.global_edit
 
         Attributes:
-            edits (list[Union['DatasetAppendRow', 'DatasetCopyRecordData', 'DatasetDeleteRow', 'DatasetFilterRows',
-                'DatasetPrependRow', 'DatasetRemoveColumn', 'DatasetRenameColumn', 'DatasetUpdateRow']]):
+            edits (list[DatasetAppendRow | DatasetCopyRecordData | DatasetDeleteRow | DatasetFilterRows | DatasetPrependRow
+                | DatasetRemoveColumn | DatasetRenameColumn | DatasetUpdateRow]):
     """
 
     edits: list[
-        Union[
-            "DatasetAppendRow",
-            "DatasetCopyRecordData",
-            "DatasetDeleteRow",
-            "DatasetFilterRows",
-            "DatasetPrependRow",
-            "DatasetRemoveColumn",
-            "DatasetRenameColumn",
-            "DatasetUpdateRow",
-        ]
+        DatasetAppendRow
+        | DatasetCopyRecordData
+        | DatasetDeleteRow
+        | DatasetFilterRows
+        | DatasetPrependRow
+        | DatasetRemoveColumn
+        | DatasetRenameColumn
+        | DatasetUpdateRow
     ]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -102,16 +102,16 @@ class UpdateDatasetContentRequest:
 
             def _parse_edits_item(
                 data: object,
-            ) -> Union[
-                "DatasetAppendRow",
-                "DatasetCopyRecordData",
-                "DatasetDeleteRow",
-                "DatasetFilterRows",
-                "DatasetPrependRow",
-                "DatasetRemoveColumn",
-                "DatasetRenameColumn",
-                "DatasetUpdateRow",
-            ]:
+            ) -> (
+                DatasetAppendRow
+                | DatasetCopyRecordData
+                | DatasetDeleteRow
+                | DatasetFilterRows
+                | DatasetPrependRow
+                | DatasetRemoveColumn
+                | DatasetRenameColumn
+                | DatasetUpdateRow
+            ):
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

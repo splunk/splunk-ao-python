@@ -149,7 +149,6 @@ from .base_scorer_version_response import BaseScorerVersionResponse
 from .billing_usage_data_point import BillingUsageDataPoint
 from .billing_usage_metric import BillingUsageMetric
 from .billing_usage_response import BillingUsageResponse
-from .bleu_scorer import BleuScorer
 from .body_create_code_scorer_version_scorers_scorer_id_version_code_post import (
     BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
 )
@@ -779,8 +778,6 @@ from .invoke_response import InvokeResponse
 from .invoke_response_headers_type_0 import InvokeResponseHeadersType0
 from .invoke_response_metadata_type_0 import InvokeResponseMetadataType0
 from .invoke_response_metric_results import InvokeResponseMetricResults
-from .job_db import JobDB
-from .job_db_request_data import JobDBRequestData
 from .job_progress import JobProgress
 from .like_dislike_aggregate import LikeDislikeAggregate
 from .like_dislike_constraints import LikeDislikeConstraints
@@ -1108,7 +1105,6 @@ from .prompt_injection_scorer import PromptInjectionScorer
 from .prompt_injection_scorer_type import PromptInjectionScorerType
 from .prompt_injection_template import PromptInjectionTemplate
 from .prompt_injection_template_response_schema_type_0 import PromptInjectionTemplateResponseSchemaType0
-from .prompt_perplexity_scorer import PromptPerplexityScorer
 from .prompt_run_settings import PromptRunSettings
 from .prompt_run_settings_response_format_type_0 import PromptRunSettingsResponseFormatType0
 from .prompt_run_settings_tools_type_0_item import PromptRunSettingsToolsType0Item
@@ -1158,7 +1154,6 @@ from .roll_up_method_display_options import RollUpMethodDisplayOptions
 from .roll_up_strategy import RollUpStrategy
 from .rollback_request import RollbackRequest
 from .root_type import RootType
-from .rouge_scorer import RougeScorer
 from .rule import Rule
 from .rule_operator import RuleOperator
 from .rule_result import RuleResult
@@ -1298,7 +1293,6 @@ from .tree_choice_constraints import TreeChoiceConstraints
 from .tree_choice_db_constraints import TreeChoiceDBConstraints
 from .tree_choice_node import TreeChoiceNode
 from .tree_choice_rating import TreeChoiceRating
-from .uncertainty_scorer import UncertaintyScorer
 from .update_annotation_queue_request import UpdateAnnotationQueueRequest
 from .update_dataset_content_request import UpdateDatasetContentRequest
 from .update_dataset_request import UpdateDatasetRequest
@@ -1488,7 +1482,6 @@ __all__ = (
     "BillingUsageDataPoint",
     "BillingUsageMetric",
     "BillingUsageResponse",
-    "BleuScorer",
     "BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost",
     "BodyCreateDatasetDatasetsPost",
     "BodyLoginEmailLoginPost",
@@ -1952,8 +1945,6 @@ __all__ = (
     "InvokeResponseHeadersType0",
     "InvokeResponseMetadataType0",
     "InvokeResponseMetricResults",
-    "JobDB",
-    "JobDBRequestData",
     "JobProgress",
     "LikeDislikeAggregate",
     "LikeDislikeConstraints",
@@ -2245,7 +2236,6 @@ __all__ = (
     "PromptInjectionScorerType",
     "PromptInjectionTemplate",
     "PromptInjectionTemplateResponseSchemaType0",
-    "PromptPerplexityScorer",
     "PromptRunSettings",
     "PromptRunSettingsResponseFormatType0",
     "PromptRunSettingsToolsType0Item",
@@ -2291,7 +2281,6 @@ __all__ = (
     "RollUpMethodDisplayOptions",
     "RollUpStrategy",
     "RootType",
-    "RougeScorer",
     "Rule",
     "RuleOperator",
     "RuleResult",
@@ -2431,7 +2420,6 @@ __all__ = (
     "TreeChoiceDBConstraints",
     "TreeChoiceNode",
     "TreeChoiceRating",
-    "UncertaintyScorer",
     "UpdateAnnotationQueueRequest",
     "UpdateDatasetContentRequest",
     "UpdateDatasetRequest",
