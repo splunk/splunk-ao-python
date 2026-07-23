@@ -36,7 +36,7 @@ SPLUNK_AO_API_KEY="your-splunk-ao-api-key"
 
 # Optional: Splunk AO project and log stream names
 SPLUNK_AO_PROJECT="your-splunk-ao-project"
-SPLUNK_AO_LOG_STREAM=splunk-ao-logger-example
+SPLUNK_AO_AGENT_STREAM=splunk-ao-logger-example
 
 # Provide the console url below if you are not using app.galileo.ai
 # SPLUNK_AO_CONSOLE_URL="your-splunk-ao-console-url"
