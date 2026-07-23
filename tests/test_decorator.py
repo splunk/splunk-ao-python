@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, splunk_ao_context, log, start_session
+from splunk_ao import Message, MessageRole, log, splunk_ao_context, start_session
 from splunk_ao.decorator import _session_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -257,6 +257,7 @@ def test_decorator_workflow_span_output_int(
     assert payload.traces[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].output == "3"
+    assert payload.traces[0].spans[0].conversation_root is True
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -415,6 +416,7 @@ def test_decorator_agent_span_with_nested_span(
     assert payload.traces[0].spans[0].input == '{"arg1": "arg1", "arg2": "arg2"}'
     assert payload.traces[0].spans[0].output == "arg1"
     assert payload.traces[0].spans[0].agent_type == "planner"
+    assert payload.traces[0].spans[0].conversation_root is True
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0].spans[0], ToolSpan)
     assert payload.traces[0].spans[0].spans[0].input == '{"arg1": "arg1"}'
@@ -449,6 +451,7 @@ def test_decorator_nested_span(
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0], WorkflowSpan)
     assert isinstance(payload.traces[0].spans[0].spans[0], LlmSpan)
+    assert payload.traces[0].spans[0].conversation_root is True
     assert payload.traces[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].output == output
