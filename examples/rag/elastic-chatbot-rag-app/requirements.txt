@@ -313,7 +313,7 @@ opentelemetry-semantic-conventions==0.52b0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-sdk
-orjson==3.10.15
+orjson==3.11.5
     # via langsmith
 packaging==24.2
     # via
