@@ -69,7 +69,7 @@ class SplunkAOConfig(GalileoConfig):
     """Configure authentication and endpoints for standalone and O11y deployments."""
 
     # Config file for this project.
-    config_filename: str = "galileo-python-config.json"
+    config_filename: str = "splunk-ao-config.json"
     console_url: Url = DEFAULT_CONSOLE_URL
 
     _instance: ClassVar[Optional["SplunkAOConfig"]] = None
