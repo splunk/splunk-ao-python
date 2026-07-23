@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from splunk_ao.log_streams import LogStream, LogStreams, enable_metrics
+from splunk_ao.agent_streams import AgentStream, AgentStreams, enable_evaluators
 from splunk_ao.projects import Project
 from splunk_ao.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
@@ -40,7 +40,7 @@ def mock_project():
 @pytest.fixture
 def mock_log_stream():
     """Mock log stream object."""
-    return LogStream(
+    return AgentStream(
         log_stream=LogStreamResponse(
             id="log-stream-123",
             name="Test Log Stream",
@@ -154,12 +154,12 @@ class TestLogStreamMetrics:
         mock_scorer_settings_class.return_value.create.assert_called_once()
 
     def test_log_stream_enable_metrics_instance_method(self, mock_log_stream) -> None:
-        """Test LogStream instance enable_metrics method."""
-        with patch("splunk_ao.log_streams.create_metric_configs") as mock_create_configs:
+        """Test AgentStream instance enable_evaluators method."""
+        with patch("splunk_ao.agent_streams.create_metric_configs") as mock_create_configs:
             mock_create_configs.return_value = ([], [])
 
             # Test instance method
-            local_metrics = mock_log_stream.enable_metrics(["correctness"])
+            local_metrics = mock_log_stream.enable_evaluators(["correctness"])
 
             # Verify create_metric_configs was called with correct parameters
             mock_create_configs.assert_called_once_with(mock_log_stream.project_id, mock_log_stream.id, ["correctness"])
@@ -168,19 +168,19 @@ class TestLogStreamMetrics:
             assert local_metrics == []
 
     def test_log_stream_enable_metrics_missing_ids(self) -> None:
-        """Test LogStream enable_metrics raises error when IDs are missing."""
-        log_stream = LogStream()  # Empty log stream without IDs
+        """Test AgentStream enable_evaluators raises error when IDs are missing."""
+        log_stream = AgentStream()  # Empty log stream without IDs
 
         with pytest.raises(ValueError, match="Log stream must have id and project_id to enable metrics"):
-            log_stream.enable_metrics(["correctness"])
+            log_stream.enable_evaluators(["correctness"])
 
-    @patch("splunk_ao.log_streams.Projects")
-    @patch.object(LogStreams, "get")
-    @patch("splunk_ao.log_streams.create_metric_configs")
+    @patch("splunk_ao.agent_streams.Projects")
+    @patch.object(AgentStreams, "get")
+    @patch("splunk_ao.agent_streams.create_metric_configs")
     def test_logstreams_enable_metrics_with_explicit_params(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
-        """Test LogStreams.enable_metrics with explicit parameters."""
+        """Test AgentStreams.enable_evaluators with explicit parameters."""
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value
         mock_projects_instance.get_with_env_fallbacks.return_value = mock_project
@@ -188,9 +188,9 @@ class TestLogStreamMetrics:
         mock_create_configs.return_value = ([], [])
 
         # Test with explicit parameters
-        log_streams = LogStreams()
-        local_metrics = log_streams.enable_metrics(
-            log_stream_name="Test Log Stream", project_name="Test Project", metrics=["correctness"]
+        log_streams = AgentStreams()
+        local_metrics = log_streams.enable_evaluators(
+            agent_stream_name="Test Log Stream", project_name="Test Project", metrics=["correctness"]
         )
 
         # Verify project lookup
@@ -205,22 +205,22 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch.object(LogStreams, "get")
-    @patch("splunk_ao.log_streams.create_metric_configs")
+    @patch.object(AgentStreams, "get")
+    @patch("splunk_ao.agent_streams.create_metric_configs")
     @patch("splunk_ao.projects.Projects.get_with_env_fallbacks")
     def test_logstreams_enable_metrics_gets_project_correctly(
         self, mock_get_with_env_fallbacks, mock_create_configs, mock_get, mock_log_stream, mock_project
     ) -> None:
-        """Test LogStreams.enable_metrics with explicit parameters."""
+        """Test AgentStreams.enable_evaluators with explicit parameters."""
         # Setup mocks
         mock_get.return_value = mock_log_stream
         mock_create_configs.return_value = ([], [])
         mock_get_with_env_fallbacks.return_value = mock_project
 
         # Test with explicit parameters
-        log_streams = LogStreams()
-        local_metrics = log_streams.enable_metrics(
-            log_stream_name="Test Log Stream", project_name="Test Project", metrics=["correctness"]
+        log_streams = AgentStreams()
+        local_metrics = log_streams.enable_evaluators(
+            agent_stream_name="Test Log Stream", project_name="Test Project", metrics=["correctness"]
         )
 
         # Verify log stream lookup
@@ -232,13 +232,13 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("splunk_ao.log_streams.Projects")
-    @patch.object(LogStreams, "get")
-    @patch("splunk_ao.log_streams.create_metric_configs")
+    @patch("splunk_ao.agent_streams.Projects")
+    @patch.object(AgentStreams, "get")
+    @patch("splunk_ao.agent_streams.create_metric_configs")
     def test_logstreams_enable_metrics_with_env_vars(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
-        """Test LogStreams.enable_metrics with environment variables."""
+        """Test AgentStreams.enable_evaluators with environment variables."""
         # Set environment variables
         os.environ["SPLUNK_AO_PROJECT"] = "Test Project"
         os.environ["SPLUNK_AO_AGENT_STREAM"] = "Test Log Stream"
@@ -250,8 +250,8 @@ class TestLogStreamMetrics:
         mock_create_configs.return_value = ([], [])
 
         # Test with environment variables
-        log_streams = LogStreams()
-        local_metrics = log_streams.enable_metrics(metrics=["correctness"])
+        log_streams = AgentStreams()
+        local_metrics = log_streams.enable_evaluators(metrics=["correctness"])
 
         # Verify project lookup used env var
         mock_projects_instance.get_with_env_fallbacks.assert_called_once_with(name="Test Project")
@@ -262,79 +262,79 @@ class TestLogStreamMetrics:
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("splunk_ao.log_streams.Projects")
+    @patch("splunk_ao.agent_streams.Projects")
     def test_logstreams_enable_metrics_project_not_found(self, mock_projects_class) -> None:
-        """Test LogStreams.enable_metrics raises ValueError when project not found."""
+        """Test AgentStreams.enable_evaluators raises ValueError when project not found."""
         # Setup mock to return None
         mock_projects_instance = mock_projects_class.return_value
         mock_projects_instance.get_with_env_fallbacks.return_value = None
 
         # Test with non-existent project - expect ValueError
-        log_streams = LogStreams()
+        log_streams = AgentStreams()
         with pytest.raises(ValueError) as exc_info:
-            log_streams.enable_metrics(
-                project_name="Nonexistent Project", log_stream_name="Test Log Stream", metrics=["correctness"]
+            log_streams.enable_evaluators(
+                project_name="Nonexistent Project", agent_stream_name="Test Log Stream", metrics=["correctness"]
             )
 
         assert "Project 'Nonexistent Project' not found" in str(exc_info.value)
 
-    @patch("splunk_ao.log_streams.Projects")
-    @patch.object(LogStreams, "get")
+    @patch("splunk_ao.agent_streams.Projects")
+    @patch.object(AgentStreams, "get")
     def test_logstreams_enable_metrics_logstream_not_found(self, mock_get, mock_projects_class, mock_project) -> None:
-        """Test LogStreams.enable_metrics raises ValueError when log stream not found."""
+        """Test AgentStreams.enable_evaluators raises ValueError when log stream not found."""
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value
         mock_projects_instance.get_with_env_fallbacks.return_value = mock_project
         mock_get.return_value = None  # Log stream not found
 
         # Test with non-existent log stream - expect ValueError
-        log_streams = LogStreams()
+        log_streams = AgentStreams()
         with pytest.raises(ValueError) as exc_info:
-            log_streams.enable_metrics(
-                project_name="Test Project", log_stream_name="Nonexistent Stream", metrics=["correctness"]
+            log_streams.enable_evaluators(
+                project_name="Test Project", agent_stream_name="Nonexistent Stream", metrics=["correctness"]
             )
 
         assert "Log stream 'Nonexistent Stream' not found" in str(exc_info.value)
 
-    @patch.object(LogStreams, "enable_metrics")
+    @patch.object(AgentStreams, "enable_evaluators")
     def test_enable_metrics_convenience_function_explicit(self, mock_enable_metrics) -> None:
-        """Test enable_metrics convenience function with explicit parameters."""
+        """Test enable_evaluators convenience function with explicit parameters."""
         mock_enable_metrics.return_value = []
 
         # Test convenience function with explicit parameters
-        local_metrics = enable_metrics(
-            log_stream_name="Test Stream", project_name="Test Project", metrics=["correctness"]
+        local_metrics = enable_evaluators(
+            agent_stream_name="Test Stream", project_name="Test Project", metrics=["correctness"]
         )
 
         # Verify it calls the instance method
         mock_enable_metrics.assert_called_once_with(
-            log_stream_name="Test Stream", project_name="Test Project", metrics=["correctness"]
+            agent_stream_name="Test Stream", project_name="Test Project", metrics=["correctness"]
         )
 
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch.object(LogStreams, "enable_metrics")
+    @patch.object(AgentStreams, "enable_evaluators")
     def test_enable_metrics_convenience_function_env_only(self, mock_enable_metrics) -> None:
-        """Test enable_metrics convenience function with environment variables only."""
+        """Test enable_evaluators convenience function with environment variables only."""
         mock_enable_metrics.return_value = []
 
         # Test environment-only function (no explicit parameters)
-        local_metrics = enable_metrics(metrics=["correctness"])
+        local_metrics = enable_evaluators(metrics=["correctness"])
 
         # Verify it calls the instance method with no explicit params
-        mock_enable_metrics.assert_called_once_with(log_stream_name=None, project_name=None, metrics=["correctness"])
+        mock_enable_metrics.assert_called_once_with(agent_stream_name=None, project_name=None, metrics=["correctness"])
 
         # Verify return value is just local metrics
         assert local_metrics == []
 
-    @patch("splunk_ao.log_streams.Projects")
-    @patch.object(LogStreams, "get")
-    @patch("splunk_ao.log_streams.create_metric_configs")
+    @patch("splunk_ao.agent_streams.Projects")
+    @patch.object(AgentStreams, "get")
+    @patch("splunk_ao.agent_streams.create_metric_configs")
     def test_enable_metrics_with_env_vars_integration(
         self, mock_create_configs, mock_get, mock_projects_class, mock_project, mock_log_stream
     ) -> None:
-        """Test enable_metrics function with environment variables (integration test)."""
+        """Test enable_evaluators function with environment variables (integration test)."""
         # Set environment variables
         os.environ["SPLUNK_AO_PROJECT"] = "Integration Project"
         os.environ["SPLUNK_AO_AGENT_STREAM"] = "Integration Stream"
@@ -346,7 +346,7 @@ class TestLogStreamMetrics:
         mock_create_configs.return_value = ([], [])
 
         # Test the full integration
-        local_metrics = enable_metrics(metrics=["correctness", "completeness"])
+        local_metrics = enable_evaluators(metrics=["correctness", "completeness"])
 
         # Verify the entire chain was called correctly
         mock_projects_instance.get_with_env_fallbacks.assert_called_once_with(name="Integration Project")
@@ -359,15 +359,15 @@ class TestLogStreamMetrics:
         assert local_metrics == []
 
     def test_enable_metrics_missing_env_vars(self) -> None:
-        """Test enable_metrics raises ValueError when environment variables are missing."""
+        """Test enable_evaluators raises ValueError when environment variables are missing."""
         # Don't set any environment variables
-        with patch("splunk_ao.log_streams.Projects") as mock_projects_class:
+        with patch("splunk_ao.agent_streams.Projects") as mock_projects_class:
             mock_projects_instance = mock_projects_class.return_value
             mock_projects_instance.get_with_env_fallbacks.return_value = None
 
             # Expect ValueError since project is not found
             with pytest.raises(ValueError) as exc_info:
-                enable_metrics(metrics=["correctness"])
+                enable_evaluators(metrics=["correctness"])
 
             assert "Project" in str(exc_info.value)
             assert "not found" in str(exc_info.value)

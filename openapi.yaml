@@ -14069,7 +14069,7 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
+          format: binary
           title: File
         validation_result:
           type: string
@@ -14102,7 +14102,7 @@ components:
         file:
           anyOf:
             - type: string
-              contentMediaType: application/octet-stream
+              format: binary
             - type: 'null'
           title: File
         copy_from_dataset_id:
@@ -14173,14 +14173,14 @@ components:
         query_files:
           items:
             type: string
-            contentMediaType: application/octet-stream
+            format: binary
           type: array
           title: Query Files
           default: []
         response_files:
           items:
             type: string
-            contentMediaType: application/octet-stream
+            format: binary
           type: array
           title: Response Files
           default: []
@@ -14192,7 +14192,7 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
+          format: binary
           title: File
         dataset_id:
           type: string
@@ -14242,7 +14242,7 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
+          format: binary
           title: File
         log_stream_id:
           anyOf:
@@ -14301,7 +14301,7 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
+          format: binary
           title: File
         test_input:
           anyOf:
