@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,32 +20,32 @@ class CreateAnnotationQueueRequest:
     """
     Attributes:
         name (Name): Global name class for handling unique naming across the application.
-        description (Union[None, Unset, str]):
-        annotator_emails (Union[Unset, list[str]]):
-        copy_templates_from_queue_id (Union[None, Unset, str]): Optional ID of an existing annotation queue to copy
-            templates from
+        description (None | str | Unset):
+        annotator_emails (list[str] | Unset):
+        copy_templates_from_queue_id (None | str | Unset): Optional ID of an existing annotation queue to copy templates
+            from
     """
 
-    name: "Name"
-    description: Union[None, Unset, str] = UNSET
-    annotator_emails: Union[Unset, list[str]] = UNSET
-    copy_templates_from_queue_id: Union[None, Unset, str] = UNSET
+    name: Name
+    description: None | str | Unset = UNSET
+    annotator_emails: list[str] | Unset = UNSET
+    copy_templates_from_queue_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name.to_dict()
 
-        description: Union[None, Unset, str]
+        description: None | str | Unset
         if isinstance(self.description, Unset):
             description = UNSET
         else:
             description = self.description
 
-        annotator_emails: Union[Unset, list[str]] = UNSET
+        annotator_emails: list[str] | Unset = UNSET
         if not isinstance(self.annotator_emails, Unset):
             annotator_emails = self.annotator_emails
 
-        copy_templates_from_queue_id: Union[None, Unset, str]
+        copy_templates_from_queue_id: None | str | Unset
         if isinstance(self.copy_templates_from_queue_id, Unset):
             copy_templates_from_queue_id = UNSET
         else:
@@ -68,23 +70,23 @@ class CreateAnnotationQueueRequest:
         d = dict(src_dict)
         name = Name.from_dict(d.pop("name"))
 
-        def _parse_description(data: object) -> Union[None, Unset, str]:
+        def _parse_description(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
 
         annotator_emails = cast(list[str], d.pop("annotator_emails", UNSET))
 
-        def _parse_copy_templates_from_queue_id(data: object) -> Union[None, Unset, str]:
+        def _parse_copy_templates_from_queue_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         copy_templates_from_queue_id = _parse_copy_templates_from_queue_id(d.pop("copy_templates_from_queue_id", UNSET))
 

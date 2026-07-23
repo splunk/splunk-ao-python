@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -13,14 +15,14 @@ T = TypeVar("T", bound="AnnotationQueueNumAnnotatorsSort")
 class AnnotationQueueNumAnnotatorsSort:
     """
     Attributes:
-        name (Union[Literal['num_annotators'], Unset]):  Default: 'num_annotators'.
-        ascending (Union[Unset, bool]):  Default: True.
-        sort_type (Union[Literal['column'], Unset]):  Default: 'column'.
+        name (Literal['num_annotators'] | Unset):  Default: 'num_annotators'.
+        ascending (bool | Unset):  Default: True.
+        sort_type (Literal['column'] | Unset):  Default: 'column'.
     """
 
-    name: Union[Literal["num_annotators"], Unset] = "num_annotators"
-    ascending: Union[Unset, bool] = True
-    sort_type: Union[Literal["column"], Unset] = "column"
+    name: Literal["num_annotators"] | Unset = "num_annotators"
+    ascending: bool | Unset = True
+    sort_type: Literal["column"] | Unset = "column"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -45,13 +47,13 @@ class AnnotationQueueNumAnnotatorsSort:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        name = cast(Union[Literal["num_annotators"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["num_annotators"] | Unset, d.pop("name", UNSET))
         if name != "num_annotators" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'num_annotators', got '{name}'")
 
         ascending = d.pop("ascending", UNSET)
 
-        sort_type = cast(Union[Literal["column"], Unset], d.pop("sort_type", UNSET))
+        sort_type = cast(Literal["column"] | Unset, d.pop("sort_type", UNSET))
         if sort_type != "column" and not isinstance(sort_type, Unset):
             raise ValueError(f"sort_type must match const 'column', got '{sort_type}'")
 

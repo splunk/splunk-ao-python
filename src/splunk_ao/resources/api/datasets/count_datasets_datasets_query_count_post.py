@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import httpx
 
@@ -19,10 +19,10 @@ from splunk_ao.utils.headers_data import get_sdk_header
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
 from ...models.list_dataset_params import ListDatasetParams
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(*, body: ListDatasetParams) -> dict[str, Any]:
+def _get_kwargs(*, body: ListDatasetParams | Unset) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -31,7 +31,9 @@ def _get_kwargs(*, body: ListDatasetParams) -> dict[str, Any]:
         "path": "/datasets/query/count",
     }
 
-    _kwargs["json"] = body.to_dict()
+    _kwargs["json"]: dict[str, Any] | Unset = UNSET
+    if not isinstance(body, Unset):
+        _kwargs["json"] = body.to_dict()
 
     headers["Content-Type"] = "application/json"
 
@@ -41,7 +43,7 @@ def _get_kwargs(*, body: ListDatasetParams) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, int]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | int:
     if response.status_code == 200:
         response_200 = cast(int, response.json())
         return response_200
@@ -69,7 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, int]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | int]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,20 +80,20 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(*, client: ApiClient, body: ListDatasetParams) -> Response[Union[HTTPValidationError, int]]:
+def sync_detailed(*, client: ApiClient, body: ListDatasetParams | Unset) -> Response[HTTPValidationError | int]:
     """Count Datasets
 
      Count datasets visible to the current user with filtering.
 
     Args:
-        body (ListDatasetParams):
+        body (ListDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, int]]
+        Response[HTTPValidationError | int]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -101,39 +103,41 @@ def sync_detailed(*, client: ApiClient, body: ListDatasetParams) -> Response[Uni
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: ListDatasetParams) -> Optional[Union[HTTPValidationError, int]]:
+def sync(*, client: ApiClient, body: ListDatasetParams | Unset) -> Optional[HTTPValidationError | int]:
     """Count Datasets
 
      Count datasets visible to the current user with filtering.
 
     Args:
-        body (ListDatasetParams):
+        body (ListDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, int]
+        HTTPValidationError | int
     """
 
     return sync_detailed(client=client, body=body).parsed
 
 
-async def asyncio_detailed(*, client: ApiClient, body: ListDatasetParams) -> Response[Union[HTTPValidationError, int]]:
+async def asyncio_detailed(
+    *, client: ApiClient, body: ListDatasetParams | Unset
+) -> Response[HTTPValidationError | int]:
     """Count Datasets
 
      Count datasets visible to the current user with filtering.
 
     Args:
-        body (ListDatasetParams):
+        body (ListDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, int]]
+        Response[HTTPValidationError | int]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -143,20 +147,20 @@ async def asyncio_detailed(*, client: ApiClient, body: ListDatasetParams) -> Res
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient, body: ListDatasetParams) -> Optional[Union[HTTPValidationError, int]]:
+async def asyncio(*, client: ApiClient, body: ListDatasetParams | Unset) -> Optional[HTTPValidationError | int]:
     """Count Datasets
 
      Count datasets visible to the current user with filtering.
 
     Args:
-        body (ListDatasetParams):
+        body (ListDatasetParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, int]
+        HTTPValidationError | int
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,25 +25,22 @@ T = TypeVar("T", bound="ExperimentMetricsRequest")
 class ExperimentMetricsRequest:
     """
     Attributes:
-        filters (Union[Unset, list[Union['LogRecordsBooleanFilter', 'LogRecordsCollectionFilter',
-            'LogRecordsDateFilter', 'LogRecordsFullyAnnotatedFilter', 'LogRecordsIDFilter', 'LogRecordsNumberFilter',
-            'LogRecordsTextFilter']]]):
+        filters (list[LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
+            LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter] | Unset):
     """
 
-    filters: Union[
-        Unset,
+    filters: (
         list[
-            Union[
-                "LogRecordsBooleanFilter",
-                "LogRecordsCollectionFilter",
-                "LogRecordsDateFilter",
-                "LogRecordsFullyAnnotatedFilter",
-                "LogRecordsIDFilter",
-                "LogRecordsNumberFilter",
-                "LogRecordsTextFilter",
-            ]
-        ],
-    ] = UNSET
+            LogRecordsBooleanFilter
+            | LogRecordsCollectionFilter
+            | LogRecordsDateFilter
+            | LogRecordsFullyAnnotatedFilter
+            | LogRecordsIDFilter
+            | LogRecordsNumberFilter
+            | LogRecordsTextFilter
+        ]
+        | Unset
+    ) = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -52,7 +51,7 @@ class ExperimentMetricsRequest:
         from ..models.log_records_number_filter import LogRecordsNumberFilter
         from ..models.log_records_text_filter import LogRecordsTextFilter
 
-        filters: Union[Unset, list[dict[str, Any]]] = UNSET
+        filters: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
             for filters_item_data in self.filters:
@@ -93,78 +92,91 @@ class ExperimentMetricsRequest:
         from ..models.log_records_text_filter import LogRecordsTextFilter
 
         d = dict(src_dict)
-        filters = []
         _filters = d.pop("filters", UNSET)
-        for filters_item_data in _filters or []:
+        filters: (
+            list[
+                LogRecordsBooleanFilter
+                | LogRecordsCollectionFilter
+                | LogRecordsDateFilter
+                | LogRecordsFullyAnnotatedFilter
+                | LogRecordsIDFilter
+                | LogRecordsNumberFilter
+                | LogRecordsTextFilter
+            ]
+            | Unset
+        ) = UNSET
+        if _filters is not UNSET:
+            filters = []
+            for filters_item_data in _filters:
 
-            def _parse_filters_item(
-                data: object,
-            ) -> Union[
-                "LogRecordsBooleanFilter",
-                "LogRecordsCollectionFilter",
-                "LogRecordsDateFilter",
-                "LogRecordsFullyAnnotatedFilter",
-                "LogRecordsIDFilter",
-                "LogRecordsNumberFilter",
-                "LogRecordsTextFilter",
-            ]:
-                try:
+                def _parse_filters_item(
+                    data: object,
+                ) -> (
+                    LogRecordsBooleanFilter
+                    | LogRecordsCollectionFilter
+                    | LogRecordsDateFilter
+                    | LogRecordsFullyAnnotatedFilter
+                    | LogRecordsIDFilter
+                    | LogRecordsNumberFilter
+                    | LogRecordsTextFilter
+                ):
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_0 = LogRecordsIDFilter.from_dict(data)
+
+                        return filters_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_1 = LogRecordsDateFilter.from_dict(data)
+
+                        return filters_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_2 = LogRecordsNumberFilter.from_dict(data)
+
+                        return filters_item_type_2
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_3 = LogRecordsBooleanFilter.from_dict(data)
+
+                        return filters_item_type_3
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_4 = LogRecordsCollectionFilter.from_dict(data)
+
+                        return filters_item_type_4
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_5 = LogRecordsTextFilter.from_dict(data)
+
+                        return filters_item_type_5
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    filters_item_type_0 = LogRecordsIDFilter.from_dict(data)
+                    filters_item_type_6 = LogRecordsFullyAnnotatedFilter.from_dict(data)
 
-                    return filters_item_type_0
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_1 = LogRecordsDateFilter.from_dict(data)
+                    return filters_item_type_6
 
-                    return filters_item_type_1
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_2 = LogRecordsNumberFilter.from_dict(data)
+                filters_item = _parse_filters_item(filters_item_data)
 
-                    return filters_item_type_2
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_3 = LogRecordsBooleanFilter.from_dict(data)
-
-                    return filters_item_type_3
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_4 = LogRecordsCollectionFilter.from_dict(data)
-
-                    return filters_item_type_4
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    filters_item_type_5 = LogRecordsTextFilter.from_dict(data)
-
-                    return filters_item_type_5
-                except:  # noqa: E722
-                    pass
-                if not isinstance(data, dict):
-                    raise TypeError()
-                filters_item_type_6 = LogRecordsFullyAnnotatedFilter.from_dict(data)
-
-                return filters_item_type_6
-
-            filters_item = _parse_filters_item(filters_item_data)
-
-            filters.append(filters_item)
+                filters.append(filters_item)
 
         experiment_metrics_request = cls(filters=filters)
 

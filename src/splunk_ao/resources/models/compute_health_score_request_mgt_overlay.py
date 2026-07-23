@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -11,9 +13,10 @@ T = TypeVar("T", bound="ComputeHealthScoreRequestMgtOverlay")
 class ComputeHealthScoreRequestMgtOverlay:
     """Client-side pending MGT edits: {row_id: value}. Overrides committed dataset values."""
 
-    additional_properties: dict[str, Union[None, str]] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, None | str] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         field_dict: dict[str, Any] = {}
         for prop_name, prop in self.additional_properties.items():
             field_dict[prop_name] = prop
@@ -28,10 +31,10 @@ class ComputeHealthScoreRequestMgtOverlay:
         additional_properties = {}
         for prop_name, prop_dict in d.items():
 
-            def _parse_additional_property(data: object) -> Union[None, str]:
+            def _parse_additional_property(data: object) -> None | str:
                 if data is None:
                     return data
-                return cast(Union[None, str], data)
+                return cast(None | str, data)
 
             additional_property = _parse_additional_property(prop_dict)
 
@@ -44,10 +47,10 @@ class ComputeHealthScoreRequestMgtOverlay:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> Union[None, str]:
+    def __getitem__(self, key: str) -> None | str:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: Union[None, str]) -> None:
+    def __setitem__(self, key: str, value: None | str) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -39,7 +39,7 @@ def _get_kwargs(project_id: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]:
+) -> ExperimentsAvailableColumnsResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = ExperimentsAvailableColumnsResponse.from_dict(response.json())
 
@@ -70,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]:
+) -> Response[ExperimentsAvailableColumnsResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient
-) -> Response[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]:
+) -> Response[ExperimentsAvailableColumnsResponse | HTTPValidationError]:
     """Experiments Available Columns
 
      Procures the column information for experiments.
@@ -94,7 +94,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]
+        Response[ExperimentsAvailableColumnsResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -104,9 +104,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    project_id: str, *, client: ApiClient
-) -> Optional[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]:
+def sync(project_id: str, *, client: ApiClient) -> Optional[ExperimentsAvailableColumnsResponse | HTTPValidationError]:
     """Experiments Available Columns
 
      Procures the column information for experiments.
@@ -119,7 +117,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]
+        ExperimentsAvailableColumnsResponse | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, client=client).parsed
@@ -127,7 +125,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient
-) -> Response[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]:
+) -> Response[ExperimentsAvailableColumnsResponse | HTTPValidationError]:
     """Experiments Available Columns
 
      Procures the column information for experiments.
@@ -140,7 +138,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]
+        Response[ExperimentsAvailableColumnsResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -152,7 +150,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient
-) -> Optional[Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]]:
+) -> Optional[ExperimentsAvailableColumnsResponse | HTTPValidationError]:
     """Experiments Available Columns
 
      Procures the column information for experiments.
@@ -165,7 +163,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[ExperimentsAvailableColumnsResponse, HTTPValidationError]
+        ExperimentsAvailableColumnsResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client)).parsed

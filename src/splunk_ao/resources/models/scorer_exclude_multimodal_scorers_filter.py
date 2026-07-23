@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,10 +18,10 @@ class ScorerExcludeMultimodalScorersFilter:
     Auto-appended by the service layer when the `multimodal` feature flag is disabled.
 
         Attributes:
-            name (Union[Literal['exclude_multimodal_scorers'], Unset]):  Default: 'exclude_multimodal_scorers'.
+            name (Literal['exclude_multimodal_scorers'] | Unset):  Default: 'exclude_multimodal_scorers'.
     """
 
-    name: Union[Literal["exclude_multimodal_scorers"], Unset] = "exclude_multimodal_scorers"
+    name: Literal["exclude_multimodal_scorers"] | Unset = "exclude_multimodal_scorers"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,7 +38,7 @@ class ScorerExcludeMultimodalScorersFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        name = cast(Union[Literal["exclude_multimodal_scorers"], Unset], d.pop("name", UNSET))
+        name = cast(Literal["exclude_multimodal_scorers"] | Unset, d.pop("name", UNSET))
         if name != "exclude_multimodal_scorers" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'exclude_multimodal_scorers', got '{name}'")
 
