@@ -336,7 +336,7 @@ proto-plus==1.26.1
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-resource-manager
-protobuf==5.29.3
+protobuf==5.29.6
     # via
     #   google-api-core
     #   google-cloud-aiplatform
