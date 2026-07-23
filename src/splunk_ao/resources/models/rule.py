@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,12 +15,12 @@ class Rule:
     Attributes:
         metric (str): Name of the metric.
         operator (RuleOperator):
-        target_value (float | int | list[Any] | None | str): Value to compare with for this metric (right hand side).
+        target_value (Union[None, float, int, list[Any], str]): Value to compare with for this metric (right hand side).
     """
 
     metric: str
     operator: RuleOperator
-    target_value: float | int | list[Any] | None | str
+    target_value: Union[None, float, int, list[Any], str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -30,7 +28,7 @@ class Rule:
 
         operator = self.operator.value
 
-        target_value: float | int | list[Any] | None | str
+        target_value: Union[None, float, int, list[Any], str]
         if isinstance(self.target_value, list):
             target_value = self.target_value
 
@@ -50,7 +48,7 @@ class Rule:
 
         operator = RuleOperator(d.pop("operator"))
 
-        def _parse_target_value(data: object) -> float | int | list[Any] | None | str:
+        def _parse_target_value(data: object) -> Union[None, float, int, list[Any], str]:
             if data is None:
                 return data
             try:
@@ -61,7 +59,7 @@ class Rule:
                 return target_value_type_3
             except:  # noqa: E722
                 pass
-            return cast(float | int | list[Any] | None | str, data)
+            return cast(Union[None, float, int, list[Any], str], data)
 
         target_value = _parse_target_value(d.pop("target_value"))
 

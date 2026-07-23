@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,7 +16,9 @@ T = TypeVar("T", bound="AggregatedTraceViewNodeMetrics")
 class AggregatedTraceViewNodeMetrics:
     """ """
 
-    additional_properties: dict[str, CategoricalMetricInfo | SystemMetricInfo] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, Union["CategoricalMetricInfo", "SystemMetricInfo"]] = _attrs_field(
+        init=False, factory=dict
+    )
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.system_metric_info import SystemMetricInfo
@@ -43,7 +43,7 @@ class AggregatedTraceViewNodeMetrics:
         additional_properties = {}
         for prop_name, prop_dict in d.items():
 
-            def _parse_additional_property(data: object) -> CategoricalMetricInfo | SystemMetricInfo:
+            def _parse_additional_property(data: object) -> Union["CategoricalMetricInfo", "SystemMetricInfo"]:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -69,10 +69,10 @@ class AggregatedTraceViewNodeMetrics:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> CategoricalMetricInfo | SystemMetricInfo:
+    def __getitem__(self, key: str) -> Union["CategoricalMetricInfo", "SystemMetricInfo"]:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: CategoricalMetricInfo | SystemMetricInfo) -> None:
+    def __setitem__(self, key: str, value: Union["CategoricalMetricInfo", "SystemMetricInfo"]) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

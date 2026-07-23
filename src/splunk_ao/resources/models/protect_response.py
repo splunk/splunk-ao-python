@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,12 +21,12 @@ class ProtectResponse:
     Attributes:
         text (str): Text from the request after processing the rules.
         trace_metadata (TraceMetadata):
-        status (ExecutionStatus | Unset): Status of the execution.
+        status (Union[Unset, ExecutionStatus]): Status of the execution.
     """
 
     text: str
-    trace_metadata: TraceMetadata
-    status: ExecutionStatus | Unset = UNSET
+    trace_metadata: "TraceMetadata"
+    status: Union[Unset, ExecutionStatus] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,7 +34,7 @@ class ProtectResponse:
 
         trace_metadata = self.trace_metadata.to_dict()
 
-        status: str | Unset = UNSET
+        status: Union[Unset, str] = UNSET
         if not isinstance(self.status, Unset):
             status = self.status.value
 
@@ -58,7 +56,7 @@ class ProtectResponse:
         trace_metadata = TraceMetadata.from_dict(d.pop("trace_metadata"))
 
         _status = d.pop("status", UNSET)
-        status: ExecutionStatus | Unset
+        status: Union[Unset, ExecutionStatus]
         if isinstance(_status, Unset):
             status = UNSET
         else:

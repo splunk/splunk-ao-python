@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,11 +14,11 @@ class TreeChoiceRating:
     """
     Attributes:
         value (str):
-        annotation_type (Literal['tree_choice'] | Unset):  Default: 'tree_choice'.
+        annotation_type (Union[Literal['tree_choice'], Unset]):  Default: 'tree_choice'.
     """
 
     value: str
-    annotation_type: Literal["tree_choice"] | Unset = "tree_choice"
+    annotation_type: Union[Literal["tree_choice"], Unset] = "tree_choice"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class TreeChoiceRating:
         d = dict(src_dict)
         value = d.pop("value")
 
-        annotation_type = cast(Literal["tree_choice"] | Unset, d.pop("annotation_type", UNSET))
+        annotation_type = cast(Union[Literal["tree_choice"], Unset], d.pop("annotation_type", UNSET))
         if annotation_type != "tree_choice" and not isinstance(annotation_type, Unset):
             raise ValueError(f"annotation_type must match const 'tree_choice', got '{annotation_type}'")
 

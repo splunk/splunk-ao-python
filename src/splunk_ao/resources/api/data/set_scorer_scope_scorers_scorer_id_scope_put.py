@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,7 +42,7 @@ def _get_kwargs(scorer_id: str, *, body: UpdateScorerScopeRequest) -> dict[str, 
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ScorerResponse:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, ScorerResponse]:
     if response.status_code == 200:
         response_200 = ScorerResponse.from_dict(response.json())
 
@@ -71,7 +71,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | ScorerResponse]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +84,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 def sync_detailed(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Response[HTTPValidationError | ScorerResponse]:
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -100,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ScorerResponse]
+        Response[Union[HTTPValidationError, ScorerResponse]]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
@@ -112,7 +114,7 @@ def sync_detailed(
 
 def sync(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Optional[HTTPValidationError | ScorerResponse]:
+) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -130,7 +132,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ScorerResponse
+        Union[HTTPValidationError, ScorerResponse]
     """
 
     return sync_detailed(scorer_id=scorer_id, client=client, body=body).parsed
@@ -138,7 +140,7 @@ def sync(
 
 async def asyncio_detailed(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Response[HTTPValidationError | ScorerResponse]:
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -156,7 +158,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ScorerResponse]
+        Response[Union[HTTPValidationError, ScorerResponse]]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
@@ -168,7 +170,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Optional[HTTPValidationError | ScorerResponse]:
+) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -186,7 +188,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ScorerResponse
+        Union[HTTPValidationError, ScorerResponse]
     """
 
     return (await asyncio_detailed(scorer_id=scorer_id, client=client, body=body)).parsed

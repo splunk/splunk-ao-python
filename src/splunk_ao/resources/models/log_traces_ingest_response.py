@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,11 +18,11 @@ class LogTracesIngestResponse:
         records_count (int): Total number of records ingested
         traces_count (int): total number of traces ingested
         spans_count (int): total number of spans ingested
-        log_stream_id (None | str | Unset): Log stream id associated with the traces.
-        experiment_id (None | str | Unset): Experiment id associated with the traces.
-        metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
-        session_id (None | str | Unset): Session id associated with the traces.
-        trace_ids (list[str] | None | Unset): List of trace IDs that were ingested. Only included if
+        log_stream_id (Union[None, Unset, str]): Log stream id associated with the traces.
+        experiment_id (Union[None, Unset, str]): Experiment id associated with the traces.
+        metrics_testing_id (Union[None, Unset, str]): Metrics testing id associated with the traces.
+        session_id (Union[None, Unset, str]): Session id associated with the traces.
+        trace_ids (Union[None, Unset, list[str]]): List of trace IDs that were ingested. Only included if
             include_trace_ids=True in request.
     """
 
@@ -33,11 +31,11 @@ class LogTracesIngestResponse:
     records_count: int
     traces_count: int
     spans_count: int
-    log_stream_id: None | str | Unset = UNSET
-    experiment_id: None | str | Unset = UNSET
-    metrics_testing_id: None | str | Unset = UNSET
-    session_id: None | str | Unset = UNSET
-    trace_ids: list[str] | None | Unset = UNSET
+    log_stream_id: Union[None, Unset, str] = UNSET
+    experiment_id: Union[None, Unset, str] = UNSET
+    metrics_testing_id: Union[None, Unset, str] = UNSET
+    session_id: Union[None, Unset, str] = UNSET
+    trace_ids: Union[None, Unset, list[str]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -51,31 +49,31 @@ class LogTracesIngestResponse:
 
         spans_count = self.spans_count
 
-        log_stream_id: None | str | Unset
+        log_stream_id: Union[None, Unset, str]
         if isinstance(self.log_stream_id, Unset):
             log_stream_id = UNSET
         else:
             log_stream_id = self.log_stream_id
 
-        experiment_id: None | str | Unset
+        experiment_id: Union[None, Unset, str]
         if isinstance(self.experiment_id, Unset):
             experiment_id = UNSET
         else:
             experiment_id = self.experiment_id
 
-        metrics_testing_id: None | str | Unset
+        metrics_testing_id: Union[None, Unset, str]
         if isinstance(self.metrics_testing_id, Unset):
             metrics_testing_id = UNSET
         else:
             metrics_testing_id = self.metrics_testing_id
 
-        session_id: None | str | Unset
+        session_id: Union[None, Unset, str]
         if isinstance(self.session_id, Unset):
             session_id = UNSET
         else:
             session_id = self.session_id
 
-        trace_ids: list[str] | None | Unset
+        trace_ids: Union[None, Unset, list[str]]
         if isinstance(self.trace_ids, Unset):
             trace_ids = UNSET
         elif isinstance(self.trace_ids, list):
@@ -121,43 +119,43 @@ class LogTracesIngestResponse:
 
         spans_count = d.pop("spans_count")
 
-        def _parse_log_stream_id(data: object) -> None | str | Unset:
+        def _parse_log_stream_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
 
-        def _parse_experiment_id(data: object) -> None | str | Unset:
+        def _parse_experiment_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
 
-        def _parse_metrics_testing_id(data: object) -> None | str | Unset:
+        def _parse_metrics_testing_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
 
-        def _parse_session_id(data: object) -> None | str | Unset:
+        def _parse_session_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))
 
-        def _parse_trace_ids(data: object) -> list[str] | None | Unset:
+        def _parse_trace_ids(data: object) -> Union[None, Unset, list[str]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -170,7 +168,7 @@ class LogTracesIngestResponse:
                 return trace_ids_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[str] | None | Unset, data)
+            return cast(Union[None, Unset, list[str]], data)
 
         trace_ids = _parse_trace_ids(d.pop("trace_ids", UNSET))
 

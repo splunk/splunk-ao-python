@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,19 +15,19 @@ class AnnotationQueueOverallProgressFilter:
     """
     Attributes:
         operator (AnnotationQueueOverallProgressFilterOperator):
-        value (float | int | list[float] | list[int]):
-        name (Literal['overall_progress'] | Unset):  Default: 'overall_progress'.
+        value (Union[float, int, list[float], list[int]]):
+        name (Union[Literal['overall_progress'], Unset]):  Default: 'overall_progress'.
     """
 
     operator: AnnotationQueueOverallProgressFilterOperator
-    value: float | int | list[float] | list[int]
-    name: Literal["overall_progress"] | Unset = "overall_progress"
+    value: Union[float, int, list[float], list[int]]
+    name: Union[Literal["overall_progress"], Unset] = "overall_progress"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         operator = self.operator.value
 
-        value: float | int | list[float] | list[int]
+        value: Union[float, int, list[float], list[int]]
         if isinstance(self.value, list):
             value = self.value
 
@@ -54,7 +52,7 @@ class AnnotationQueueOverallProgressFilter:
         d = dict(src_dict)
         operator = AnnotationQueueOverallProgressFilterOperator(d.pop("operator"))
 
-        def _parse_value(data: object) -> float | int | list[float] | list[int]:
+        def _parse_value(data: object) -> Union[float, int, list[float], list[int]]:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -71,11 +69,11 @@ class AnnotationQueueOverallProgressFilter:
                 return value_type_3
             except:  # noqa: E722
                 pass
-            return cast(float | int | list[float] | list[int], data)
+            return cast(Union[float, int, list[float], list[int]], data)
 
         value = _parse_value(d.pop("value"))
 
-        name = cast(Literal["overall_progress"] | Unset, d.pop("name", UNSET))
+        name = cast(Union[Literal["overall_progress"], Unset], d.pop("name", UNSET))
         if name != "overall_progress" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'overall_progress', got '{name}'")
 

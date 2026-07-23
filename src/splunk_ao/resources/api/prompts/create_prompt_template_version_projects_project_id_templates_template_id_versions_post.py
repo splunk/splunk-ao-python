@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -46,7 +46,7 @@ def _get_kwargs(project_id: str, template_id: str, *, body: BasePromptTemplateVe
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> BasePromptTemplateVersionResponse | HTTPValidationError:
+) -> Union[BasePromptTemplateVersionResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = BasePromptTemplateVersionResponse.from_dict(response.json())
 
@@ -77,7 +77,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,7 +88,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, template_id: str, *, client: ApiClient, body: BasePromptTemplateVersion
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Create Prompt Template Version
 
      Create a prompt template version for a given prompt template.
@@ -117,7 +117,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BasePromptTemplateVersionResponse | HTTPValidationError]
+        Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_id=template_id, body=body)
@@ -129,7 +129,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, template_id: str, *, client: ApiClient, body: BasePromptTemplateVersion
-) -> Optional[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Optional[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Create Prompt Template Version
 
      Create a prompt template version for a given prompt template.
@@ -158,7 +158,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BasePromptTemplateVersionResponse | HTTPValidationError
+        Union[BasePromptTemplateVersionResponse, HTTPValidationError]
     """
 
     return sync_detailed(project_id=project_id, template_id=template_id, client=client, body=body).parsed
@@ -166,7 +166,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, template_id: str, *, client: ApiClient, body: BasePromptTemplateVersion
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Create Prompt Template Version
 
      Create a prompt template version for a given prompt template.
@@ -195,7 +195,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BasePromptTemplateVersionResponse | HTTPValidationError]
+        Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_id=template_id, body=body)
@@ -207,7 +207,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, template_id: str, *, client: ApiClient, body: BasePromptTemplateVersion
-) -> Optional[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Optional[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Create Prompt Template Version
 
      Create a prompt template version for a given prompt template.
@@ -236,7 +236,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BasePromptTemplateVersionResponse | HTTPValidationError
+        Union[BasePromptTemplateVersionResponse, HTTPValidationError]
     """
 
     return (await asyncio_detailed(project_id=project_id, template_id=template_id, client=client, body=body)).parsed

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,11 +14,11 @@ class TagsRating:
     """
     Attributes:
         value (list[str]):
-        annotation_type (Literal['tags'] | Unset):  Default: 'tags'.
+        annotation_type (Union[Literal['tags'], Unset]):  Default: 'tags'.
     """
 
     value: list[str]
-    annotation_type: Literal["tags"] | Unset = "tags"
+    annotation_type: Union[Literal["tags"], Unset] = "tags"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class TagsRating:
         d = dict(src_dict)
         value = cast(list[str], d.pop("value"))
 
-        annotation_type = cast(Literal["tags"] | Unset, d.pop("annotation_type", UNSET))
+        annotation_type = cast(Union[Literal["tags"], Unset], d.pop("annotation_type", UNSET))
         if annotation_type != "tags" and not isinstance(annotation_type, Unset):
             raise ValueError(f"annotation_type must match const 'tags', got '{annotation_type}'")
 

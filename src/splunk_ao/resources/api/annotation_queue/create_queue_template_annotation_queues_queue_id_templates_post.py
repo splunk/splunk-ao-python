@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,7 +42,9 @@ def _get_kwargs(queue_id: str, *, body: CreateQueueTemplateRequest) -> dict[str,
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | list[AnnotationTemplateDB]:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[HTTPValidationError, list["AnnotationTemplateDB"]]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -78,7 +80,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | list[AnnotationTemplateDB]]:
+) -> Response[Union[HTTPValidationError, list["AnnotationTemplateDB"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -89,7 +91,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, *, client: ApiClient, body: CreateQueueTemplateRequest
-) -> Response[HTTPValidationError | list[AnnotationTemplateDB]]:
+) -> Response[Union[HTTPValidationError, list["AnnotationTemplateDB"]]]:
     """Create Queue Template
 
      Create template(s) in an annotation queue.
@@ -111,7 +113,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[AnnotationTemplateDB]]
+        Response[Union[HTTPValidationError, list['AnnotationTemplateDB']]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -123,7 +125,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, *, client: ApiClient, body: CreateQueueTemplateRequest
-) -> Optional[HTTPValidationError | list[AnnotationTemplateDB]]:
+) -> Optional[Union[HTTPValidationError, list["AnnotationTemplateDB"]]]:
     """Create Queue Template
 
      Create template(s) in an annotation queue.
@@ -145,7 +147,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[AnnotationTemplateDB]
+        Union[HTTPValidationError, list['AnnotationTemplateDB']]
     """
 
     return sync_detailed(queue_id=queue_id, client=client, body=body).parsed
@@ -153,7 +155,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, *, client: ApiClient, body: CreateQueueTemplateRequest
-) -> Response[HTTPValidationError | list[AnnotationTemplateDB]]:
+) -> Response[Union[HTTPValidationError, list["AnnotationTemplateDB"]]]:
     """Create Queue Template
 
      Create template(s) in an annotation queue.
@@ -175,7 +177,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[AnnotationTemplateDB]]
+        Response[Union[HTTPValidationError, list['AnnotationTemplateDB']]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -187,7 +189,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, *, client: ApiClient, body: CreateQueueTemplateRequest
-) -> Optional[HTTPValidationError | list[AnnotationTemplateDB]]:
+) -> Optional[Union[HTTPValidationError, list["AnnotationTemplateDB"]]]:
     """Create Queue Template
 
      Create template(s) in an annotation queue.
@@ -209,7 +211,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[AnnotationTemplateDB]
+        Union[HTTPValidationError, list['AnnotationTemplateDB']]
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client, body=body)).parsed

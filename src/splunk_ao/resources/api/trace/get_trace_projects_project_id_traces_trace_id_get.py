@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -23,7 +23,9 @@ from ...models.stub_trace_record import StubTraceRecord
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, trace_id: str, *, include_presigned_urls: bool | Unset = False) -> dict[str, Any]:
+def _get_kwargs(
+    project_id: str, trace_id: str, *, include_presigned_urls: Union[Unset, bool] = False
+) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
@@ -47,10 +49,10 @@ def _get_kwargs(project_id: str, trace_id: str, *, include_presigned_urls: bool 
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError:
+) -> Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]:
     if response.status_code == 200:
 
-        def _parse_response_200(data: object) -> ExtendedTraceRecordWithChildren | StubTraceRecord:
+        def _parse_response_200(data: object) -> Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]:
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")
@@ -156,7 +158,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
+) -> Response[Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -166,21 +168,21 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
+    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Response[Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]]:
     """Get Trace
 
     Args:
         project_id (str):
         trace_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
+        Response[Union[HTTPValidationError, Union['ExtendedTraceRecordWithChildren', 'StubTraceRecord']]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
@@ -191,21 +193,21 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
+    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Optional[Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]]:
     """Get Trace
 
     Args:
         project_id (str):
         trace_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError
+        Union[HTTPValidationError, Union['ExtendedTraceRecordWithChildren', 'StubTraceRecord']]
     """
 
     return sync_detailed(
@@ -214,21 +216,21 @@ def sync(
 
 
 async def asyncio_detailed(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
+    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Response[Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]]:
     """Get Trace
 
     Args:
         project_id (str):
         trace_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
+        Response[Union[HTTPValidationError, Union['ExtendedTraceRecordWithChildren', 'StubTraceRecord']]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
@@ -239,21 +241,21 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
+    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Optional[Union[HTTPValidationError, Union["ExtendedTraceRecordWithChildren", "StubTraceRecord"]]]:
     """Get Trace
 
     Args:
         project_id (str):
         trace_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError
+        Union[HTTPValidationError, Union['ExtendedTraceRecordWithChildren', 'StubTraceRecord']]
     """
 
     return (

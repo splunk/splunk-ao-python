@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -28,44 +26,44 @@ T = TypeVar("T", bound="UpdateScorerRequest")
 class UpdateScorerRequest:
     """
     Attributes:
-        name (None | str | Unset):
-        description (None | str | Unset):
-        tags (list[str] | None | Unset):
-        defaults (None | ScorerDefaults | Unset):
-        model_type (ModelType | None | Unset):
-        ground_truth (bool | None | Unset):
-        default_version_id (None | str | Unset):
-        user_prompt (None | str | Unset):
-        scoreable_node_types (list[str] | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
-        roll_up_method (None | RollUpMethodDisplayOptions | Unset):
-        metric_color_picker_config (MetricColorPickerBoolean | MetricColorPickerCategorical |
-            MetricColorPickerMultiLabel | MetricColorPickerNumeric | None | Unset):
+        name (Union[None, Unset, str]):
+        description (Union[None, Unset, str]):
+        tags (Union[None, Unset, list[str]]):
+        defaults (Union['ScorerDefaults', None, Unset]):
+        model_type (Union[ModelType, None, Unset]):
+        ground_truth (Union[None, Unset, bool]):
+        default_version_id (Union[None, Unset, str]):
+        user_prompt (Union[None, Unset, str]):
+        scoreable_node_types (Union[None, Unset, list[str]]):
+        output_type (Union[None, OutputTypeEnum, Unset]):
+        input_type (Union[InputTypeEnum, None, Unset]):
+        multimodal_capabilities (Union[None, Unset, list[MultimodalCapability]]):
+        roll_up_method (Union[None, RollUpMethodDisplayOptions, Unset]):
+        metric_color_picker_config (Union['MetricColorPickerBoolean', 'MetricColorPickerCategorical',
+            'MetricColorPickerMultiLabel', 'MetricColorPickerNumeric', None, Unset]):
     """
 
-    name: None | str | Unset = UNSET
-    description: None | str | Unset = UNSET
-    tags: list[str] | None | Unset = UNSET
-    defaults: None | ScorerDefaults | Unset = UNSET
-    model_type: ModelType | None | Unset = UNSET
-    ground_truth: bool | None | Unset = UNSET
-    default_version_id: None | str | Unset = UNSET
-    user_prompt: None | str | Unset = UNSET
-    scoreable_node_types: list[str] | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
-    roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
-    metric_color_picker_config: (
-        MetricColorPickerBoolean
-        | MetricColorPickerCategorical
-        | MetricColorPickerMultiLabel
-        | MetricColorPickerNumeric
-        | None
-        | Unset
-    ) = UNSET
+    name: Union[None, Unset, str] = UNSET
+    description: Union[None, Unset, str] = UNSET
+    tags: Union[None, Unset, list[str]] = UNSET
+    defaults: Union["ScorerDefaults", None, Unset] = UNSET
+    model_type: Union[ModelType, None, Unset] = UNSET
+    ground_truth: Union[None, Unset, bool] = UNSET
+    default_version_id: Union[None, Unset, str] = UNSET
+    user_prompt: Union[None, Unset, str] = UNSET
+    scoreable_node_types: Union[None, Unset, list[str]] = UNSET
+    output_type: Union[None, OutputTypeEnum, Unset] = UNSET
+    input_type: Union[InputTypeEnum, None, Unset] = UNSET
+    multimodal_capabilities: Union[None, Unset, list[MultimodalCapability]] = UNSET
+    roll_up_method: Union[None, RollUpMethodDisplayOptions, Unset] = UNSET
+    metric_color_picker_config: Union[
+        "MetricColorPickerBoolean",
+        "MetricColorPickerCategorical",
+        "MetricColorPickerMultiLabel",
+        "MetricColorPickerNumeric",
+        None,
+        Unset,
+    ] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -75,19 +73,19 @@ class UpdateScorerRequest:
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.scorer_defaults import ScorerDefaults
 
-        name: None | str | Unset
+        name: Union[None, Unset, str]
         if isinstance(self.name, Unset):
             name = UNSET
         else:
             name = self.name
 
-        description: None | str | Unset
+        description: Union[None, Unset, str]
         if isinstance(self.description, Unset):
             description = UNSET
         else:
             description = self.description
 
-        tags: list[str] | None | Unset
+        tags: Union[None, Unset, list[str]]
         if isinstance(self.tags, Unset):
             tags = UNSET
         elif isinstance(self.tags, list):
@@ -96,7 +94,7 @@ class UpdateScorerRequest:
         else:
             tags = self.tags
 
-        defaults: dict[str, Any] | None | Unset
+        defaults: Union[None, Unset, dict[str, Any]]
         if isinstance(self.defaults, Unset):
             defaults = UNSET
         elif isinstance(self.defaults, ScorerDefaults):
@@ -104,7 +102,7 @@ class UpdateScorerRequest:
         else:
             defaults = self.defaults
 
-        model_type: None | str | Unset
+        model_type: Union[None, Unset, str]
         if isinstance(self.model_type, Unset):
             model_type = UNSET
         elif isinstance(self.model_type, ModelType):
@@ -112,25 +110,25 @@ class UpdateScorerRequest:
         else:
             model_type = self.model_type
 
-        ground_truth: bool | None | Unset
+        ground_truth: Union[None, Unset, bool]
         if isinstance(self.ground_truth, Unset):
             ground_truth = UNSET
         else:
             ground_truth = self.ground_truth
 
-        default_version_id: None | str | Unset
+        default_version_id: Union[None, Unset, str]
         if isinstance(self.default_version_id, Unset):
             default_version_id = UNSET
         else:
             default_version_id = self.default_version_id
 
-        user_prompt: None | str | Unset
+        user_prompt: Union[None, Unset, str]
         if isinstance(self.user_prompt, Unset):
             user_prompt = UNSET
         else:
             user_prompt = self.user_prompt
 
-        scoreable_node_types: list[str] | None | Unset
+        scoreable_node_types: Union[None, Unset, list[str]]
         if isinstance(self.scoreable_node_types, Unset):
             scoreable_node_types = UNSET
         elif isinstance(self.scoreable_node_types, list):
@@ -139,7 +137,7 @@ class UpdateScorerRequest:
         else:
             scoreable_node_types = self.scoreable_node_types
 
-        output_type: None | str | Unset
+        output_type: Union[None, Unset, str]
         if isinstance(self.output_type, Unset):
             output_type = UNSET
         elif isinstance(self.output_type, OutputTypeEnum):
@@ -147,7 +145,7 @@ class UpdateScorerRequest:
         else:
             output_type = self.output_type
 
-        input_type: None | str | Unset
+        input_type: Union[None, Unset, str]
         if isinstance(self.input_type, Unset):
             input_type = UNSET
         elif isinstance(self.input_type, InputTypeEnum):
@@ -155,7 +153,7 @@ class UpdateScorerRequest:
         else:
             input_type = self.input_type
 
-        multimodal_capabilities: list[str] | None | Unset
+        multimodal_capabilities: Union[None, Unset, list[str]]
         if isinstance(self.multimodal_capabilities, Unset):
             multimodal_capabilities = UNSET
         elif isinstance(self.multimodal_capabilities, list):
@@ -167,7 +165,7 @@ class UpdateScorerRequest:
         else:
             multimodal_capabilities = self.multimodal_capabilities
 
-        roll_up_method: None | str | Unset
+        roll_up_method: Union[None, Unset, str]
         if isinstance(self.roll_up_method, Unset):
             roll_up_method = UNSET
         elif isinstance(self.roll_up_method, RollUpMethodDisplayOptions):
@@ -175,7 +173,7 @@ class UpdateScorerRequest:
         else:
             roll_up_method = self.roll_up_method
 
-        metric_color_picker_config: dict[str, Any] | None | Unset
+        metric_color_picker_config: Union[None, Unset, dict[str, Any]]
         if isinstance(self.metric_color_picker_config, Unset):
             metric_color_picker_config = UNSET
         elif isinstance(self.metric_color_picker_config, MetricColorPickerNumeric):
@@ -233,25 +231,25 @@ class UpdateScorerRequest:
 
         d = dict(src_dict)
 
-        def _parse_name(data: object) -> None | str | Unset:
+        def _parse_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_description(data: object) -> None | str | Unset:
+        def _parse_description(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         description = _parse_description(d.pop("description", UNSET))
 
-        def _parse_tags(data: object) -> list[str] | None | Unset:
+        def _parse_tags(data: object) -> Union[None, Unset, list[str]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -264,11 +262,11 @@ class UpdateScorerRequest:
                 return tags_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[str] | None | Unset, data)
+            return cast(Union[None, Unset, list[str]], data)
 
         tags = _parse_tags(d.pop("tags", UNSET))
 
-        def _parse_defaults(data: object) -> None | ScorerDefaults | Unset:
+        def _parse_defaults(data: object) -> Union["ScorerDefaults", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -281,11 +279,11 @@ class UpdateScorerRequest:
                 return defaults_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerDefaults | Unset, data)
+            return cast(Union["ScorerDefaults", None, Unset], data)
 
         defaults = _parse_defaults(d.pop("defaults", UNSET))
 
-        def _parse_model_type(data: object) -> ModelType | None | Unset:
+        def _parse_model_type(data: object) -> Union[ModelType, None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -298,38 +296,38 @@ class UpdateScorerRequest:
                 return model_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(ModelType | None | Unset, data)
+            return cast(Union[ModelType, None, Unset], data)
 
         model_type = _parse_model_type(d.pop("model_type", UNSET))
 
-        def _parse_ground_truth(data: object) -> bool | None | Unset:
+        def _parse_ground_truth(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(bool | None | Unset, data)
+            return cast(Union[None, Unset, bool], data)
 
         ground_truth = _parse_ground_truth(d.pop("ground_truth", UNSET))
 
-        def _parse_default_version_id(data: object) -> None | str | Unset:
+        def _parse_default_version_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         default_version_id = _parse_default_version_id(d.pop("default_version_id", UNSET))
 
-        def _parse_user_prompt(data: object) -> None | str | Unset:
+        def _parse_user_prompt(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         user_prompt = _parse_user_prompt(d.pop("user_prompt", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[str] | None | Unset:
+        def _parse_scoreable_node_types(data: object) -> Union[None, Unset, list[str]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -342,11 +340,11 @@ class UpdateScorerRequest:
                 return scoreable_node_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[str] | None | Unset, data)
+            return cast(Union[None, Unset, list[str]], data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> Union[None, OutputTypeEnum, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -359,11 +357,11 @@ class UpdateScorerRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            return cast(Union[None, OutputTypeEnum, Unset], data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> Union[InputTypeEnum, None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -376,11 +374,11 @@ class UpdateScorerRequest:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            return cast(Union[InputTypeEnum, None, Unset], data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> Union[None, Unset, list[MultimodalCapability]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -398,11 +396,11 @@ class UpdateScorerRequest:
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(Union[None, Unset, list[MultimodalCapability]], data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
-        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | Unset:
+        def _parse_roll_up_method(data: object) -> Union[None, RollUpMethodDisplayOptions, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -415,20 +413,20 @@ class UpdateScorerRequest:
                 return roll_up_method_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpMethodDisplayOptions | Unset, data)
+            return cast(Union[None, RollUpMethodDisplayOptions, Unset], data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 
         def _parse_metric_color_picker_config(
             data: object,
-        ) -> (
-            MetricColorPickerBoolean
-            | MetricColorPickerCategorical
-            | MetricColorPickerMultiLabel
-            | MetricColorPickerNumeric
-            | None
-            | Unset
-        ):
+        ) -> Union[
+            "MetricColorPickerBoolean",
+            "MetricColorPickerCategorical",
+            "MetricColorPickerMultiLabel",
+            "MetricColorPickerNumeric",
+            None,
+            Unset,
+        ]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -466,12 +464,14 @@ class UpdateScorerRequest:
             except:  # noqa: E722
                 pass
             return cast(
-                MetricColorPickerBoolean
-                | MetricColorPickerCategorical
-                | MetricColorPickerMultiLabel
-                | MetricColorPickerNumeric
-                | None
-                | Unset,
+                Union[
+                    "MetricColorPickerBoolean",
+                    "MetricColorPickerCategorical",
+                    "MetricColorPickerMultiLabel",
+                    "MetricColorPickerNumeric",
+                    None,
+                    Unset,
+                ],
                 data,
             )
 

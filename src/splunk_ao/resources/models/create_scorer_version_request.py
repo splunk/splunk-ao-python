@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,36 +15,36 @@ T = TypeVar("T", bound="CreateScorerVersionRequest")
 class CreateScorerVersionRequest:
     """
     Attributes:
-        model_name (None | str | Unset):
-        num_judges (int | None | Unset):
-        scoreable_node_types (list[str] | None | Unset):
-        cot_enabled (bool | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
+        model_name (Union[None, Unset, str]):
+        num_judges (Union[None, Unset, int]):
+        scoreable_node_types (Union[None, Unset, list[str]]):
+        cot_enabled (Union[None, Unset, bool]):
+        output_type (Union[None, OutputTypeEnum, Unset]):
+        input_type (Union[InputTypeEnum, None, Unset]):
     """
 
-    model_name: None | str | Unset = UNSET
-    num_judges: int | None | Unset = UNSET
-    scoreable_node_types: list[str] | None | Unset = UNSET
-    cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
+    model_name: Union[None, Unset, str] = UNSET
+    num_judges: Union[None, Unset, int] = UNSET
+    scoreable_node_types: Union[None, Unset, list[str]] = UNSET
+    cot_enabled: Union[None, Unset, bool] = UNSET
+    output_type: Union[None, OutputTypeEnum, Unset] = UNSET
+    input_type: Union[InputTypeEnum, None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        model_name: None | str | Unset
+        model_name: Union[None, Unset, str]
         if isinstance(self.model_name, Unset):
             model_name = UNSET
         else:
             model_name = self.model_name
 
-        num_judges: int | None | Unset
+        num_judges: Union[None, Unset, int]
         if isinstance(self.num_judges, Unset):
             num_judges = UNSET
         else:
             num_judges = self.num_judges
 
-        scoreable_node_types: list[str] | None | Unset
+        scoreable_node_types: Union[None, Unset, list[str]]
         if isinstance(self.scoreable_node_types, Unset):
             scoreable_node_types = UNSET
         elif isinstance(self.scoreable_node_types, list):
@@ -55,13 +53,13 @@ class CreateScorerVersionRequest:
         else:
             scoreable_node_types = self.scoreable_node_types
 
-        cot_enabled: bool | None | Unset
+        cot_enabled: Union[None, Unset, bool]
         if isinstance(self.cot_enabled, Unset):
             cot_enabled = UNSET
         else:
             cot_enabled = self.cot_enabled
 
-        output_type: None | str | Unset
+        output_type: Union[None, Unset, str]
         if isinstance(self.output_type, Unset):
             output_type = UNSET
         elif isinstance(self.output_type, OutputTypeEnum):
@@ -69,7 +67,7 @@ class CreateScorerVersionRequest:
         else:
             output_type = self.output_type
 
-        input_type: None | str | Unset
+        input_type: Union[None, Unset, str]
         if isinstance(self.input_type, Unset):
             input_type = UNSET
         elif isinstance(self.input_type, InputTypeEnum):
@@ -99,25 +97,25 @@ class CreateScorerVersionRequest:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
 
-        def _parse_model_name(data: object) -> None | str | Unset:
+        def _parse_model_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
 
-        def _parse_num_judges(data: object) -> int | None | Unset:
+        def _parse_num_judges(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[str] | None | Unset:
+        def _parse_scoreable_node_types(data: object) -> Union[None, Unset, list[str]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -130,20 +128,20 @@ class CreateScorerVersionRequest:
                 return scoreable_node_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[str] | None | Unset, data)
+            return cast(Union[None, Unset, list[str]], data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_cot_enabled(data: object) -> bool | None | Unset:
+        def _parse_cot_enabled(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(bool | None | Unset, data)
+            return cast(Union[None, Unset, bool], data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> Union[None, OutputTypeEnum, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -156,11 +154,11 @@ class CreateScorerVersionRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            return cast(Union[None, OutputTypeEnum, Unset], data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> Union[InputTypeEnum, None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -173,7 +171,7 @@ class CreateScorerVersionRequest:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            return cast(Union[InputTypeEnum, None, Unset], data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 

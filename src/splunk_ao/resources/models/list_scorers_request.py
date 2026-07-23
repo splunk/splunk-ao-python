@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -37,37 +35,40 @@ T = TypeVar("T", bound="ListScorersRequest")
 class ListScorersRequest:
     """
     Attributes:
-        filters (list[ScorerCreatedAtFilter | ScorerCreatorFilter | ScorerExcludeMultimodalScorersFilter |
-            ScorerExcludeSlmScorersFilter | ScorerIDFilter | ScorerIsGlobalFilter | ScorerLabelFilter |
-            ScorerModelTypeFilter | ScorerMultimodalCapabilitiesFilter | ScorerNameFilter | ScorerScopeProjectsFilter |
-            ScorerScoreableNodeTypesFilter | ScorerTagsFilter | ScorerTypeFilter | ScorerUpdatedAtFilter] | Unset):
-        sort (None | ScorerEnabledInPlaygroundSort | ScorerEnabledInRunSort | ScorerNameSort | ScorerUpdatedAtSort |
-            Unset):
+        filters (Union[Unset, list[Union['ScorerCreatedAtFilter', 'ScorerCreatorFilter',
+            'ScorerExcludeMultimodalScorersFilter', 'ScorerExcludeSlmScorersFilter', 'ScorerIDFilter',
+            'ScorerIsGlobalFilter', 'ScorerLabelFilter', 'ScorerModelTypeFilter', 'ScorerMultimodalCapabilitiesFilter',
+            'ScorerNameFilter', 'ScorerScopeProjectsFilter', 'ScorerScoreableNodeTypesFilter', 'ScorerTagsFilter',
+            'ScorerTypeFilter', 'ScorerUpdatedAtFilter']]]):
+        sort (Union['ScorerEnabledInPlaygroundSort', 'ScorerEnabledInRunSort', 'ScorerNameSort', 'ScorerUpdatedAtSort',
+            None, Unset]):
     """
 
-    filters: (
+    filters: Union[
+        Unset,
         list[
-            ScorerCreatedAtFilter
-            | ScorerCreatorFilter
-            | ScorerExcludeMultimodalScorersFilter
-            | ScorerExcludeSlmScorersFilter
-            | ScorerIDFilter
-            | ScorerIsGlobalFilter
-            | ScorerLabelFilter
-            | ScorerModelTypeFilter
-            | ScorerMultimodalCapabilitiesFilter
-            | ScorerNameFilter
-            | ScorerScopeProjectsFilter
-            | ScorerScoreableNodeTypesFilter
-            | ScorerTagsFilter
-            | ScorerTypeFilter
-            | ScorerUpdatedAtFilter
-        ]
-        | Unset
-    ) = UNSET
-    sort: (
-        None | ScorerEnabledInPlaygroundSort | ScorerEnabledInRunSort | ScorerNameSort | ScorerUpdatedAtSort | Unset
-    ) = UNSET
+            Union[
+                "ScorerCreatedAtFilter",
+                "ScorerCreatorFilter",
+                "ScorerExcludeMultimodalScorersFilter",
+                "ScorerExcludeSlmScorersFilter",
+                "ScorerIDFilter",
+                "ScorerIsGlobalFilter",
+                "ScorerLabelFilter",
+                "ScorerModelTypeFilter",
+                "ScorerMultimodalCapabilitiesFilter",
+                "ScorerNameFilter",
+                "ScorerScopeProjectsFilter",
+                "ScorerScoreableNodeTypesFilter",
+                "ScorerTagsFilter",
+                "ScorerTypeFilter",
+                "ScorerUpdatedAtFilter",
+            ]
+        ],
+    ] = UNSET
+    sort: Union[
+        "ScorerEnabledInPlaygroundSort", "ScorerEnabledInRunSort", "ScorerNameSort", "ScorerUpdatedAtSort", None, Unset
+    ] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -90,7 +91,7 @@ class ListScorersRequest:
         from ..models.scorer_updated_at_filter import ScorerUpdatedAtFilter
         from ..models.scorer_updated_at_sort import ScorerUpdatedAtSort
 
-        filters: list[dict[str, Any]] | Unset = UNSET
+        filters: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
             for filters_item_data in self.filters:
@@ -128,7 +129,7 @@ class ListScorersRequest:
 
                 filters.append(filters_item)
 
-        sort: dict[str, Any] | None | Unset
+        sort: Union[None, Unset, dict[str, Any]]
         if isinstance(self.sort, Unset):
             sort = UNSET
         elif isinstance(self.sort, ScorerNameSort):
@@ -175,177 +176,161 @@ class ListScorersRequest:
         from ..models.scorer_updated_at_sort import ScorerUpdatedAtSort
 
         d = dict(src_dict)
+        filters = []
         _filters = d.pop("filters", UNSET)
-        filters: (
-            list[
-                ScorerCreatedAtFilter
-                | ScorerCreatorFilter
-                | ScorerExcludeMultimodalScorersFilter
-                | ScorerExcludeSlmScorersFilter
-                | ScorerIDFilter
-                | ScorerIsGlobalFilter
-                | ScorerLabelFilter
-                | ScorerModelTypeFilter
-                | ScorerMultimodalCapabilitiesFilter
-                | ScorerNameFilter
-                | ScorerScopeProjectsFilter
-                | ScorerScoreableNodeTypesFilter
-                | ScorerTagsFilter
-                | ScorerTypeFilter
-                | ScorerUpdatedAtFilter
-            ]
-            | Unset
-        ) = UNSET
-        if _filters is not UNSET:
-            filters = []
-            for filters_item_data in _filters:
+        for filters_item_data in _filters or []:
 
-                def _parse_filters_item(
-                    data: object,
-                ) -> (
-                    ScorerCreatedAtFilter
-                    | ScorerCreatorFilter
-                    | ScorerExcludeMultimodalScorersFilter
-                    | ScorerExcludeSlmScorersFilter
-                    | ScorerIDFilter
-                    | ScorerIsGlobalFilter
-                    | ScorerLabelFilter
-                    | ScorerModelTypeFilter
-                    | ScorerMultimodalCapabilitiesFilter
-                    | ScorerNameFilter
-                    | ScorerScopeProjectsFilter
-                    | ScorerScoreableNodeTypesFilter
-                    | ScorerTagsFilter
-                    | ScorerTypeFilter
-                    | ScorerUpdatedAtFilter
-                ):
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_0 = ScorerNameFilter.from_dict(data)
-
-                        return filters_item_type_0
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_1 = ScorerTypeFilter.from_dict(data)
-
-                        return filters_item_type_1
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_2 = ScorerModelTypeFilter.from_dict(data)
-
-                        return filters_item_type_2
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_3 = ScorerExcludeSlmScorersFilter.from_dict(data)
-
-                        return filters_item_type_3
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_4 = ScorerExcludeMultimodalScorersFilter.from_dict(data)
-
-                        return filters_item_type_4
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_5 = ScorerTagsFilter.from_dict(data)
-
-                        return filters_item_type_5
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_6 = ScorerCreatorFilter.from_dict(data)
-
-                        return filters_item_type_6
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_7 = ScorerCreatedAtFilter.from_dict(data)
-
-                        return filters_item_type_7
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_8 = ScorerUpdatedAtFilter.from_dict(data)
-
-                        return filters_item_type_8
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_9 = ScorerLabelFilter.from_dict(data)
-
-                        return filters_item_type_9
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_10 = ScorerScoreableNodeTypesFilter.from_dict(data)
-
-                        return filters_item_type_10
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_11 = ScorerMultimodalCapabilitiesFilter.from_dict(data)
-
-                        return filters_item_type_11
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_12 = ScorerIDFilter.from_dict(data)
-
-                        return filters_item_type_12
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_13 = ScorerIsGlobalFilter.from_dict(data)
-
-                        return filters_item_type_13
-                    except:  # noqa: E722
-                        pass
+            def _parse_filters_item(
+                data: object,
+            ) -> Union[
+                "ScorerCreatedAtFilter",
+                "ScorerCreatorFilter",
+                "ScorerExcludeMultimodalScorersFilter",
+                "ScorerExcludeSlmScorersFilter",
+                "ScorerIDFilter",
+                "ScorerIsGlobalFilter",
+                "ScorerLabelFilter",
+                "ScorerModelTypeFilter",
+                "ScorerMultimodalCapabilitiesFilter",
+                "ScorerNameFilter",
+                "ScorerScopeProjectsFilter",
+                "ScorerScoreableNodeTypesFilter",
+                "ScorerTagsFilter",
+                "ScorerTypeFilter",
+                "ScorerUpdatedAtFilter",
+            ]:
+                try:
                     if not isinstance(data, dict):
                         raise TypeError()
-                    filters_item_type_14 = ScorerScopeProjectsFilter.from_dict(data)
+                    filters_item_type_0 = ScorerNameFilter.from_dict(data)
 
-                    return filters_item_type_14
+                    return filters_item_type_0
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_1 = ScorerTypeFilter.from_dict(data)
 
-                filters_item = _parse_filters_item(filters_item_data)
+                    return filters_item_type_1
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_2 = ScorerModelTypeFilter.from_dict(data)
 
-                filters.append(filters_item)
+                    return filters_item_type_2
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_3 = ScorerExcludeSlmScorersFilter.from_dict(data)
+
+                    return filters_item_type_3
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_4 = ScorerExcludeMultimodalScorersFilter.from_dict(data)
+
+                    return filters_item_type_4
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_5 = ScorerTagsFilter.from_dict(data)
+
+                    return filters_item_type_5
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_6 = ScorerCreatorFilter.from_dict(data)
+
+                    return filters_item_type_6
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_7 = ScorerCreatedAtFilter.from_dict(data)
+
+                    return filters_item_type_7
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_8 = ScorerUpdatedAtFilter.from_dict(data)
+
+                    return filters_item_type_8
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_9 = ScorerLabelFilter.from_dict(data)
+
+                    return filters_item_type_9
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_10 = ScorerScoreableNodeTypesFilter.from_dict(data)
+
+                    return filters_item_type_10
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_11 = ScorerMultimodalCapabilitiesFilter.from_dict(data)
+
+                    return filters_item_type_11
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_12 = ScorerIDFilter.from_dict(data)
+
+                    return filters_item_type_12
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_13 = ScorerIsGlobalFilter.from_dict(data)
+
+                    return filters_item_type_13
+                except:  # noqa: E722
+                    pass
+                if not isinstance(data, dict):
+                    raise TypeError()
+                filters_item_type_14 = ScorerScopeProjectsFilter.from_dict(data)
+
+                return filters_item_type_14
+
+            filters_item = _parse_filters_item(filters_item_data)
+
+            filters.append(filters_item)
 
         def _parse_sort(
             data: object,
-        ) -> (
-            None | ScorerEnabledInPlaygroundSort | ScorerEnabledInRunSort | ScorerNameSort | ScorerUpdatedAtSort | Unset
-        ):
+        ) -> Union[
+            "ScorerEnabledInPlaygroundSort",
+            "ScorerEnabledInRunSort",
+            "ScorerNameSort",
+            "ScorerUpdatedAtSort",
+            None,
+            Unset,
+        ]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -383,12 +368,14 @@ class ListScorersRequest:
             except:  # noqa: E722
                 pass
             return cast(
-                None
-                | ScorerEnabledInPlaygroundSort
-                | ScorerEnabledInRunSort
-                | ScorerNameSort
-                | ScorerUpdatedAtSort
-                | Unset,
+                Union[
+                    "ScorerEnabledInPlaygroundSort",
+                    "ScorerEnabledInRunSort",
+                    "ScorerNameSort",
+                    "ScorerUpdatedAtSort",
+                    None,
+                    Unset,
+                ],
                 data,
             )
 

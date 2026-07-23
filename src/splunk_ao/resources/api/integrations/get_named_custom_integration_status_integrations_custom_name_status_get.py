@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -41,10 +41,10 @@ def _get_kwargs(name: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> (
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
-):
+) -> Union[
+    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+    HTTPValidationError,
+]:
     if response.status_code == 200:
         response_200 = GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet.from_dict(
             response.json()
@@ -78,8 +78,10 @@ def _parse_response(
 def _build_response(
     *, client: ApiClient, response: httpx.Response
 ) -> Response[
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     return Response(
         status_code=HTTPStatus(response.status_code),
@@ -92,8 +94,10 @@ def _build_response(
 def sync_detailed(
     name: str, *, client: ApiClient
 ) -> Response[
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Check status of a named custom integration
 
@@ -105,7 +109,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet | HTTPValidationError]
+        Response[Union[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -118,8 +122,10 @@ def sync_detailed(
 def sync(
     name: str, *, client: ApiClient
 ) -> Optional[
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Check status of a named custom integration
 
@@ -131,7 +137,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet | HTTPValidationError
+        Union[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet, HTTPValidationError]
     """
 
     return sync_detailed(name=name, client=client).parsed
@@ -140,8 +146,10 @@ def sync(
 async def asyncio_detailed(
     name: str, *, client: ApiClient
 ) -> Response[
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Check status of a named custom integration
 
@@ -153,7 +161,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet | HTTPValidationError]
+        Response[Union[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -166,8 +174,10 @@ async def asyncio_detailed(
 async def asyncio(
     name: str, *, client: ApiClient
 ) -> Optional[
-    GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Check status of a named custom integration
 
@@ -179,7 +189,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet | HTTPValidationError
+        Union[GetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGetResponseGetNamedCustomIntegrationStatusIntegrationsCustomNameStatusGet, HTTPValidationError]
     """
 
     return (await asyncio_detailed(name=name, client=client)).parsed

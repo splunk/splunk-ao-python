@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,14 +13,14 @@ T = TypeVar("T", bound="UpdateDatasetVersionRequest")
 class UpdateDatasetVersionRequest:
     """
     Attributes:
-        name (None | str | Unset):
+        name (Union[None, Unset, str]):
     """
 
-    name: None | str | Unset = UNSET
+    name: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        name: None | str | Unset
+        name: Union[None, Unset, str]
         if isinstance(self.name, Unset):
             name = UNSET
         else:
@@ -40,12 +38,12 @@ class UpdateDatasetVersionRequest:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
 
-        def _parse_name(data: object) -> None | str | Unset:
+        def _parse_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         name = _parse_name(d.pop("name", UNSET))
 

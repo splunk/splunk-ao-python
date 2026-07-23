@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.integration_provider import IntegrationProvider
 from ..types import UNSET, Unset
@@ -27,9 +26,9 @@ class IntegrationDB:
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         created_by (str):
-        permissions (list[Permission] | Unset):
-        is_selected (bool | Unset):  Default: False.
-        is_disabled (bool | Unset):  Default: False.
+        permissions (Union[Unset, list['Permission']]):
+        is_selected (Union[Unset, bool]):  Default: False.
+        is_disabled (Union[Unset, bool]):  Default: False.
     """
 
     id: str
@@ -38,9 +37,9 @@ class IntegrationDB:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: str
-    permissions: list[Permission] | Unset = UNSET
-    is_selected: bool | Unset = False
-    is_disabled: bool | Unset = False
+    permissions: Union[Unset, list["Permission"]] = UNSET
+    is_selected: Union[Unset, bool] = False
+    is_disabled: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -56,7 +55,7 @@ class IntegrationDB:
 
         created_by = self.created_by
 
-        permissions: list[dict[str, Any]] | Unset = UNSET
+        permissions: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.permissions, Unset):
             permissions = []
             for permissions_item_data in self.permissions:
@@ -99,20 +98,18 @@ class IntegrationDB:
 
         provider = IntegrationProvider(d.pop("provider"))
 
-        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+        created_at = isoparse(d.pop("created_at"))
 
-        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
+        updated_at = isoparse(d.pop("updated_at"))
 
         created_by = d.pop("created_by")
 
+        permissions = []
         _permissions = d.pop("permissions", UNSET)
-        permissions: list[Permission] | Unset = UNSET
-        if _permissions is not UNSET:
-            permissions = []
-            for permissions_item_data in _permissions:
-                permissions_item = Permission.from_dict(permissions_item_data)
+        for permissions_item_data in _permissions or []:
+            permissions_item = Permission.from_dict(permissions_item_data)
 
-                permissions.append(permissions_item)
+            permissions.append(permissions_item)
 
         is_selected = d.pop("is_selected", UNSET)
 

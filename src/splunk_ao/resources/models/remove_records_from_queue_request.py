@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,11 +17,11 @@ class RemoveRecordsFromQueueRequest:
     """Request to remove records from an annotation queue.
 
     Attributes:
-        record_selector (AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs): Selector to specify
-            which records to remove (either by record IDs or filter tree)
+        record_selector (Union['AnnotationQueueRecordsByFilterTree', 'AnnotationQueueRecordsByRecordIDs']): Selector to
+            specify which records to remove (either by record IDs or filter tree)
     """
 
-    record_selector: AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs
+    record_selector: Union["AnnotationQueueRecordsByFilterTree", "AnnotationQueueRecordsByRecordIDs"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -50,7 +48,7 @@ class RemoveRecordsFromQueueRequest:
 
         def _parse_record_selector(
             data: object,
-        ) -> AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs:
+        ) -> Union["AnnotationQueueRecordsByFilterTree", "AnnotationQueueRecordsByRecordIDs"]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

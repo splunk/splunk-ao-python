@@ -1,6 +1,6 @@
 import datetime
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -55,7 +55,9 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | IntegrationCostsResponse:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[HTTPValidationError, IntegrationCostsResponse]:
     if response.status_code == 200:
         response_200 = IntegrationCostsResponse.from_dict(response.json())
 
@@ -86,7 +88,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | IntegrationCostsResponse]:
+) -> Response[Union[HTTPValidationError, IntegrationCostsResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -97,7 +99,7 @@ def _build_response(
 
 def sync_detailed(
     *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
-) -> Response[HTTPValidationError | IntegrationCostsResponse]:
+) -> Response[Union[HTTPValidationError, IntegrationCostsResponse]]:
     """Get Integration Costs
 
     Args:
@@ -110,7 +112,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationCostsResponse]
+        Response[Union[HTTPValidationError, IntegrationCostsResponse]]
     """
 
     kwargs = _get_kwargs(start_time=start_time, end_time=end_time, interval=interval)
@@ -122,7 +124,7 @@ def sync_detailed(
 
 def sync(
     *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
-) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
+) -> Optional[Union[HTTPValidationError, IntegrationCostsResponse]]:
     """Get Integration Costs
 
     Args:
@@ -135,7 +137,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationCostsResponse
+        Union[HTTPValidationError, IntegrationCostsResponse]
     """
 
     return sync_detailed(client=client, start_time=start_time, end_time=end_time, interval=interval).parsed
@@ -143,7 +145,7 @@ def sync(
 
 async def asyncio_detailed(
     *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
-) -> Response[HTTPValidationError | IntegrationCostsResponse]:
+) -> Response[Union[HTTPValidationError, IntegrationCostsResponse]]:
     """Get Integration Costs
 
     Args:
@@ -156,7 +158,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationCostsResponse]
+        Response[Union[HTTPValidationError, IntegrationCostsResponse]]
     """
 
     kwargs = _get_kwargs(start_time=start_time, end_time=end_time, interval=interval)
@@ -168,7 +170,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
-) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
+) -> Optional[Union[HTTPValidationError, IntegrationCostsResponse]]:
     """Get Integration Costs
 
     Args:
@@ -181,7 +183,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationCostsResponse
+        Union[HTTPValidationError, IntegrationCostsResponse]
     """
 
     return (await asyncio_detailed(client=client, start_time=start_time, end_time=end_time, interval=interval)).parsed

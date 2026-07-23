@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,7 +42,7 @@ def _get_kwargs(project_id: str, *, body: LogStreamCreateRequest) -> dict[str, A
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | LogStreamResponse:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, LogStreamResponse]:
     if response.status_code == 200:
         response_200 = LogStreamResponse.from_dict(response.json())
 
@@ -73,7 +73,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | LogStreamResponse]:
+) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +84,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: LogStreamCreateRequest
-) -> Response[HTTPValidationError | LogStreamResponse]:
+) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
     """Create Log Stream
 
      Create a new log stream for a project.
@@ -98,7 +98,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogStreamResponse]
+        Response[Union[HTTPValidationError, LogStreamResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -110,7 +110,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, body: LogStreamCreateRequest
-) -> Optional[HTTPValidationError | LogStreamResponse]:
+) -> Optional[Union[HTTPValidationError, LogStreamResponse]]:
     """Create Log Stream
 
      Create a new log stream for a project.
@@ -124,7 +124,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogStreamResponse
+        Union[HTTPValidationError, LogStreamResponse]
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -132,7 +132,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: LogStreamCreateRequest
-) -> Response[HTTPValidationError | LogStreamResponse]:
+) -> Response[Union[HTTPValidationError, LogStreamResponse]]:
     """Create Log Stream
 
      Create a new log stream for a project.
@@ -146,7 +146,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogStreamResponse]
+        Response[Union[HTTPValidationError, LogStreamResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -158,7 +158,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: LogStreamCreateRequest
-) -> Optional[HTTPValidationError | LogStreamResponse]:
+) -> Optional[Union[HTTPValidationError, LogStreamResponse]]:
     """Create Log Stream
 
      Create a new log stream for a project.
@@ -172,7 +172,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogStreamResponse
+        Union[HTTPValidationError, LogStreamResponse]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -22,14 +22,14 @@ from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, *, template_name: str, version: int | None | Unset = UNSET) -> dict[str, Any]:
+def _get_kwargs(project_id: str, *, template_name: str, version: Union[None, Unset, int] = UNSET) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
     params["template_name"] = template_name
 
-    json_version: int | None | Unset
+    json_version: Union[None, Unset, int]
     if isinstance(version, Unset):
         json_version = UNSET
     else:
@@ -53,7 +53,7 @@ def _get_kwargs(project_id: str, *, template_name: str, version: int | None | Un
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> BasePromptTemplateVersionResponse | HTTPValidationError:
+) -> Union[BasePromptTemplateVersionResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = BasePromptTemplateVersionResponse.from_dict(response.json())
 
@@ -84,7 +84,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -94,8 +94,8 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, *, client: ApiClient, template_name: str, version: int | None | Unset = UNSET
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+    project_id: str, *, client: ApiClient, template_name: str, version: Union[None, Unset, int] = UNSET
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Get Template Version By Name
 
      Get a prompt template from a project.
@@ -117,14 +117,14 @@ def sync_detailed(
     Args:
         project_id (str):
         template_name (str):
-        version (int | None | Unset):
+        version (Union[None, Unset, int]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BasePromptTemplateVersionResponse | HTTPValidationError]
+        Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_name=template_name, version=version)
@@ -135,8 +135,8 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, *, client: ApiClient, template_name: str, version: int | None | Unset = UNSET
-) -> Optional[BasePromptTemplateVersionResponse | HTTPValidationError]:
+    project_id: str, *, client: ApiClient, template_name: str, version: Union[None, Unset, int] = UNSET
+) -> Optional[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Get Template Version By Name
 
      Get a prompt template from a project.
@@ -158,22 +158,22 @@ def sync(
     Args:
         project_id (str):
         template_name (str):
-        version (int | None | Unset):
+        version (Union[None, Unset, int]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BasePromptTemplateVersionResponse | HTTPValidationError
+        Union[BasePromptTemplateVersionResponse, HTTPValidationError]
     """
 
     return sync_detailed(project_id=project_id, client=client, template_name=template_name, version=version).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, *, client: ApiClient, template_name: str, version: int | None | Unset = UNSET
-) -> Response[BasePromptTemplateVersionResponse | HTTPValidationError]:
+    project_id: str, *, client: ApiClient, template_name: str, version: Union[None, Unset, int] = UNSET
+) -> Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Get Template Version By Name
 
      Get a prompt template from a project.
@@ -195,14 +195,14 @@ async def asyncio_detailed(
     Args:
         project_id (str):
         template_name (str):
-        version (int | None | Unset):
+        version (Union[None, Unset, int]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BasePromptTemplateVersionResponse | HTTPValidationError]
+        Response[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_name=template_name, version=version)
@@ -213,8 +213,8 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, *, client: ApiClient, template_name: str, version: int | None | Unset = UNSET
-) -> Optional[BasePromptTemplateVersionResponse | HTTPValidationError]:
+    project_id: str, *, client: ApiClient, template_name: str, version: Union[None, Unset, int] = UNSET
+) -> Optional[Union[BasePromptTemplateVersionResponse, HTTPValidationError]]:
     """Get Template Version By Name
 
      Get a prompt template from a project.
@@ -236,14 +236,14 @@ async def asyncio(
     Args:
         project_id (str):
         template_name (str):
-        version (int | None | Unset):
+        version (Union[None, Unset, int]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BasePromptTemplateVersionResponse | HTTPValidationError
+        Union[BasePromptTemplateVersionResponse, HTTPValidationError]
     """
 
     return (

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,20 +18,21 @@ T = TypeVar("T", bound="MetricNotApplicable")
 class MetricNotApplicable:
     """
     Attributes:
-        status_type (Literal['not_applicable'] | Unset):  Default: 'not_applicable'.
-        scorer_type (None | ScorerType | Unset):
-        metric_key_alias (None | str | Unset):
-        message (str | Unset):  Default: 'Metric not applicable.'.
-        ems_error_code (int | None | Unset): EMS error code from errors.yaml catalog for this not-applicable reason
-        standard_error (None | StandardError | Unset): Structured EMS error resolved on-the-fly from errors.yaml catalog
+        status_type (Union[Literal['not_applicable'], Unset]):  Default: 'not_applicable'.
+        scorer_type (Union[None, ScorerType, Unset]):
+        metric_key_alias (Union[None, Unset, str]):
+        message (Union[Unset, str]):  Default: 'Metric not applicable.'.
+        ems_error_code (Union[None, Unset, int]): EMS error code from errors.yaml catalog for this not-applicable reason
+        standard_error (Union['StandardError', None, Unset]): Structured EMS error resolved on-the-fly from errors.yaml
+            catalog
     """
 
-    status_type: Literal["not_applicable"] | Unset = "not_applicable"
-    scorer_type: None | ScorerType | Unset = UNSET
-    metric_key_alias: None | str | Unset = UNSET
-    message: str | Unset = "Metric not applicable."
-    ems_error_code: int | None | Unset = UNSET
-    standard_error: None | StandardError | Unset = UNSET
+    status_type: Union[Literal["not_applicable"], Unset] = "not_applicable"
+    scorer_type: Union[None, ScorerType, Unset] = UNSET
+    metric_key_alias: Union[None, Unset, str] = UNSET
+    message: Union[Unset, str] = "Metric not applicable."
+    ems_error_code: Union[None, Unset, int] = UNSET
+    standard_error: Union["StandardError", None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +40,7 @@ class MetricNotApplicable:
 
         status_type = self.status_type
 
-        scorer_type: None | str | Unset
+        scorer_type: Union[None, Unset, str]
         if isinstance(self.scorer_type, Unset):
             scorer_type = UNSET
         elif isinstance(self.scorer_type, ScorerType):
@@ -49,7 +48,7 @@ class MetricNotApplicable:
         else:
             scorer_type = self.scorer_type
 
-        metric_key_alias: None | str | Unset
+        metric_key_alias: Union[None, Unset, str]
         if isinstance(self.metric_key_alias, Unset):
             metric_key_alias = UNSET
         else:
@@ -57,13 +56,13 @@ class MetricNotApplicable:
 
         message = self.message
 
-        ems_error_code: int | None | Unset
+        ems_error_code: Union[None, Unset, int]
         if isinstance(self.ems_error_code, Unset):
             ems_error_code = UNSET
         else:
             ems_error_code = self.ems_error_code
 
-        standard_error: dict[str, Any] | None | Unset
+        standard_error: Union[None, Unset, dict[str, Any]]
         if isinstance(self.standard_error, Unset):
             standard_error = UNSET
         elif isinstance(self.standard_error, StandardError):
@@ -94,11 +93,11 @@ class MetricNotApplicable:
         from ..models.standard_error import StandardError
 
         d = dict(src_dict)
-        status_type = cast(Literal["not_applicable"] | Unset, d.pop("status_type", UNSET))
+        status_type = cast(Union[Literal["not_applicable"], Unset], d.pop("status_type", UNSET))
         if status_type != "not_applicable" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'not_applicable', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> Union[None, ScorerType, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -111,31 +110,31 @@ class MetricNotApplicable:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            return cast(Union[None, ScorerType, Unset], data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 
-        def _parse_metric_key_alias(data: object) -> None | str | Unset:
+        def _parse_metric_key_alias(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
         message = d.pop("message", UNSET)
 
-        def _parse_ems_error_code(data: object) -> int | None | Unset:
+        def _parse_ems_error_code(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         ems_error_code = _parse_ems_error_code(d.pop("ems_error_code", UNSET))
 
-        def _parse_standard_error(data: object) -> None | StandardError | Unset:
+        def _parse_standard_error(data: object) -> Union["StandardError", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -148,7 +147,7 @@ class MetricNotApplicable:
                 return standard_error_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | StandardError | Unset, data)
+            return cast(Union["StandardError", None, Unset], data)
 
         standard_error = _parse_standard_error(d.pop("standard_error", UNSET))
 

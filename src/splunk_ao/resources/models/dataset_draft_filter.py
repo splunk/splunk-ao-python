@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,13 +15,13 @@ class DatasetDraftFilter:
     """
     Attributes:
         value (bool):
-        name (Literal['draft'] | Unset):  Default: 'draft'.
-        operator (DatasetDraftFilterOperator | Unset):  Default: DatasetDraftFilterOperator.EQ.
+        name (Union[Literal['draft'], Unset]):  Default: 'draft'.
+        operator (Union[Unset, DatasetDraftFilterOperator]):  Default: DatasetDraftFilterOperator.EQ.
     """
 
     value: bool
-    name: Literal["draft"] | Unset = "draft"
-    operator: DatasetDraftFilterOperator | Unset = DatasetDraftFilterOperator.EQ
+    name: Union[Literal["draft"], Unset] = "draft"
+    operator: Union[Unset, DatasetDraftFilterOperator] = DatasetDraftFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,7 +29,7 @@ class DatasetDraftFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
+        operator: Union[Unset, str] = UNSET
         if not isinstance(self.operator, Unset):
             operator = self.operator.value
 
@@ -50,12 +48,12 @@ class DatasetDraftFilter:
         d = dict(src_dict)
         value = d.pop("value")
 
-        name = cast(Literal["draft"] | Unset, d.pop("name", UNSET))
+        name = cast(Union[Literal["draft"], Unset], d.pop("name", UNSET))
         if name != "draft" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'draft', got '{name}'")
 
         _operator = d.pop("operator", UNSET)
-        operator: DatasetDraftFilterOperator | Unset
+        operator: Union[Unset, DatasetDraftFilterOperator]
         if isinstance(_operator, Unset):
             operator = UNSET
         else:

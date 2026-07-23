@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -22,18 +20,18 @@ T = TypeVar("T", bound="AnnotationQueueCountRequest")
 class AnnotationQueueCountRequest:
     """
     Attributes:
-        filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
-            OrNodeLogRecordsFilter | Unset):
+        filter_tree (Union['AndNodeLogRecordsFilter', 'FilterLeafLogRecordsFilter', 'NotNodeLogRecordsFilter',
+            'OrNodeLogRecordsFilter', None, Unset]):
     """
 
-    filter_tree: (
-        AndNodeLogRecordsFilter
-        | FilterLeafLogRecordsFilter
-        | None
-        | NotNodeLogRecordsFilter
-        | OrNodeLogRecordsFilter
-        | Unset
-    ) = UNSET
+    filter_tree: Union[
+        "AndNodeLogRecordsFilter",
+        "FilterLeafLogRecordsFilter",
+        "NotNodeLogRecordsFilter",
+        "OrNodeLogRecordsFilter",
+        None,
+        Unset,
+    ] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,7 +40,7 @@ class AnnotationQueueCountRequest:
         from ..models.not_node_log_records_filter import NotNodeLogRecordsFilter
         from ..models.or_node_log_records_filter import OrNodeLogRecordsFilter
 
-        filter_tree: dict[str, Any] | None | Unset
+        filter_tree: Union[None, Unset, dict[str, Any]]
         if isinstance(self.filter_tree, Unset):
             filter_tree = UNSET
         elif isinstance(self.filter_tree, FilterLeafLogRecordsFilter):
@@ -75,14 +73,14 @@ class AnnotationQueueCountRequest:
 
         def _parse_filter_tree(
             data: object,
-        ) -> (
-            AndNodeLogRecordsFilter
-            | FilterLeafLogRecordsFilter
-            | None
-            | NotNodeLogRecordsFilter
-            | OrNodeLogRecordsFilter
-            | Unset
-        ):
+        ) -> Union[
+            "AndNodeLogRecordsFilter",
+            "FilterLeafLogRecordsFilter",
+            "NotNodeLogRecordsFilter",
+            "OrNodeLogRecordsFilter",
+            None,
+            Unset,
+        ]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -128,12 +126,14 @@ class AnnotationQueueCountRequest:
             except:  # noqa: E722
                 pass
             return cast(
-                AndNodeLogRecordsFilter
-                | FilterLeafLogRecordsFilter
-                | None
-                | NotNodeLogRecordsFilter
-                | OrNodeLogRecordsFilter
-                | Unset,
+                Union[
+                    "AndNodeLogRecordsFilter",
+                    "FilterLeafLogRecordsFilter",
+                    "NotNodeLogRecordsFilter",
+                    "OrNodeLogRecordsFilter",
+                    None,
+                    Unset,
+                ],
                 data,
             )
 

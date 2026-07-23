@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -41,10 +41,10 @@ def _get_kwargs(*, body: ProtectRequest) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> HTTPValidationError | InvokeResponse | ProtectResponse:
+) -> Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]:
     if response.status_code == 200:
 
-        def _parse_response_200(data: object) -> InvokeResponse | ProtectResponse:
+        def _parse_response_200(data: object) -> Union["InvokeResponse", "ProtectResponse"]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -88,7 +88,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | InvokeResponse | ProtectResponse]:
+) -> Response[Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -99,7 +99,7 @@ def _build_response(
 
 def sync_detailed(
     *, client: ApiClient, body: ProtectRequest
-) -> Response[HTTPValidationError | InvokeResponse | ProtectResponse]:
+) -> Response[Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]]:
     """Invoke
 
     Args:
@@ -110,7 +110,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | InvokeResponse | ProtectResponse]
+        Response[Union[HTTPValidationError, Union['InvokeResponse', 'ProtectResponse']]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -122,7 +122,7 @@ def sync_detailed(
 
 def sync(
     *, client: ApiClient, body: ProtectRequest
-) -> Optional[HTTPValidationError | InvokeResponse | ProtectResponse]:
+) -> Optional[Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]]:
     """Invoke
 
     Args:
@@ -133,7 +133,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | InvokeResponse | ProtectResponse
+        Union[HTTPValidationError, Union['InvokeResponse', 'ProtectResponse']]
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -141,7 +141,7 @@ def sync(
 
 async def asyncio_detailed(
     *, client: ApiClient, body: ProtectRequest
-) -> Response[HTTPValidationError | InvokeResponse | ProtectResponse]:
+) -> Response[Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]]:
     """Invoke
 
     Args:
@@ -152,7 +152,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | InvokeResponse | ProtectResponse]
+        Response[Union[HTTPValidationError, Union['InvokeResponse', 'ProtectResponse']]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -164,7 +164,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *, client: ApiClient, body: ProtectRequest
-) -> Optional[HTTPValidationError | InvokeResponse | ProtectResponse]:
+) -> Optional[Union[HTTPValidationError, Union["InvokeResponse", "ProtectResponse"]]]:
     """Invoke
 
     Args:
@@ -175,7 +175,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | InvokeResponse | ProtectResponse
+        Union[HTTPValidationError, Union['InvokeResponse', 'ProtectResponse']]
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

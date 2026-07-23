@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -32,73 +31,78 @@ T = TypeVar("T", bound="LlmSpan")
 class LlmSpan:
     """
     Attributes:
-        type_ (Literal['llm'] | Unset): Type of the trace, span or session. Default: 'llm'.
-        input_ (list[Message] | Unset): Input to the trace or span.
-        redacted_input (list[Message] | None | Unset): Redacted input of the trace or span.
-        output (Message | Unset):
-        redacted_output (Message | None | Unset): Redacted output of the trace or span.
-        name (str | Unset): Name of the trace, span or session. Default: ''.
-        created_at (datetime.datetime | Unset): Timestamp of the trace or span's creation.
-        user_metadata (LlmSpanUserMetadata | Unset): Metadata associated with this trace or span.
-        tags (list[str] | Unset): Tags associated with this trace or span.
-        status_code (int | None | Unset): Status code of the trace or span. Used for logging failure or error states.
-        metrics (LlmMetrics | Unset):
-        external_id (None | str | Unset): A user-provided session, trace or span ID.
-        dataset_input (None | str | Unset): Input to the dataset associated with this trace
-        dataset_output (None | str | Unset): Output from the dataset associated with this trace
-        dataset_metadata (LlmSpanDatasetMetadata | Unset): Metadata from the dataset associated with this trace
-        id (None | str | Unset): Galileo ID of the session, trace or span
-        session_id (None | str | Unset): Galileo ID of the session containing the trace or span or session
-        trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
-        step_number (int | None | Unset): Topological step number of the span.
-        parent_id (None | str | Unset): Galileo ID of the parent of this span
-        tools (list[LlmSpanToolsType0Item] | None | Unset): List of available tools passed to the LLM on invocation.
-        events (list[ImageGenerationEvent | InternalToolCall | MCPApprovalRequestEvent | MCPCallEvent |
-            MCPListToolsEvent | MessageEvent | ReasoningEvent | WebSearchCallEvent] | None | Unset): List of reasoning,
-            internal tool call, or MCP events that occurred during the LLM span.
-        model (None | str | Unset): Model used for this span.
-        temperature (float | None | Unset): Temperature used for generation.
-        finish_reason (None | str | Unset): Reason for finishing.
+        type_ (Union[Literal['llm'], Unset]): Type of the trace, span or session. Default: 'llm'.
+        input_ (Union[Unset, list['Message']]): Input to the trace or span.
+        redacted_input (Union[None, Unset, list['Message']]): Redacted input of the trace or span.
+        output (Union[Unset, Message]):
+        redacted_output (Union['Message', None, Unset]): Redacted output of the trace or span.
+        name (Union[Unset, str]): Name of the trace, span or session. Default: ''.
+        created_at (Union[Unset, datetime.datetime]): Timestamp of the trace or span's creation.
+        user_metadata (Union[Unset, LlmSpanUserMetadata]): Metadata associated with this trace or span.
+        tags (Union[Unset, list[str]]): Tags associated with this trace or span.
+        status_code (Union[None, Unset, int]): Status code of the trace or span. Used for logging failure or error
+            states.
+        metrics (Union[Unset, LlmMetrics]):
+        external_id (Union[None, Unset, str]): A user-provided session, trace or span ID.
+        dataset_input (Union[None, Unset, str]): Input to the dataset associated with this trace
+        dataset_output (Union[None, Unset, str]): Output from the dataset associated with this trace
+        dataset_metadata (Union[Unset, LlmSpanDatasetMetadata]): Metadata from the dataset associated with this trace
+        id (Union[None, Unset, str]): Galileo ID of the session, trace or span
+        session_id (Union[None, Unset, str]): Galileo ID of the session containing the trace or span or session
+        trace_id (Union[None, Unset, str]): Galileo ID of the trace containing the span (or the same value as id for a
+            trace)
+        step_number (Union[None, Unset, int]): Topological step number of the span.
+        parent_id (Union[None, Unset, str]): Galileo ID of the parent of this span
+        tools (Union[None, Unset, list['LlmSpanToolsType0Item']]): List of available tools passed to the LLM on
+            invocation.
+        events (Union[None, Unset, list[Union['ImageGenerationEvent', 'InternalToolCall', 'MCPApprovalRequestEvent',
+            'MCPCallEvent', 'MCPListToolsEvent', 'MessageEvent', 'ReasoningEvent', 'WebSearchCallEvent']]]): List of
+            reasoning, internal tool call, or MCP events that occurred during the LLM span.
+        model (Union[None, Unset, str]): Model used for this span.
+        temperature (Union[None, Unset, float]): Temperature used for generation.
+        finish_reason (Union[None, Unset, str]): Reason for finishing.
     """
 
-    type_: Literal["llm"] | Unset = "llm"
-    input_: list[Message] | Unset = UNSET
-    redacted_input: list[Message] | None | Unset = UNSET
-    output: Message | Unset = UNSET
-    redacted_output: Message | None | Unset = UNSET
-    name: str | Unset = ""
-    created_at: datetime.datetime | Unset = UNSET
-    user_metadata: LlmSpanUserMetadata | Unset = UNSET
-    tags: list[str] | Unset = UNSET
-    status_code: int | None | Unset = UNSET
-    metrics: LlmMetrics | Unset = UNSET
-    external_id: None | str | Unset = UNSET
-    dataset_input: None | str | Unset = UNSET
-    dataset_output: None | str | Unset = UNSET
-    dataset_metadata: LlmSpanDatasetMetadata | Unset = UNSET
-    id: None | str | Unset = UNSET
-    session_id: None | str | Unset = UNSET
-    trace_id: None | str | Unset = UNSET
-    step_number: int | None | Unset = UNSET
-    parent_id: None | str | Unset = UNSET
-    tools: list[LlmSpanToolsType0Item] | None | Unset = UNSET
-    events: (
+    type_: Union[Literal["llm"], Unset] = "llm"
+    input_: Union[Unset, list["Message"]] = UNSET
+    redacted_input: Union[None, Unset, list["Message"]] = UNSET
+    output: Union[Unset, "Message"] = UNSET
+    redacted_output: Union["Message", None, Unset] = UNSET
+    name: Union[Unset, str] = ""
+    created_at: Union[Unset, datetime.datetime] = UNSET
+    user_metadata: Union[Unset, "LlmSpanUserMetadata"] = UNSET
+    tags: Union[Unset, list[str]] = UNSET
+    status_code: Union[None, Unset, int] = UNSET
+    metrics: Union[Unset, "LlmMetrics"] = UNSET
+    external_id: Union[None, Unset, str] = UNSET
+    dataset_input: Union[None, Unset, str] = UNSET
+    dataset_output: Union[None, Unset, str] = UNSET
+    dataset_metadata: Union[Unset, "LlmSpanDatasetMetadata"] = UNSET
+    id: Union[None, Unset, str] = UNSET
+    session_id: Union[None, Unset, str] = UNSET
+    trace_id: Union[None, Unset, str] = UNSET
+    step_number: Union[None, Unset, int] = UNSET
+    parent_id: Union[None, Unset, str] = UNSET
+    tools: Union[None, Unset, list["LlmSpanToolsType0Item"]] = UNSET
+    events: Union[
+        None,
+        Unset,
         list[
-            ImageGenerationEvent
-            | InternalToolCall
-            | MCPApprovalRequestEvent
-            | MCPCallEvent
-            | MCPListToolsEvent
-            | MessageEvent
-            | ReasoningEvent
-            | WebSearchCallEvent
-        ]
-        | None
-        | Unset
-    ) = UNSET
-    model: None | str | Unset = UNSET
-    temperature: float | None | Unset = UNSET
-    finish_reason: None | str | Unset = UNSET
+            Union[
+                "ImageGenerationEvent",
+                "InternalToolCall",
+                "MCPApprovalRequestEvent",
+                "MCPCallEvent",
+                "MCPListToolsEvent",
+                "MessageEvent",
+                "ReasoningEvent",
+                "WebSearchCallEvent",
+            ]
+        ],
+    ] = UNSET
+    model: Union[None, Unset, str] = UNSET
+    temperature: Union[None, Unset, float] = UNSET
+    finish_reason: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -113,14 +117,14 @@ class LlmSpan:
 
         type_ = self.type_
 
-        input_: list[dict[str, Any]] | Unset = UNSET
+        input_: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.input_, Unset):
             input_ = []
             for input_item_data in self.input_:
                 input_item = input_item_data.to_dict()
                 input_.append(input_item)
 
-        redacted_input: list[dict[str, Any]] | None | Unset
+        redacted_input: Union[None, Unset, list[dict[str, Any]]]
         if isinstance(self.redacted_input, Unset):
             redacted_input = UNSET
         elif isinstance(self.redacted_input, list):
@@ -132,11 +136,11 @@ class LlmSpan:
         else:
             redacted_input = self.redacted_input
 
-        output: dict[str, Any] | Unset = UNSET
+        output: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.output, Unset):
             output = self.output.to_dict()
 
-        redacted_output: dict[str, Any] | None | Unset
+        redacted_output: Union[None, Unset, dict[str, Any]]
         if isinstance(self.redacted_output, Unset):
             redacted_output = UNSET
         elif isinstance(self.redacted_output, Message):
@@ -146,81 +150,81 @@ class LlmSpan:
 
         name = self.name
 
-        created_at: str | Unset = UNSET
+        created_at: Union[Unset, str] = UNSET
         if not isinstance(self.created_at, Unset):
             created_at = self.created_at.isoformat()
 
-        user_metadata: dict[str, Any] | Unset = UNSET
+        user_metadata: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.user_metadata, Unset):
             user_metadata = self.user_metadata.to_dict()
 
-        tags: list[str] | Unset = UNSET
+        tags: Union[Unset, list[str]] = UNSET
         if not isinstance(self.tags, Unset):
             tags = self.tags
 
-        status_code: int | None | Unset
+        status_code: Union[None, Unset, int]
         if isinstance(self.status_code, Unset):
             status_code = UNSET
         else:
             status_code = self.status_code
 
-        metrics: dict[str, Any] | Unset = UNSET
+        metrics: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.metrics, Unset):
             metrics = self.metrics.to_dict()
 
-        external_id: None | str | Unset
+        external_id: Union[None, Unset, str]
         if isinstance(self.external_id, Unset):
             external_id = UNSET
         else:
             external_id = self.external_id
 
-        dataset_input: None | str | Unset
+        dataset_input: Union[None, Unset, str]
         if isinstance(self.dataset_input, Unset):
             dataset_input = UNSET
         else:
             dataset_input = self.dataset_input
 
-        dataset_output: None | str | Unset
+        dataset_output: Union[None, Unset, str]
         if isinstance(self.dataset_output, Unset):
             dataset_output = UNSET
         else:
             dataset_output = self.dataset_output
 
-        dataset_metadata: dict[str, Any] | Unset = UNSET
+        dataset_metadata: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.dataset_metadata, Unset):
             dataset_metadata = self.dataset_metadata.to_dict()
 
-        id: None | str | Unset
+        id: Union[None, Unset, str]
         if isinstance(self.id, Unset):
             id = UNSET
         else:
             id = self.id
 
-        session_id: None | str | Unset
+        session_id: Union[None, Unset, str]
         if isinstance(self.session_id, Unset):
             session_id = UNSET
         else:
             session_id = self.session_id
 
-        trace_id: None | str | Unset
+        trace_id: Union[None, Unset, str]
         if isinstance(self.trace_id, Unset):
             trace_id = UNSET
         else:
             trace_id = self.trace_id
 
-        step_number: int | None | Unset
+        step_number: Union[None, Unset, int]
         if isinstance(self.step_number, Unset):
             step_number = UNSET
         else:
             step_number = self.step_number
 
-        parent_id: None | str | Unset
+        parent_id: Union[None, Unset, str]
         if isinstance(self.parent_id, Unset):
             parent_id = UNSET
         else:
             parent_id = self.parent_id
 
-        tools: list[dict[str, Any]] | None | Unset
+        tools: Union[None, Unset, list[dict[str, Any]]]
         if isinstance(self.tools, Unset):
             tools = UNSET
         elif isinstance(self.tools, list):
@@ -232,7 +236,7 @@ class LlmSpan:
         else:
             tools = self.tools
 
-        events: list[dict[str, Any]] | None | Unset
+        events: Union[None, Unset, list[dict[str, Any]]]
         if isinstance(self.events, Unset):
             events = UNSET
         elif isinstance(self.events, list):
@@ -261,19 +265,19 @@ class LlmSpan:
         else:
             events = self.events
 
-        model: None | str | Unset
+        model: Union[None, Unset, str]
         if isinstance(self.model, Unset):
             model = UNSET
         else:
             model = self.model
 
-        temperature: float | None | Unset
+        temperature: Union[None, Unset, float]
         if isinstance(self.temperature, Unset):
             temperature = UNSET
         else:
             temperature = self.temperature
 
-        finish_reason: None | str | Unset
+        finish_reason: Union[None, Unset, str]
         if isinstance(self.finish_reason, Unset):
             finish_reason = UNSET
         else:
@@ -352,20 +356,18 @@ class LlmSpan:
         from ..models.web_search_call_event import WebSearchCallEvent
 
         d = dict(src_dict)
-        type_ = cast(Literal["llm"] | Unset, d.pop("type", UNSET))
+        type_ = cast(Union[Literal["llm"], Unset], d.pop("type", UNSET))
         if type_ != "llm" and not isinstance(type_, Unset):
             raise ValueError(f"type must match const 'llm', got '{type_}'")
 
+        input_ = []
         _input_ = d.pop("input", UNSET)
-        input_: list[Message] | Unset = UNSET
-        if _input_ is not UNSET:
-            input_ = []
-            for input_item_data in _input_:
-                input_item = Message.from_dict(input_item_data)
+        for input_item_data in _input_ or []:
+            input_item = Message.from_dict(input_item_data)
 
-                input_.append(input_item)
+            input_.append(input_item)
 
-        def _parse_redacted_input(data: object) -> list[Message] | None | Unset:
+        def _parse_redacted_input(data: object) -> Union[None, Unset, list["Message"]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -383,18 +385,18 @@ class LlmSpan:
                 return redacted_input_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[Message] | None | Unset, data)
+            return cast(Union[None, Unset, list["Message"]], data)
 
         redacted_input = _parse_redacted_input(d.pop("redacted_input", UNSET))
 
         _output = d.pop("output", UNSET)
-        output: Message | Unset
+        output: Union[Unset, Message]
         if isinstance(_output, Unset):
             output = UNSET
         else:
             output = Message.from_dict(_output)
 
-        def _parse_redacted_output(data: object) -> Message | None | Unset:
+        def _parse_redacted_output(data: object) -> Union["Message", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -407,21 +409,21 @@ class LlmSpan:
                 return redacted_output_type_0
             except:  # noqa: E722
                 pass
-            return cast(Message | None | Unset, data)
+            return cast(Union["Message", None, Unset], data)
 
         redacted_output = _parse_redacted_output(d.pop("redacted_output", UNSET))
 
         name = d.pop("name", UNSET)
 
         _created_at = d.pop("created_at", UNSET)
-        created_at: datetime.datetime | Unset
+        created_at: Union[Unset, datetime.datetime]
         if isinstance(_created_at, Unset):
             created_at = UNSET
         else:
-            created_at = datetime.datetime.fromisoformat(_created_at)
+            created_at = isoparse(_created_at)
 
         _user_metadata = d.pop("user_metadata", UNSET)
-        user_metadata: LlmSpanUserMetadata | Unset
+        user_metadata: Union[Unset, LlmSpanUserMetadata]
         if isinstance(_user_metadata, Unset):
             user_metadata = UNSET
         else:
@@ -429,102 +431,102 @@ class LlmSpan:
 
         tags = cast(list[str], d.pop("tags", UNSET))
 
-        def _parse_status_code(data: object) -> int | None | Unset:
+        def _parse_status_code(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
 
         _metrics = d.pop("metrics", UNSET)
-        metrics: LlmMetrics | Unset
+        metrics: Union[Unset, LlmMetrics]
         if isinstance(_metrics, Unset):
             metrics = UNSET
         else:
             metrics = LlmMetrics.from_dict(_metrics)
 
-        def _parse_external_id(data: object) -> None | str | Unset:
+        def _parse_external_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
 
-        def _parse_dataset_input(data: object) -> None | str | Unset:
+        def _parse_dataset_input(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
 
-        def _parse_dataset_output(data: object) -> None | str | Unset:
+        def _parse_dataset_output(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
 
         _dataset_metadata = d.pop("dataset_metadata", UNSET)
-        dataset_metadata: LlmSpanDatasetMetadata | Unset
+        dataset_metadata: Union[Unset, LlmSpanDatasetMetadata]
         if isinstance(_dataset_metadata, Unset):
             dataset_metadata = UNSET
         else:
             dataset_metadata = LlmSpanDatasetMetadata.from_dict(_dataset_metadata)
 
-        def _parse_id(data: object) -> None | str | Unset:
+        def _parse_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         id = _parse_id(d.pop("id", UNSET))
 
-        def _parse_session_id(data: object) -> None | str | Unset:
+        def _parse_session_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))
 
-        def _parse_trace_id(data: object) -> None | str | Unset:
+        def _parse_trace_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         trace_id = _parse_trace_id(d.pop("trace_id", UNSET))
 
-        def _parse_step_number(data: object) -> int | None | Unset:
+        def _parse_step_number(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
 
-        def _parse_parent_id(data: object) -> None | str | Unset:
+        def _parse_parent_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
 
-        def _parse_tools(data: object) -> list[LlmSpanToolsType0Item] | None | Unset:
+        def _parse_tools(data: object) -> Union[None, Unset, list["LlmSpanToolsType0Item"]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -542,26 +544,28 @@ class LlmSpan:
                 return tools_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[LlmSpanToolsType0Item] | None | Unset, data)
+            return cast(Union[None, Unset, list["LlmSpanToolsType0Item"]], data)
 
         tools = _parse_tools(d.pop("tools", UNSET))
 
         def _parse_events(
             data: object,
-        ) -> (
+        ) -> Union[
+            None,
+            Unset,
             list[
-                ImageGenerationEvent
-                | InternalToolCall
-                | MCPApprovalRequestEvent
-                | MCPCallEvent
-                | MCPListToolsEvent
-                | MessageEvent
-                | ReasoningEvent
-                | WebSearchCallEvent
-            ]
-            | None
-            | Unset
-        ):
+                Union[
+                    "ImageGenerationEvent",
+                    "InternalToolCall",
+                    "MCPApprovalRequestEvent",
+                    "MCPCallEvent",
+                    "MCPListToolsEvent",
+                    "MessageEvent",
+                    "ReasoningEvent",
+                    "WebSearchCallEvent",
+                ]
+            ],
+        ]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -575,16 +579,16 @@ class LlmSpan:
 
                     def _parse_events_type_0_item(
                         data: object,
-                    ) -> (
-                        ImageGenerationEvent
-                        | InternalToolCall
-                        | MCPApprovalRequestEvent
-                        | MCPCallEvent
-                        | MCPListToolsEvent
-                        | MessageEvent
-                        | ReasoningEvent
-                        | WebSearchCallEvent
-                    ):
+                    ) -> Union[
+                        "ImageGenerationEvent",
+                        "InternalToolCall",
+                        "MCPApprovalRequestEvent",
+                        "MCPCallEvent",
+                        "MCPListToolsEvent",
+                        "MessageEvent",
+                        "ReasoningEvent",
+                        "WebSearchCallEvent",
+                    ]:
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -655,47 +659,51 @@ class LlmSpan:
             except:  # noqa: E722
                 pass
             return cast(
-                list[
-                    ImageGenerationEvent
-                    | InternalToolCall
-                    | MCPApprovalRequestEvent
-                    | MCPCallEvent
-                    | MCPListToolsEvent
-                    | MessageEvent
-                    | ReasoningEvent
-                    | WebSearchCallEvent
-                ]
-                | None
-                | Unset,
+                Union[
+                    None,
+                    Unset,
+                    list[
+                        Union[
+                            "ImageGenerationEvent",
+                            "InternalToolCall",
+                            "MCPApprovalRequestEvent",
+                            "MCPCallEvent",
+                            "MCPListToolsEvent",
+                            "MessageEvent",
+                            "ReasoningEvent",
+                            "WebSearchCallEvent",
+                        ]
+                    ],
+                ],
                 data,
             )
 
         events = _parse_events(d.pop("events", UNSET))
 
-        def _parse_model(data: object) -> None | str | Unset:
+        def _parse_model(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         model = _parse_model(d.pop("model", UNSET))
 
-        def _parse_temperature(data: object) -> float | None | Unset:
+        def _parse_temperature(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(float | None | Unset, data)
+            return cast(Union[None, Unset, float], data)
 
         temperature = _parse_temperature(d.pop("temperature", UNSET))
 
-        def _parse_finish_reason(data: object) -> None | str | Unset:
+        def _parse_finish_reason(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         finish_reason = _parse_finish_reason(d.pop("finish_reason", UNSET))
 

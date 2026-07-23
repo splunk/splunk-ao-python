@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -44,7 +44,7 @@ def _get_kwargs(queue_id: str, *, body: AnnotationQueuePartialSearchRequest) -> 
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> HTTPValidationError | LogRecordsPartialQueryResponse:
+) -> Union[HTTPValidationError, LogRecordsPartialQueryResponse]:
     if response.status_code == 200:
         response_200 = LogRecordsPartialQueryResponse.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | LogRecordsPartialQueryResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, *, client: ApiClient, body: AnnotationQueuePartialSearchRequest
-) -> Response[HTTPValidationError | LogRecordsPartialQueryResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]:
     """Partial Search Annotation Queue Records
 
      Search records in an annotation queue with partial field selection.
@@ -113,7 +113,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsPartialQueryResponse]
+        Response[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -125,7 +125,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, *, client: ApiClient, body: AnnotationQueuePartialSearchRequest
-) -> Optional[HTTPValidationError | LogRecordsPartialQueryResponse]:
+) -> Optional[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]:
     """Partial Search Annotation Queue Records
 
      Search records in an annotation queue with partial field selection.
@@ -152,7 +152,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsPartialQueryResponse
+        Union[HTTPValidationError, LogRecordsPartialQueryResponse]
     """
 
     return sync_detailed(queue_id=queue_id, client=client, body=body).parsed
@@ -160,7 +160,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, *, client: ApiClient, body: AnnotationQueuePartialSearchRequest
-) -> Response[HTTPValidationError | LogRecordsPartialQueryResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]:
     """Partial Search Annotation Queue Records
 
      Search records in an annotation queue with partial field selection.
@@ -187,7 +187,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsPartialQueryResponse]
+        Response[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -199,7 +199,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, *, client: ApiClient, body: AnnotationQueuePartialSearchRequest
-) -> Optional[HTTPValidationError | LogRecordsPartialQueryResponse]:
+) -> Optional[Union[HTTPValidationError, LogRecordsPartialQueryResponse]]:
     """Partial Search Annotation Queue Records
 
      Search records in an annotation queue with partial field selection.
@@ -226,7 +226,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsPartialQueryResponse
+        Union[HTTPValidationError, LogRecordsPartialQueryResponse]
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client, body=body)).parsed

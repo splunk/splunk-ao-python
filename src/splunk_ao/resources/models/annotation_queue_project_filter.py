@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,11 +14,11 @@ class AnnotationQueueProjectFilter:
     """
     Attributes:
         value (str):
-        name (Literal['project_id'] | Unset):  Default: 'project_id'.
+        name (Union[Literal['project_id'], Unset]):  Default: 'project_id'.
     """
 
     value: str
-    name: Literal["project_id"] | Unset = "project_id"
+    name: Union[Literal["project_id"], Unset] = "project_id"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class AnnotationQueueProjectFilter:
         d = dict(src_dict)
         value = d.pop("value")
 
-        name = cast(Literal["project_id"] | Unset, d.pop("name", UNSET))
+        name = cast(Union[Literal["project_id"], Unset], d.pop("name", UNSET))
         if name != "project_id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'project_id', got '{name}'")
 

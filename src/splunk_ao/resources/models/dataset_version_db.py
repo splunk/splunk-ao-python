@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 if TYPE_CHECKING:
     from ..models.user_info import UserInfo
@@ -19,9 +18,9 @@ class DatasetVersionDB:
     """
     Attributes:
         version_index (int):
-        name (None | str):
+        name (Union[None, str]):
         created_at (datetime.datetime):
-        created_by_user (None | UserInfo):
+        created_by_user (Union['UserInfo', None]):
         num_rows (int):
         column_names (list[str]):
         rows_added (int):
@@ -33,9 +32,9 @@ class DatasetVersionDB:
     """
 
     version_index: int
-    name: None | str
+    name: Union[None, str]
     created_at: datetime.datetime
-    created_by_user: None | UserInfo
+    created_by_user: Union["UserInfo", None]
     num_rows: int
     column_names: list[str]
     rows_added: int
@@ -51,12 +50,12 @@ class DatasetVersionDB:
 
         version_index = self.version_index
 
-        name: None | str
+        name: Union[None, str]
         name = self.name
 
         created_at = self.created_at.isoformat()
 
-        created_by_user: dict[str, Any] | None
+        created_by_user: Union[None, dict[str, Any]]
         if isinstance(self.created_by_user, UserInfo):
             created_by_user = self.created_by_user.to_dict()
         else:
@@ -106,16 +105,16 @@ class DatasetVersionDB:
         d = dict(src_dict)
         version_index = d.pop("version_index")
 
-        def _parse_name(data: object) -> None | str:
+        def _parse_name(data: object) -> Union[None, str]:
             if data is None:
                 return data
-            return cast(None | str, data)
+            return cast(Union[None, str], data)
 
         name = _parse_name(d.pop("name"))
 
-        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+        created_at = isoparse(d.pop("created_at"))
 
-        def _parse_created_by_user(data: object) -> None | UserInfo:
+        def _parse_created_by_user(data: object) -> Union["UserInfo", None]:
             if data is None:
                 return data
             try:
@@ -126,7 +125,7 @@ class DatasetVersionDB:
                 return created_by_user_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | UserInfo, data)
+            return cast(Union["UserInfo", None], data)
 
         created_by_user = _parse_created_by_user(d.pop("created_by_user"))
 

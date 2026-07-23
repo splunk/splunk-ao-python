@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -22,7 +22,9 @@ from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, session_id: str, *, include_presigned_urls: bool | Unset = False) -> dict[str, Any]:
+def _get_kwargs(
+    project_id: str, session_id: str, *, include_presigned_urls: Union[Unset, bool] = False
+) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
@@ -46,7 +48,7 @@ def _get_kwargs(project_id: str, session_id: str, *, include_presigned_urls: boo
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> ExtendedSessionRecordWithChildren | HTTPValidationError:
+) -> Union[ExtendedSessionRecordWithChildren, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = ExtendedSessionRecordWithChildren.from_dict(response.json())
 
@@ -77,7 +79,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -87,21 +89,21 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Response[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
@@ -112,21 +114,21 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Optional[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        Union[ExtendedSessionRecordWithChildren, HTTPValidationError]
     """
 
     return sync_detailed(
@@ -135,21 +137,21 @@ def sync(
 
 
 async def asyncio_detailed(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Response[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
@@ -160,21 +162,21 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: Union[Unset, bool] = False
+) -> Optional[Union[ExtendedSessionRecordWithChildren, HTTPValidationError]]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
-        include_presigned_urls (bool | Unset):  Default: False.
+        include_presigned_urls (Union[Unset, bool]):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        Union[ExtendedSessionRecordWithChildren, HTTPValidationError]
     """
 
     return (

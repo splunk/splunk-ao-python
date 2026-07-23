@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,12 +16,12 @@ class DatasetRenameColumn:
     Attributes:
         column_name (str):
         new_column_name (str):
-        edit_type (Literal['rename_column'] | Unset):  Default: 'rename_column'.
+        edit_type (Union[Literal['rename_column'], Unset]):  Default: 'rename_column'.
     """
 
     column_name: str
     new_column_name: str
-    edit_type: Literal["rename_column"] | Unset = "rename_column"
+    edit_type: Union[Literal["rename_column"], Unset] = "rename_column"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,7 +46,7 @@ class DatasetRenameColumn:
 
         new_column_name = d.pop("new_column_name")
 
-        edit_type = cast(Literal["rename_column"] | Unset, d.pop("edit_type", UNSET))
+        edit_type = cast(Union[Literal["rename_column"], Unset], d.pop("edit_type", UNSET))
         if edit_type != "rename_column" and not isinstance(edit_type, Unset):
             raise ValueError(f"edit_type must match const 'rename_column', got '{edit_type}'")
 

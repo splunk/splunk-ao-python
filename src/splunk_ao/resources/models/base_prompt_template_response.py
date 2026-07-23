@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -25,7 +24,7 @@ class BasePromptTemplateResponse:
 
     Attributes:
         id (str):
-        name (Name | str):
+        name (Union['Name', str]):
         template (str):
         selected_version (BasePromptTemplateVersionResponse): Base response from API for a prompt template version.
         selected_version_id (str):
@@ -34,24 +33,24 @@ class BasePromptTemplateResponse:
         max_version (int):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        created_by_user (None | UserInfo):
-        permissions (list[Permission] | Unset):
-        all_versions (list[BasePromptTemplateVersionResponse] | Unset):
+        created_by_user (Union['UserInfo', None]):
+        permissions (Union[Unset, list['Permission']]):
+        all_versions (Union[Unset, list['BasePromptTemplateVersionResponse']]):
     """
 
     id: str
-    name: Name | str
+    name: Union["Name", str]
     template: str
-    selected_version: BasePromptTemplateVersionResponse
+    selected_version: "BasePromptTemplateVersionResponse"
     selected_version_id: str
     all_available_versions: list[int]
     total_versions: int
     max_version: int
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    created_by_user: None | UserInfo
-    permissions: list[Permission] | Unset = UNSET
-    all_versions: list[BasePromptTemplateVersionResponse] | Unset = UNSET
+    created_by_user: Union["UserInfo", None]
+    permissions: Union[Unset, list["Permission"]] = UNSET
+    all_versions: Union[Unset, list["BasePromptTemplateVersionResponse"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -60,7 +59,7 @@ class BasePromptTemplateResponse:
 
         id = self.id
 
-        name: dict[str, Any] | str
+        name: Union[dict[str, Any], str]
         if isinstance(self.name, Name):
             name = self.name.to_dict()
         else:
@@ -82,20 +81,20 @@ class BasePromptTemplateResponse:
 
         updated_at = self.updated_at.isoformat()
 
-        created_by_user: dict[str, Any] | None
+        created_by_user: Union[None, dict[str, Any]]
         if isinstance(self.created_by_user, UserInfo):
             created_by_user = self.created_by_user.to_dict()
         else:
             created_by_user = self.created_by_user
 
-        permissions: list[dict[str, Any]] | Unset = UNSET
+        permissions: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.permissions, Unset):
             permissions = []
             for permissions_item_data in self.permissions:
                 permissions_item = permissions_item_data.to_dict()
                 permissions.append(permissions_item)
 
-        all_versions: list[dict[str, Any]] | Unset = UNSET
+        all_versions: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.all_versions, Unset):
             all_versions = []
             for all_versions_item_data in self.all_versions:
@@ -136,7 +135,7 @@ class BasePromptTemplateResponse:
         d = dict(src_dict)
         id = d.pop("id")
 
-        def _parse_name(data: object) -> Name | str:
+        def _parse_name(data: object) -> Union["Name", str]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -145,7 +144,7 @@ class BasePromptTemplateResponse:
                 return name_type_1
             except:  # noqa: E722
                 pass
-            return cast(Name | str, data)
+            return cast(Union["Name", str], data)
 
         name = _parse_name(d.pop("name"))
 
@@ -161,11 +160,11 @@ class BasePromptTemplateResponse:
 
         max_version = d.pop("max_version")
 
-        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+        created_at = isoparse(d.pop("created_at"))
 
-        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
+        updated_at = isoparse(d.pop("updated_at"))
 
-        def _parse_created_by_user(data: object) -> None | UserInfo:
+        def _parse_created_by_user(data: object) -> Union["UserInfo", None]:
             if data is None:
                 return data
             try:
@@ -176,27 +175,23 @@ class BasePromptTemplateResponse:
                 return created_by_user_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | UserInfo, data)
+            return cast(Union["UserInfo", None], data)
 
         created_by_user = _parse_created_by_user(d.pop("created_by_user"))
 
+        permissions = []
         _permissions = d.pop("permissions", UNSET)
-        permissions: list[Permission] | Unset = UNSET
-        if _permissions is not UNSET:
-            permissions = []
-            for permissions_item_data in _permissions:
-                permissions_item = Permission.from_dict(permissions_item_data)
+        for permissions_item_data in _permissions or []:
+            permissions_item = Permission.from_dict(permissions_item_data)
 
-                permissions.append(permissions_item)
+            permissions.append(permissions_item)
 
+        all_versions = []
         _all_versions = d.pop("all_versions", UNSET)
-        all_versions: list[BasePromptTemplateVersionResponse] | Unset = UNSET
-        if _all_versions is not UNSET:
-            all_versions = []
-            for all_versions_item_data in _all_versions:
-                all_versions_item = BasePromptTemplateVersionResponse.from_dict(all_versions_item_data)
+        for all_versions_item_data in _all_versions or []:
+            all_versions_item = BasePromptTemplateVersionResponse.from_dict(all_versions_item_data)
 
-                all_versions.append(all_versions_item)
+            all_versions.append(all_versions_item)
 
         base_prompt_template_response = cls(
             id=id,

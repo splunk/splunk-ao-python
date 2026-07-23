@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -44,7 +44,9 @@ def _get_kwargs(project_id: str, experiment_id: str, *, body: ExperimentMetricsR
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> ExperimentMetricsResponse | HTTPValidationError:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[ExperimentMetricsResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = ExperimentMetricsResponse.from_dict(response.json())
 
@@ -75,7 +77,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Experimen
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExperimentMetricsResponse | HTTPValidationError]:
+) -> Response[Union[ExperimentMetricsResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +88,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient, body: ExperimentMetricsRequest
-) -> Response[ExperimentMetricsResponse | HTTPValidationError]:
+) -> Response[Union[ExperimentMetricsResponse, HTTPValidationError]]:
     """Get Experiment Metrics
 
      Retrieve metrics for a specific experiment.
@@ -101,7 +103,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExperimentMetricsResponse | HTTPValidationError]
+        Response[Union[ExperimentMetricsResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id, body=body)
@@ -113,7 +115,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, experiment_id: str, *, client: ApiClient, body: ExperimentMetricsRequest
-) -> Optional[ExperimentMetricsResponse | HTTPValidationError]:
+) -> Optional[Union[ExperimentMetricsResponse, HTTPValidationError]]:
     """Get Experiment Metrics
 
      Retrieve metrics for a specific experiment.
@@ -128,7 +130,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExperimentMetricsResponse | HTTPValidationError
+        Union[ExperimentMetricsResponse, HTTPValidationError]
     """
 
     return sync_detailed(project_id=project_id, experiment_id=experiment_id, client=client, body=body).parsed
@@ -136,7 +138,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, experiment_id: str, *, client: ApiClient, body: ExperimentMetricsRequest
-) -> Response[ExperimentMetricsResponse | HTTPValidationError]:
+) -> Response[Union[ExperimentMetricsResponse, HTTPValidationError]]:
     """Get Experiment Metrics
 
      Retrieve metrics for a specific experiment.
@@ -151,7 +153,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExperimentMetricsResponse | HTTPValidationError]
+        Response[Union[ExperimentMetricsResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, experiment_id=experiment_id, body=body)
@@ -163,7 +165,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, experiment_id: str, *, client: ApiClient, body: ExperimentMetricsRequest
-) -> Optional[ExperimentMetricsResponse | HTTPValidationError]:
+) -> Optional[Union[ExperimentMetricsResponse, HTTPValidationError]]:
     """Get Experiment Metrics
 
      Retrieve metrics for a specific experiment.
@@ -178,7 +180,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExperimentMetricsResponse | HTTPValidationError
+        Union[ExperimentMetricsResponse, HTTPValidationError]
     """
 
     return (await asyncio_detailed(project_id=project_id, experiment_id=experiment_id, client=client, body=body)).parsed

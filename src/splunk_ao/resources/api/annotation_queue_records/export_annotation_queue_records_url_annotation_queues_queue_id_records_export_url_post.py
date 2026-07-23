@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,7 +42,9 @@ def _get_kwargs(queue_id: str, *, body: AnnotationQueueExportRequest) -> dict[st
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> ExportPresignedUrlResponse | HTTPValidationError:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[ExportPresignedUrlResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = ExportPresignedUrlResponse.from_dict(response.json())
 
@@ -73,7 +75,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> ExportPre
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
+) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, *, client: ApiClient, body: AnnotationQueueExportRequest
-) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
+) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
     """Export Annotation Queue Records Url
 
      Export selected records from an annotation queue and return a presigned download URL.
@@ -103,7 +105,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportPresignedUrlResponse | HTTPValidationError]
+        Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -115,7 +117,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, *, client: ApiClient, body: AnnotationQueueExportRequest
-) -> Optional[ExportPresignedUrlResponse | HTTPValidationError]:
+) -> Optional[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
     """Export Annotation Queue Records Url
 
      Export selected records from an annotation queue and return a presigned download URL.
@@ -134,7 +136,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportPresignedUrlResponse | HTTPValidationError
+        Union[ExportPresignedUrlResponse, HTTPValidationError]
     """
 
     return sync_detailed(queue_id=queue_id, client=client, body=body).parsed
@@ -142,7 +144,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, *, client: ApiClient, body: AnnotationQueueExportRequest
-) -> Response[ExportPresignedUrlResponse | HTTPValidationError]:
+) -> Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
     """Export Annotation Queue Records Url
 
      Export selected records from an annotation queue and return a presigned download URL.
@@ -161,7 +163,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportPresignedUrlResponse | HTTPValidationError]
+        Response[Union[ExportPresignedUrlResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, body=body)
@@ -173,7 +175,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, *, client: ApiClient, body: AnnotationQueueExportRequest
-) -> Optional[ExportPresignedUrlResponse | HTTPValidationError]:
+) -> Optional[Union[ExportPresignedUrlResponse, HTTPValidationError]]:
     """Export Annotation Queue Records Url
 
      Export selected records from an annotation queue and return a presigned download URL.
@@ -192,7 +194,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportPresignedUrlResponse | HTTPValidationError
+        Union[ExportPresignedUrlResponse, HTTPValidationError]
     """
 
     return (await asyncio_detailed(queue_id=queue_id, client=client, body=body)).parsed

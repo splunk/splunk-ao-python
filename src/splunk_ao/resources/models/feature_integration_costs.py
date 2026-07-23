@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -20,13 +18,13 @@ class FeatureIntegrationCosts:
     """
     Attributes:
         feature_name (str):
-        total_cost (float | Unset):  Default: 0.0.
-        projects (list[ProjectIntegrationCosts] | Unset):
+        total_cost (Union[Unset, float]):  Default: 0.0.
+        projects (Union[Unset, list['ProjectIntegrationCosts']]):
     """
 
     feature_name: str
-    total_cost: float | Unset = 0.0
-    projects: list[ProjectIntegrationCosts] | Unset = UNSET
+    total_cost: Union[Unset, float] = 0.0
+    projects: Union[Unset, list["ProjectIntegrationCosts"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,7 +32,7 @@ class FeatureIntegrationCosts:
 
         total_cost = self.total_cost
 
-        projects: list[dict[str, Any]] | Unset = UNSET
+        projects: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.projects, Unset):
             projects = []
             for projects_item_data in self.projects:
@@ -60,14 +58,12 @@ class FeatureIntegrationCosts:
 
         total_cost = d.pop("total_cost", UNSET)
 
+        projects = []
         _projects = d.pop("projects", UNSET)
-        projects: list[ProjectIntegrationCosts] | Unset = UNSET
-        if _projects is not UNSET:
-            projects = []
-            for projects_item_data in _projects:
-                projects_item = ProjectIntegrationCosts.from_dict(projects_item_data)
+        for projects_item_data in _projects or []:
+            projects_item = ProjectIntegrationCosts.from_dict(projects_item_data)
 
-                projects.append(projects_item)
+            projects.append(projects_item)
 
         feature_integration_costs = cls(feature_name=feature_name, total_cost=total_cost, projects=projects)
 

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(name: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | IntegrationDB:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, IntegrationDB]:
     if response.status_code == 200:
         response_200 = IntegrationDB.from_dict(response.json())
 
@@ -66,7 +66,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | IntegrationDB]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +77,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
+def sync_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     """Get a named custom integration
 
     Args:
@@ -86,7 +88,7 @@ def sync_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationErr
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationDB]
+        Response[Union[HTTPValidationError, IntegrationDB]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -96,7 +98,7 @@ def sync_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationErr
     return _build_response(client=client, response=response)
 
 
-def sync(name: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
+def sync(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
     """Get a named custom integration
 
     Args:
@@ -107,13 +109,13 @@ def sync(name: str, *, client: ApiClient) -> Optional[HTTPValidationError | Inte
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationDB
+        Union[HTTPValidationError, IntegrationDB]
     """
 
     return sync_detailed(name=name, client=client).parsed
 
 
-async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
+async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     """Get a named custom integration
 
     Args:
@@ -124,7 +126,7 @@ async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[HTTPVali
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationDB]
+        Response[Union[HTTPValidationError, IntegrationDB]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -134,7 +136,7 @@ async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[HTTPVali
     return _build_response(client=client, response=response)
 
 
-async def asyncio(name: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
+async def asyncio(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
     """Get a named custom integration
 
     Args:
@@ -145,7 +147,7 @@ async def asyncio(name: str, *, client: ApiClient) -> Optional[HTTPValidationErr
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationDB
+        Union[HTTPValidationError, IntegrationDB]
     """
 
     return (await asyncio_detailed(name=name, client=client)).parsed

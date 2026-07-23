@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -38,7 +38,7 @@ def _get_kwargs(*, body: CreateJobRequest) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> CreateJobResponse | HTTPValidationError:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[CreateJobResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = CreateJobResponse.from_dict(response.json())
 
@@ -69,7 +69,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> CreateJob
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[CreateJobResponse | HTTPValidationError]:
+) -> Response[Union[CreateJobResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,7 +78,9 @@ def _build_response(
     )
 
 
-def sync_detailed(*, client: ApiClient, body: CreateJobRequest) -> Response[CreateJobResponse | HTTPValidationError]:
+def sync_detailed(
+    *, client: ApiClient, body: CreateJobRequest
+) -> Response[Union[CreateJobResponse, HTTPValidationError]]:
     """Create Job
 
      Create a job for a project run and enqueue it for processing.
@@ -91,7 +93,7 @@ def sync_detailed(*, client: ApiClient, body: CreateJobRequest) -> Response[Crea
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CreateJobResponse | HTTPValidationError]
+        Response[Union[CreateJobResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -101,7 +103,7 @@ def sync_detailed(*, client: ApiClient, body: CreateJobRequest) -> Response[Crea
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResponse | HTTPValidationError]:
+def sync(*, client: ApiClient, body: CreateJobRequest) -> Optional[Union[CreateJobResponse, HTTPValidationError]]:
     """Create Job
 
      Create a job for a project run and enqueue it for processing.
@@ -114,7 +116,7 @@ def sync(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResp
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CreateJobResponse | HTTPValidationError
+        Union[CreateJobResponse, HTTPValidationError]
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -122,7 +124,7 @@ def sync(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResp
 
 async def asyncio_detailed(
     *, client: ApiClient, body: CreateJobRequest
-) -> Response[CreateJobResponse | HTTPValidationError]:
+) -> Response[Union[CreateJobResponse, HTTPValidationError]]:
     """Create Job
 
      Create a job for a project run and enqueue it for processing.
@@ -135,7 +137,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CreateJobResponse | HTTPValidationError]
+        Response[Union[CreateJobResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -145,7 +147,9 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient, body: CreateJobRequest) -> Optional[CreateJobResponse | HTTPValidationError]:
+async def asyncio(
+    *, client: ApiClient, body: CreateJobRequest
+) -> Optional[Union[CreateJobResponse, HTTPValidationError]]:
     """Create Job
 
      Create a job for a project run and enqueue it for processing.
@@ -158,7 +162,7 @@ async def asyncio(*, client: ApiClient, body: CreateJobRequest) -> Optional[Crea
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CreateJobResponse | HTTPValidationError
+        Union[CreateJobResponse, HTTPValidationError]
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

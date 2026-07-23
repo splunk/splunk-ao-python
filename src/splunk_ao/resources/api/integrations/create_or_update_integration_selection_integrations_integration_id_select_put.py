@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(integration_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | IntegrationDB:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, IntegrationDB]:
     if response.status_code == 200:
         response_200 = IntegrationDB.from_dict(response.json())
 
@@ -66,7 +66,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | IntegrationDB]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +77,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
+def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     """Create Or Update Integration Selection
 
      Create or update an integration selection for this user from Galileo.
@@ -88,7 +90,7 @@ def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPVal
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationDB]
+        Response[Union[HTTPValidationError, IntegrationDB]]
     """
 
     kwargs = _get_kwargs(integration_id=integration_id)
@@ -98,7 +100,7 @@ def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPVal
     return _build_response(client=client, response=response)
 
 
-def sync(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
+def sync(integration_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
     """Create Or Update Integration Selection
 
      Create or update an integration selection for this user from Galileo.
@@ -111,13 +113,15 @@ def sync(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationEr
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationDB
+        Union[HTTPValidationError, IntegrationDB]
     """
 
     return sync_detailed(integration_id=integration_id, client=client).parsed
 
 
-async def asyncio_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
+async def asyncio_detailed(
+    integration_id: str, *, client: ApiClient
+) -> Response[Union[HTTPValidationError, IntegrationDB]]:
     """Create Or Update Integration Selection
 
      Create or update an integration selection for this user from Galileo.
@@ -130,7 +134,7 @@ async def asyncio_detailed(integration_id: str, *, client: ApiClient) -> Respons
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | IntegrationDB]
+        Response[Union[HTTPValidationError, IntegrationDB]]
     """
 
     kwargs = _get_kwargs(integration_id=integration_id)
@@ -140,7 +144,7 @@ async def asyncio_detailed(integration_id: str, *, client: ApiClient) -> Respons
     return _build_response(client=client, response=response)
 
 
-async def asyncio(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
+async def asyncio(integration_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
     """Create Or Update Integration Selection
 
      Create or update an integration selection for this user from Galileo.
@@ -153,7 +157,7 @@ async def asyncio(integration_id: str, *, client: ApiClient) -> Optional[HTTPVal
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | IntegrationDB
+        Union[HTTPValidationError, IntegrationDB]
     """
 
     return (await asyncio_detailed(integration_id=integration_id, client=client)).parsed

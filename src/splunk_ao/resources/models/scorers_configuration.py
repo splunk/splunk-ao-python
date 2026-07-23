@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,86 +17,94 @@ class ScorersConfiguration:
     fastest first, and the slowest last.
 
         Attributes:
-            latency (bool | Unset):  Default: True.
-            cost (bool | Unset):  Default: True.
-            pii (bool | Unset):  Default: False.
-            input_pii (bool | Unset):  Default: False.
-            protect_status (bool | Unset):  Default: True.
-            context_relevance (bool | Unset):  Default: False.
-            toxicity (bool | Unset):  Default: False.
-            input_toxicity (bool | Unset):  Default: False.
-            tone (bool | Unset):  Default: False.
-            input_tone (bool | Unset):  Default: False.
-            sexist (bool | Unset):  Default: False.
-            input_sexist (bool | Unset):  Default: False.
-            prompt_injection (bool | Unset):  Default: False.
-            adherence_nli (bool | Unset):  Default: False.
-            chunk_attribution_utilization_nli (bool | Unset):  Default: False.
-            context_adherence_luna (bool | Unset):  Default: False.
-            context_relevance_luna (bool | Unset):  Default: False.
-            chunk_relevance_luna (bool | Unset):  Default: False.
-            completeness_luna (bool | Unset):  Default: False.
-            completeness_nli (bool | Unset):  Default: False.
-            tool_error_rate_luna (bool | Unset):  Default: False.
-            tool_selection_quality_luna (bool | Unset):  Default: False.
-            action_completion_luna (bool | Unset):  Default: False.
-            action_advancement_luna (bool | Unset):  Default: False.
-            factuality (bool | Unset):  Default: False.
-            groundedness (bool | Unset):  Default: False.
-            chunk_attribution_utilization_gpt (bool | Unset):  Default: False.
-            completeness_gpt (bool | Unset):  Default: False.
-            instruction_adherence (bool | Unset):  Default: False.
-            ground_truth_adherence (bool | Unset):  Default: False.
-            tool_selection_quality (bool | Unset):  Default: False.
-            tool_error_rate (bool | Unset):  Default: False.
-            agentic_session_success (bool | Unset):  Default: False.
-            agentic_workflow_success (bool | Unset):  Default: False.
-            prompt_injection_gpt (bool | Unset):  Default: False.
-            sexist_gpt (bool | Unset):  Default: False.
-            input_sexist_gpt (bool | Unset):  Default: False.
-            toxicity_gpt (bool | Unset):  Default: False.
-            input_toxicity_gpt (bool | Unset):  Default: False.
+            latency (Union[Unset, bool]):  Default: True.
+            cost (Union[Unset, bool]):  Default: True.
+            pii (Union[Unset, bool]):  Default: False.
+            input_pii (Union[Unset, bool]):  Default: False.
+            bleu (Union[Unset, bool]):  Default: True.
+            rouge (Union[Unset, bool]):  Default: True.
+            protect_status (Union[Unset, bool]):  Default: True.
+            context_relevance (Union[Unset, bool]):  Default: False.
+            toxicity (Union[Unset, bool]):  Default: False.
+            input_toxicity (Union[Unset, bool]):  Default: False.
+            tone (Union[Unset, bool]):  Default: False.
+            input_tone (Union[Unset, bool]):  Default: False.
+            sexist (Union[Unset, bool]):  Default: False.
+            input_sexist (Union[Unset, bool]):  Default: False.
+            prompt_injection (Union[Unset, bool]):  Default: False.
+            adherence_nli (Union[Unset, bool]):  Default: False.
+            chunk_attribution_utilization_nli (Union[Unset, bool]):  Default: False.
+            context_adherence_luna (Union[Unset, bool]):  Default: False.
+            context_relevance_luna (Union[Unset, bool]):  Default: False.
+            chunk_relevance_luna (Union[Unset, bool]):  Default: False.
+            completeness_luna (Union[Unset, bool]):  Default: False.
+            completeness_nli (Union[Unset, bool]):  Default: False.
+            tool_error_rate_luna (Union[Unset, bool]):  Default: False.
+            tool_selection_quality_luna (Union[Unset, bool]):  Default: False.
+            action_completion_luna (Union[Unset, bool]):  Default: False.
+            action_advancement_luna (Union[Unset, bool]):  Default: False.
+            uncertainty (Union[Unset, bool]):  Default: False.
+            factuality (Union[Unset, bool]):  Default: False.
+            groundedness (Union[Unset, bool]):  Default: False.
+            prompt_perplexity (Union[Unset, bool]):  Default: False.
+            chunk_attribution_utilization_gpt (Union[Unset, bool]):  Default: False.
+            completeness_gpt (Union[Unset, bool]):  Default: False.
+            instruction_adherence (Union[Unset, bool]):  Default: False.
+            ground_truth_adherence (Union[Unset, bool]):  Default: False.
+            tool_selection_quality (Union[Unset, bool]):  Default: False.
+            tool_error_rate (Union[Unset, bool]):  Default: False.
+            agentic_session_success (Union[Unset, bool]):  Default: False.
+            agentic_workflow_success (Union[Unset, bool]):  Default: False.
+            prompt_injection_gpt (Union[Unset, bool]):  Default: False.
+            sexist_gpt (Union[Unset, bool]):  Default: False.
+            input_sexist_gpt (Union[Unset, bool]):  Default: False.
+            toxicity_gpt (Union[Unset, bool]):  Default: False.
+            input_toxicity_gpt (Union[Unset, bool]):  Default: False.
     """
 
-    latency: bool | Unset = True
-    cost: bool | Unset = True
-    pii: bool | Unset = False
-    input_pii: bool | Unset = False
-    protect_status: bool | Unset = True
-    context_relevance: bool | Unset = False
-    toxicity: bool | Unset = False
-    input_toxicity: bool | Unset = False
-    tone: bool | Unset = False
-    input_tone: bool | Unset = False
-    sexist: bool | Unset = False
-    input_sexist: bool | Unset = False
-    prompt_injection: bool | Unset = False
-    adherence_nli: bool | Unset = False
-    chunk_attribution_utilization_nli: bool | Unset = False
-    context_adherence_luna: bool | Unset = False
-    context_relevance_luna: bool | Unset = False
-    chunk_relevance_luna: bool | Unset = False
-    completeness_luna: bool | Unset = False
-    completeness_nli: bool | Unset = False
-    tool_error_rate_luna: bool | Unset = False
-    tool_selection_quality_luna: bool | Unset = False
-    action_completion_luna: bool | Unset = False
-    action_advancement_luna: bool | Unset = False
-    factuality: bool | Unset = False
-    groundedness: bool | Unset = False
-    chunk_attribution_utilization_gpt: bool | Unset = False
-    completeness_gpt: bool | Unset = False
-    instruction_adherence: bool | Unset = False
-    ground_truth_adherence: bool | Unset = False
-    tool_selection_quality: bool | Unset = False
-    tool_error_rate: bool | Unset = False
-    agentic_session_success: bool | Unset = False
-    agentic_workflow_success: bool | Unset = False
-    prompt_injection_gpt: bool | Unset = False
-    sexist_gpt: bool | Unset = False
-    input_sexist_gpt: bool | Unset = False
-    toxicity_gpt: bool | Unset = False
-    input_toxicity_gpt: bool | Unset = False
+    latency: Union[Unset, bool] = True
+    cost: Union[Unset, bool] = True
+    pii: Union[Unset, bool] = False
+    input_pii: Union[Unset, bool] = False
+    bleu: Union[Unset, bool] = True
+    rouge: Union[Unset, bool] = True
+    protect_status: Union[Unset, bool] = True
+    context_relevance: Union[Unset, bool] = False
+    toxicity: Union[Unset, bool] = False
+    input_toxicity: Union[Unset, bool] = False
+    tone: Union[Unset, bool] = False
+    input_tone: Union[Unset, bool] = False
+    sexist: Union[Unset, bool] = False
+    input_sexist: Union[Unset, bool] = False
+    prompt_injection: Union[Unset, bool] = False
+    adherence_nli: Union[Unset, bool] = False
+    chunk_attribution_utilization_nli: Union[Unset, bool] = False
+    context_adherence_luna: Union[Unset, bool] = False
+    context_relevance_luna: Union[Unset, bool] = False
+    chunk_relevance_luna: Union[Unset, bool] = False
+    completeness_luna: Union[Unset, bool] = False
+    completeness_nli: Union[Unset, bool] = False
+    tool_error_rate_luna: Union[Unset, bool] = False
+    tool_selection_quality_luna: Union[Unset, bool] = False
+    action_completion_luna: Union[Unset, bool] = False
+    action_advancement_luna: Union[Unset, bool] = False
+    uncertainty: Union[Unset, bool] = False
+    factuality: Union[Unset, bool] = False
+    groundedness: Union[Unset, bool] = False
+    prompt_perplexity: Union[Unset, bool] = False
+    chunk_attribution_utilization_gpt: Union[Unset, bool] = False
+    completeness_gpt: Union[Unset, bool] = False
+    instruction_adherence: Union[Unset, bool] = False
+    ground_truth_adherence: Union[Unset, bool] = False
+    tool_selection_quality: Union[Unset, bool] = False
+    tool_error_rate: Union[Unset, bool] = False
+    agentic_session_success: Union[Unset, bool] = False
+    agentic_workflow_success: Union[Unset, bool] = False
+    prompt_injection_gpt: Union[Unset, bool] = False
+    sexist_gpt: Union[Unset, bool] = False
+    input_sexist_gpt: Union[Unset, bool] = False
+    toxicity_gpt: Union[Unset, bool] = False
+    input_toxicity_gpt: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -109,6 +115,10 @@ class ScorersConfiguration:
         pii = self.pii
 
         input_pii = self.input_pii
+
+        bleu = self.bleu
+
+        rouge = self.rouge
 
         protect_status = self.protect_status
 
@@ -150,9 +160,13 @@ class ScorersConfiguration:
 
         action_advancement_luna = self.action_advancement_luna
 
+        uncertainty = self.uncertainty
+
         factuality = self.factuality
 
         groundedness = self.groundedness
+
+        prompt_perplexity = self.prompt_perplexity
 
         chunk_attribution_utilization_gpt = self.chunk_attribution_utilization_gpt
 
@@ -191,6 +205,10 @@ class ScorersConfiguration:
             field_dict["pii"] = pii
         if input_pii is not UNSET:
             field_dict["input_pii"] = input_pii
+        if bleu is not UNSET:
+            field_dict["bleu"] = bleu
+        if rouge is not UNSET:
+            field_dict["rouge"] = rouge
         if protect_status is not UNSET:
             field_dict["protect_status"] = protect_status
         if context_relevance is not UNSET:
@@ -231,10 +249,14 @@ class ScorersConfiguration:
             field_dict["action_completion_luna"] = action_completion_luna
         if action_advancement_luna is not UNSET:
             field_dict["action_advancement_luna"] = action_advancement_luna
+        if uncertainty is not UNSET:
+            field_dict["uncertainty"] = uncertainty
         if factuality is not UNSET:
             field_dict["factuality"] = factuality
         if groundedness is not UNSET:
             field_dict["groundedness"] = groundedness
+        if prompt_perplexity is not UNSET:
+            field_dict["prompt_perplexity"] = prompt_perplexity
         if chunk_attribution_utilization_gpt is not UNSET:
             field_dict["chunk_attribution_utilization_gpt"] = chunk_attribution_utilization_gpt
         if completeness_gpt is not UNSET:
@@ -274,6 +296,10 @@ class ScorersConfiguration:
         pii = d.pop("pii", UNSET)
 
         input_pii = d.pop("input_pii", UNSET)
+
+        bleu = d.pop("bleu", UNSET)
+
+        rouge = d.pop("rouge", UNSET)
 
         protect_status = d.pop("protect_status", UNSET)
 
@@ -315,9 +341,13 @@ class ScorersConfiguration:
 
         action_advancement_luna = d.pop("action_advancement_luna", UNSET)
 
+        uncertainty = d.pop("uncertainty", UNSET)
+
         factuality = d.pop("factuality", UNSET)
 
         groundedness = d.pop("groundedness", UNSET)
+
+        prompt_perplexity = d.pop("prompt_perplexity", UNSET)
 
         chunk_attribution_utilization_gpt = d.pop("chunk_attribution_utilization_gpt", UNSET)
 
@@ -350,6 +380,8 @@ class ScorersConfiguration:
             cost=cost,
             pii=pii,
             input_pii=input_pii,
+            bleu=bleu,
+            rouge=rouge,
             protect_status=protect_status,
             context_relevance=context_relevance,
             toxicity=toxicity,
@@ -370,8 +402,10 @@ class ScorersConfiguration:
             tool_selection_quality_luna=tool_selection_quality_luna,
             action_completion_luna=action_completion_luna,
             action_advancement_luna=action_advancement_luna,
+            uncertainty=uncertainty,
             factuality=factuality,
             groundedness=groundedness,
+            prompt_perplexity=prompt_perplexity,
             chunk_attribution_utilization_gpt=chunk_attribution_utilization_gpt,
             completeness_gpt=completeness_gpt,
             instruction_adherence=instruction_adherence,

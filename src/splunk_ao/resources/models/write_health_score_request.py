@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -22,13 +20,13 @@ class WriteHealthScoreRequest:
         dataset_id (str):
         health_score_type (str):
         score (float):
-        secondary (None | Unset | WriteHealthScoreRequestSecondaryType0):
+        secondary (Union['WriteHealthScoreRequestSecondaryType0', None, Unset]):
     """
 
     dataset_id: str
     health_score_type: str
     score: float
-    secondary: None | Unset | WriteHealthScoreRequestSecondaryType0 = UNSET
+    secondary: Union["WriteHealthScoreRequestSecondaryType0", None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,7 +38,7 @@ class WriteHealthScoreRequest:
 
         score = self.score
 
-        secondary: dict[str, Any] | None | Unset
+        secondary: Union[None, Unset, dict[str, Any]]
         if isinstance(self.secondary, Unset):
             secondary = UNSET
         elif isinstance(self.secondary, WriteHealthScoreRequestSecondaryType0):
@@ -67,7 +65,7 @@ class WriteHealthScoreRequest:
 
         score = d.pop("score")
 
-        def _parse_secondary(data: object) -> None | Unset | WriteHealthScoreRequestSecondaryType0:
+        def _parse_secondary(data: object) -> Union["WriteHealthScoreRequestSecondaryType0", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -80,7 +78,7 @@ class WriteHealthScoreRequest:
                 return secondary_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | Unset | WriteHealthScoreRequestSecondaryType0, data)
+            return cast(Union["WriteHealthScoreRequestSecondaryType0", None, Unset], data)
 
         secondary = _parse_secondary(d.pop("secondary", UNSET))
 

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,12 +15,12 @@ class TreeChoiceNode:
     Attributes:
         label (str):
         id (str):
-        children (list[TreeChoiceNode] | Unset):
+        children (Union[Unset, list['TreeChoiceNode']]):
     """
 
     label: str
     id: str
-    children: list[TreeChoiceNode] | Unset = UNSET
+    children: Union[Unset, list["TreeChoiceNode"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -30,7 +28,7 @@ class TreeChoiceNode:
 
         id = self.id
 
-        children: list[dict[str, Any]] | Unset = UNSET
+        children: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.children, Unset):
             children = []
             for children_item_data in self.children:
@@ -52,14 +50,12 @@ class TreeChoiceNode:
 
         id = d.pop("id")
 
+        children = []
         _children = d.pop("children", UNSET)
-        children: list[TreeChoiceNode] | Unset = UNSET
-        if _children is not UNSET:
-            children = []
-            for children_item_data in _children:
-                children_item = TreeChoiceNode.from_dict(children_item_data)
+        for children_item_data in _children or []:
+            children_item = TreeChoiceNode.from_dict(children_item_data)
 
-                children.append(children_item)
+            children.append(children_item)
 
         tree_choice_node = cls(label=label, id=id, children=children)
 

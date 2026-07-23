@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -41,7 +41,7 @@ def _get_kwargs(*, body: IntegrationDisableRequest) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -69,7 +69,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,7 +78,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(*, client: ApiClient, body: IntegrationDisableRequest) -> Response[Any | HTTPValidationError]:
+def sync_detailed(*, client: ApiClient, body: IntegrationDisableRequest) -> Response[Union[Any, HTTPValidationError]]:
     """Disable Integration
 
      Disable an integration type for this user.
@@ -93,7 +93,7 @@ def sync_detailed(*, client: ApiClient, body: IntegrationDisableRequest) -> Resp
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Union[Any, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -103,7 +103,7 @@ def sync_detailed(*, client: ApiClient, body: IntegrationDisableRequest) -> Resp
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Any | HTTPValidationError]:
+def sync(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Union[Any, HTTPValidationError]]:
     """Disable Integration
 
      Disable an integration type for this user.
@@ -118,7 +118,7 @@ def sync(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Any 
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Union[Any, HTTPValidationError]
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -126,7 +126,7 @@ def sync(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Any 
 
 async def asyncio_detailed(
     *, client: ApiClient, body: IntegrationDisableRequest
-) -> Response[Any | HTTPValidationError]:
+) -> Response[Union[Any, HTTPValidationError]]:
     """Disable Integration
 
      Disable an integration type for this user.
@@ -141,7 +141,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Union[Any, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -151,7 +151,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Any | HTTPValidationError]:
+async def asyncio(*, client: ApiClient, body: IntegrationDisableRequest) -> Optional[Union[Any, HTTPValidationError]]:
     """Disable Integration
 
      Disable an integration type for this user.
@@ -166,7 +166,7 @@ async def asyncio(*, client: ApiClient, body: IntegrationDisableRequest) -> Opti
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Union[Any, HTTPValidationError]
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

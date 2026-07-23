@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -22,16 +20,16 @@ class SegmentFilter:
     """
     Attributes:
         sample_rate (float): The fraction of the data to sample. Must be between 0 and 1, inclusive.
-        filter_ (MetadataFilter | ModalityFilter | NodeNameFilter | None | Unset): Filter to apply to the segment. By
-            default sample on all data.
-        llm_scorers (bool | Unset): Whether to sample only on LLM scorers. Default: False.
-        multimodal_scorers (bool | Unset): Whether to sample only on multimodal scorers. Default: False.
+        filter_ (Union['MetadataFilter', 'ModalityFilter', 'NodeNameFilter', None, Unset]): Filter to apply to the
+            segment. By default sample on all data.
+        llm_scorers (Union[Unset, bool]): Whether to sample only on LLM scorers. Default: False.
+        multimodal_scorers (Union[Unset, bool]): Whether to sample only on multimodal scorers. Default: False.
     """
 
     sample_rate: float
-    filter_: MetadataFilter | ModalityFilter | NodeNameFilter | None | Unset = UNSET
-    llm_scorers: bool | Unset = False
-    multimodal_scorers: bool | Unset = False
+    filter_: Union["MetadataFilter", "ModalityFilter", "NodeNameFilter", None, Unset] = UNSET
+    llm_scorers: Union[Unset, bool] = False
+    multimodal_scorers: Union[Unset, bool] = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class SegmentFilter:
 
         sample_rate = self.sample_rate
 
-        filter_: dict[str, Any] | None | Unset
+        filter_: Union[None, Unset, dict[str, Any]]
         if isinstance(self.filter_, Unset):
             filter_ = UNSET
         elif isinstance(self.filter_, NodeNameFilter):
@@ -78,7 +76,7 @@ class SegmentFilter:
         d = dict(src_dict)
         sample_rate = d.pop("sample_rate")
 
-        def _parse_filter_(data: object) -> MetadataFilter | ModalityFilter | NodeNameFilter | None | Unset:
+        def _parse_filter_(data: object) -> Union["MetadataFilter", "ModalityFilter", "NodeNameFilter", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -107,7 +105,7 @@ class SegmentFilter:
                 return filter_type_0_type_2
             except:  # noqa: E722
                 pass
-            return cast(MetadataFilter | ModalityFilter | NodeNameFilter | None | Unset, data)
+            return cast(Union["MetadataFilter", "ModalityFilter", "NodeNameFilter", None, Unset], data)
 
         filter_ = _parse_filter_(d.pop("filter", UNSET))
 

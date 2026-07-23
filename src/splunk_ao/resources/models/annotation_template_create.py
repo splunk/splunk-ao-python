@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -26,24 +24,24 @@ class AnnotationTemplateCreate:
     """
     Attributes:
         name (str):
-        constraints (ChoiceConstraints | LikeDislikeConstraints | ScoreConstraints | StarConstraints | TagsConstraints |
-            TextConstraints | TreeChoiceConstraints):
-        include_explanation (bool | Unset):  Default: False.
-        criteria (None | str | Unset):
+        constraints (Union['ChoiceConstraints', 'LikeDislikeConstraints', 'ScoreConstraints', 'StarConstraints',
+            'TagsConstraints', 'TextConstraints', 'TreeChoiceConstraints']):
+        include_explanation (Union[Unset, bool]):  Default: False.
+        criteria (Union[None, Unset, str]):
     """
 
     name: str
-    constraints: (
-        ChoiceConstraints
-        | LikeDislikeConstraints
-        | ScoreConstraints
-        | StarConstraints
-        | TagsConstraints
-        | TextConstraints
-        | TreeChoiceConstraints
-    )
-    include_explanation: bool | Unset = False
-    criteria: None | str | Unset = UNSET
+    constraints: Union[
+        "ChoiceConstraints",
+        "LikeDislikeConstraints",
+        "ScoreConstraints",
+        "StarConstraints",
+        "TagsConstraints",
+        "TextConstraints",
+        "TreeChoiceConstraints",
+    ]
+    include_explanation: Union[Unset, bool] = False
+    criteria: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,7 +72,7 @@ class AnnotationTemplateCreate:
 
         include_explanation = self.include_explanation
 
-        criteria: None | str | Unset
+        criteria: Union[None, Unset, str]
         if isinstance(self.criteria, Unset):
             criteria = UNSET
         else:
@@ -105,15 +103,15 @@ class AnnotationTemplateCreate:
 
         def _parse_constraints(
             data: object,
-        ) -> (
-            ChoiceConstraints
-            | LikeDislikeConstraints
-            | ScoreConstraints
-            | StarConstraints
-            | TagsConstraints
-            | TextConstraints
-            | TreeChoiceConstraints
-        ):
+        ) -> Union[
+            "ChoiceConstraints",
+            "LikeDislikeConstraints",
+            "ScoreConstraints",
+            "StarConstraints",
+            "TagsConstraints",
+            "TextConstraints",
+            "TreeChoiceConstraints",
+        ]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -172,12 +170,12 @@ class AnnotationTemplateCreate:
 
         include_explanation = d.pop("include_explanation", UNSET)
 
-        def _parse_criteria(data: object) -> None | str | Unset:
+        def _parse_criteria(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         criteria = _parse_criteria(d.pop("criteria", UNSET))
 

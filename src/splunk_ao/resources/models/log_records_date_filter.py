@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.log_records_date_filter_operator import LogRecordsDateFilterOperator
 from ..types import UNSET, Unset
@@ -20,13 +19,13 @@ class LogRecordsDateFilter:
         column_id (str): ID of the column to filter.
         operator (LogRecordsDateFilterOperator):
         value (datetime.datetime):
-        type_ (Literal['date'] | Unset):  Default: 'date'.
+        type_ (Union[Literal['date'], Unset]):  Default: 'date'.
     """
 
     column_id: str
     operator: LogRecordsDateFilterOperator
     value: datetime.datetime
-    type_: Literal["date"] | Unset = "date"
+    type_: Union[Literal["date"], Unset] = "date"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,9 +52,9 @@ class LogRecordsDateFilter:
 
         operator = LogRecordsDateFilterOperator(d.pop("operator"))
 
-        value = datetime.datetime.fromisoformat(d.pop("value"))
+        value = isoparse(d.pop("value"))
 
-        type_ = cast(Literal["date"] | Unset, d.pop("type", UNSET))
+        type_ = cast(Union[Literal["date"], Unset], d.pop("type", UNSET))
         if type_ != "date" and not isinstance(type_, Unset):
             raise ValueError(f"type must match const 'date', got '{type_}'")
 

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 T = TypeVar("T", bound="BucketedMetrics")
 
@@ -36,9 +35,9 @@ class BucketedMetrics:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        start_bucket_time = datetime.datetime.fromisoformat(d.pop("start_bucket_time"))
+        start_bucket_time = isoparse(d.pop("start_bucket_time"))
 
-        end_bucket_time = datetime.datetime.fromisoformat(d.pop("end_bucket_time"))
+        end_bucket_time = isoparse(d.pop("end_bucket_time"))
 
         bucketed_metrics = cls(start_bucket_time=start_bucket_time, end_bucket_time=end_bucket_time)
 

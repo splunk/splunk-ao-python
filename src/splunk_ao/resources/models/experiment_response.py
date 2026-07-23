@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.task_type import TaskType
 from ..types import UNSET, Unset
@@ -38,69 +37,69 @@ class ExperimentResponse:
         task_type (TaskType): Valid task types for modeling.
 
             We store these as ints instead of strings because we will be looking this up in the database frequently.
-        created_at (datetime.datetime | Unset): Timestamp of the experiment's creation
-        updated_at (datetime.datetime | None | Unset): Timestamp of the trace or span's last update
-        name (str | Unset): Name of the experiment Default: ''.
-        created_by (None | str | Unset):
-        created_by_user (None | Unset | UserInfo):
-        num_spans (int | None | Unset):
-        num_traces (int | None | Unset):
-        num_sessions (int | None | Unset):
-        dataset (ExperimentDataset | None | Unset):
-        aggregate_metrics (ExperimentResponseAggregateMetrics | Unset):
-        structured_aggregate_metrics (ExperimentResponseStructuredAggregateMetricsType0 | None | Unset): Structured
-            aggregate metrics with full statistical aggregates (avg, min, max, sum, count). Keys are scorer UUIDs for
-            scorer-backed metrics (matching available_columns column IDs after stripping the 'metrics/' prefix) and raw
+        created_at (Union[Unset, datetime.datetime]): Timestamp of the experiment's creation
+        updated_at (Union[None, Unset, datetime.datetime]): Timestamp of the trace or span's last update
+        name (Union[Unset, str]): Name of the experiment Default: ''.
+        created_by (Union[None, Unset, str]):
+        created_by_user (Union['UserInfo', None, Unset]):
+        num_spans (Union[None, Unset, int]):
+        num_traces (Union[None, Unset, int]):
+        num_sessions (Union[None, Unset, int]):
+        dataset (Union['ExperimentDataset', None, Unset]):
+        aggregate_metrics (Union[Unset, ExperimentResponseAggregateMetrics]):
+        structured_aggregate_metrics (Union['ExperimentResponseStructuredAggregateMetricsType0', None, Unset]):
+            Structured aggregate metrics with full statistical aggregates (avg, min, max, sum, count). Keys are scorer UUIDs
+            for scorer-backed metrics (matching available_columns column IDs after stripping the 'metrics/' prefix) and raw
             strings for system metrics (e.g. 'duration_ns', 'cost'). Present only when use_clickhouse_run_aggregates flag is
             enabled.
-        aggregate_feedback (ExperimentResponseAggregateFeedback | Unset): Aggregate feedback information related to the
-            experiment (traces only)
-        rating_aggregates (ExperimentResponseRatingAggregates | Unset): Annotation aggregates keyed by template ID and
-            root type
-        ranking_score (float | None | Unset):
-        rank (int | None | Unset):
-        winner (bool | None | Unset):
-        playground_id (None | str | Unset):
-        playground (ExperimentPlayground | None | Unset):
-        prompt_run_settings (None | PromptRunSettings | Unset):
-        prompt_model (None | str | Unset):
-        prompt (ExperimentPrompt | None | Unset):
-        tags (ExperimentResponseTags | Unset):
-        status (ExperimentStatus | Unset):
-        experiment_group_id (None | str | Unset):
-        experiment_group_name (None | str | Unset):
-        experiment_group_is_system (bool | None | Unset):
+        aggregate_feedback (Union[Unset, ExperimentResponseAggregateFeedback]): Aggregate feedback information related
+            to the experiment (traces only)
+        rating_aggregates (Union[Unset, ExperimentResponseRatingAggregates]): Annotation aggregates keyed by template ID
+            and root type
+        ranking_score (Union[None, Unset, float]):
+        rank (Union[None, Unset, int]):
+        winner (Union[None, Unset, bool]):
+        playground_id (Union[None, Unset, str]):
+        playground (Union['ExperimentPlayground', None, Unset]):
+        prompt_run_settings (Union['PromptRunSettings', None, Unset]):
+        prompt_model (Union[None, Unset, str]):
+        prompt (Union['ExperimentPrompt', None, Unset]):
+        tags (Union[Unset, ExperimentResponseTags]):
+        status (Union[Unset, ExperimentStatus]):
+        experiment_group_id (Union[None, Unset, str]):
+        experiment_group_name (Union[None, Unset, str]):
+        experiment_group_is_system (Union[None, Unset, bool]):
     """
 
     id: str
     project_id: str
     task_type: TaskType
-    created_at: datetime.datetime | Unset = UNSET
-    updated_at: datetime.datetime | None | Unset = UNSET
-    name: str | Unset = ""
-    created_by: None | str | Unset = UNSET
-    created_by_user: None | Unset | UserInfo = UNSET
-    num_spans: int | None | Unset = UNSET
-    num_traces: int | None | Unset = UNSET
-    num_sessions: int | None | Unset = UNSET
-    dataset: ExperimentDataset | None | Unset = UNSET
-    aggregate_metrics: ExperimentResponseAggregateMetrics | Unset = UNSET
-    structured_aggregate_metrics: ExperimentResponseStructuredAggregateMetricsType0 | None | Unset = UNSET
-    aggregate_feedback: ExperimentResponseAggregateFeedback | Unset = UNSET
-    rating_aggregates: ExperimentResponseRatingAggregates | Unset = UNSET
-    ranking_score: float | None | Unset = UNSET
-    rank: int | None | Unset = UNSET
-    winner: bool | None | Unset = UNSET
-    playground_id: None | str | Unset = UNSET
-    playground: ExperimentPlayground | None | Unset = UNSET
-    prompt_run_settings: None | PromptRunSettings | Unset = UNSET
-    prompt_model: None | str | Unset = UNSET
-    prompt: ExperimentPrompt | None | Unset = UNSET
-    tags: ExperimentResponseTags | Unset = UNSET
-    status: ExperimentStatus | Unset = UNSET
-    experiment_group_id: None | str | Unset = UNSET
-    experiment_group_name: None | str | Unset = UNSET
-    experiment_group_is_system: bool | None | Unset = UNSET
+    created_at: Union[Unset, datetime.datetime] = UNSET
+    updated_at: Union[None, Unset, datetime.datetime] = UNSET
+    name: Union[Unset, str] = ""
+    created_by: Union[None, Unset, str] = UNSET
+    created_by_user: Union["UserInfo", None, Unset] = UNSET
+    num_spans: Union[None, Unset, int] = UNSET
+    num_traces: Union[None, Unset, int] = UNSET
+    num_sessions: Union[None, Unset, int] = UNSET
+    dataset: Union["ExperimentDataset", None, Unset] = UNSET
+    aggregate_metrics: Union[Unset, "ExperimentResponseAggregateMetrics"] = UNSET
+    structured_aggregate_metrics: Union["ExperimentResponseStructuredAggregateMetricsType0", None, Unset] = UNSET
+    aggregate_feedback: Union[Unset, "ExperimentResponseAggregateFeedback"] = UNSET
+    rating_aggregates: Union[Unset, "ExperimentResponseRatingAggregates"] = UNSET
+    ranking_score: Union[None, Unset, float] = UNSET
+    rank: Union[None, Unset, int] = UNSET
+    winner: Union[None, Unset, bool] = UNSET
+    playground_id: Union[None, Unset, str] = UNSET
+    playground: Union["ExperimentPlayground", None, Unset] = UNSET
+    prompt_run_settings: Union["PromptRunSettings", None, Unset] = UNSET
+    prompt_model: Union[None, Unset, str] = UNSET
+    prompt: Union["ExperimentPrompt", None, Unset] = UNSET
+    tags: Union[Unset, "ExperimentResponseTags"] = UNSET
+    status: Union[Unset, "ExperimentStatus"] = UNSET
+    experiment_group_id: Union[None, Unset, str] = UNSET
+    experiment_group_name: Union[None, Unset, str] = UNSET
+    experiment_group_is_system: Union[None, Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -119,11 +118,11 @@ class ExperimentResponse:
 
         task_type = self.task_type.value
 
-        created_at: str | Unset = UNSET
+        created_at: Union[Unset, str] = UNSET
         if not isinstance(self.created_at, Unset):
             created_at = self.created_at.isoformat()
 
-        updated_at: None | str | Unset
+        updated_at: Union[None, Unset, str]
         if isinstance(self.updated_at, Unset):
             updated_at = UNSET
         elif isinstance(self.updated_at, datetime.datetime):
@@ -133,13 +132,13 @@ class ExperimentResponse:
 
         name = self.name
 
-        created_by: None | str | Unset
+        created_by: Union[None, Unset, str]
         if isinstance(self.created_by, Unset):
             created_by = UNSET
         else:
             created_by = self.created_by
 
-        created_by_user: dict[str, Any] | None | Unset
+        created_by_user: Union[None, Unset, dict[str, Any]]
         if isinstance(self.created_by_user, Unset):
             created_by_user = UNSET
         elif isinstance(self.created_by_user, UserInfo):
@@ -147,25 +146,25 @@ class ExperimentResponse:
         else:
             created_by_user = self.created_by_user
 
-        num_spans: int | None | Unset
+        num_spans: Union[None, Unset, int]
         if isinstance(self.num_spans, Unset):
             num_spans = UNSET
         else:
             num_spans = self.num_spans
 
-        num_traces: int | None | Unset
+        num_traces: Union[None, Unset, int]
         if isinstance(self.num_traces, Unset):
             num_traces = UNSET
         else:
             num_traces = self.num_traces
 
-        num_sessions: int | None | Unset
+        num_sessions: Union[None, Unset, int]
         if isinstance(self.num_sessions, Unset):
             num_sessions = UNSET
         else:
             num_sessions = self.num_sessions
 
-        dataset: dict[str, Any] | None | Unset
+        dataset: Union[None, Unset, dict[str, Any]]
         if isinstance(self.dataset, Unset):
             dataset = UNSET
         elif isinstance(self.dataset, ExperimentDataset):
@@ -173,11 +172,11 @@ class ExperimentResponse:
         else:
             dataset = self.dataset
 
-        aggregate_metrics: dict[str, Any] | Unset = UNSET
+        aggregate_metrics: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.aggregate_metrics, Unset):
             aggregate_metrics = self.aggregate_metrics.to_dict()
 
-        structured_aggregate_metrics: dict[str, Any] | None | Unset
+        structured_aggregate_metrics: Union[None, Unset, dict[str, Any]]
         if isinstance(self.structured_aggregate_metrics, Unset):
             structured_aggregate_metrics = UNSET
         elif isinstance(self.structured_aggregate_metrics, ExperimentResponseStructuredAggregateMetricsType0):
@@ -185,39 +184,39 @@ class ExperimentResponse:
         else:
             structured_aggregate_metrics = self.structured_aggregate_metrics
 
-        aggregate_feedback: dict[str, Any] | Unset = UNSET
+        aggregate_feedback: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.aggregate_feedback, Unset):
             aggregate_feedback = self.aggregate_feedback.to_dict()
 
-        rating_aggregates: dict[str, Any] | Unset = UNSET
+        rating_aggregates: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.rating_aggregates, Unset):
             rating_aggregates = self.rating_aggregates.to_dict()
 
-        ranking_score: float | None | Unset
+        ranking_score: Union[None, Unset, float]
         if isinstance(self.ranking_score, Unset):
             ranking_score = UNSET
         else:
             ranking_score = self.ranking_score
 
-        rank: int | None | Unset
+        rank: Union[None, Unset, int]
         if isinstance(self.rank, Unset):
             rank = UNSET
         else:
             rank = self.rank
 
-        winner: bool | None | Unset
+        winner: Union[None, Unset, bool]
         if isinstance(self.winner, Unset):
             winner = UNSET
         else:
             winner = self.winner
 
-        playground_id: None | str | Unset
+        playground_id: Union[None, Unset, str]
         if isinstance(self.playground_id, Unset):
             playground_id = UNSET
         else:
             playground_id = self.playground_id
 
-        playground: dict[str, Any] | None | Unset
+        playground: Union[None, Unset, dict[str, Any]]
         if isinstance(self.playground, Unset):
             playground = UNSET
         elif isinstance(self.playground, ExperimentPlayground):
@@ -225,7 +224,7 @@ class ExperimentResponse:
         else:
             playground = self.playground
 
-        prompt_run_settings: dict[str, Any] | None | Unset
+        prompt_run_settings: Union[None, Unset, dict[str, Any]]
         if isinstance(self.prompt_run_settings, Unset):
             prompt_run_settings = UNSET
         elif isinstance(self.prompt_run_settings, PromptRunSettings):
@@ -233,13 +232,13 @@ class ExperimentResponse:
         else:
             prompt_run_settings = self.prompt_run_settings
 
-        prompt_model: None | str | Unset
+        prompt_model: Union[None, Unset, str]
         if isinstance(self.prompt_model, Unset):
             prompt_model = UNSET
         else:
             prompt_model = self.prompt_model
 
-        prompt: dict[str, Any] | None | Unset
+        prompt: Union[None, Unset, dict[str, Any]]
         if isinstance(self.prompt, Unset):
             prompt = UNSET
         elif isinstance(self.prompt, ExperimentPrompt):
@@ -247,27 +246,27 @@ class ExperimentResponse:
         else:
             prompt = self.prompt
 
-        tags: dict[str, Any] | Unset = UNSET
+        tags: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.tags, Unset):
             tags = self.tags.to_dict()
 
-        status: dict[str, Any] | Unset = UNSET
+        status: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.status, Unset):
             status = self.status.to_dict()
 
-        experiment_group_id: None | str | Unset
+        experiment_group_id: Union[None, Unset, str]
         if isinstance(self.experiment_group_id, Unset):
             experiment_group_id = UNSET
         else:
             experiment_group_id = self.experiment_group_id
 
-        experiment_group_name: None | str | Unset
+        experiment_group_name: Union[None, Unset, str]
         if isinstance(self.experiment_group_name, Unset):
             experiment_group_name = UNSET
         else:
             experiment_group_name = self.experiment_group_name
 
-        experiment_group_is_system: bool | None | Unset
+        experiment_group_is_system: Union[None, Unset, bool]
         if isinstance(self.experiment_group_is_system, Unset):
             experiment_group_is_system = UNSET
         else:
@@ -355,13 +354,13 @@ class ExperimentResponse:
         task_type = TaskType(d.pop("task_type"))
 
         _created_at = d.pop("created_at", UNSET)
-        created_at: datetime.datetime | Unset
+        created_at: Union[Unset, datetime.datetime]
         if isinstance(_created_at, Unset):
             created_at = UNSET
         else:
-            created_at = datetime.datetime.fromisoformat(_created_at)
+            created_at = isoparse(_created_at)
 
-        def _parse_updated_at(data: object) -> datetime.datetime | None | Unset:
+        def _parse_updated_at(data: object) -> Union[None, Unset, datetime.datetime]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -369,27 +368,27 @@ class ExperimentResponse:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                updated_at_type_0 = datetime.datetime.fromisoformat(data)
+                updated_at_type_0 = isoparse(data)
 
                 return updated_at_type_0
             except:  # noqa: E722
                 pass
-            return cast(datetime.datetime | None | Unset, data)
+            return cast(Union[None, Unset, datetime.datetime], data)
 
         updated_at = _parse_updated_at(d.pop("updated_at", UNSET))
 
         name = d.pop("name", UNSET)
 
-        def _parse_created_by(data: object) -> None | str | Unset:
+        def _parse_created_by(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
 
-        def _parse_created_by_user(data: object) -> None | Unset | UserInfo:
+        def _parse_created_by_user(data: object) -> Union["UserInfo", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -402,38 +401,38 @@ class ExperimentResponse:
                 return created_by_user_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | Unset | UserInfo, data)
+            return cast(Union["UserInfo", None, Unset], data)
 
         created_by_user = _parse_created_by_user(d.pop("created_by_user", UNSET))
 
-        def _parse_num_spans(data: object) -> int | None | Unset:
+        def _parse_num_spans(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         num_spans = _parse_num_spans(d.pop("num_spans", UNSET))
 
-        def _parse_num_traces(data: object) -> int | None | Unset:
+        def _parse_num_traces(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         num_traces = _parse_num_traces(d.pop("num_traces", UNSET))
 
-        def _parse_num_sessions(data: object) -> int | None | Unset:
+        def _parse_num_sessions(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         num_sessions = _parse_num_sessions(d.pop("num_sessions", UNSET))
 
-        def _parse_dataset(data: object) -> ExperimentDataset | None | Unset:
+        def _parse_dataset(data: object) -> Union["ExperimentDataset", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -446,12 +445,12 @@ class ExperimentResponse:
                 return dataset_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExperimentDataset | None | Unset, data)
+            return cast(Union["ExperimentDataset", None, Unset], data)
 
         dataset = _parse_dataset(d.pop("dataset", UNSET))
 
         _aggregate_metrics = d.pop("aggregate_metrics", UNSET)
-        aggregate_metrics: ExperimentResponseAggregateMetrics | Unset
+        aggregate_metrics: Union[Unset, ExperimentResponseAggregateMetrics]
         if isinstance(_aggregate_metrics, Unset):
             aggregate_metrics = UNSET
         else:
@@ -459,7 +458,7 @@ class ExperimentResponse:
 
         def _parse_structured_aggregate_metrics(
             data: object,
-        ) -> ExperimentResponseStructuredAggregateMetricsType0 | None | Unset:
+        ) -> Union["ExperimentResponseStructuredAggregateMetricsType0", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -472,61 +471,61 @@ class ExperimentResponse:
                 return structured_aggregate_metrics_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExperimentResponseStructuredAggregateMetricsType0 | None | Unset, data)
+            return cast(Union["ExperimentResponseStructuredAggregateMetricsType0", None, Unset], data)
 
         structured_aggregate_metrics = _parse_structured_aggregate_metrics(d.pop("structured_aggregate_metrics", UNSET))
 
         _aggregate_feedback = d.pop("aggregate_feedback", UNSET)
-        aggregate_feedback: ExperimentResponseAggregateFeedback | Unset
+        aggregate_feedback: Union[Unset, ExperimentResponseAggregateFeedback]
         if isinstance(_aggregate_feedback, Unset):
             aggregate_feedback = UNSET
         else:
             aggregate_feedback = ExperimentResponseAggregateFeedback.from_dict(_aggregate_feedback)
 
         _rating_aggregates = d.pop("rating_aggregates", UNSET)
-        rating_aggregates: ExperimentResponseRatingAggregates | Unset
+        rating_aggregates: Union[Unset, ExperimentResponseRatingAggregates]
         if isinstance(_rating_aggregates, Unset):
             rating_aggregates = UNSET
         else:
             rating_aggregates = ExperimentResponseRatingAggregates.from_dict(_rating_aggregates)
 
-        def _parse_ranking_score(data: object) -> float | None | Unset:
+        def _parse_ranking_score(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(float | None | Unset, data)
+            return cast(Union[None, Unset, float], data)
 
         ranking_score = _parse_ranking_score(d.pop("ranking_score", UNSET))
 
-        def _parse_rank(data: object) -> int | None | Unset:
+        def _parse_rank(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         rank = _parse_rank(d.pop("rank", UNSET))
 
-        def _parse_winner(data: object) -> bool | None | Unset:
+        def _parse_winner(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(bool | None | Unset, data)
+            return cast(Union[None, Unset, bool], data)
 
         winner = _parse_winner(d.pop("winner", UNSET))
 
-        def _parse_playground_id(data: object) -> None | str | Unset:
+        def _parse_playground_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         playground_id = _parse_playground_id(d.pop("playground_id", UNSET))
 
-        def _parse_playground(data: object) -> ExperimentPlayground | None | Unset:
+        def _parse_playground(data: object) -> Union["ExperimentPlayground", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -539,11 +538,11 @@ class ExperimentResponse:
                 return playground_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExperimentPlayground | None | Unset, data)
+            return cast(Union["ExperimentPlayground", None, Unset], data)
 
         playground = _parse_playground(d.pop("playground", UNSET))
 
-        def _parse_prompt_run_settings(data: object) -> None | PromptRunSettings | Unset:
+        def _parse_prompt_run_settings(data: object) -> Union["PromptRunSettings", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -556,20 +555,20 @@ class ExperimentResponse:
                 return prompt_run_settings_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | PromptRunSettings | Unset, data)
+            return cast(Union["PromptRunSettings", None, Unset], data)
 
         prompt_run_settings = _parse_prompt_run_settings(d.pop("prompt_run_settings", UNSET))
 
-        def _parse_prompt_model(data: object) -> None | str | Unset:
+        def _parse_prompt_model(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         prompt_model = _parse_prompt_model(d.pop("prompt_model", UNSET))
 
-        def _parse_prompt(data: object) -> ExperimentPrompt | None | Unset:
+        def _parse_prompt(data: object) -> Union["ExperimentPrompt", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -582,48 +581,48 @@ class ExperimentResponse:
                 return prompt_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExperimentPrompt | None | Unset, data)
+            return cast(Union["ExperimentPrompt", None, Unset], data)
 
         prompt = _parse_prompt(d.pop("prompt", UNSET))
 
         _tags = d.pop("tags", UNSET)
-        tags: ExperimentResponseTags | Unset
+        tags: Union[Unset, ExperimentResponseTags]
         if isinstance(_tags, Unset):
             tags = UNSET
         else:
             tags = ExperimentResponseTags.from_dict(_tags)
 
         _status = d.pop("status", UNSET)
-        status: ExperimentStatus | Unset
+        status: Union[Unset, ExperimentStatus]
         if isinstance(_status, Unset):
             status = UNSET
         else:
             status = ExperimentStatus.from_dict(_status)
 
-        def _parse_experiment_group_id(data: object) -> None | str | Unset:
+        def _parse_experiment_group_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         experiment_group_id = _parse_experiment_group_id(d.pop("experiment_group_id", UNSET))
 
-        def _parse_experiment_group_name(data: object) -> None | str | Unset:
+        def _parse_experiment_group_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         experiment_group_name = _parse_experiment_group_name(d.pop("experiment_group_name", UNSET))
 
-        def _parse_experiment_group_is_system(data: object) -> bool | None | Unset:
+        def _parse_experiment_group_is_system(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(bool | None | Unset, data)
+            return cast(Union[None, Unset, bool], data)
 
         experiment_group_is_system = _parse_experiment_group_is_system(d.pop("experiment_group_is_system", UNSET))
 

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -44,7 +44,7 @@ def _get_kwargs(project_id: str, *, body: AggregatedTraceViewRequest) -> dict[st
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> AggregatedTraceViewResponse | HTTPValidationError:
+) -> Union[AggregatedTraceViewResponse, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = AggregatedTraceViewResponse.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[AggregatedTraceViewResponse | HTTPValidationError]:
+) -> Response[Union[AggregatedTraceViewResponse, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: AggregatedTraceViewRequest
-) -> Response[AggregatedTraceViewResponse | HTTPValidationError]:
+) -> Response[Union[AggregatedTraceViewResponse, HTTPValidationError]]:
     """Get Aggregated Trace View
 
     Args:
@@ -98,7 +98,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AggregatedTraceViewResponse | HTTPValidationError]
+        Response[Union[AggregatedTraceViewResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -110,7 +110,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, body: AggregatedTraceViewRequest
-) -> Optional[AggregatedTraceViewResponse | HTTPValidationError]:
+) -> Optional[Union[AggregatedTraceViewResponse, HTTPValidationError]]:
     """Get Aggregated Trace View
 
     Args:
@@ -122,7 +122,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AggregatedTraceViewResponse | HTTPValidationError
+        Union[AggregatedTraceViewResponse, HTTPValidationError]
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -130,7 +130,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: AggregatedTraceViewRequest
-) -> Response[AggregatedTraceViewResponse | HTTPValidationError]:
+) -> Response[Union[AggregatedTraceViewResponse, HTTPValidationError]]:
     """Get Aggregated Trace View
 
     Args:
@@ -142,7 +142,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AggregatedTraceViewResponse | HTTPValidationError]
+        Response[Union[AggregatedTraceViewResponse, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -154,7 +154,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: AggregatedTraceViewRequest
-) -> Optional[AggregatedTraceViewResponse | HTTPValidationError]:
+) -> Optional[Union[AggregatedTraceViewResponse, HTTPValidationError]]:
     """Get Aggregated Trace View
 
     Args:
@@ -166,7 +166,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AggregatedTraceViewResponse | HTTPValidationError
+        Union[AggregatedTraceViewResponse, HTTPValidationError]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

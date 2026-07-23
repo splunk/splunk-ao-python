@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -33,38 +31,41 @@ class LogRecordsDeleteRequest:
             input'}], 'log_stream_id': '74aec44e-ec21-4c9f-a3e2-b2ab2b81b4db'}
 
     Attributes:
-        log_stream_id (None | str | Unset): Log stream id associated with the traces.
-        experiment_id (None | str | Unset): Experiment id associated with the traces.
-        metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
-        filters (list[LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
-            LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter] | Unset):
-        filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
-            OrNodeLogRecordsFilter | Unset):
+        log_stream_id (Union[None, Unset, str]): Log stream id associated with the traces.
+        experiment_id (Union[None, Unset, str]): Experiment id associated with the traces.
+        metrics_testing_id (Union[None, Unset, str]): Metrics testing id associated with the traces.
+        filters (Union[Unset, list[Union['LogRecordsBooleanFilter', 'LogRecordsCollectionFilter',
+            'LogRecordsDateFilter', 'LogRecordsFullyAnnotatedFilter', 'LogRecordsIDFilter', 'LogRecordsNumberFilter',
+            'LogRecordsTextFilter']]]):
+        filter_tree (Union['AndNodeLogRecordsFilter', 'FilterLeafLogRecordsFilter', 'NotNodeLogRecordsFilter',
+            'OrNodeLogRecordsFilter', None, Unset]):
     """
 
-    log_stream_id: None | str | Unset = UNSET
-    experiment_id: None | str | Unset = UNSET
-    metrics_testing_id: None | str | Unset = UNSET
-    filters: (
+    log_stream_id: Union[None, Unset, str] = UNSET
+    experiment_id: Union[None, Unset, str] = UNSET
+    metrics_testing_id: Union[None, Unset, str] = UNSET
+    filters: Union[
+        Unset,
         list[
-            LogRecordsBooleanFilter
-            | LogRecordsCollectionFilter
-            | LogRecordsDateFilter
-            | LogRecordsFullyAnnotatedFilter
-            | LogRecordsIDFilter
-            | LogRecordsNumberFilter
-            | LogRecordsTextFilter
-        ]
-        | Unset
-    ) = UNSET
-    filter_tree: (
-        AndNodeLogRecordsFilter
-        | FilterLeafLogRecordsFilter
-        | None
-        | NotNodeLogRecordsFilter
-        | OrNodeLogRecordsFilter
-        | Unset
-    ) = UNSET
+            Union[
+                "LogRecordsBooleanFilter",
+                "LogRecordsCollectionFilter",
+                "LogRecordsDateFilter",
+                "LogRecordsFullyAnnotatedFilter",
+                "LogRecordsIDFilter",
+                "LogRecordsNumberFilter",
+                "LogRecordsTextFilter",
+            ]
+        ],
+    ] = UNSET
+    filter_tree: Union[
+        "AndNodeLogRecordsFilter",
+        "FilterLeafLogRecordsFilter",
+        "NotNodeLogRecordsFilter",
+        "OrNodeLogRecordsFilter",
+        None,
+        Unset,
+    ] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -79,25 +80,25 @@ class LogRecordsDeleteRequest:
         from ..models.not_node_log_records_filter import NotNodeLogRecordsFilter
         from ..models.or_node_log_records_filter import OrNodeLogRecordsFilter
 
-        log_stream_id: None | str | Unset
+        log_stream_id: Union[None, Unset, str]
         if isinstance(self.log_stream_id, Unset):
             log_stream_id = UNSET
         else:
             log_stream_id = self.log_stream_id
 
-        experiment_id: None | str | Unset
+        experiment_id: Union[None, Unset, str]
         if isinstance(self.experiment_id, Unset):
             experiment_id = UNSET
         else:
             experiment_id = self.experiment_id
 
-        metrics_testing_id: None | str | Unset
+        metrics_testing_id: Union[None, Unset, str]
         if isinstance(self.metrics_testing_id, Unset):
             metrics_testing_id = UNSET
         else:
             metrics_testing_id = self.metrics_testing_id
 
-        filters: list[dict[str, Any]] | Unset = UNSET
+        filters: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
             for filters_item_data in self.filters:
@@ -119,7 +120,7 @@ class LogRecordsDeleteRequest:
 
                 filters.append(filters_item)
 
-        filter_tree: dict[str, Any] | None | Unset
+        filter_tree: Union[None, Unset, dict[str, Any]]
         if isinstance(self.filter_tree, Unset):
             filter_tree = UNSET
         elif isinstance(self.filter_tree, FilterLeafLogRecordsFilter):
@@ -165,129 +166,116 @@ class LogRecordsDeleteRequest:
 
         d = dict(src_dict)
 
-        def _parse_log_stream_id(data: object) -> None | str | Unset:
+        def _parse_log_stream_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
 
-        def _parse_experiment_id(data: object) -> None | str | Unset:
+        def _parse_experiment_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
 
-        def _parse_metrics_testing_id(data: object) -> None | str | Unset:
+        def _parse_metrics_testing_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
 
+        filters = []
         _filters = d.pop("filters", UNSET)
-        filters: (
-            list[
-                LogRecordsBooleanFilter
-                | LogRecordsCollectionFilter
-                | LogRecordsDateFilter
-                | LogRecordsFullyAnnotatedFilter
-                | LogRecordsIDFilter
-                | LogRecordsNumberFilter
-                | LogRecordsTextFilter
-            ]
-            | Unset
-        ) = UNSET
-        if _filters is not UNSET:
-            filters = []
-            for filters_item_data in _filters:
+        for filters_item_data in _filters or []:
 
-                def _parse_filters_item(
-                    data: object,
-                ) -> (
-                    LogRecordsBooleanFilter
-                    | LogRecordsCollectionFilter
-                    | LogRecordsDateFilter
-                    | LogRecordsFullyAnnotatedFilter
-                    | LogRecordsIDFilter
-                    | LogRecordsNumberFilter
-                    | LogRecordsTextFilter
-                ):
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_0 = LogRecordsIDFilter.from_dict(data)
-
-                        return filters_item_type_0
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_1 = LogRecordsDateFilter.from_dict(data)
-
-                        return filters_item_type_1
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_2 = LogRecordsNumberFilter.from_dict(data)
-
-                        return filters_item_type_2
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_3 = LogRecordsBooleanFilter.from_dict(data)
-
-                        return filters_item_type_3
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_4 = LogRecordsCollectionFilter.from_dict(data)
-
-                        return filters_item_type_4
-                    except:  # noqa: E722
-                        pass
-                    try:
-                        if not isinstance(data, dict):
-                            raise TypeError()
-                        filters_item_type_5 = LogRecordsTextFilter.from_dict(data)
-
-                        return filters_item_type_5
-                    except:  # noqa: E722
-                        pass
+            def _parse_filters_item(
+                data: object,
+            ) -> Union[
+                "LogRecordsBooleanFilter",
+                "LogRecordsCollectionFilter",
+                "LogRecordsDateFilter",
+                "LogRecordsFullyAnnotatedFilter",
+                "LogRecordsIDFilter",
+                "LogRecordsNumberFilter",
+                "LogRecordsTextFilter",
+            ]:
+                try:
                     if not isinstance(data, dict):
                         raise TypeError()
-                    filters_item_type_6 = LogRecordsFullyAnnotatedFilter.from_dict(data)
+                    filters_item_type_0 = LogRecordsIDFilter.from_dict(data)
 
-                    return filters_item_type_6
+                    return filters_item_type_0
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_1 = LogRecordsDateFilter.from_dict(data)
 
-                filters_item = _parse_filters_item(filters_item_data)
+                    return filters_item_type_1
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_2 = LogRecordsNumberFilter.from_dict(data)
 
-                filters.append(filters_item)
+                    return filters_item_type_2
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_3 = LogRecordsBooleanFilter.from_dict(data)
+
+                    return filters_item_type_3
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_4 = LogRecordsCollectionFilter.from_dict(data)
+
+                    return filters_item_type_4
+                except:  # noqa: E722
+                    pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_5 = LogRecordsTextFilter.from_dict(data)
+
+                    return filters_item_type_5
+                except:  # noqa: E722
+                    pass
+                if not isinstance(data, dict):
+                    raise TypeError()
+                filters_item_type_6 = LogRecordsFullyAnnotatedFilter.from_dict(data)
+
+                return filters_item_type_6
+
+            filters_item = _parse_filters_item(filters_item_data)
+
+            filters.append(filters_item)
 
         def _parse_filter_tree(
             data: object,
-        ) -> (
-            AndNodeLogRecordsFilter
-            | FilterLeafLogRecordsFilter
-            | None
-            | NotNodeLogRecordsFilter
-            | OrNodeLogRecordsFilter
-            | Unset
-        ):
+        ) -> Union[
+            "AndNodeLogRecordsFilter",
+            "FilterLeafLogRecordsFilter",
+            "NotNodeLogRecordsFilter",
+            "OrNodeLogRecordsFilter",
+            None,
+            Unset,
+        ]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -333,12 +321,14 @@ class LogRecordsDeleteRequest:
             except:  # noqa: E722
                 pass
             return cast(
-                AndNodeLogRecordsFilter
-                | FilterLeafLogRecordsFilter
-                | None
-                | NotNodeLogRecordsFilter
-                | OrNodeLogRecordsFilter
-                | Unset,
+                Union[
+                    "AndNodeLogRecordsFilter",
+                    "FilterLeafLogRecordsFilter",
+                    "NotNodeLogRecordsFilter",
+                    "OrNodeLogRecordsFilter",
+                    None,
+                    Unset,
+                ],
                 data,
             )
 

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,14 +16,14 @@ class UserInfo:
     Attributes:
         id (str):
         email (str):
-        first_name (None | str | Unset):
-        last_name (None | str | Unset):
+        first_name (Union[None, Unset, str]):
+        last_name (Union[None, Unset, str]):
     """
 
     id: str
     email: str
-    first_name: None | str | Unset = UNSET
-    last_name: None | str | Unset = UNSET
+    first_name: Union[None, Unset, str] = UNSET
+    last_name: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -33,13 +31,13 @@ class UserInfo:
 
         email = self.email
 
-        first_name: None | str | Unset
+        first_name: Union[None, Unset, str]
         if isinstance(self.first_name, Unset):
             first_name = UNSET
         else:
             first_name = self.first_name
 
-        last_name: None | str | Unset
+        last_name: Union[None, Unset, str]
         if isinstance(self.last_name, Unset):
             last_name = UNSET
         else:
@@ -62,21 +60,21 @@ class UserInfo:
 
         email = d.pop("email")
 
-        def _parse_first_name(data: object) -> None | str | Unset:
+        def _parse_first_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         first_name = _parse_first_name(d.pop("first_name", UNSET))
 
-        def _parse_last_name(data: object) -> None | str | Unset:
+        def _parse_last_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         last_name = _parse_last_name(d.pop("last_name", UNSET))
 

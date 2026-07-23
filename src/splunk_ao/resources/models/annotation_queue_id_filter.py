@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,18 +14,18 @@ T = TypeVar("T", bound="AnnotationQueueIDFilter")
 class AnnotationQueueIDFilter:
     """
     Attributes:
-        value (list[str] | str):
-        name (Literal['id'] | Unset):  Default: 'id'.
-        operator (AnnotationQueueIDFilterOperator | Unset):  Default: AnnotationQueueIDFilterOperator.EQ.
+        value (Union[list[str], str]):
+        name (Union[Literal['id'], Unset]):  Default: 'id'.
+        operator (Union[Unset, AnnotationQueueIDFilterOperator]):  Default: AnnotationQueueIDFilterOperator.EQ.
     """
 
-    value: list[str] | str
-    name: Literal["id"] | Unset = "id"
-    operator: AnnotationQueueIDFilterOperator | Unset = AnnotationQueueIDFilterOperator.EQ
+    value: Union[list[str], str]
+    name: Union[Literal["id"], Unset] = "id"
+    operator: Union[Unset, AnnotationQueueIDFilterOperator] = AnnotationQueueIDFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        value: list[str] | str
+        value: Union[list[str], str]
         if isinstance(self.value, list):
             value = []
             for value_type_1_item_data in self.value:
@@ -40,7 +38,7 @@ class AnnotationQueueIDFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
+        operator: Union[Unset, str] = UNSET
         if not isinstance(self.operator, Unset):
             operator = self.operator.value
 
@@ -58,7 +56,7 @@ class AnnotationQueueIDFilter:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
 
-        def _parse_value(data: object) -> list[str] | str:
+        def _parse_value(data: object) -> Union[list[str], str]:
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -76,16 +74,16 @@ class AnnotationQueueIDFilter:
                 return value_type_1
             except:  # noqa: E722
                 pass
-            return cast(list[str] | str, data)
+            return cast(Union[list[str], str], data)
 
         value = _parse_value(d.pop("value"))
 
-        name = cast(Literal["id"] | Unset, d.pop("name", UNSET))
+        name = cast(Union[Literal["id"], Unset], d.pop("name", UNSET))
         if name != "id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'id', got '{name}'")
 
         _operator = d.pop("operator", UNSET)
-        operator: AnnotationQueueIDFilterOperator | Unset
+        operator: Union[Unset, AnnotationQueueIDFilterOperator]
         if isinstance(_operator, Unset):
             operator = UNSET
         else:

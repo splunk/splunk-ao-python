@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,7 +42,9 @@ def _get_kwargs(project_id: str, *, body: LogRecordsDeleteRequest) -> dict[str, 
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | LogRecordsDeleteResponse:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[HTTPValidationError, LogRecordsDeleteResponse]:
     if response.status_code == 200:
         response_200 = LogRecordsDeleteResponse.from_dict(response.json())
 
@@ -73,7 +75,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | LogRecordsDeleteResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsDeleteResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, body: LogRecordsDeleteRequest
-) -> Response[HTTPValidationError | LogRecordsDeleteResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsDeleteResponse]]:
     """Delete Sessions
 
      Delete all session records that match the provided filters.
@@ -100,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsDeleteResponse]
+        Response[Union[HTTPValidationError, LogRecordsDeleteResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -112,7 +114,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, body: LogRecordsDeleteRequest
-) -> Optional[HTTPValidationError | LogRecordsDeleteResponse]:
+) -> Optional[Union[HTTPValidationError, LogRecordsDeleteResponse]]:
     """Delete Sessions
 
      Delete all session records that match the provided filters.
@@ -128,7 +130,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsDeleteResponse
+        Union[HTTPValidationError, LogRecordsDeleteResponse]
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -136,7 +138,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: LogRecordsDeleteRequest
-) -> Response[HTTPValidationError | LogRecordsDeleteResponse]:
+) -> Response[Union[HTTPValidationError, LogRecordsDeleteResponse]]:
     """Delete Sessions
 
      Delete all session records that match the provided filters.
@@ -152,7 +154,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsDeleteResponse]
+        Response[Union[HTTPValidationError, LogRecordsDeleteResponse]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -164,7 +166,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, body: LogRecordsDeleteRequest
-) -> Optional[HTTPValidationError | LogRecordsDeleteResponse]:
+) -> Optional[Union[HTTPValidationError, LogRecordsDeleteResponse]]:
     """Delete Sessions
 
      Delete all session records that match the provided filters.
@@ -180,7 +182,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsDeleteResponse
+        Union[HTTPValidationError, LogRecordsDeleteResponse]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

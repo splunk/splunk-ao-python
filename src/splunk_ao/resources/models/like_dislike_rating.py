@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,11 +14,11 @@ class LikeDislikeRating:
     """
     Attributes:
         value (bool):
-        annotation_type (Literal['like_dislike'] | Unset):  Default: 'like_dislike'.
+        annotation_type (Union[Literal['like_dislike'], Unset]):  Default: 'like_dislike'.
     """
 
     value: bool
-    annotation_type: Literal["like_dislike"] | Unset = "like_dislike"
+    annotation_type: Union[Literal["like_dislike"], Unset] = "like_dislike"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class LikeDislikeRating:
         d = dict(src_dict)
         value = d.pop("value")
 
-        annotation_type = cast(Literal["like_dislike"] | Unset, d.pop("annotation_type", UNSET))
+        annotation_type = cast(Union[Literal["like_dislike"], Unset], d.pop("annotation_type", UNSET))
         if annotation_type != "like_dislike" and not isinstance(annotation_type, Unset):
             raise ValueError(f"annotation_type must match const 'like_dislike', got '{annotation_type}'")
 

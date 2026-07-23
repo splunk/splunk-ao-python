@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -42,10 +42,10 @@ def _get_kwargs(name: IntegrationProvider) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> (
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
-):
+) -> Union[
+    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+    HTTPValidationError,
+]:
     if response.status_code == 200:
         response_200 = GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet.from_dict(
             response.json()
@@ -79,8 +79,10 @@ def _parse_response(
 def _build_response(
     *, client: ApiClient, response: httpx.Response
 ) -> Response[
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     return Response(
         status_code=HTTPStatus(response.status_code),
@@ -93,8 +95,10 @@ def _build_response(
 def sync_detailed(
     name: IntegrationProvider, *, client: ApiClient
 ) -> Response[
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Get Integration Status
 
@@ -108,7 +112,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet | HTTPValidationError]
+        Response[Union[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -121,8 +125,10 @@ def sync_detailed(
 def sync(
     name: IntegrationProvider, *, client: ApiClient
 ) -> Optional[
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Get Integration Status
 
@@ -136,7 +142,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet | HTTPValidationError
+        Union[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet, HTTPValidationError]
     """
 
     return sync_detailed(name=name, client=client).parsed
@@ -145,8 +151,10 @@ def sync(
 async def asyncio_detailed(
     name: IntegrationProvider, *, client: ApiClient
 ) -> Response[
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Get Integration Status
 
@@ -160,7 +168,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet | HTTPValidationError]
+        Response[Union[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -173,8 +181,10 @@ async def asyncio_detailed(
 async def asyncio(
     name: IntegrationProvider, *, client: ApiClient
 ) -> Optional[
-    GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
-    | HTTPValidationError
+    Union[
+        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet,
+        HTTPValidationError,
+    ]
 ]:
     """Get Integration Status
 
@@ -188,7 +198,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet | HTTPValidationError
+        Union[GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet, HTTPValidationError]
     """
 
     return (await asyncio_detailed(name=name, client=client)).parsed

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -16,11 +14,11 @@ class AnnotationQueueRecordsByRecordIDs:
     """
     Attributes:
         record_ids (list[str]): List of log record IDs to select
-        type_ (Literal['record_ids'] | Unset):  Default: 'record_ids'.
+        type_ (Union[Literal['record_ids'], Unset]):  Default: 'record_ids'.
     """
 
     record_ids: list[str]
-    type_: Literal["record_ids"] | Unset = "record_ids"
+    type_: Union[Literal["record_ids"], Unset] = "record_ids"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class AnnotationQueueRecordsByRecordIDs:
         d = dict(src_dict)
         record_ids = cast(list[str], d.pop("record_ids"))
 
-        type_ = cast(Literal["record_ids"] | Unset, d.pop("type", UNSET))
+        type_ = cast(Union[Literal["record_ids"], Unset], d.pop("type", UNSET))
         if type_ != "record_ids" and not isinstance(type_, Unset):
             raise ValueError(f"type must match const 'record_ids', got '{type_}'")
 

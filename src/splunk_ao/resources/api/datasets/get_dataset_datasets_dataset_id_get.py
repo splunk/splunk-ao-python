@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(dataset_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetDB | HTTPValidationError:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DatasetDB, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = DatasetDB.from_dict(response.json())
 
@@ -66,7 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetDB
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[DatasetDB | HTTPValidationError]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[DatasetDB, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +75,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(dataset_id: str, *, client: ApiClient) -> Response[DatasetDB | HTTPValidationError]:
+def sync_detailed(dataset_id: str, *, client: ApiClient) -> Response[Union[DatasetDB, HTTPValidationError]]:
     """Get Dataset
 
     Args:
@@ -86,7 +86,7 @@ def sync_detailed(dataset_id: str, *, client: ApiClient) -> Response[DatasetDB |
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DatasetDB | HTTPValidationError]
+        Response[Union[DatasetDB, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id)
@@ -96,7 +96,7 @@ def sync_detailed(dataset_id: str, *, client: ApiClient) -> Response[DatasetDB |
     return _build_response(client=client, response=response)
 
 
-def sync(dataset_id: str, *, client: ApiClient) -> Optional[DatasetDB | HTTPValidationError]:
+def sync(dataset_id: str, *, client: ApiClient) -> Optional[Union[DatasetDB, HTTPValidationError]]:
     """Get Dataset
 
     Args:
@@ -107,13 +107,13 @@ def sync(dataset_id: str, *, client: ApiClient) -> Optional[DatasetDB | HTTPVali
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DatasetDB | HTTPValidationError
+        Union[DatasetDB, HTTPValidationError]
     """
 
     return sync_detailed(dataset_id=dataset_id, client=client).parsed
 
 
-async def asyncio_detailed(dataset_id: str, *, client: ApiClient) -> Response[DatasetDB | HTTPValidationError]:
+async def asyncio_detailed(dataset_id: str, *, client: ApiClient) -> Response[Union[DatasetDB, HTTPValidationError]]:
     """Get Dataset
 
     Args:
@@ -124,7 +124,7 @@ async def asyncio_detailed(dataset_id: str, *, client: ApiClient) -> Response[Da
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DatasetDB | HTTPValidationError]
+        Response[Union[DatasetDB, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(dataset_id=dataset_id)
@@ -134,7 +134,7 @@ async def asyncio_detailed(dataset_id: str, *, client: ApiClient) -> Response[Da
     return _build_response(client=client, response=response)
 
 
-async def asyncio(dataset_id: str, *, client: ApiClient) -> Optional[DatasetDB | HTTPValidationError]:
+async def asyncio(dataset_id: str, *, client: ApiClient) -> Optional[Union[DatasetDB, HTTPValidationError]]:
     """Get Dataset
 
     Args:
@@ -145,7 +145,7 @@ async def asyncio(dataset_id: str, *, client: ApiClient) -> Optional[DatasetDB |
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DatasetDB | HTTPValidationError
+        Union[DatasetDB, HTTPValidationError]
     """
 
     return (await asyncio_detailed(dataset_id=dataset_id, client=client)).parsed

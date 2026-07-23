@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -22,14 +20,14 @@ class VegasGatewayIntegrationCreate:
         endpoint (str):
         use_case (str):
         token (str):
-        multi_modal_config (MultiModalModelIntegrationConfig | None | Unset): Configuration for multi-modal (file
+        multi_modal_config (Union['MultiModalModelIntegrationConfig', None, Unset]): Configuration for multi-modal (file
             upload) capabilities.
     """
 
     endpoint: str
     use_case: str
     token: str
-    multi_modal_config: MultiModalModelIntegrationConfig | None | Unset = UNSET
+    multi_modal_config: Union["MultiModalModelIntegrationConfig", None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,7 +39,7 @@ class VegasGatewayIntegrationCreate:
 
         token = self.token
 
-        multi_modal_config: dict[str, Any] | None | Unset
+        multi_modal_config: Union[None, Unset, dict[str, Any]]
         if isinstance(self.multi_modal_config, Unset):
             multi_modal_config = UNSET
         elif isinstance(self.multi_modal_config, MultiModalModelIntegrationConfig):
@@ -68,7 +66,7 @@ class VegasGatewayIntegrationCreate:
 
         token = d.pop("token")
 
-        def _parse_multi_modal_config(data: object) -> MultiModalModelIntegrationConfig | None | Unset:
+        def _parse_multi_modal_config(data: object) -> Union["MultiModalModelIntegrationConfig", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -81,7 +79,7 @@ class VegasGatewayIntegrationCreate:
                 return multi_modal_config_type_0
             except:  # noqa: E722
                 pass
-            return cast(MultiModalModelIntegrationConfig | None | Unset, data)
+            return cast(Union["MultiModalModelIntegrationConfig", None, Unset], data)
 
         multi_modal_config = _parse_multi_modal_config(d.pop("multi_modal_config", UNSET))
 

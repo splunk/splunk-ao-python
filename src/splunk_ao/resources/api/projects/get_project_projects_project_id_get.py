@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -37,7 +37,7 @@ def _get_kwargs(project_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ProjectDB:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, ProjectDB]:
     if response.status_code == 200:
         response_200 = ProjectDB.from_dict(response.json())
 
@@ -66,7 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | ProjectDB]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, ProjectDB]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +75,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(project_id: str, *, client: ApiClient) -> Response[HTTPValidationError | ProjectDB]:
+def sync_detailed(project_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, ProjectDB]]:
     """Get Project
 
     Args:
@@ -86,7 +86,7 @@ def sync_detailed(project_id: str, *, client: ApiClient) -> Response[HTTPValidat
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProjectDB]
+        Response[Union[HTTPValidationError, ProjectDB]]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -96,7 +96,7 @@ def sync_detailed(project_id: str, *, client: ApiClient) -> Response[HTTPValidat
     return _build_response(client=client, response=response)
 
 
-def sync(project_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | ProjectDB]:
+def sync(project_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, ProjectDB]]:
     """Get Project
 
     Args:
@@ -107,13 +107,13 @@ def sync(project_id: str, *, client: ApiClient) -> Optional[HTTPValidationError 
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProjectDB
+        Union[HTTPValidationError, ProjectDB]
     """
 
     return sync_detailed(project_id=project_id, client=client).parsed
 
 
-async def asyncio_detailed(project_id: str, *, client: ApiClient) -> Response[HTTPValidationError | ProjectDB]:
+async def asyncio_detailed(project_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, ProjectDB]]:
     """Get Project
 
     Args:
@@ -124,7 +124,7 @@ async def asyncio_detailed(project_id: str, *, client: ApiClient) -> Response[HT
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProjectDB]
+        Response[Union[HTTPValidationError, ProjectDB]]
     """
 
     kwargs = _get_kwargs(project_id=project_id)
@@ -134,7 +134,7 @@ async def asyncio_detailed(project_id: str, *, client: ApiClient) -> Response[HT
     return _build_response(client=client, response=response)
 
 
-async def asyncio(project_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | ProjectDB]:
+async def asyncio(project_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, ProjectDB]]:
     """Get Project
 
     Args:
@@ -145,7 +145,7 @@ async def asyncio(project_id: str, *, client: ApiClient) -> Optional[HTTPValidat
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProjectDB
+        Union[HTTPValidationError, ProjectDB]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client)).parsed

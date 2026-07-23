@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,18 +17,18 @@ T = TypeVar("T", bound="UpdateAnnotationQueueRequest")
 class UpdateAnnotationQueueRequest:
     """
     Attributes:
-        name (Name | None | Unset):
-        description (None | str | Unset):
+        name (Union['Name', None, Unset]):
+        description (Union[None, Unset, str]):
     """
 
-    name: Name | None | Unset = UNSET
-    description: None | str | Unset = UNSET
+    name: Union["Name", None, Unset] = UNSET
+    description: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.name import Name
 
-        name: dict[str, Any] | None | Unset
+        name: Union[None, Unset, dict[str, Any]]
         if isinstance(self.name, Unset):
             name = UNSET
         elif isinstance(self.name, Name):
@@ -38,7 +36,7 @@ class UpdateAnnotationQueueRequest:
         else:
             name = self.name
 
-        description: None | str | Unset
+        description: Union[None, Unset, str]
         if isinstance(self.description, Unset):
             description = UNSET
         else:
@@ -60,7 +58,7 @@ class UpdateAnnotationQueueRequest:
 
         d = dict(src_dict)
 
-        def _parse_name(data: object) -> Name | None | Unset:
+        def _parse_name(data: object) -> Union["Name", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -73,16 +71,16 @@ class UpdateAnnotationQueueRequest:
                 return name_type_0
             except:  # noqa: E722
                 pass
-            return cast(Name | None | Unset, data)
+            return cast(Union["Name", None, Unset], data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_description(data: object) -> None | str | Unset:
+        def _parse_description(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         description = _parse_description(d.pop("description", UNSET))
 

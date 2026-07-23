@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -36,7 +36,7 @@ def _get_kwargs(template_id: str, group_id: str) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -64,7 +64,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,7 +73,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
+def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Response[Union[Any, HTTPValidationError]]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -87,7 +87,7 @@ def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Resp
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Union[Any, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(template_id=template_id, group_id=group_id)
@@ -97,7 +97,7 @@ def sync_detailed(template_id: str, group_id: str, *, client: ApiClient) -> Resp
     return _build_response(client=client, response=response)
 
 
-def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
+def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -111,7 +111,7 @@ def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any 
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Union[Any, HTTPValidationError]
     """
 
     return sync_detailed(template_id=template_id, group_id=group_id, client=client).parsed
@@ -119,7 +119,7 @@ def sync(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any 
 
 async def asyncio_detailed(
     template_id: str, group_id: str, *, client: ApiClient
-) -> Response[Any | HTTPValidationError]:
+) -> Response[Union[Any, HTTPValidationError]]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -133,7 +133,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Union[Any, HTTPValidationError]]
     """
 
     kwargs = _get_kwargs(template_id=template_id, group_id=group_id)
@@ -143,7 +143,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
+async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
     """Delete Group Prompt Template Collaborator
 
      Remove a group's access to a prompt template.
@@ -157,7 +157,7 @@ async def asyncio(template_id: str, group_id: str, *, client: ApiClient) -> Opti
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Union[Any, HTTPValidationError]
     """
 
     return (await asyncio_detailed(template_id=template_id, group_id=group_id, client=client)).parsed

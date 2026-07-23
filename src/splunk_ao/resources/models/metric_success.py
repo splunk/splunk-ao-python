@@ -1,12 +1,11 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
 from uuid import UUID
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.scorer_type import ScorerType
 from ..types import UNSET, Unset
@@ -28,108 +27,115 @@ T = TypeVar("T", bound="MetricSuccess")
 class MetricSuccess:
     """
     Attributes:
-        value (bool | datetime.datetime | Document | FeedbackAggregate | FeedbackRatingDB | float | HallucinationSegment
-            | int | list[bool | datetime.datetime | Document | FeedbackAggregate | FeedbackRatingDB | float |
-            HallucinationSegment | int | None | Segment | str | UUID] | list[list[bool | datetime.datetime | Document |
-            FeedbackAggregate | FeedbackRatingDB | float | HallucinationSegment | int | None | Segment | str | UUID]] |
-            list[list[list[bool | datetime.datetime | Document | FeedbackAggregate | FeedbackRatingDB | float |
-            HallucinationSegment | int | None | Segment | str | UUID]]] | None | Segment | str | UUID):
-        status_type (Literal['success'] | Unset):  Default: 'success'.
-        scorer_type (None | ScorerType | Unset):
-        metric_key_alias (None | str | Unset):
-        explanation (None | str | Unset):
-        cost (float | None | Unset):
-        model_alias (None | str | Unset):
-        num_judges (int | None | Unset):
-        multijudge_average (float | None | Unset):
-        input_tokens (int | None | Unset):
-        output_tokens (int | None | Unset):
-        total_tokens (int | None | Unset):
-        critique (MetricCritiqueColumnar | None | Unset):
-        metadata (MetricSuccessMetadataType0 | None | Unset): Optional per-row context returned alongside the score by
-            code-based scorers that return a (score, metadata) tuple. Sourced from the {metric_name}_metadata auxiliary key,
-            which is stored as a JSON string in ClickHouse.
-        display_value (None | str | Unset):
-        rationale (None | str | Unset):
+        value (Union['Document', 'FeedbackAggregate', 'FeedbackRatingDB', 'HallucinationSegment', 'Segment', None, UUID,
+            bool, datetime.datetime, float, int, list[Union['Document', 'FeedbackAggregate', 'FeedbackRatingDB',
+            'HallucinationSegment', 'Segment', None, UUID, bool, datetime.datetime, float, int, str]],
+            list[list[Union['Document', 'FeedbackAggregate', 'FeedbackRatingDB', 'HallucinationSegment', 'Segment', None,
+            UUID, bool, datetime.datetime, float, int, str]]], list[list[list[Union['Document', 'FeedbackAggregate',
+            'FeedbackRatingDB', 'HallucinationSegment', 'Segment', None, UUID, bool, datetime.datetime, float, int, str]]]],
+            str]):
+        status_type (Union[Literal['success'], Unset]):  Default: 'success'.
+        scorer_type (Union[None, ScorerType, Unset]):
+        metric_key_alias (Union[None, Unset, str]):
+        explanation (Union[None, Unset, str]):
+        cost (Union[None, Unset, float]):
+        model_alias (Union[None, Unset, str]):
+        num_judges (Union[None, Unset, int]):
+        multijudge_average (Union[None, Unset, float]):
+        input_tokens (Union[None, Unset, int]):
+        output_tokens (Union[None, Unset, int]):
+        total_tokens (Union[None, Unset, int]):
+        critique (Union['MetricCritiqueColumnar', None, Unset]):
+        metadata (Union['MetricSuccessMetadataType0', None, Unset]): Optional per-row context returned alongside the
+            score by code-based scorers that return a (score, metadata) tuple. Sourced from the {metric_name}_metadata
+            auxiliary key, which is stored as a JSON string in ClickHouse.
+        display_value (Union[None, Unset, str]):
+        rationale (Union[None, Unset, str]):
     """
 
-    value: (
-        bool
-        | datetime.datetime
-        | Document
-        | FeedbackAggregate
-        | FeedbackRatingDB
-        | float
-        | HallucinationSegment
-        | int
-        | list[
-            bool
-            | datetime.datetime
-            | Document
-            | FeedbackAggregate
-            | FeedbackRatingDB
-            | float
-            | HallucinationSegment
-            | int
-            | None
-            | Segment
-            | str
-            | UUID
-        ]
-        | list[
-            list[
-                bool
-                | datetime.datetime
-                | Document
-                | FeedbackAggregate
-                | FeedbackRatingDB
-                | float
-                | HallucinationSegment
-                | int
-                | None
-                | Segment
-                | str
-                | UUID
+    value: Union[
+        "Document",
+        "FeedbackAggregate",
+        "FeedbackRatingDB",
+        "HallucinationSegment",
+        "Segment",
+        None,
+        UUID,
+        bool,
+        datetime.datetime,
+        float,
+        int,
+        list[
+            Union[
+                "Document",
+                "FeedbackAggregate",
+                "FeedbackRatingDB",
+                "HallucinationSegment",
+                "Segment",
+                None,
+                UUID,
+                bool,
+                datetime.datetime,
+                float,
+                int,
+                str,
             ]
-        ]
-        | list[
+        ],
+        list[
             list[
-                list[
-                    bool
-                    | datetime.datetime
-                    | Document
-                    | FeedbackAggregate
-                    | FeedbackRatingDB
-                    | float
-                    | HallucinationSegment
-                    | int
-                    | None
-                    | Segment
-                    | str
-                    | UUID
+                Union[
+                    "Document",
+                    "FeedbackAggregate",
+                    "FeedbackRatingDB",
+                    "HallucinationSegment",
+                    "Segment",
+                    None,
+                    UUID,
+                    bool,
+                    datetime.datetime,
+                    float,
+                    int,
+                    str,
                 ]
             ]
-        ]
-        | None
-        | Segment
-        | str
-        | UUID
-    )
-    status_type: Literal["success"] | Unset = "success"
-    scorer_type: None | ScorerType | Unset = UNSET
-    metric_key_alias: None | str | Unset = UNSET
-    explanation: None | str | Unset = UNSET
-    cost: float | None | Unset = UNSET
-    model_alias: None | str | Unset = UNSET
-    num_judges: int | None | Unset = UNSET
-    multijudge_average: float | None | Unset = UNSET
-    input_tokens: int | None | Unset = UNSET
-    output_tokens: int | None | Unset = UNSET
-    total_tokens: int | None | Unset = UNSET
-    critique: MetricCritiqueColumnar | None | Unset = UNSET
-    metadata: MetricSuccessMetadataType0 | None | Unset = UNSET
-    display_value: None | str | Unset = UNSET
-    rationale: None | str | Unset = UNSET
+        ],
+        list[
+            list[
+                list[
+                    Union[
+                        "Document",
+                        "FeedbackAggregate",
+                        "FeedbackRatingDB",
+                        "HallucinationSegment",
+                        "Segment",
+                        None,
+                        UUID,
+                        bool,
+                        datetime.datetime,
+                        float,
+                        int,
+                        str,
+                    ]
+                ]
+            ]
+        ],
+        str,
+    ]
+    status_type: Union[Literal["success"], Unset] = "success"
+    scorer_type: Union[None, ScorerType, Unset] = UNSET
+    metric_key_alias: Union[None, Unset, str] = UNSET
+    explanation: Union[None, Unset, str] = UNSET
+    cost: Union[None, Unset, float] = UNSET
+    model_alias: Union[None, Unset, str] = UNSET
+    num_judges: Union[None, Unset, int] = UNSET
+    multijudge_average: Union[None, Unset, float] = UNSET
+    input_tokens: Union[None, Unset, int] = UNSET
+    output_tokens: Union[None, Unset, int] = UNSET
+    total_tokens: Union[None, Unset, int] = UNSET
+    critique: Union["MetricCritiqueColumnar", None, Unset] = UNSET
+    metadata: Union["MetricSuccessMetadataType0", None, Unset] = UNSET
+    display_value: Union[None, Unset, str] = UNSET
+    rationale: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -141,17 +147,17 @@ class MetricSuccess:
         from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
         from ..models.segment import Segment
 
-        value: (
-            bool
-            | dict[str, Any]
-            | float
-            | int
-            | list[bool | dict[str, Any] | float | int | None | str]
-            | list[list[bool | dict[str, Any] | float | int | None | str]]
-            | list[list[list[bool | dict[str, Any] | float | int | None | str]]]
-            | None
-            | str
-        )
+        value: Union[
+            None,
+            bool,
+            dict[str, Any],
+            float,
+            int,
+            list[Union[None, bool, dict[str, Any], float, int, str]],
+            list[list[Union[None, bool, dict[str, Any], float, int, str]]],
+            list[list[list[Union[None, bool, dict[str, Any], float, int, str]]]],
+            str,
+        ]
         if isinstance(self.value, UUID):
             value = str(self.value)
         elif isinstance(self.value, datetime.datetime):
@@ -169,7 +175,7 @@ class MetricSuccess:
         elif isinstance(self.value, list):
             value = []
             for value_type_11_item_data in self.value:
-                value_type_11_item: bool | dict[str, Any] | float | int | None | str
+                value_type_11_item: Union[None, bool, dict[str, Any], float, int, str]
                 if isinstance(value_type_11_item_data, UUID):
                     value_type_11_item = str(value_type_11_item_data)
                 elif isinstance(value_type_11_item_data, datetime.datetime):
@@ -193,7 +199,7 @@ class MetricSuccess:
             for value_type_12_item_data in self.value:
                 value_type_12_item = []
                 for value_type_12_item_item_data in value_type_12_item_data:
-                    value_type_12_item_item: bool | dict[str, Any] | float | int | None | str
+                    value_type_12_item_item: Union[None, bool, dict[str, Any], float, int, str]
                     if isinstance(value_type_12_item_item_data, UUID):
                         value_type_12_item_item = str(value_type_12_item_item_data)
                     elif isinstance(value_type_12_item_item_data, datetime.datetime):
@@ -221,7 +227,7 @@ class MetricSuccess:
                 for value_type_13_item_item_data in value_type_13_item_data:
                     value_type_13_item_item = []
                     for value_type_13_item_item_item_data in value_type_13_item_item_data:
-                        value_type_13_item_item_item: bool | dict[str, Any] | float | int | None | str
+                        value_type_13_item_item_item: Union[None, bool, dict[str, Any], float, int, str]
                         if isinstance(value_type_13_item_item_item_data, UUID):
                             value_type_13_item_item_item = str(value_type_13_item_item_item_data)
                         elif isinstance(value_type_13_item_item_item_data, datetime.datetime):
@@ -249,7 +255,7 @@ class MetricSuccess:
 
         status_type = self.status_type
 
-        scorer_type: None | str | Unset
+        scorer_type: Union[None, Unset, str]
         if isinstance(self.scorer_type, Unset):
             scorer_type = UNSET
         elif isinstance(self.scorer_type, ScorerType):
@@ -257,61 +263,61 @@ class MetricSuccess:
         else:
             scorer_type = self.scorer_type
 
-        metric_key_alias: None | str | Unset
+        metric_key_alias: Union[None, Unset, str]
         if isinstance(self.metric_key_alias, Unset):
             metric_key_alias = UNSET
         else:
             metric_key_alias = self.metric_key_alias
 
-        explanation: None | str | Unset
+        explanation: Union[None, Unset, str]
         if isinstance(self.explanation, Unset):
             explanation = UNSET
         else:
             explanation = self.explanation
 
-        cost: float | None | Unset
+        cost: Union[None, Unset, float]
         if isinstance(self.cost, Unset):
             cost = UNSET
         else:
             cost = self.cost
 
-        model_alias: None | str | Unset
+        model_alias: Union[None, Unset, str]
         if isinstance(self.model_alias, Unset):
             model_alias = UNSET
         else:
             model_alias = self.model_alias
 
-        num_judges: int | None | Unset
+        num_judges: Union[None, Unset, int]
         if isinstance(self.num_judges, Unset):
             num_judges = UNSET
         else:
             num_judges = self.num_judges
 
-        multijudge_average: float | None | Unset
+        multijudge_average: Union[None, Unset, float]
         if isinstance(self.multijudge_average, Unset):
             multijudge_average = UNSET
         else:
             multijudge_average = self.multijudge_average
 
-        input_tokens: int | None | Unset
+        input_tokens: Union[None, Unset, int]
         if isinstance(self.input_tokens, Unset):
             input_tokens = UNSET
         else:
             input_tokens = self.input_tokens
 
-        output_tokens: int | None | Unset
+        output_tokens: Union[None, Unset, int]
         if isinstance(self.output_tokens, Unset):
             output_tokens = UNSET
         else:
             output_tokens = self.output_tokens
 
-        total_tokens: int | None | Unset
+        total_tokens: Union[None, Unset, int]
         if isinstance(self.total_tokens, Unset):
             total_tokens = UNSET
         else:
             total_tokens = self.total_tokens
 
-        critique: dict[str, Any] | None | Unset
+        critique: Union[None, Unset, dict[str, Any]]
         if isinstance(self.critique, Unset):
             critique = UNSET
         elif isinstance(self.critique, MetricCritiqueColumnar):
@@ -319,7 +325,7 @@ class MetricSuccess:
         else:
             critique = self.critique
 
-        metadata: dict[str, Any] | None | Unset
+        metadata: Union[None, Unset, dict[str, Any]]
         if isinstance(self.metadata, Unset):
             metadata = UNSET
         elif isinstance(self.metadata, MetricSuccessMetadataType0):
@@ -327,13 +333,13 @@ class MetricSuccess:
         else:
             metadata = self.metadata
 
-        display_value: None | str | Unset
+        display_value: Union[None, Unset, str]
         if isinstance(self.display_value, Unset):
             display_value = UNSET
         else:
             display_value = self.display_value
 
-        rationale: None | str | Unset
+        rationale: Union[None, Unset, str]
         if isinstance(self.rationale, Unset):
             rationale = UNSET
         else:
@@ -389,68 +395,74 @@ class MetricSuccess:
 
         def _parse_value(
             data: object,
-        ) -> (
-            bool
-            | datetime.datetime
-            | Document
-            | FeedbackAggregate
-            | FeedbackRatingDB
-            | float
-            | HallucinationSegment
-            | int
-            | list[
-                bool
-                | datetime.datetime
-                | Document
-                | FeedbackAggregate
-                | FeedbackRatingDB
-                | float
-                | HallucinationSegment
-                | int
-                | None
-                | Segment
-                | str
-                | UUID
-            ]
-            | list[
-                list[
-                    bool
-                    | datetime.datetime
-                    | Document
-                    | FeedbackAggregate
-                    | FeedbackRatingDB
-                    | float
-                    | HallucinationSegment
-                    | int
-                    | None
-                    | Segment
-                    | str
-                    | UUID
+        ) -> Union[
+            "Document",
+            "FeedbackAggregate",
+            "FeedbackRatingDB",
+            "HallucinationSegment",
+            "Segment",
+            None,
+            UUID,
+            bool,
+            datetime.datetime,
+            float,
+            int,
+            list[
+                Union[
+                    "Document",
+                    "FeedbackAggregate",
+                    "FeedbackRatingDB",
+                    "HallucinationSegment",
+                    "Segment",
+                    None,
+                    UUID,
+                    bool,
+                    datetime.datetime,
+                    float,
+                    int,
+                    str,
                 ]
-            ]
-            | list[
+            ],
+            list[
                 list[
-                    list[
-                        bool
-                        | datetime.datetime
-                        | Document
-                        | FeedbackAggregate
-                        | FeedbackRatingDB
-                        | float
-                        | HallucinationSegment
-                        | int
-                        | None
-                        | Segment
-                        | str
-                        | UUID
+                    Union[
+                        "Document",
+                        "FeedbackAggregate",
+                        "FeedbackRatingDB",
+                        "HallucinationSegment",
+                        "Segment",
+                        None,
+                        UUID,
+                        bool,
+                        datetime.datetime,
+                        float,
+                        int,
+                        str,
                     ]
                 ]
-            ]
-            | None
-            | Segment
-            | str
-            | UUID
-        ):
+            ],
+            list[
+                list[
+                    list[
+                        Union[
+                            "Document",
+                            "FeedbackAggregate",
+                            "FeedbackRatingDB",
+                            "HallucinationSegment",
+                            "Segment",
+                            None,
+                            UUID,
+                            bool,
+                            datetime.datetime,
+                            float,
+                            int,
+                            str,
+                        ]
+                    ]
+                ]
+            ],
+            str,
+        ]:
             if data is None:
                 return data
             try:
@@ -464,7 +476,7 @@ class MetricSuccess:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                value_type_5 = datetime.datetime.fromisoformat(data)
+                value_type_5 = isoparse(data)
 
                 return value_type_5
             except:  # noqa: E722
@@ -518,20 +530,20 @@ class MetricSuccess:
 
                     def _parse_value_type_11_item(
                         data: object,
-                    ) -> (
-                        bool
-                        | datetime.datetime
-                        | Document
-                        | FeedbackAggregate
-                        | FeedbackRatingDB
-                        | float
-                        | HallucinationSegment
-                        | int
-                        | None
-                        | Segment
-                        | str
-                        | UUID
-                    ):
+                    ) -> Union[
+                        "Document",
+                        "FeedbackAggregate",
+                        "FeedbackRatingDB",
+                        "HallucinationSegment",
+                        "Segment",
+                        None,
+                        UUID,
+                        bool,
+                        datetime.datetime,
+                        float,
+                        int,
+                        str,
+                    ]:
                         if data is None:
                             return data
                         try:
@@ -545,7 +557,7 @@ class MetricSuccess:
                         try:
                             if not isinstance(data, str):
                                 raise TypeError()
-                            value_type_11_item_type_5 = datetime.datetime.fromisoformat(data)
+                            value_type_11_item_type_5 = isoparse(data)
 
                             return value_type_11_item_type_5
                         except:  # noqa: E722
@@ -591,18 +603,20 @@ class MetricSuccess:
                         except:  # noqa: E722
                             pass
                         return cast(
-                            bool
-                            | datetime.datetime
-                            | Document
-                            | FeedbackAggregate
-                            | FeedbackRatingDB
-                            | float
-                            | HallucinationSegment
-                            | int
-                            | None
-                            | Segment
-                            | str
-                            | UUID,
+                            Union[
+                                "Document",
+                                "FeedbackAggregate",
+                                "FeedbackRatingDB",
+                                "HallucinationSegment",
+                                "Segment",
+                                None,
+                                UUID,
+                                bool,
+                                datetime.datetime,
+                                float,
+                                int,
+                                str,
+                            ],
                             data,
                         )
 
@@ -625,20 +639,20 @@ class MetricSuccess:
 
                         def _parse_value_type_12_item_item(
                             data: object,
-                        ) -> (
-                            bool
-                            | datetime.datetime
-                            | Document
-                            | FeedbackAggregate
-                            | FeedbackRatingDB
-                            | float
-                            | HallucinationSegment
-                            | int
-                            | None
-                            | Segment
-                            | str
-                            | UUID
-                        ):
+                        ) -> Union[
+                            "Document",
+                            "FeedbackAggregate",
+                            "FeedbackRatingDB",
+                            "HallucinationSegment",
+                            "Segment",
+                            None,
+                            UUID,
+                            bool,
+                            datetime.datetime,
+                            float,
+                            int,
+                            str,
+                        ]:
                             if data is None:
                                 return data
                             try:
@@ -652,7 +666,7 @@ class MetricSuccess:
                             try:
                                 if not isinstance(data, str):
                                     raise TypeError()
-                                value_type_12_item_item_type_5 = datetime.datetime.fromisoformat(data)
+                                value_type_12_item_item_type_5 = isoparse(data)
 
                                 return value_type_12_item_item_type_5
                             except:  # noqa: E722
@@ -698,18 +712,20 @@ class MetricSuccess:
                             except:  # noqa: E722
                                 pass
                             return cast(
-                                bool
-                                | datetime.datetime
-                                | Document
-                                | FeedbackAggregate
-                                | FeedbackRatingDB
-                                | float
-                                | HallucinationSegment
-                                | int
-                                | None
-                                | Segment
-                                | str
-                                | UUID,
+                                Union[
+                                    "Document",
+                                    "FeedbackAggregate",
+                                    "FeedbackRatingDB",
+                                    "HallucinationSegment",
+                                    "Segment",
+                                    None,
+                                    UUID,
+                                    bool,
+                                    datetime.datetime,
+                                    float,
+                                    int,
+                                    str,
+                                ],
                                 data,
                             )
 
@@ -737,20 +753,20 @@ class MetricSuccess:
 
                             def _parse_value_type_13_item_item_item(
                                 data: object,
-                            ) -> (
-                                bool
-                                | datetime.datetime
-                                | Document
-                                | FeedbackAggregate
-                                | FeedbackRatingDB
-                                | float
-                                | HallucinationSegment
-                                | int
-                                | None
-                                | Segment
-                                | str
-                                | UUID
-                            ):
+                            ) -> Union[
+                                "Document",
+                                "FeedbackAggregate",
+                                "FeedbackRatingDB",
+                                "HallucinationSegment",
+                                "Segment",
+                                None,
+                                UUID,
+                                bool,
+                                datetime.datetime,
+                                float,
+                                int,
+                                str,
+                            ]:
                                 if data is None:
                                     return data
                                 try:
@@ -764,7 +780,7 @@ class MetricSuccess:
                                 try:
                                     if not isinstance(data, str):
                                         raise TypeError()
-                                    value_type_13_item_item_item_type_5 = datetime.datetime.fromisoformat(data)
+                                    value_type_13_item_item_item_type_5 = isoparse(data)
 
                                     return value_type_13_item_item_item_type_5
                                 except:  # noqa: E722
@@ -810,18 +826,20 @@ class MetricSuccess:
                                 except:  # noqa: E722
                                     pass
                                 return cast(
-                                    bool
-                                    | datetime.datetime
-                                    | Document
-                                    | FeedbackAggregate
-                                    | FeedbackRatingDB
-                                    | float
-                                    | HallucinationSegment
-                                    | int
-                                    | None
-                                    | Segment
-                                    | str
-                                    | UUID,
+                                    Union[
+                                        "Document",
+                                        "FeedbackAggregate",
+                                        "FeedbackRatingDB",
+                                        "HallucinationSegment",
+                                        "Segment",
+                                        None,
+                                        UUID,
+                                        bool,
+                                        datetime.datetime,
+                                        float,
+                                        int,
+                                        str,
+                                    ],
                                     data,
                                 )
 
@@ -839,76 +857,84 @@ class MetricSuccess:
             except:  # noqa: E722
                 pass
             return cast(
-                bool
-                | datetime.datetime
-                | Document
-                | FeedbackAggregate
-                | FeedbackRatingDB
-                | float
-                | HallucinationSegment
-                | int
-                | list[
-                    bool
-                    | datetime.datetime
-                    | Document
-                    | FeedbackAggregate
-                    | FeedbackRatingDB
-                    | float
-                    | HallucinationSegment
-                    | int
-                    | None
-                    | Segment
-                    | str
-                    | UUID
-                ]
-                | list[
+                Union[
+                    "Document",
+                    "FeedbackAggregate",
+                    "FeedbackRatingDB",
+                    "HallucinationSegment",
+                    "Segment",
+                    None,
+                    UUID,
+                    bool,
+                    datetime.datetime,
+                    float,
+                    int,
                     list[
-                        bool
-                        | datetime.datetime
-                        | Document
-                        | FeedbackAggregate
-                        | FeedbackRatingDB
-                        | float
-                        | HallucinationSegment
-                        | int
-                        | None
-                        | Segment
-                        | str
-                        | UUID
-                    ]
-                ]
-                | list[
+                        Union[
+                            "Document",
+                            "FeedbackAggregate",
+                            "FeedbackRatingDB",
+                            "HallucinationSegment",
+                            "Segment",
+                            None,
+                            UUID,
+                            bool,
+                            datetime.datetime,
+                            float,
+                            int,
+                            str,
+                        ]
+                    ],
                     list[
                         list[
-                            bool
-                            | datetime.datetime
-                            | Document
-                            | FeedbackAggregate
-                            | FeedbackRatingDB
-                            | float
-                            | HallucinationSegment
-                            | int
-                            | None
-                            | Segment
-                            | str
-                            | UUID
+                            Union[
+                                "Document",
+                                "FeedbackAggregate",
+                                "FeedbackRatingDB",
+                                "HallucinationSegment",
+                                "Segment",
+                                None,
+                                UUID,
+                                bool,
+                                datetime.datetime,
+                                float,
+                                int,
+                                str,
+                            ]
                         ]
-                    ]
-                ]
-                | None
-                | Segment
-                | str
-                | UUID,
+                    ],
+                    list[
+                        list[
+                            list[
+                                Union[
+                                    "Document",
+                                    "FeedbackAggregate",
+                                    "FeedbackRatingDB",
+                                    "HallucinationSegment",
+                                    "Segment",
+                                    None,
+                                    UUID,
+                                    bool,
+                                    datetime.datetime,
+                                    float,
+                                    int,
+                                    str,
+                                ]
+                            ]
+                        ]
+                    ],
+                    str,
+                ],
                 data,
             )
 
         value = _parse_value(d.pop("value"))
 
-        status_type = cast(Literal["success"] | Unset, d.pop("status_type", UNSET))
+        status_type = cast(Union[Literal["success"], Unset], d.pop("status_type", UNSET))
         if status_type != "success" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'success', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> Union[None, ScorerType, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -921,92 +947,92 @@ class MetricSuccess:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            return cast(Union[None, ScorerType, Unset], data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 
-        def _parse_metric_key_alias(data: object) -> None | str | Unset:
+        def _parse_metric_key_alias(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
-        def _parse_explanation(data: object) -> None | str | Unset:
+        def _parse_explanation(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         explanation = _parse_explanation(d.pop("explanation", UNSET))
 
-        def _parse_cost(data: object) -> float | None | Unset:
+        def _parse_cost(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(float | None | Unset, data)
+            return cast(Union[None, Unset, float], data)
 
         cost = _parse_cost(d.pop("cost", UNSET))
 
-        def _parse_model_alias(data: object) -> None | str | Unset:
+        def _parse_model_alias(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         model_alias = _parse_model_alias(d.pop("model_alias", UNSET))
 
-        def _parse_num_judges(data: object) -> int | None | Unset:
+        def _parse_num_judges(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
 
-        def _parse_multijudge_average(data: object) -> float | None | Unset:
+        def _parse_multijudge_average(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(float | None | Unset, data)
+            return cast(Union[None, Unset, float], data)
 
         multijudge_average = _parse_multijudge_average(d.pop("multijudge_average", UNSET))
 
-        def _parse_input_tokens(data: object) -> int | None | Unset:
+        def _parse_input_tokens(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         input_tokens = _parse_input_tokens(d.pop("input_tokens", UNSET))
 
-        def _parse_output_tokens(data: object) -> int | None | Unset:
+        def _parse_output_tokens(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         output_tokens = _parse_output_tokens(d.pop("output_tokens", UNSET))
 
-        def _parse_total_tokens(data: object) -> int | None | Unset:
+        def _parse_total_tokens(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(int | None | Unset, data)
+            return cast(Union[None, Unset, int], data)
 
         total_tokens = _parse_total_tokens(d.pop("total_tokens", UNSET))
 
-        def _parse_critique(data: object) -> MetricCritiqueColumnar | None | Unset:
+        def _parse_critique(data: object) -> Union["MetricCritiqueColumnar", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1019,11 +1045,11 @@ class MetricSuccess:
                 return critique_type_0
             except:  # noqa: E722
                 pass
-            return cast(MetricCritiqueColumnar | None | Unset, data)
+            return cast(Union["MetricCritiqueColumnar", None, Unset], data)
 
         critique = _parse_critique(d.pop("critique", UNSET))
 
-        def _parse_metadata(data: object) -> MetricSuccessMetadataType0 | None | Unset:
+        def _parse_metadata(data: object) -> Union["MetricSuccessMetadataType0", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1036,25 +1062,25 @@ class MetricSuccess:
                 return metadata_type_0
             except:  # noqa: E722
                 pass
-            return cast(MetricSuccessMetadataType0 | None | Unset, data)
+            return cast(Union["MetricSuccessMetadataType0", None, Unset], data)
 
         metadata = _parse_metadata(d.pop("metadata", UNSET))
 
-        def _parse_display_value(data: object) -> None | str | Unset:
+        def _parse_display_value(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         display_value = _parse_display_value(d.pop("display_value", UNSET))
 
-        def _parse_rationale(data: object) -> None | str | Unset:
+        def _parse_rationale(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         rationale = _parse_rationale(d.pop("rationale", UNSET))
 

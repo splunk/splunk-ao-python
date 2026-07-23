@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -23,12 +23,12 @@ from ...models.scorer_response import ScorerResponse
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(scorer_id: str, *, actions: list[ScorerAction] | Unset = UNSET) -> dict[str, Any]:
+def _get_kwargs(scorer_id: str, *, actions: Union[Unset, list[ScorerAction]] = UNSET) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
-    json_actions: list[str] | Unset = UNSET
+    json_actions: Union[Unset, list[str]] = UNSET
     if not isinstance(actions, Unset):
         json_actions = []
         for actions_item_data in actions:
@@ -52,7 +52,7 @@ def _get_kwargs(scorer_id: str, *, actions: list[ScorerAction] | Unset = UNSET) 
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ScorerResponse:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, ScorerResponse]:
     if response.status_code == 200:
         response_200 = ScorerResponse.from_dict(response.json())
 
@@ -81,7 +81,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | ScorerResponse]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -91,21 +93,21 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 
 def sync_detailed(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
-) -> Response[HTTPValidationError | ScorerResponse]:
+    scorer_id: str, *, client: ApiClient, actions: Union[Unset, list[ScorerAction]] = UNSET
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (Union[Unset, list[ScorerAction]]): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ScorerResponse]
+        Response[Union[HTTPValidationError, ScorerResponse]]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, actions=actions)
@@ -116,42 +118,42 @@ def sync_detailed(
 
 
 def sync(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
-) -> Optional[HTTPValidationError | ScorerResponse]:
+    scorer_id: str, *, client: ApiClient, actions: Union[Unset, list[ScorerAction]] = UNSET
+) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (Union[Unset, list[ScorerAction]]): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ScorerResponse
+        Union[HTTPValidationError, ScorerResponse]
     """
 
     return sync_detailed(scorer_id=scorer_id, client=client, actions=actions).parsed
 
 
 async def asyncio_detailed(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
-) -> Response[HTTPValidationError | ScorerResponse]:
+    scorer_id: str, *, client: ApiClient, actions: Union[Unset, list[ScorerAction]] = UNSET
+) -> Response[Union[HTTPValidationError, ScorerResponse]]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (Union[Unset, list[ScorerAction]]): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ScorerResponse]
+        Response[Union[HTTPValidationError, ScorerResponse]]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, actions=actions)
@@ -162,21 +164,21 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
-) -> Optional[HTTPValidationError | ScorerResponse]:
+    scorer_id: str, *, client: ApiClient, actions: Union[Unset, list[ScorerAction]] = UNSET
+) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (Union[Unset, list[ScorerAction]]): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ScorerResponse
+        Union[HTTPValidationError, ScorerResponse]
     """
 
     return (await asyncio_detailed(scorer_id=scorer_id, client=client, actions=actions)).parsed

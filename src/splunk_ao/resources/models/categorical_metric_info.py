@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,16 +19,16 @@ class CategoricalMetricInfo:
     Attributes:
         name (str): Unique identifier for the metric
         label (str): Human-readable display name for the metric
-        aggregation_type (Literal['categorical'] | Unset): Discriminator: categorical metrics aggregated as per-label
-            counts Default: 'categorical'.
-        category_counts (CategoricalMetricInfoCategoryCounts | Unset): Count of occurrences per category label across
-            records
+        aggregation_type (Union[Literal['categorical'], Unset]): Discriminator: categorical metrics aggregated as per-
+            label counts Default: 'categorical'.
+        category_counts (Union[Unset, CategoricalMetricInfoCategoryCounts]): Count of occurrences per category label
+            across records
     """
 
     name: str
     label: str
-    aggregation_type: Literal["categorical"] | Unset = "categorical"
-    category_counts: CategoricalMetricInfoCategoryCounts | Unset = UNSET
+    aggregation_type: Union[Literal["categorical"], Unset] = "categorical"
+    category_counts: Union[Unset, "CategoricalMetricInfoCategoryCounts"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,7 +38,7 @@ class CategoricalMetricInfo:
 
         aggregation_type = self.aggregation_type
 
-        category_counts: dict[str, Any] | Unset = UNSET
+        category_counts: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.category_counts, Unset):
             category_counts = self.category_counts.to_dict()
 
@@ -63,12 +61,12 @@ class CategoricalMetricInfo:
 
         label = d.pop("label")
 
-        aggregation_type = cast(Literal["categorical"] | Unset, d.pop("aggregation_type", UNSET))
+        aggregation_type = cast(Union[Literal["categorical"], Unset], d.pop("aggregation_type", UNSET))
         if aggregation_type != "categorical" and not isinstance(aggregation_type, Unset):
             raise ValueError(f"aggregation_type must match const 'categorical', got '{aggregation_type}'")
 
         _category_counts = d.pop("category_counts", UNSET)
-        category_counts: CategoricalMetricInfoCategoryCounts | Unset
+        category_counts: Union[Unset, CategoricalMetricInfoCategoryCounts]
         if isinstance(_category_counts, Unset):
             category_counts = UNSET
         else:

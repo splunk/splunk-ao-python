@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,14 +19,14 @@ class ProjectIntegrationCosts:
     Attributes:
         project_id (str):
         project_name (str):
-        total_cost (float | Unset):  Default: 0.0.
-        data_points (list[IntegrationCostsDataPoint] | Unset):
+        total_cost (Union[Unset, float]):  Default: 0.0.
+        data_points (Union[Unset, list['IntegrationCostsDataPoint']]):
     """
 
     project_id: str
     project_name: str
-    total_cost: float | Unset = 0.0
-    data_points: list[IntegrationCostsDataPoint] | Unset = UNSET
+    total_cost: Union[Unset, float] = 0.0
+    data_points: Union[Unset, list["IntegrationCostsDataPoint"]] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -38,7 +36,7 @@ class ProjectIntegrationCosts:
 
         total_cost = self.total_cost
 
-        data_points: list[dict[str, Any]] | Unset = UNSET
+        data_points: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.data_points, Unset):
             data_points = []
             for data_points_item_data in self.data_points:
@@ -66,14 +64,12 @@ class ProjectIntegrationCosts:
 
         total_cost = d.pop("total_cost", UNSET)
 
+        data_points = []
         _data_points = d.pop("data_points", UNSET)
-        data_points: list[IntegrationCostsDataPoint] | Unset = UNSET
-        if _data_points is not UNSET:
-            data_points = []
-            for data_points_item_data in _data_points:
-                data_points_item = IntegrationCostsDataPoint.from_dict(data_points_item_data)
+        for data_points_item_data in _data_points or []:
+            data_points_item = IntegrationCostsDataPoint.from_dict(data_points_item_data)
 
-                data_points.append(data_points_item)
+            data_points.append(data_points_item)
 
         project_integration_costs = cls(
             project_id=project_id, project_name=project_name, total_cost=total_cost, data_points=data_points

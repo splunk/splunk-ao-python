@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -38,7 +38,9 @@ def _get_kwargs(*, body: ProjectCreate) -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ProjectCreateResponse:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Union[HTTPValidationError, ProjectCreateResponse]:
     if response.status_code == 200:
         response_200 = ProjectCreateResponse.from_dict(response.json())
 
@@ -69,7 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | ProjectCreateResponse]:
+) -> Response[Union[HTTPValidationError, ProjectCreateResponse]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,7 +80,9 @@ def _build_response(
     )
 
 
-def sync_detailed(*, client: ApiClient, body: ProjectCreate) -> Response[HTTPValidationError | ProjectCreateResponse]:
+def sync_detailed(
+    *, client: ApiClient, body: ProjectCreate
+) -> Response[Union[HTTPValidationError, ProjectCreateResponse]]:
     """Create Project
 
      Create a new project.
@@ -91,7 +95,7 @@ def sync_detailed(*, client: ApiClient, body: ProjectCreate) -> Response[HTTPVal
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProjectCreateResponse]
+        Response[Union[HTTPValidationError, ProjectCreateResponse]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -101,7 +105,7 @@ def sync_detailed(*, client: ApiClient, body: ProjectCreate) -> Response[HTTPVal
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationError | ProjectCreateResponse]:
+def sync(*, client: ApiClient, body: ProjectCreate) -> Optional[Union[HTTPValidationError, ProjectCreateResponse]]:
     """Create Project
 
      Create a new project.
@@ -114,7 +118,7 @@ def sync(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationEr
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProjectCreateResponse
+        Union[HTTPValidationError, ProjectCreateResponse]
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -122,7 +126,7 @@ def sync(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationEr
 
 async def asyncio_detailed(
     *, client: ApiClient, body: ProjectCreate
-) -> Response[HTTPValidationError | ProjectCreateResponse]:
+) -> Response[Union[HTTPValidationError, ProjectCreateResponse]]:
     """Create Project
 
      Create a new project.
@@ -135,7 +139,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProjectCreateResponse]
+        Response[Union[HTTPValidationError, ProjectCreateResponse]]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -145,7 +149,9 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPValidationError | ProjectCreateResponse]:
+async def asyncio(
+    *, client: ApiClient, body: ProjectCreate
+) -> Optional[Union[HTTPValidationError, ProjectCreateResponse]]:
     """Create Project
 
      Create a new project.
@@ -158,7 +164,7 @@ async def asyncio(*, client: ApiClient, body: ProjectCreate) -> Optional[HTTPVal
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProjectCreateResponse
+        Union[HTTPValidationError, ProjectCreateResponse]
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,16 +21,16 @@ class ComputeHealthScoreRequest:
     Attributes:
         scorer_id (str):
         output_type (OutputTypeEnum): Enumeration of output types.
-        scoreable_node_types (list[StepType] | Unset): The scorer's scoreable_node_types. Determines which record type
-            carries the score.
-        mgt_overlay (ComputeHealthScoreRequestMgtOverlay | Unset): Client-side pending MGT edits: {row_id: value}.
+        scoreable_node_types (Union[Unset, list[StepType]]): The scorer's scoreable_node_types. Determines which record
+            type carries the score.
+        mgt_overlay (Union[Unset, ComputeHealthScoreRequestMgtOverlay]): Client-side pending MGT edits: {row_id: value}.
             Overrides committed dataset values.
     """
 
     scorer_id: str
     output_type: OutputTypeEnum
-    scoreable_node_types: list[StepType] | Unset = UNSET
-    mgt_overlay: ComputeHealthScoreRequestMgtOverlay | Unset = UNSET
+    scoreable_node_types: Union[Unset, list[StepType]] = UNSET
+    mgt_overlay: Union[Unset, "ComputeHealthScoreRequestMgtOverlay"] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,14 +38,14 @@ class ComputeHealthScoreRequest:
 
         output_type = self.output_type.value
 
-        scoreable_node_types: list[str] | Unset = UNSET
+        scoreable_node_types: Union[Unset, list[str]] = UNSET
         if not isinstance(self.scoreable_node_types, Unset):
             scoreable_node_types = []
             for scoreable_node_types_item_data in self.scoreable_node_types:
                 scoreable_node_types_item = scoreable_node_types_item_data.value
                 scoreable_node_types.append(scoreable_node_types_item)
 
-        mgt_overlay: dict[str, Any] | Unset = UNSET
+        mgt_overlay: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.mgt_overlay, Unset):
             mgt_overlay = self.mgt_overlay.to_dict()
 
@@ -70,17 +68,15 @@ class ComputeHealthScoreRequest:
 
         output_type = OutputTypeEnum(d.pop("output_type"))
 
+        scoreable_node_types = []
         _scoreable_node_types = d.pop("scoreable_node_types", UNSET)
-        scoreable_node_types: list[StepType] | Unset = UNSET
-        if _scoreable_node_types is not UNSET:
-            scoreable_node_types = []
-            for scoreable_node_types_item_data in _scoreable_node_types:
-                scoreable_node_types_item = StepType(scoreable_node_types_item_data)
+        for scoreable_node_types_item_data in _scoreable_node_types or []:
+            scoreable_node_types_item = StepType(scoreable_node_types_item_data)
 
-                scoreable_node_types.append(scoreable_node_types_item)
+            scoreable_node_types.append(scoreable_node_types_item)
 
         _mgt_overlay = d.pop("mgt_overlay", UNSET)
-        mgt_overlay: ComputeHealthScoreRequestMgtOverlay | Unset
+        mgt_overlay: Union[Unset, ComputeHealthScoreRequestMgtOverlay]
         if isinstance(_mgt_overlay, Unset):
             mgt_overlay = UNSET
         else:

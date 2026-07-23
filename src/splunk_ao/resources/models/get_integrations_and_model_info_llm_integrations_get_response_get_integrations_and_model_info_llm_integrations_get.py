@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -19,10 +17,9 @@ T = TypeVar(
 class GetIntegrationsAndModelInfoLlmIntegrationsGetResponseGetIntegrationsAndModelInfoLlmIntegrationsGet:
     """ """
 
-    additional_properties: dict[str, IntegrationModelsResponse] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, "IntegrationModelsResponse"] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-
         field_dict: dict[str, Any] = {}
         for prop_name, prop in self.additional_properties.items():
             field_dict[prop_name] = prop.to_dict()
@@ -49,10 +46,10 @@ class GetIntegrationsAndModelInfoLlmIntegrationsGetResponseGetIntegrationsAndMod
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> IntegrationModelsResponse:
+    def __getitem__(self, key: str) -> "IntegrationModelsResponse":
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: IntegrationModelsResponse) -> None:
+    def __setitem__(self, key: str, value: "IntegrationModelsResponse") -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

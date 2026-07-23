@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,10 +16,10 @@ T = TypeVar("T", bound="ValidateRegisteredScorerResult")
 class ValidateRegisteredScorerResult:
     """
     Attributes:
-        result (InvalidResult | ValidResult):
+        result (Union['InvalidResult', 'ValidResult']):
     """
 
-    result: InvalidResult | ValidResult
+    result: Union["InvalidResult", "ValidResult"]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -46,7 +44,7 @@ class ValidateRegisteredScorerResult:
 
         d = dict(src_dict)
 
-        def _parse_result(data: object) -> InvalidResult | ValidResult:
+        def _parse_result(data: object) -> Union["InvalidResult", "ValidResult"]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

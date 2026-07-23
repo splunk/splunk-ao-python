@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -19,30 +17,30 @@ T = TypeVar("T", bound="OpenAIIntegration")
 class OpenAIIntegration:
     """
     Attributes:
-        organization_id (None | str | Unset):
-        id (None | str | Unset):
-        name (Literal['openai'] | Unset):  Default: 'openai'.
-        provider (Literal['openai'] | Unset):  Default: 'openai'.
-        extra (None | OpenAIIntegrationExtraType0 | Unset):
+        organization_id (Union[None, Unset, str]):
+        id (Union[None, Unset, str]):
+        name (Union[Literal['openai'], Unset]):  Default: 'openai'.
+        provider (Union[Literal['openai'], Unset]):  Default: 'openai'.
+        extra (Union['OpenAIIntegrationExtraType0', None, Unset]):
     """
 
-    organization_id: None | str | Unset = UNSET
-    id: None | str | Unset = UNSET
-    name: Literal["openai"] | Unset = "openai"
-    provider: Literal["openai"] | Unset = "openai"
-    extra: None | OpenAIIntegrationExtraType0 | Unset = UNSET
+    organization_id: Union[None, Unset, str] = UNSET
+    id: Union[None, Unset, str] = UNSET
+    name: Union[Literal["openai"], Unset] = "openai"
+    provider: Union[Literal["openai"], Unset] = "openai"
+    extra: Union["OpenAIIntegrationExtraType0", None, Unset] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.open_ai_integration_extra_type_0 import OpenAIIntegrationExtraType0
 
-        organization_id: None | str | Unset
+        organization_id: Union[None, Unset, str]
         if isinstance(self.organization_id, Unset):
             organization_id = UNSET
         else:
             organization_id = self.organization_id
 
-        id: None | str | Unset
+        id: Union[None, Unset, str]
         if isinstance(self.id, Unset):
             id = UNSET
         else:
@@ -52,7 +50,7 @@ class OpenAIIntegration:
 
         provider = self.provider
 
-        extra: dict[str, Any] | None | Unset
+        extra: Union[None, Unset, dict[str, Any]]
         if isinstance(self.extra, Unset):
             extra = UNSET
         elif isinstance(self.extra, OpenAIIntegrationExtraType0):
@@ -82,33 +80,33 @@ class OpenAIIntegration:
 
         d = dict(src_dict)
 
-        def _parse_organization_id(data: object) -> None | str | Unset:
+        def _parse_organization_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         organization_id = _parse_organization_id(d.pop("organization_id", UNSET))
 
-        def _parse_id(data: object) -> None | str | Unset:
+        def _parse_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         id = _parse_id(d.pop("id", UNSET))
 
-        name = cast(Literal["openai"] | Unset, d.pop("name", UNSET))
+        name = cast(Union[Literal["openai"], Unset], d.pop("name", UNSET))
         if name != "openai" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'openai', got '{name}'")
 
-        provider = cast(Literal["openai"] | Unset, d.pop("provider", UNSET))
+        provider = cast(Union[Literal["openai"], Unset], d.pop("provider", UNSET))
         if provider != "openai" and not isinstance(provider, Unset):
             raise ValueError(f"provider must match const 'openai', got '{provider}'")
 
-        def _parse_extra(data: object) -> None | OpenAIIntegrationExtraType0 | Unset:
+        def _parse_extra(data: object) -> Union["OpenAIIntegrationExtraType0", None, Unset]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -121,7 +119,7 @@ class OpenAIIntegration:
                 return extra_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OpenAIIntegrationExtraType0 | Unset, data)
+            return cast(Union["OpenAIIntegrationExtraType0", None, Unset], data)
 
         extra = _parse_extra(d.pop("extra", UNSET))
 

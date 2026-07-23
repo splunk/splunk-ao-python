@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import httpx
 
@@ -44,7 +44,7 @@ def _get_kwargs(project_id: str, run_id: str, *, body: ComputeHealthScoreRequest
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | HealthScoreResult:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, HealthScoreResult]:
     if response.status_code == 200:
         response_200 = HealthScoreResult.from_dict(response.json())
 
@@ -75,7 +75,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | HealthScoreResult]:
+) -> Response[Union[HTTPValidationError, HealthScoreResult]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +86,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, run_id: str, *, client: ApiClient, body: ComputeHealthScoreRequest
-) -> Response[HTTPValidationError | HealthScoreResult]:
+) -> Response[Union[HTTPValidationError, HealthScoreResult]]:
     """Compute Health Score Endpoint
 
      Compute the health score metric for a metrics testing run.
@@ -101,7 +101,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | HealthScoreResult]
+        Response[Union[HTTPValidationError, HealthScoreResult]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, run_id=run_id, body=body)
@@ -113,7 +113,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, run_id: str, *, client: ApiClient, body: ComputeHealthScoreRequest
-) -> Optional[HTTPValidationError | HealthScoreResult]:
+) -> Optional[Union[HTTPValidationError, HealthScoreResult]]:
     """Compute Health Score Endpoint
 
      Compute the health score metric for a metrics testing run.
@@ -128,7 +128,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | HealthScoreResult
+        Union[HTTPValidationError, HealthScoreResult]
     """
 
     return sync_detailed(project_id=project_id, run_id=run_id, client=client, body=body).parsed
@@ -136,7 +136,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, run_id: str, *, client: ApiClient, body: ComputeHealthScoreRequest
-) -> Response[HTTPValidationError | HealthScoreResult]:
+) -> Response[Union[HTTPValidationError, HealthScoreResult]]:
     """Compute Health Score Endpoint
 
      Compute the health score metric for a metrics testing run.
@@ -151,7 +151,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | HealthScoreResult]
+        Response[Union[HTTPValidationError, HealthScoreResult]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, run_id=run_id, body=body)
@@ -163,7 +163,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, run_id: str, *, client: ApiClient, body: ComputeHealthScoreRequest
-) -> Optional[HTTPValidationError | HealthScoreResult]:
+) -> Optional[Union[HTTPValidationError, HealthScoreResult]]:
     """Compute Health Score Endpoint
 
      Compute the health score metric for a metrics testing run.
@@ -178,7 +178,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | HealthScoreResult
+        Union[HTTPValidationError, HealthScoreResult]
     """
 
     return (await asyncio_detailed(project_id=project_id, run_id=run_id, client=client, body=body)).parsed

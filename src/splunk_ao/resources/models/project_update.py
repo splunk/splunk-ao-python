@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 
@@ -14,23 +12,23 @@ T = TypeVar("T", bound="ProjectUpdate")
 class ProjectUpdate:
     """
     Attributes:
-        name (None | str | Unset):
-        labels (list[str] | None | Unset):
-        description (None | str | Unset):
+        name (Union[None, Unset, str]):
+        labels (Union[None, Unset, list[str]]):
+        description (Union[None, Unset, str]):
     """
 
-    name: None | str | Unset = UNSET
-    labels: list[str] | None | Unset = UNSET
-    description: None | str | Unset = UNSET
+    name: Union[None, Unset, str] = UNSET
+    labels: Union[None, Unset, list[str]] = UNSET
+    description: Union[None, Unset, str] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
-        name: None | str | Unset
+        name: Union[None, Unset, str]
         if isinstance(self.name, Unset):
             name = UNSET
         else:
             name = self.name
 
-        labels: list[str] | None | Unset
+        labels: Union[None, Unset, list[str]]
         if isinstance(self.labels, Unset):
             labels = UNSET
         elif isinstance(self.labels, list):
@@ -39,7 +37,7 @@ class ProjectUpdate:
         else:
             labels = self.labels
 
-        description: None | str | Unset
+        description: Union[None, Unset, str]
         if isinstance(self.description, Unset):
             description = UNSET
         else:
@@ -61,16 +59,16 @@ class ProjectUpdate:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
 
-        def _parse_name(data: object) -> None | str | Unset:
+        def _parse_name(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_labels(data: object) -> list[str] | None | Unset:
+        def _parse_labels(data: object) -> Union[None, Unset, list[str]]:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -83,16 +81,16 @@ class ProjectUpdate:
                 return labels_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[str] | None | Unset, data)
+            return cast(Union[None, Unset, list[str]], data)
 
         labels = _parse_labels(d.pop("labels", UNSET))
 
-        def _parse_description(data: object) -> None | str | Unset:
+        def _parse_description(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         description = _parse_description(d.pop("description", UNSET))
 

@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,17 +15,17 @@ class AnnotationQueueUserCollaboratorUpdate:
     """
     Attributes:
         role (CollaboratorRole):
-        track_progress (bool | None | Unset):
+        track_progress (Union[None, Unset, bool]):
     """
 
     role: CollaboratorRole
-    track_progress: bool | None | Unset = UNSET
+    track_progress: Union[None, Unset, bool] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         role = self.role.value
 
-        track_progress: bool | None | Unset
+        track_progress: Union[None, Unset, bool]
         if isinstance(self.track_progress, Unset):
             track_progress = UNSET
         else:
@@ -46,12 +44,12 @@ class AnnotationQueueUserCollaboratorUpdate:
         d = dict(src_dict)
         role = CollaboratorRole(d.pop("role"))
 
-        def _parse_track_progress(data: object) -> bool | None | Unset:
+        def _parse_track_progress(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(bool | None | Unset, data)
+            return cast(Union[None, Unset, bool], data)
 
         track_progress = _parse_track_progress(d.pop("track_progress", UNSET))
 

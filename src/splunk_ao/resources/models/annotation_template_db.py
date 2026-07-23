@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -28,33 +27,33 @@ class AnnotationTemplateDB:
     Attributes:
         name (str):
         include_explanation (bool):
-        constraints (ChoiceConstraints | LikeDislikeConstraints | ScoreConstraints | StarConstraints | TagsConstraints |
-            TextConstraints | TreeChoiceDBConstraints):
+        constraints (Union['ChoiceConstraints', 'LikeDislikeConstraints', 'ScoreConstraints', 'StarConstraints',
+            'TagsConstraints', 'TextConstraints', 'TreeChoiceDBConstraints']):
         id (str):
         created_at (datetime.datetime):
-        created_by (None | str):
+        created_by (Union[None, str]):
         position (int):
         usage_count (int): Number of annotation ratings using the template.
-        criteria (None | str | Unset):
+        criteria (Union[None, Unset, str]):
     """
 
     name: str
     include_explanation: bool
-    constraints: (
-        ChoiceConstraints
-        | LikeDislikeConstraints
-        | ScoreConstraints
-        | StarConstraints
-        | TagsConstraints
-        | TextConstraints
-        | TreeChoiceDBConstraints
-    )
+    constraints: Union[
+        "ChoiceConstraints",
+        "LikeDislikeConstraints",
+        "ScoreConstraints",
+        "StarConstraints",
+        "TagsConstraints",
+        "TextConstraints",
+        "TreeChoiceDBConstraints",
+    ]
     id: str
     created_at: datetime.datetime
-    created_by: None | str
+    created_by: Union[None, str]
     position: int
     usage_count: int
-    criteria: None | str | Unset = UNSET
+    criteria: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -89,14 +88,14 @@ class AnnotationTemplateDB:
 
         created_at = self.created_at.isoformat()
 
-        created_by: None | str
+        created_by: Union[None, str]
         created_by = self.created_by
 
         position = self.position
 
         usage_count = self.usage_count
 
-        criteria: None | str | Unset
+        criteria: Union[None, Unset, str]
         if isinstance(self.criteria, Unset):
             criteria = UNSET
         else:
@@ -138,15 +137,15 @@ class AnnotationTemplateDB:
 
         def _parse_constraints(
             data: object,
-        ) -> (
-            ChoiceConstraints
-            | LikeDislikeConstraints
-            | ScoreConstraints
-            | StarConstraints
-            | TagsConstraints
-            | TextConstraints
-            | TreeChoiceDBConstraints
-        ):
+        ) -> Union[
+            "ChoiceConstraints",
+            "LikeDislikeConstraints",
+            "ScoreConstraints",
+            "StarConstraints",
+            "TagsConstraints",
+            "TextConstraints",
+            "TreeChoiceDBConstraints",
+        ]:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -205,12 +204,12 @@ class AnnotationTemplateDB:
 
         id = d.pop("id")
 
-        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+        created_at = isoparse(d.pop("created_at"))
 
-        def _parse_created_by(data: object) -> None | str:
+        def _parse_created_by(data: object) -> Union[None, str]:
             if data is None:
                 return data
-            return cast(None | str, data)
+            return cast(Union[None, str], data)
 
         created_by = _parse_created_by(d.pop("created_by"))
 
@@ -218,12 +217,12 @@ class AnnotationTemplateDB:
 
         usage_count = d.pop("usage_count")
 
-        def _parse_criteria(data: object) -> None | str | Unset:
+        def _parse_criteria(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            return cast(Union[None, Unset, str], data)
 
         criteria = _parse_criteria(d.pop("criteria", UNSET))
 
