@@ -793,7 +793,7 @@ class TestExperiments:
         with pytest.raises(ValueError, match="dataset"):
             run_experiment("test_experiment", project="awesome-new-project")
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.datasets.Datasets, "get")
@@ -1162,7 +1162,7 @@ class TestExperiments:
         assert ps.max_tokens == 256
 
     @travel(datetime(2012, 1, 1), tick=False)
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.datasets.Datasets, "get")
@@ -1289,7 +1289,7 @@ class TestExperiments:
         )
         on_error.assert_not_called()
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.datasets.Datasets, "get")
@@ -1554,7 +1554,7 @@ class TestExperiments:
 
         assert mock_upsert_tag.call_count == 3
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.datasets.Datasets, "get")
@@ -1601,7 +1601,7 @@ class TestExperiments:
             total_traces += len(payload.traces)
         assert total_traces == 150
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.experiments.Experiments, "create", return_value=experiment_response())
@@ -1662,7 +1662,7 @@ class TestExperiments:
         assert '{"input": "Which continent is Spain in?"}' in span_inputs[0]
         assert '{"input": "Which continent is Japan in?"}' in span_inputs[1]
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     @patch.object(splunk_ao.datasets.Datasets, "get")
