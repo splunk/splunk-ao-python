@@ -34,7 +34,7 @@ class TestSplunkAOOTLPExporter:
     @pytest.fixture
     def clear_env_vars(self):
         """Clear relevant environment variables and context vars for clean test state."""
-        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_AGENT_STREAM"]
+        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_AGENT_STREAM", "SPLUNK_AO_LOG_STREAM"]
         original_values = {var: os.environ.pop(var, None) for var in env_vars}
         _project_context.set(None)
         _log_stream_context.set(None)

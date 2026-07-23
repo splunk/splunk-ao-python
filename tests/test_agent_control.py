@@ -15,7 +15,9 @@ def reset_agent_control_helper_state(monkeypatch):
     # Given: no log stream ID environment override or cached logger state
     monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
     monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
     monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM_ID", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_LOG_STREAM_ID", raising=False)
     monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
     SplunkAOLoggerSingleton().reset_all()
     monkeypatch.setattr(SplunkAOLoggerSingleton, "get_all_loggers", lambda self: {})
