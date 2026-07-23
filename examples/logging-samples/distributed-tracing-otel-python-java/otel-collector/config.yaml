@@ -28,7 +28,7 @@ exporters:
     headers:
       Splunk-AO-API-Key: ${env:SPLUNK_AO_API_KEY}
       project: ${env:SPLUNK_AO_PROJECT}
-      logstream: ${env:SPLUNK_AO_AGENT_STREAM}
+      logstream: ${env:SPLUNK_AO_LOG_STREAM}
     # Retry on transient failures so a blip to Splunk AO doesn't drop half a trace.
     retry_on_failure:
       enabled: true

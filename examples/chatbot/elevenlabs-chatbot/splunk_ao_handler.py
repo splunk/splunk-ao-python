@@ -29,7 +29,7 @@ class SplunkAOHandler:
 
         # Load Splunk AO config from environment
         self._project_name = os.getenv("SPLUNK_AO_PROJECT", "elevenlabs-voice-poc")
-        self._log_stream = os.getenv("SPLUNK_AO_AGENT_STREAM", "voice-chatbot")
+        self._log_stream = os.getenv("SPLUNK_AO_LOG_STREAM", "voice-chatbot")
 
         self._init_logger()
 

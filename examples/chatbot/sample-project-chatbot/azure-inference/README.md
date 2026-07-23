@@ -35,7 +35,7 @@ To set up this project:
 1. Fill in the required values for the Splunk AO environment variables in the `.env` file:
    - `SPLUNK_AO_API_KEY` - Set this to your Splunk AO API key
    - `SPLUNK_AO_PROJECT` - Set this to your Splunk AO Project name
-   - `SPLUNK_AO_AGENT_STREAM` - Set this to your Splunk AO Log stream name
+   - `SPLUNK_AO_LOG_STREAM` - Set this to your Splunk AO Log stream name
 
    There are also some optional values:
    - `SPLUNK_AO_CONSOLE_URL` - If you are using a hosted version of Splunk AO, set the console URL here. For the free version, remove or comment out this value

@@ -42,7 +42,7 @@ def get_stock_price(symbol: str) -> str:
 def main() -> None:
     # Use the Splunk AO context manager to specify project and log stream
     # All traces created within this context will be associated with this project
-    with splunk_ao_context(project=os.getenv("SPLUNK_AO_PROJECT", "langchain-middleware"), log_stream=os.getenv("SPLUNK_AO_AGENT_STREAM", "agent_execution")):
+    with splunk_ao_context(project=os.getenv("SPLUNK_AO_PROJECT", "langchain-middleware"), log_stream=os.getenv("SPLUNK_AO_LOG_STREAM", "agent_execution")):
         # Create an agent with SplunkAOMiddleware for automatic logging
         # SplunkAOMiddleware automatically captures:
         # - Agent lifecycle events (start/completion)

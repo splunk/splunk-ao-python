@@ -104,7 +104,7 @@ By completing this tutorial, you will:
     # Splunk AO Environment Variables
     SPLUNK_AO_API_KEY=your-splunk-ao-api-key             # Your Splunk AO API key.
     SPLUNK_AO_PROJECT=your-splunk-ao-project-name        # Your Splunk AO project name.
-    SPLUNK_AO_AGENT_STREAM=weather_vibes_agent
+    SPLUNK_AO_LOG_STREAM=weather_vibes_agent
     
     # Provide the console url below if you are using a custom deployment, and not using app.galileo.ai
     # SPLUNK_AO_CONSOLE_URL=your-splunk-ao-console-url   # Optional if you are using a hosted version of Splunk AO

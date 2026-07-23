@@ -32,7 +32,7 @@ SPLUNK_AO_API_KEY="your-splunk-ao-api-key"
 SPLUNK_AO_PROJECT="your-splunk-ao-project-name"
 
 # The name of the Log stream you want to use for logging
-SPLUNK_AO_AGENT_STREAM="your-splunk-ao-log-stream"
+SPLUNK_AO_LOG_STREAM="your-splunk-ao-log-stream"
 
 # Provide the console url below if you are using a
 # custom deployment, and not using the free tier, or app.galileo.ai.

@@ -117,7 +117,7 @@ def test_native_conversation_root_marks_direct_trace_children(
     assert serialized["traces"][0]["spans"][1]["user_metadata"]["gen_ai.conversation_root"] == "true"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_single_span_trace_to_galileo(

@@ -17,7 +17,7 @@ os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = os.environ.get(
 headers = {
     "Splunk-AO-API-Key": os.environ["SPLUNK_AO_API_KEY"],
     "project": os.environ["SPLUNK_AO_PROJECT"],
-    "logstream": os.environ["SPLUNK_AO_AGENT_STREAM"],
+    "logstream": os.environ["SPLUNK_AO_LOG_STREAM"],
 }
 
 os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = ",".join([f"{k}={v}" for k, v in headers.items()])

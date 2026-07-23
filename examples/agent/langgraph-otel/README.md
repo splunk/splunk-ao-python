@@ -44,7 +44,7 @@ SPLUNK_AO_API_KEY=your_splunk_ao_api_key_here
 SPLUNK_AO_PROJECT=your_project_name
 
 # Log stream for organizing traces
-SPLUNK_AO_AGENT_STREAM=langgraph
+SPLUNK_AO_LOG_STREAM=langgraph
 
 # Splunk AO console URL (if using a custom deployment is different than https://app.galileo.ai)
 SPLUNK_AO_CONSOLE_URL=https://app.galileo.ai
@@ -57,7 +57,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 | -------------------- | -------- | ------------------------------------------------------------------------------ |
 | `SPLUNK_AO_API_KEY`    | Yes      | Your Splunk AO API key from [settings](https://app.galileo.ai/settings/api-keys) |
 | `SPLUNK_AO_PROJECT`    | Yes      | Splunk AO project name (create one in your dashboard)                            |
-| `SPLUNK_AO_AGENT_STREAM` | Yes      | Log stream name for organizing traces (default: "default")                     |
+| `SPLUNK_AO_LOG_STREAM` | Yes      | Log stream name for organizing traces (default: "default")                     |
 | `OPENAI_API_KEY`     | Yes      | Your OpenAI API key from [OpenAI](https://platform.openai.com/api-keys)        |
 
 ### Run

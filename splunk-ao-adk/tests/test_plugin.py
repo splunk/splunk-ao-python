@@ -32,7 +32,7 @@ class TestSplunkAOADKPluginInit:
         """Plugin with ingestion_hook works without any Galileo environment variables."""
         # Given: no Galileo environment variables are set
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
         monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
         monkeypatch.delenv("SPLUNK_AO_CONSOLE_URL", raising=False)
 
@@ -47,9 +47,9 @@ class TestSplunkAOADKPluginInit:
 
     def test_init_requires_project_and_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin raises error when neither project/log_stream nor hook provided."""
-        # Given: SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars are not set
+        # Given: SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars are not set
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
 
         # When/Then: creating plugin without project or log_stream raises an error
         with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
@@ -57,8 +57,8 @@ class TestSplunkAOADKPluginInit:
 
     def test_init_requires_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Plugin raises error when project is provided but log_stream is not."""
-        # Given: SPLUNK_AO_AGENT_STREAM env var is not set
-        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
+        # Given: SPLUNK_AO_LOG_STREAM env var is not set
+        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
 
         # When/Then: creating plugin with project but no log_stream raises an error
         with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):

@@ -42,7 +42,7 @@ print("✓ OpenAI client configured")
 headers = {
     "Splunk-AO-API-Key": os.environ.get("SPLUNK_AO_API_KEY"),  # Your unique API key
     "project": os.environ.get("SPLUNK_AO_PROJECT"),  # Which Splunk AO project to use
-    "logstream": os.environ.get("SPLUNK_AO_AGENT_STREAM", "default"),  # Organize traces within the project
+    "logstream": os.environ.get("SPLUNK_AO_LOG_STREAM", "default"),  # Organize traces within the project
 }
 
 # OpenTelemetry requires headers in a specific format: "key1=value1,key2=value2"

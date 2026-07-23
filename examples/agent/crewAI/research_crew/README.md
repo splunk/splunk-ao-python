@@ -55,7 +55,7 @@ cd sdk-examples/python/agent/crewAI/research_crew
 cp .env.example .env
 ```
 
-In addition to API keys, you’ll need to specify a Splunk AO project and log stream (e.g. SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM). All CrewAI run data will be logged to this destination in Splunk AO. See
+In addition to API keys, you’ll need to specify a Splunk AO project and log stream (e.g. SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM). All CrewAI run data will be logged to this destination in Splunk AO. See
 [Understanding the Splunk AO Integration](#understanding-the-galileo-integration) for more detail.
 
 3. Install project dependencies into the active environment:
@@ -97,9 +97,9 @@ Creating a CrewAIEventListener() instance is all that’s required to enable Spl
 - Uses OpenTelemetry (OTel) to instrument Crew execution events
 - Reads Splunk AO configuration from environment variables
 - Logs all run data to the Splunk AO project and log stream specified by
-  `SPLUNK_AO_PROJECT` and `SPLUNK_AO_AGENT_STREAM`
+  `SPLUNK_AO_PROJECT` and `SPLUNK_AO_LOG_STREAM`
 
-No additional configuration or code changes are required. All data from this run is logged to the Splunk AO project and log stream specified by your environment configuration (for example, SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM).
+No additional configuration or code changes are required. All data from this run is logged to the Splunk AO project and log stream specified by your environment configuration (for example, SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM).
 
 ## CrewAI Support
 

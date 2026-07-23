@@ -93,7 +93,7 @@ env = [
     "SPLUNK_AO_CONSOLE_URL=http://fake.test:8088",
     "SPLUNK_AO_API_KEY=api-1234567890",
     "SPLUNK_AO_PROJECT=test-project",
-    "SPLUNK_AO_AGENT_STREAM=test-log-stream",
+    "SPLUNK_AO_LOG_STREAM=test-log-stream",
     "OPENAI_API_KEY=sk-test",
 ]
 addopts = [

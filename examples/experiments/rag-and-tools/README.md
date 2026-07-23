@@ -20,7 +20,7 @@ You will need to configure environment variables to use this project. Copy the `
 # Splunk AO environment variables
 SPLUNK_AO_API_KEY=
 SPLUNK_AO_PROJECT=
-SPLUNK_AO_AGENT_STREAM=
+SPLUNK_AO_LOG_STREAM=
 
 # OpenAI environment variables
 OPENAI_API_KEY=

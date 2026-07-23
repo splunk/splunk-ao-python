@@ -34,9 +34,9 @@ if any(not os.getenv(key) for key in required_keys):
     sys.exit(1)
 
 # Check for Splunk AO log stream
-galileo_log_stream = os.getenv("SPLUNK_AO_AGENT_STREAM")
+galileo_log_stream = os.getenv("SPLUNK_AO_LOG_STREAM")
 if not galileo_log_stream:
-    print("Warning: SPLUNK_AO_AGENT_STREAM environment variable not set.")
+    print("Warning: SPLUNK_AO_LOG_STREAM environment variable not set.")
     print("Using default log stream name.")
     galileo_log_stream = "weather_vibes_agent"
 

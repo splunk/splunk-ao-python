@@ -134,7 +134,7 @@ async def test_simple_agent(
     assert len(payload.traces[0].spans) == 1
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_processor_marks_direct_trace_child_agent(

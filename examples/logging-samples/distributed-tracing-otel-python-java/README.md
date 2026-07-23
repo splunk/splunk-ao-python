@@ -61,7 +61,7 @@ Edit `.env` and fill in your keys:
 OPENAI_API_KEY=sk-...
 SPLUNK_AO_API_KEY=...
 SPLUNK_AO_PROJECT=distributed-tracing-demo
-SPLUNK_AO_AGENT_STREAM=main
+SPLUNK_AO_LOG_STREAM=main
 SPLUNK_AO_API_URL=https://api.galileo.ai
 ```
 
@@ -150,7 +150,7 @@ No application code changes. The instrumentation stays identical.
 
 **No traces in Splunk AO**
 - Verify `SPLUNK_AO_API_KEY` and `SPLUNK_AO_API_URL` in `.env`
-- Check `SPLUNK_AO_PROJECT` and `SPLUNK_AO_AGENT_STREAM` match what you're looking at in the UI
+- Check `SPLUNK_AO_PROJECT` and `SPLUNK_AO_LOG_STREAM` match what you're looking at in the UI
 
 **ChromaDB connection refused**
 - Python service waits up to 60 s for ChromaDB; check `docker compose logs python-service`

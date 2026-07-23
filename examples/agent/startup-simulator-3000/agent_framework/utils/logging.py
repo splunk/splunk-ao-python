@@ -53,7 +53,7 @@ def get_galileo_logger():
                 # This logger will automatically use environment variables for configuration:
                 # - SPLUNK_AO_API_KEY: Your API key for authentication
                 # - SPLUNK_AO_PROJECT: Your project name/ID
-                # - SPLUNK_AO_AGENT_STREAM: The log stream to use
+                # - SPLUNK_AO_LOG_STREAM: The log stream to use
                 _global_galileo_logger = SplunkAOLogger()
                 print("✅ Splunk AO logger initialized successfully using environment variables")
             except Exception as e:
