@@ -71,7 +71,7 @@ os.environ["OPENAI_API_KEY"] = "sk-test"
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_complex_agent(
@@ -102,7 +102,7 @@ async def test_complex_agent(
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_simple_agent(
@@ -196,7 +196,7 @@ def _find_tool_spans(spans):
 
 
 @mark.asyncio
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_pre_built_tools_multiple_types(

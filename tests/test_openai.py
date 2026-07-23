@@ -30,7 +30,7 @@ def openai_incorrect_api_key_error() -> bytes:
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_basic_openai_call(
@@ -94,7 +94,7 @@ def test_basic_openai_call(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_streamed_openai_call(
@@ -142,7 +142,7 @@ def test_streamed_openai_call(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_openai_api_calls_as_parent_span(
@@ -195,7 +195,7 @@ def test_openai_api_calls_as_parent_span(
     "openai.resources.chat.Completions.create",
     side_effect=openai.OpenAIError("The api_key client option must be set either"),
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_openai_error_trace(
@@ -227,7 +227,7 @@ def test_openai_error_trace(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_openai_error_trace_(
@@ -272,7 +272,7 @@ def test_openai_error_trace_(
     "openai.resources.chat.Completions.create",
     side_effect=openai.OpenAIError("The api_key client option must be set either"),
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_client_fails_because_openai_error_trace_no_exp(
@@ -308,7 +308,7 @@ def test_client_fails_because_openai_error_trace_no_exp(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams", side_effect=Exception("error"))
+@patch("splunk_ao.logger.logger.AgentStreams", side_effect=Exception("error"))
 @patch("splunk_ao.logger.logger.Projects", side_effect=Exception("error"))
 @patch("splunk_ao.logger.logger.Traces")
 def test_galileo_api_client_transport_error_not_blocking_user_code(
@@ -348,7 +348,7 @@ def test_galileo_api_client_transport_error_not_blocking_user_code(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_openai_calls_in_active_trace(
@@ -386,7 +386,7 @@ def test_openai_calls_in_active_trace(
 
 
 @patch("openai.resources.chat.Completions.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_chat_completions_multiple_messages(
@@ -447,7 +447,7 @@ def test_chat_completions_multiple_messages(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_basic_responses_api_call(
@@ -488,7 +488,7 @@ def test_basic_responses_api_call(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_with_tools(
@@ -551,7 +551,7 @@ def test_responses_api_with_tools(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_multiple_messages(
@@ -613,7 +613,7 @@ def test_responses_api_multiple_messages(
 
 
 @patch("openai.resources.responses.Responses.create")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_responses_api_streaming(

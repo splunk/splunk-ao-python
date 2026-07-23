@@ -136,7 +136,7 @@ dev = [
     "ruff>=0.12.3",
     "mypy>=1.16.0",
     "coverage>=7.9.2",
-    "splunk-ao[otel]>=0.1.0,<1.0.0",
+    "splunk-ao>=0.1.0,<1.0.0",
     "galileo-core[testing]>=3.82.0",
 ]
 

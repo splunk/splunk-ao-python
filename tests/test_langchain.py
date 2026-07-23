@@ -24,7 +24,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 class TestSplunkAOCallback:
     @pytest.fixture
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     def splunk_ao_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
@@ -1023,7 +1023,7 @@ class TestSplunkAOCallbackWithIngestionHook:
     @pytest.fixture(autouse=True)
     def logger_mocks(self):
         with (
-            patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+            patch("splunk_ao.logger.logger.AgentStreams") as mock_logstreams,
             patch("splunk_ao.logger.logger.Projects") as mock_projects,
             patch("splunk_ao.logger.logger.Traces") as mock_traces,
         ):

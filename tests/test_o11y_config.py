@@ -56,7 +56,7 @@ def config_env(**overrides: str) -> Iterator[None]:
 
 def _o11y_client(token: str = "tok") -> O11yApiClient:
     client = O11yApiClient(
-        host="https://api.us1.observability.splunkcloud.com", sf_token=SecretStr(token), jwt_token=SecretStr("")
+        host="https://app.lab0.observability.splunkcloud.com", sf_token=SecretStr(token), jwt_token=SecretStr("")
     )
     client.thread_local.client = None
     return client
@@ -69,10 +69,10 @@ def test_o11y_api_client_uses_sf_token_header() -> None:
 @pytest.mark.parametrize(
     ("path", "expected"),
     [
-        ("/projects", "/v2/ao/projects"),
-        ("projects", "/v2/ao/projects"),
-        ("/v2/ao/projects", "/v2/ao/projects"),
-        ("/v2/ao", "/v2/ao"),
+        ("/projects", "/ao/api/projects"),
+        ("projects", "/ao/api/projects"),
+        ("/ao/api/projects", "/ao/api/projects"),
+        ("/ao/api", "/ao/api"),
     ],
 )
 def test_o11y_api_client_prefixes_paths_once(path: str, expected: str) -> None:
@@ -93,7 +93,7 @@ def test_o11y_api_client_sync_request_preserves_prefix_and_header(monkeypatch: p
 
     assert captured == {
         "method": RequestMethod.GET,
-        "url": "https://api.us1.observability.splunkcloud.com/v2/ao/projects",
+        "url": "https://app.lab0.observability.splunkcloud.com/ao/api/projects",
         "headers": {"accept": "application/json", "Content-Type": "application/json", "X-SF-Token": "tok"},
     }
 
@@ -109,9 +109,9 @@ async def test_o11y_api_client_async_request_preserves_existing_prefix(monkeypat
         return {}
 
     monkeypatch.setattr(ApiClient, "make_request", staticmethod(fake_make_request))
-    await _o11y_client().arequest(RequestMethod.GET, "/v2/ao/projects", {"X-Custom": "value"})
+    await _o11y_client().arequest(RequestMethod.GET, "/ao/api/projects", {"X-Custom": "value"})
 
-    assert captured["url"] == "https://api.us1.observability.splunkcloud.com/v2/ao/projects"
+    assert captured["url"] == "https://app.lab0.observability.splunkcloud.com/ao/api/projects"
     assert captured["headers"] == {"X-Custom": "value", "X-SF-Token": "tok"}
 
 
@@ -128,7 +128,7 @@ def test_o11y_api_client_prefixes_streaming_requests(monkeypatch: pytest.MonkeyP
     with _o11y_client().stream_request(RequestMethod.GET, "/projects"):
         pass
 
-    assert captured["path"] == "/v2/ao/projects"
+    assert captured["path"] == "/ao/api/projects"
 
 
 @pytest.mark.parametrize("token_var", ["SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"])
@@ -162,9 +162,9 @@ def test_o11y_auth_guard_does_not_accept_token_kwargs() -> None:
 
 
 def test_o11y_console_bridge_uses_realm_and_preserves_explicit_legacy_value() -> None:
-    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok"):
+    with config_env(SPLUNK_AO_REALM="lab0", SPLUNK_AO_SF_TOKEN="tok"):
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.us1.observability.splunkcloud.com/#/ao"
+        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.lab0.observability.splunkcloud.com/"
 
     with config_env(
         SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok", GALILEO_CONSOLE_URL="https://explicit.example.com"
@@ -176,7 +176,7 @@ def test_o11y_console_bridge_uses_realm_and_preserves_explicit_legacy_value() ->
 def test_o11y_console_bridge_rederives_after_reset() -> None:
     with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok"):
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.us1.observability.splunkcloud.com/#/ao"
+        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.us1.observability.splunkcloud.com/"
 
         with patch("galileo_core.schemas.base_config.GalileoConfig.reset"):
             SplunkAOConfig.reset(MagicMock(spec=SplunkAOConfig))
@@ -184,7 +184,7 @@ def test_o11y_console_bridge_rederives_after_reset() -> None:
         assert "GALILEO_CONSOLE_URL" not in os.environ
         os.environ["SPLUNK_AO_REALM"] = "eu0"
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.eu0.observability.splunkcloud.com/#/ao"
+        assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.eu0.observability.splunkcloud.com/"
 
 
 @pytest.mark.parametrize(("api_token", "expected_token"), [(None, "ingest-token"), ("api-token", "api-token")])
@@ -197,7 +197,7 @@ def test_o11y_get_builds_realm_config_without_jwt_calls(
     async def async_fail(*args: object, **kwargs: object) -> None:
         fail()
 
-    values = {"SPLUNK_AO_REALM": "us1", "SPLUNK_AO_SF_TOKEN": "ingest-token"}
+    values = {"SPLUNK_AO_REALM": "lab0", "SPLUNK_AO_SF_TOKEN": "ingest-token"}
     if api_token is not None:
         values["SPLUNK_AO_SF_API_TOKEN"] = api_token
     values["GALILEO_API_KEY"] = "stale-standalone-key"
@@ -215,10 +215,10 @@ def test_o11y_get_builds_realm_config_without_jwt_calls(
         assert cfg.api_client is client
 
         assert cfg.jwt_token is None
-        assert str(cfg.console_url).rstrip("/") == "https://app.us1.observability.splunkcloud.com/#/ao"
-        assert str(cfg.api_url).rstrip("/") == "https://api.us1.observability.splunkcloud.com/v2/ao"
+        assert str(cfg.console_url) == "https://app.lab0.observability.splunkcloud.com/"
+        assert str(cfg.api_url) == "https://app.lab0.observability.splunkcloud.com/ao/api/"
         assert isinstance(client, O11yApiClient)
-        assert str(client.host).rstrip("/") == "https://api.us1.observability.splunkcloud.com"
+        assert str(client.host) == "https://app.lab0.observability.splunkcloud.com/"
         assert client.auth_header == {"X-SF-Token": expected_token}
         assert client.ssl_context is False
 

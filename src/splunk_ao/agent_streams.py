@@ -20,7 +20,7 @@ from splunk_ao.utils.metrics import create_metric_configs
 logger = get_logger(__name__)
 
 
-class LogStream(LogStreamResponse):
+class AgentStream(LogStreamResponse):
     """
     Log streams are used to organize logs within a project on the Galileo platform.
     They provide a way to categorize and group related logs, making it easier to
@@ -48,21 +48,21 @@ class LogStream(LogStreamResponse):
     --------
     ```python
     # Create a new log stream in a project
-    from splunk_ao.log_streams import create_log_stream
+    from splunk_ao.agent_streams import create_agent_stream
 
     # Create by project ID
-    log_stream = create_log_stream(name="Production Logs", project_id="project-123")
+    log_stream = create_agent_stream(name="Production Logs", project_id="project-123")
 
     # Create by project name
-    log_stream = create_log_stream(name="Production Logs", project_name="My AI Project")
+    log_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # Get a log stream by name
-    from splunk_ao.log_streams import get_log_stream
-    log_stream = get_log_stream(name="Production Logs", project_name="My AI Project")
+    from splunk_ao.agent_streams import get_agent_stream
+    log_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # List all log streams in a project
-    from splunk_ao.log_streams import list_log_streams
-    log_streams = list_log_streams(project_name="My AI Project")
+    from splunk_ao.agent_streams import list_agent_streams
+    log_streams = list_agent_streams(project_name="My AI Project")
     for stream in log_streams:
         logger.info(f"Log Stream: {stream.name} (ID: {stream.id})")
 
@@ -77,7 +77,7 @@ class LogStream(LogStreamResponse):
         )
 
     # Enable metrics on a log stream - RECOMMENDED APPROACH
-    from splunk_ao.log_streams import enable_metrics
+    from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOMetrics
 
     # Set environment variables first
@@ -85,15 +85,15 @@ class LogStream(LogStreamResponse):
     # export SPLUNK_AO_PROJECT="My AI Project"
 
     # Clean and simple - just pass the metrics!
-    local_metrics = enable_metrics([
+    local_metrics = enable_evaluators([
         SplunkAOMetrics.correctness,
         SplunkAOMetrics.completeness,
         "context_relevance"
     ])
 
     # Alternative: Use explicit parameters
-    local_metrics = enable_metrics(
-        log_stream_name="Production Logs",
+    local_metrics = enable_evaluators(
+        agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=["correctness", "completeness"]
     )
@@ -102,7 +102,7 @@ class LogStream(LogStreamResponse):
 
     def __init__(self, log_stream: None | LogStreamResponse = None):
         """
-        Initialize a LogStream instance.
+        Initialize a AgentStream instance.
 
         Parameters
         ----------
@@ -122,18 +122,18 @@ class LogStream(LogStreamResponse):
             self.additional_properties = log_stream.additional_properties.copy()
             return
 
-    def enable_metrics(
+    def enable_evaluators(
         self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Enable metrics directly on this log stream instance.
 
         This is the most intuitive and clean way to enable metrics when you already have a
-        LogStream object. The method leverages the log stream's existing project_id and id
+        AgentStream object. The method leverages the log stream's existing project_id and id
         attributes, eliminating the need for redundant parameter specification and reducing
         the potential for errors.
 
-        This approach is ideal for object-oriented workflows where you're working with LogStream
+        This approach is ideal for object-oriented workflows where you're working with AgentStream
         instances directly, and it provides the clearest semantic meaning: "enable these metrics
         on this specific log stream."
 
@@ -157,7 +157,7 @@ class LogStream(LogStreamResponse):
         Raises
         ------
         ValueError
-            - If this LogStream instance lacks required `id` or `project_id` attributes
+            - If this AgentStream instance lacks required `id` or `project_id` attributes
             - If any specified metrics are unknown or unavailable
             - If there are issues with metric configuration or registration
         GalileoHTTPException
@@ -168,15 +168,15 @@ class LogStream(LogStreamResponse):
         Basic usage with built-in metrics:
 
         ```python
-        from splunk_ao.log_streams import LogStreams
+        from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOMetrics
 
         # Get a log stream first
-        log_streams = LogStreams()
+        log_streams = AgentStreams()
         log_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
 
         # Enable metrics directly - clean and intuitive!
-        local_metrics = log_stream.enable_metrics([
+        local_metrics = log_stream.enable_evaluators([
             SplunkAOMetrics.correctness,
             SplunkAOMetrics.completeness,
             "context_relevance",
@@ -195,7 +195,7 @@ class LogStream(LogStreamResponse):
         def custom_scorer(trace_or_span):
             return 0.75  # Your scoring logic
 
-        local_metrics = log_stream.enable_metrics([
+        local_metrics = log_stream.enable_evaluators([
             SplunkAOMetrics.correctness,
             "completeness",
             Metric(name="domain_relevance", version=3),
@@ -211,12 +211,12 @@ class LogStream(LogStreamResponse):
         -----
         **Requirements:**
 
-        - The LogStream instance must have valid `id` and `project_id` attributes
-        - These are automatically set when retrieving LogStream objects via LogStreams methods
+        - The AgentStream instance must have valid `id` and `project_id` attributes
+        - These are automatically set when retrieving AgentStream objects via AgentStreams methods
 
         **Recommended Usage:**
 
-        - Use this method when you already have a LogStream object
+        - Use this method when you already have a AgentStream object
         - More intuitive than specifying project/log stream names again
         - Cleaner object-oriented design pattern
         """
@@ -227,7 +227,7 @@ class LogStream(LogStreamResponse):
         return local_metrics
 
 
-class LogStreams:
+class AgentStreams:
     config: SplunkAOConfig
 
     def __init__(self) -> None:
@@ -236,12 +236,12 @@ class LogStreams:
     @overload
     def list(
         self, *, project_id: str, limit: Unset | int = 100, starting_token: Unset | int = 0
-    ) -> builtins.list[LogStream]: ...
+    ) -> builtins.list[AgentStream]: ...
 
     @overload
     def list(
         self, *, project_name: str, limit: Unset | int = 100, starting_token: Unset | int = 0
-    ) -> builtins.list[LogStream]: ...
+    ) -> builtins.list[AgentStream]: ...
 
     def list(
         self,
@@ -250,7 +250,7 @@ class LogStreams:
         project_name: str | None = None,
         limit: Unset | int = 100,
         starting_token: Unset | int = 0,
-    ) -> builtins.list[LogStream]:
+    ) -> builtins.list[AgentStream]:
         """
         Lists log streams. Exactly one of `project_id` or `project_name` must be provided.
 
@@ -270,7 +270,7 @@ class LogStreams:
 
         Returns
         -------
-        builtins.list[LogStream]
+        builtins.list[AgentStream]
             A page of log streams.
 
         Raises
@@ -302,7 +302,7 @@ class LogStreams:
         if response is None:
             raise ValueError("Unexpected empty response while listing log streams")
 
-        return [LogStream(log_stream=log_stream) for log_stream in response.log_streams]
+        return [AgentStream(log_stream=log_stream) for log_stream in response.log_streams]
 
     # Page size used by `_list_all`. Larger than the default `list()` page size so
     # full scans (name-based `get`, oldest-stream fallback) issue fewer round trips.
@@ -311,7 +311,7 @@ class LogStreams:
     # `ValueError` instead of silently truncating, so the regression is loud.
     _LIST_ALL_PAGE_SIZE = 500
 
-    def _list_all(self, *, project_id: str) -> builtins.list[LogStream]:
+    def _list_all(self, *, project_id: str) -> builtins.list[AgentStream]:
         """Internal helper: paginate through every page and return all log streams.
 
         Used by callers that need a globally-complete view (e.g. name-based lookup,
@@ -322,7 +322,7 @@ class LogStreams:
         errors so mid-pagination failures aren't silently swallowed into a
         truncated result.
         """
-        all_log_streams: builtins.list[LogStream] = []
+        all_log_streams: builtins.list[AgentStream] = []
         starting_token: int = 0
         seen_tokens: set[int] = {starting_token}
         while True:
@@ -337,7 +337,7 @@ class LogStreams:
             if response is None:
                 raise ValueError("Unexpected empty response while paginating log streams")
 
-            all_log_streams.extend(LogStream(log_stream=log_stream) for log_stream in response.log_streams)
+            all_log_streams.extend(AgentStream(log_stream=log_stream) for log_stream in response.log_streams)
 
             next_token = response.next_starting_token
             if next_token is None or isinstance(next_token, Unset) or not response.paginated:
@@ -354,9 +354,9 @@ class LogStreams:
         return all_log_streams
 
     @overload
-    def get(self, *, id: str, project_id: str | None = None, project_name: str | None = None) -> LogStream | None: ...
+    def get(self, *, id: str, project_id: str | None = None, project_name: str | None = None) -> AgentStream | None: ...
     @overload
-    def get(self, *, name: str, project_id: str | None = None, project_name: str | None = None) -> LogStream | None: ...
+    def get(self, *, name: str, project_id: str | None = None, project_name: str | None = None) -> AgentStream | None: ...
     def get(
         self,
         *,
@@ -364,7 +364,7 @@ class LogStreams:
         name: str | None = None,
         project_id: str | None = None,
         project_name: str | None = None,
-    ) -> LogStream | None:
+    ) -> AgentStream | None:
         """
         Retrieves a log stream by id or name.
 
@@ -381,7 +381,7 @@ class LogStreams:
 
         Returns
         -------
-        Optional[LogStream]
+        Optional[AgentStream]
             The log stream if found, None otherwise.
 
         Raises
@@ -412,7 +412,7 @@ class LogStreams:
             )
             if not log_stream_response:
                 return None
-            return LogStream(log_stream=log_stream_response)
+            return AgentStream(log_stream=log_stream_response)
 
         if name:
             for log_stream in self._list_all(project_id=project_id):
@@ -421,11 +421,11 @@ class LogStreams:
         return None
 
     @overload
-    def create(self, name: str, *, project_id: str | None = None) -> LogStream: ...
+    def create(self, name: str, *, project_id: str | None = None) -> AgentStream: ...
     @overload
-    def create(self, name: str, *, project_name: str) -> LogStream: ...
+    def create(self, name: str, *, project_name: str) -> AgentStream: ...
 
-    def create(self, name: str, *, project_id: str | None = None, project_name: str | None = None) -> LogStream:
+    def create(self, name: str, *, project_id: str | None = None, project_name: str | None = None) -> AgentStream:
         """
         Creates a new log stream. Exactly one of `project_id` or `project_name` must be provided.
 
@@ -440,7 +440,7 @@ class LogStreams:
 
         Returns
         -------
-        LogStream
+        AgentStream
             The created log stream.
 
         Raises
@@ -474,12 +474,12 @@ class LogStreams:
         if not response:
             raise ValueError("Unable to create log stream")
 
-        return LogStream(log_stream=response)
+        return AgentStream(log_stream=response)
 
-    def enable_metrics(
+    def enable_evaluators(
         self,
         *,
-        log_stream_name: str | None = None,
+        agent_stream_name: str | None = None,
         project_name: str | None = None,
         metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
     ) -> builtins.list[LocalMetricConfig]:
@@ -489,12 +489,12 @@ class LogStreams:
         The project name can be provided via the 'project_name' parameter or the
         SPLUNK_AO_PROJECT environment variable.
 
-        The log stream name can be provided via the 'log_stream_name' parameter or the
+        The log stream name can be provided via the 'agent_stream_name' parameter or the
         SPLUNK_AO_LOG_STREAM environment variable.
 
         Parameters
         ----------
-        log_stream_name : Optional[str], optional
+        agent_stream_name : Optional[str], optional
             The name of the log stream. Takes precedence over the SPLUNK_AO_LOG_STREAM environment variable. Defaults to None.
         project_name : Optional[str], optional
             The name of the project. Takes precedence over the SPLUNK_AO_PROJECT environment variable. Defaults to None.
@@ -519,12 +519,12 @@ class LogStreams:
         --------
         ```python
         # Enable built-in metrics with explicit parameters
-        from splunk_ao.log_streams import LogStreams
+        from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOMetrics
 
-        log_streams = LogStreams()
-        scorer_configs, local_metrics = log_streams.enable_metrics(
-            log_stream_name="Production Logs",
+        log_streams = AgentStreams()
+        scorer_configs, local_metrics = log_streams.enable_evaluators(
+            agent_stream_name="Production Logs",
             project_name="My AI Project",
             metrics=[
                 SplunkAOMetrics.correctness,
@@ -536,7 +536,7 @@ class LogStreams:
         # Enable metrics using environment variables
         # export SPLUNK_AO_LOG_STREAM="Production Logs"
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_metrics = log_streams.enable_metrics(
+        scorer_configs, local_metrics = log_streams.enable_evaluators(
             metrics=["correctness", "completeness"]
         )
 
@@ -547,8 +547,8 @@ class LogStreams:
             return 0.85  # Custom scoring logic
 
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_metrics = log_streams.enable_metrics(
-            log_stream_name="Production Logs",  # Explicit log stream
+        scorer_configs, local_metrics = log_streams.enable_evaluators(
+            agent_stream_name="Production Logs",  # Explicit log stream
             # project_name from env var
             metrics=[
                 Metric(name="my_custom_metric", version=2),
@@ -559,7 +559,7 @@ class LogStreams:
         """
         # Apply environment variable fallbacks
         project_name = project_name or _get_project_from_env()
-        log_stream_name = log_stream_name or _get_log_stream_from_env()
+        agent_stream_name = agent_stream_name or _get_log_stream_from_env()
 
         # Get project using environment fallbacks
         project_obj = Projects().get_with_env_fallbacks(name=project_name)
@@ -567,9 +567,11 @@ class LogStreams:
             raise ValueError(f"Project '{project_name}' not found")
 
         # Get log stream - error out if not found
-        log_stream = self.get(name=log_stream_name, project_name=project_obj.name)
+        if not agent_stream_name:
+            raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_LOG_STREAM env var)")
+        log_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
         if not log_stream:
-            raise ValueError(f"Log stream '{log_stream_name}' not found in project '{project_obj.name}'")
+            raise ValueError(f"Log stream '{agent_stream_name}' not found in project '{project_obj.name}'")
 
         # Use the shared utility function directly
         _, local_metrics = create_metric_configs(project_obj.id, log_stream.id, metrics)
@@ -581,9 +583,9 @@ class LogStreams:
 #
 
 
-def get_log_stream(
+def get_agent_stream(
     *, name: str | None = None, project_id: str | None = None, project_name: str | None = None
-) -> LogStream | None:
+) -> AgentStream | None:
     """
     Retrieves a log stream by name. Exactly one of `project_id` or `project_name` must be provided.
 
@@ -598,7 +600,7 @@ def get_log_stream(
 
     Returns
     -------
-    Optional[LogStream]
+    Optional[AgentStream]
         The log stream if found, None otherwise.
 
     Raises
@@ -610,16 +612,16 @@ def get_log_stream(
     httpx.TimeoutException
         If the request takes longer than Client.timeout.
     """
-    return LogStreams().get(name=name, project_id=project_id, project_name=project_name)
+    return AgentStreams().get(name=name, project_id=project_id, project_name=project_name)  # type: ignore[arg-type]
 
 
-def list_log_streams(
+def list_agent_streams(
     *,
     project_id: str | None = None,
     project_name: str | None = None,
     limit: Unset | int = 100,
     starting_token: Unset | int = 0,
-) -> builtins.list[LogStream]:
+) -> builtins.list[AgentStream]:
     """
     Lists log streams. Exactly one of `project_id` or `project_name` must be provided.
 
@@ -639,7 +641,7 @@ def list_log_streams(
 
     Returns
     -------
-    builtins.list[LogStream]
+    builtins.list[AgentStream]
         A page of log streams.
 
     Raises
@@ -650,12 +652,12 @@ def list_log_streams(
         If the request takes longer than Client.timeout.
 
     """
-    return LogStreams().list(
+    return AgentStreams().list(  # type: ignore[call-overload]
         project_id=project_id, project_name=project_name, limit=limit, starting_token=starting_token
     )
 
 
-def create_log_stream(name: str, project_id: str | None = None, project_name: str | None = None) -> LogStream:
+def create_agent_stream(name: str, project_id: str | None = None, project_name: str | None = None) -> AgentStream:
     """
     Creates a new log stream. Exactly one of `project_id` or `project_name` must be provided.
 
@@ -666,7 +668,7 @@ def create_log_stream(name: str, project_id: str | None = None, project_name: st
 
     Returns
     -------
-    LogStream
+    AgentStream
         The created project.
 
     Raises
@@ -677,12 +679,12 @@ def create_log_stream(name: str, project_id: str | None = None, project_name: st
         If the request takes longer than Client.timeout.
 
     """
-    return LogStreams().create(name=name, project_id=project_id, project_name=project_name)
+    return AgentStreams().create(name=name, project_id=project_id, project_name=project_name)  # type: ignore[call-overload]
 
 
-def enable_metrics(
+def enable_evaluators(
     *,
-    log_stream_name: str | None = None,
+    agent_stream_name: str | None = None,
     project_name: str | None = None,
     metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
 ) -> builtins.list[LocalMetricConfig]:
@@ -702,11 +704,11 @@ def enable_metrics(
     SPLUNK_AO_PROJECT : str
         The name of the Galileo project (used when project_name not provided)
     SPLUNK_AO_LOG_STREAM : str
-        The name of the log stream (used when log_stream_name not provided)
+        The name of the log stream (used when agent_stream_name not provided)
 
     Parameters
     ----------
-    log_stream_name : Optional[str], optional
+    agent_stream_name : Optional[str], optional
         The name of the log stream. Takes precedence over SPLUNK_AO_LOG_STREAM environment variable.
         If None, will use SPLUNK_AO_LOG_STREAM env var. Defaults to None.
     project_name : Optional[str], optional
@@ -739,11 +741,11 @@ def enable_metrics(
     --------
     ```python
     # Enable built-in metrics with explicit parameters
-    from splunk_ao.log_streams import enable_metrics
+    from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOMetrics
 
-    local_metrics = enable_metrics(
-        log_stream_name="Production Logs",
+    local_metrics = enable_evaluators(
+        agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=[
             SplunkAOMetrics.correctness,
@@ -755,7 +757,7 @@ def enable_metrics(
     # Enable metrics using environment variables only
     # export SPLUNK_AO_LOG_STREAM="Production Logs"
     # export SPLUNK_AO_PROJECT="My AI Project"
-    local_metrics = enable_metrics(metrics=["correctness", "completeness"])
+    local_metrics = enable_evaluators(metrics=["correctness", "completeness"])
 
     # Enable custom and local metrics with environment variable fallbacks
     from splunk_ao.schema.metrics import Metric, LocalMetricConfig
@@ -767,8 +769,8 @@ def enable_metrics(
             return min(len(trace_or_span.output) / 100.0, 1.0)  # Normalize 0-1
         return 0.0
 
-    local_metrics = enable_metrics(
-        log_stream_name="Development Logs",
+    local_metrics = enable_evaluators(
+        agent_stream_name="Development Logs",
         metrics=[
             SplunkAOMetrics.correctness,
             "toxicity",
@@ -787,4 +789,4 @@ def enable_metrics(
         logger.info(f"Need to process local metric: {local_metric.name}")
     ```
     """
-    return LogStreams().enable_metrics(log_stream_name=log_stream_name, project_name=project_name, metrics=metrics)
+    return AgentStreams().enable_evaluators(agent_stream_name=agent_stream_name, project_name=project_name, metrics=metrics)

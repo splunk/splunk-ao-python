@@ -80,7 +80,7 @@ class MockOutput:
 def mock_splunk_ao_logger():
     """Creates a mock Galileo logger for testing."""
     with (
-        patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+        patch("splunk_ao.logger.logger.AgentStreams") as mock_logstreams,
         patch("splunk_ao.logger.logger.Projects") as mock_projects,
         patch("splunk_ao.logger.logger.Traces") as mock_traces_client,
     ):

@@ -64,7 +64,7 @@ def client(app):
     return TestClient(app)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_middleware_extracts_headers(
@@ -123,7 +123,7 @@ def test_middleware_extracts_headers(
     assert data["span_id"] == parent_id
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_middleware_handles_missing_headers(
@@ -143,7 +143,7 @@ def test_middleware_handles_missing_headers(
     assert data["span_id"] is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_middleware_handles_partial_headers(
@@ -172,7 +172,7 @@ def test_middleware_handles_partial_headers(
     assert data["span_id"] is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_context_cleanup_after_request(
@@ -201,7 +201,7 @@ def test_context_cleanup_after_request(
     assert data2["parent_id"] is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_request_logger_when_parent_id_equals_trace_id(
@@ -233,7 +233,7 @@ def test_get_request_logger_when_parent_id_equals_trace_id(
     assert data["span_id"] is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mismatched_trace_and_span_ids(
@@ -268,7 +268,7 @@ def test_mismatched_trace_and_span_ids(
 
 
 @patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 def test_invalid_uuid_headers_raise_exception(
     mock_logstreams_client: Mock, mock_projects_client: Mock, app: FastAPI, client: TestClient
 ):
