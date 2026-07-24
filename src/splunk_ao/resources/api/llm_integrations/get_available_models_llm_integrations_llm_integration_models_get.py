@@ -31,7 +31,7 @@ def _get_kwargs(llm_integration: LLMIntegration) -> dict[str, Any]:
         "path": "/llm_integrations/{llm_integration}/models".format(llm_integration=llm_integration),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
