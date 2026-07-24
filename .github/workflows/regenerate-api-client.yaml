@@ -38,15 +38,12 @@ jobs:
           pip install poetry==2.4.1
           poetry install --all-extras --with dev
 
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
-
       - name: Fetch API types and regenerate
+        id: regenerate
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
           API_URL: ${{ secrets.SPLUNK_AO_API_URL }}
-          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
@@ -57,18 +54,22 @@ jobs:
           git add .
           if git diff --cached --quiet; then
             echo "No changes to commit — spec is unchanged"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "Update API Client"
-          git push origin $BRANCH_NAME
+          git push origin $BRANCH_NAME --force
+          echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Create pull request
+      - name: Create or update pull request
+        if: steps.regenerate.outputs.changed == 'true'
         env:
-          BRANCH_NAME: chore/splunk-ao-automation/update-api-client-${{ steps.date.outputs.date }}-${{ github.run_id }}
+          BRANCH_NAME: chore/splunk-ao-automation/update-api-client
           GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
         run: |
-          if ! git ls-remote --exit-code origin refs/heads/$BRANCH_NAME > /dev/null 2>&1; then
-            echo "No branch to create PR from — nothing was committed"
-            exit 0
+          EXISTING_PR=$(gh pr list --base main --head $BRANCH_NAME --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already open for branch $BRANCH_NAME — updated via force push"
+          else
+            gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'
           fi
-          gh pr create -B main -H $BRANCH_NAME --label 'dependencies' --title 'Update API Client' --body 'Fix any breaking changes if this pull request fails to deploy'
