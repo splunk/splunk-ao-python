@@ -117,7 +117,7 @@ def test_native_conversation_root_marks_direct_trace_children(
     assert serialized["traces"][0]["spans"][1]["user_metadata"]["gen_ai.conversation_root"] == "true"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_single_span_trace_to_galileo(
@@ -2177,7 +2177,7 @@ def test_ingestion_hook_without_project_or_log_stream(monkeypatch) -> None:
     """Test that ingestion_hook allows initialization without project/log_stream."""
     # Given: no project or log_stream in environment
     monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-    monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
 
     # Given: an ingestion hook
     hook = Mock()

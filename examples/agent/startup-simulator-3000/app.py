@@ -170,7 +170,7 @@ async def run_agent(industry: str, audience: str, random_word: str, mode: str = 
 if __name__ == "__main__":
     # Verify Splunk AO configuration
     project_id = os.environ.get("SPLUNK_AO_PROJECT")
-    log_stream = os.environ.get("SPLUNK_AO_LOG_STREAM")
+    log_stream = os.environ.get("SPLUNK_AO_AGENT_STREAM")
     api_key = os.environ.get("SPLUNK_AO_API_KEY")
 
     print("🔍 Splunk AO Configuration:")

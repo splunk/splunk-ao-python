@@ -1,9 +1,5 @@
 """Tests for Splunk-AO-SDK header in API calls."""
 
-import pytest
-
-pytestmark = pytest.mark.skip(reason="Header rename to Splunk-AO-SDK pending separate PR")
-
 from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
 
@@ -45,7 +41,7 @@ class TestApiHeaders:
         assert "Splunk-AO-SDK" in content_headers
         header = content_headers["Splunk-AO-SDK"]
         # Should include version and method name
-        assert header.startswith(f"galileo-python/{get_package_version()}")
+        assert header.startswith(f"splunk-ao/{get_package_version()}")
         # Direct call to resource should include the resource method name
         assert "@splunk_ao.resources.api.datasets" in header
 
@@ -59,8 +55,8 @@ class TestApiHeaders:
         content_headers = kwargs.get("content_headers", {})
         sdk_header = content_headers.get("Splunk-AO-SDK", "")
 
-        # Should match pattern: galileo-python/x.x.x
-        assert sdk_header.startswith("galileo-python/")
+        # Should match pattern: splunk-ao/x.x.x
+        assert sdk_header.startswith("splunk-ao/")
         # Extract version part
         version_part = sdk_header.split("/", 1)[1]
         # Version should be a string (may be empty in test environment)
@@ -77,7 +73,7 @@ class TestApiHeaders:
         # Verify the header includes both version and method
         content_headers = kwargs.get("content_headers", {})
         header = content_headers["Splunk-AO-SDK"]
-        assert header.startswith("galileo-python/1.2.3")
+        assert header.startswith("splunk-ao/1.2.3")
         # Should also include the method name
         assert "@splunk_ao.resources.api.datasets" in header
 
@@ -120,8 +116,8 @@ class TestApiHeaders:
         header2 = captured_headers[-1]  # Get last one in case there were more calls
 
         # Both should have the SDK name and version
-        assert header1.startswith("galileo-python/")
-        assert header2.startswith("galileo-python/")
+        assert header1.startswith("splunk-ao/")
+        assert header2.startswith("splunk-ao/")
 
         # But they should have different method names
         assert "list@splunk_ao.project" in header1.lower()

@@ -57,7 +57,7 @@ def _get_project_or_default(project: str | None) -> str:
 
 def _get_log_stream_or_default(log_stream: str | None) -> str:
     """
-    Get the log stream name, falling back to SPLUNK_AO_LOG_STREAM env var or default.
+    Get the log stream name, falling back to SPLUNK_AO_AGENT_STREAM env var or default.
 
     Parameters
     ----------
@@ -70,7 +70,8 @@ def _get_log_stream_or_default(log_stream: str | None) -> str:
         The log stream name to use.
     """
     if log_stream is None:
-        return getenv("SPLUNK_AO_LOG_STREAM", DEFAULT_LOG_STREAM_NAME)
+        # SPLUNK_AO_LOG_STREAM is a deprecated alias; SPLUNK_AO_AGENT_STREAM takes precedence.
+        return getenv("SPLUNK_AO_AGENT_STREAM") or getenv("SPLUNK_AO_LOG_STREAM") or DEFAULT_LOG_STREAM_NAME
     return log_stream
 
 
@@ -100,23 +101,25 @@ def _get_project_id_from_env() -> str | None:
 
 def _get_log_stream_from_env() -> str | None:
     """
-    Get the log stream name from SPLUNK_AO_LOG_STREAM environment variable.
+    Get the log stream name from SPLUNK_AO_AGENT_STREAM environment variable.
 
     Returns
     -------
     Optional[str]
         The log stream name from environment variable, or None if not set.
     """
-    return getenv("SPLUNK_AO_LOG_STREAM")
+    # SPLUNK_AO_LOG_STREAM is a deprecated alias; SPLUNK_AO_AGENT_STREAM takes precedence.
+    return getenv("SPLUNK_AO_AGENT_STREAM") or getenv("SPLUNK_AO_LOG_STREAM") or None
 
 
 def _get_log_stream_id_from_env() -> str | None:
     """
-    Get the log stream ID from SPLUNK_AO_LOG_STREAM_ID environment variable.
+    Get the log stream ID from SPLUNK_AO_AGENT_STREAM_ID environment variable.
 
     Returns
     -------
     Optional[str]
         The log stream ID from environment variable, or None if not set.
     """
-    return getenv("SPLUNK_AO_LOG_STREAM_ID")
+    # SPLUNK_AO_LOG_STREAM_ID is a deprecated alias; SPLUNK_AO_AGENT_STREAM_ID takes precedence.
+    return getenv("SPLUNK_AO_AGENT_STREAM_ID") or getenv("SPLUNK_AO_LOG_STREAM_ID") or None

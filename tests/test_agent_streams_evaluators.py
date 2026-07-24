@@ -17,7 +17,7 @@ def reset_env_vars():
     """Reset environment variables before each test and restore after."""
     saved = {
         k: os.environ.pop(k, None)
-        for k in ("SPLUNK_AO_PROJECT", "SPLUNK_AO_PROJECT_ID", "SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID")
+        for k in ("SPLUNK_AO_PROJECT", "SPLUNK_AO_PROJECT_ID", "SPLUNK_AO_AGENT_STREAM", "SPLUNK_AO_AGENT_STREAM_ID")
     }
     yield
     for k, v in saved.items():
@@ -241,7 +241,7 @@ class TestLogStreamMetrics:
         """Test AgentStreams.enable_evaluators with environment variables."""
         # Set environment variables
         os.environ["SPLUNK_AO_PROJECT"] = "Test Project"
-        os.environ["SPLUNK_AO_LOG_STREAM"] = "Test Log Stream"
+        os.environ["SPLUNK_AO_AGENT_STREAM"] = "Test Log Stream"
 
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value
@@ -337,7 +337,7 @@ class TestLogStreamMetrics:
         """Test enable_evaluators function with environment variables (integration test)."""
         # Set environment variables
         os.environ["SPLUNK_AO_PROJECT"] = "Integration Project"
-        os.environ["SPLUNK_AO_LOG_STREAM"] = "Integration Stream"
+        os.environ["SPLUNK_AO_AGENT_STREAM"] = "Integration Stream"
 
         # Setup mocks
         mock_projects_instance = mock_projects_class.return_value

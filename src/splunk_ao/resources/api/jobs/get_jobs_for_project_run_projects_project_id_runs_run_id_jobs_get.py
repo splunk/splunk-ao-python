@@ -43,7 +43,7 @@ def _get_kwargs(project_id: str, run_id: str, *, status: None | str | Unset = UN
         "params": params,
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
