@@ -27,27 +27,6 @@ pyenv local 3.13
 uv sync
 ```
 
-The local project installs the current repository checkout as an editable
-dependency, so it exercises the SDK changes on the current branch. If an exact
-Python 3.13 version is required, select one shown by `pyenv versions`.
-
-You can also reuse the private configuration from the existing local example:
-
-```shell
-cp ../langgraph-open-telemetry/.env .env
-```
-
-Add this variable if that file does not already contain it:
-
-```dotenv
-OPENAI_MODEL=gpt-5-nano
-```
-
-`ChatOpenAI` reads `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL` from
-the environment. The Azure-compatible base URL should include `/openai/v1`.
-The example does not set `temperature` or a completion-token limit because the
-configured GPT-5 deployment does not require them.
-
 ## Telemetry configuration
 
 The example registers one official LangChain instrumentor:
@@ -77,8 +56,9 @@ Captured content can contain sensitive information.
 ```dotenv
 SPLUNK_AO_REALM=us1
 SPLUNK_AO_SF_TOKEN=your-splunk-ingest-token
+SPLUNK_AO_SF_API_TOKEN=your-splunk-ingest-token
 SPLUNK_AO_PROJECT=your-project-name
-SPLUNK_AO_LOG_STREAM=multi-agent-travel-planner-otel
+SPLUNK_AO_LOG_STREAM=your-logstream-name
 ```
 
 `SPLUNK_AO_SF_TOKEN` must have ingest permission. Routing may use project and
@@ -91,24 +71,11 @@ resource.
 SPLUNK_AO_API_KEY=your-agent-observability-api-key
 SPLUNK_AO_CONSOLE_URL=https://app.galileo.ai
 SPLUNK_AO_PROJECT=your-project-name
-SPLUNK_AO_LOG_STREAM=multi-agent-travel-planner-otel
+SPLUNK_AO_LOG_STREAM=your-logstream-name
 ```
-
-Set `SPLUNK_AO_API_URL` only when it cannot be derived from the console URL.
-
-## Session and agent attributes
-
-The example creates one session ID per itinerary. `splunk_ao_context` applies
-the AO session attribute throughout the workflow. Each ReAct agent also
-receives `agent_name` and `conversation_id` metadata so the official LangChain
-instrumentation recognizes agent invocations and sets the applicable GenAI
-attributes on those agent spans.
 
 ## Run
 
 ```shell
 uv run python main.py
 ```
-
-The finite example calls `tracer_provider.shutdown()` after the workflow so
-the batch processor exports pending spans before the process exits.
