@@ -312,11 +312,26 @@ def test_normalizer_gen_ai_wins_collisions_and_sdk_marker_is_authoritative() -> 
     assert result["splunk_ao.system"] == "splunk_ao_python"
 
 
+def test_normalizer_does_not_use_deprecated_gen_ai_system_as_provider() -> None:
+    result = normalize_attributes_for_export({"gen_ai.system": "legacy-provider"})
+
+    assert result["gen_ai.system"] == "legacy-provider"
+    assert "splunk_ao.provider.name" not in result
+
+
 def test_normalizer_converts_first_chunk_seconds_to_splunk_nanoseconds() -> None:
     result = normalize_attributes_for_export({"gen_ai.response.time_to_first_chunk": 0.125})
 
     assert result["gen_ai.response.time_to_first_chunk"] == 0.125
     assert result["splunk_ao.llm.time_to_first_token_ns"] == 125_000_000
+
+
+def test_normalizer_preserves_exact_source_nanoseconds() -> None:
+    result = normalize_attributes_for_export(
+        {"gen_ai.response.time_to_first_chunk": 0.123456789, "splunk_ao.llm.time_to_first_token_ns": 123_456_789}
+    )
+
+    assert result["splunk_ao.llm.time_to_first_token_ns"] == 123_456_789
 
 
 def test_normalizer_is_idempotent() -> None:

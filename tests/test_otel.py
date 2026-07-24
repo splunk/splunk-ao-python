@@ -423,6 +423,56 @@ class TestStartGalileoSpan:
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "search"
 
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid partial span"))
+    def test_start_span_finalization_does_not_mask_body_exception(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with pytest.raises(RuntimeError, match="user failure"), start_splunk_ao_span(galileo_span):
+            raise RuntimeError("user failure")
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid span"))
+    def test_start_span_finalization_failure_does_not_fail_successful_body(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with start_splunk_ao_span(galileo_span):
+            pass
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", return_value={"gen_ai.operation.name": "execute_tool"})
+    def test_start_span_contains_attribute_write_failure(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_otel_span = Mock()
+        mock_otel_span.set_attribute.side_effect = ValueError("attribute rejected")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with start_splunk_ao_span(galileo_span):
+            pass
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
 
 class TestWorkflowSpanAttributes:
     """Test suite for WorkflowSpan OpenTelemetry attribute mapping."""

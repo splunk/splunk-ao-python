@@ -27,7 +27,6 @@ CONTENT_ALIAS_BY_GEN_AI: Mapping[str, str] = {
 }
 
 SPLUNK_ALIAS_BY_GEN_AI: Mapping[str, str] = {
-    "gen_ai.system": "splunk_ao.provider.name",
     "gen_ai.operation.name": "splunk_ao.operation.name",
     "gen_ai.conversation.id": "splunk_ao.session.id",
     "gen_ai.workflow.name": "splunk_ao.workflow.name",
@@ -428,6 +427,8 @@ def normalize_attributes_for_export(
 
     for source_key, destination_key in SPLUNK_ALIAS_BY_GEN_AI.items():
         if source_key in attrs:
+            if destination_key == "splunk_ao.llm.time_to_first_token_ns" and destination_key in attrs:
+                continue
             result[destination_key] = _alias_value(source_key, attrs[source_key])
 
     for source_key in CONTENT_ALIAS_BY_GEN_AI:

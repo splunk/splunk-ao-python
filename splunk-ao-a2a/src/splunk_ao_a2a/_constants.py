@@ -10,11 +10,11 @@ INSTRUMENTOR_VERSION = __version__
 SPLUNK_AO_OBSERVE_KEY = "splunk_ao_observe"
 AGNTCY_OBSERVE_KEY = "observe"  # compatibility with AGNTCY Observe SDK
 
-# A2A span attribute keys
-A2A_TASK_ID = "splunk_ao.a2a.task.id"
-A2A_CONTEXT_ID = "splunk_ao.a2a.context_id"
-A2A_RPC_METHOD = "splunk_ao.a2a.rpc.method"
-A2A_TASK_STATE = "splunk_ao.a2a.task.state"
+# A2A protocol span attributes expected by the ingest API
+A2A_TASK_ID = "a2a.task.id"
+A2A_CONTEXT_ID = "a2a.context_id"
+A2A_RPC_METHOD = "a2a.rpc.method"
+A2A_TASK_STATE = "a2a.task.state"
 
 # OTel GenAI semantic convention attributes — span type determination
 GENAI_OPERATION_NAME = "gen_ai.operation.name"

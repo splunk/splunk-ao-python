@@ -320,5 +320,8 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         try:
             yield span
         finally:
-            for key, value in build_span_attributes(galileo_span, _session_id_context.get(None)).items():
-                span.set_attribute(key, value)
+            try:
+                for key, value in build_span_attributes(galileo_span, _session_id_context.get(None)).items():
+                    span.set_attribute(key, value)
+            except Exception:
+                logger.warning("Failed to finalize Splunk AO span attributes", exc_info=True)
