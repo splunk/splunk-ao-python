@@ -51,7 +51,7 @@ def _get_kwargs(
     if not isinstance(body, Unset):
         _kwargs["files"] = body.to_multipart()
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

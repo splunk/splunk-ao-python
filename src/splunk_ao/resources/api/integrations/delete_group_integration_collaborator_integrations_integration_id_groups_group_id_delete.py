@@ -32,7 +32,7 @@ def _get_kwargs(integration_id: str, group_id: str) -> dict[str, Any]:
         ),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
