@@ -93,6 +93,138 @@ def _content_value(value: Any) -> str:
     return value if isinstance(value, str) else _json_string(value)
 
 
+def _mapping_value(value: Any) -> dict[str, Any] | None:
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json", exclude_none=True)
+    if isinstance(value, Mapping):
+        return {str(key): _json_compatible(item) for key, item in value.items()}
+    return None
+
+
+def _parse_json_value(value: Any) -> Any:
+    if not isinstance(value, str):
+        return _json_compatible(value)
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return value
+
+
+def _text_part(value: Any) -> dict[str, Any]:
+    content = value if isinstance(value, str) else _json_string(value)
+    return {"type": "text", "content": content}
+
+
+def _content_part(value: Any) -> dict[str, Any] | None:
+    part = _mapping_value(value)
+    if part is None or "type" not in part:
+        return None
+
+    part_type = _json_compatible(part["type"])
+    part["type"] = str(part_type)
+    if part_type == "text" and "content" not in part and "text" in part:
+        part["content"] = part.pop("text")
+    return part
+
+
+def _content_parts(value: Any) -> list[dict[str, Any]]:
+    part = _content_part(value)
+    if part is not None:
+        return [part]
+
+    if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
+        parts = [_content_part(item) for item in value]
+        if all(item is not None for item in parts):
+            return [item for item in parts if item is not None]
+
+    return [_text_part(value)]
+
+
+def _tool_call_part(value: Any) -> dict[str, Any]:
+    call = _mapping_value(value) or {}
+    function = _mapping_value(call.pop("function", None)) or {}
+    result = {**call, "type": "tool_call"}
+    if "name" in function:
+        result["name"] = function.pop("name")
+    if "arguments" in function:
+        result["arguments"] = _parse_json_value(function.pop("arguments"))
+    result.update(function)
+    return result
+
+
+def _mapped_message(source: dict[str, Any], default_role: str) -> dict[str, Any]:
+    role = _json_compatible(source.pop("role"))
+    content = source.pop("content", "")
+    tool_call_id = source.pop("tool_call_id", None)
+    tool_calls = source.pop("tool_calls", None)
+
+    if role == "tool":
+        response = {"type": "tool_call_response", "response": _parse_json_value(content)}
+        if tool_call_id is not None:
+            response["id"] = str(tool_call_id)
+        parts = [response]
+    else:
+        parts = [] if content == "" and tool_calls else _content_parts(content)
+
+    if tool_calls:
+        parts.extend(_tool_call_part(tool_call) for tool_call in tool_calls)
+
+    return {**source, "role": str(role), "parts": parts}
+
+
+def _message(value: Any, default_role: str) -> dict[str, Any]:
+    source = _mapping_value(value)
+    if source is None or "role" not in source:
+        return {"role": default_role, "parts": _content_parts(value)}
+    return _mapped_message(source, default_role)
+
+
+def _message_sequence(value: Any, default_role: str) -> list[dict[str, Any]]:
+    if not isinstance(value, Sequence) or isinstance(value, str | bytes | bytearray):
+        return [_message(value, default_role)]
+    if not value:
+        return []
+
+    messages = [_mapping_value(item) for item in value]
+    if all(message is not None and "role" in message for message in messages):
+        return [_mapped_message(message, default_role) for message in messages if message is not None]
+    return [_message(value, default_role)]
+
+
+def _input_messages(value: Any) -> str:
+    return _json_string(_message_sequence(value, "user"))
+
+
+def _output_messages(value: Any, finish_reason: str | None = None) -> str:
+    messages = _message_sequence(value, "assistant")
+    for message in messages:
+        source_finish_reason = message.get("finish_reason")
+        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+    return _json_string(messages)
+
+
+def _tool_definitions(value: Sequence[Any]) -> str:
+    definitions: list[Any] = []
+    for tool in value:
+        definition = _mapping_value(tool)
+        if definition is None:
+            definitions.append(_json_compatible(tool))
+            continue
+
+        function = _mapping_value(definition.pop("function", None))
+        if function is not None:
+            definition = {**function, **definition}
+            definition.setdefault("type", "function")
+        definitions.append(definition)
+    return _json_string(definitions)
+
+
+def _object_content(value: Any) -> str:
+    parsed = _parse_json_value(value)
+    content = parsed if isinstance(parsed, Mapping) else {"value": parsed}
+    return _json_string(content)
+
+
 def _set_if_present(attrs: MutableMapping[str, AttributeValue], key: str, value: AttributeValue | None) -> None:
     if value is not None:
         attrs[key] = value
@@ -149,8 +281,8 @@ def _set_operation(attrs: MutableMapping[str, AttributeValue], span_type: StepTy
 def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan) -> None:
     """Map LLM request, response, content, and metric fields."""
     _set_operation(attrs, StepType.llm)
-    attrs["gen_ai.input.messages"] = _content_value(span.input)
-    attrs["gen_ai.output.messages"] = _content_value(span.output)
+    attrs["gen_ai.input.messages"] = _input_messages(span.input)
+    attrs["gen_ai.output.messages"] = _output_messages(span.output, span.finish_reason)
     _set_if_present(attrs, "gen_ai.request.model", span.model)
     _set_if_present(attrs, "gen_ai.request.temperature", span.temperature)
 
@@ -171,7 +303,7 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
     if span.finish_reason is not None:
         attrs["gen_ai.response.finish_reasons"] = (span.finish_reason,)
     if span.tools is not None:
-        attrs["gen_ai.tool.definitions"] = _json_string(span.tools)
+        attrs["gen_ai.tool.definitions"] = _tool_definitions(span.tools)
     if span.events is not None:
         attrs["splunk_ao.llm.events"] = _json_string(span.events)
 
@@ -208,9 +340,9 @@ def set_tool_attributes(attrs: MutableMapping[str, AttributeValue], span: ToolSp
     """Map tool execution fields."""
     _set_operation(attrs, StepType.tool)
     attrs["gen_ai.tool.name"] = span.name
-    attrs["gen_ai.tool.call.arguments"] = _content_value(span.input)
+    attrs["gen_ai.tool.call.arguments"] = _object_content(span.input)
     if span.output is not None:
-        attrs["gen_ai.tool.call.result"] = _content_value(span.output)
+        attrs["gen_ai.tool.call.result"] = _object_content(span.output)
     _set_if_present(attrs, "gen_ai.tool.call.id", span.tool_call_id)
 
 
@@ -226,9 +358,9 @@ def set_retriever_attributes(attrs: MutableMapping[str, AttributeValue], span: R
 
 
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
-    attrs["gen_ai.input.messages"] = _content_value(span.input)
+    attrs["gen_ai.input.messages"] = _input_messages(span.input)
     if span.output is not None:
-        attrs["gen_ai.output.messages"] = _content_value(span.output)
+        attrs["gen_ai.output.messages"] = _output_messages(span.output)
 
 
 def set_workflow_attributes(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan) -> None:
@@ -248,9 +380,9 @@ def set_agent_attributes(attrs: MutableMapping[str, AttributeValue], span: Agent
 
 def _set_generic_content(attrs: MutableMapping[str, AttributeValue], span: BaseStep) -> None:
     if span.input is not None:
-        attrs["gen_ai.input.messages"] = _content_value(span.input)
+        attrs["gen_ai.input.messages"] = _input_messages(span.input)
     if span.output is not None:
-        attrs["gen_ai.output.messages"] = _content_value(span.output)
+        attrs["gen_ai.output.messages"] = _output_messages(span.output)
 
 
 def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict[str, AttributeValue]:

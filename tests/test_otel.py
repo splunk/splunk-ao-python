@@ -277,8 +277,8 @@ class TestSetToolSpanAttributes:
 
         assert attrs["gen_ai.operation.name"] == "execute_tool"
         assert attrs["gen_ai.tool.name"] == "test-tool"
-        assert attrs["gen_ai.tool.call.arguments"] == "tool input data"
-        assert attrs["gen_ai.tool.call.result"] == "tool output result"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input data"}
+        assert json.loads(attrs["gen_ai.tool.call.result"]) == {"value": "tool output result"}
         assert attrs["gen_ai.tool.call.id"] == "call-123"
         assert "gen_ai.input.messages" not in attrs
         assert "gen_ai.output.messages" not in attrs
@@ -291,7 +291,7 @@ class TestSetToolSpanAttributes:
 
         assert attrs["gen_ai.operation.name"] == "execute_tool"
         assert attrs["gen_ai.tool.name"] == "test-tool"
-        assert attrs["gen_ai.tool.call.arguments"] == "tool input only"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input only"}
         assert "gen_ai.tool.call.result" not in attrs
         assert "gen_ai.tool.call.id" not in attrs
 
@@ -305,8 +305,8 @@ class TestSetToolSpanAttributes:
 
         assert attrs["gen_ai.operation.name"] == "execute_tool"
         assert attrs["gen_ai.tool.name"] == "test-tool"
-        assert attrs["gen_ai.tool.call.arguments"] == "tool input"
-        assert attrs["gen_ai.tool.call.result"] == "tool output"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input"}
+        assert json.loads(attrs["gen_ai.tool.call.result"]) == {"value": "tool output"}
         assert "gen_ai.tool.call.id" not in attrs
 
 
@@ -347,8 +347,8 @@ class TestStartGalileoSpan:
         assert "gen_ai.system" not in calls
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "my-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input data"
-        assert calls["gen_ai.tool.call.result"] == "tool output result"
+        assert json.loads(calls["gen_ai.tool.call.arguments"]) == {"value": "tool input data"}
+        assert json.loads(calls["gen_ai.tool.call.result"]) == {"value": "tool output result"}
         assert calls["gen_ai.tool.call.id"] == "call-789"
 
     def test_start_splunk_ao_span_tool_span_with_none_output(self):
@@ -372,7 +372,7 @@ class TestStartGalileoSpan:
         assert "gen_ai.system" not in calls
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "minimal-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "just input"
+        assert json.loads(calls["gen_ai.tool.call.arguments"]) == {"value": "just input"}
         assert "gen_ai.tool.call.result" not in calls
         assert "gen_ai.tool.call.id" not in calls
 
@@ -435,8 +435,12 @@ class TestWorkflowSpanAttributes:
 
         assert attrs["gen_ai.operation.name"] == "invoke_workflow"
         assert attrs["gen_ai.workflow.name"] == "test-workflow"
-        assert attrs["gen_ai.input.messages"] == "input text"
-        assert attrs["gen_ai.output.messages"] == "output text"
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "input text"}]}
+        ]
+        assert json.loads(attrs["gen_ai.output.messages"]) == [
+            {"role": "assistant", "parts": [{"type": "text", "content": "output text"}], "finish_reason": "unknown"}
+        ]
 
     def test_workflow_span_with_message_input_output(self):
         """Test WorkflowSpan with Message input and output."""
@@ -445,8 +449,12 @@ class TestWorkflowSpanAttributes:
         workflow_span = WorkflowSpan(name="test-workflow", input=[input_msg], output=input_msg, status_code=200)
         attrs = build_span_attributes(workflow_span)
 
-        assert json.loads(attrs["gen_ai.input.messages"])[0]["content"] == "user question"
-        assert json.loads(attrs["gen_ai.output.messages"])["content"] == "user question"
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "user question"}]}
+        ]
+        assert json.loads(attrs["gen_ai.output.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "user question"}], "finish_reason": "unknown"}
+        ]
 
     def test_workflow_span_with_document_sequence_output(self):
         """Test WorkflowSpan with Document sequence output."""
@@ -463,10 +471,9 @@ class TestWorkflowSpanAttributes:
         )
         attrs = build_span_attributes(workflow_span)
 
-        assert [document["content"] for document in json.loads(attrs["gen_ai.output.messages"])] == [
-            "doc1 content",
-            "doc2 content",
-        ]
+        output = json.loads(attrs["gen_ai.output.messages"])
+        documents = json.loads(output[0]["parts"][0]["content"])
+        assert [document["content"] for document in documents] == ["doc1 content", "doc2 content"]
 
     def test_workflow_span_with_none_output(self):
         """Test WorkflowSpan with None output (should not set output attribute)."""
@@ -474,7 +481,9 @@ class TestWorkflowSpanAttributes:
         workflow_span = WorkflowSpan(name="test-workflow", input="input text", output=None, status_code=200)
         attrs = build_span_attributes(workflow_span)
 
-        assert attrs["gen_ai.input.messages"] == "input text"
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "input text"}]}
+        ]
         assert "gen_ai.output.messages" not in attrs
 
     def test_workflow_span_in_start_splunk_ao_span(self):
