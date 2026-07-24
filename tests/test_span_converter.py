@@ -84,7 +84,6 @@ def supported_spans() -> list[tuple[BaseStep, str, SpanKind]]:
             "invoke_agent planner",
             SpanKind.INTERNAL,
         ),
-        (Trace(name="travel", input="request", output="plan", created_at=CREATED_AT), "travel", SpanKind.INTERNAL),
         (
             ControlSpan(
                 name="guardrail",
@@ -130,6 +129,11 @@ def test_missing_optional_name_parts_do_not_leave_whitespace(span: BaseStep, exp
 def test_unsupported_step_types_fail_clearly(span: BaseStep) -> None:
     with pytest.raises(TypeError, match="Unsupported step type"):
         convert(span)
+
+
+def test_trace_envelope_is_not_convertible() -> None:
+    with pytest.raises(TypeError, match="LoggedTrace is a trace envelope"):
+        convert(Trace(name="root", input="question"))
 
 
 def test_converter_calls_shared_attribute_builder_once(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -193,7 +197,7 @@ def test_context_parent_flags_and_trace_state_are_preserved() -> None:
 
 
 def test_root_span_has_no_parent() -> None:
-    assert convert(Trace(name="root", input="question")).parent is None
+    assert convert(LlmSpan(input="question")).parent is None
 
 
 def test_deep_parent_chain_uses_only_preassigned_contexts() -> None:

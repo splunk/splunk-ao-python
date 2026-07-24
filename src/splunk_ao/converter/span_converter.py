@@ -23,7 +23,6 @@ _NAME_PARTS: dict[StepType, tuple[str, str]] = {
     StepType.retriever: ("retrieval", "name"),
     StepType.workflow: ("invoke_workflow", "name"),
     StepType.agent: ("invoke_agent", "name"),
-    StepType.trace: ("", "name"),
     StepType.control: ("", "name"),
 }
 
@@ -39,6 +38,8 @@ def _step_type(span: BaseStep) -> StepType:
     except (TypeError, ValueError) as exc:
         raise TypeError(f"Unsupported step type: {raw_type}") from exc
 
+    if step_type is StepType.trace:
+        raise TypeError("LoggedTrace is a trace envelope and cannot be converted")
     if step_type not in _NAME_PARTS:
         raise TypeError(f"Unsupported step type: {step_type.value}")
     return step_type
