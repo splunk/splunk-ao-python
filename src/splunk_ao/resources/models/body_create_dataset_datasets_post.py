@@ -57,6 +57,7 @@ class BodyCreateDatasetDatasetsPost:
             file = UNSET
         elif isinstance(self.file, File):
             file = self.file.to_tuple()
+
         else:
             file = self.file
 
@@ -199,7 +200,9 @@ class BodyCreateDatasetDatasetsPost:
             try:
                 if not isinstance(data, bytes):
                     raise TypeError()
-                return File(payload=BytesIO(data))
+                file_type_0 = File(payload=BytesIO(data))
+
+                return file_type_0
             except:  # noqa: E722
                 pass
             return cast(File | None | Unset, data)

@@ -16,10 +16,9 @@ T = TypeVar("T", bound="BodyCreateCodeScorerVersionScorersScorerIdVersionCodePos
 @_attrs_define
 class BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost:
     """
-    Attributes
-    ----------
+    Attributes:
         file (File):
-        validation_result (str): Pre-validated result as JSON string from the validate endpoint.
+        validation_result (str): Pre-validated result as JSON string from the validate endpoint
     """
 
     file: File

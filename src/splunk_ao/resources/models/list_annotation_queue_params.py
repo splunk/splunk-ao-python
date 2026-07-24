@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -34,48 +36,45 @@ T = TypeVar("T", bound="ListAnnotationQueueParams")
 @_attrs_define
 class ListAnnotationQueueParams:
     """
-    Attributes
-    ----------
-        filters (Union[Unset, list[Union['AnnotationQueueCreatedAtFilter', 'AnnotationQueueIDFilter',
-            'AnnotationQueueNameFilter', 'AnnotationQueueNumAnnotatorsFilter', 'AnnotationQueueNumLogRecordsFilter',
-            'AnnotationQueueNumTemplatesFilter', 'AnnotationQueueNumUsersFilter', 'AnnotationQueueOverallProgressFilter',
-            'AnnotationQueueProjectFilter', 'AnnotationQueueUpdatedAtFilter']]]):
-        sort (Union['AnnotationQueueCreatedAtSort', 'AnnotationQueueCreatedBySort', 'AnnotationQueueNameSort',
-            'AnnotationQueueNumAnnotatorsSort', 'AnnotationQueueNumLogRecordsSort', 'AnnotationQueueNumTemplatesSort',
-            'AnnotationQueueNumUsersSort', 'AnnotationQueueOverallProgressSort', 'AnnotationQueueUpdatedAtSort', None,
-            Unset]):  Default: None.
+    Attributes:
+        filters (list[AnnotationQueueCreatedAtFilter | AnnotationQueueIDFilter | AnnotationQueueNameFilter |
+            AnnotationQueueNumAnnotatorsFilter | AnnotationQueueNumLogRecordsFilter | AnnotationQueueNumTemplatesFilter |
+            AnnotationQueueNumUsersFilter | AnnotationQueueOverallProgressFilter | AnnotationQueueProjectFilter |
+            AnnotationQueueUpdatedAtFilter] | Unset):
+        sort (AnnotationQueueCreatedAtSort | AnnotationQueueCreatedBySort | AnnotationQueueNameSort |
+            AnnotationQueueNumAnnotatorsSort | AnnotationQueueNumLogRecordsSort | AnnotationQueueNumTemplatesSort |
+            AnnotationQueueNumUsersSort | AnnotationQueueOverallProgressSort | AnnotationQueueUpdatedAtSort | None | Unset):
+            Default: None.
     """
 
     filters: (
-        Unset
-        | list[
-            Union[
-                "AnnotationQueueCreatedAtFilter",
-                "AnnotationQueueIDFilter",
-                "AnnotationQueueNameFilter",
-                "AnnotationQueueNumAnnotatorsFilter",
-                "AnnotationQueueNumLogRecordsFilter",
-                "AnnotationQueueNumTemplatesFilter",
-                "AnnotationQueueNumUsersFilter",
-                "AnnotationQueueOverallProgressFilter",
-                "AnnotationQueueProjectFilter",
-                "AnnotationQueueUpdatedAtFilter",
-            ]
+        list[
+            AnnotationQueueCreatedAtFilter
+            | AnnotationQueueIDFilter
+            | AnnotationQueueNameFilter
+            | AnnotationQueueNumAnnotatorsFilter
+            | AnnotationQueueNumLogRecordsFilter
+            | AnnotationQueueNumTemplatesFilter
+            | AnnotationQueueNumUsersFilter
+            | AnnotationQueueOverallProgressFilter
+            | AnnotationQueueProjectFilter
+            | AnnotationQueueUpdatedAtFilter
         ]
+        | Unset
     ) = UNSET
-    sort: Union[
-        "AnnotationQueueCreatedAtSort",
-        "AnnotationQueueCreatedBySort",
-        "AnnotationQueueNameSort",
-        "AnnotationQueueNumAnnotatorsSort",
-        "AnnotationQueueNumLogRecordsSort",
-        "AnnotationQueueNumTemplatesSort",
-        "AnnotationQueueNumUsersSort",
-        "AnnotationQueueOverallProgressSort",
-        "AnnotationQueueUpdatedAtSort",
-        None,
-        Unset,
-    ] = None
+    sort: (
+        AnnotationQueueCreatedAtSort
+        | AnnotationQueueCreatedBySort
+        | AnnotationQueueNameSort
+        | AnnotationQueueNumAnnotatorsSort
+        | AnnotationQueueNumLogRecordsSort
+        | AnnotationQueueNumTemplatesSort
+        | AnnotationQueueNumUsersSort
+        | AnnotationQueueOverallProgressSort
+        | AnnotationQueueUpdatedAtSort
+        | None
+        | Unset
+    ) = None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -98,42 +97,54 @@ class ListAnnotationQueueParams:
         from ..models.annotation_queue_updated_at_filter import AnnotationQueueUpdatedAtFilter
         from ..models.annotation_queue_updated_at_sort import AnnotationQueueUpdatedAtSort
 
-        filters: Unset | list[dict[str, Any]] = UNSET
+        filters: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
             for filters_item_data in self.filters:
                 filters_item: dict[str, Any]
-                if isinstance(
-                    filters_item_data,
-                    AnnotationQueueIDFilter
-                    | AnnotationQueueNameFilter
-                    | AnnotationQueueProjectFilter
-                    | AnnotationQueueCreatedAtFilter
-                    | (AnnotationQueueUpdatedAtFilter | AnnotationQueueNumLogRecordsFilter)
-                    | AnnotationQueueNumAnnotatorsFilter
-                    | AnnotationQueueNumUsersFilter
-                    | AnnotationQueueOverallProgressFilter,
-                ):
+                if isinstance(filters_item_data, AnnotationQueueIDFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueNameFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueProjectFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueCreatedAtFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueUpdatedAtFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueNumLogRecordsFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueNumAnnotatorsFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueNumUsersFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, AnnotationQueueOverallProgressFilter):
                     filters_item = filters_item_data.to_dict()
                 else:
                     filters_item = filters_item_data.to_dict()
 
                 filters.append(filters_item)
 
-        sort: None | Unset | dict[str, Any]
+        sort: dict[str, Any] | None | Unset
         if isinstance(self.sort, Unset):
             sort = UNSET
-        elif isinstance(
-            self.sort,
-            AnnotationQueueNameSort
-            | AnnotationQueueCreatedAtSort
-            | AnnotationQueueUpdatedAtSort
-            | AnnotationQueueCreatedBySort
-            | (AnnotationQueueNumUsersSort | AnnotationQueueNumLogRecordsSort)
-            | AnnotationQueueNumTemplatesSort
-            | AnnotationQueueNumAnnotatorsSort
-            | AnnotationQueueOverallProgressSort,
-        ):
+        elif isinstance(self.sort, AnnotationQueueNameSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueCreatedAtSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueUpdatedAtSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueCreatedBySort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueNumUsersSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueNumLogRecordsSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueNumTemplatesSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueNumAnnotatorsSort):
+            sort = self.sort.to_dict()
+        elif isinstance(self.sort, AnnotationQueueOverallProgressSort):
             sort = self.sort.to_dict()
         else:
             sort = self.sort
@@ -171,110 +182,137 @@ class ListAnnotationQueueParams:
         from ..models.annotation_queue_updated_at_sort import AnnotationQueueUpdatedAtSort
 
         d = dict(src_dict)
-        filters = []
         _filters = d.pop("filters", UNSET)
-        for filters_item_data in _filters or []:
+        filters: (
+            list[
+                AnnotationQueueCreatedAtFilter
+                | AnnotationQueueIDFilter
+                | AnnotationQueueNameFilter
+                | AnnotationQueueNumAnnotatorsFilter
+                | AnnotationQueueNumLogRecordsFilter
+                | AnnotationQueueNumTemplatesFilter
+                | AnnotationQueueNumUsersFilter
+                | AnnotationQueueOverallProgressFilter
+                | AnnotationQueueProjectFilter
+                | AnnotationQueueUpdatedAtFilter
+            ]
+            | Unset
+        ) = UNSET
+        if _filters is not UNSET:
+            filters = []
+            for filters_item_data in _filters:
 
-            def _parse_filters_item(
-                data: object,
-            ) -> Union[
-                "AnnotationQueueCreatedAtFilter",
-                "AnnotationQueueIDFilter",
-                "AnnotationQueueNameFilter",
-                "AnnotationQueueNumAnnotatorsFilter",
-                "AnnotationQueueNumLogRecordsFilter",
-                "AnnotationQueueNumTemplatesFilter",
-                "AnnotationQueueNumUsersFilter",
-                "AnnotationQueueOverallProgressFilter",
-                "AnnotationQueueProjectFilter",
-                "AnnotationQueueUpdatedAtFilter",
-            ]:
-                try:
+                def _parse_filters_item(
+                    data: object,
+                ) -> (
+                    AnnotationQueueCreatedAtFilter
+                    | AnnotationQueueIDFilter
+                    | AnnotationQueueNameFilter
+                    | AnnotationQueueNumAnnotatorsFilter
+                    | AnnotationQueueNumLogRecordsFilter
+                    | AnnotationQueueNumTemplatesFilter
+                    | AnnotationQueueNumUsersFilter
+                    | AnnotationQueueOverallProgressFilter
+                    | AnnotationQueueProjectFilter
+                    | AnnotationQueueUpdatedAtFilter
+                ):
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_0 = AnnotationQueueIDFilter.from_dict(data)
+
+                        return filters_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_1 = AnnotationQueueNameFilter.from_dict(data)
+
+                        return filters_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_2 = AnnotationQueueProjectFilter.from_dict(data)
+
+                        return filters_item_type_2
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_3 = AnnotationQueueCreatedAtFilter.from_dict(data)
+
+                        return filters_item_type_3
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_4 = AnnotationQueueUpdatedAtFilter.from_dict(data)
+
+                        return filters_item_type_4
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_5 = AnnotationQueueNumLogRecordsFilter.from_dict(data)
+
+                        return filters_item_type_5
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_6 = AnnotationQueueNumAnnotatorsFilter.from_dict(data)
+
+                        return filters_item_type_6
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_7 = AnnotationQueueNumUsersFilter.from_dict(data)
+
+                        return filters_item_type_7
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_8 = AnnotationQueueOverallProgressFilter.from_dict(data)
+
+                        return filters_item_type_8
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    return AnnotationQueueIDFilter.from_dict(data)
+                    filters_item_type_9 = AnnotationQueueNumTemplatesFilter.from_dict(data)
 
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueNameFilter.from_dict(data)
+                    return filters_item_type_9
 
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueProjectFilter.from_dict(data)
+                filters_item = _parse_filters_item(filters_item_data)
 
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueCreatedAtFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueUpdatedAtFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueNumLogRecordsFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueNumAnnotatorsFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueNumUsersFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                try:
-                    if not isinstance(data, dict):
-                        raise TypeError()
-                    return AnnotationQueueOverallProgressFilter.from_dict(data)
-
-                except:  # noqa: E722
-                    pass
-                if not isinstance(data, dict):
-                    raise TypeError()
-                return AnnotationQueueNumTemplatesFilter.from_dict(data)
-
-            filters_item = _parse_filters_item(filters_item_data)
-
-            filters.append(filters_item)
+                filters.append(filters_item)
 
         def _parse_sort(
             data: object,
-        ) -> Union[
-            "AnnotationQueueCreatedAtSort",
-            "AnnotationQueueCreatedBySort",
-            "AnnotationQueueNameSort",
-            "AnnotationQueueNumAnnotatorsSort",
-            "AnnotationQueueNumLogRecordsSort",
-            "AnnotationQueueNumTemplatesSort",
-            "AnnotationQueueNumUsersSort",
-            "AnnotationQueueOverallProgressSort",
-            "AnnotationQueueUpdatedAtSort",
-            None,
-            Unset,
-        ]:
+        ) -> (
+            AnnotationQueueCreatedAtSort
+            | AnnotationQueueCreatedBySort
+            | AnnotationQueueNameSort
+            | AnnotationQueueNumAnnotatorsSort
+            | AnnotationQueueNumLogRecordsSort
+            | AnnotationQueueNumTemplatesSort
+            | AnnotationQueueNumUsersSort
+            | AnnotationQueueOverallProgressSort
+            | AnnotationQueueUpdatedAtSort
+            | None
+            | Unset
+        ):
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -282,80 +320,87 @@ class ListAnnotationQueueParams:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueNameSort.from_dict(data)
+                sort_type_0_type_0 = AnnotationQueueNameSort.from_dict(data)
 
+                return sort_type_0_type_0
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueCreatedAtSort.from_dict(data)
+                sort_type_0_type_1 = AnnotationQueueCreatedAtSort.from_dict(data)
 
+                return sort_type_0_type_1
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueUpdatedAtSort.from_dict(data)
+                sort_type_0_type_2 = AnnotationQueueUpdatedAtSort.from_dict(data)
 
+                return sort_type_0_type_2
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueCreatedBySort.from_dict(data)
+                sort_type_0_type_3 = AnnotationQueueCreatedBySort.from_dict(data)
 
+                return sort_type_0_type_3
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueNumUsersSort.from_dict(data)
+                sort_type_0_type_4 = AnnotationQueueNumUsersSort.from_dict(data)
 
+                return sort_type_0_type_4
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueNumLogRecordsSort.from_dict(data)
+                sort_type_0_type_5 = AnnotationQueueNumLogRecordsSort.from_dict(data)
 
+                return sort_type_0_type_5
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueNumTemplatesSort.from_dict(data)
+                sort_type_0_type_6 = AnnotationQueueNumTemplatesSort.from_dict(data)
 
+                return sort_type_0_type_6
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueNumAnnotatorsSort.from_dict(data)
+                sort_type_0_type_7 = AnnotationQueueNumAnnotatorsSort.from_dict(data)
 
+                return sort_type_0_type_7
             except:  # noqa: E722
                 pass
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                return AnnotationQueueOverallProgressSort.from_dict(data)
+                sort_type_0_type_8 = AnnotationQueueOverallProgressSort.from_dict(data)
 
+                return sort_type_0_type_8
             except:  # noqa: E722
                 pass
             return cast(
-                Union[
-                    "AnnotationQueueCreatedAtSort",
-                    "AnnotationQueueCreatedBySort",
-                    "AnnotationQueueNameSort",
-                    "AnnotationQueueNumAnnotatorsSort",
-                    "AnnotationQueueNumLogRecordsSort",
-                    "AnnotationQueueNumTemplatesSort",
-                    "AnnotationQueueNumUsersSort",
-                    "AnnotationQueueOverallProgressSort",
-                    "AnnotationQueueUpdatedAtSort",
-                    None,
-                    Unset,
-                ],
+                AnnotationQueueCreatedAtSort
+                | AnnotationQueueCreatedBySort
+                | AnnotationQueueNameSort
+                | AnnotationQueueNumAnnotatorsSort
+                | AnnotationQueueNumLogRecordsSort
+                | AnnotationQueueNumTemplatesSort
+                | AnnotationQueueNumUsersSort
+                | AnnotationQueueOverallProgressSort
+                | AnnotationQueueUpdatedAtSort
+                | None
+                | Unset,
                 data,
             )
 
