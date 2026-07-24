@@ -70,7 +70,7 @@ elasticsearch[vectorstore-mmr]==8.17.2
     #   langchain-elasticsearch
 fastavro==1.10.0
     # via cohere
-filelock==3.18.0
+filelock==3.20.1
     # via
     #   huggingface-hub
     #   transformers
