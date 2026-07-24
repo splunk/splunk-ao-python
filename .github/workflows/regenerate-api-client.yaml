@@ -38,10 +38,6 @@ jobs:
           pip install poetry==2.4.1
           poetry install --all-extras --with dev
 
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
-
       - name: Fetch API types and regenerate
         id: regenerate
         env:
