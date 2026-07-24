@@ -29,7 +29,7 @@ class TestSplunkAOAsyncCallback:
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
         setup_mock_logstreams_client(mock_logstreams_client)
-        return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+        return SplunkAOLogger(project="my_project", log_stream="my_log_stream", ingestion_hook=lambda _: None)
 
     @pytest.fixture
     def callback(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOAsyncCallback, None, None]:
@@ -47,7 +47,9 @@ class TestSplunkAOAsyncCallback:
         assert callback._handler._nodes == {}
 
         # Custom initialization
-        callback = SplunkAOAsyncCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOAsyncCallback(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
         assert callback._handler._start_new_trace is False
         assert callback._handler._flush_on_chain_end is False
 
@@ -662,7 +664,9 @@ class TestSplunkAOAsyncCallback:
         splunk_ao_logger.start_trace(input="test input")
 
         # Pass the active logger to the callback
-        callback = SplunkAOAsyncCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
+        callback = SplunkAOAsyncCallback(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
 
         # Start a chain (creates a workflow span)
         await callback._handler.async_start_node("chain", None, run_id, name="Test Chain", input='{"query": "test"}')
@@ -993,7 +997,7 @@ class TestSplunkAOAsyncCallback:
             )
 
             mock_start_node.assert_called_once()
-            args, kwargs = mock_start_node.call_args
+            args, _kwargs = mock_start_node.call_args
 
             # Verify UUIDs were converted to UUID4
             converted_parent_id = args[1]  # parent_run_id
@@ -1013,7 +1017,7 @@ class TestSplunkAOAsyncCallback:
             await callback.on_tool_error(error=Exception("test"), run_id=uuid7_run_id)
 
             mock_end_node.assert_called_once()
-            args, kwargs = mock_end_node.call_args
+            args, _kwargs = mock_end_node.call_args
 
             converted_run_id = args[0]  # run_id
             assert converted_run_id.version == 4

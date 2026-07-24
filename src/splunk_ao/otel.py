@@ -26,15 +26,7 @@ from splunk_ao.decorator import (
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter
-from splunk_ao.utils.env_helpers import (
-    _get_log_stream_from_env,
-    _get_log_stream_id_from_env,
-    _get_log_stream_or_default,
-    _get_project_from_env,
-    _get_project_id_from_env,
-    _get_project_or_default,
-)
+from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter, resolve_routing
 
 logger = logging.getLogger(__name__)
 
@@ -54,28 +46,6 @@ class TracerProvider(Protocol):
 _TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
 
 
-def _resolve_name_or_id(
-    explicit_name: str | None,
-    explicit_id: str | None,
-    context_name: str | None,
-    environment_name: str | None,
-    environment_id: str | None,
-    default_name: str | None,
-) -> tuple[str | None, str | None]:
-    """Resolve one immutable routing identity while preserving its supplied form."""
-    if explicit_name:
-        return explicit_name, None
-    if explicit_id:
-        return None, explicit_id
-    if context_name:
-        return context_name, None
-    if environment_name:
-        return environment_name, None
-    if environment_id:
-        return None, environment_id
-    return default_name, None
-
-
 def _resolve_routing(
     deployment: DeploymentMode,
     project: str | None,
@@ -85,29 +55,16 @@ def _resolve_routing(
     experiment_id: str | None,
 ) -> RoutingAttrs:
     """Capture routing once for one exporter without resolving names to IDs."""
-    standalone = deployment == DeploymentMode.STANDALONE
-    project_name, resolved_project_id = _resolve_name_or_id(
-        project,
-        project_id,
-        _project_context.get(None),
-        _get_project_from_env(),
-        _get_project_id_from_env(),
-        _get_project_or_default(None) if standalone else None,
-    )
-    log_stream_name, resolved_log_stream_id = _resolve_name_or_id(
-        logstream,
-        log_stream_id,
-        _log_stream_context.get(None),
-        _get_log_stream_from_env(),
-        _get_log_stream_id_from_env(),
-        _get_log_stream_or_default(None) if standalone else None,
-    )
-    return RoutingAttrs(
-        project_name=project_name,
-        project_id=resolved_project_id,
-        log_stream_name=log_stream_name,
-        log_stream_id=resolved_log_stream_id,
-        experiment_id=experiment_id or _experiment_id_context.get(None),
+    return resolve_routing(
+        deployment,
+        project=project,
+        project_id=project_id,
+        log_stream=logstream,
+        log_stream_id=log_stream_id,
+        experiment_id=experiment_id,
+        context_project=_project_context.get(None),
+        context_log_stream=_log_stream_context.get(None),
+        context_experiment_id=_experiment_id_context.get(None),
     )
 
 

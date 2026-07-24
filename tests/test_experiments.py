@@ -55,7 +55,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 
 @pytest.fixture
-def reset_context(auto_use=True) -> None:
+def reset_context(legacy_logger_capture) -> None:
     splunk_ao_context.reset()
     os.environ.pop("SPLUNK_AO_PROJECT", None)
     os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
@@ -814,19 +814,16 @@ class TestExperiments:
                         name="length",
                         scorer_fn=lambda step: len(step.input),
                         scorable_types=["workflow"],
-                        aggregator_fn=lambda lengths: sum(lengths),
+                        aggregator_fn=sum,
                     ),
                     LocalMetricConfig[str](
                         name="output",
                         scorer_fn=lambda step: step.output,
                         scorable_types=["workflow"],
-                        aggregator_fn=lambda outputs: ",".join(outputs),
+                        aggregator_fn=",".join,
                     ),
                     LocalMetricConfig[float](
-                        name="decimal",
-                        scorer_fn=lambda step: 4.53,
-                        scorable_types=["workflow"],
-                        aggregator_fn=lambda values: mean(values),
+                        name="decimal", scorer_fn=lambda step: 4.53, scorable_types=["workflow"], aggregator_fn=mean
                     ),
                     LocalMetricConfig[bool](
                         name="bool",
@@ -845,14 +842,10 @@ class TestExperiments:
                 complex_trace_function,
                 [
                     LocalMetricConfig[int](
-                        name="length",
-                        scorer_fn=lambda step: len(step.input[0].content),
-                        aggregator_fn=lambda lengths: sum(lengths),
+                        name="length", scorer_fn=lambda step: len(step.input[0].content), aggregator_fn=sum
                     ),
                     LocalMetricConfig[str](
-                        name="output",
-                        scorer_fn=lambda step: step.output.content,
-                        aggregator_fn=lambda outputs: ",".join(outputs),
+                        name="output", scorer_fn=lambda step: step.output.content, aggregator_fn=",".join
                     ),
                 ],
                 2,
@@ -1193,9 +1186,9 @@ class TestExperiments:
         # Return dataset_content on first call (starting_token=0), then None to signal end of pagination
         mock_get_dataset_instance = mock_get_dataset.return_value
         mock_get_dataset_instance.get_content = MagicMock(
-            side_effect=lambda starting_token=0, limit=1000: dataset_content_with_question
-            if starting_token == 0
-            else None
+            side_effect=lambda starting_token=0, limit=1000: (
+                dataset_content_with_question if starting_token == 0 else None
+            )
         )
 
         def runner(input) -> str:
@@ -1423,7 +1416,7 @@ class TestExperiments:
         from splunk_ao.utils.metrics import create_metric_configs
 
         scorers, local_scorers = create_metric_configs(
-            "project_id", "experiment_id", ["metric1", LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))]
+            "project_id", "experiment_id", ["metric1", LocalMetricConfig(name="length", scorer_fn=len)]
         )
         assert len(scorers) == 1  # Should return one valid scorer
         assert len(local_scorers) == 1  # Should return one local scorer
@@ -1483,7 +1476,7 @@ class TestExperiments:
         mock_scorers_instance.get_scorer_version.assert_called_once_with(scorer_id="3", version=2)
 
         # Test mixed input types
-        local_metric = LocalMetricConfig(name="length", scorer_fn=lambda x: len(x))
+        local_metric = LocalMetricConfig(name="length", scorer_fn=len)
 
         from splunk_ao.utils.metrics import create_metric_configs
 
@@ -1718,10 +1711,9 @@ class TestExperiments:
         def mock_get_content_paginated(starting_token=0, limit=1000):
             if starting_token == 0:
                 return page1_content
-            elif starting_token == 1000:
+            if starting_token == 1000:
                 return page2_content
-            else:
-                return None
+            return None
 
         mock_get_dataset_instance = mock_get_dataset.return_value
         mock_get_dataset_instance.get_content = MagicMock(side_effect=mock_get_content_paginated)

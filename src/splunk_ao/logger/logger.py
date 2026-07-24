@@ -11,7 +11,7 @@ from collections.abc import Callable
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 if TYPE_CHECKING:
     from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 import backoff
 from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
 from pydantic import PrivateAttr
@@ -41,7 +42,17 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.traces_logger import TracesLogger
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
+from splunk_ao.converter import SpanConverter
+from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig, resolve_deployment
 from splunk_ao.exceptions import SplunkAOLoggerException
+from splunk_ao.exporter import (
+    SpanSink,
+    build_o11y_exporter,
+    build_span_sink,
+    build_standalone_exporter,
+    resolve_routing,
+    routing_resource_attributes,
+)
 from splunk_ao.log_streams import LogStreams
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
@@ -82,19 +93,14 @@ from splunk_ao.utils.decorators import (
     retry_on_transient_http_error,
     warn_catch_exception,
 )
-from splunk_ao.utils.env_helpers import (
-    _get_log_stream_id_from_env,
-    _get_log_stream_or_default,
-    _get_mode_or_default,
-    _get_project_id_from_env,
-    _get_project_or_default,
-)
+from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.metrics import populate_local_metrics
 from splunk_ao.utils.retrievers import convert_to_documents
 from splunk_ao.utils.serialization import serialize_to_str
 
 # Type alias for metadata values that can be auto-converted to strings
 MetadataValue = str | bool | int | float | None
+StepT = TypeVar("StepT", bound=BaseStep)
 
 STREAMING_MAX_RETRIES = 5
 STREAMING_MAX_TIME_SECONDS = 70  # Maximum time to spend retrying a single request
@@ -222,6 +228,7 @@ class SplunkAOLogger(TracesLogger):
     _task_handler: ThreadPoolTaskHandler
     _trace_completion_submitted: bool
     _otel_ids: dict[uuid.UUID, OtelIds] = PrivateAttr(default_factory=dict)
+    _pending_otel_steps: set[uuid.UUID] = PrivateAttr(default_factory=set)
 
     def __init__(
         self,
@@ -235,6 +242,8 @@ class SplunkAOLogger(TracesLogger):
         local_metrics: list[LocalMetricConfig] | None = None,
         mode: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
+        *,
+        _sink: SpanSink | None = None,
     ) -> None:
         """
         Initializes the logger.
@@ -280,6 +289,9 @@ class SplunkAOLogger(TracesLogger):
         mode = _get_mode_or_default(mode)
         self.mode: LoggerModeType = mode
         self._task_counter = 0
+        self._terminated = False
+        self._traces_client = None
+        self._pending_otel_steps = set()
 
         self._ingestion_hook = ingestion_hook
         if self._ingestion_hook and self.mode == "distributed":
@@ -289,19 +301,15 @@ class SplunkAOLogger(TracesLogger):
         # The user's hook handles all trace flushing, so no Galileo credentials are needed
         if ingestion_hook:
             self.project_name = project
+            self.project_id = project_id
             self.log_stream_name = log_stream
+            self.log_stream_id = log_stream_id
+            self.experiment_id = experiment_id
             if local_metrics:
                 self.local_metrics = local_metrics
             atexit.register(self.terminate)
             self._auto_enable_agent_control_if_available()
             return
-
-        # Standard mode: validate credentials and connect to Galileo backend
-        project_name_from_env = _get_project_or_default(None)
-        log_stream_name_from_env = _get_log_stream_or_default(None)
-
-        project_id_from_env = _get_project_id_from_env()
-        log_stream_id_from_env = _get_log_stream_id_from_env()
 
         if trace_id or span_id:
             if self.mode != "distributed":
@@ -328,31 +336,37 @@ class SplunkAOLogger(TracesLogger):
             self.trace_id = trace_id
             self.span_id = span_id
 
-        self.project_name = project or project_name_from_env
-        self.project_id = project_id or project_id_from_env
+        if (log_stream or log_stream_id) and experiment_id:
+            raise SplunkAOLoggerException("User cannot specify both a log stream and an experiment.")
 
-        # When using ingestion_hook, API configuration is optional (hook handles ingestion)
-        if not self._ingestion_hook:
+        self._deployment = resolve_deployment()
+        try:
+            routing = resolve_routing(
+                self._deployment,
+                project=project,
+                project_id=project_id,
+                log_stream=log_stream,
+                log_stream_id=log_stream_id,
+                experiment_id=experiment_id,
+            )
+        except ValueError as exc:
+            raise SplunkAOLoggerException(str(exc)) from exc
+
+        self._routing = routing
+        self.project_name = routing.project_name
+        self.project_id = routing.project_id
+        self.experiment_id = routing.experiment_id
+        if self.experiment_id is None:
+            self.log_stream_name = routing.log_stream_name
+            self.log_stream_id = routing.log_stream_id
+
+        if self._deployment == DeploymentMode.STANDALONE:
             if self.project_name is None and self.project_id is None:
                 raise SplunkAOLoggerException(
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
-
-        if (log_stream or log_stream_id) and experiment_id:
-            raise SplunkAOLoggerException("User cannot specify both a log stream and an experiment.")
-
-        if experiment_id:
-            self.experiment_id = experiment_id
-        else:
-            self.log_stream_name = log_stream or log_stream_name_from_env
-            self.log_stream_id = log_stream_id or log_stream_id_from_env
-
-            # When using ingestion_hook, log_stream is optional (hook handles ingestion)
-            if not self._ingestion_hook:
-                if self.log_stream_name is None and self.log_stream_id is None:
-                    raise SplunkAOLoggerException(
-                        "log_stream or log_stream_id is required to initialize SplunkAOLogger."
-                    )
+            if self.experiment_id is None and self.log_stream_name is None and self.log_stream_id is None:
+                raise SplunkAOLoggerException("log_stream or log_stream_id is required to initialize SplunkAOLogger.")
 
         if local_metrics:
             self.local_metrics = local_metrics
@@ -363,8 +377,7 @@ class SplunkAOLogger(TracesLogger):
             self._task_handler = ThreadPoolTaskHandler()
             self._trace_completion_submitted = False
 
-        # When using ingestion_hook, skip API initialization (hook handles ingestion)
-        if not self._ingestion_hook:
+        if self._deployment == DeploymentMode.STANDALONE:
             if not self.project_id:
                 self._init_project()
 
@@ -372,10 +385,17 @@ class SplunkAOLogger(TracesLogger):
                 self._init_log_stream()
 
             self._traces_client = self._create_traces_client()
+        elif self.project_id and (self.log_stream_id or self.experiment_id):
+            self._traces_client = self._create_traces_client()
+
+        self._resource = Resource(routing_resource_attributes(routing))
+        self._converter = SpanConverter()
+        if _sink is not None:
+            self._sink = _sink
+        elif self._deployment == DeploymentMode.O11Y:
+            self._sink = build_span_sink(build_o11y_exporter(O11yConfig.from_env(), routing))
         else:
-            # ingestion_hook path: Traces client not created eagerly.
-            # If the user later calls ingest_traces(), it will be created lazily.
-            self._traces_client = None
+            self._sink = build_span_sink(build_standalone_exporter(StandaloneConfig.from_env(), routing))
 
         # If continuing an existing distributed trace, create local stubs instead of
         # fetching from the backend to avoid race conditions with eventual consistency.
@@ -559,6 +579,65 @@ class SplunkAOLogger(TracesLogger):
                 exc_info=True,
             )
 
+    def _emit_and_release(self, finished_step: BaseStep) -> None:
+        """Convert and enqueue one completed step, then release its stable identity."""
+        ids = self._otel_ids.get(finished_step.id)
+        if ids is None:
+            return
+
+        try:
+            self._sink.emit(
+                self._converter.convert_span(
+                    span=finished_step,
+                    span_context=ids.span_context,
+                    parent_span_context=ids.parent_span_context,
+                    session_id=self.session_id,
+                    resource=self._resource,
+                )
+            )
+        except Exception:
+            self._logger.warning("Failed to emit completed step %s.", finished_step.id, exc_info=True)
+        finally:
+            self._pending_otel_steps.discard(finished_step.id)
+            self._otel_ids.pop(finished_step.id, None)
+
+    def _emit_pending_descendants(self, finished_step: BaseStep) -> None:
+        """Emit pending descendants in post-order before their enclosing parent."""
+        if not isinstance(finished_step, StepWithChildSpans):
+            return
+
+        for child in finished_step.spans:
+            self._emit_pending_descendants(child)
+            if child.id in self._pending_otel_steps:
+                self._emit_and_release(child)
+
+    def _complete_step(self, finished_step: BaseStep) -> None:
+        """Coordinate completion for hook or OTLP egress without double dispatch."""
+        if self._ingestion_hook:
+            self._release_otel_context(finished_step)
+            return
+
+        self._emit_pending_descendants(finished_step)
+        self._emit_and_release(finished_step)
+        if isinstance(finished_step, Trace):
+            self.traces = [trace for trace in getattr(self, "traces", []) if trace is not finished_step]
+
+    def _add_completed_leaf(self, span: StepT, parent: BaseStep | None = None) -> StepT:
+        """Attach a complete leaf and route it through the shared completion coordinator."""
+        if parent is None:
+            parent = self.current_parent()
+        span._parent = parent
+        self.add_child_span_to_parent(span)
+        self._record_otel_ids(span, parent_step=parent)
+        if not self._ingestion_hook:
+            self._emit_and_release(span)
+        return span
+
+    def _mark_potentially_parentable(self, span: BaseStep) -> None:
+        """Defer a tool or retriever until its parentability is unambiguous."""
+        if not self._ingestion_hook and span.id in self._otel_ids:
+            self._pending_otel_steps.add(span.id)
+
     def _current_span_id(self) -> uuid.UUID:
         """Return the current proprietary parent ID for internal lifecycle tests."""
         current_parent = self.current_parent()
@@ -625,6 +704,28 @@ class SplunkAOLogger(TracesLogger):
         if self.experiment_id:
             return Traces(project_id=self.project_id, experiment_id=self.experiment_id)
         raise SplunkAOLoggerException("Cannot create Traces client: no log_stream_id or experiment_id available.")
+
+    def _has_session_routing(self) -> bool:
+        """Return whether session CRUD has a complete destination identity."""
+        has_project = bool(self.project_id or self.project_name)
+        has_destination = bool(self.experiment_id or self.log_stream_id or self.log_stream_name)
+        return has_project and has_destination
+
+    def _ensure_session_crud_client(self) -> Traces:
+        """Resolve deferred routing IDs and return the cached session client."""
+        if self._traces_client is not None:
+            return self._traces_client
+        if not self._has_session_routing():
+            raise SplunkAOLoggerException(
+                "Session operations require a project and a log stream or experiment identity."
+            )
+
+        if not self.project_id:
+            self._init_project()
+        if not (self.log_stream_id or self.experiment_id):
+            self._init_log_stream()
+        self._traces_client = self._create_traces_client()
+        return self._traces_client
 
     def _init_distributed_trace_stubs(self) -> None:
         """
@@ -1259,17 +1360,7 @@ class SplunkAOLogger(TracesLogger):
             "external_id": external_id,
             "id": uuid.uuid4(),
         }
-        trace = self.add_trace(**kwargs)
-
-        if self.mode == "distributed":
-            self.traces = [trace]
-            # Reset parent tracking to just this trace (for distributed mode isolation)
-            trace._parent = None
-            self._set_current_parent(trace)
-            self._trace_completion_submitted = False
-            self._ingest_step_streaming(trace)
-
-        return trace
+        return self.add_trace(**kwargs)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -1439,11 +1530,12 @@ class SplunkAOLogger(TracesLogger):
         self._record_otel_ids(trace.spans[0], parent_step=trace)
         self._set_current_parent(None)
 
-        if self.mode == "distributed":
-            self.traces = [trace]
-            self._ingest_step_streaming(trace, is_complete=False)
-
-        self._release_otel_context(trace)
+        if self._ingestion_hook:
+            self._release_otel_context(trace)
+        else:
+            self._emit_and_release(trace.spans[0])
+            self._emit_and_release(trace)
+            self.traces = [logged_trace for logged_trace in self.traces if logged_trace is not trace]
         return trace
 
     @nop_sync
@@ -1577,13 +1669,7 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
-        self.add_child_span_to_parent(span)
-        self._record_otel_ids(span, parent_step=parent)
-
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
-
-        return span
+        return self._add_completed_leaf(span, parent=parent)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -1663,9 +1749,7 @@ class SplunkAOLogger(TracesLogger):
         parent = self.current_parent()
         span = super().add_retriever_span(**kwargs)
         self._record_otel_ids(span, parent_step=parent)
-
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
+        self._mark_potentially_parentable(span)
 
         return span
 
@@ -1754,9 +1838,7 @@ class SplunkAOLogger(TracesLogger):
         parent = self.current_parent()
         span = super().add_tool_span(**kwargs)
         self._record_otel_ids(span, parent_step=parent)
-
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
+        self._mark_potentially_parentable(span)
 
         return span
 
@@ -1768,8 +1850,6 @@ class SplunkAOLogger(TracesLogger):
         self._set_current_parent(span)
         if status_code is not None:
             span.status_code = status_code
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
         return span
 
     @nop_sync
@@ -2012,14 +2092,7 @@ class SplunkAOLogger(TracesLogger):
             span_kwargs["name"] = name
 
         span = LoggedControlSpan(**span_kwargs)
-        span._parent = current_parent
-        self.add_child_span_to_parent(span)
-        self._record_otel_ids(span, parent_step=current_parent)
-
-        if self.mode == "distributed":
-            self._ingest_step_streaming(span)
-
-        return span
+        return self._add_completed_leaf(span, parent=current_parent)
 
     @warn_catch_exception(exceptions=(Exception,))
     def _conclude(
@@ -2101,33 +2174,21 @@ class SplunkAOLogger(TracesLogger):
             finished_step, current_parent = self._conclude(
                 output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
             )
-            self._release_otel_context(finished_step)
-            if self.mode == "distributed":
-                # In distributed mode, conclude() marks the trace as complete immediately
-                # Batch mode keeps traces in memory and sends them all during flush()
-                self._update_step_streaming(finished_step, is_complete=True)
+            self._complete_step(finished_step)
         else:
-            # In distributed mode, wait for all span ingests to complete before concluding
-            # This prevents "Trace is marked as complete" errors for slow span ingests
-            if self.mode == "distributed":
-                self._wait_for_pending_span_ingests(timeout_seconds=DISTRIBUTED_FLUSH_TIMEOUT_SECONDS)
-
             current_parent = None
             while self.current_parent() is not None:
                 finished_step, current_parent = self._conclude(
                     output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
                 )
-                self._release_otel_context(finished_step)
-                if self.mode == "distributed":
-                    # Mark each concluded trace/span as complete
-                    self._update_step_streaming(finished_step, is_complete=True)
+                self._complete_step(finished_step)
 
         return current_parent
 
     @nop_sync
-    def flush(self, on_error: Callable[[Exception], None] | None = None) -> list[LoggedTrace]:
+    def flush(self, on_error: Callable[[Exception], None] | None = None) -> None:
         """
-        Upload all traces to Galileo.
+        Drain completed spans waiting in the batch processor.
 
         Parameters
         ----------
@@ -2137,21 +2198,17 @@ class SplunkAOLogger(TracesLogger):
             callback itself is protected: if it raises, the exception is logged as a warning.
             Defaults to None (swallow and log warning).
 
-        Returns
-        -------
-        list[LoggedTrace]
-            The list of uploaded traces.
+        Unconcluded steps are not converted or emitted. This method does not
+        shut down the processor; call ``terminate()`` during application teardown.
         """
         try:
-            try:
-                if self.mode == "distributed":
-                    return async_run(self._flush_distributed())
-                return async_run(self._flush_batch())
-            finally:
-                # Reset only the calling request in the main thread (async_run uses
-                # a thread pool). Other async contexts may still have open traces on
-                # this reusable logger, so their stable identities must be retained.
-                self.reset_parent_tracking()
+            if self._ingestion_hook:
+                async_run(self._flush_batch())
+                self._set_current_parent(None)
+                return
+
+            if not self._sink.force_flush():
+                raise RuntimeError("force_flush timed out; some spans may not have been exported")
         except Exception as e:
             if on_error is not None:
                 # Guard the callback so a buggy on_error never crashes the caller.
@@ -2165,27 +2222,17 @@ class SplunkAOLogger(TracesLogger):
                     self._logger.warning(f"on_error callback raised: {cb_exc}")
             else:
                 self._logger.warning(f"Ingestion error in flush: {e}")
-            return []
 
     @nop_async
     @async_warn_catch_exception(exceptions=(Exception,))
-    async def async_flush(self) -> list[LoggedTrace]:
-        """
-        Async upload all traces to Galileo.
+    async def async_flush(self) -> None:
+        """Drain completed spans without blocking the caller's event loop."""
+        if self._ingestion_hook:
+            await self._flush_batch()
+            return
 
-        Returns
-        -------
-        list[LoggedTrace]
-            The list of uploaded traces.
-        """
-        try:
-            if self.mode == "distributed":
-                return await self._flush_distributed()
-            return await self._flush_batch()
-        finally:
-            # Reset only the calling request. Other async contexts may still have
-            # open traces on this reusable logger.
-            self.reset_parent_tracking()
+        if not await asyncio.to_thread(self._sink.force_flush):
+            raise RuntimeError("force_flush timed out; some spans may not have been exported")
 
     @async_warn_catch_exception(exceptions=(Exception,))
     async def _wait_for_all_tasks_async(self, timeout_seconds: int) -> None:
@@ -2369,45 +2416,37 @@ class SplunkAOLogger(TracesLogger):
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
     def terminate(self) -> None:
-        """Terminate the logger and flush all traces to Galileo.
-
-        This is a lifecycle-end call. After ``terminate()`` returns the logger
-        instance must NOT be reused: in distributed mode the underlying
-        ``EventLoopThreadPool`` is stopped (its worker threads are joined), so
-        any subsequent call that submits a new task will hang silently. Create
-        a new ``SplunkAOLogger`` if you need to log again.
-
-        The wait for in-flight background tasks is bounded by
-        ``DEFAULT_TERMINATE_TIMEOUT_SECONDS``. After waiting (whether tasks
-        completed or the timeout fired) the underlying ``EventLoopThreadPool``
-        is stopped so its worker threads no longer hold the process open.
-        """
-        # Unregister the atexit handler first
+        """Drain completed spans, shut down owned resources, and discard unfinished state."""
+        if self._terminated:
+            return
+        self._terminated = True
         atexit.unregister(self.terminate)
 
         terminate_timeout_seconds = DEFAULT_TERMINATE_TIMEOUT_SECONDS
         start_time = time.time()
         try:
-            if self.mode == "distributed":
-                # Don't use flush() which calls async_run() - this causes event loop conflicts during shutdown
-                # when the main program uses asyncio.run(). Instead, handle cleanup synchronously.
-                self._auto_conclude_trace()
-                self._wait_for_all_tasks_sync(timeout_seconds=terminate_timeout_seconds)
-                self.traces = []
-                self._set_current_parent(None)
-                self._otel_ids.clear()
-            else:
-                # Batch mode: try flush() but don't fail if async_run has issues during shutdown
+            if self._ingestion_hook:
                 try:
-                    self.flush()
-                except RuntimeError as e:
-                    # Event loop might be closed during shutdown, log warning but don't crash
-                    self._logger.warning(f"Could not flush during terminate due to event loop shutdown: {e}")
+                    async_run(self._flush_batch())
+                except Exception as exc:
+                    self._logger.warning("SplunkAOLogger.terminate: hook flush failed: %s", exc)
+            else:
+                try:
+                    if not self._sink.force_flush():
+                        self._logger.warning("SplunkAOLogger.terminate: force_flush timed out")
+                except Exception as exc:
+                    self._logger.warning("SplunkAOLogger.terminate: drain failed: %s", exc)
                 finally:
-                    # terminate() invalidates the entire logger, unlike reusable
-                    # flush(), so no identity from another context may survive.
-                    self._otel_ids.clear()
+                    try:
+                        self._sink.shutdown()
+                    except Exception as exc:
+                        self._logger.warning("SplunkAOLogger.terminate: sink shutdown failed: %s", exc)
         finally:
+            self._set_current_parent(None)
+            self._otel_ids.clear()
+            self._pending_otel_steps.clear()
+            self.traces = []
+
             try:
                 self.disable_agent_control()
             except Exception as exc:
@@ -2445,7 +2484,6 @@ class SplunkAOLogger(TracesLogger):
                     terminate_timeout_seconds,
                 )
 
-    @async_warn_catch_exception(exceptions=(Exception,))
     async def _start_or_get_session_async(
         self,
         name: str | None = None,
@@ -2454,15 +2492,17 @@ class SplunkAOLogger(TracesLogger):
         metadata: dict[str, str] | None = None,
     ) -> str:
         self._session_external_id = external_id
-        if self._ingestion_hook and not hasattr(self, "_traces_client"):
+        if self._ingestion_hook:
             self.session_id = str(uuid.uuid4())
             self._logger.info("Session started: session_id=%s, external_id=%s", self.session_id, external_id)
             return self.session_id
 
+        traces_client = self._ensure_session_crud_client()
+
         if external_id and external_id.strip() != "":
             self._logger.info(f"Searching for session with external ID: {external_id} ...")
             try:
-                sessions = await self._traces_client.get_sessions(
+                sessions = await traces_client.get_sessions(
                     LogRecordsSearchRequest(
                         filters=[
                             LogRecordsSearchFilter(
@@ -2485,7 +2525,7 @@ class SplunkAOLogger(TracesLogger):
 
         self._logger.info("Starting a new session...")
 
-        session = await self._traces_client.create_session(
+        session = await traces_client.create_session(
             SessionCreateRequest(
                 name=name, previous_session_id=previous_session_id, external_id=external_id, user_metadata=metadata
             )
@@ -2496,7 +2536,6 @@ class SplunkAOLogger(TracesLogger):
         return self.session_id
 
     @nop_async
-    @async_warn_catch_exception(exceptions=(Exception,))
     async def async_start_session(
         self,
         name: str | None = None,
@@ -2534,7 +2573,6 @@ class SplunkAOLogger(TracesLogger):
         )
 
     @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
     def start_session(
         self,
         name: str | None = None,

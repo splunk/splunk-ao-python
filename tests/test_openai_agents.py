@@ -80,7 +80,7 @@ async def test_complex_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=lambda _: None)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -111,7 +111,11 @@ async def test_simple_agent(
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+
+    async def capture_payload(payload):
+        await mock_traces_client_instance.ingest_traces(payload)
+
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -209,7 +213,10 @@ async def test_pre_built_tools_multiple_types(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    async def capture_payload(payload):
+        await mock_traces_client_instance.ingest_traces(payload)
+
+    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")

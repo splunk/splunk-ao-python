@@ -8,14 +8,14 @@ from pydantic import BaseModel
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, splunk_ao_context, log, start_session
+from splunk_ao import Message, MessageRole, log, splunk_ao_context, start_session
 from splunk_ao.decorator import _session_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 @pytest.fixture
-def reset_context():
+def reset_context(legacy_logger_capture):
     splunk_ao_context.reset()
     yield
     splunk_ao_context.reset()

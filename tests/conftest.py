@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 # fmt: off
 # CRITICAL: Set test environment variables BEFORE any other imports.
 # This MUST be at the absolute top of conftest.py before any import statements.
@@ -39,6 +40,7 @@ from splunk_ao.logger import logger as _splunk_ao_logger_module
 
 _splunk_ao_logger_module.DEFAULT_TERMINATE_TIMEOUT_SECONDS = 2
 
+
 import datetime
 import logging
 import sys
@@ -50,6 +52,7 @@ from uuid import uuid4
 
 from httpx import Request
 from httpx import Response as HttpxResponse
+from opentelemetry import context as otel_context
 from test_support.config import fast_config_validation
 
 from galileo_core.constants.request_method import RequestMethod
@@ -59,9 +62,29 @@ from galileo_core.schemas.core.user_role import UserRole
 from splunk_ao.collaborator import CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration
+from splunk_ao.decorator import _mode_context
 from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
 from splunk_ao.resources.models.messages_list_item import MessagesListItem
+from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 from tests.testutils.setup import setup_thread_pool_request_capture
+
+
+class _TestSpanSink:
+    def __init__(self) -> None:
+        self.spans = []
+        self.force_flush_calls = 0
+        self.shutdown_calls = 0
+
+    def emit(self, span) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        self.shutdown_calls += 1
+
 
 # Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
 
@@ -114,11 +137,50 @@ def reset_agent_control_bridge_state() -> Generator[None, None, None]:
         bridge_module._PREVIOUS_TRACE_CONTEXT_PROVIDER = None
 
 
+def _clear_otel_test_context() -> None:
+    state_var = _splunk_ao_logger_module._otel_context_state
+    state = state_var.get()
+    if state is None:
+        return
+
+    detach_failed = False
+    for active in reversed(state.active_contexts):
+        try:
+            active.token.var.reset(active.token)
+        except (RuntimeError, ValueError):
+            detach_failed = True
+
+    if detach_failed:
+        otel_context.attach(state.base_context)
+    state_var.set(None)
+
+
+@pytest.fixture(autouse=True)
+def reset_otel_test_context() -> Generator[None, None, None]:
+    _clear_otel_test_context()
+    yield
+    _clear_otel_test_context()
+
+
 @pytest.fixture(autouse=True)
 def set_validated_config(
-    mock_healthcheck: None, mock_login_api_key: None, mock_get_current_user: None, mock_decode_jwt: MagicMock
+    mock_healthcheck: None,
+    mock_login_api_key: None,
+    mock_get_current_user: None,
+    mock_decode_jwt: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
+    SplunkAOLoggerSingleton().reset_all()
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")
+    monkeypatch.setenv("SPLUNK_AO_PROJECT", "test-project")
+    monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "test-log-stream")
+    monkeypatch.setenv("SPLUNK_AO_MODE", "batch")
+    _mode_context.set("batch")
+    monkeypatch.setattr(_splunk_ao_logger_module, "build_span_sink", lambda *args, **kwargs: _TestSpanSink())
     # Reset any existing config to ensure fresh initialization
     # This is needed for pytest-xdist compatibility on Python 3.14+
     if SplunkAOConfig._instance is not None:
@@ -129,7 +191,40 @@ def set_validated_config(
     with fast_config_validation():
         config = SplunkAOConfig.get(console_url="http://fake.test:8088", api_key="api-1234567890")
     yield
+    _mode_context.set("batch")
+    SplunkAOLoggerSingleton().reset_all()
     config.reset()
+
+
+@pytest.fixture
+def legacy_logger_capture(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    """Keep proprietary-payload tests on the temporary ingestion-hook path."""
+    singleton = SplunkAOLoggerSingleton()
+    original_get = singleton.get
+
+    async def capture_payload(request) -> None:
+        await _splunk_ao_logger_module.Traces.return_value.ingest_traces(request)
+
+    def get_with_legacy_capture(**kwargs):
+        logger = original_get(**kwargs)
+        if not hasattr(logger, "_test_start_session"):
+            original_start_session = logger._start_or_get_session_async
+
+            async def start_session_with_crud(*args, **session_kwargs):
+                hook = logger._ingestion_hook
+                logger._ingestion_hook = None
+                try:
+                    return await original_start_session(*args, **session_kwargs)
+                finally:
+                    logger._ingestion_hook = hook
+
+            logger._test_start_session = start_session_with_crud
+            logger._start_or_get_session_async = start_session_with_crud
+        logger._ingestion_hook = capture_payload
+        return logger
+
+    monkeypatch.setattr(singleton, "get", get_with_legacy_capture)
+    yield
 
 
 @pytest.fixture

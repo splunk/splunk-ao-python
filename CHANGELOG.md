@@ -3,6 +3,12 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- `SplunkAOLogger.flush()` and `async_flush()` now return `None` and only drain
+  completed spans already queued for OTLP export. They no longer conclude open
+  spans or return uploaded proprietary trace objects.
+
 ### Features
 
 - **New `generated_output` field**: Add `generated_output` field to `DatasetRecord` for storing model-generated outputs separately from ground truth. This allows you to track both the expected output (ground truth) and the actual model output in the same dataset record. In the UI, this field is displayed as "Generated Output".

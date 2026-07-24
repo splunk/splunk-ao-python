@@ -5,6 +5,7 @@ from splunk_ao.exporter.config import (
     RoutingAttrs,
     build_exporter,
     resolve_exporter_config,
+    resolve_routing,
     routing_resource_attributes,
 )
 from splunk_ao.exporter.o11y import build_o11y_exporter, resolve_o11y_exporter_config
@@ -23,6 +24,7 @@ __all__ = [
     "build_standalone_exporter",
     "resolve_exporter_config",
     "resolve_o11y_exporter_config",
+    "resolve_routing",
     "resolve_standalone_exporter_config",
     "routing_resource_attributes",
 ]

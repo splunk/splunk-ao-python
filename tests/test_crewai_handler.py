@@ -90,7 +90,7 @@ def mock_splunk_ao_logger():
 
         from splunk_ao.logger.logger import SplunkAOLogger
 
-        return SplunkAOLogger(project="test_project", log_stream="test_log_stream")
+        return SplunkAOLogger(project="test_project", log_stream="test_log_stream", ingestion_hook=lambda _: None)
 
 
 @pytest.fixture
@@ -210,7 +210,7 @@ def test_extract_metadata(crewai_callback) -> None:
     assert metadata["key2"] == "value2"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_crew_kickoff_started(crewai_callback, generated_id) -> None:
     """Test crew kickoff started event handling."""
     crew_id = generated_id()
@@ -228,7 +228,7 @@ def test_crew_kickoff_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["name"] == "Test Crew"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_crew_kickoff_started_empty_inputs(crewai_callback, generated_id) -> None:
     """Test crew kickoff started event handling."""
     crew_id = generated_id()
@@ -247,7 +247,7 @@ def test_crew_kickoff_started_empty_inputs(crewai_callback, generated_id) -> Non
         assert call_args[1]["input"] == "-"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_crew_kickoff_completed(crewai_callback, generated_id) -> None:
     """Test crew kickoff completed event handling."""
     crew_id = generated_id()
@@ -265,7 +265,7 @@ def test_crew_kickoff_completed(crewai_callback, generated_id) -> None:
         mock_end_node.assert_called_once_with(run_id=crew_id, output="Crew completed successfully")
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_crew_kickoff_failed(crewai_callback, generated_id) -> None:
     """Test crew kickoff failed event handling."""
     crew_id = generated_id()
@@ -282,7 +282,7 @@ def test_crew_kickoff_failed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Something went wrong"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_agent_execution_started(crewai_callback, generated_id) -> None:
     """Test agent execution started event handling."""
     agent_id = generated_id()
@@ -305,7 +305,7 @@ def test_agent_execution_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == "Research the topic"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_agent_execution_started_no_input(crewai_callback, generated_id) -> None:
     """Test agent execution started event handling."""
     agent_id = generated_id()
@@ -328,7 +328,7 @@ def test_agent_execution_started_no_input(crewai_callback, generated_id) -> None
         assert call_args[1]["input"] == "-"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_agent_execution_completed(crewai_callback, generated_id) -> None:
     """Test agent execution completed event handling."""
     agent_id = generated_id()
@@ -341,7 +341,7 @@ def test_agent_execution_completed(crewai_callback, generated_id) -> None:
         mock_end_node.assert_called_once_with(run_id=agent_id, output="Agent task completed")
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_agent_execution_error(crewai_callback, generated_id) -> None:
     """Test agent execution error event handling."""
     agent_id = generated_id()
@@ -358,7 +358,7 @@ def test_agent_execution_error(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Agent failed"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_task_started(crewai_callback, generated_id) -> None:
     """Test task started event handling."""
     task_id = generated_id()
@@ -381,7 +381,7 @@ def test_task_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == "Previous research context"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_task_started_no_context(crewai_callback, generated_id) -> None:
     """Test task started event handling."""
     task_id = generated_id()
@@ -404,7 +404,7 @@ def test_task_started_no_context(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == task.description
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_task_started_no_description(crewai_callback, generated_id) -> None:
     """Test task started event handling."""
     task_id = generated_id()
@@ -427,7 +427,7 @@ def test_task_started_no_description(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == "-"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_task_completed(crewai_callback, generated_id) -> None:
     """Test task completed event handling."""
     task_id = generated_id()
@@ -441,7 +441,7 @@ def test_task_completed(crewai_callback, generated_id) -> None:
         mock_end_node.assert_called_once_with(run_id=task_id, output="Task completed successfully")
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_task_failed(crewai_callback, generated_id) -> None:
     """Test task failed event handling."""
     task_id = generated_id()
@@ -457,7 +457,7 @@ def test_task_failed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Task execution failed"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_tool_usage_started(crewai_callback, generated_id) -> None:
     """Test tool usage started event handling."""
     tool_id = generated_id()
@@ -477,7 +477,7 @@ def test_tool_usage_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["name"] == "search_tool"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_tool_usage_started_no_input(crewai_callback, generated_id) -> None:
     """Test tool usage started event handling."""
     tool_id = generated_id()
@@ -499,7 +499,7 @@ def test_tool_usage_started_no_input(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == "-"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_tool_usage_finished(crewai_callback, generated_id) -> None:
     """Test tool usage finished event handling."""
     tool_id = generated_id()
@@ -512,7 +512,7 @@ def test_tool_usage_finished(crewai_callback, generated_id) -> None:
         mock_end_node.assert_called_once_with(run_id=tool_id, output="Tool execution completed")
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_tool_usage_error(crewai_callback, generated_id) -> None:
     """Test tool usage error event handling."""
     tool_id = generated_id()
@@ -529,7 +529,7 @@ def test_tool_usage_error(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Tool execution failed"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_llm_call_started(crewai_callback, generated_id) -> None:
     """Test LLM call started event handling."""
     llm_id = generated_id()
@@ -548,7 +548,7 @@ def test_llm_call_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["temperature"] == 0.7
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_llm_call_completed(crewai_callback, generated_id) -> None:
     """Test LLM call completed event handling."""
     llm_id = generated_id()
@@ -608,7 +608,7 @@ def test_llm_call_completed_extracts_token_usage_from_source(crewai_callback) ->
     # Given: a response with no usage, but source carries _token_usage as a dict
     llm_id = uuid.uuid4()
     source = MockSource(id=llm_id, _token_usage={"prompt_tokens": 80, "completion_tokens": 20, "total_tokens": 100})
-    mock_response = Mock(spec=[], **{"usage": None})
+    mock_response = Mock(spec=[], usage=None)
     mock_response.model_extra = {}
     event = MockEvent(response=mock_response)
 
@@ -623,7 +623,7 @@ def test_llm_call_completed_extracts_token_usage_from_source(crewai_callback) ->
         assert call_args["total_tokens"] == 100
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_llm_call_failed(crewai_callback, generated_id) -> None:
     """Test LLM call failed event handling."""
     llm_id = generated_id()
@@ -723,7 +723,7 @@ def test_lite_llm_usage_callback_no_node(crewai_callback) -> None:
 # Memory event tests (for CrewAI >= 0.177.0)
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_query_started(crewai_callback, generated_id) -> None:
     """Test memory query started event handling."""
     query_id = generated_id()
@@ -755,7 +755,7 @@ def test_memory_query_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["agent_role"] == "Research Agent"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_query_completed(crewai_callback, generated_id) -> None:
     """Test memory query completed event handling."""
     query_id = generated_id()
@@ -774,7 +774,7 @@ def test_memory_query_completed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["results_count"] == 2
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_query_failed(crewai_callback, generated_id) -> None:
     """Test memory query failed event handling."""
     query_id = generated_id()
@@ -792,7 +792,7 @@ def test_memory_query_failed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Connection timeout"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_save_started(crewai_callback, generated_id) -> None:
     """Test memory save started event handling."""
     save_id = generated_id()
@@ -820,7 +820,7 @@ def test_memory_save_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["agent_role"] == "Research Agent"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_save_started_no_value(crewai_callback, generated_id) -> None:
     """Test memory save started event handling with no value."""
     save_id = generated_id()
@@ -835,7 +835,7 @@ def test_memory_save_started_no_value(crewai_callback, generated_id) -> None:
         assert call_args[1]["input"] == "Memory content"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_save_completed(crewai_callback, generated_id) -> None:
     """Test memory save completed event handling."""
     save_id = generated_id()
@@ -852,7 +852,7 @@ def test_memory_save_completed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["save_time_ms"] == 75.2
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_save_failed(crewai_callback, generated_id) -> None:
     """Test memory save failed event handling."""
     save_id = generated_id()
@@ -869,7 +869,7 @@ def test_memory_save_failed(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["error"] == "Storage full"
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_retrieval_started(crewai_callback, generated_id) -> None:
     """Test memory retrieval started event handling."""
     retrieval_id = generated_id()
@@ -892,7 +892,7 @@ def test_memory_retrieval_started(crewai_callback, generated_id) -> None:
         assert call_args[1]["metadata"]["task_id"] == task_id
 
 
-@pytest.mark.parametrize("generated_id", [lambda: uuid.uuid4(), lambda: str(uuid.uuid4())])
+@pytest.mark.parametrize("generated_id", [uuid.uuid4, lambda: str(uuid.uuid4())])
 def test_memory_retrieval_completed(crewai_callback, generated_id) -> None:
     """Test memory retrieval completed event handling."""
     retrieval_id = generated_id()

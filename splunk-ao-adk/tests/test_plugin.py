@@ -1,6 +1,6 @@
 """Integration tests for SplunkAOADKPlugin."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -45,33 +45,27 @@ class TestSplunkAOADKPluginInit:
         assert plugin._observer._trace_builder is not None
         assert plugin._observer._trace_builder._ingestion_hook is not None
 
-    def test_init_requires_project_and_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Plugin raises error when neither project/log_stream nor hook provided."""
-        # Given: SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars are not set
-        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
-
-        # When/Then: creating plugin without project or log_stream raises an error
-        with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
+    def test_init_delegates_missing_routing_to_core_logger(self) -> None:
+        with patch("splunk_ao_adk.observer.splunk_ao_context") as mock_context:
             SplunkAOADKPlugin()
 
-    def test_init_requires_log_stream(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Plugin raises error when project is provided but log_stream is not."""
-        # Given: SPLUNK_AO_LOG_STREAM env var is not set
-        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        mock_context.get_logger_instance.assert_called_once_with(
+            project=None,
+            project_id=None,
+            log_stream=None,
+            log_stream_id=None,
+        )
 
-        # When/Then: creating plugin with project but no log_stream raises an error
-        with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
-            SplunkAOADKPlugin(project="my-project")
+    def test_init_forwards_id_routing(self) -> None:
+        with patch("splunk_ao_adk.observer.splunk_ao_context") as mock_context:
+            SplunkAOADKPlugin(project_id="project-id", log_stream_id="stream-id")
 
-    def test_init_requires_project(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Plugin raises error when log_stream is provided but project is not."""
-        # Given: SPLUNK_AO_PROJECT env var is not set
-        monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-
-        # When/Then: creating plugin with log_stream but no project raises an error
-        with pytest.raises(ValueError, match="Both 'project' and 'log_stream' must be provided"):
-            SplunkAOADKPlugin(log_stream="my-stream")
+        mock_context.get_logger_instance.assert_called_once_with(
+            project=None,
+            project_id="project-id",
+            log_stream=None,
+            log_stream_id="stream-id",
+        )
 
 
 class TestSplunkAOADKPluginCallbacks:
