@@ -348,7 +348,7 @@ protobuf==5.29.3
     #   proto-plus
 psutil==7.0.0
     # via opentelemetry-instrumentation-system-metrics
-pyasn1==0.6.1
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   rsa
