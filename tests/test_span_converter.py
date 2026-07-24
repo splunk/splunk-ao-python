@@ -262,18 +262,14 @@ def test_status_code_maps_to_otel_status(status_code: int | None, expected: Stat
     result = convert(ToolSpan(name="tool", status_code=status_code))
 
     assert result.status.status_code is expected
-    assert result.status.description in (None, "")
+    assert result.status.description is None
 
 
-class ToolSpanWithException(ToolSpan):
-    exception: str | None = None
-
-
-def test_exception_sets_error_status_and_description() -> None:
-    result = convert(ToolSpanWithException(name="tool", exception="tool failed"))
+def test_error_output_is_not_inferred_as_status_description() -> None:
+    result = convert(ToolSpan(name="tool", output="Error: tool failed", status_code=500))
 
     assert result.status.status_code is StatusCode.ERROR
-    assert result.status.description == "tool failed"
+    assert result.status.description is None
 
 
 def test_readable_span_has_empty_events_links_and_versioned_scope() -> None:

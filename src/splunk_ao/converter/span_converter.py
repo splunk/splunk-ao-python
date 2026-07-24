@@ -59,11 +59,10 @@ def _to_unix_ns(value: datetime) -> int:
 
 
 def _span_status(span: BaseStep) -> Status:
-    exception = getattr(span, "exception", None)
-    status_code = getattr(span, "status_code", None)
-    if exception is None and (status_code is None or status_code < 400):
+    status_code = span.status_code
+    if status_code is None or status_code < 400:
         return Status(StatusCode.UNSET)
-    return Status(StatusCode.ERROR, str(exception) if exception is not None else "")
+    return Status(StatusCode.ERROR)
 
 
 def _end_time_ns(span: BaseStep, start_time_ns: int, end_time_ns: int | None) -> int:
