@@ -1,3 +1,4 @@
+import json
 from collections.abc import Generator
 from unittest.mock import Mock, patch
 
@@ -90,7 +91,9 @@ def test_completed_workflow_is_enqueued_and_flush_does_not_complete_root(
     assert len(emitted) == 1
     attrs = emitted[0].attributes or {}
     assert attrs["gen_ai.operation.name"] == "invoke_workflow"
-    assert attrs["gen_ai.output.messages"] == "output: test input"
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"finish_reason": "unknown", "parts": [{"content": "output: test input", "type": "text"}], "role": "assistant"}
+    ]
     assert emitted[0].end_time >= emitted[0].start_time
     root = logger.current_parent()
     assert root is not None
@@ -114,7 +117,9 @@ def test_workflow_empty_output_is_preserved(reset_context: None, distributed_cli
         return ""
 
     assert workflow() == ""
-    assert (logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"] == ""
+    assert json.loads((logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"]) == [
+        {"finish_reason": "unknown", "parts": [{"content": "", "type": "text"}], "role": "assistant"}
+    ]
     assert logger.current_parent().output == ""
 
 

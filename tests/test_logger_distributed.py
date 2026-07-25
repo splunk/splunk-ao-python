@@ -48,10 +48,10 @@ def test_distributed_mode_uses_otlp_completion_queue(distributed_logger: tuple[S
     logger.conclude(output="workflow answer")
     logger.conclude(output="answer")
 
-    llm_span, workflow_span, root_span = sink.spans
-    assert operation_names(sink.spans) == ["chat", "invoke_workflow", None]
+    llm_span, workflow_span = sink.spans
+    assert operation_names(sink.spans) == ["chat", "invoke_workflow"]
     assert llm_span.parent == workflow_span.context
-    assert workflow_span.parent == root_span.context
+    assert workflow_span.parent is None
     assert workflow.id not in logger._otel_ids
     assert root.id not in logger._otel_ids
     assert logger.traces == []
@@ -121,7 +121,7 @@ def test_distributed_conclude_all_emits_inner_to_outer(
 
     logger.conclude(output="answer", conclude_all=True)
 
-    assert operation_names(sink.spans) == ["chat", "invoke_agent", "invoke_workflow", None]
+    assert operation_names(sink.spans) == ["chat", "invoke_agent", "invoke_workflow"]
     assert len({span.context.trace_id for span in sink.spans if span.context is not None}) == 1
 
 

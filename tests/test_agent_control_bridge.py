@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import json
 import sys
 import types
 import uuid
@@ -357,7 +358,9 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     emitted = logger._sink.spans[0]
     assert emitted.parent == logger._otel_ids[workflow.id].span_context
     assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
-    assert (emitted.attributes or {})["gen_ai.input.messages"] == "selected text"
+    assert json.loads((emitted.attributes or {})["gen_ai.input.messages"]) == [
+        {"parts": [{"content": "selected text", "type": "text"}], "role": "user"}
+    ]
 
     # When: the logger drains in batch mode
     logger.flush()

@@ -306,6 +306,9 @@ class TestUpdateSessionIfChanged:
 
             assert observer.current_adk_session == "adk-session"
             assert logger._traces_client is None
-            assert sink.emit.call_count == 2
+            sink.emit.assert_called_once()
+            emitted = sink.emit.call_args.args[0]
+            assert (emitted.attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
+            assert emitted.parent is None
         finally:
             logger.terminate()

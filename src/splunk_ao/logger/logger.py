@@ -579,6 +579,21 @@ class SplunkAOLogger(TracesLogger):
                 exc_info=True,
             )
 
+    def _export_parent_context(self, step: BaseStep, ids: OtelIds) -> SpanContext | None:
+        """Return the real upstream parent, bypassing an internal trace envelope."""
+        parent = step._parent
+        if not isinstance(parent, Trace):
+            return ids.parent_span_context
+
+        trace_ids = self._otel_ids.get(parent.id)
+        if trace_ids is not None:
+            return trace_ids.parent_span_context
+
+        self._logger.warning(
+            "Missing OTel identity for trace envelope %s; exporting step %s as a root span.", parent.id, step.id
+        )
+        return None
+
     def _emit_and_release(self, finished_step: BaseStep) -> None:
         """Convert and enqueue one completed step, then release its stable identity."""
         ids = self._otel_ids.get(finished_step.id)
@@ -586,11 +601,14 @@ class SplunkAOLogger(TracesLogger):
             return
 
         try:
+            if isinstance(finished_step, Trace):
+                return
+
             self._sink.emit(
                 self._converter.convert_span(
                     span=finished_step,
                     span_context=ids.span_context,
-                    parent_span_context=ids.parent_span_context,
+                    parent_span_context=self._export_parent_context(finished_step, ids),
                     session_id=self.session_id,
                     resource=self._resource,
                 )
@@ -1497,34 +1515,34 @@ class SplunkAOLogger(TracesLogger):
             dataset_metadata=dataset_metadata if dataset_metadata is not None else {},
             id=uuid.uuid4(),
         )
-        trace.add_child_span(
-            LoggedLlmSpan(
-                name=name,
-                created_at=created_at,
-                user_metadata=metadata,
-                tags=tags,
-                input=input,
-                redacted_input=redacted_input,
-                output=output,
-                redacted_output=redacted_output,
-                metrics=LlmMetrics(
-                    duration_ns=duration_ns,
-                    num_input_tokens=num_input_tokens,
-                    num_output_tokens=num_output_tokens,
-                    num_total_tokens=total_tokens,
-                    time_to_first_token_ns=time_to_first_token_ns,
-                ),
-                tools=tools,
-                model=model,
-                temperature=temperature,
-                status_code=status_code,
-                dataset_input=dataset_input,
-                dataset_output=dataset_output,
-                dataset_metadata=dataset_metadata if dataset_metadata is not None else {},
-                id=uuid.uuid4(),
-                step_number=span_step_number,
-            )
+        llm_span = LoggedLlmSpan(
+            name=name,
+            created_at=created_at,
+            user_metadata=metadata,
+            tags=tags,
+            input=input,
+            redacted_input=redacted_input,
+            output=output,
+            redacted_output=redacted_output,
+            metrics=LlmMetrics(
+                duration_ns=duration_ns,
+                num_input_tokens=num_input_tokens,
+                num_output_tokens=num_output_tokens,
+                num_total_tokens=total_tokens,
+                time_to_first_token_ns=time_to_first_token_ns,
+            ),
+            tools=tools,
+            model=model,
+            temperature=temperature,
+            status_code=status_code,
+            dataset_input=dataset_input,
+            dataset_output=dataset_output,
+            dataset_metadata=dataset_metadata if dataset_metadata is not None else {},
+            id=uuid.uuid4(),
+            step_number=span_step_number,
         )
+        llm_span._parent = trace
+        trace.add_child_span(llm_span)
         self.traces.append(trace)
         self._record_otel_ids(trace)
         self._record_otel_ids(trace.spans[0], parent_step=trace)
@@ -1748,6 +1766,7 @@ class SplunkAOLogger(TracesLogger):
         }
         parent = self.current_parent()
         span = super().add_retriever_span(**kwargs)
+        span._parent = parent
         self._record_otel_ids(span, parent_step=parent)
         self._mark_potentially_parentable(span)
 
@@ -1837,6 +1856,7 @@ class SplunkAOLogger(TracesLogger):
         }
         parent = self.current_parent()
         span = super().add_tool_span(**kwargs)
+        span._parent = parent
         self._record_otel_ids(span, parent_step=parent)
         self._mark_potentially_parentable(span)
 

@@ -1,13 +1,15 @@
 import asyncio
+import json
 from collections.abc import Generator
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from opentelemetry import trace
+from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.trace import ReadableSpan
 
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exceptions import SplunkAOLoggerException
+from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.shared.exceptions import MissingConfigurationError
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
@@ -63,41 +65,46 @@ def configure_o11y(monkeypatch: pytest.MonkeyPatch, *, ingest_token: bool = True
 
 def test_complete_leaf_is_enqueued_before_flush(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
     root = otlp_logger.start_trace(input="question")
+    envelope_context = otlp_logger._otel_ids[root.id].span_context
     leaf = otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
 
     assert operation_names(recording_sink.spans) == ["chat"]
+    assert recording_sink.spans[0].parent is None
+    assert recording_sink.spans[0].context != envelope_context
     assert leaf.id not in otlp_logger._otel_ids
     assert root.id in otlp_logger._otel_ids
     assert recording_sink.force_flush_calls == 0
 
 
-def test_single_llm_trace_emits_child_then_root_from_stored_ids(
-    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
-) -> None:
+def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
     otlp_logger.add_single_llm_span_trace(input="question", output="answer", model="gpt-5")
 
-    llm_span, root_span = recording_sink.spans
-    assert operation_names(recording_sink.spans) == ["chat", None]
+    [llm_span] = recording_sink.spans
+    assert operation_names(recording_sink.spans) == ["chat"]
     assert llm_span.context is not None
-    assert root_span.context is not None
-    assert llm_span.context.trace_id == root_span.context.trace_id
-    assert llm_span.parent == root_span.context
-    assert root_span.parent is None
+    assert llm_span.parent is None
     assert otlp_logger._otel_ids == {}
     assert otlp_logger.traces == []
 
 
-def test_pending_leaf_emits_before_enclosing_parent(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
+@pytest.mark.parametrize(("leaf_kind", "leaf_operation"), [("tool", "execute_tool"), ("retriever", "retrieval")])
+def test_pending_leaf_emits_when_trace_envelope_is_released(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, leaf_kind: str, leaf_operation: str
+) -> None:
     otlp_logger.start_trace(input="question")
-    tool = otlp_logger.add_tool_span(input="args", output="result", name="search")
+    if leaf_kind == "tool":
+        leaf = otlp_logger.add_tool_span(input="args", output="result", name="search")
+    else:
+        leaf = otlp_logger.add_retriever_span(input="query", output=["document"], name="search")
     otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
 
     assert operation_names(recording_sink.spans) == ["chat"]
-    assert tool.id in otlp_logger._pending_otel_steps
+    assert leaf.id in otlp_logger._pending_otel_steps
 
     otlp_logger.conclude(output="answer")
 
-    assert operation_names(recording_sink.spans) == ["chat", "execute_tool", None]
+    assert operation_names(recording_sink.spans) == ["chat", leaf_operation]
+    assert all(span.parent is None for span in recording_sink.spans)
     assert otlp_logger._otel_ids == {}
 
 
@@ -113,21 +120,73 @@ def test_promoted_tool_emits_after_child_and_before_root(
     otlp_logger.conclude(output="result")
     otlp_logger.conclude(output="answer")
 
-    llm_span, tool_span, root_span = recording_sink.spans
-    assert operation_names(recording_sink.spans) == ["chat", "execute_tool", None]
+    llm_span, tool_span = recording_sink.spans
+    assert operation_names(recording_sink.spans) == ["chat", "execute_tool"]
     assert llm_span.parent == tool_span.context
-    assert tool_span.parent == root_span.context
+    assert tool_span.parent is None
 
 
 def test_conclude_all_emits_each_open_parent_once(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
-    otlp_logger.start_trace(input="question")
+    root = otlp_logger.start_trace(input="question")
+    envelope_context = otlp_logger._otel_ids[root.id].span_context
     otlp_logger.add_workflow_span(input="workflow")
     otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
 
     otlp_logger.conclude(output="done", conclude_all=True)
 
-    assert operation_names(recording_sink.spans) == ["chat", "invoke_workflow", None]
+    llm_span, workflow_span = recording_sink.spans
+    assert operation_names(recording_sink.spans) == ["chat", "invoke_workflow"]
+    assert llm_span.parent == workflow_span.context
+    assert workflow_span.parent is None
+    assert all(span.context != envelope_context and span.parent != envelope_context for span in recording_sink.spans)
     assert otlp_logger._otel_ids == {}
+
+
+def test_top_level_span_inherits_external_upstream_parent(recording_sink: RecordingSink) -> None:
+    remote_context = propagate.extract({"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"})
+    upstream_context = trace.get_current_span(remote_context).get_span_context()
+    token = context.attach(remote_context)
+    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=recording_sink)
+    try:
+        root = logger.start_trace(input="question")
+        envelope_context = logger._otel_ids[root.id].span_context
+        logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
+        logger.conclude(output="answer")
+
+        [llm_span] = recording_sink.spans
+        assert llm_span.context is not None
+        assert llm_span.context.trace_id == upstream_context.trace_id
+        assert llm_span.parent == upstream_context
+        assert llm_span.parent != envelope_context
+    finally:
+        logger.terminate()
+        context.detach(token)
+
+
+def test_final_normalization_preserves_non_empty_schema_valid_content(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
+
+    source_attributes = recording_sink.spans[0].attributes or {}
+    source_output_messages = json.loads(source_attributes["gen_ai.output.messages"])
+    expected_output_messages = [
+        {"finish_reason": "unknown", "parts": [{"content": "answer", "type": "text"}], "role": "assistant"}
+    ]
+    assert source_output_messages == expected_output_messages
+
+    passthrough = copy_span_for_export(recording_sink.spans[0], normalize_attributes=False)
+    passthrough_attributes = passthrough.attributes or {}
+    assert json.loads(passthrough_attributes["gen_ai.output.messages"]) == expected_output_messages
+    assert "splunk_ao.output.messages" not in passthrough_attributes
+
+    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    attributes = exported.attributes or {}
+    output_messages = json.loads(attributes["splunk_ao.output.messages"])
+
+    assert "gen_ai.output.messages" not in attributes
+    assert output_messages == expected_output_messages
 
 
 def test_conversion_failure_releases_leaf_and_restores_parent(
@@ -300,9 +359,11 @@ def test_o11y_no_routing_exports_but_explicit_session_fails(
     logger = SplunkAOLogger(_sink=recording_sink)
 
     logger.start_trace(input="question")
+    logger.add_llm_span(input="prompt", output="answer", model="gpt-5")
     logger.conclude(output="answer")
 
     assert len(recording_sink.spans) == 1
+    assert recording_sink.spans[0].parent is None
     assert logger._resource.attributes.get("splunk_ao.project.name") is None
     with pytest.raises(SplunkAOLoggerException, match=r"project.*log stream or experiment"):
         logger.start_session(name="session")
