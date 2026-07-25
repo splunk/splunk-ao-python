@@ -100,13 +100,24 @@ def _mapping_value(value: Any) -> dict[str, Any] | None:
     return None
 
 
-def _parse_json_value(value: Any) -> Any:
+def _mapping_view(value: Any) -> Mapping[str, Any] | None:
+    if isinstance(value, BaseModel):
+        return value.model_dump(mode="json", exclude_none=True)
+    return value if isinstance(value, Mapping) else None
+
+
+def _parse_json_string(value: Any) -> Any:
     if not isinstance(value, str):
-        return _json_compatible(value)
+        return value
     try:
         return json.loads(value)
     except (TypeError, ValueError):
         return value
+
+
+def _parse_json_value(value: Any) -> Any:
+    parsed = _parse_json_string(value)
+    return parsed if isinstance(value, str) else _json_compatible(parsed)
 
 
 def _text_part(value: Any) -> dict[str, Any]:
@@ -153,17 +164,20 @@ def _tool_call_part(value: Any) -> dict[str, Any]:
 
 def _mapped_message(source: dict[str, Any], default_role: str) -> dict[str, Any]:
     role = _json_compatible(source.pop("role"))
-    content = source.pop("content", "")
+    content = source.pop("content", None)
+    source_parts = source.pop("parts", None)
     tool_call_id = source.pop("tool_call_id", None)
     tool_calls = source.pop("tool_calls", None)
 
-    if role == "tool":
+    if source_parts is not None:
+        parts = _content_parts(source_parts)
+    elif role == "tool":
         response = {"type": "tool_call_response", "response": _parse_json_value(content)}
         if tool_call_id is not None:
             response["id"] = str(tool_call_id)
         parts = [response]
     else:
-        parts = [] if content == "" and tool_calls else _content_parts(content)
+        parts = [] if content in (None, "") and tool_calls else _content_parts("" if content is None else content)
 
     if tool_calls:
         parts.extend(_tool_call_part(tool_call) for tool_call in tool_calls)
@@ -190,16 +204,61 @@ def _message_sequence(value: Any, default_role: str) -> list[dict[str, Any]]:
     return [_message(value, default_role)]
 
 
+def _message_container(value: Any) -> tuple[Any | None, bool]:
+    parsed = _parse_json_string(value)
+
+    source = _mapping_view(parsed)
+    if source is not None:
+        update = _mapping_view(_parse_json_string(source.get("update")))
+        for container in (update, source):
+            if container is None or "messages" not in container:
+                continue
+            messages = _parse_json_string(container["messages"])
+            if _is_message_sequence(messages):
+                return messages, container is source
+
+        if "role" in source or "type" in source:
+            return parsed, False
+        return None, False
+
+    if isinstance(parsed, Sequence) and not isinstance(parsed, str | bytes | bytearray):
+        if _is_message_sequence(parsed) or _is_content_part_sequence(parsed):
+            return parsed, False
+        return (parsed, False) if not isinstance(value, str | bytes | bytearray) else (None, False)
+
+    return parsed, False
+
+
+def _is_message_sequence(value: Any) -> bool:
+    if not isinstance(value, Sequence) or isinstance(value, str | bytes | bytearray):
+        message = _mapping_view(value)
+        return message is not None and "role" in message
+    return not value or all((message := _mapping_view(item)) is not None and "role" in message for item in value)
+
+
+def _is_content_part_sequence(value: Any) -> bool:
+    return bool(value) and all((part := _mapping_view(item)) is not None and "type" in part for item in value)
+
+
+def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[str, Any]] | None, bool]:
+    container, full_history = _message_container(value)
+    messages = None if container is None else _message_sequence(container, default_role)
+    return messages, full_history
+
+
+def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
+    for message in messages:
+        source_finish_reason = message.get("finish_reason")
+        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+    return messages
+
+
 def _input_messages(value: Any) -> str:
     return _json_string(_message_sequence(value, "user"))
 
 
 def _output_messages(value: Any, finish_reason: str | None = None) -> str:
-    messages = _message_sequence(value, "assistant")
-    for message in messages:
-        source_finish_reason = message.get("finish_reason")
-        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
-    return _json_string(messages)
+    return _json_string(_with_finish_reasons(_message_sequence(value, "assistant"), finish_reason))
 
 
 def _tool_definitions(value: Sequence[Any]) -> str:
@@ -357,9 +416,20 @@ def set_retriever_attributes(attrs: MutableMapping[str, AttributeValue], span: R
 
 
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
-    attrs["gen_ai.input.messages"] = _input_messages(span.input)
-    if span.output is not None:
-        attrs["gen_ai.output.messages"] = _output_messages(span.output)
+    input_messages, _ = _orchestration_messages(span.input, "user")
+    if input_messages is not None:
+        attrs["gen_ai.input.messages"] = _json_string(input_messages)
+
+    if span.output is None:
+        return
+
+    output_messages, full_history = _orchestration_messages(span.output, "assistant")
+    if output_messages is None:
+        return
+    if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
+        output_messages = output_messages[len(input_messages) :]
+    if output_messages:
+        attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 
 def set_workflow_attributes(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan) -> None:

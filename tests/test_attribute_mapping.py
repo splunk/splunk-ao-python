@@ -13,7 +13,7 @@ from galileo_core.schemas.logging.span import (
     ToolSpan,
     WorkflowSpan,
 )
-from galileo_core.schemas.shared.content_parts import FileContentPart
+from galileo_core.schemas.shared.content_parts import FileContentPart, TextContentPart
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter.attribute_mapping import (
     CONTENT_ALIAS_BY_GEN_AI,
@@ -261,6 +261,163 @@ def test_orchestration_mapping(span, operation_key: str, operation: str, name_ke
     assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "question")]
     assert json.loads(attrs["gen_ai.output.messages"]) == [
         _text_message("assistant", "answer", finish_reason="unknown")
+    ]
+
+
+def test_orchestration_extracts_serialized_langgraph_messages_with_multimodal_parts() -> None:
+    file_id = uuid4()
+    span = WorkflowSpan(
+        name="travel-planner",
+        input=json.dumps(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Plan this trip"},
+                            {"type": "image", "url": "https://example.com/map.png"},
+                            {"type": "file", "file_id": str(file_id)},
+                        ],
+                    }
+                ],
+                "destination": "Paris",
+            }
+        ),
+        output=json.dumps(
+            {
+                "update": {
+                    "messages": [
+                        {
+                            "role": "assistant",
+                            "content": [
+                                {"type": "text", "text": "Here is the plan"},
+                                {"type": "data", "modality": "audio", "base64": "YXVkaW8="},
+                            ],
+                        }
+                    ]
+                }
+            }
+        ),
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        {
+            "role": "user",
+            "parts": [
+                {"type": "text", "content": "Plan this trip"},
+                {"type": "image", "url": "https://example.com/map.png"},
+                {"type": "file", "file_id": str(file_id)},
+            ],
+        }
+    ]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {
+            "role": "assistant",
+            "parts": [
+                {"type": "text", "content": "Here is the plan"},
+                {"type": "data", "modality": "audio", "base64": "YXVkaW8="},
+            ],
+            "finish_reason": "unknown",
+        }
+    ]
+
+
+def test_orchestration_accepts_native_content_part_sequences() -> None:
+    file_id = uuid4()
+    span = AgentSpan(
+        name="multimodal-agent",
+        agent_type=AgentType.planner,
+        input=[TextContentPart(text="Inspect this"), FileContentPart(file_id=file_id)],
+        output=[FileContentPart(file_id=file_id)],
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        {
+            "role": "user",
+            "parts": [{"type": "text", "content": "Inspect this"}, {"type": "file", "file_id": str(file_id)}],
+        }
+    ]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [{"type": "file", "file_id": str(file_id)}], "finish_reason": "unknown"}
+    ]
+
+
+def test_orchestration_output_omits_repeated_input_history() -> None:
+    user_message = {"role": "user", "content": "Plan a trip"}
+    assistant_message = {"role": "assistant", "content": "Where would you like to go?"}
+    span = AgentSpan(
+        name="planner",
+        agent_type=AgentType.planner,
+        input=json.dumps({"messages": [user_message]}),
+        output=json.dumps({"messages": [user_message, assistant_message]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "Plan a trip")]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "Where would you like to go?", finish_reason="unknown")
+    ]
+
+
+def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
+    span = WorkflowSpan(
+        name="tool-workflow",
+        input=json.dumps(
+            {
+                "messages": [
+                    {
+                        "role": "assistant",
+                        "parts": [{"type": "text", "content": "Checking weather"}],
+                        "tool_calls": [
+                            {"id": "call-1", "function": {"name": "weather", "arguments": '{"city":"Paris"}'}}
+                        ],
+                    },
+                    {"role": "tool", "content": '{"temperature":21}', "tool_call_id": "call-1"},
+                ]
+            }
+        ),
+    )
+
+    messages = json.loads(build_span_attributes(span)["gen_ai.input.messages"])
+
+    assert messages == [
+        {
+            "role": "assistant",
+            "parts": [
+                {"type": "text", "content": "Checking weather"},
+                {"type": "tool_call", "id": "call-1", "name": "weather", "arguments": {"city": "Paris"}},
+            ],
+        },
+        {"role": "tool", "parts": [{"type": "tool_call_response", "id": "call-1", "response": {"temperature": 21}}]},
+    ]
+
+
+def test_orchestration_does_not_label_arbitrary_state_as_messages() -> None:
+    span = WorkflowSpan(
+        name="state-machine",
+        input=json.dumps({"current_agent": "coordinator", "travellers": 2}),
+        output=json.dumps({"next_agent": "flight_specialist"}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert "gen_ai.input.messages" not in attrs
+    assert "gen_ai.output.messages" not in attrs
+
+
+def test_orchestration_keeps_non_json_strings_as_text_messages() -> None:
+    span = WorkflowSpan(name="workflow", input="{not-json", output="plain response")
+
+    attrs = build_span_attributes(span)
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "{not-json")]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "plain response", finish_reason="unknown")
     ]
 
 
