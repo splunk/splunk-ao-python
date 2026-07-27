@@ -59,7 +59,7 @@ This attribute is set on every span emitted by `start_splunk_ao_span()`.
 |--------|-------|------|
 | `galileo_span_processor` | `splunk_ao_span_processor` | `examples/agent/google-adk/my_agent/agent.py` |
 | `galileo_span_processor` | `splunk_ao_span_processor` | `examples/agent/langgraph-open-telemetry/main.py` |
-| `start_galileo_span` | `start_splunk_ao_span` | `examples/rag/cli-rag-demo/python-service/app.py` |
+| `start_galileo_span` | `start_splunk_ao_span` | `examples/logging-samples/distributed-tracing-otel-python-java/python-service/app.py` |
 
 ---
 
@@ -92,7 +92,7 @@ src/splunk_ao/handlers/openai_agents/handler.py
 src/splunk_ao/utils/openai_agents.py
 examples/agent/google-adk/my_agent/agent.py
 examples/agent/langgraph-open-telemetry/main.py
-examples/rag/cli-rag-demo/python-service/app.py
+examples/logging-samples/distributed-tracing-otel-python-java/python-service/app.py
 tests/test_otel.py
 tests/test_openai_agents_utils.py
 ```
