@@ -127,18 +127,18 @@ def test_provider_classes_are_same():
 
 
 def test_metric_classes_are_same():
-    from splunk_ao.__future__.metric import CodeMetric as FutureCodeMetric
-    from splunk_ao.__future__.metric import LlmMetric as FutureLlmMetric
-    from splunk_ao.__future__.metric import LocalMetric as FutureLocalMetric
-    from splunk_ao.__future__.metric import Metric as FutureMetric
-    from splunk_ao.__future__.metric import SplunkAOMetric as FutureSplunkAOMetric
-    from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
+    from splunk_ao.__future__ import CodeEvaluator as FutureCodeMetric
+    from splunk_ao.__future__ import LlmEvaluator as FutureLlmMetric
+    from splunk_ao.__future__ import LocalEvaluator as FutureLocalMetric
+    from splunk_ao.__future__ import Evaluator as FutureMetric
+    from splunk_ao.__future__ import SplunkAOEvaluator as FutureSplunkAOMetric
+    from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator, SplunkAOEvaluator
 
-    assert FutureMetric is Metric
-    assert FutureCodeMetric is CodeMetric
-    assert FutureSplunkAOMetric is SplunkAOMetric
-    assert FutureLlmMetric is LlmMetric
-    assert FutureLocalMetric is LocalMetric
+    assert FutureMetric is Evaluator
+    assert FutureCodeMetric is CodeEvaluator
+    assert FutureSplunkAOMetric is SplunkAOEvaluator
+    assert FutureLlmMetric is LlmEvaluator
+    assert FutureLocalMetric is LocalEvaluator
 
 
 def test_experiment_is_same_class():
@@ -149,8 +149,8 @@ def test_experiment_is_same_class():
 
 
 def test_log_stream_is_same_class():
-    from splunk_ao.__future__.log_stream import LogStream as FutureLogStream
-    from splunk_ao.log_stream import LogStream as RootLogStream
+    from splunk_ao.__future__ import AgentStream as FutureLogStream
+    from splunk_ao.agent_stream import AgentStream as RootLogStream
 
     assert FutureLogStream is RootLogStream
 
@@ -217,10 +217,10 @@ def test_provider_generic_and_unconfigured_are_same():
 
 
 def test_metric_builtin_metrics_is_same():
-    from splunk_ao.__future__.metric import BuiltInMetrics as FutureBuiltIn
-    from splunk_ao.metric import BuiltInMetrics
+    from splunk_ao.__future__ import BuiltInEvaluators as FutureBuiltIn
+    from splunk_ao.evaluator import BuiltInEvaluators
 
-    assert FutureBuiltIn is BuiltInMetrics
+    assert FutureBuiltIn is BuiltInEvaluators
 
 
 def test_prompt_private_symbols_are_same():
@@ -284,33 +284,33 @@ def test_root_init_has_new_exports():
         AnthropicProvider,
         AzureProvider,
         BedrockProvider,
-        CodeMetric,
+        CodeEvaluator,
         Configuration,
         Dataset,
         Experiment,
         Integration,
-        LlmMetric,
-        LocalMetric,
-        LogStream,
-        Metric,
+        LlmEvaluator,
+        LocalEvaluator,
+        AgentStream,
+        Evaluator,
         MetricSpec,
         Model,
         OpenAIProvider,
         Prompt,
         Provider,
-        SplunkAOMetric,
+        SplunkAOEvaluator,
     )
 
     assert Configuration is not None
     assert Dataset is not None
     assert Experiment is not None
     assert Integration is not None
-    assert LogStream is not None
-    assert Metric is not None
-    assert CodeMetric is not None
-    assert SplunkAOMetric is not None
-    assert LlmMetric is not None
-    assert LocalMetric is not None
+    assert AgentStream is not None
+    assert Evaluator is not None
+    assert CodeEvaluator is not None
+    assert SplunkAOEvaluator is not None
+    assert LlmEvaluator is not None
+    assert LocalEvaluator is not None
     assert MetricSpec is not None
     assert Model is not None
     assert Prompt is not None

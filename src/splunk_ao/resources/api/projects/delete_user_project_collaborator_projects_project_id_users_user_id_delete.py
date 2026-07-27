@@ -30,7 +30,7 @@ def _get_kwargs(project_id: str, user_id: str) -> dict[str, Any]:
         "path": "/projects/{project_id}/users/{user_id}".format(project_id=project_id, user_id=user_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

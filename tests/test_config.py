@@ -28,20 +28,29 @@ def _clear_auth_env(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 # Every (SPLUNK_AO_*, GALILEO_*) pair defined in _bridge_env_vars.
+# Deprecated aliases (SPLUNK_AO_LOG_STREAM, SPLUNK_AO_LOG_STREAM_ID) share a
+# GALILEO_* target with their primary key so they are listed separately and
+# excluded from the parametrized 1:1 propagation tests.
 _ALL_BRIDGE_PAIRS = [
     ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
     ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
     ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
     ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
     ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
-    ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),
-    ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
+    ("SPLUNK_AO_AGENT_STREAM", "GALILEO_LOG_STREAM"),
+    ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),  # deprecated alias
+    ("SPLUNK_AO_AGENT_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
+    ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),  # deprecated alias
     ("SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN"),
     ("SPLUNK_AO_SSO_ID_TOKEN", "GALILEO_SSO_ID_TOKEN"),
     ("SPLUNK_AO_SSO_PROVIDER", "GALILEO_SSO_PROVIDER"),
     ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
     ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
     ("SPLUNK_AO_MODE", "GALILEO_MODE"),
+]
+
+_CANONICAL_BRIDGE_PAIRS = [
+    p for p in _ALL_BRIDGE_PAIRS if p[0] not in ("SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID")
 ]
 
 # Safe test values per key — URL keys must be valid URLs to avoid leaking
@@ -58,7 +67,7 @@ def _val(key: str) -> str:
     return _TEST_VALUE.get(key, f"test-{key.lower().replace('_', '-')}")
 
 
-@pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
+@pytest.mark.parametrize("splunk_key,galileo_key", _CANONICAL_BRIDGE_PAIRS)
 def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key) -> None:
     """Each SPLUNK_AO_* value is copied to its GALILEO_* counterpart when the
     GALILEO_* key is absent from the environment.
@@ -76,7 +85,7 @@ def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key
         )
 
 
-@pytest.mark.parametrize("splunk_key,galileo_key", _ALL_BRIDGE_PAIRS)
+@pytest.mark.parametrize("splunk_key,galileo_key", _CANONICAL_BRIDGE_PAIRS)
 def test_bridge_env_vars_does_not_overwrite_existing_galileo_value(splunk_key, galileo_key) -> None:
     """An explicit GALILEO_* value already in the environment must win over any
     SPLUNK_AO_* value — the bridge must not overwrite it."""

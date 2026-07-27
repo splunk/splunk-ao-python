@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
@@ -99,7 +100,14 @@ def reset_otel_context(monkeypatch: pytest.MonkeyPatch):
     for context_var in contexts:
         context_var.set(None)
     _TRACE_PROVIDER_CONTEXT_VAR.set(None)
-    for name in ("SPLUNK_AO_PROJECT", "SPLUNK_AO_PROJECT_ID", "SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID"):
+    for name in (
+        "SPLUNK_AO_PROJECT",
+        "SPLUNK_AO_PROJECT_ID",
+        "SPLUNK_AO_AGENT_STREAM",
+        "SPLUNK_AO_AGENT_STREAM_ID",
+        "SPLUNK_AO_LOG_STREAM",
+        "SPLUNK_AO_LOG_STREAM_ID",
+    ):
         monkeypatch.delenv(name, raising=False)
     yield
     for context_var in contexts:
@@ -279,7 +287,6 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
         "events",
         "links",
         "kind",
-        "instrumentation_info",
         "status",
         "start_time",
         "end_time",
@@ -294,6 +301,18 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
     assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
     assert exported.attributes["custom.attribute"] == "preserved"
+    exporter.shutdown()
+
+
+def test_exporter_does_not_read_deprecated_instrumentation_info() -> None:
+    factory = RecordingExporterFactory()
+    exporter = build_exporter(DeploymentMode.O11Y, factory, project="project")
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always", DeprecationWarning)
+        exporter.export((make_span(),))
+
+    assert not any("instrumentation_scope" in str(warning.message) for warning in captured)
     exporter.shutdown()
 
 
@@ -350,6 +369,11 @@ def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
         _exporter_factory=exporter_factory,
     )
     processor.shutdown()
+
+
+def test_processor_rejects_prebuilt_exporter_with_otlp_options() -> None:
+    with pytest.raises(ValueError, match="OTLP exporter options cannot be used with _exporter"):
+        SplunkAOSpanProcessor(_exporter=RecordingExporter(), timeout=10)
 
 
 def test_helper_constructs_registers_and_returns_processor() -> None:

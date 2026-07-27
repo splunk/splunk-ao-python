@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from splunk_ao.export import export_records
-from splunk_ao.log_streams import LogStream
+from splunk_ao.agent_streams import AgentStream
 from splunk_ao.resources.errors import UnexpectedStatus
 from splunk_ao.resources.models import (
     LLMExportFormat,
@@ -64,7 +64,7 @@ def test_export_records_with_defaults(mock_export_records_stream):
     assert request_body.sort == LogRecordsSortClause(column_id="created_at", ascending=False)
 
 
-@patch("splunk_ao.export.LogStreams._list_all")
+@patch("splunk_ao.export.AgentStreams._list_all")
 @patch("splunk_ao.export.export_records_stream")
 def test_export_records_default_log_stream(mock_export_records_stream, mock_log_streams_list_all):
     project_id = str(uuid4())
@@ -72,15 +72,15 @@ def test_export_records_default_log_stream(mock_export_records_stream, mock_log_
     now = datetime.now()
 
     # Create mock log streams, ensuring one is clearly the oldest
-    log_stream_1 = LogStream()
+    log_stream_1 = AgentStream()
     log_stream_1.id = str(uuid4())
     log_stream_1.created_at = now
 
-    log_stream_2 = LogStream()
+    log_stream_2 = AgentStream()
     log_stream_2.id = oldest_log_stream_id
     log_stream_2.created_at = now - timedelta(days=1)
 
-    log_stream_3 = LogStream()
+    log_stream_3 = AgentStream()
     log_stream_3.id = str(uuid4())
     log_stream_3.created_at = now + timedelta(days=1)
 
@@ -99,7 +99,7 @@ def test_export_records_default_log_stream(mock_export_records_stream, mock_log_
     assert request_body.experiment_id is None
 
 
-@patch("splunk_ao.export.LogStreams._list_all")
+@patch("splunk_ao.export.AgentStreams._list_all")
 @patch("splunk_ao.export.export_records_stream")
 def test_export_records_no_default_log_stream(mock_export_records_stream, mock_log_streams_list_all):
     project_id = str(uuid4())

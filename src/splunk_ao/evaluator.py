@@ -19,7 +19,7 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import Configuration
-from splunk_ao.metrics import Metrics
+from splunk_ao.evaluators import Evaluators
 from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
@@ -40,7 +40,7 @@ from splunk_ao.resources.models import (
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.types import UNSET, File, Unset
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
-from splunk_ao.schema.metrics import Metric as LegacyMetric
+from splunk_ao.schema.metrics import Metric as SchemaMetric
 from splunk_ao.scorers import Scorers
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
@@ -54,18 +54,18 @@ logger = logging.getLogger(__name__)
 #   - Configuration.code_validation_backoff_multiplier (env: SPLUNK_AO_CODE_VALIDATION_BACKOFF_MULTIPLIER) - default: 1.5
 
 
-class BuiltInMetrics:
+class BuiltInEvaluators:
     """
     Provides convenient access to built-in Galileo metrics (formerly "scorers").
 
     Examples
     --------
-        from splunk_ao.metric import Metric
+        from splunk_ao import Evaluator
 
-        # Access built-in metrics
-        Metric.metrics.correctness
-        Metric.metrics.completeness
-        Metric.metrics.toxicity
+        # Access built-in evaluators
+        Evaluator.metrics.correctness
+        Evaluator.metrics.completeness
+        Evaluator.metrics.toxicity
     """
 
     def __getattr__(self, name: str) -> SplunkAOMetrics:
@@ -82,20 +82,20 @@ class BuiltInMetrics:
 
 
 # Backwards-compatible alias
-BuiltInScorers = BuiltInMetrics
+BuiltInScorers = BuiltInEvaluators
 
 
-class Metric(StateManagementMixin, ABC):
+class Evaluator(StateManagementMixin, ABC):
     """
     Base class for all Galileo metrics.
 
     This is an abstract base class that defines common attributes and methods
     for all metric types. Use one of the concrete metric classes instead:
 
-    - **SplunkAOMetric**: Built-in Galileo scorers (access via Metric.scorers)
-    - **LlmMetric**: Custom LLM-based metrics with prompt templates
-    - **LocalMetric**: Local function-based metrics
-    - **CodeMetric**: Code-based metrics (future support)
+    - **SplunkAOEvaluator**: Built-in Galileo scorers (access via Evaluator.scorers)
+    - **LlmEvaluator**: Custom LLM-based metrics with prompt templates
+    - **LocalEvaluator**: Local function-based metrics
+    - **CodeEvaluator**: Code-based metrics (future support)
 
     Common Attributes
     -----------------
@@ -106,25 +106,25 @@ class Metric(StateManagementMixin, ABC):
         tags (list[str]): Tags associated with the metric.
         created_at (datetime | None): When the metric was created.
         updated_at (datetime | None): When the metric was last updated.
-        version (int | None): Metric version number.
+        version (int | None): Evaluator version number.
 
     Class Attributes
     ----------------
-        metrics (BuiltInMetrics): Access built-in Galileo metrics.
+        metrics (BuiltInEvaluators): Access built-in Galileo metrics.
 
     Examples
     --------
         # 1. Use built-in Galileo scorers
-        from splunk_ao import Metric, SplunkAOMetric, LlmMetric, LocalMetric, LogStream
+        from splunk_ao import Evaluator, SplunkAOEvaluator, LlmEvaluator, LocalEvaluator, AgentStream
 
-        log_stream = LogStream.get(name="my-stream", project_name="my-project")
-        log_stream.set_metrics([
-            Metric.metrics.correctness,
-            Metric.metrics.completeness,
+        agent_stream = AgentStream.get(name="my-stream", project_name="my-project")
+        agent_stream.set_metrics([
+            Evaluator.metrics.correctness,
+            Evaluator.metrics.completeness,
         ])
 
         # 2. Create custom LLM metric
-        llm_metric = LlmMetric(
+        llm_metric = LlmEvaluator(
             name="response_quality",
             prompt="Rate the quality...",
             model="gpt-4o-mini",
@@ -135,14 +135,14 @@ class Metric(StateManagementMixin, ABC):
         def my_scorer(trace_or_span):
             return 0.5
 
-        local_metric = LocalMetric(
+        local_metric = LocalEvaluator(
             name="response_length",
             scorer_fn=my_scorer,
         )
     """
 
     # Class attribute for built-in metrics (preferred name)
-    metrics = BuiltInMetrics()
+    metrics = BuiltInEvaluators()
 
     # Backwards-compatible property for legacy name
     scorers = metrics
@@ -167,7 +167,7 @@ class Metric(StateManagementMixin, ABC):
         self, name: str, *, description: str = "", tags: list[str] | None = None, version: int | None = None
     ) -> None:
         """
-        Initialize a base Metric instance with common attributes.
+        Initialize a base Evaluator instance with common attributes.
 
         Args:
             name: The name of the metric.
@@ -213,9 +213,9 @@ class Metric(StateManagementMixin, ABC):
         return _map.get(output_type.lower(), default)
 
     @classmethod
-    def _create_metric_from_type(cls, scorer_type: ScorerTypes) -> Metric:
+    def _create_metric_from_type(cls, scorer_type: ScorerTypes) -> Evaluator:
         """
-        Create the appropriate Metric subclass instance based on scorer_type.
+        Create the appropriate Evaluator subclass instance based on scorer_type.
 
         This is a factory method that centralizes the logic for instantiating
         the correct metric subclass based on the scorer type returned from the API.
@@ -225,23 +225,23 @@ class Metric(StateManagementMixin, ABC):
 
         Returns
         -------
-            Metric: An uninitialized instance of the appropriate subclass
-                   (LlmMetric, CodeMetric, or SplunkAOMetric).
+            Evaluator: An uninitialized instance of the appropriate subclass
+                   (LlmEvaluator, CodeEvaluator, or SplunkAOEvaluator).
 
         Examples
         --------
-            instance = Metric._create_metric_from_type(ScorerTypes.LLM)
-            # Returns: LlmMetric instance
+            instance = Evaluator._create_metric_from_type(ScorerTypes.LLM)
+            # Returns: LlmEvaluator instance
         """
         if scorer_type == ScorerTypes.LLM:
-            return LlmMetric.__new__(LlmMetric)
+            return LlmEvaluator.__new__(LlmEvaluator)
         if scorer_type == ScorerTypes.CODE:
-            return CodeMetric.__new__(CodeMetric)
-        # Default to SplunkAOMetric for built-in scorers (LUNA, PRESET, etc.)
-        return SplunkAOMetric.__new__(SplunkAOMetric)
+            return CodeEvaluator.__new__(CodeEvaluator)
+        # Default to SplunkAOEvaluator for built-in scorers (LUNA, PRESET, etc.)
+        return SplunkAOEvaluator.__new__(SplunkAOEvaluator)
 
     @classmethod
-    def get(cls, *, id: str | None = None, name: str | None = None) -> Metric | None:
+    def get(cls, *, id: str | None = None, name: str | None = None) -> Evaluator | None:
         """
         Get an existing metric by ID or name.
 
@@ -253,7 +253,7 @@ class Metric(StateManagementMixin, ABC):
 
         Returns
         -------
-            Optional[Metric]: The metric if found (SplunkAOMetric, LlmMetric, or CodeMetric), None otherwise.
+            Optional[Evaluator]: The metric if found (SplunkAOEvaluator, LlmEvaluator, or CodeEvaluator), None otherwise.
 
         Raises
         ------
@@ -262,10 +262,10 @@ class Metric(StateManagementMixin, ABC):
         Examples
         --------
             # Get by name - returns appropriate subclass
-            metric = Metric.get(name="factuality-checker")
+            metric = Evaluator.get(name="factuality-checker")
 
             # Get by ID
-            metric = Metric.get(id="abc-123-def")
+            metric = Evaluator.get(id="abc-123-def")
         """
         if id is not None and name is not None:
             raise ValidationError("Cannot specify both id and name")
@@ -298,7 +298,7 @@ class Metric(StateManagementMixin, ABC):
     @classmethod
     def list(
         cls, *, name_filter: str | None = None, scorer_types: list[ScorerTypes] | None = None
-    ) -> builtins.list[Metric]:
+    ) -> builtins.list[Evaluator]:
         """
         List metrics with optional filtering.
 
@@ -310,25 +310,25 @@ class Metric(StateManagementMixin, ABC):
 
         Returns
         -------
-            list[Metric]: List of metrics matching the criteria (with appropriate subclass types).
+            list[Evaluator]: List of metrics matching the criteria (with appropriate subclass types).
 
         Examples
         --------
             # List all metrics
-            metrics = Metric.list()
+            metrics = Evaluator.list()
 
             # List LLM metrics only
-            metrics = Metric.list(scorer_types=[ScorerTypes.LLM])
+            metrics = Evaluator.list(scorer_types=[ScorerTypes.LLM])
 
             # List by name
-            metrics = Metric.list(name_filter="factuality")
+            metrics = Evaluator.list(name_filter="factuality")
         """
-        logger.debug(f"Metric.list: name_filter='{name_filter}' types={scorer_types} - started")
+        logger.debug(f"Evaluator.list: name_filter='{name_filter}' types={scorer_types} - started")
         scorers_service = Scorers()
         retrieved_scorers = scorers_service.list(name=name_filter, types=scorer_types)
-        logger.debug(f"Metric.list: found {len(retrieved_scorers)} metrics - completed")
+        logger.debug(f"Evaluator.list: found {len(retrieved_scorers)} metrics - completed")
 
-        result: builtins.list[Metric] = []
+        result: builtins.list[Evaluator] = []
         for retrieved_scorer in retrieved_scorers:
             # Create appropriate subclass instance based on scorer_type
             instance = cls._create_metric_from_type(retrieved_scorer.scorer_type)
@@ -344,7 +344,7 @@ class Metric(StateManagementMixin, ABC):
         """
         Delete a metric by name without retrieving it first.
 
-        This is more efficient than calling `Metric.get(name=...).delete()`
+        This is more efficient than calling `Evaluator.get(name=...).delete()`
         when you only need to delete and don't need the metric object.
 
         Args:
@@ -357,19 +357,19 @@ class Metric(StateManagementMixin, ABC):
         Examples
         --------
             # Delete without retrieving first
-            Metric.delete_by_name("old-metric")
+            Evaluator.delete_by_name("old-metric")
 
             # Alternative (less efficient)
-            metric = Metric.get(name="old-metric")
+            metric = Evaluator.get(name="old-metric")
             metric.delete()
         """
-        logger.info(f"Metric.delete_by_name: name='{name}' - started")
+        logger.info(f"Evaluator.delete_by_name: name='{name}' - started")
         try:
-            metrics_service = Metrics()
-            metrics_service.delete_metric(name=name)
-            logger.info(f"Metric.delete_by_name: name='{name}' - completed")
+            metrics_service = Evaluators()
+            metrics_service.delete_evaluator(name=name)
+            logger.info(f"Evaluator.delete_by_name: name='{name}' - completed")
         except Exception as e:
-            logger.error(f"Metric.delete_by_name: name='{name}' - failed: {e}")
+            logger.error(f"Evaluator.delete_by_name: name='{name}' - failed: {e}")
             raise
 
     def _populate_from_scorer_response(self, scorer_response: Any) -> None:
@@ -410,8 +410,8 @@ class Metric(StateManagementMixin, ABC):
             cot_enabled=cot_enabled,
         )
 
-        # LLM-specific attributes (only set if this is an LlmMetric)
-        if isinstance(self, LlmMetric):
+        # LLM-specific attributes (only set if this is an LlmEvaluator)
+        if isinstance(self, LlmEvaluator):
             output_type = None if isinstance(scorer_response.output_type, Unset) else scorer_response.output_type
             prompt = None if isinstance(scorer_response.user_prompt, Unset) else scorer_response.user_prompt
 
@@ -432,8 +432,8 @@ class Metric(StateManagementMixin, ABC):
 
             self._sync_attrs(output_type=output_type, prompt=prompt, node_level=node_level, ground_truth=ground_truth)
 
-        # Code-specific attributes (only set if this is a CodeMetric)
-        if isinstance(self, CodeMetric):
+        # Code-specific attributes (only set if this is a CodeEvaluator)
+        if isinstance(self, CodeEvaluator):
             # Extract scoreable node types
             if not isinstance(scorer_response.scoreable_node_types, Unset) and scorer_response.scoreable_node_types:
                 try:
@@ -447,7 +447,7 @@ class Metric(StateManagementMixin, ABC):
 
             self._sync_attrs(node_level=code_node_level, output_type=code_output_type)
 
-    def update(self, **kwargs: Any) -> Metric:
+    def update(self, **kwargs: Any) -> Evaluator:
         """
         Update this metric's properties on the API.
 
@@ -461,7 +461,7 @@ class Metric(StateManagementMixin, ABC):
 
         Returns
         -------
-            Metric: This metric instance with updated attributes from the API.
+            Evaluator: This metric instance with updated attributes from the API.
 
         Raises
         ------
@@ -474,14 +474,14 @@ class Metric(StateManagementMixin, ABC):
 
         Examples
         --------
-            metric = Metric.get(name="factuality-checker")
+            metric = Evaluator.get(name="factuality-checker")
             metric.update(name="new-name", description="Updated description")
             assert metric.is_synced()
         """
-        if isinstance(self, LocalMetric):
+        if isinstance(self, LocalEvaluator):
             raise ValidationError("Local metrics don't exist on the server and can't be updated.")
         if self.id is None:
-            raise ValueError("Metric ID is not set. Cannot update a local-only metric.")
+            raise ValueError("Evaluator ID is not set. Cannot update a local-only metric.")
         if self.sync_state == SyncState.DELETED:
             raise ValueError("Cannot update a deleted metric.")
         if self.sync_state == SyncState.FAILED_SYNC:
@@ -499,23 +499,23 @@ class Metric(StateManagementMixin, ABC):
             name=kwargs.get("name", UNSET), description=kwargs.get("description", UNSET), tags=kwargs.get("tags", UNSET)
         )
 
-        logger.info(f"Metric.update: id='{self.id}' name='{self.name}' - started")
+        logger.info(f"Evaluator.update: id='{self.id}' name='{self.name}' - started")
         try:
             config = SplunkAOConfig.get()
             response = update_scorers_scorer_id_patch.sync(scorer_id=self.id, client=config.api_client, body=body)
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
-            logger.error(f"Metric.update: id='{self.id}' - failed: {e}")
+            logger.error(f"Evaluator.update: id='{self.id}' - failed: {e}")
             raise
 
         if isinstance(response, HTTPValidationError):
-            raise APIError(f"Metric update validation error: {response.detail}")
+            raise APIError(f"Evaluator update validation error: {response.detail}")
         if response is None:
-            raise APIError(f"Metric update returned empty response for id '{self.id}'")
+            raise APIError(f"Evaluator update returned empty response for id '{self.id}'")
 
         self._populate_from_scorer_response(response)
         self._set_state(SyncState.SYNCED)
-        logger.info(f"Metric.update: id='{self.id}' - completed")
+        logger.info(f"Evaluator.update: id='{self.id}' - completed")
         return self
 
     def delete(self) -> None:
@@ -531,24 +531,24 @@ class Metric(StateManagementMixin, ABC):
 
         Examples
         --------
-            metric = Metric.get(name="factuality-checker")
+            metric = Evaluator.get(name="factuality-checker")
             metric.delete()
         """
-        if isinstance(self, LocalMetric):
+        if isinstance(self, LocalEvaluator):
             raise ValidationError("Local metrics don't exist on the server and can't be deleted.")
 
         if self.id is None:
-            raise ValueError("Metric ID is not set. Cannot delete a local-only metric.")
+            raise ValueError("Evaluator ID is not set. Cannot delete a local-only metric.")
 
         try:
-            logger.info(f"Metric.delete: id='{self.id}' name='{self.name}' - started")
-            metrics_service = Metrics()
-            metrics_service.delete_metric(name=self.name)
+            logger.info(f"Evaluator.delete: id='{self.id}' name='{self.name}' - started")
+            metrics_service = Evaluators()
+            metrics_service.delete_evaluator(name=self.name)
             self._set_state(SyncState.DELETED)
-            logger.info(f"Metric.delete: id='{self.id}' - completed")
+            logger.info(f"Evaluator.delete: id='{self.id}' - completed")
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
-            logger.error(f"Metric.delete: id='{self.id}' - failed: {e}")
+            logger.error(f"Evaluator.delete: id='{self.id}' - failed: {e}")
             raise
 
     def refresh(self) -> None:
@@ -568,47 +568,47 @@ class Metric(StateManagementMixin, ABC):
             metric.refresh()
             assert metric.is_synced()
         """
-        if isinstance(self, LocalMetric):
+        if isinstance(self, LocalEvaluator):
             raise ValidationError("Local metrics don't exist on the server and can't be refreshed.")
 
         if self.id is None:
-            raise ValueError("Metric ID is not set. Cannot refresh a local-only metric.")
+            raise ValueError("Evaluator ID is not set. Cannot refresh a local-only metric.")
 
         try:
-            logger.debug(f"Metric.refresh: id='{self.id}' - started")
+            logger.debug(f"Evaluator.refresh: id='{self.id}' - started")
             scorers_service = Scorers()
             scorers = scorers_service.list()
             retrieved_scorer = next((s for s in scorers if s.id == self.id), None)
 
             if retrieved_scorer is None:
-                raise ValueError(f"Metric with id '{self.id}' no longer exists")
+                raise ValueError(f"Evaluator with id '{self.id}' no longer exists")
 
             self._populate_from_scorer_response(retrieved_scorer)
             self._set_state(SyncState.SYNCED)
-            logger.debug(f"Metric.refresh: id='{self.id}' - completed")
+            logger.debug(f"Evaluator.refresh: id='{self.id}' - completed")
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
-            logger.error(f"Metric.refresh: id='{self.id}' - failed: {e}")
+            logger.error(f"Evaluator.refresh: id='{self.id}' - failed: {e}")
             raise
 
-    def to_legacy_metric(self) -> LegacyMetric:
+    def to_legacy_metric(self) -> SchemaMetric:
         """
-        Convert to legacy splunk_ao.schema.metrics.Metric format.
+        Convert to legacy splunk_ao.schema.metrics.Evaluator format.
 
         This enables backward compatibility with existing code that uses
-        the legacy Metric class.
+        the legacy Evaluator class.
 
         Returns
         -------
-            LegacyMetric: Legacy metric object with name and version.
+            SchemaMetric: Legacy metric object with name and version.
 
         Examples
         --------
-            metric = Metric.get(name="my-metric")
+            metric = Evaluator.get(name="my-metric")
             legacy = metric.to_legacy_metric()
             # Use with existing APIs
         """
-        return LegacyMetric(name=self.name, version=self.version)
+        return SchemaMetric(name=self.name, version=self.version)
 
     def __str__(self) -> str:
         """String representation of the metric."""
@@ -623,11 +623,11 @@ class Metric(StateManagementMixin, ABC):
 
 
 # ============================================================================
-# Concrete Metric Types
+# Concrete Evaluator Types
 # ============================================================================
 
 
-class LlmMetric(Metric):
+class LlmEvaluator(Evaluator):
     """
     LLM-based metric with custom prompt templates.
 
@@ -652,7 +652,7 @@ class LlmMetric(Metric):
     Examples
     --------
         # Create custom LLM metric with string model name
-        metric = LlmMetric(
+        metric = LlmEvaluator(
             name="response_quality",
             prompt='''
             Rate the quality of this response on a scale of 1-10.
@@ -674,7 +674,7 @@ class LlmMetric(Metric):
         # Or use a Model object from Integration
         from splunk_ao.integration import Integration
         gpt_model = Integration.openai.get_model(alias="gpt-4o-mini")
-        metric = LlmMetric(
+        metric = LlmEvaluator(
             name="response_quality",
             prompt="Rate quality 1-10: {input} -> {output}",
             model=gpt_model,  # Model object
@@ -770,7 +770,7 @@ class LlmMetric(Metric):
 
         # Handle output_type (accept string or enum)
         if isinstance(output_type, str):
-            self.output_type = Metric._parse_output_type(output_type, default=OutputTypeEnum.PERCENTAGE)
+            self.output_type = Evaluator._parse_output_type(output_type, default=OutputTypeEnum.PERCENTAGE)
         else:
             self.output_type = output_type or OutputTypeEnum.BOOLEAN
 
@@ -778,13 +778,13 @@ class LlmMetric(Metric):
 
         self.scorer_type = ScorerTypes.LLM
 
-    def create(self) -> LlmMetric:
+    def create(self) -> LlmEvaluator:
         """
         Persist this LLM metric to the API.
 
         Returns
         -------
-            LlmMetric: This metric instance with updated attributes from the API.
+            LlmEvaluator: This metric instance with updated attributes from the API.
 
         Raises
         ------
@@ -793,7 +793,7 @@ class LlmMetric(Metric):
 
         Examples
         --------
-            metric = LlmMetric(
+            metric = LlmEvaluator(
                 name="quality_check",
                 prompt="Rate the quality...",
                 model="gpt-4o-mini"
@@ -801,10 +801,10 @@ class LlmMetric(Metric):
             assert metric.is_synced()
         """
         try:
-            logger.info(f"LlmMetric.create: name='{self.name}' - started")
+            logger.info(f"LlmEvaluator.create: name='{self.name}' - started")
 
-            metrics_service = Metrics()
-            created_version = metrics_service.create_custom_llm_metric(
+            metrics_service = Evaluators()
+            created_version = metrics_service.create_custom_llm_evaluator(
                 name=self.name,
                 user_prompt=self.prompt or "",
                 node_level=self.node_level if self.node_level is not None else StepType.llm,
@@ -829,21 +829,21 @@ class LlmMetric(Metric):
             # Refresh to get full scorer details
             self.refresh()
 
-            logger.info(f"LlmMetric.create: id='{self.id}' - completed")
+            logger.info(f"LlmEvaluator.create: id='{self.id}' - completed")
             return self
         except ValidationError:
             raise
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
-            logger.error(f"LlmMetric.create: name='{self.name}' - failed: {e}")
+            logger.error(f"LlmEvaluator.create: name='{self.name}' - failed: {e}")
             raise
 
     def __repr__(self) -> str:
         """Detailed string representation of the metric."""
-        return f"LlmMetric(name='{self.name}', id='{self.id}', model='{self.model}', judges={self.judges})"
+        return f"LlmEvaluator(name='{self.name}', id='{self.id}', model='{self.model}', judges={self.judges})"
 
 
-class CodeMetric(Metric):
+class CodeEvaluator(Evaluator):
     r"""
     Code-based metric.
 
@@ -859,11 +859,11 @@ class CodeMetric(Metric):
     Examples
     --------
         # Get existing code metric
-        metric = Metric.get(name="my-code-metric")
-        assert isinstance(metric, CodeMetric)
+        metric = Evaluator.get(name="my-code-metric")
+        assert isinstance(metric, CodeEvaluator)
 
         # Create code metric with inline code
-        metric = CodeMetric(
+        metric = CodeEvaluator(
             name="custom_code_scorer",
             code="def scorer_fn(step_object):\\n    return 1.0",
             description="Custom code-based scorer",
@@ -873,7 +873,7 @@ class CodeMetric(Metric):
         ).create()
 
         # Load code from file
-        metric = CodeMetric(
+        metric = CodeEvaluator(
             name="custom_code_scorer",
             node_level=StepType.llm,
         ).load_code("./scorers/my_scorer.py").create()
@@ -918,9 +918,9 @@ class CodeMetric(Metric):
         self.required_metrics = required_metrics
         self.scorer_type = ScorerTypes.CODE
 
-        self.output_type = Metric._parse_output_type(output_type)
+        self.output_type = Evaluator._parse_output_type(output_type)
 
-    def load_code(self, code_file_path: str) -> CodeMetric:
+    def load_code(self, code_file_path: str) -> CodeEvaluator:
         """
         Load code from a file into this metric instance.
 
@@ -929,7 +929,7 @@ class CodeMetric(Metric):
 
         Returns
         -------
-            CodeMetric: This metric instance with code loaded from the file (for chaining).
+            CodeEvaluator: This metric instance with code loaded from the file (for chaining).
 
         Raises
         ------
@@ -938,7 +938,7 @@ class CodeMetric(Metric):
         Examples
         --------
             # Load code from file
-            metric = CodeMetric(
+            metric = CodeEvaluator(
                 name="custom_code_scorer",
                 node_level=StepType.llm,
             ).load_code("./scorers/my_scorer.py").create()
@@ -985,11 +985,11 @@ class CodeMetric(Metric):
         )
 
         if validate_response is None:
-            logger.debug("CodeMetric._validate_code: No response from validate_code_scorer")
+            logger.debug("CodeEvaluator._validate_code: No response from validate_code_scorer")
             raise ValueError("Failed to validate code: No response from API")
 
         task_id = validate_response.task_id
-        logger.debug(f"CodeMetric._validate_code: task_id='{task_id}' - validation started")
+        logger.debug(f"CodeEvaluator._validate_code: task_id='{task_id}' - validation started")
 
         # Step 2: Poll for validation result with time-based timeout
         start_time_seconds = time.time()
@@ -1005,11 +1005,11 @@ class CodeMetric(Metric):
             )
 
             if task_result is None:
-                logger.debug(f"CodeMetric._validate_code: No response for task_id='{task_id}'")
+                logger.debug(f"CodeEvaluator._validate_code: No response for task_id='{task_id}'")
                 raise ValueError("Failed to get validation result: No response from API")
 
             if task_result.status == TaskResultStatus.COMPLETED:
-                logger.debug(f"CodeMetric._validate_code: task_id='{task_id}' - validation completed")
+                logger.debug(f"CodeEvaluator._validate_code: task_id='{task_id}' - validation completed")
 
                 # Extract and validate the result
                 result = task_result.result
@@ -1043,7 +1043,7 @@ class CodeMetric(Metric):
                 )
 
                 logger.debug(
-                    f"CodeMetric._validate_code: task_id='{task_id}' - pending "
+                    f"CodeEvaluator._validate_code: task_id='{task_id}' - pending "
                     f"(elapsed: {elapsed_seconds:.1f}s/{timeout_seconds:.0f}s, next delay: {delay_seconds:.2f}s)"
                 )
                 time.sleep(delay_seconds)
@@ -1051,7 +1051,7 @@ class CodeMetric(Metric):
             else:
                 raise ValueError(f"Unknown task status: {task_result.status}")
 
-    def create(self) -> CodeMetric:
+    def create(self) -> CodeEvaluator:
         r"""
         Persist this Code metric to the API.
 
@@ -1061,7 +1061,7 @@ class CodeMetric(Metric):
 
         Returns
         -------
-            CodeMetric: This metric instance with updated attributes from the API.
+            CodeEvaluator: This metric instance with updated attributes from the API.
 
         Raises
         ------
@@ -1071,7 +1071,7 @@ class CodeMetric(Metric):
         Examples
         --------
             # Create with inline code
-            metric = CodeMetric(
+            metric = CodeEvaluator(
                 name="custom_code_scorer",
                 code="def scorer_fn(step_object):\\n    return 1.0",
                 node_level=StepType.llm,
@@ -1079,7 +1079,7 @@ class CodeMetric(Metric):
             assert metric.is_synced()
 
             # Create by loading from file
-            metric = CodeMetric(
+            metric = CodeEvaluator(
                 name="custom_code_scorer",
                 node_level=StepType.llm,
             ).load_code("./scorers/my_scorer.py").create()
@@ -1088,11 +1088,11 @@ class CodeMetric(Metric):
         # Validate that code is set
         if self.code is None:
             raise ValidationError(
-                "Code is not set. Either pass 'code' to __init__() or use CodeMetric.load_code() to load from a file."
+                "Code is not set. Either pass 'code' to __init__() or use CodeEvaluator.load_code() to load from a file."
             )
 
         try:
-            logger.info(f"CodeMetric.create: name='{self.name}' - started")
+            logger.info(f"CodeEvaluator.create: name='{self.name}' - started")
 
             config = SplunkAOConfig.get()
 
@@ -1100,9 +1100,9 @@ class CodeMetric(Metric):
             assert self.node_level is not None
 
             # Step 1: Validate the code and get validation result
-            logger.debug(f"CodeMetric.create: name='{self.name}' - validating code")
+            logger.debug(f"CodeEvaluator.create: name='{self.name}' - validating code")
             validation_result = self._validate_code(config)
-            logger.debug(f"CodeMetric.create: name='{self.name}' - code validated successfully")
+            logger.debug(f"CodeEvaluator.create: name='{self.name}' - code validated successfully")
 
             # Step 2: Create the scorer
             scorer_request = CreateScorerRequest(
@@ -1118,7 +1118,7 @@ class CodeMetric(Metric):
             scorer_response = create_scorers_post.sync(client=config.api_client, body=scorer_request)
 
             if scorer_response is None:
-                logger.debug("CodeMetric.create: No response from create_scorers_post")
+                logger.debug("CodeEvaluator.create: No response from create_scorers_post")
                 raise ValueError("Failed to create code-based metric: No response from API")
 
             # Step 3: Create the code scorer version with file upload and validation result
@@ -1135,7 +1135,7 @@ class CodeMetric(Metric):
 
             if created_version is None:
                 logger.debug(
-                    "CodeMetric.create: No response from create_code_scorer_version_scorers_scorer_id_version_code_post"
+                    "CodeEvaluator.create: No response from create_code_scorer_version_scorers_scorer_id_version_code_post"
                 )
                 raise ValueError("Failed to create code-based metric: No response from API")
 
@@ -1147,42 +1147,42 @@ class CodeMetric(Metric):
             # Refresh to get full scorer details
             self.refresh()
 
-            logger.info(f"CodeMetric.create: id='{self.id}' - completed")
+            logger.info(f"CodeEvaluator.create: id='{self.id}' - completed")
             return self
         except ValidationError:
             raise
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
-            logger.error(f"CodeMetric.create: name='{self.name}' - failed: {e}")
+            logger.error(f"CodeEvaluator.create: name='{self.name}' - failed: {e}")
             raise
 
     def __repr__(self) -> str:
         """Detailed string representation of the metric."""
-        return f"CodeMetric(name='{self.name}', id='{self.id}'')"
+        return f"CodeEvaluator(name='{self.name}', id='{self.id}'')"
 
 
-class SplunkAOMetric(Metric):
+class SplunkAOEvaluator(Evaluator):
     """
     Built-in Galileo scorer metric.
 
     This metric type represents Galileo's built-in scorers like correctness,
-    completeness, toxicity, etc. Access these via `Metric.metrics`.
+    completeness, toxicity, etc. Access these via `Evaluator.metrics`.
 
     Examples
     --------
         # Access built-in scorers
-        from splunk_ao import Metric, LogStream
+        from splunk_ao import Evaluator, AgentStream
 
-        log_stream = LogStream.get(name="my-stream", project_name="my-project")
-        log_stream.set_metrics([
-            Metric.metrics.correctness,
-            Metric.metrics.completeness,
-            Metric.metrics.toxicity,
+        agent_stream = AgentStream.get(name="my-stream", project_name="my-project")
+        agent_stream.set_metrics([
+            Evaluator.metrics.correctness,
+            Evaluator.metrics.completeness,
+            Evaluator.metrics.toxicity,
         ])
 
         # Or get by name
-        metric = Metric.get(name="correctness")
-        assert isinstance(metric, SplunkAOMetric)
+        metric = Evaluator.get(name="correctness")
+        assert isinstance(metric, SplunkAOEvaluator)
     """
 
     def __init__(
@@ -1201,7 +1201,7 @@ class SplunkAOMetric(Metric):
         # Galileo metrics can have various scorer types, set during population
 
 
-class LocalMetric(Metric):
+class LocalEvaluator(Evaluator):
     """
     Local function-based metric.
 
@@ -1224,7 +1224,7 @@ class LocalMetric(Metric):
                 return min(len(trace_or_span.output) / 100.0, 1.0)
             return 0.0
 
-        local_metric = LocalMetric(
+        local_metric = LocalEvaluator(
             name="response_length",
             scorer_fn=response_length_scorer,
             scorable_types=[StepType.llm],
@@ -1300,7 +1300,7 @@ class LocalMetric(Metric):
             def my_scorer(trace):
                 return 0.5
 
-            metric = LocalMetric(name="test", scorer_fn=my_scorer)
+            metric = LocalEvaluator(name="test", scorer_fn=my_scorer)
             config = metric.to_local_metric_config()
         """
         return LocalMetricConfig(
@@ -1314,4 +1314,4 @@ class LocalMetric(Metric):
         """Detailed string representation of the metric."""
         # Handle callables that don't have __name__ (partials, lambdas, callable instances)
         fn_name = getattr(self.scorer_fn, "__name__", f"<{type(self.scorer_fn).__name__}>")
-        return f"LocalMetric(name='{self.name}', scorer_fn={fn_name})"
+        return f"LocalEvaluator(name='{self.name}', scorer_fn={fn_name})"

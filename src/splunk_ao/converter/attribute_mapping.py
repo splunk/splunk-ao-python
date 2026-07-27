@@ -483,7 +483,10 @@ def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict
 
 def _alias_value(source_key: str, value: AttributeValue) -> AttributeValue:
     if source_key == "gen_ai.response.time_to_first_chunk":
-        return int(float(value) * 1_000_000_000)
+        try:
+            return int(float(value) * 1_000_000_000)
+        except (TypeError, ValueError):
+            return value
     return value
 
 
