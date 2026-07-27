@@ -26,13 +26,13 @@ from splunk_ao.search import FilterType
 _logger = logging.getLogger(__name__)
 
 
-class Metrics:
+class Evaluators:
     config: SplunkAOConfig
 
     def __init__(self) -> None:
         self.config = SplunkAOConfig.get()
 
-    def delete_metric(self, name: str) -> None:
+    def delete_evaluator(self, name: str) -> None:
         scorers_to_delete = Scorers().list(name=name)
         if not scorers_to_delete:
             raise ValueError(f"Scorer with name {name} not found.")
@@ -45,7 +45,7 @@ class Metrics:
             if response is None:
                 raise ValueError("Failed to delete metric.")
 
-    def create_custom_llm_metric(
+    def create_custom_llm_evaluator(
         self,
         name: str,
         user_prompt: str,
@@ -148,7 +148,7 @@ class Metrics:
 
 
 # Public functions
-def create_custom_llm_metric(
+def create_custom_llm_evaluator(
     name: str,
     user_prompt: str,
     node_level: StepType = StepType.llm,
@@ -194,12 +194,12 @@ def create_custom_llm_metric(
     """
     if tags is None:
         tags = []
-    return Metrics().create_custom_llm_metric(
+    return Evaluators().create_custom_llm_evaluator(
         name, user_prompt, node_level, cot_enabled, model_name, num_judges, description, tags, output_type, ground_truth
     )
 
 
-def get_metrics(
+def get_evaluators(
     project_id: str,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
@@ -235,7 +235,7 @@ def get_metrics(
     LogRecordsMetricsResponse
         A LogRecordsMetricsResponse object containing the query results, or None if the query fails.
     """
-    return Metrics().query(
+    return Evaluators().query(
         project_id=project_id,
         start_time=start_time,
         end_time=end_time,
@@ -247,7 +247,7 @@ def get_metrics(
     )
 
 
-def delete_metric(name: str) -> None:
+def delete_evaluator(name: str) -> None:
     """
     Deletes a metric by its name.
 
@@ -256,4 +256,4 @@ def delete_metric(name: str) -> None:
     name
         The name of the metric to delete.
     """
-    Metrics().delete_metric(name)
+    Evaluators().delete_evaluator(name)

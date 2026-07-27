@@ -67,18 +67,57 @@ def test_disable_splunk_ao_logger(mock_traces_client: Mock, monkeypatch, caplog,
             total_tokens=13,
             duration_ns=1000,
         )
+        assert logger.add_workflow_span(input="workflow input") is None
+        assert logger.add_agent_span(input="agent input") is None
         logger.conclude(output="Nice try!", duration_ns=1000)
         logger.flush()
 
         assert "Bypassing logging for start_trace. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for add_llm_span. Logging is currently disabled." in caplog.text
+        assert "Bypassing logging for add_workflow_span. Logging is currently disabled." in caplog.text
+        assert "Bypassing logging for add_agent_span. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for conclude. Logging is currently disabled." in caplog.text
         assert "Bypassing logging for flush. Logging is currently disabled." in caplog.text
     mock_traces_client.assert_not_called()
     mock_traces_client.ingest_traces.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_native_conversation_root_marks_direct_trace_children(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    """Workflow and agent spans directly under a trace are conversation roots."""
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+
+    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    trace = logger.start_trace(input="trace input")
+    workflow = logger.add_workflow_span(
+        input="workflow input", metadata={"existing": "value", "gen_ai.conversation_root": "caller-value"}
+    )
+    nested_agent = logger.add_agent_span(input="nested agent input")
+    logger.conclude()
+    logger.conclude()
+    sibling_agent = logger.add_agent_span(input="sibling agent input")
+
+    assert workflow.conversation_root is True
+    assert workflow.user_metadata == {"existing": "value", "gen_ai.conversation_root": "caller-value"}
+    assert nested_agent.conversation_root is None
+    assert nested_agent.user_metadata == {}
+    assert sibling_agent.conversation_root is True
+    assert sibling_agent.user_metadata == {"gen_ai.conversation_root": "true"}
+
+    request = TracesIngestRequest(traces=[trace])
+    serialized = request.model_dump(mode="json")
+    assert serialized["traces"][0]["spans"][0]["conversation_root"] is True
+    assert serialized["traces"][0]["spans"][0]["user_metadata"]["gen_ai.conversation_root"] == "caller-value"
+    assert serialized["traces"][0]["spans"][1]["user_metadata"]["gen_ai.conversation_root"] == "true"
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_single_span_trace_to_galileo(
@@ -125,7 +164,7 @@ def test_single_span_trace_to_galileo(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_all_span_types_with_redacted_fields(
@@ -288,7 +327,7 @@ def test_single_span_trace_to_galileo_experiment_id(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_nested_span_trace_to_galileo(
@@ -339,7 +378,7 @@ def test_nested_span_trace_to_galileo(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_agent_span(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -369,7 +408,7 @@ def test_add_agent_span(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_multi_span_trace_to_galileo(
@@ -437,7 +476,7 @@ def test_multi_span_trace_to_galileo(
 
 
 @pytest.mark.asyncio
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_single_span_trace_to_galileo_with_async(
@@ -494,7 +533,7 @@ async def test_single_span_trace_to_galileo_with_async(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_str_output(
@@ -520,7 +559,7 @@ def test_retriever_span_str_output(
     assert payload.traces[0].spans[0].output == [Document(content="response", metadata=None)]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_str_output(
@@ -549,7 +588,7 @@ def test_retriever_span_list_str_output(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_dict_output(
@@ -584,7 +623,7 @@ def test_retriever_span_dict_output(
     assert payload.traces[0].spans[1].output == [Document(content="response2", metadata={"key": "value"})]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_dict_output(
@@ -631,7 +670,7 @@ def test_retriever_span_list_dict_output(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_document_output(
@@ -661,7 +700,7 @@ def test_retriever_span_document_output(
     assert payload.traces[0].spans[0].output == [Document(content="response", metadata={"key": "value"})]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_list_document_output(
@@ -694,7 +733,7 @@ def test_retriever_span_list_document_output(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_retriever_span_none_output(
@@ -718,7 +757,7 @@ def test_retriever_span_none_output(
     assert payload.traces[0].spans[0].output == [Document(content="", metadata={})]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_conclude_all_spans(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -757,7 +796,7 @@ def test_conclude_all_spans(mock_traces_client: Mock, mock_projects_client: Mock
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_with_conclude_all_spans(
@@ -804,7 +843,7 @@ def test_flush_with_conclude_all_spans(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_workflow_keeps_message_trace_gets_string(
@@ -1187,7 +1226,7 @@ def test_get_last_output_llm_message_raw() -> None:
     assert output.role == MessageRole.assistant
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_create(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -1209,7 +1248,7 @@ def test_session_create(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_create_with_metadata(
@@ -1235,7 +1274,7 @@ def test_session_create_with_metadata(
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_create_empty_values(
@@ -1257,7 +1296,7 @@ def test_session_create_empty_values(
     assert logger.session_id == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_clear(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -1277,7 +1316,7 @@ def test_session_clear(mock_traces_client: Mock, mock_projects_client: Mock, moc
     assert logger.session_id is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_id_on_flush(
@@ -1303,7 +1342,7 @@ def test_session_id_on_flush(
     assert str(payload.session_id) == session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_set_session_id(mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock) -> None:
@@ -1329,7 +1368,7 @@ def test_set_session_id(mock_traces_client: Mock, mock_projects_client: Mock, mo
     assert payload.session_id == UUID(session_id)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_start_session_with_external_id(
@@ -1401,7 +1440,7 @@ def test_start_session_with_external_id(
     assert payload.session_id == session_id
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_log_stream_id(
@@ -1422,7 +1461,7 @@ def test_logger_init_with_project_id_and_log_stream_id(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_log_stream_name(
@@ -1441,7 +1480,7 @@ def test_logger_init_with_project_id_and_log_stream_name(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_name_and_log_stream_id(
@@ -1460,7 +1499,7 @@ def test_logger_init_with_project_name_and_log_stream_id(
     assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_name_and_experiment_id(
@@ -1480,7 +1519,7 @@ def test_logger_init_with_project_name_and_experiment_id(
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_with_project_id_and_experiment_id(
@@ -1502,7 +1541,7 @@ def test_logger_init_with_project_id_and_experiment_id(
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_ingestion_hook_sync(
@@ -1527,7 +1566,7 @@ def test_ingestion_hook_sync(
 
 
 @pytest.mark.asyncio
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_ingestion_hook_async(
@@ -1552,7 +1591,7 @@ async def test_ingestion_hook_async(
 
 
 @pytest.mark.asyncio
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_ingest_traces_methods(
@@ -1573,7 +1612,7 @@ async def test_ingest_traces_methods(
     assert mock_traces_client_instance.ingest_traces.call_count == 2
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_ingestion_hook_with_real_redaction(
@@ -1619,7 +1658,7 @@ def test_ingestion_hook_with_real_redaction(
     assert payload.traces[0].input == "This is a [REDACTED]"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_single_llm_span_trace_ingestion(
@@ -1668,7 +1707,7 @@ def test_add_single_llm_span_trace_ingestion(
     assert logger._parent_stack == deque()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_with_unconcluded_trace_redaction(
@@ -1745,7 +1784,7 @@ def test_get_last_output_with_redacted_output() -> None:
         ),
     ],
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_start_trace_auto_conversion(
@@ -1776,7 +1815,7 @@ def test_start_trace_auto_conversion(
         assert getattr(payload_trace, attr) == expected_value, f"payload.{attr} mismatch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_multimodal_input_not_stringified_at_trace_level(
@@ -1839,7 +1878,7 @@ def test_multimodal_input_not_stringified_at_trace_level(
         ),
     ],
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_start_trace_valid_input_types(
@@ -1904,13 +1943,25 @@ def test_start_trace_invalid_redacted_input_type_raises() -> None:
         pytest.param(
             "add_workflow_span",
             {"input": "workflow input"},
-            {"intMeta": "1", "boolMeta": "True", "ratio": "3.14", "name": "test"},
+            {
+                "intMeta": "1",
+                "boolMeta": "True",
+                "ratio": "3.14",
+                "name": "test",
+                "gen_ai.conversation_root": "true",
+            },
             id="workflow_span",
         ),
         pytest.param(
             "add_agent_span",
             {"input": "agent input"},
-            {"intMeta": "1", "boolMeta": "True", "ratio": "3.14", "name": "test"},
+            {
+                "intMeta": "1",
+                "boolMeta": "True",
+                "ratio": "3.14",
+                "name": "test",
+                "gen_ai.conversation_root": "true",
+            },
             id="agent_span",
         ),
     ],
@@ -2001,7 +2052,7 @@ class TestMultipleLoggerInstanceIsolation:
     on one logger do not affect another logger's state or trace hierarchy.
     """
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     def test_loggers_have_isolated_state(
@@ -2057,7 +2108,7 @@ class TestMultipleLoggerInstanceIsolation:
         assert isinstance(workflow_a, WorkflowSpan) and len(workflow_a.spans) == 1
         assert workflow_a.spans[0].name == "llm_a"
 
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     def test_reset_only_affects_own_logger(
@@ -2126,7 +2177,7 @@ def test_ingestion_hook_without_project_or_log_stream(monkeypatch) -> None:
     """Test that ingestion_hook allows initialization without project/log_stream."""
     # Given: no project or log_stream in environment
     monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-    monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
 
     # Given: an ingestion hook
     hook = Mock()
@@ -2170,7 +2221,7 @@ def test_ingestion_hook_registers_atexit_before_agent_control_auto_enable() -> N
     assert calls == [("atexit", "terminate"), ("agent_control", None)]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_standard_init_registers_atexit_before_agent_control_auto_enable(
@@ -2205,7 +2256,7 @@ def test_standard_init_registers_atexit_before_agent_control_auto_enable(
     assert calls == [("atexit", "terminate"), ("agent_control", None)]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_does_not_propagate_exceptions(
@@ -2234,7 +2285,7 @@ def test_flush_does_not_propagate_exceptions(
     assert result is None or result == []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_terminate_does_not_propagate_exceptions(
@@ -2265,7 +2316,7 @@ def test_terminate_does_not_propagate_exceptions(
         pytest.fail(f"terminate() should not propagate exceptions, but raised: {e}")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_ingest_traces_lazy_creates_client_for_ingestion_hook(
@@ -2306,7 +2357,7 @@ def test_ingest_traces_lazy_creates_client_for_ingestion_hook(
     mock_traces_instance.ingest_traces.assert_called_once_with(captured_payload)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_ingest_traces_reuses_existing_client(

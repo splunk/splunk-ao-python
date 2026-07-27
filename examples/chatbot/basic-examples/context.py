@@ -2,7 +2,7 @@ import os
 
 from splunk_ao import splunk_ao_context, openai
 
-# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-id", log_stream="your-log-stream-id")
 
 # Initialize the Splunk AO wrapped OpenAI client

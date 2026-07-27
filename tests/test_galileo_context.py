@@ -12,7 +12,7 @@ def reset_context() -> None:
     splunk_ao_context.reset()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_nested_context_restoration(
@@ -65,7 +65,7 @@ def test_nested_context_restoration(
     assert _experiment_id_context.get() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_context_update_with_defaults(

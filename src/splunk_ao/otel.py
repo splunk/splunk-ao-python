@@ -13,6 +13,7 @@ from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace import Tracer
 
+from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
@@ -37,6 +38,8 @@ from splunk_ao.utils.env_helpers import (
 )
 
 logger = logging.getLogger(__name__)
+
+GEN_AI_CONVERSATION_ROOT = "gen_ai.conversation_root"
 
 
 class TracerProvider(Protocol):
@@ -118,6 +121,10 @@ class SplunkAOOTLPExporter(SpanExporter):
     This exporter wraps the standard OTLPSpanExporter with deployment-aware
     configuration, authentication, and immutable routing. For most applications, use
     SplunkAOSpanProcessor instead, which provides a complete tracing solution.
+
+    Routing is captured when the exporter is constructed and remains fixed for its
+    lifetime. Applications that export to multiple destinations must use a separate
+    exporter and span processor for each destination.
     """
 
     def __init__(
@@ -186,6 +193,8 @@ class SplunkAOSpanProcessor(SpanProcessor):
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
     It handles the complete lifecycle of spans from creation to export to Galileo.
+    Project, log-stream, and experiment routing is fixed when the processor's exporter
+    is constructed. Use separate processors and exporters for separate destinations.
 
     Examples
     --------
@@ -221,7 +230,14 @@ class SplunkAOSpanProcessor(SpanProcessor):
         SpanProcessor : type, optional
             Custom span processor class. Defaults to BatchSpanProcessor for optimal performance.
 
+        Raises
+        ------
+        ValueError
+            When a prebuilt exporter is combined with exporter configuration options.
         """
+        if _exporter is not None and kwargs:
+            raise ValueError("OTLP exporter options cannot be used with _exporter")
+
         self._exporter = (
             _exporter
             if _exporter is not None
@@ -316,12 +332,18 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
+    is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
+        galileo_span, WorkflowSpan | AgentSpan
+    )
     with tracer.start_as_current_span(galileo_span.name) as span:
         try:
             yield span
         finally:
             try:
-                for key, value in build_span_attributes(galileo_span, _session_id_context.get(None)).items():
+                attributes = build_span_attributes(galileo_span, _session_id_context.get(None))
+                if is_conversation_root:
+                    attributes[GEN_AI_CONVERSATION_ROOT] = True
+                for key, value in attributes.items():
                     span.set_attribute(key, value)
             except Exception:
                 logger.warning("Failed to finalize Splunk AO span attributes", exc_info=True)

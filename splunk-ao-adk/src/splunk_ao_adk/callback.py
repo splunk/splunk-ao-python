@@ -56,7 +56,7 @@ class SplunkAOADKCallback:
         Splunk AO project name. Can also be set via SPLUNK_AO_PROJECT env var.
         Required unless `ingestion_hook` is provided.
     log_stream : str, optional
-        Log stream name within the project. Can also be set via SPLUNK_AO_LOG_STREAM env var.
+        Log stream name within the project. Can also be set via SPLUNK_AO_AGENT_STREAM env var.
         Required unless `ingestion_hook` is provided.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
         Custom callback to receive trace data instead of sending to Splunk AO.
@@ -77,11 +77,11 @@ class SplunkAOADKCallback:
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ) -> None:
         effective_project = project or os.environ.get("SPLUNK_AO_PROJECT")
-        effective_log_stream = log_stream or os.environ.get("SPLUNK_AO_LOG_STREAM")
+        effective_log_stream = log_stream or os.environ.get("SPLUNK_AO_AGENT_STREAM")
         if not ingestion_hook and (not effective_project or not effective_log_stream):
             raise ValueError(
                 "Both 'project' and 'log_stream' must be provided via parameters or "
-                "SPLUNK_AO_PROJECT/SPLUNK_AO_LOG_STREAM environment variables"
+                "SPLUNK_AO_PROJECT/SPLUNK_AO_AGENT_STREAM environment variables"
             )
 
         self._observer = SplunkAOObserver(

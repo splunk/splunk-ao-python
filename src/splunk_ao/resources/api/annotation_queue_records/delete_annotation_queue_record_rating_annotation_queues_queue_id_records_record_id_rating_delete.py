@@ -39,7 +39,7 @@ def _get_kwargs(queue_id: str, record_id: str, *, annotation_template_id: str) -
         "params": params,
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from io import BytesIO
 from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, Unset
+from ..types import UNSET, File, FileTypes, Unset
 
 T = TypeVar("T", bound="BodyCreateDatasetDatasetsPost")
 
@@ -20,7 +21,7 @@ class BodyCreateDatasetDatasetsPost:
         hidden (bool | Unset):  Default: False.
         name (None | str | Unset):
         append_suffix_if_duplicate (bool | Unset):  Default: False.
-        file (None | str | Unset):
+        file (File | None | Unset):
         copy_from_dataset_id (None | str | Unset):
         copy_from_dataset_version_index (int | None | Unset):
         project_id (None | str | Unset):
@@ -31,7 +32,7 @@ class BodyCreateDatasetDatasetsPost:
     hidden: bool | Unset = False
     name: None | str | Unset = UNSET
     append_suffix_if_duplicate: bool | Unset = False
-    file: None | str | Unset = UNSET
+    file: File | None | Unset = UNSET
     copy_from_dataset_id: None | str | Unset = UNSET
     copy_from_dataset_version_index: int | None | Unset = UNSET
     project_id: None | str | Unset = UNSET
@@ -51,9 +52,12 @@ class BodyCreateDatasetDatasetsPost:
 
         append_suffix_if_duplicate = self.append_suffix_if_duplicate
 
-        file: None | str | Unset
+        file: FileTypes | None | Unset
         if isinstance(self.file, Unset):
             file = UNSET
+        elif isinstance(self.file, File):
+            file = self.file.to_tuple()
+
         else:
             file = self.file
 
@@ -126,8 +130,8 @@ class BodyCreateDatasetDatasetsPost:
             )
 
         if not isinstance(self.file, Unset):
-            if isinstance(self.file, str):
-                files.append(("file", (None, str(self.file).encode(), "text/plain")))
+            if isinstance(self.file, File):
+                files.append(("file", self.file.to_tuple()))
             else:
                 files.append(("file", (None, str(self.file).encode(), "text/plain")))
 
@@ -188,12 +192,20 @@ class BodyCreateDatasetDatasetsPost:
 
         append_suffix_if_duplicate = d.pop("append_suffix_if_duplicate", UNSET)
 
-        def _parse_file(data: object) -> None | str | Unset:
+        def _parse_file(data: object) -> File | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            try:
+                if not isinstance(data, bytes):
+                    raise TypeError()
+                file_type_0 = File(payload=BytesIO(data))
+
+                return file_type_0
+            except:  # noqa: E722
+                pass
+            return cast(File | None | Unset, data)
 
         file = _parse_file(d.pop("file", UNSET))
 
