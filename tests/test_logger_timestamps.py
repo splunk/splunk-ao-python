@@ -5,7 +5,7 @@ from splunk_ao.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 def test_rapid_span_creation_ensures_uniqueness(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that creating spans in a tight loop results in unique, monotonically increasing timestamps."""
@@ -23,7 +23,7 @@ def test_rapid_span_creation_ensures_uniqueness(mock_projects_client: Mock, mock
     assert timestamps == sorted(timestamps), "Timestamps should be monotonically increasing"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that timestamps provided by the user are not modified."""
@@ -46,7 +46,7 @@ def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock
     assert span_timestamps == timestamps, "User-provided timestamps should be respected"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 def test_mixed_default_and_user_timestamps(mock_projects_client: Mock, mock_logstreams_client: Mock):
     """Tests that the internal state for default timestamp generation is not affected by user-provided timestamps."""

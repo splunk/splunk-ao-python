@@ -61,6 +61,7 @@ class LoggedWorkflowSpan(WorkflowSpan):
     output: IngestOutputType | None = _OUTPUT_FIELD
     redacted_output: IngestOutputType | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
+    conversation_root: bool | None = Field(default=None)
 
 
 class LoggedAgentSpan(AgentSpan):
@@ -71,6 +72,7 @@ class LoggedAgentSpan(AgentSpan):
     output: IngestOutputType | None = _OUTPUT_FIELD
     redacted_output: IngestOutputType | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
+    conversation_root: bool | None = Field(default=None)
 
 
 class LoggedLlmSpan(LlmSpan):

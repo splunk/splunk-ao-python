@@ -18,7 +18,7 @@ Run this script as a post-generation hook after
 ``scripts/auto-generate-api-client.sh``::
 
     python scripts/patch_http_validation_error.py \\
-        src/galileo/resources/models/http_validation_error.py
+        src/splunk_ao/resources/models/http_validation_error.py
 
 Exit codes
 ----------

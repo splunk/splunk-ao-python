@@ -42,7 +42,7 @@ def set_distributed_mode():
         os.environ["SPLUNK_AO_MODE"] = original
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_get_tracing_headers(
@@ -76,7 +76,7 @@ def test_decorator_get_tracing_headers(
     assert headers[TRACE_ID_HEADER] == str(logger.traces[0].id)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_with_middleware_context(
@@ -118,7 +118,7 @@ def test_decorator_with_middleware_context(
     assert logger.traces[0].name == "stub_trace"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_updates_trace_with_output_and_duration(
@@ -181,7 +181,7 @@ def test_decorator_updates_trace_with_output_and_duration(
     assert trace_request.is_complete, "Trace should be marked complete after flush"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_server_side_does_not_conclude_trace(
@@ -229,7 +229,7 @@ def test_decorator_server_side_does_not_conclude_trace(
     assert logger.traces[0].name == "stub_trace"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_client_and_server_side_behavior(
@@ -320,7 +320,7 @@ def test_decorator_client_and_server_side_behavior(
     assert logger_server.traces[0].name == "stub_trace"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_output_is_set(
@@ -370,7 +370,7 @@ def test_decorator_workflow_span_output_is_set(
     mock_traces_client_instance.update_span.assert_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_both_trace_and_workflow_span_have_output(
@@ -436,7 +436,7 @@ def test_decorator_both_trace_and_workflow_span_have_output(
     assert trace_request.is_complete, "Trace should be marked complete after flush"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_empty_string_output_is_set(
@@ -480,7 +480,7 @@ def test_decorator_workflow_span_empty_string_output_is_set(
     assert request.output == "", "Workflow span output should be set to empty string, not None"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_trace_duration_is_set_and_accumulates(
@@ -543,7 +543,7 @@ def test_decorator_trace_duration_is_set_and_accumulates(
     )
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_distributed_content_blocks_preserved_on_trace(
@@ -589,7 +589,7 @@ def test_decorator_distributed_content_blocks_preserved_on_trace(
     assert "image" in trace_request.output
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_distributed_messages_serialized_on_trace(
@@ -630,7 +630,7 @@ def test_decorator_distributed_messages_serialized_on_trace(
     assert "Hi!" in trace_request.output
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_distributed_documents_serialized_on_trace(

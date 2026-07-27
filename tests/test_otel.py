@@ -6,7 +6,7 @@ import pytest
 from pydantic import SecretStr
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
-from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.decorator import (
     _dataset_input_context,
@@ -34,7 +34,7 @@ class TestSplunkAOOTLPExporter:
     @pytest.fixture
     def clear_env_vars(self):
         """Clear relevant environment variables and context vars for clean test state."""
-        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_LOG_STREAM"]
+        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_AGENT_STREAM", "SPLUNK_AO_LOG_STREAM"]
         original_values = {var: os.environ.pop(var, None) for var in env_vars}
         _project_context.set(None)
         _log_stream_context.set(None)
@@ -72,14 +72,14 @@ class TestSplunkAOOTLPExporter:
 
         # Test that params override env vars
         mock_otlp_init.reset_mock()
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_LOG_STREAM": "env-logstream"}):
+        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
             exporter = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream")
             assert exporter.project == "param-project"  # Param wins over env
 
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     def test_init_with_env_variables(self, mock_otlp_init, mock_config, clear_env_vars):
         """Test initialization using environment variables."""
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_LOG_STREAM": "env-logstream"}):
+        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
             exporter = SplunkAOOTLPExporter()
             assert exporter.project == "env-project"
             assert exporter.logstream == "env-logstream"
@@ -188,9 +188,13 @@ class TestSplunkAOSpanProcessor:
         processor = SplunkAOSpanProcessor(project="test")
 
         mock_span = Mock()
+        mock_span.attributes = {"gen_ai.conversation_root": True}
         processor.on_end(mock_span)
 
         mocks["mock_processor_instance"].on_end.assert_called_once_with(mock_span)
+        assert mocks["mock_processor_instance"].on_end.call_args.args[0].attributes == {
+            "gen_ai.conversation_root": True
+        }
 
     def test_shutdown_delegates_to_processor(self, mock_processor_setup):
         """Test that shutdown delegates to the underlying processor."""
@@ -342,7 +346,7 @@ class TestOTelContextIntegration:
         """Test on_start sets context attributes on spans, handling None values."""
         # Pin env vars for this test to avoid flakiness from parallel workers
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "test-project")
-        monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "test-log-stream")
+        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
 
         # Given: all context vars set (experiment_id takes priority over logstream)
         _project_context.set("test-project")
@@ -370,7 +374,7 @@ class TestOTelContextIntegration:
         _session_id_context.set(None)
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "test-log-stream")
+        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
         try:
             processor2 = SplunkAOSpanProcessor()
             mock_span2 = Mock()
@@ -380,7 +384,7 @@ class TestOTelContextIntegration:
             assert mock_span2.set_attribute.call_count == 2
             actual_calls = {(args[0], args[1]) for args, _ in mock_span2.set_attribute.call_args_list}
             assert ("splunk_ao.project.name", "test-project") in actual_calls
-            # Falls back to SPLUNK_AO_LOG_STREAM env var
+            # Falls back to SPLUNK_AO_AGENT_STREAM env var
             assert ("splunk_ao.logstream.name", "test-log-stream") in actual_calls
         finally:
             monkeypatch.undo()
@@ -472,7 +476,10 @@ class TestSetToolSpanAttributes:
         _set_tool_span_attributes(mock_otel_span, tool_span)
 
         # Then: all attributes are set correctly
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "test-tool"
         assert calls["gen_ai.tool.call.arguments"] == "tool input data"
@@ -594,6 +601,84 @@ class TestStartGalileoSpan:
         assert "gen_ai.tool.call.result" not in calls
         assert "gen_ai.output.messages" not in calls
         assert "gen_ai.tool.call.id" not in calls
+
+    @pytest.mark.parametrize(
+        "galileo_span",
+        [
+            WorkflowSpan(name="workflow", input="input", output="output"),
+            AgentSpan(name="agent", input="input", output="output"),
+        ],
+    )
+    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, galileo_span):
+        """Eligible spans with no caller parent receive the standard root marker."""
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
+            with start_splunk_ao_span(galileo_span):
+                pass
+
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
+        assert calls["gen_ai.conversation_root"] is True
+
+    def test_start_splunk_ao_span_does_not_mark_span_with_parent(self):
+        """A valid caller parent prevents a new conversation root marker."""
+        workflow_span = WorkflowSpan(name="workflow", input="input", output="output")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = True
+            with start_splunk_ao_span(workflow_span):
+                pass
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert "gen_ai.conversation_root" not in calls
+
+    @pytest.mark.parametrize(
+        "galileo_span",
+        [
+            ToolSpan(name="tool", input="input", output="output"),
+            LlmSpan(
+                name="llm",
+                input=[Message(role=MessageRole.user, content="input")],
+                output=Message(role=MessageRole.assistant, content="output"),
+                model="model",
+            ),
+            RetrieverSpan(name="retriever", input="input", output=[]),
+        ],
+    )
+    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, galileo_span):
+        """LLM, tool, and retriever spans are never conversation roots."""
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
+            with start_splunk_ao_span(galileo_span):
+                pass
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert "gen_ai.conversation_root" not in calls
 
 
 class TestWorkflowSpanAttributes:

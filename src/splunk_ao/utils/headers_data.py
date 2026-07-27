@@ -62,7 +62,7 @@ def get_sdk_header() -> str:
     version_str = get_package_version()
     method_name = get_method_name()
 
-    sdk_header = f"galileo-python/{version_str}"
+    sdk_header = f"splunk-ao/{version_str}"
     if method_name:
         sdk_header = f"{sdk_header} {method_name}"
 

@@ -24,7 +24,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 class TestSplunkAOCallback:
     @pytest.fixture
-    @patch("splunk_ao.logger.logger.LogStreams")
+    @patch("splunk_ao.logger.logger.AgentStreams")
     @patch("splunk_ao.logger.logger.Projects")
     @patch("splunk_ao.logger.logger.Traces")
     def splunk_ao_logger(self, mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock):
@@ -79,6 +79,7 @@ class TestSplunkAOCallback:
         assert traces[0].spans[0].input == '{"query": "test question"}'
         assert traces[0].spans[0].output == '{"result": "test answer"}'
         assert traces[0].spans[0].step_number is None
+        assert traces[0].spans[0].conversation_root is True
 
     def test_on_chain_start_with_kwargs_serialised_none(
         self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger
@@ -898,10 +899,12 @@ class TestSplunkAOCallback:
         outer_span = traces[0].spans[0]
         assert outer_span.type == "workflow"
         assert outer_span.name == "OuterChain"
+        assert outer_span.conversation_root is True
         assert len(outer_span.spans) == 1
         inner_span = outer_span.spans[0]
         assert inner_span.type == "agent"
         assert inner_span.name == "OuterChain:Agent"
+        assert inner_span.conversation_root is None
 
     def test_ai_message_with_list_content(self, callback: SplunkAOCallback, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test AIMessage serialization with content as list of dicts (Responses API format)"""
@@ -1023,7 +1026,7 @@ class TestSplunkAOCallbackWithIngestionHook:
     @pytest.fixture(autouse=True)
     def logger_mocks(self):
         with (
-            patch("splunk_ao.logger.logger.LogStreams") as mock_logstreams,
+            patch("splunk_ao.logger.logger.AgentStreams") as mock_logstreams,
             patch("splunk_ao.logger.logger.Projects") as mock_projects,
             patch("splunk_ao.logger.logger.Traces") as mock_traces,
         ):
@@ -1314,7 +1317,7 @@ class TestSplunkAOCallbackIngestionHookWithoutCredentials:
         # Given: no Galileo API credentials are configured
         monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
         monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://console.galileo.ai/")
 
         if SplunkAOConfig._instance is not None:

@@ -16,9 +16,9 @@ from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 
 if TYPE_CHECKING:
+    from splunk_ao.agent_stream import AgentStream
     from splunk_ao.dataset import Dataset
     from splunk_ao.experiment import Experiment
-    from splunk_ao.log_stream import LogStream
     from splunk_ao.prompt import Prompt
 
 logger = logging.getLogger(__name__)
@@ -55,14 +55,14 @@ class Project(StateManagementMixin):
         projects = Project.list()
 
         # Create a log stream for the project
-        log_stream = project.create_log_stream(name="Production Logs")
+        log_stream = project.create_agent_stream(name="Production Logs")
 
         # List log streams for the project
-        log_streams = project.list_log_streams()
+        log_streams = project.list_agent_streams()
 
         # Access related resources via properties
-        for log_stream in project.logstreams:
-            print(log_stream.name)
+        for stream in project.agent_streams:
+            print(stream.name)
 
         for experiment in project.experiments:
             print(experiment.name)
@@ -288,64 +288,57 @@ class Project(StateManagementMixin):
 
         return [cls._from_api_response(retrieved_project) for retrieved_project in retrieved_projects]
 
-    def create_log_stream(self, name: str) -> LogStream:
+    def create_agent_stream(self, name: str) -> "AgentStream":
         """
-        Create a new log stream for this project.
+        Create a new agent stream for this project.
 
         Args:
-            name (str): The name of the log stream to create.
+            name (str): The name of the agent stream to create.
 
         Returns
         -------
-            LogStream: The created log stream.
+            AgentStream: The created agent stream.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
-            log_stream = project.create_log_stream(name="Production Logs")
+            stream = project.create_agent_stream(name="Production Traces")
         """
         if self.id is None:
-            raise ValueError("Project ID is not set. Cannot create log stream for a local-only project.")
+            raise ValueError("Project ID is not set. Cannot create agent stream for a local-only project.")
 
-        # Use the LogStream pattern to avoid duplication
-        return LogStream(name=name, project_id=self.id).create()
+        return AgentStream(name=name, project_id=self.id).create()
 
-    def list_log_streams(
+
+    def list_agent_streams(
         self, *, limit: Unset | int = 100, starting_token: Unset | int = 0
-    ) -> builtins.list[LogStream]:
+    ) -> "builtins.list[AgentStream]":
         """
-        List log streams for this project.
+        List agent streams for this project.
 
         Returns a single page of results. Use `starting_token` (from
         `next_starting_token` on a prior response) to fetch subsequent pages.
 
         Args:
-            limit (Union[Unset, int]): Maximum number of log streams to return per page. Defaults to 100.
-            starting_token (Union[Unset, int]): Pagination token to start from. Defaults to 0 (first page).
+            limit (Union[Unset, int]): Maximum number of agent streams per page. Defaults to 100.
+            starting_token (Union[Unset, int]): Pagination token. Defaults to 0 (first page).
 
         Returns
         -------
-            List[LogStream]: A page of log streams belonging to this project.
+            List[AgentStream]: A page of agent streams belonging to this project.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
-            log_streams = project.list_log_streams()
-            for stream in log_streams:
-                # Process each log stream
+            streams = project.list_agent_streams()
+            for stream in streams:
                 pass
-
-            # Cap the number of returned log streams
-            log_streams = project.list_log_streams(limit=3)
-
-            # Fetch the next page
-            page_2 = project.list_log_streams(starting_token=100)
         """
         if self.id is None:
-            raise ValueError("Project ID is not set. Cannot list log streams for a local-only project.")
+            raise ValueError("Project ID is not set. Cannot list agent streams for a local-only project.")
 
-        # Use the LogStream pattern to avoid duplication
-        return LogStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
+        return AgentStream.list(project_id=self.id, limit=limit, starting_token=starting_token)
+
 
     def list_experiments(self) -> builtins.list[Experiment]:
         """
@@ -414,24 +407,25 @@ class Project(StateManagementMixin):
         return Prompt.list(project_id=self.id)
 
     @property
-    def logstreams(self) -> builtins.list[LogStream]:
+    def agent_streams(self) -> "builtins.list[AgentStream]":
         """
-        Property to access log streams for this project.
+        Property to access agent streams for this project.
 
-        This is a read-only property that returns the current list of log streams.
-        To create new log streams, use create_log_stream().
+        This is a read-only property that returns the current list of agent streams.
+        To create new agent streams, use :meth:`create_agent_stream`.
 
         Returns
         -------
-            List[LogStream]: A list of log streams belonging to this project.
+            List[AgentStream]: A list of agent streams belonging to this project.
 
         Examples
         --------
             project = Project.get(name="My AI Project")
-            for stream in project.logstreams:
+            for stream in project.agent_streams:
                 print(stream.name)
         """
-        return self.list_log_streams()
+        return self.list_agent_streams()
+
 
     @property
     def experiments(self) -> builtins.list[Experiment]:
@@ -888,8 +882,8 @@ class Project(StateManagementMixin):
         return self
 
 
-# Import at end to avoid circular import (log_stream.py imports Project)
+# Import at end to avoid circular import (agent_stream.py imports Project)
+from splunk_ao.agent_stream import AgentStream  # noqa: E402
 from splunk_ao.dataset import Dataset  # noqa: E402
 from splunk_ao.experiment import Experiment  # noqa: E402
-from splunk_ao.log_stream import LogStream  # noqa: E402
 from splunk_ao.prompt import Prompt  # noqa: E402
