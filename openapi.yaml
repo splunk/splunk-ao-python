@@ -31330,14 +31330,14 @@ components:
       examples:
         - columns:
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: Input to the trace or span.
@@ -31351,14 +31351,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: Output of the trace or span.
@@ -31372,14 +31372,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: Name of the trace, span or session.
@@ -31393,14 +31393,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: timestamp
               description: Timestamp of the trace or span's creation.
@@ -31414,13 +31414,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: string_list
               description: Tags associated with this trace or span.
@@ -31434,13 +31434,13 @@ components:
               multi_valued: true
               sortable: false
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: integer
               description: Status code of the trace or span. Used for logging failure
@@ -31455,14 +31455,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: A user-provided session, trace or span ID.
@@ -31476,13 +31476,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: text
               description: Input to the dataset associated with this trace
@@ -31496,13 +31496,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: text
               description: Output from the dataset associated with this trace
@@ -31516,14 +31516,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the session, trace or span
@@ -31537,13 +31537,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the session containing the trace (or the
@@ -31558,13 +31558,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the project associated with this trace or
@@ -31579,13 +31579,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the run (log stream or experiment) associated
@@ -31600,13 +31600,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: timestamp
               description: Timestamp of the session or trace or span's last update
@@ -31620,13 +31620,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: boolean
               description: Whether or not this trace or span has child spans
@@ -31640,14 +31640,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: Runner progress text written directly to CH span
@@ -31661,14 +31661,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
                 - session
+                - control
+                - workflow
+                - trace
+                - tool
               category: standard
               data_type: text
               description: Runner error text written directly to CH span
@@ -31682,13 +31682,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
                 - trace
+                - tool
               category: standard
               data_type: boolean
               description: Whether the parent trace is complete or not
@@ -31702,21 +31702,21 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
-                - trace
+                - retriever
+                - agent
+                - control
                 - session
-              applicable_types:
-                - control
-                - agent
-                - tool
                 - workflow
-                - retriever
+                - trace
+                - tool
+              applicable_types:
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
+                - tool
               category: standard
               data_type: text
               description: Type of the trace, span or session.
@@ -31730,12 +31730,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the trace containing the span (or the same
@@ -31750,12 +31750,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the parent of this span
@@ -31769,12 +31769,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
-                - agent
-                - tool
-                - workflow
-                - retriever
                 - llm
+                - retriever
+                - agent
+                - control
+                - workflow
+                - tool
               category: standard
               data_type: integer
               description: Topological step number of the span.
@@ -31788,14 +31788,14 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - reflection
-                - react
+                - router
                 - classifier
                 - supervisor
-                - planner
-                - judge
+                - react
+                - reflection
                 - default
-                - router
+                - judge
+                - planner
               applicable_types:
                 - agent
               category: standard
@@ -31928,8 +31928,8 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - tool_call
                 - llm_call
+                - tool_call
               applicable_types:
                 - control
               category: standard
@@ -32958,7 +32958,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-20T08:49:45.737198Z'
+              created_at: '2026-07-20T08:45:58.273859Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -32977,7 +32977,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-20T08:49:45.737313Z'
+              created_at: '2026-07-20T08:45:58.273988Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33257,7 +33257,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-20T08:49:45.732001Z'
+              created_at: '2026-07-20T08:45:58.268461Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33282,7 +33282,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-20T08:49:45.732129Z'
+              created_at: '2026-07-20T08:45:58.268641Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33615,14 +33615,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           parent_id: 11000011-0000-0000-0000-110000110000
           spans:
-            - created_at: '2026-07-20T08:49:45.703369Z'
+            - created_at: '2026-07-20T08:45:58.240888Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-20T08:49:45.689741Z'
+                - created_at: '2026-07-20T08:45:58.225454Z'
                   dataset_metadata: {}
                   id: 22222222-2222-4222-a222-222222222222
                   input:
@@ -34269,14 +34269,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           session_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-07-20T08:49:45.684547Z'
+            - created_at: '2026-07-20T08:45:58.219922Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-20T08:49:45.684501Z'
+                - created_at: '2026-07-20T08:45:58.219876Z'
                   dataset_metadata: {}
                   input:
                     - content: 'Question: who is a smart LLM?'
@@ -34294,14 +34294,14 @@ components:
               user_metadata: {}
         - experiment_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-07-20T08:49:45.685058Z'
+            - created_at: '2026-07-20T08:45:58.220779Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-20T08:49:45.684941Z'
+                - created_at: '2026-07-20T08:45:58.220729Z'
                   dataset_metadata: {}
                   id: 11111111-1111-4111-a111-111111111111
                   input:
