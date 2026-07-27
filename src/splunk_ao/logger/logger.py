@@ -40,6 +40,7 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.traces_logger import TracesLogger
+from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.converter import SpanConverter
@@ -53,7 +54,6 @@ from splunk_ao.exporter import (
     resolve_routing,
     routing_resource_attributes,
 )
-from splunk_ao.log_streams import LogStreams
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 from splunk_ao.projects import Projects
@@ -255,7 +255,7 @@ class SplunkAOLogger(TracesLogger):
         project_id: Optional[str]
             Project ID.
         log_stream: Optional[str]
-            Log stream name. If not provided, will use the log_stream_id param or the log stream name from the environment variable SPLUNK_AO_LOG_STREAM.
+            Log stream name. If not provided, will use the log_stream_id param or the log stream name from the environment variable SPLUNK_AO_AGENT_STREAM.
         log_stream_id: Optional[str]
             Log stream ID.
         experiment_id: Optional[str]
@@ -700,7 +700,7 @@ class SplunkAOLogger(TracesLogger):
     @nop_sync
     def _init_log_stream(self) -> None:
         """Initializes the log stream ID."""
-        log_streams_client = LogStreams()
+        log_streams_client = AgentStreams()
         log_stream_obj = log_streams_client.get(name=self.log_stream_name, project_id=self.project_id)
         if log_stream_obj is None:
             # Create log stream if it doesn't exist
@@ -1949,6 +1949,7 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
+        self._mark_conversation_root(span)
         return self._attach_parentable_span(span, status_code)
 
     @nop_sync
@@ -2032,7 +2033,14 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
+        self._mark_conversation_root(span)
         return self._attach_parentable_span(span, status_code)
+
+    def _mark_conversation_root(self, span: LoggedWorkflowSpan | LoggedAgentSpan) -> None:
+        """Mark eligible native trace children and add the interim metadata bridge."""
+        if isinstance(self.current_parent(), LoggedTrace):
+            span.conversation_root = True
+            span.user_metadata = {"gen_ai.conversation_root": "true", **(span.user_metadata or {})}
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))

@@ -237,6 +237,9 @@ class TestProjectSave:
 
         # Then: the direct API call is made and synced fields are updated
         mock_update_put.sync_detailed.assert_called_once()
+        update_body = mock_update_put.sync_detailed.call_args.kwargs["body"]
+        assert update_body.name == "Renamed Project"
+        assert update_body.to_dict() == {"name": "Renamed Project"}
         assert result.name == "Renamed Project"
         assert result.updated_at == updated_at
         assert result.id == mock_project.id

@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric
+from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
 from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.models.task_result_status import TaskResultStatus
@@ -137,15 +137,15 @@ def create_temp_code_file(tmp_path):
 
 
 class TestMetricInitialization:
-    """Test suite for Metric initialization."""
+    """Test suite for Evaluator initialization."""
 
     def test_init_with_required_fields(self, reset_configuration: None) -> None:
         """Test initializing a metric with required fields creates a local-only instance."""
-        metric = LlmMetric(
-            name="Test Metric", prompt="Is the response factually accurate?", model="gpt-4.1-mini", judges=3
+        metric = LlmEvaluator(
+            name="Test Evaluator", prompt="Is the response factually accurate?", model="gpt-4.1-mini", judges=3
         )
 
-        assert metric.name == "Test Metric"
+        assert metric.name == "Test Evaluator"
         assert metric.prompt == "Is the response factually accurate?"
         assert metric.model == "gpt-4.1-mini"
         assert metric.judges == 3
@@ -155,8 +155,8 @@ class TestMetricInitialization:
 
     def test_init_with_all_fields(self, reset_configuration: None) -> None:
         """Test initializing a metric with all fields."""
-        metric = LlmMetric(
-            name="Test Metric",
+        metric = LlmEvaluator(
+            name="Test Evaluator",
             prompt="Is the response factually accurate?",
             node_level=StepType.llm,
             cot_enabled=True,
@@ -167,7 +167,7 @@ class TestMetricInitialization:
             output_type="percentage",
         )
 
-        assert metric.name == "Test Metric"
+        assert metric.name == "Test Evaluator"
         assert metric.prompt == "Is the response factually accurate?"
         assert metric.scorer_type == ScorerTypes.LLM
         assert metric.node_level == StepType.llm
@@ -180,15 +180,15 @@ class TestMetricInitialization:
         assert metric.ground_truth is False
 
     def test_init_ground_truth_defaults_false(self, reset_configuration: None) -> None:
-        # Given: an LlmMetric created without specifying ground_truth
-        metric = LlmMetric(name="Test Metric", prompt="Is it accurate?")
+        # Given: an LlmEvaluator created without specifying ground_truth
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Is it accurate?")
 
         # Then: ground_truth defaults to False
         assert metric.ground_truth is False
 
     def test_init_with_ground_truth_true(self, reset_configuration: None) -> None:
-        # Given: an LlmMetric created with ground_truth=True
-        metric = LlmMetric(name="Test Metric", prompt="Compare against reference_output.", ground_truth=True)
+        # Given: an LlmEvaluator created with ground_truth=True
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Compare against reference_output.", ground_truth=True)
 
         # Then: ground_truth is exposed on the instance
         assert metric.ground_truth is True
@@ -197,19 +197,19 @@ class TestMetricInitialization:
         """Test initializing a metric without name raises TypeError."""
         with pytest.raises(TypeError, match="missing 1 required positional argument: 'name'"):
             # name is a required positional argument - omit it entirely
-            LlmMetric(prompt="Test prompt")  # type: ignore[call-arg]
+            LlmEvaluator(prompt="Test prompt")  # type: ignore[call-arg]
 
     def test_init_llm_scorer_without_user_prompt_raises_error(self, reset_configuration: None) -> None:
         """Test initializing an LLM metric without prompt raises ValidationError."""
         with pytest.raises(ValidationError, match="'prompt' .* must be provided for LLM-based metrics"):
-            LlmMetric(name="Test Metric", prompt=None)
+            LlmEvaluator(name="Test Evaluator", prompt=None)
 
 
 class TestMetricCreate:
-    """Test suite for Metric.create() method."""
+    """Test suite for Evaluator.create() method."""
 
-    @patch("splunk_ao.metric.Metrics")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_persists_metric_to_api(
         self, mock_scorers_class: MagicMock, mock_metrics_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -228,7 +228,7 @@ class TestMetricCreate:
 
         mock_scorer = MagicMock()
         mock_scorer.id = scorer_id
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = ["test"]
         mock_scorer.description = "Test description"
@@ -242,23 +242,23 @@ class TestMetricCreate:
         mock_scorer.defaults.cot_enabled = True
         mock_scorer.scoreable_node_types = ["llm"]
 
-        mock_metrics_service.create_custom_llm_metric.return_value = mock_version
+        mock_metrics_service.create_custom_llm_evaluator.return_value = mock_version
         mock_scorers_service.list.return_value = [mock_scorer]
 
-        metric = LlmMetric(
-            name="Test Metric", user_prompt="Is it accurate?", description="Test description", tags=["test"]
+        metric = LlmEvaluator(
+            name="Test Evaluator", user_prompt="Is it accurate?", description="Test description", tags=["test"]
         ).create()
 
-        mock_metrics_service.create_custom_llm_metric.assert_called_once()
+        mock_metrics_service.create_custom_llm_evaluator.assert_called_once()
         assert metric.id == scorer_id
         assert metric.is_synced()
 
-    @patch("splunk_ao.metric.Metrics")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_forwards_ground_truth(
         self, mock_scorers_class: MagicMock, mock_metrics_class: MagicMock, reset_configuration: None
     ) -> None:
-        # Given: a mocked metrics service that records the create_custom_llm_metric kwargs
+        # Given: a mocked metrics service that records the create_custom_llm_evaluator kwargs
         mock_metrics_service = MagicMock()
         mock_metrics_class.return_value = mock_metrics_service
 
@@ -273,7 +273,7 @@ class TestMetricCreate:
 
         mock_scorer = MagicMock()
         mock_scorer.id = scorer_id
-        mock_scorer.name = "GT Metric"
+        mock_scorer.name = "GT Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = ""
@@ -288,25 +288,25 @@ class TestMetricCreate:
         mock_scorer.scoreable_node_types = ["llm"]
         mock_scorer.ground_truth = True
 
-        mock_metrics_service.create_custom_llm_metric.return_value = mock_version
+        mock_metrics_service.create_custom_llm_evaluator.return_value = mock_version
         mock_scorers_service.list.return_value = [mock_scorer]
 
-        # When: an LlmMetric with ground_truth=True is created
-        metric = LlmMetric(name="GT Metric", prompt="Compare against reference_output.", ground_truth=True).create()
+        # When: an LlmEvaluator with ground_truth=True is created
+        metric = LlmEvaluator(name="GT Evaluator", prompt="Compare against reference_output.", ground_truth=True).create()
 
         # Then: ground_truth=True is forwarded to the metrics service and reflected on the synced instance
-        _, kwargs = mock_metrics_service.create_custom_llm_metric.call_args
+        _, kwargs = mock_metrics_service.create_custom_llm_evaluator.call_args
         assert kwargs["ground_truth"] is True
         assert metric.ground_truth is True
 
-    @patch("splunk_ao.metric.Metrics")
+    @patch("splunk_ao.evaluator.Evaluators")
     def test_create_handles_api_failure(self, mock_metrics_class: MagicMock, reset_configuration: None) -> None:
         """Test create() handles API failures and sets state correctly."""
         mock_service = MagicMock()
         mock_metrics_class.return_value = mock_service
-        mock_service.create_custom_llm_metric.side_effect = Exception("API Error")
+        mock_service.create_custom_llm_evaluator.side_effect = Exception("API Error")
 
-        metric = LlmMetric(name="Test Metric", prompt="Is it accurate?")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Is it accurate?")
 
         with pytest.raises(Exception, match="API Error"):
             metric.create()
@@ -315,9 +315,9 @@ class TestMetricCreate:
 
 
 class TestMetricGet:
-    """Test suite for Metric.get() class method."""
+    """Test suite for Evaluator.get() class method."""
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_get_by_name_returns_metric(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test get() with name returns a synced metric instance."""
         mock_service = MagicMock()
@@ -325,7 +325,7 @@ class TestMetricGet:
 
         mock_scorer = MagicMock()
         mock_scorer.id = str(uuid4())
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = "Test"
@@ -341,13 +341,13 @@ class TestMetricGet:
 
         mock_service.list.return_value = [mock_scorer]
 
-        metric = Metric.get(name="Test Metric")
+        metric = Evaluator.get(name="Test Evaluator")
 
         assert metric is not None
-        assert metric.name == "Test Metric"
+        assert metric.name == "Test Evaluator"
         assert metric.is_synced()
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_get_by_id_returns_metric(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test get() with id returns a synced metric instance."""
         mock_service = MagicMock()
@@ -356,7 +356,7 @@ class TestMetricGet:
         metric_id = str(uuid4())
         mock_scorer = MagicMock()
         mock_scorer.id = metric_id
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = "Test"
@@ -369,20 +369,20 @@ class TestMetricGet:
 
         mock_service.list.return_value = [mock_scorer]
 
-        metric = Metric.get(id=metric_id)
+        metric = Evaluator.get(id=metric_id)
 
         assert metric is not None
         assert metric.id == metric_id
         assert metric.is_synced()
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_get_returns_none_when_not_found(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test get() returns None when metric is not found."""
         mock_service = MagicMock()
         mock_scorers_class.return_value = mock_service
         mock_service.list.return_value = []
 
-        metric = Metric.get(name="Nonexistent Metric")
+        metric = Evaluator.get(name="Nonexistent Evaluator")
 
         assert metric is None
 
@@ -396,13 +396,13 @@ class TestMetricGet:
     def test_get_validates_parameters(self, kwargs: dict, expected_error: str, reset_configuration: None) -> None:
         """Test get() validates parameter combinations."""
         with pytest.raises(ValidationError, match=expected_error):
-            Metric.get(**kwargs)
+            Evaluator.get(**kwargs)
 
 
 class TestMetricList:
-    """Test suite for Metric.list() class method."""
+    """Test suite for Evaluator.list() class method."""
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_list_returns_all_metrics(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test list() returns a list of synced metric instances."""
         mock_service = MagicMock()
@@ -413,7 +413,7 @@ class TestMetricList:
         for i in range(3):
             mock_scorer = MagicMock()
             mock_scorer.id = str(uuid4())
-            mock_scorer.name = f"Metric {i}"
+            mock_scorer.name = f"Evaluator {i}"
             mock_scorer.scorer_type = ScorerTypes.LLM
             mock_scorer.tags = []
             mock_scorer.description = f"Description {i}"
@@ -427,13 +427,13 @@ class TestMetricList:
 
         mock_service.list.return_value = mock_scorers
 
-        metrics = Metric.list()
+        metrics = Evaluator.list()
 
         assert len(metrics) == 3
-        assert all(isinstance(m, Metric) for m in metrics)
+        assert all(isinstance(m, Evaluator) for m in metrics)
         assert all(m.is_synced() for m in metrics)
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_list_with_name_filter(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test list() with name filter."""
         mock_service = MagicMock()
@@ -441,7 +441,7 @@ class TestMetricList:
 
         mock_scorer = MagicMock()
         mock_scorer.id = str(uuid4())
-        mock_scorer.name = "Factuality Metric"
+        mock_scorer.name = "Factuality Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = "Test"
@@ -454,29 +454,29 @@ class TestMetricList:
 
         mock_service.list.return_value = [mock_scorer]
 
-        metrics = Metric.list(name_filter="Factuality Metric")
+        metrics = Evaluator.list(name_filter="Factuality Evaluator")
 
-        mock_service.list.assert_called_once_with(name="Factuality Metric", types=None)
+        mock_service.list.assert_called_once_with(name="Factuality Evaluator", types=None)
         assert len(metrics) == 1
-        assert metrics[0].name == "Factuality Metric"
+        assert metrics[0].name == "Factuality Evaluator"
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_list_with_scorer_types_filter(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test list() with scorer types filter."""
         mock_service = MagicMock()
         mock_scorers_class.return_value = mock_service
         mock_service.list.return_value = []
 
-        Metric.list(scorer_types=[ScorerTypes.LLM])
+        Evaluator.list(scorer_types=[ScorerTypes.LLM])
 
         mock_service.list.assert_called_once_with(name=None, types=[ScorerTypes.LLM])
 
 
 class TestMetricDelete:
-    """Test suite for Metric.delete() method."""
+    """Test suite for Evaluator.delete() method."""
 
-    @patch("splunk_ao.metric.Metrics")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_delete_removes_metric(
         self, mock_scorers_class: MagicMock, mock_metrics_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -490,7 +490,7 @@ class TestMetricDelete:
         metric_id = str(uuid4())
         mock_scorer = MagicMock()
         mock_scorer.id = metric_id
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = "Test"
@@ -503,24 +503,24 @@ class TestMetricDelete:
 
         mock_scorers_service.list.return_value = [mock_scorer]
 
-        metric = Metric.get(id=metric_id)
+        metric = Evaluator.get(id=metric_id)
         metric.delete()
 
-        mock_metrics_service.delete_metric.assert_called_once_with(name="Test Metric")
+        mock_metrics_service.delete_evaluator.assert_called_once_with(name="Test Evaluator")
         assert metric.sync_state == SyncState.DELETED
 
     def test_delete_raises_error_for_local_only(self, reset_configuration: None) -> None:
         """Test delete() raises ValueError for local-only metric."""
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
 
-        with pytest.raises(ValueError, match="Metric ID is not set"):
+        with pytest.raises(ValueError, match="Evaluator ID is not set"):
             metric.delete()
 
 
 class TestMetricRefresh:
-    """Test suite for Metric.refresh() method."""
+    """Test suite for Evaluator.refresh() method."""
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_refresh_updates_attributes(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
         """Test refresh() updates all attributes from the API."""
         mock_service = MagicMock()
@@ -531,7 +531,7 @@ class TestMetricRefresh:
         # Initial state
         initial_scorer = MagicMock()
         initial_scorer.id = metric_id
-        initial_scorer.name = "Test Metric"
+        initial_scorer.name = "Test Evaluator"
         initial_scorer.scorer_type = ScorerTypes.LLM
         initial_scorer.tags = ["test"]
         initial_scorer.description = "Initial description"
@@ -548,7 +548,7 @@ class TestMetricRefresh:
         # Updated state
         updated_scorer = MagicMock()
         updated_scorer.id = metric_id
-        updated_scorer.name = "Test Metric"
+        updated_scorer.name = "Test Evaluator"
         updated_scorer.scorer_type = ScorerTypes.LLM
         updated_scorer.tags = ["test", "updated"]
         updated_scorer.description = "Updated description"
@@ -564,7 +564,7 @@ class TestMetricRefresh:
 
         mock_service.list.side_effect = [[initial_scorer], [updated_scorer]]
 
-        metric = Metric.get(id=metric_id)
+        metric = Evaluator.get(id=metric_id)
         assert metric.description == "Initial description"
         assert metric.judges == 3
 
@@ -576,12 +576,12 @@ class TestMetricRefresh:
 
     def test_refresh_raises_error_for_local_only(self, reset_configuration: None) -> None:
         """Test refresh() raises ValueError for local-only metric."""
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
 
-        with pytest.raises(ValueError, match="Metric ID is not set"):
+        with pytest.raises(ValueError, match="Evaluator ID is not set"):
             metric.refresh()
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_refresh_raises_error_when_metric_no_longer_exists(
         self, mock_scorers_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -592,7 +592,7 @@ class TestMetricRefresh:
         metric_id = str(uuid4())
         mock_scorer = MagicMock()
         mock_scorer.id = metric_id
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = "Test"
@@ -606,21 +606,21 @@ class TestMetricRefresh:
         # First call returns the metric, second returns empty list (deleted)
         mock_service.list.side_effect = [[mock_scorer], []]
 
-        metric = Metric.get(id=metric_id)
+        metric = Evaluator.get(id=metric_id)
 
         with pytest.raises(ValueError, match="no longer exists"):
             metric.refresh()
 
 
 class TestMetricUpdate:
-    """Test suite for Metric.update() method."""
+    """Test suite for Evaluator.update() method."""
 
     def test_update_local_metric_raises_validation_error(self, reset_configuration: None) -> None:
         # Given: a local metric instance
         def dummy_fn(trace):
             return 0.5
 
-        metric = LocalMetric(name="my-local", scorer_fn=dummy_fn)
+        metric = LocalEvaluator(name="my-local", scorer_fn=dummy_fn)
 
         # When/Then: calling update raises ValidationError
         with pytest.raises(ValidationError, match="Local metrics don't exist"):
@@ -628,15 +628,15 @@ class TestMetricUpdate:
 
     def test_update_without_id_raises_value_error(self, reset_configuration: None) -> None:
         # Given: an LLM metric without an ID (local-only)
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
 
         # When/Then: calling update raises ValueError about missing ID
-        with pytest.raises(ValueError, match="Metric ID is not set"):
+        with pytest.raises(ValueError, match="Evaluator ID is not set"):
             metric.update(name="New Name")
 
     def test_update_deleted_metric_raises_value_error(self, reset_configuration: None) -> None:
         # Given: a metric in DELETED state
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.DELETED)
 
@@ -646,7 +646,7 @@ class TestMetricUpdate:
 
     def test_update_failed_sync_raises_value_error(self, reset_configuration: None) -> None:
         # Given: a metric in FAILED_SYNC state
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.FAILED_SYNC, error=RuntimeError("prior failure"))
 
@@ -656,7 +656,7 @@ class TestMetricUpdate:
 
     def test_update_with_invalid_fields_raises_value_error(self, reset_configuration: None) -> None:
         # Given: a synced LLM metric
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.SYNCED)
 
@@ -664,14 +664,14 @@ class TestMetricUpdate:
         with pytest.raises(ValueError, match="Invalid update fields"):
             metric.update(prompt="new prompt", model="gpt-4o")
 
-    @patch("splunk_ao.metric.update_scorers_scorer_id_patch")
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.update_scorers_scorer_id_patch")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
     def test_update_calls_api_and_syncs_attributes(
         self, mock_config_get: MagicMock, mock_update_patch: MagicMock, reset_configuration: None
     ) -> None:
         # Given: a synced LLM metric with an ID
         metric_id = str(uuid4())
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id=metric_id, tags=["old-tag"], description="old desc")
         metric._set_state(SyncState.SYNCED)
 
@@ -680,7 +680,7 @@ class TestMetricUpdate:
 
         updated_response = MagicMock()
         updated_response.id = metric_id
-        updated_response.name = "Test Metric"
+        updated_response.name = "Test Evaluator"
         updated_response.scorer_type = ScorerTypes.LLM
         updated_response.tags = ["new-tag"]
         updated_response.description = "new desc"
@@ -705,13 +705,13 @@ class TestMetricUpdate:
         assert metric.tags == ["new-tag"]
         assert metric.sync_state == SyncState.SYNCED
 
-    @patch("splunk_ao.metric.update_scorers_scorer_id_patch")
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.update_scorers_scorer_id_patch")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
     def test_update_handles_api_failure(
         self, mock_config_get: MagicMock, mock_update_patch: MagicMock, reset_configuration: None
     ) -> None:
         # Given: a synced metric whose API call will fail
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.SYNCED)
 
@@ -724,13 +724,13 @@ class TestMetricUpdate:
 
         assert metric.sync_state == SyncState.FAILED_SYNC
 
-    @patch("splunk_ao.metric.update_scorers_scorer_id_patch")
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.update_scorers_scorer_id_patch")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
     def test_update_raises_api_error_for_validation_error_response(
         self, mock_config_get: MagicMock, mock_update_patch: MagicMock, reset_configuration: None
     ) -> None:
         # Given: a synced metric and an API that returns an HTTPValidationError
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.SYNCED)
 
@@ -740,16 +740,16 @@ class TestMetricUpdate:
         mock_update_patch.sync.return_value = validation_error_response
 
         # When/Then: APIError is raised with the validation detail
-        with pytest.raises(APIError, match="Metric update validation error"):
+        with pytest.raises(APIError, match="Evaluator update validation error"):
             metric.update(name="New Name")
 
-    @patch("splunk_ao.metric.update_scorers_scorer_id_patch")
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.update_scorers_scorer_id_patch")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
     def test_update_raises_api_error_for_none_response(
         self, mock_config_get: MagicMock, mock_update_patch: MagicMock, reset_configuration: None
     ) -> None:
         # Given: a synced metric and an API that returns None
-        metric = LlmMetric(name="Test Metric", prompt="Test prompt")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Test prompt")
         metric._sync_attrs(id="some-id")
         metric._set_state(SyncState.SYNCED)
 
@@ -762,17 +762,17 @@ class TestMetricUpdate:
 
 
 class TestMetricMethods:
-    """Test suite for other Metric methods."""
+    """Test suite for other Evaluator methods."""
 
     def test_str_and_repr(self, reset_configuration: None) -> None:
         """Test __str__ and __repr__ return expected formats."""
-        metric = LlmMetric(name="Test Metric", prompt="Is it accurate?", output_type="percentage")
+        metric = LlmEvaluator(name="Test Evaluator", prompt="Is it accurate?", output_type="percentage")
         metric.id = "test-id-123"
 
-        assert str(metric) == "LlmMetric(name='Test Metric', id='test-id-123', scorer_type='llm')"
+        assert str(metric) == "LlmEvaluator(name='Test Evaluator', id='test-id-123', scorer_type='llm')"
         assert "model=" in repr(metric) and "judges=" in repr(metric)
 
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_populate_from_scorer_response_handles_unset_values(
         self, mock_scorers_class: MagicMock, reset_configuration: None
     ) -> None:
@@ -784,7 +784,7 @@ class TestMetricMethods:
 
         mock_scorer = MagicMock()
         mock_scorer.id = str(uuid4())
-        mock_scorer.name = "Test Metric"
+        mock_scorer.name = "Test Evaluator"
         mock_scorer.scorer_type = ScorerTypes.LLM
         mock_scorer.tags = []
         mock_scorer.description = UnsetType()
@@ -797,7 +797,7 @@ class TestMetricMethods:
 
         mock_service.list.return_value = [mock_scorer]
 
-        metric = Metric.get(name="Test Metric")
+        metric = Evaluator.get(name="Test Evaluator")
 
         assert metric is not None
         assert metric.description == ""
@@ -812,43 +812,43 @@ class TestMetricMethods:
 
 
 class TestCodeMetricInitialization:
-    """Test suite for CodeMetric initialization."""
+    """Test suite for CodeEvaluator initialization."""
 
     def test_init_with_minimal_fields(self, reset_configuration: None) -> None:
-        """Test initializing a CodeMetric with just a name."""
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        """Test initializing a CodeEvaluator with just a name."""
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
-        assert metric.name == "Test Code Metric"
+        assert metric.name == "Test Code Evaluator"
         assert metric.scorer_type == ScorerTypes.CODE
         assert metric.id is None
         assert metric.sync_state == SyncState.LOCAL_ONLY
 
     def test_init_with_all_fields(self, reset_configuration: None) -> None:
-        """Test initializing a CodeMetric with all optional fields."""
-        metric = CodeMetric(name="Test Code Metric", description="Test code metric description", tags=["test", "code"])
+        """Test initializing a CodeEvaluator with all optional fields."""
+        metric = CodeEvaluator(name="Test Code Evaluator", description="Test code metric description", tags=["test", "code"])
 
-        assert metric.name == "Test Code Metric"
+        assert metric.name == "Test Code Evaluator"
         assert metric.description == "Test code metric description"
         assert metric.tags == ["test", "code"]
 
     def test_init_with_required_metrics(self, reset_configuration: None) -> None:
-        """Test initializing a CodeMetric with required_metrics."""
-        metric = CodeMetric(
-            name="Test Code Metric", node_level=StepType.llm, required_metrics=["context_adherence", "completeness"]
+        """Test initializing a CodeEvaluator with required_metrics."""
+        metric = CodeEvaluator(
+            name="Test Code Evaluator", node_level=StepType.llm, required_metrics=["context_adherence", "completeness"]
         )
 
-        assert metric.name == "Test Code Metric"
+        assert metric.name == "Test Code Evaluator"
         assert metric.required_metrics == ["context_adherence", "completeness"]
         assert metric.node_level == StepType.llm
 
     def test_init_with_output_type_enum(self, reset_configuration: None) -> None:
-        """Test initializing a CodeMetric with an OutputTypeEnum output_type."""
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm, output_type=OutputTypeEnum.PERCENTAGE)
+        """Test initializing a CodeEvaluator with an OutputTypeEnum output_type."""
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm, output_type=OutputTypeEnum.PERCENTAGE)
 
         assert metric.output_type == OutputTypeEnum.PERCENTAGE
 
     def test_init_with_output_type_string(self, reset_configuration: None) -> None:
-        """Test initializing a CodeMetric with a string output_type is mapped to the enum."""
+        """Test initializing a CodeEvaluator with a string output_type is mapped to the enum."""
         cases = [
             ("percentage", OutputTypeEnum.PERCENTAGE),
             ("boolean", OutputTypeEnum.BOOLEAN),
@@ -857,25 +857,25 @@ class TestCodeMetricInitialization:
             ("discrete", OutputTypeEnum.DISCRETE),
         ]
         for string_value, expected_enum in cases:
-            metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm, output_type=string_value)
+            metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm, output_type=string_value)
             assert metric.output_type == expected_enum, f"Expected {expected_enum} for '{string_value}'"
 
     def test_init_without_output_type_defaults_to_none(self, reset_configuration: None) -> None:
         """Test that omitting output_type leaves it as None (API applies its own default)."""
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         assert metric.output_type is None
 
 
 class TestCodeMetricCreate:
-    """Test suite for CodeMetric.create() method."""
+    """Test suite for CodeEvaluator.create() method."""
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_persists_code_metric_to_api(
         self,
         mock_scorers_class: MagicMock,
@@ -907,7 +907,7 @@ class TestCodeMetricCreate:
 
         # Mock the scorer creation response
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
 
         # Mock the version creation response
         mock_create_version.sync.return_value = mock_version_response(scorer_id)
@@ -915,13 +915,13 @@ class TestCodeMetricCreate:
         # Mock the scorer list response for refresh
         mock_scorers_service = MagicMock()
         mock_scorers_service.list.return_value = [
-            mock_scorer_full(scorer_id, "Test Code Metric", tags=["test"], description="Test description")
+            mock_scorer_full(scorer_id, "Test Code Evaluator", tags=["test"], description="Test description")
         ]
         mock_scorers_class.return_value = mock_scorers_service
 
         # Create the metric
         metric = (
-            CodeMetric(name="Test Code Metric", description="Test description", tags=["test"], node_level=StepType.llm)
+            CodeEvaluator(name="Test Code Evaluator", description="Test description", tags=["test"], node_level=StepType.llm)
             .load_code(str(code_file))
             .create()
         )
@@ -933,7 +933,7 @@ class TestCodeMetricCreate:
         # Verify scorer creation was called
         mock_create_scorers.sync.assert_called_once()
         create_scorer_call = mock_create_scorers.sync.call_args
-        assert create_scorer_call.kwargs["body"].name == "Test Code Metric"
+        assert create_scorer_call.kwargs["body"].name == "Test Code Evaluator"
         assert create_scorer_call.kwargs["body"].scorer_type == ScorerTypes.CODE
         assert create_scorer_call.kwargs["body"].description == "Test description"
         assert create_scorer_call.kwargs["body"].tags == ["test"]
@@ -954,12 +954,12 @@ class TestCodeMetricCreate:
         assert metric.id == scorer_id
         assert metric.is_synced()
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_forwards_output_type_to_scorer_request(
         self,
         mock_scorers_class: MagicMock,
@@ -985,23 +985,23 @@ class TestCodeMetricCreate:
         mock_validate_post.sync.return_value = mock_validation_response(task_id)
         mock_validate_get.sync.return_value = mock_validation_task_result(TaskResultStatus.COMPLETED)
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
         mock_create_version.sync.return_value = mock_version_response(scorer_id)
         mock_scorers_service = MagicMock()
-        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Metric")]
+        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Evaluator")]
         mock_scorers_class.return_value = mock_scorers_service
 
-        CodeMetric(name="Test Code Metric", node_level=StepType.llm, output_type=OutputTypeEnum.PERCENTAGE).load_code(
+        CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm, output_type=OutputTypeEnum.PERCENTAGE).load_code(
             str(code_file)
         ).create()
 
         create_scorer_call = mock_create_scorers.sync.call_args
         assert create_scorer_call.kwargs["body"].output_type == OutputTypeEnum.PERCENTAGE
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_handles_scorer_creation_failure(
         self,
         mock_create_scorers: MagicMock,
@@ -1028,18 +1028,18 @@ class TestCodeMetricCreate:
         # Mock scorer creation to fail
         mock_create_scorers.sync.side_effect = Exception("Scorer creation failed")
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(Exception, match="Scorer creation failed"):
             metric.load_code(str(code_file)).create()
 
         assert metric.sync_state == SyncState.FAILED_SYNC
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_handles_version_creation_failure(
         self,
         mock_create_scorers: MagicMock,
@@ -1067,24 +1067,24 @@ class TestCodeMetricCreate:
 
         # Mock scorer creation to succeed
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
 
         # Mock version creation to fail
         mock_create_version.sync.side_effect = Exception("Version creation failed")
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(Exception, match="Version creation failed"):
             metric.load_code(str(code_file)).create()
 
         assert metric.sync_state == SyncState.FAILED_SYNC
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_with_different_node_levels(
         self,
         mock_scorers_class: MagicMock,
@@ -1116,7 +1116,7 @@ class TestCodeMetricCreate:
 
             # Mock the scorer creation response
             scorer_id = str(uuid4())
-            mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, f"Test Code Metric {node_level}")
+            mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, f"Test Code Evaluator {node_level}")
 
             # Mock the version creation response
             mock_create_version.sync.return_value = mock_version_response(scorer_id)
@@ -1124,13 +1124,13 @@ class TestCodeMetricCreate:
             # Mock the scorer list response for refresh
             mock_scorers_service = MagicMock()
             mock_scorers_service.list.return_value = [
-                mock_scorer_full(scorer_id, f"Test Code Metric {node_level}", node_types=[node_level])
+                mock_scorer_full(scorer_id, f"Test Code Evaluator {node_level}", node_types=[node_level])
             ]
             mock_scorers_class.return_value = mock_scorers_service
 
             # Create the metric
             metric = (
-                CodeMetric(name=f"Test Code Metric {node_level}", node_level=node_level)
+                CodeEvaluator(name=f"Test Code Evaluator {node_level}", node_level=node_level)
                 .load_code(str(code_file))
                 .create()
             )
@@ -1140,12 +1140,12 @@ class TestCodeMetricCreate:
             # Verify the node_level is set on the metric itself
             assert metric.node_level == node_level
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_with_required_metrics(
         self,
         mock_scorers_class: MagicMock,
@@ -1177,21 +1177,21 @@ class TestCodeMetricCreate:
 
         # Mock the scorer creation response
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
 
         # Mock the version creation response
         mock_create_version.sync.return_value = mock_version_response(scorer_id)
 
         # Mock the scorer list response for refresh
         mock_scorers_service = MagicMock()
-        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Metric")]
+        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Evaluator")]
         mock_scorers_class.return_value = mock_scorers_service
 
         required_metrics = ["context_adherence", "completeness"]
 
         # Create the metric with required_metrics
         metric = (
-            CodeMetric(name="Test Code Metric", node_level=StepType.llm, required_metrics=required_metrics)
+            CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm, required_metrics=required_metrics)
             .load_code(str(code_file))
             .create()
         )
@@ -1207,7 +1207,7 @@ class TestCodeMetricCreate:
         create_scorer_call = mock_create_scorers.sync.call_args
         assert create_scorer_call.kwargs["body"].required_scorers == required_metrics
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
     def test_create_reads_code_file_correctly(
         self,
         mock_config: MagicMock,
@@ -1234,15 +1234,15 @@ def score(trace):
         code_file = create_temp_code_file(filename="complex_scorer.py", content=expected_content)
 
         with (
-            patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post") as mock_validate_post,
+            patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post") as mock_validate_post,
             patch(
-                "splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get"
+                "splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get"
             ) as mock_validate_get,
-            patch("splunk_ao.metric.create_scorers_post") as mock_create_scorers,
+            patch("splunk_ao.evaluator.create_scorers_post") as mock_create_scorers,
             patch(
-                "splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post"
+                "splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post"
             ) as mock_create_version,
-            patch("splunk_ao.metric.Scorers") as mock_scorers_class,
+            patch("splunk_ao.evaluator.Scorers") as mock_scorers_class,
         ):
             # Mock validation flow
             mock_validate_post.sync.return_value = mock_validation_response()
@@ -1258,7 +1258,7 @@ def score(trace):
             mock_scorers_class.return_value = mock_scorers_service
 
             # Create the metric
-            CodeMetric(name="Complex Scorer", node_level=StepType.llm).load_code(str(code_file)).create()
+            CodeEvaluator(name="Complex Scorer", node_level=StepType.llm).load_code(str(code_file)).create()
 
             # Verify the code file was read as bytes
             version_call = mock_create_version.sync.call_args
@@ -1267,8 +1267,8 @@ def score(trace):
             assert hasattr(body, "file")
             assert hasattr(body.file, "payload")
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_load_code_with_nonexistent_file_raises_validation_error(
         self,
         mock_create_scorers: MagicMock,
@@ -1282,15 +1282,15 @@ def score(trace):
         mock_config.return_value.api_client = mock_api_client
 
         # Create a metric and pass a non-existent file path
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(ValidationError, match="Code file not found"):
             metric.load_code("/nonexistent/file.py").create()
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_handles_none_scorer_response(
         self,
         mock_create_scorers: MagicMock,
@@ -1317,18 +1317,18 @@ def score(trace):
         # Mock scorer creation to return None
         mock_create_scorers.sync.return_value = None
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(ValueError, match="Failed to create code-based metric: No response from API"):
             metric.load_code(str(code_file)).create()
 
         assert metric.sync_state == SyncState.FAILED_SYNC
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_handles_none_version_response(
         self,
         mock_create_scorers: MagicMock,
@@ -1356,22 +1356,22 @@ def score(trace):
 
         # Mock scorer creation to succeed
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
 
         # Mock version creation to return None
         mock_create_version.sync.return_value = None
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(ValueError, match="Failed to create code-based metric: No response from API"):
             metric.load_code(str(code_file)).create()
 
         assert metric.sync_state == SyncState.FAILED_SYNC
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_propagates_validation_error(
         self,
         mock_create_scorers: MagicMock,
@@ -1399,16 +1399,16 @@ def score(trace):
         validation_error = ValidationError("Invalid configuration")
         mock_create_scorers.sync.side_effect = validation_error
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         # ValidationError should be propagated as-is, not wrapped
         with pytest.raises(ValidationError, match="Invalid configuration"):
             metric.load_code(str(code_file)).create()
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_scorers_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
     def test_create_sets_failed_sync_state_on_general_exception(
         self,
         mock_create_scorers: MagicMock,
@@ -1436,7 +1436,7 @@ def score(trace):
         runtime_error = RuntimeError("Unexpected error")
         mock_create_scorers.sync.side_effect = runtime_error
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(RuntimeError, match="Unexpected error"):
             metric.load_code(str(code_file)).create()
@@ -1445,9 +1445,9 @@ def score(trace):
         assert metric.sync_state == SyncState.FAILED_SYNC
         assert metric._last_error == runtime_error
 
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
     def test_create_handles_validation_failure(
         self,
         mock_validate_post: MagicMock,
@@ -1470,18 +1470,18 @@ def score(trace):
         mock_validate_post.sync.return_value = mock_validation_response()
         mock_validate_get.sync.return_value = mock_validation_task_result(TaskResultStatus.FAILED)
 
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm)
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm)
 
         with pytest.raises(ValidationError, match="Code validation failed"):
             metric.load_code(str(code_file)).create()
 
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.SplunkAOConfig.get")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.Scorers")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
     def test_create_polls_until_validation_complete(
         self,
         mock_scorers_class: MagicMock,
@@ -1517,16 +1517,16 @@ def score(trace):
 
         # Mock the scorer creation response
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test Code Evaluator")
         mock_create_version.sync.return_value = mock_version_response(scorer_id)
 
         # Mock the scorer list response for refresh
         mock_scorers_service = MagicMock()
-        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Metric")]
+        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test Code Evaluator")]
         mock_scorers_class.return_value = mock_scorers_service
 
         # Create the metric
-        metric = CodeMetric(name="Test Code Metric", node_level=StepType.llm).load_code(str(code_file)).create()
+        metric = CodeEvaluator(name="Test Code Evaluator", node_level=StepType.llm).load_code(str(code_file)).create()
 
         # Verify polling was called 3 times (2 pending + 1 completed)
         assert mock_validate_get.sync.call_count == 3
@@ -1534,11 +1534,11 @@ def score(trace):
         assert mock_sleep.call_count == 2
         assert metric.is_synced()
 
-    @patch("splunk_ao.metric.time.time")
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.time.time")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_timeout(
         self,
         mock_config,
@@ -1563,14 +1563,14 @@ def score(trace):
         # Simulate time passing: first call is start_time=0, second call is elapsed=61 (past 60s timeout)
         mock_time.side_effect = [0.0, 61.0]
 
-        metric = CodeMetric(name="Test Timeout Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Timeout Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValidationError, match="Code validation timed out"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_post_returns_none(
         self, mock_config, mock_validate_post, mock_validate_get, create_temp_code_file, mock_api_client
     ) -> None:
@@ -1581,14 +1581,14 @@ def score(trace):
 
         mock_validate_post.sync.return_value = None
 
-        metric = CodeMetric(name="Test None Response Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test None Response Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValueError, match="Failed to validate code: No response from API"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_get_returns_none(
         self,
         mock_config,
@@ -1606,14 +1606,14 @@ def score(trace):
         mock_validate_post.sync.return_value = mock_validation_response()
         mock_validate_get.sync.return_value = None
 
-        metric = CodeMetric(name="Test None Get Response Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test None Get Response Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValueError, match="Failed to get validation result: No response from API"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_unknown_status(
         self,
         mock_config,
@@ -1634,14 +1634,14 @@ def score(trace):
         mock_result.status = "unknown_status"
         mock_validate_get.sync.return_value = mock_result
 
-        metric = CodeMetric(name="Test Unknown Status Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Unknown Status Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValueError, match="Unknown task status"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_failed_status(
         self,
         mock_config,
@@ -1662,14 +1662,14 @@ def score(trace):
         mock_result.result = "Syntax error in code"
         mock_validate_get.sync.return_value = mock_result
 
-        metric = CodeMetric(name="Test Failed Status Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Failed Status Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValidationError, match="Code validation failed: Syntax error in code"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_failed_status_no_message(
         self,
         mock_config,
@@ -1690,14 +1690,14 @@ def score(trace):
         mock_result.result = None  # No error message
         mock_validate_get.sync.return_value = mock_result
 
-        metric = CodeMetric(name="Test Failed No Message Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Failed No Message Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValidationError, match="Code validation failed"):
             metric.create()
 
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_invalid_result(
         self,
         mock_config,
@@ -1734,17 +1734,17 @@ def score(trace):
         mock_task_result.result = mock_validate_result
         mock_validate_get.sync.return_value = mock_task_result
 
-        metric = CodeMetric(name="Test Invalid Result Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Invalid Result Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValidationError, match="Code validation failed: Missing required function: evaluate"):
             metric.create()
 
-    @patch("splunk_ao.metric.Scorers")
-    @patch("splunk_ao.metric.create_code_scorer_version_scorers_scorer_id_version_code_post")
-    @patch("splunk_ao.metric.create_scorers_post")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.Scorers")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_create_validation_result_as_string(
         self,
         mock_config,
@@ -1774,15 +1774,15 @@ def score(trace):
         mock_validate_get.sync.return_value = mock_task_result
 
         scorer_id = str(uuid4())
-        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test String Result Metric")
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Test String Result Evaluator")
         mock_create_version.sync.return_value = mock_version_response(scorer_id)
 
         mock_scorers_service = MagicMock()
-        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test String Result Metric")]
+        mock_scorers_service.list.return_value = [mock_scorer_full(scorer_id, "Test String Result Evaluator")]
         mock_scorers_class.return_value = mock_scorers_service
 
         metric = (
-            CodeMetric(name="Test String Result Metric", node_level=StepType.llm).load_code(str(code_file)).create()
+            CodeEvaluator(name="Test String Result Evaluator", node_level=StepType.llm).load_code(str(code_file)).create()
         )
 
         assert metric.is_synced()
@@ -1790,13 +1790,13 @@ def score(trace):
 
 
 class TestCodeMetricValidationConfiguration:
-    """Test suite for CodeMetric validation configuration parameters."""
+    """Test suite for CodeEvaluator validation configuration parameters."""
 
-    @patch("splunk_ao.metric.time.time")
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.time.time")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_custom_timeout_value_is_respected(
         self,
         mock_config,
@@ -1825,16 +1825,16 @@ class TestCodeMetricValidationConfiguration:
         # Simulate time passing: first call is start_time=0, second call is elapsed=31 (past 30s custom timeout)
         mock_time.side_effect = [0.0, 31.0]
 
-        metric = CodeMetric(name="Test Custom Timeout Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Custom Timeout Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         with pytest.raises(ValidationError, match="Code validation timed out after 30 seconds"):
             metric.create()
 
-    @patch("splunk_ao.metric.time.time")
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.time.time")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_custom_initial_delay_is_used(
         self,
         mock_config,
@@ -1868,7 +1868,7 @@ class TestCodeMetricValidationConfiguration:
         # Time progression
         mock_time.side_effect = [0.0, 1.0, 2.0]
 
-        metric = CodeMetric(name="Test Initial Delay Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Initial Delay Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         # Should raise because no scorers mock, but we can check the sleep was called correctly
         try:
@@ -1881,11 +1881,11 @@ class TestCodeMetricValidationConfiguration:
             first_sleep_call = mock_sleep.call_args_list[0]
             assert first_sleep_call[0][0] == 2.0
 
-    @patch("splunk_ao.metric.time.time")
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.time.time")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_custom_max_delay_caps_backoff(
         self,
         mock_config,
@@ -1922,7 +1922,7 @@ class TestCodeMetricValidationConfiguration:
         # Time progression
         mock_time.side_effect = [0.0, 1.0, 2.0, 3.0, 4.0]
 
-        metric = CodeMetric(name="Test Max Delay Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Max Delay Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         try:
             metric.create()
@@ -1934,11 +1934,11 @@ class TestCodeMetricValidationConfiguration:
             second_sleep_call = mock_sleep.call_args_list[1]
             assert second_sleep_call[0][0] == 15.0  # Capped at max_delay
 
-    @patch("splunk_ao.metric.time.time")
-    @patch("splunk_ao.metric.time.sleep")
-    @patch("splunk_ao.metric.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
-    @patch("splunk_ao.metric.validate_code_scorer_scorers_code_validate_post")
-    @patch("splunk_ao.metric.SplunkAOConfig")
+    @patch("splunk_ao.evaluator.time.time")
+    @patch("splunk_ao.evaluator.time.sleep")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.SplunkAOConfig")
     def test_custom_backoff_multiplier_is_applied(
         self,
         mock_config,
@@ -1975,7 +1975,7 @@ class TestCodeMetricValidationConfiguration:
         # Time progression
         mock_time.side_effect = [0.0, 1.0, 2.0, 3.0, 4.0]
 
-        metric = CodeMetric(name="Test Backoff Multiplier Metric", node_level=StepType.llm).load_code(str(code_file))
+        metric = CodeEvaluator(name="Test Backoff Multiplier Evaluator", node_level=StepType.llm).load_code(str(code_file))
 
         try:
             metric.create()

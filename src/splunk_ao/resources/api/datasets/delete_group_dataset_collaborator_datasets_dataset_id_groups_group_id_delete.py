@@ -30,7 +30,7 @@ def _get_kwargs(dataset_id: str, group_id: str) -> dict[str, Any]:
         "path": "/datasets/{dataset_id}/groups/{group_id}".format(dataset_id=dataset_id, group_id=group_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

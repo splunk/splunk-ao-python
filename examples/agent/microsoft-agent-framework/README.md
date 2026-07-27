@@ -22,7 +22,7 @@ OPENAI_API_KEY=
 # SPLUNK_AO_API_ENDPOINT=    # Optional, only set this if you are using a custom Splunk AO deployment
 SPLUNK_AO_API_KEY=
 SPLUNK_AO_PROJECT=
-SPLUNK_AO_LOG_STREAM=
+SPLUNK_AO_AGENT_STREAM=
 ```
 
 For the `SPLUNK_AO_API_ENDPOINT`, you only need to set this if you are using a custom Splunk AO deployment. There is no need to set this if you are using [app.galileo.ai](https://app.galileo.ai). This endpoint is different to the console URL that you would normally use. See the [Splunk AO OpenTelemetry documentation](https://docs.galileo.ai/sdk-api/third-party-integrations/opentelemetry-and-openinference#self-hosted-deployments) for more details.

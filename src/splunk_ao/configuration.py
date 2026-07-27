@@ -91,8 +91,8 @@ _CONFIGURATION_KEYS = [
     ),
     ConfigKey(name="default_project_name", env_var="SPLUNK_AO_PROJECT", description="Default project name"),
     ConfigKey(name="default_project_id", env_var="SPLUNK_AO_PROJECT_ID", description="Default project ID"),
-    ConfigKey(name="default_logstream_name", env_var="SPLUNK_AO_LOG_STREAM", description="Default log stream name"),
-    ConfigKey(name="default_logstream_id", env_var="SPLUNK_AO_LOG_STREAM_ID", description="Default log stream ID"),
+    ConfigKey(name="default_logstream_name", env_var="SPLUNK_AO_AGENT_STREAM", description="Default agent stream name"),
+    ConfigKey(name="default_logstream_id", env_var="SPLUNK_AO_AGENT_STREAM_ID", description="Default agent stream ID"),
     ConfigKey(
         name="default_scorer_model",
         env_var="SPLUNK_AO_DEFAULT_SCORER_MODEL",

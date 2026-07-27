@@ -31,7 +31,7 @@ def distributed_clients(set_distributed_mode: None) -> Generator[Mock, None, Non
     with (
         patch("splunk_ao.logger.logger.Traces") as traces_client,
         patch("splunk_ao.logger.logger.Projects") as projects_client,
-        patch("splunk_ao.logger.logger.LogStreams") as logstreams_client,
+        patch("splunk_ao.logger.logger.AgentStreams") as logstreams_client,
     ):
         client = setup_mock_traces_client(traces_client)
         setup_mock_projects_client(projects_client)

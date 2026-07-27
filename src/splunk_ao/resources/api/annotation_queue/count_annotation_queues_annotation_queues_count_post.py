@@ -17,46 +17,38 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
+from ...models.annotation_queue_count_response import AnnotationQueueCountResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.job_db import JobDB
+from ...models.list_annotation_queue_params import ListAnnotationQueueParams
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, run_id: str, *, status: None | str | Unset = UNSET) -> dict[str, Any]:
+def _get_kwargs(*, body: ListAnnotationQueueParams | Unset) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
-    params: dict[str, Any] = {}
-
-    json_status: None | str | Unset
-    if isinstance(status, Unset):
-        json_status = UNSET
-    else:
-        json_status = status
-    params["status"] = json_status
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
     _kwargs: dict[str, Any] = {
-        "method": RequestMethod.GET,
+        "method": RequestMethod.POST,
         "return_raw_response": True,
-        "path": "/projects/{project_id}/runs/{run_id}/jobs".format(project_id=project_id, run_id=run_id),
-        "params": params,
+        "path": "/annotation_queues/count",
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    _kwargs["json"]: dict[str, Any] | Unset = UNSET
+    if not isinstance(body, Unset):
+        _kwargs["json"] = body.to_dict()
+
+    headers["Content-Type"] = "application/json"
+
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | list[JobDB]:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> AnnotationQueueCountResponse | HTTPValidationError:
     if response.status_code == 200:
-        response_200 = []
-        _response_200 = response.json()
-        for response_200_item_data in _response_200:
-            response_200_item = JobDB.from_dict(response_200_item_data)
-
-            response_200.append(response_200_item)
+        response_200 = AnnotationQueueCountResponse.from_dict(response.json())
 
         return response_200
 
@@ -83,7 +75,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | list[JobDB]]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -93,28 +87,24 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 
 def sync_detailed(
-    project_id: str, run_id: str, *, client: ApiClient, status: None | str | Unset = UNSET
-) -> Response[HTTPValidationError | list[JobDB]]:
-    """Get Jobs For Project Run
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get all jobs for a project and run.
-
-    Returns them in order of creation from newest to oldest.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        project_id (str):
-        run_id (str):
-        status (None | str | Unset):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[JobDB]]
+        Response[AnnotationQueueCountResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, run_id=run_id, status=status)
+    kwargs = _get_kwargs(body=body)
 
     response = client.request(**kwargs)
 
@@ -122,53 +112,45 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, run_id: str, *, client: ApiClient, status: None | str | Unset = UNSET
-) -> Optional[HTTPValidationError | list[JobDB]]:
-    """Get Jobs For Project Run
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Optional[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get all jobs for a project and run.
-
-    Returns them in order of creation from newest to oldest.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        project_id (str):
-        run_id (str):
-        status (None | str | Unset):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[JobDB]
+        AnnotationQueueCountResponse | HTTPValidationError
     """
 
-    return sync_detailed(project_id=project_id, run_id=run_id, client=client, status=status).parsed
+    return sync_detailed(client=client, body=body).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, run_id: str, *, client: ApiClient, status: None | str | Unset = UNSET
-) -> Response[HTTPValidationError | list[JobDB]]:
-    """Get Jobs For Project Run
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get all jobs for a project and run.
-
-    Returns them in order of creation from newest to oldest.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        project_id (str):
-        run_id (str):
-        status (None | str | Unset):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[JobDB]]
+        Response[AnnotationQueueCountResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, run_id=run_id, status=status)
+    kwargs = _get_kwargs(body=body)
 
     response = await client.arequest(**kwargs)
 
@@ -176,25 +158,21 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, run_id: str, *, client: ApiClient, status: None | str | Unset = UNSET
-) -> Optional[HTTPValidationError | list[JobDB]]:
-    """Get Jobs For Project Run
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Optional[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get all jobs for a project and run.
-
-    Returns them in order of creation from newest to oldest.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        project_id (str):
-        run_id (str):
-        status (None | str | Unset):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[JobDB]
+        AnnotationQueueCountResponse | HTTPValidationError
     """
 
-    return (await asyncio_detailed(project_id=project_id, run_id=run_id, client=client, status=status)).parsed
+    return (await asyncio_detailed(client=client, body=body)).parsed

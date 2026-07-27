@@ -32,7 +32,7 @@ class TestSplunkAOADKPluginInit:
         """Plugin with ingestion_hook works without any Galileo environment variables."""
         # Given: no Galileo environment variables are set
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-        monkeypatch.delenv("SPLUNK_AO_LOG_STREAM", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_AGENT_STREAM", raising=False)
         monkeypatch.delenv("SPLUNK_AO_API_KEY", raising=False)
         monkeypatch.delenv("SPLUNK_AO_CONSOLE_URL", raising=False)
 

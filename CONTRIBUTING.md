@@ -46,6 +46,8 @@
    poetry run pytest
    ```
 
+   Dev dependencies (including `fastapi ^0.135.0`) resolve against **Pydantic v2** (`>=2.9.0`). Use `poetry install --sync` after pulling lockfile changes so your local environment matches CI.
+
 ## Auto-generating the API client
 
 1. Run `./scripts/import-openapi-yaml.sh https://api.galileo.ai/client` to update the openapi.yml file with the latest client spec
