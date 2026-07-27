@@ -1,4 +1,4 @@
-"""Tests for pagination behavior of the LogStreams service.
+"""Tests for pagination behavior of the AgentStreams service.
 
 Covers:
 - `_list_all` paginates across all pages until the API signals no more pages.
@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import pytest
 
-from splunk_ao.log_streams import LogStreams
+from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.resources.models.http_validation_error import HTTPValidationError
 from splunk_ao.resources.models.list_log_stream_response import ListLogStreamResponse
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
@@ -38,10 +38,10 @@ def _make_response(*, names: list[str], next_token, paginated: bool) -> ListLogS
 
 
 class TestListAllPagination:
-    """Tests for LogStreams._list_all (internal helper)."""
+    """Tests for AgentStreams._list_all (internal helper)."""
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_paginates_across_multiple_pages(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -51,7 +51,7 @@ class TestListAllPagination:
         mock_endpoint.sync.side_effect = [page_1, page_2]
 
         # When: _list_all is called
-        all_streams = LogStreams()._list_all(project_id="proj-1")
+        all_streams = AgentStreams()._list_all(project_id="proj-1")
 
         # Then: every page is fetched and concatenated
         assert len(all_streams) == 8
@@ -60,22 +60,22 @@ class TestListAllPagination:
         # Second call passes the token from the first response
         assert mock_endpoint.sync.call_args_list[1].kwargs["starting_token"] == 5
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_stops_when_paginated_false(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: a single page with paginated=False
         page = _make_response(names=["only-stream"], next_token=42, paginated=False)
         mock_endpoint.sync.return_value = page
 
         # When: _list_all is called
-        all_streams = LogStreams()._list_all(project_id="proj-1")
+        all_streams = AgentStreams()._list_all(project_id="proj-1")
 
         # Then: only one fetch happens regardless of next_starting_token
         assert len(all_streams) == 1
         assert mock_endpoint.sync.call_count == 1
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_stops_when_next_token_is_unset(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -84,28 +84,28 @@ class TestListAllPagination:
         mock_endpoint.sync.return_value = page
 
         # When: _list_all is called
-        all_streams = LogStreams()._list_all(project_id="proj-1")
+        all_streams = AgentStreams()._list_all(project_id="proj-1")
 
         # Then: pagination stops on UNSET token
         assert len(all_streams) == 2
         assert mock_endpoint.sync.call_count == 1
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_uses_larger_page_size(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: a single page
         mock_endpoint.sync.return_value = _make_response(names=["a"], next_token=None, paginated=True)
 
         # When: _list_all is called
-        LogStreams()._list_all(project_id="proj-1")
+        AgentStreams()._list_all(project_id="proj-1")
 
         # Then: it uses the larger page size (500) to reduce round trips
         kwargs = mock_endpoint.sync.call_args.kwargs
-        assert kwargs["limit"] == LogStreams._LIST_ALL_PAGE_SIZE
+        assert kwargs["limit"] == AgentStreams._LIST_ALL_PAGE_SIZE
         assert kwargs["limit"] == 500
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_raises_on_http_validation_error(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -115,20 +115,20 @@ class TestListAllPagination:
 
         # When/Then: _list_all raises instead of silently returning the partial accumulator
         with pytest.raises(ValueError, match="Failed to list log streams"):
-            LogStreams()._list_all(project_id="proj-1")
+            AgentStreams()._list_all(project_id="proj-1")
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_raises_on_none_response(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: the endpoint returns None (unexpected protocol error)
         mock_endpoint.sync.return_value = None
 
         # When/Then: _list_all raises ValueError instead of returning an empty list
         with pytest.raises(ValueError, match="Unexpected empty response"):
-            LogStreams()._list_all(project_id="proj-1")
+            AgentStreams()._list_all(project_id="proj-1")
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_breaks_on_non_advancing_token(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -137,14 +137,14 @@ class TestListAllPagination:
         mock_endpoint.sync.return_value = same_token_page
 
         # When: _list_all is called
-        all_streams = LogStreams()._list_all(project_id="proj-1")
+        all_streams = AgentStreams()._list_all(project_id="proj-1")
 
         # Then: the loop terminates after one iteration thanks to the progress guard
         assert len(all_streams) == 1
         assert mock_endpoint.sync.call_count == 1
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_all_breaks_on_repeated_seen_token(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -157,7 +157,7 @@ class TestListAllPagination:
         mock_endpoint.sync.side_effect = [page_1, page_2, page_3]
 
         # When: _list_all is called
-        all_streams = LogStreams()._list_all(project_id="proj-1")
+        all_streams = AgentStreams()._list_all(project_id="proj-1")
 
         # Then: the loop terminates on the third page when the cycle is detected
         assert len(all_streams) == 3
@@ -165,10 +165,10 @@ class TestListAllPagination:
 
 
 class TestGetByNamePaginates:
-    """Tests for LogStreams.get(name=...) finding matches across pages."""
+    """Tests for AgentStreams.get(name=...) finding matches across pages."""
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_get_by_name_finds_match_on_second_page(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -178,15 +178,15 @@ class TestGetByNamePaginates:
         mock_endpoint.sync.side_effect = [page_1, page_2]
 
         # When: looking up by name
-        result = LogStreams().get(name="target-stream", project_id="proj-1")
+        result = AgentStreams().get(name="target-stream", project_id="proj-1")
 
         # Then: the match on page 2 is found (would have returned None before this fix)
         assert result is not None
         assert result.name == "target-stream"
         assert mock_endpoint.sync.call_count == 2
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_get_by_name_returns_none_when_missing(
         self, mock_config_class: MagicMock, mock_endpoint: MagicMock
     ) -> None:
@@ -195,23 +195,23 @@ class TestGetByNamePaginates:
         mock_endpoint.sync.return_value = page
 
         # When: looking up a missing name
-        result = LogStreams().get(name="nonexistent", project_id="proj-1")
+        result = AgentStreams().get(name="nonexistent", project_id="proj-1")
 
         # Then: returns None
         assert result is None
 
 
 class TestListForwardsStartingToken:
-    """Tests that LogStreams.list forwards starting_token to the paginated endpoint."""
+    """Tests that AgentStreams.list forwards starting_token to the paginated endpoint."""
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_forwards_starting_token(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: a single page response
         mock_endpoint.sync.return_value = _make_response(names=["s1"], next_token=None, paginated=True)
 
         # When: list is called with a custom starting_token
-        LogStreams().list(project_id="proj-1", starting_token=200, limit=50)
+        AgentStreams().list(project_id="proj-1", starting_token=200, limit=50)
 
         # Then: starting_token and limit are passed to the underlying endpoint
         kwargs = mock_endpoint.sync.call_args.kwargs
@@ -219,14 +219,14 @@ class TestListForwardsStartingToken:
         assert kwargs["limit"] == 50
         assert kwargs["project_id"] == "proj-1"
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_default_starting_token_is_zero(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: a single page response
         mock_endpoint.sync.return_value = _make_response(names=[], next_token=None, paginated=True)
 
         # When: list is called without starting_token
-        LogStreams().list(project_id="proj-1")
+        AgentStreams().list(project_id="proj-1")
 
         # Then: starting_token defaults to 0
         kwargs = mock_endpoint.sync.call_args.kwargs
@@ -235,38 +235,38 @@ class TestListForwardsStartingToken:
 
 
 class TestListValidatesArguments:
-    """Tests that LogStreams.list rejects invalid (project_id, project_name) combinations."""
+    """Tests that AgentStreams.list rejects invalid (project_id, project_name) combinations."""
 
     def test_list_raises_when_both_project_id_and_name_provided(self) -> None:
         # When/Then: passing both project_id and project_name is rejected (matches get/create XOR contract)
         with pytest.raises(ValueError, match="Exactly one of 'project_id' or 'project_name'"):
-            LogStreams().list(project_id="proj-1", project_name="My Project")
+            AgentStreams().list(project_id="proj-1", project_name="My Project")
 
     def test_list_raises_when_neither_project_id_nor_name_provided(self) -> None:
         # When/Then: passing neither is rejected
         with pytest.raises(ValueError, match="Exactly one of 'project_id' or 'project_name'"):
-            LogStreams().list()
+            AgentStreams().list()
 
 
 class TestListPropagatesErrors:
-    """Tests that LogStreams.list raises instead of silently returning [] on server errors."""
+    """Tests that AgentStreams.list raises instead of silently returning [] on server errors."""
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_raises_on_http_validation_error(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: the endpoint returns an HTTPValidationError (e.g. bad starting_token type)
         mock_endpoint.sync.return_value = HTTPValidationError()
 
         # When/Then: list raises ValueError instead of masking the error as an empty page
         with pytest.raises(ValueError, match="Failed to list log streams"):
-            LogStreams().list(project_id="proj-1")
+            AgentStreams().list(project_id="proj-1")
 
-    @patch("splunk_ao.log_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
-    @patch("splunk_ao.log_streams.SplunkAOConfig")
+    @patch("splunk_ao.agent_streams.list_log_streams_paginated_projects_project_id_log_streams_paginated_get")
+    @patch("splunk_ao.agent_streams.SplunkAOConfig")
     def test_list_raises_on_none_response(self, mock_config_class: MagicMock, mock_endpoint: MagicMock) -> None:
         # Given: the endpoint returns None (unexpected protocol error)
         mock_endpoint.sync.return_value = None
 
         # When/Then: list raises ValueError
         with pytest.raises(ValueError, match="Unexpected empty response"):
-            LogStreams().list(project_id="proj-1")
+            AgentStreams().list(project_id="proj-1")

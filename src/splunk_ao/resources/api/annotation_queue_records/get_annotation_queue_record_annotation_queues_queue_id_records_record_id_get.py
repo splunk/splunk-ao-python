@@ -38,7 +38,7 @@ def _get_kwargs(queue_id: str, record_id: str) -> dict[str, Any]:
         "path": "/annotation_queues/{queue_id}/records/{record_id}".format(queue_id=queue_id, record_id=record_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

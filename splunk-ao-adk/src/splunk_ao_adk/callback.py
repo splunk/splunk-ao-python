@@ -55,9 +55,10 @@ class SplunkAOADKCallback:
     project_id : str, optional
         Splunk AO project ID.
     log_stream : str, optional
-        Log stream name within the project. Can also be set via SPLUNK_AO_LOG_STREAM env var.
+        Agent stream name within the project. Can also be set via
+        SPLUNK_AO_AGENT_STREAM env var.
     log_stream_id : str, optional
-        Splunk AO log stream ID.
+        Splunk AO agent stream ID.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
         Custom callback to receive trace data instead of sending to Splunk AO.
 

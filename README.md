@@ -82,6 +82,11 @@ export SPLUNK_AO_PROJECT="your-project-name"
 export SPLUNK_AO_LOG_STREAM="your-log-stream-name"
 ```
 
+When using `SplunkAOSpanProcessor`, routing is captured when its exporter is
+constructed and remains fixed for that exporter's lifetime. This matches the
+OpenTelemetry Resource model and keeps request headers consistent for batched
+spans. Use a separate processor and exporter for each additional destination.
+
 Set `SPLUNK_AO_LOGGING_DISABLED=true` to disable telemetry collection and
 export.
 

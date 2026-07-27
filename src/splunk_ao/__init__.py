@@ -16,10 +16,35 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import StepType
 from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.agent_control import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
+from splunk_ao.agent_stream import AgentStream
+from splunk_ao.annotation_queues import (
+    AnnotationField,
+    AnnotationQueue,
+    AnnotationQueueRecordSelector,
+    AnnotationQueues,
+    AnnotationQueueUser,
+    add_records_to_annotation_queue,
+    create_annotation_queue,
+    create_annotation_queue_field,
+    delete_annotation_queue,
+    delete_annotation_queue_field,
+    get_annotation_queue,
+    get_annotation_queue_records,
+    list_annotation_queue_fields,
+    list_annotation_queue_users,
+    list_annotation_queues,
+    remove_annotation_queue_user,
+    remove_records_from_annotation_queue,
+    share_annotation_queue,
+    update_annotation_queue,
+    update_annotation_queue_field,
+    update_annotation_queue_user,
+)
 from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.decorator import SplunkAODecorator, log, splunk_ao_context, start_session
+from splunk_ao.evaluator import CodeEvaluator, Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -34,10 +59,8 @@ from splunk_ao.exceptions import (
 from splunk_ao.experiment import Experiment
 from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
 from splunk_ao.integration import Integration
-from splunk_ao.log_stream import LogStream
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
-from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
@@ -64,17 +87,25 @@ from splunk_ao.utils.log_config import enable_console_logging
 __version__ = "0.1.0"
 
 __all__ = [
+    # Stable / unchanged
     "APIError",
     "AgentControlTarget",
     "AgentControlTargetUnresolvedError",
     "AgentSpan",
+    # New canonical names (HYBIM-730)
+    "AgentStream",
     "AmbiguousConfigurationError",
+    "AnnotationField",
+    "AnnotationQueue",
+    "AnnotationQueueRecordSelector",
+    "AnnotationQueueUser",
+    "AnnotationQueues",
     "AnthropicProvider",
     "AuthenticationError",
     "AzureProvider",
     "BadRequestError",
     "BedrockProvider",
-    "CodeMetric",
+    "CodeEvaluator",
     "Collaborator",
     "CollaboratorRole",
     "Configuration",
@@ -86,16 +117,15 @@ __all__ = [
     "ControlSpan",
     "Dataset",
     "Document",
+    "Evaluator",
     "Experiment",
     "ForbiddenError",
     "Integration",
-    "LlmMetric",
+    "LlmEvaluator",
     "LlmSpan",
-    "LocalMetric",
-    "LogStream",
+    "LocalEvaluator",
     "Message",
     "MessageRole",
-    "Metric",
     "MetricSpec",
     "MissingConfigurationError",
     "Model",
@@ -115,10 +145,10 @@ __all__ = [
     "SplunkAOAgentControlBridge",
     "SplunkAOConfigError",
     "SplunkAODecorator",
+    "SplunkAOEvaluator",
     "SplunkAOFutureError",
     "SplunkAOLogger",
     "SplunkAOLoggerException",
-    "SplunkAOMetric",
     "SplunkAOMetrics",
     "StepType",
     "StepWithChildSpans",
@@ -129,15 +159,31 @@ __all__ = [
     "Trace",
     "ValidationError",
     "WorkflowSpan",
+    "add_records_to_annotation_queue",
+    "create_annotation_queue",
+    "create_annotation_queue_field",
     "create_api_key",
+    "delete_annotation_queue",
+    "delete_annotation_queue_field",
     "delete_api_key",
     "enable_console_logging",
     "get_agent_control_target",
+    "get_annotation_queue",
+    "get_annotation_queue_records",
     "get_tracing_headers",
     "is_dependency_available",
+    "list_annotation_queue_fields",
+    "list_annotation_queue_users",
+    "list_annotation_queues",
     "list_api_keys",
     "log",
+    "remove_annotation_queue_user",
+    "remove_records_from_annotation_queue",
     "setup_agent_control_bridge",
+    "share_annotation_queue",
     "splunk_ao_context",
     "start_session",
+    "update_annotation_queue",
+    "update_annotation_queue_field",
+    "update_annotation_queue_user",
 ]

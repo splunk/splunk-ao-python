@@ -133,7 +133,7 @@ def _make_event(logger: SplunkAOLogger, **overrides: object) -> FakeControlExecu
     return FakeControlExecutionEvent(**payload)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_enable_agent_control_registers_provider_and_sink(
@@ -165,7 +165,7 @@ def test_enable_agent_control_registers_provider_and_sink(
     assert fake_agent_control_modules["trace_context"].get_trace_context_from_provider() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_auto_registers_agent_control_bridge_when_available(
@@ -185,7 +185,7 @@ def test_logger_auto_registers_agent_control_bridge_when_available(
     assert fake_agent_control_modules["agent_control"]._registered_sinks == [bridge._sink]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_logger_init_does_not_raise_when_agent_control_is_missing(
@@ -206,7 +206,7 @@ def test_logger_init_does_not_raise_when_agent_control_is_missing(
     assert getattr(logger, "_agent_control_bridge", None) is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_cleanup_restores_previous_provider_across_loggers(
@@ -251,7 +251,7 @@ def test_agent_control_cleanup_restores_previous_provider_across_loggers(
     }
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_cleanup_does_not_clobber_provider_installed_while_active(
@@ -284,7 +284,7 @@ def test_agent_control_cleanup_does_not_clobber_provider_installed_while_active(
     assert fake_agent_control_modules["agent_control"]._registered_sinks == []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_idle_new_logger_does_not_mask_active_logger_context(
@@ -316,7 +316,7 @@ def test_idle_new_logger_does_not_mask_active_logger_context(
     assert len(workflow_a.spans) == 1
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_converts_to_control_span_in_batch_mode(
@@ -370,7 +370,7 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     mock_traces_client_instance.ingest_traces.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_uses_empty_string_when_no_representative_input(
@@ -395,7 +395,7 @@ def test_agent_control_event_uses_empty_string_when_no_representative_input(
     assert workflow.spans[0].input == ""
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
@@ -420,7 +420,7 @@ def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
     assert workflow.spans == []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_enqueues_immediately_in_distributed_mode(
@@ -452,7 +452,7 @@ def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     mock_traces_client_instance.ingest_spans.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_add_control_span_uses_model_default_name(
@@ -474,7 +474,7 @@ def test_add_control_span_uses_model_default_name(
     assert workflow.spans == [control_span]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_agent_control_event_is_dropped_when_context_does_not_match(

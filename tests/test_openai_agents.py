@@ -1,4 +1,5 @@
 import os
+import uuid
 from unittest.mock import MagicMock, Mock, patch
 
 import httpx
@@ -21,6 +22,7 @@ from pytest import MonkeyPatch, mark
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
 from splunk_ao.handlers.openai_agents import SplunkAOTracingProcessor
 from splunk_ao.logger.logger import SplunkAOLogger
+from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
@@ -71,7 +73,7 @@ os.environ["OPENAI_API_KEY"] = "sk-test"
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_complex_agent(
@@ -102,7 +104,7 @@ async def test_complex_agent(
     decode_compressed_response=True,
     record_mode=vcr.mode.NEW_EPISODES,
 )
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_simple_agent(
@@ -134,6 +136,37 @@ async def test_simple_agent(
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
     assert len(payload.traces) == 1
     assert len(payload.traces[0].spans) == 1
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_processor_marks_direct_trace_child_agent(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    """The processor inherits native root semantics without an OpenAI API call."""
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", log_stream="test")
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    logger.start_trace(input="input")
+
+    processor._log_node_tree(
+        Node(
+            node_type="agent",
+            run_id=uuid.uuid4(),
+            span_params={
+                "input": "input",
+                "output": "output",
+                "name": "Agent step",
+                "start_time_iso": "2025-01-01T00:00:00+00:00",
+            },
+        )
+    )
+    logger.conclude(output="output")
+
+    assert logger.traces[0].spans[0].conversation_root is True
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:
@@ -200,7 +233,7 @@ def _find_tool_spans(spans):
 
 
 @mark.asyncio
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 async def test_pre_built_tools_multiple_types(

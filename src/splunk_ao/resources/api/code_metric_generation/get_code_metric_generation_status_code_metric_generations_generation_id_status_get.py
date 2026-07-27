@@ -31,7 +31,7 @@ def _get_kwargs(generation_id: str) -> dict[str, Any]:
         "path": "/code-metric-generations/{generation_id}/status".format(generation_id=generation_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

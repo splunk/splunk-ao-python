@@ -7,8 +7,8 @@ from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.experiment import Experiment
 from splunk_ao.integration import Integration
-from splunk_ao.log_stream import LogStream
-from splunk_ao.metric import CodeMetric, LlmMetric, LocalMetric, Metric, SplunkAOMetric
+from splunk_ao.agent_stream import AgentStream
+from splunk_ao.evaluator import BuiltInEvaluators, CodeEvaluator, Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
 from splunk_ao.model import Model
 from splunk_ao.project import Project
 from splunk_ao.prompt import Prompt
@@ -26,28 +26,29 @@ from splunk_ao.utils.log_config import enable_console_logging
 
 __all__ = [
     "APIError",
-    "CodeMetric",
+    "AgentStream",
+    "BuiltInEvaluators",
+    "CodeEvaluator",
     "Collaborator",
     "CollaboratorRole",
     "Configuration",
     "ConfigurationError",
     "Dataset",
+    "Evaluator",
     "Experiment",
     "Integration",
-    "LlmMetric",
-    "LocalMetric",
-    "LogStream",
+    "LlmEvaluator",
+    "LocalEvaluator",
     "Message",
     "MessageRole",
-    "Metric",
     "Model",
     "Project",
     "Prompt",
     "RecordType",
     "ResourceConflictError",
     "ResourceNotFoundError",
+    "SplunkAOEvaluator",
     "SplunkAOFutureError",
-    "SplunkAOMetric",
     "StepType",
     "ValidationError",
     "enable_console_logging",
