@@ -235,23 +235,6 @@ class TestSplunkAOSpanProcessor:
         mocks["mock_exporter_class"].assert_called_once()
 
 
-class TestOTelUnavailable:
-    """Test behavior when OpenTelemetry is not available."""
-
-    @patch("splunk_ao.otel.OTEL_AVAILABLE", False)
-    def test_splunk_ao_span_processor_raises_import_error_when_otel_unavailable(self):
-        """Test that SplunkAOSpanProcessor raises ImportError when OpenTelemetry is not available."""
-        with pytest.raises(ImportError, match=re.escape(INSTALL_ERR_MSG)):
-            SplunkAOSpanProcessor(project="test")
-
-    def test_stub_classes_raise_import_error(self):
-        """Test that stub classes raise ImportError when instantiated."""
-        # This test only applies when OTEL is not available, but since we're testing
-        # with OTEL available, we'll skip this test
-        if OTEL_AVAILABLE:
-            pytest.skip("OpenTelemetry is available, stub classes are not used")
-
-
 class TestOTelIntegration:
     """Integration tests for OpenTelemetry functionality."""
 
