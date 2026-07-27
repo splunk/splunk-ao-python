@@ -1,9 +1,18 @@
 import os
 from typing import TypedDict
 
-# Load environment variables first (contains API keys and project settings)
 import dotenv
+import openai
+from langgraph.graph import END, StateGraph
+from openinference.instrumentation.langchain import LangChainInstrumentor
+from openinference.instrumentation.openai import OpenAIInstrumentor
+from opentelemetry import trace as trace_api  # API for interacting with traces
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter  # Sends traces via HTTP
+from opentelemetry.sdk import trace as trace_sdk  # SDK for creating traces
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace.export import BatchSpanProcessor  # Efficiently batches spans before export
 
+# Load environment variables first (contains API keys and project settings)
 dotenv.load_dotenv()
 
 # ============================================================================
@@ -12,27 +21,6 @@ dotenv.load_dotenv()
 # OpenTelemetry (OTel) is an observability framework that helps you collect
 # traces, metrics, and logs from your applications. Think of it as a way to
 # "instrument" your code so you can see exactly what's happening during execution.
-
-# Core OpenTelemetry imports
-from opentelemetry.sdk import trace as trace_sdk  # SDK for creating traces
-from opentelemetry import trace as trace_api  # API for interacting with traces
-from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
-)  # Efficiently batches spans before export
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-    OTLPSpanExporter,
-)  # Sends traces via HTTP
-
-# OpenInference is a specialized instrumentation library that understands AI frameworks
-# It automatically creates meaningful spans for LangChain/LangGraph operations
-from openinference.instrumentation.langchain import LangChainInstrumentor
-from openinference.instrumentation.openai import OpenAIInstrumentor
-
-# LangGraph imports - this is what we're actually instrumenting
-from langgraph.graph import StateGraph, END
-
-# OpenAI imports for LLM integration
-import openai
 
 # ============================================================================
 # STEP 1: CONFIGURE API AUTHENTICATION
@@ -54,7 +42,7 @@ print("✓ OpenAI client configured")
 headers = {
     "Splunk-AO-API-Key": os.environ.get("SPLUNK_AO_API_KEY"),  # Your unique API key
     "project": os.environ.get("SPLUNK_AO_PROJECT"),  # Which Splunk AO project to use
-    "logstream": os.environ.get("SPLUNK_AO_LOG_STREAM", "default"),  # Organize traces within the project
+    "logstream": os.environ.get("SPLUNK_AO_AGENT_STREAM", "default"),  # Organize traces within the project
 }
 
 # OpenTelemetry requires headers in a specific format: "key1=value1,key2=value2"
@@ -75,16 +63,14 @@ print(f"OTEL Headers: {os.environ['OTEL_EXPORTER_OTLP_TRACES_HEADERS']}")
 # Splunk AO's OTel ingest lives on the `api.` subdomain (not the `console.`/`app.`
 # one you log into). We derive it from SPLUNK_AO_CONSOLE_URL so custom deployments
 # (e.g. https://console.demo-v2.galileocloud.io/) route to their own ingest
-# (https://api.demo-v2.galileocloud.io/otel/traces) instead of app.galileo.ai.
+# (https://api.demo-v2.galileocloud.io/otel/v1/traces) instead of app.galileo.ai.
 console_url = os.environ.get("SPLUNK_AO_CONSOLE_URL", "https://app.galileo.ai").rstrip("/")
 api_url = console_url.replace("://console.", "://api.").replace("://app.", "://api.")
-endpoint = f"{api_url}/otel/traces"
+endpoint = f"{api_url}/otel/v1/traces"
 print(f"OTEL endpoint: {endpoint}")
 
 # Create a TracerProvider with descriptive resource information
 # This helps identify these traces as coming from OpenTelemetry in Splunk AO
-from opentelemetry.sdk.resources import Resource
-
 resource = Resource.create(
     {
         "service.name": "LangGraph-OpenTelemetry-Demo",
@@ -143,7 +129,7 @@ class AgentState(TypedDict, total=False):
 
 # Node 1: Input Validation
 # Validates and prepares the user input for processing
-def validate_input(state: AgentState):
+def validate_input(state: AgentState) -> AgentState:
     user_input = state.get("user_input", "")
     print(f"📥 Validating input: '{user_input}'")
 
@@ -160,7 +146,7 @@ def validate_input(state: AgentState):
 # Node 2: Generate Response
 # Calls OpenAI to generate a response to the user's question
 # OpenAI instrumentation will automatically create detailed spans
-def generate_response(state: AgentState):
+def generate_response(state: AgentState) -> AgentState:
     user_input = state["user_input"]
 
     try:
@@ -168,10 +154,7 @@ def generate_response(state: AgentState):
 
         # Make the OpenAI API call - OpenAI instrumentation handles tracing
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}],
-            max_tokens=300,
-            temperature=0.7,
+            model="gpt-3.5-turbo", messages=[{"role": "user", "content": user_input}], max_tokens=300, temperature=0.7
         )
 
         # Extract the response content
@@ -183,12 +166,12 @@ def generate_response(state: AgentState):
 
     except Exception as e:
         print(f"❌ Error calling OpenAI: {e}")
-        return {"llm_response": f"Error: {str(e)}"}
+        return {"llm_response": f"Error: {e!s}"}
 
 
 # Node 3: Format Answer
 # Extracts and formats a clean answer from the raw LLM response
-def format_answer(state: AgentState):
+def format_answer(state: AgentState) -> AgentState:
     llm_response = state.get("llm_response", "")
 
     # Simple parsing - extract first sentence for a concise answer

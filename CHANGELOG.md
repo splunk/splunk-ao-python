@@ -3,6 +3,10 @@
 
 ## Unreleased
 
+### Security
+
+- **deps (VULN-88813)**: Raise the optional `starlette` floor to `>=1.3.1` (from `>=0.27.0`) to remediate urlencoded form limit bypass in `request.form()`. Starlette 1.x removes APIs deprecated since 0.x; consumers of the `middleware`, `openai`, or `crewai` extras who rely on removed Starlette 0.x APIs may need to update custom middleware.
+
 ### Features
 
 - **New `generated_output` field**: Add `generated_output` field to `DatasetRecord` for storing model-generated outputs separately from ground truth. This allows you to track both the expected output (ground truth) and the actual model output in the same dataset record. In the UI, this field is displayed as "Generated Output".

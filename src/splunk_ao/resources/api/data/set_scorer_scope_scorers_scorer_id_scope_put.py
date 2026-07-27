@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,13 +36,13 @@ def _get_kwargs(scorer_id: str, *, body: UpdateScorerScopeRequest) -> dict[str, 
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, ScorerResponse]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ScorerResponse:
     if response.status_code == 200:
         response_200 = ScorerResponse.from_dict(response.json())
 
@@ -71,9 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | ScorerResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +82,7 @@ def _build_response(
 
 def sync_detailed(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+) -> Response[HTTPValidationError | ScorerResponse]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -102,7 +100,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerResponse]]
+        Response[HTTPValidationError | ScorerResponse]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
@@ -114,7 +112,7 @@ def sync_detailed(
 
 def sync(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
+) -> Optional[HTTPValidationError | ScorerResponse]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -132,7 +130,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerResponse]
+        HTTPValidationError | ScorerResponse
     """
 
     return sync_detailed(scorer_id=scorer_id, client=client, body=body).parsed
@@ -140,7 +138,7 @@ def sync(
 
 async def asyncio_detailed(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Response[Union[HTTPValidationError, ScorerResponse]]:
+) -> Response[HTTPValidationError | ScorerResponse]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -158,7 +156,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, ScorerResponse]]
+        Response[HTTPValidationError | ScorerResponse]
     """
 
     kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
@@ -170,7 +168,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     scorer_id: str, *, client: ApiClient, body: UpdateScorerScopeRequest
-) -> Optional[Union[HTTPValidationError, ScorerResponse]]:
+) -> Optional[HTTPValidationError | ScorerResponse]:
     """Set Scorer Scope
 
      Full-replace a scorer's access scope (Share / manage visibility). metrics_rbac only.
@@ -188,7 +186,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, ScorerResponse]
+        HTTPValidationError | ScorerResponse
     """
 
     return (await asyncio_detailed(scorer_id=scorer_id, client=client, body=body)).parsed

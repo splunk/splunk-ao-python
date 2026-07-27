@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -25,16 +25,13 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *,
-    body: BodyCreateDatasetDatasetsPost,
-    format_: Union[Unset, DatasetFormat] = UNSET,
-    hidden: Union[Unset, bool] = False,
+    *, body: BodyCreateDatasetDatasetsPost | Unset, format_: DatasetFormat | Unset = UNSET, hidden: bool | Unset = False
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
-    json_format_: Union[Unset, str] = UNSET
+    json_format_: str | Unset = UNSET
     if not isinstance(format_, Unset):
         json_format_ = format_.value
 
@@ -51,15 +48,16 @@ def _get_kwargs(
         "params": params,
     }
 
-    _kwargs["files"] = body.to_multipart()
+    if not isinstance(body, Unset):
+        _kwargs["files"] = body.to_multipart()
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DatasetDB, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetDB | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DatasetDB.from_dict(response.json())
 
@@ -88,7 +86,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Dat
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[DatasetDB, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[DatasetDB | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -100,25 +98,25 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(
     *,
     client: ApiClient,
-    body: BodyCreateDatasetDatasetsPost,
-    format_: Union[Unset, DatasetFormat] = UNSET,
-    hidden: Union[Unset, bool] = False,
-) -> Response[Union[DatasetDB, HTTPValidationError]]:
+    body: BodyCreateDatasetDatasetsPost | Unset,
+    format_: DatasetFormat | Unset = UNSET,
+    hidden: bool | Unset = False,
+) -> Response[DatasetDB | HTTPValidationError]:
     """Create Dataset
 
      Creates a standalone dataset.
 
     Args:
-        format_ (Union[Unset, DatasetFormat]):
-        hidden (Union[Unset, bool]):  Default: False.
-        body (BodyCreateDatasetDatasetsPost):
+        format_ (DatasetFormat | Unset):
+        hidden (bool | Unset):  Default: False.
+        body (BodyCreateDatasetDatasetsPost | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetDB, HTTPValidationError]]
+        Response[DatasetDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(body=body, format_=format_, hidden=hidden)
@@ -131,25 +129,25 @@ def sync_detailed(
 def sync(
     *,
     client: ApiClient,
-    body: BodyCreateDatasetDatasetsPost,
-    format_: Union[Unset, DatasetFormat] = UNSET,
-    hidden: Union[Unset, bool] = False,
-) -> Optional[Union[DatasetDB, HTTPValidationError]]:
+    body: BodyCreateDatasetDatasetsPost | Unset,
+    format_: DatasetFormat | Unset = UNSET,
+    hidden: bool | Unset = False,
+) -> Optional[DatasetDB | HTTPValidationError]:
     """Create Dataset
 
      Creates a standalone dataset.
 
     Args:
-        format_ (Union[Unset, DatasetFormat]):
-        hidden (Union[Unset, bool]):  Default: False.
-        body (BodyCreateDatasetDatasetsPost):
+        format_ (DatasetFormat | Unset):
+        hidden (bool | Unset):  Default: False.
+        body (BodyCreateDatasetDatasetsPost | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetDB, HTTPValidationError]
+        DatasetDB | HTTPValidationError
     """
 
     return sync_detailed(client=client, body=body, format_=format_, hidden=hidden).parsed
@@ -158,25 +156,25 @@ def sync(
 async def asyncio_detailed(
     *,
     client: ApiClient,
-    body: BodyCreateDatasetDatasetsPost,
-    format_: Union[Unset, DatasetFormat] = UNSET,
-    hidden: Union[Unset, bool] = False,
-) -> Response[Union[DatasetDB, HTTPValidationError]]:
+    body: BodyCreateDatasetDatasetsPost | Unset,
+    format_: DatasetFormat | Unset = UNSET,
+    hidden: bool | Unset = False,
+) -> Response[DatasetDB | HTTPValidationError]:
     """Create Dataset
 
      Creates a standalone dataset.
 
     Args:
-        format_ (Union[Unset, DatasetFormat]):
-        hidden (Union[Unset, bool]):  Default: False.
-        body (BodyCreateDatasetDatasetsPost):
+        format_ (DatasetFormat | Unset):
+        hidden (bool | Unset):  Default: False.
+        body (BodyCreateDatasetDatasetsPost | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DatasetDB, HTTPValidationError]]
+        Response[DatasetDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(body=body, format_=format_, hidden=hidden)
@@ -189,25 +187,25 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: ApiClient,
-    body: BodyCreateDatasetDatasetsPost,
-    format_: Union[Unset, DatasetFormat] = UNSET,
-    hidden: Union[Unset, bool] = False,
-) -> Optional[Union[DatasetDB, HTTPValidationError]]:
+    body: BodyCreateDatasetDatasetsPost | Unset,
+    format_: DatasetFormat | Unset = UNSET,
+    hidden: bool | Unset = False,
+) -> Optional[DatasetDB | HTTPValidationError]:
     """Create Dataset
 
      Creates a standalone dataset.
 
     Args:
-        format_ (Union[Unset, DatasetFormat]):
-        hidden (Union[Unset, bool]):  Default: False.
-        body (BodyCreateDatasetDatasetsPost):
+        format_ (DatasetFormat | Unset):
+        hidden (bool | Unset):  Default: False.
+        body (BodyCreateDatasetDatasetsPost | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DatasetDB, HTTPValidationError]
+        DatasetDB | HTTPValidationError
     """
 
     return (await asyncio_detailed(client=client, body=body, format_=format_, hidden=hidden)).parsed

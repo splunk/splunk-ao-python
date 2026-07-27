@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -38,7 +38,7 @@ def _get_kwargs(queue_id: str, record_id: str) -> dict[str, Any]:
         "path": "/annotation_queues/{queue_id}/records/{record_id}".format(queue_id=queue_id, record_id=record_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -46,33 +46,31 @@ def _get_kwargs(queue_id: str, record_id: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[
-    HTTPValidationError,
-    Union[
-        "PartialExtendedAgentSpanRecord",
-        "PartialExtendedControlSpanRecord",
-        "PartialExtendedLlmSpanRecord",
-        "PartialExtendedRetrieverSpanRecord",
-        "PartialExtendedSessionRecord",
-        "PartialExtendedToolSpanRecord",
-        "PartialExtendedTraceRecord",
-        "PartialExtendedWorkflowSpanRecord",
-    ],
-]:
+) -> (
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
+):
     if response.status_code == 200:
 
         def _parse_response_200(
             data: object,
-        ) -> Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ]:
+        ) -> (
+            PartialExtendedAgentSpanRecord
+            | PartialExtendedControlSpanRecord
+            | PartialExtendedLlmSpanRecord
+            | PartialExtendedRetrieverSpanRecord
+            | PartialExtendedSessionRecord
+            | PartialExtendedToolSpanRecord
+            | PartialExtendedTraceRecord
+            | PartialExtendedWorkflowSpanRecord
+        ):
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")
@@ -227,19 +225,15 @@ def _parse_response(
 def _build_response(
     *, client: ApiClient, response: httpx.Response
 ) -> Response[
-    Union[
-        HTTPValidationError,
-        Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ],
-    ]
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
 ]:
     return Response(
         status_code=HTTPStatus(response.status_code),
@@ -252,19 +246,15 @@ def _build_response(
 def sync_detailed(
     queue_id: str, record_id: str, *, client: ApiClient
 ) -> Response[
-    Union[
-        HTTPValidationError,
-        Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ],
-    ]
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
 ]:
     """Get Annotation Queue Record
 
@@ -282,7 +272,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, Union['PartialExtendedAgentSpanRecord', 'PartialExtendedControlSpanRecord', 'PartialExtendedLlmSpanRecord', 'PartialExtendedRetrieverSpanRecord', 'PartialExtendedSessionRecord', 'PartialExtendedToolSpanRecord', 'PartialExtendedTraceRecord', 'PartialExtendedWorkflowSpanRecord']]]
+        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, record_id=record_id)
@@ -295,19 +285,15 @@ def sync_detailed(
 def sync(
     queue_id: str, record_id: str, *, client: ApiClient
 ) -> Optional[
-    Union[
-        HTTPValidationError,
-        Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ],
-    ]
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
 ]:
     """Get Annotation Queue Record
 
@@ -325,7 +311,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, Union['PartialExtendedAgentSpanRecord', 'PartialExtendedControlSpanRecord', 'PartialExtendedLlmSpanRecord', 'PartialExtendedRetrieverSpanRecord', 'PartialExtendedSessionRecord', 'PartialExtendedToolSpanRecord', 'PartialExtendedTraceRecord', 'PartialExtendedWorkflowSpanRecord']]
+        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
     """
 
     return sync_detailed(queue_id=queue_id, record_id=record_id, client=client).parsed
@@ -334,19 +320,15 @@ def sync(
 async def asyncio_detailed(
     queue_id: str, record_id: str, *, client: ApiClient
 ) -> Response[
-    Union[
-        HTTPValidationError,
-        Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ],
-    ]
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
 ]:
     """Get Annotation Queue Record
 
@@ -364,7 +346,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, Union['PartialExtendedAgentSpanRecord', 'PartialExtendedControlSpanRecord', 'PartialExtendedLlmSpanRecord', 'PartialExtendedRetrieverSpanRecord', 'PartialExtendedSessionRecord', 'PartialExtendedToolSpanRecord', 'PartialExtendedTraceRecord', 'PartialExtendedWorkflowSpanRecord']]]
+        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, record_id=record_id)
@@ -377,19 +359,15 @@ async def asyncio_detailed(
 async def asyncio(
     queue_id: str, record_id: str, *, client: ApiClient
 ) -> Optional[
-    Union[
-        HTTPValidationError,
-        Union[
-            "PartialExtendedAgentSpanRecord",
-            "PartialExtendedControlSpanRecord",
-            "PartialExtendedLlmSpanRecord",
-            "PartialExtendedRetrieverSpanRecord",
-            "PartialExtendedSessionRecord",
-            "PartialExtendedToolSpanRecord",
-            "PartialExtendedTraceRecord",
-            "PartialExtendedWorkflowSpanRecord",
-        ],
-    ]
+    HTTPValidationError
+    | PartialExtendedAgentSpanRecord
+    | PartialExtendedControlSpanRecord
+    | PartialExtendedLlmSpanRecord
+    | PartialExtendedRetrieverSpanRecord
+    | PartialExtendedSessionRecord
+    | PartialExtendedToolSpanRecord
+    | PartialExtendedTraceRecord
+    | PartialExtendedWorkflowSpanRecord
 ]:
     """Get Annotation Queue Record
 
@@ -407,7 +385,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, Union['PartialExtendedAgentSpanRecord', 'PartialExtendedControlSpanRecord', 'PartialExtendedLlmSpanRecord', 'PartialExtendedRetrieverSpanRecord', 'PartialExtendedSessionRecord', 'PartialExtendedToolSpanRecord', 'PartialExtendedTraceRecord', 'PartialExtendedWorkflowSpanRecord']]
+        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
     """
 
     return (await asyncio_detailed(queue_id=queue_id, record_id=record_id, client=client)).parsed

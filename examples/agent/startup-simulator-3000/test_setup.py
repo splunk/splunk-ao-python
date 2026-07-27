@@ -6,7 +6,7 @@ Run this script to check if everything is configured correctly
 
 import os
 import sys
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 from dotenv import load_dotenv
 
@@ -14,11 +14,11 @@ from dotenv import load_dotenv
 def test_python_version() -> bool:
     """Test if Python version is compatible"""
     print("🐍 Testing Python version...")
-    version = sys.version_info
-    if version.major < 3 or (version.major == 3 and version.minor < 8):
-        print(f"❌ Python {version.major}.{version.minor} is too old. Need Python 3.8+")
+    py_version = sys.version_info
+    if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 8):
+        print(f"❌ Python {py_version.major}.{py_version.minor} is too old. Need Python 3.8+")
         return False
-    print(f"✅ Python {version.major}.{version.minor}.{version.micro} is compatible")
+    print(f"✅ Python {py_version.major}.{py_version.minor}.{py_version.micro} is compatible")
     return True
 
 

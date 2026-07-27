@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -17,29 +17,38 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
+from ...models.annotation_queue_count_response import AnnotationQueueCountResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.job_db import JobDB
-from ...types import Response
+from ...models.list_annotation_queue_params import ListAnnotationQueueParams
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(job_id: str) -> dict[str, Any]:
+def _get_kwargs(*, body: ListAnnotationQueueParams | Unset) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
-        "method": RequestMethod.GET,
+        "method": RequestMethod.POST,
         "return_raw_response": True,
-        "path": "/jobs/{job_id}".format(job_id=job_id),
+        "path": "/annotation_queues/count",
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    _kwargs["json"]: dict[str, Any] | Unset = UNSET
+    if not isinstance(body, Unset):
+        _kwargs["json"] = body.to_dict()
+
+    headers["Content-Type"] = "application/json"
+
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, JobDB]:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> AnnotationQueueCountResponse | HTTPValidationError:
     if response.status_code == 200:
-        response_200 = JobDB.from_dict(response.json())
+        response_200 = AnnotationQueueCountResponse.from_dict(response.json())
 
         return response_200
 
@@ -66,7 +75,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, JobDB]]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,85 +86,93 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, JobDB]]:
-    """Get Job
+def sync_detailed(
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get a job by id.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        job_id (str):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, JobDB]]
+        Response[AnnotationQueueCountResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(job_id=job_id)
+    kwargs = _get_kwargs(body=body)
 
     response = client.request(**kwargs)
 
     return _build_response(client=client, response=response)
 
 
-def sync(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, JobDB]]:
-    """Get Job
+def sync(
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Optional[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get a job by id.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        job_id (str):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, JobDB]
+        AnnotationQueueCountResponse | HTTPValidationError
     """
 
-    return sync_detailed(job_id=job_id, client=client).parsed
+    return sync_detailed(client=client, body=body).parsed
 
 
-async def asyncio_detailed(job_id: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, JobDB]]:
-    """Get Job
+async def asyncio_detailed(
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Response[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get a job by id.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        job_id (str):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, JobDB]]
+        Response[AnnotationQueueCountResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(job_id=job_id)
+    kwargs = _get_kwargs(body=body)
 
     response = await client.arequest(**kwargs)
 
     return _build_response(client=client, response=response)
 
 
-async def asyncio(job_id: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, JobDB]]:
-    """Get Job
+async def asyncio(
+    *, client: ApiClient, body: ListAnnotationQueueParams | Unset
+) -> Optional[AnnotationQueueCountResponse | HTTPValidationError]:
+    """Count Annotation Queues
 
-     Get a job by id.
+     Count annotation queues in the user's organization with filtering.
 
     Args:
-        job_id (str):
+        body (ListAnnotationQueueParams | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, JobDB]
+        AnnotationQueueCountResponse | HTTPValidationError
     """
 
-    return (await asyncio_detailed(job_id=job_id, client=client)).parsed
+    return (await asyncio_detailed(client=client, body=body)).parsed

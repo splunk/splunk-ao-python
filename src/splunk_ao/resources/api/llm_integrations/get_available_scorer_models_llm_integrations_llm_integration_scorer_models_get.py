@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import httpx
 
@@ -31,13 +31,13 @@ def _get_kwargs(llm_integration: LLMIntegration) -> dict[str, Any]:
         "path": "/llm_integrations/{llm_integration}/scorer_models".format(llm_integration=llm_integration),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, list[str]]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | list[str]:
     if response.status_code == 200:
         response_200 = cast(list[str], response.json())
 
@@ -66,7 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[HTTPValidationError, list[str]]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | list[str]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,9 +75,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(
-    llm_integration: LLMIntegration, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, list[str]]]:
+def sync_detailed(llm_integration: LLMIntegration, *, client: ApiClient) -> Response[HTTPValidationError | list[str]]:
     """Get Available Scorer Models
 
      Get the list of supported scorer models for the LLM integration.
@@ -90,7 +88,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list[str]]]
+        Response[HTTPValidationError | list[str]]
     """
 
     kwargs = _get_kwargs(llm_integration=llm_integration)
@@ -100,7 +98,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[Union[HTTPValidationError, list[str]]]:
+def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[HTTPValidationError | list[str]]:
     """Get Available Scorer Models
 
      Get the list of supported scorer models for the LLM integration.
@@ -113,7 +111,7 @@ def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[Unio
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list[str]]
+        HTTPValidationError | list[str]
     """
 
     return sync_detailed(llm_integration=llm_integration, client=client).parsed
@@ -121,7 +119,7 @@ def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[Unio
 
 async def asyncio_detailed(
     llm_integration: LLMIntegration, *, client: ApiClient
-) -> Response[Union[HTTPValidationError, list[str]]]:
+) -> Response[HTTPValidationError | list[str]]:
     """Get Available Scorer Models
 
      Get the list of supported scorer models for the LLM integration.
@@ -134,7 +132,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list[str]]]
+        Response[HTTPValidationError | list[str]]
     """
 
     kwargs = _get_kwargs(llm_integration=llm_integration)
@@ -144,9 +142,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(
-    llm_integration: LLMIntegration, *, client: ApiClient
-) -> Optional[Union[HTTPValidationError, list[str]]]:
+async def asyncio(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[HTTPValidationError | list[str]]:
     """Get Available Scorer Models
 
      Get the list of supported scorer models for the LLM integration.
@@ -159,7 +155,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list[str]]
+        HTTPValidationError | list[str]
     """
 
     return (await asyncio_detailed(llm_integration=llm_integration, client=client)).parsed

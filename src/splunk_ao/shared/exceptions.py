@@ -30,6 +30,18 @@ class ValidationError(SplunkAOFutureError):
     """
 
 
+class SplunkAOConfigError(ConfigurationError):
+    """Base exception for deployment configuration errors."""
+
+
+class AmbiguousConfigurationError(SplunkAOConfigError):
+    """Raised when o11y and standalone configuration are both present."""
+
+
+class MissingConfigurationError(SplunkAOConfigError):
+    """Raised when required deployment configuration is absent."""
+
+
 class ResourceNotFoundError(NotFoundError, SplunkAOFutureError):
     """
     Backward-compatible alias for NotFoundError.

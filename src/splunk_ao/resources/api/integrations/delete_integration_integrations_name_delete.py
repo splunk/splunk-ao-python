@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,13 +31,13 @@ def _get_kwargs(name: IntegrationProvider) -> dict[str, Any]:
         "path": "/integrations/{name}".format(name=name),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> Any | HTTPValidationError:
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -65,7 +65,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Any
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Union[Any, HTTPValidationError]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,7 +74,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[Union[Any, HTTPValidationError]]:
+def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
@@ -87,7 +87,7 @@ def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[U
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -97,7 +97,7 @@ def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[U
     return _build_response(client=client, response=response)
 
 
-def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
@@ -110,15 +110,13 @@ def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[Union[Any,
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(name=name, client=client).parsed
 
 
-async def asyncio_detailed(
-    name: IntegrationProvider, *, client: ApiClient
-) -> Response[Union[Any, HTTPValidationError]]:
+async def asyncio_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
@@ -131,7 +129,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -141,7 +139,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(name: IntegrationProvider, *, client: ApiClient) -> Optional[Union[Any, HTTPValidationError]]:
+async def asyncio(name: IntegrationProvider, *, client: ApiClient) -> Optional[Any | HTTPValidationError]:
     """Delete Integration
 
      Delete an integration. Admins can delete integrations created by other admins in the same org.
@@ -154,7 +152,7 @@ async def asyncio(name: IntegrationProvider, *, client: ApiClient) -> Optional[U
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return (await asyncio_detailed(name=name, client=client)).parsed

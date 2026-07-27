@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -36,13 +36,13 @@ def _get_kwargs(*, body: MistralIntegrationCreate) -> dict[str, Any]:
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, IntegrationDB]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | IntegrationDB:
     if response.status_code == 200:
         response_200 = IntegrationDB.from_dict(response.json())
 
@@ -71,9 +71,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | IntegrationDB]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,7 +82,7 @@ def _build_response(
 
 def sync_detailed(
     *, client: ApiClient, body: MistralIntegrationCreate
-) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Mistral integration
 
      Create or update an Mistral integration for this user from Galileo.
@@ -97,7 +95,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, IntegrationDB]]
+        Response[HTTPValidationError | IntegrationDB]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -107,7 +105,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient, body: MistralIntegrationCreate) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
+def sync(*, client: ApiClient, body: MistralIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Mistral integration
 
      Create or update an Mistral integration for this user from Galileo.
@@ -120,7 +118,7 @@ def sync(*, client: ApiClient, body: MistralIntegrationCreate) -> Optional[Union
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, IntegrationDB]
+        HTTPValidationError | IntegrationDB
     """
 
     return sync_detailed(client=client, body=body).parsed
@@ -128,7 +126,7 @@ def sync(*, client: ApiClient, body: MistralIntegrationCreate) -> Optional[Union
 
 async def asyncio_detailed(
     *, client: ApiClient, body: MistralIntegrationCreate
-) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Mistral integration
 
      Create or update an Mistral integration for this user from Galileo.
@@ -141,7 +139,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, IntegrationDB]]
+        Response[HTTPValidationError | IntegrationDB]
     """
 
     kwargs = _get_kwargs(body=body)
@@ -153,7 +151,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *, client: ApiClient, body: MistralIntegrationCreate
-) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
+) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Mistral integration
 
      Create or update an Mistral integration for this user from Galileo.
@@ -166,7 +164,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, IntegrationDB]
+        HTTPValidationError | IntegrationDB
     """
 
     return (await asyncio_detailed(client=client, body=body)).parsed

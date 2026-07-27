@@ -23,10 +23,10 @@ GOOGLE_API_KEY=
 SPLUNK_AO_API_ENDPOINT=
 SPLUNK_AO_API_KEY=
 SPLUNK_AO_PROJECT=
-SPLUNK_AO_LOG_STREAM=
+SPLUNK_AO_AGENT_STREAM=
 ```
 
-For the `SPLUNK_AO_API_ENDPOINT`, this is different to the console URL that you would normally use. If you are using `app.galileo.ai` for example, the endpoint is `https://api.galileo.ai/otel/traces`.
+For the `SPLUNK_AO_API_ENDPOINT`, this is different to the console URL that you would normally use. If you are using `app.galileo.ai` for example, the endpoint is `https://api.galileo.ai/otel/v1/traces`.
 
 See the [Splunk AO OTel and OpenInference documentation](https://docs.galileo.ai/sdk-api/third-party-integrations/opentelemetry-and-openinference) for more details.
 

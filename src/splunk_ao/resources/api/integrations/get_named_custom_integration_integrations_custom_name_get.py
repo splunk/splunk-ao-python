@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,13 +31,13 @@ def _get_kwargs(name: str) -> dict[str, Any]:
         "path": "/integrations/custom/{name}".format(name=name),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTTPValidationError, IntegrationDB]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | IntegrationDB:
     if response.status_code == 200:
         response_200 = IntegrationDB.from_dict(response.json())
 
@@ -66,9 +66,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[HTT
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError | IntegrationDB]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -77,7 +75,7 @@ def _build_response(
     )
 
 
-def sync_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+def sync_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
     """Get a named custom integration
 
     Args:
@@ -88,7 +86,7 @@ def sync_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidat
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, IntegrationDB]]
+        Response[HTTPValidationError | IntegrationDB]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -98,7 +96,7 @@ def sync_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidat
     return _build_response(client=client, response=response)
 
 
-def sync(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
+def sync(name: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
     """Get a named custom integration
 
     Args:
@@ -109,13 +107,13 @@ def sync(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError,
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, IntegrationDB]
+        HTTPValidationError | IntegrationDB
     """
 
     return sync_detailed(name=name, client=client).parsed
 
 
-async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[Union[HTTPValidationError, IntegrationDB]]:
+async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
     """Get a named custom integration
 
     Args:
@@ -126,7 +124,7 @@ async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[Union[HT
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, IntegrationDB]]
+        Response[HTTPValidationError | IntegrationDB]
     """
 
     kwargs = _get_kwargs(name=name)
@@ -136,7 +134,7 @@ async def asyncio_detailed(name: str, *, client: ApiClient) -> Response[Union[HT
     return _build_response(client=client, response=response)
 
 
-async def asyncio(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidationError, IntegrationDB]]:
+async def asyncio(name: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
     """Get a named custom integration
 
     Args:
@@ -147,7 +145,7 @@ async def asyncio(name: str, *, client: ApiClient) -> Optional[Union[HTTPValidat
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, IntegrationDB]
+        HTTPValidationError | IntegrationDB
     """
 
     return (await asyncio_detailed(name=name, client=client)).parsed

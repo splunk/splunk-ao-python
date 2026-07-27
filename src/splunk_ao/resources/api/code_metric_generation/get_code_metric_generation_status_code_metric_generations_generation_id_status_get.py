@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,7 +31,7 @@ def _get_kwargs(generation_id: str) -> dict[str, Any]:
         "path": "/code-metric-generations/{generation_id}/status".format(generation_id=generation_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -39,7 +39,7 @@ def _get_kwargs(generation_id: str) -> dict[str, Any]:
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> Union[CodeMetricGenerationStatusResponse, HTTPValidationError]:
+) -> CodeMetricGenerationStatusResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = CodeMetricGenerationStatusResponse.from_dict(response.json())
 
@@ -70,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]:
+) -> Response[CodeMetricGenerationStatusResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +81,7 @@ def _build_response(
 
 def sync_detailed(
     generation_id: str, *, client: ApiClient
-) -> Response[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]:
+) -> Response[CodeMetricGenerationStatusResponse | HTTPValidationError]:
     """Get Code Metric Generation Status
 
      Lightweight endpoint for polling code metric generation status.
@@ -96,7 +96,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]
+        Response[CodeMetricGenerationStatusResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(generation_id=generation_id)
@@ -108,7 +108,7 @@ def sync_detailed(
 
 def sync(
     generation_id: str, *, client: ApiClient
-) -> Optional[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]:
+) -> Optional[CodeMetricGenerationStatusResponse | HTTPValidationError]:
     """Get Code Metric Generation Status
 
      Lightweight endpoint for polling code metric generation status.
@@ -123,7 +123,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CodeMetricGenerationStatusResponse, HTTPValidationError]
+        CodeMetricGenerationStatusResponse | HTTPValidationError
     """
 
     return sync_detailed(generation_id=generation_id, client=client).parsed
@@ -131,7 +131,7 @@ def sync(
 
 async def asyncio_detailed(
     generation_id: str, *, client: ApiClient
-) -> Response[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]:
+) -> Response[CodeMetricGenerationStatusResponse | HTTPValidationError]:
     """Get Code Metric Generation Status
 
      Lightweight endpoint for polling code metric generation status.
@@ -146,7 +146,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]
+        Response[CodeMetricGenerationStatusResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(generation_id=generation_id)
@@ -158,7 +158,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     generation_id: str, *, client: ApiClient
-) -> Optional[Union[CodeMetricGenerationStatusResponse, HTTPValidationError]]:
+) -> Optional[CodeMetricGenerationStatusResponse | HTTPValidationError]:
     """Get Code Metric Generation Status
 
      Lightweight endpoint for polling code metric generation status.
@@ -173,7 +173,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[CodeMetricGenerationStatusResponse, HTTPValidationError]
+        CodeMetricGenerationStatusResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(generation_id=generation_id, client=client)).parsed

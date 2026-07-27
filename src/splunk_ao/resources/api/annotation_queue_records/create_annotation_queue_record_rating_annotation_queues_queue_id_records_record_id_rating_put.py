@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -47,13 +47,13 @@ def _get_kwargs(
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[AnnotationRatingDB, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> AnnotationRatingDB | HTTPValidationError:
     if response.status_code == 200:
         response_200 = AnnotationRatingDB.from_dict(response.json())
 
@@ -84,7 +84,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Ann
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[AnnotationRatingDB, HTTPValidationError]]:
+) -> Response[AnnotationRatingDB | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -95,7 +95,7 @@ def _build_response(
 
 def sync_detailed(
     queue_id: str, record_id: str, *, client: ApiClient, body: AnnotationRatingCreate, annotation_template_id: str
-) -> Response[Union[AnnotationRatingDB, HTTPValidationError]]:
+) -> Response[AnnotationRatingDB | HTTPValidationError]:
     """Create Annotation Queue Record Rating
 
      Create an annotation rating for a record in an annotation queue.
@@ -113,7 +113,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[AnnotationRatingDB, HTTPValidationError]]
+        Response[AnnotationRatingDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -127,7 +127,7 @@ def sync_detailed(
 
 def sync(
     queue_id: str, record_id: str, *, client: ApiClient, body: AnnotationRatingCreate, annotation_template_id: str
-) -> Optional[Union[AnnotationRatingDB, HTTPValidationError]]:
+) -> Optional[AnnotationRatingDB | HTTPValidationError]:
     """Create Annotation Queue Record Rating
 
      Create an annotation rating for a record in an annotation queue.
@@ -145,7 +145,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[AnnotationRatingDB, HTTPValidationError]
+        AnnotationRatingDB | HTTPValidationError
     """
 
     return sync_detailed(
@@ -155,7 +155,7 @@ def sync(
 
 async def asyncio_detailed(
     queue_id: str, record_id: str, *, client: ApiClient, body: AnnotationRatingCreate, annotation_template_id: str
-) -> Response[Union[AnnotationRatingDB, HTTPValidationError]]:
+) -> Response[AnnotationRatingDB | HTTPValidationError]:
     """Create Annotation Queue Record Rating
 
      Create an annotation rating for a record in an annotation queue.
@@ -173,7 +173,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[AnnotationRatingDB, HTTPValidationError]]
+        Response[AnnotationRatingDB | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -187,7 +187,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     queue_id: str, record_id: str, *, client: ApiClient, body: AnnotationRatingCreate, annotation_template_id: str
-) -> Optional[Union[AnnotationRatingDB, HTTPValidationError]]:
+) -> Optional[AnnotationRatingDB | HTTPValidationError]:
     """Create Annotation Queue Record Rating
 
      Create an annotation rating for a record in an annotation queue.
@@ -205,7 +205,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[AnnotationRatingDB, HTTPValidationError]
+        AnnotationRatingDB | HTTPValidationError
     """
 
     return (

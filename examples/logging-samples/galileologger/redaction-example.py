@@ -46,7 +46,7 @@ logger.flush()  # send the trace to Splunk AO
 import os
 
 project_name = os.getenv("SPLUNK_AO_PROJECT")
-log_stream_name = os.getenv("SPLUNK_AO_LOG_STREAM")
+log_stream_name = os.getenv("SPLUNK_AO_AGENT_STREAM")
 
 project = get_project(name=project_name)
 log_stream = get_log_stream(name=log_stream_name, project_name=project_name)

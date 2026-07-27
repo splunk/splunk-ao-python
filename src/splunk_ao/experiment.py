@@ -3,8 +3,12 @@ from __future__ import annotations
 import builtins
 import datetime
 import re
+import warnings
 from collections.abc import Iterator
+from time import sleep
 from typing import TYPE_CHECKING, Any
+
+from tqdm.auto import tqdm
 
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.datasets import Dataset as LegacyDataset
@@ -13,7 +17,6 @@ from splunk_ao.experiment_tags import upsert_experiment_tag
 from splunk_ao.experiments import Experiments as ExperimentsService
 from splunk_ao.experiments import _default_prompt_settings
 from splunk_ao.export import ExportClient
-from splunk_ao.job_progress import get_run_scorer_jobs, job_progress
 from splunk_ao.prompts import PromptTemplate, get_prompt
 from splunk_ao.resources.api.experiment import (
     delete_experiment_projects_project_id_experiments_experiment_id_delete,
@@ -185,7 +188,6 @@ class Experiment(StateManagementMixin):
     _prompt_template: PromptTemplate | None
     _model_obj: Model | None
     _experiment_response: ExperimentResponse | None
-    _job_id: str | None
 
     def __str__(self) -> str:
         """String representation of the experiment."""
@@ -366,7 +368,6 @@ class Experiment(StateManagementMixin):
 
         # Private runtime state
         self._experiment_response: ExperimentResponse | None = None
-        self._job_id: str | None = None
         self._run_result: ExperimentRunResult | None = None
         self._run_result_consumed: bool = False
 
@@ -429,7 +430,7 @@ class Experiment(StateManagementMixin):
 
             if existing_experiment:
                 _logger.warning(f"Experiment {existing_experiment.name} already exists, adding a timestamp")
-                now = datetime.datetime.now(datetime.timezone.utc)
+                now = datetime.datetime.now(datetime.UTC)
                 self.name = f"{existing_experiment.name} {now:%Y-%m-%d} at {now:%H:%M:%S}.{now.microsecond // 1000:03d}"
 
             # Resolve prompt template before create (needed for trigger=True)
@@ -535,7 +536,6 @@ class Experiment(StateManagementMixin):
         instance._prompt_template = None
         instance._model_obj = None
         instance._experiment_response: ExperimentResponse | None = None
-        instance._job_id: str | None = None
         instance._run_result: ExperimentRunResult | None = None
         instance._run_result_consumed: bool = False
         return instance
@@ -627,7 +627,6 @@ class Experiment(StateManagementMixin):
         instance._prompt_template = None
         instance._model_obj = None
         instance._experiment_response = retrieved_experiment
-        instance._job_id = None
         # Set state to synced since we just retrieved from API
         instance._set_state(SyncState.SYNCED)
         return instance
@@ -1122,54 +1121,99 @@ class Experiment(StateManagementMixin):
 
         return ExperimentStatusInfo(self._experiment_response)
 
-    def monitor_progress(self, job_id: str | None = None) -> str:
+    def monitor_progress(
+        self,
+        poll_interval_seconds: float = 2.0,
+        *,
+        timeout_seconds: float | None = 3600.0,
+        job_id: str | None = None,
+    ) -> None:
         """
-        Monitor the progress of the experiment job with a progress bar.
+        Monitor the progress of the experiment with a progress bar.
 
-        Args:
-            job_id: Optional job ID to monitor. If not provided, will attempt to find
-                   the primary job for this experiment.
+        Polls the experiment status via the API until the experiment completes,
+        displaying a tqdm progress bar reflecting `log_generation` progress.
+
+        Parameters
+        ----------
+        poll_interval_seconds : float, optional
+            Seconds to wait between status polls. Defaults to 2.0.
+            Note: in a prior version, ``job_id`` was the first positional
+            parameter. That parameter has been removed; callers that passed a
+            job ID string positionally will now receive a ``TypeError`` from
+            ``sleep()``. Use ``job_id=`` as a keyword argument instead.
+        timeout_seconds : float or None, optional
+            Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
+            (one hour). Pass None to wait indefinitely (not recommended).
+        job_id : str or None, optional
+            Deprecated. This parameter is ignored; it existed in a prior version
+            that polled the jobs table, which has been retired.
 
         Returns
         -------
-            str: The unique identifier of the completed job.
+        None
 
         Raises
         ------
-            ValueError: If the experiment lacks required id or project_id attributes,
-                       or if no job_id is provided and no job can be found.
+        ValueError
+            If the experiment lacks required id or project_id attributes.
+        RuntimeError
+            If the experiment enters a failed state.
+        TimeoutError
+            If the experiment does not complete within timeout_seconds.
 
         Examples
         --------
-            experiment = Experiment.get(name="ml-evaluation", project_name="My AI Project")
-            result = experiment.run()
+            experiment = Experiment(
+                name="ml-evaluation",
+                dataset_name="ml-dataset",
+                project_name="My AI Project"
+            ).create()
 
-            # Monitor the job progress
-            completed_job_id = experiment.monitor_progress()
+            experiment.monitor_progress()
         """
+        if job_id is not None:
+            warnings.warn(
+                "The 'job_id' parameter of monitor_progress() is deprecated and will be removed in a future release. "
+                "Progress is now tracked directly via experiment status; the job_id value is ignored.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         if self.id is None:
             raise ValueError("Experiment ID is not set. Cannot monitor progress for a local-only experiment.")
         if self.project_id is None:
             raise ValueError("Project ID is not set. Cannot monitor progress without project_id.")
 
-        if job_id is None:
-            # Try to get job from stored state or query for it
-            if self._job_id:
-                job_id = self._job_id
-            else:
-                # Get the first scorer job
-                scorer_jobs = get_run_scorer_jobs(project_id=self.project_id, run_id=self.id)
-                if not scorer_jobs:
-                    raise ValueError("No job found for this experiment. Run the experiment first.")
-                job_id = str(scorer_jobs[0].id)
+        _logger.info(f"Experiment.monitor_progress: experiment_id='{self.id}' - started")
 
-        _logger.info(f"Experiment.monitor_progress: experiment_id='{self.id}' job_id='{job_id}' - started")
+        import time
 
-        # Monitor job progress with progress bar
-        completed_job_id = job_progress(job_id=job_id, project_id=self.project_id, run_id=self.id)
+        deadline = time.monotonic() + timeout_seconds if timeout_seconds is not None else None
+
+        status = self.get_status()
+        progress_bar = tqdm(total=100, unit="%", desc="Experiment progress")
+        try:
+            while not status.is_complete:
+                if status.is_failed:
+                    raise RuntimeError(
+                        f"Experiment '{self.id}' entered a failed state. "
+                        "Check the experiment results for details."
+                    )
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        f"Experiment '{self.id}' did not complete within {timeout_seconds}s. "
+                        "Increase timeout_seconds or pass None to wait indefinitely."
+                    )
+                new_progress = status.overall_progress
+                progress_bar.update(new_progress - progress_bar.n)
+                sleep(poll_interval_seconds)
+                status = self.get_status()
+            progress_bar.update(100 - progress_bar.n)
+        finally:
+            progress_bar.close()
 
         _logger.info(f"Experiment.monitor_progress: experiment_id='{self.id}' - completed")
-        return str(completed_job_id)
 
     # Query and export methods - similar to LogStream
 

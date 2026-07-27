@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..models.project_type import ProjectType
 from ..types import UNSET, Unset
@@ -19,17 +20,17 @@ class ProjectCreateResponse:
         id (str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        name (Union[None, Unset, str]):
-        created_by (Union[None, Unset, str]):
-        type_ (Union[None, ProjectType, Unset]):
+        name (None | str | Unset):
+        created_by (None | str | Unset):
+        type_ (None | ProjectType | Unset):
     """
 
     id: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    name: Union[None, Unset, str] = UNSET
-    created_by: Union[None, Unset, str] = UNSET
-    type_: Union[None, ProjectType, Unset] = UNSET
+    name: None | str | Unset = UNSET
+    created_by: None | str | Unset = UNSET
+    type_: None | ProjectType | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,19 +40,19 @@ class ProjectCreateResponse:
 
         updated_at = self.updated_at.isoformat()
 
-        name: Union[None, Unset, str]
+        name: None | str | Unset
         if isinstance(self.name, Unset):
             name = UNSET
         else:
             name = self.name
 
-        created_by: Union[None, Unset, str]
+        created_by: None | str | Unset
         if isinstance(self.created_by, Unset):
             created_by = UNSET
         else:
             created_by = self.created_by
 
-        type_: Union[None, Unset, str]
+        type_: None | str | Unset
         if isinstance(self.type_, Unset):
             type_ = UNSET
         elif isinstance(self.type_, ProjectType):
@@ -76,29 +77,29 @@ class ProjectCreateResponse:
         d = dict(src_dict)
         id = d.pop("id")
 
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        updated_at = isoparse(d.pop("updated_at"))
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
-        def _parse_name(data: object) -> Union[None, Unset, str]:
+        def _parse_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_created_by(data: object) -> Union[None, Unset, str]:
+        def _parse_created_by(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
 
-        def _parse_type_(data: object) -> Union[None, ProjectType, Unset]:
+        def _parse_type_(data: object) -> None | ProjectType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -111,7 +112,7 @@ class ProjectCreateResponse:
                 return type_type_0
             except:  # noqa: E722
                 pass
-            return cast(Union[None, ProjectType, Unset], data)
+            return cast(None | ProjectType | Unset, data)
 
         type_ = _parse_type_(d.pop("type", UNSET))
 

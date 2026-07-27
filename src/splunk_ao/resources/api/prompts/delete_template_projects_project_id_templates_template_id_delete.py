@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 
@@ -31,13 +31,13 @@ def _get_kwargs(project_id: str, template_id: str) -> dict[str, Any]:
         "path": "/projects/{project_id}/templates/{template_id}".format(project_id=project_id, template_id=template_id),
     }
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[DeletePromptResponse, HTTPValidationError]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> DeletePromptResponse | HTTPValidationError:
     if response.status_code == 200:
         response_200 = DeletePromptResponse.from_dict(response.json())
 
@@ -68,7 +68,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Union[Del
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Response[DeletePromptResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +79,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, template_id: str, *, client: ApiClient
-) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Response[DeletePromptResponse | HTTPValidationError]:
     """Delete Template
 
     Args:
@@ -91,7 +91,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeletePromptResponse, HTTPValidationError]]
+        Response[DeletePromptResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_id=template_id)
@@ -103,7 +103,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, template_id: str, *, client: ApiClient
-) -> Optional[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Optional[DeletePromptResponse | HTTPValidationError]:
     """Delete Template
 
     Args:
@@ -115,7 +115,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeletePromptResponse, HTTPValidationError]
+        DeletePromptResponse | HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, template_id=template_id, client=client).parsed
@@ -123,7 +123,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, template_id: str, *, client: ApiClient
-) -> Response[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Response[DeletePromptResponse | HTTPValidationError]:
     """Delete Template
 
     Args:
@@ -135,7 +135,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[DeletePromptResponse, HTTPValidationError]]
+        Response[DeletePromptResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, template_id=template_id)
@@ -147,7 +147,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, template_id: str, *, client: ApiClient
-) -> Optional[Union[DeletePromptResponse, HTTPValidationError]]:
+) -> Optional[DeletePromptResponse | HTTPValidationError]:
     """Delete Template
 
     Args:
@@ -159,7 +159,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[DeletePromptResponse, HTTPValidationError]
+        DeletePromptResponse | HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, template_id=template_id, client=client)).parsed

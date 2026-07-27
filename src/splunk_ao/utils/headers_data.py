@@ -59,10 +59,10 @@ def get_method_name() -> str:
 
 def get_sdk_header() -> str:
     """Build the Splunk-AO-SDK header value."""
-    version = get_package_version()
+    version_str = get_package_version()
     method_name = get_method_name()
 
-    sdk_header = f"galileo-python/{version}"
+    sdk_header = f"splunk-ao/{version_str}"
     if method_name:
         sdk_header = f"{sdk_header} {method_name}"
 

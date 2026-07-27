@@ -270,6 +270,8 @@ class TestJsonRoundtripNoCoercion:
                         LoggedAgentSpan(
                             input=[LoggedMessage(content="agent task", role=MessageRole.user)],
                             output="agent done",
+                            conversation_root=True,
+                            user_metadata={"gen_ai.conversation_root": "true"},
                             spans=[
                                 LoggedWorkflowSpan(
                                     input=[LoggedMessage(content="wf", role=MessageRole.user)],
@@ -313,6 +315,8 @@ class TestJsonRoundtripNoCoercion:
 
         agent = trace.spans[0]
         assert type(agent) is LoggedAgentSpan
+        assert agent.conversation_root is True
+        assert agent.user_metadata == {"gen_ai.conversation_root": "true"}
         assert isinstance(agent.input, list)
         assert type(agent.input[0]) is LoggedMessage
 

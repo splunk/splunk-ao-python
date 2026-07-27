@@ -37,7 +37,7 @@ dev = [
     "ruff>=0.12.3",
     "mypy>=1.16.0",
     "opentelemetry-instrumentation>=0.61b0",
-    "splunk-ao[otel]>=0.1.0,<1.0.0",
+    "splunk-ao>=0.1.0,<1.0.0",
 ]
 examples = [
     "uvicorn>=0.42.0",
@@ -71,7 +71,7 @@ env = [
     "SPLUNK_AO_CONSOLE_URL=http://fake.test:8088",
     "SPLUNK_AO_API_KEY=api-1234567890",
     "SPLUNK_AO_PROJECT=test-project",
-    "SPLUNK_AO_LOG_STREAM=test-log-stream",
+    "SPLUNK_AO_AGENT_STREAM=test-log-stream",
 ]
 addopts = [
     "-v",

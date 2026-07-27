@@ -1,12 +1,13 @@
 import json
 import os
-import re
 from unittest.mock import Mock, patch
 
 import pytest
 from pydantic import SecretStr
 
-from galileo_core.schemas.logging.span import ToolSpan
+from galileo_core.schemas.logging.llm import Message, MessageRole
+from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.shared.document import Document
 from splunk_ao.decorator import (
     _dataset_input_context,
     _dataset_metadata_context,
@@ -19,19 +20,12 @@ from splunk_ao.decorator import (
 )
 from splunk_ao.otel import (
     _TRACE_PROVIDER_CONTEXT_VAR,
-    INSTALL_ERR_MSG,
-    OTEL_AVAILABLE,
     SplunkAOOTLPExporter,
     SplunkAOSpanProcessor,
     _set_tool_span_attributes,
+    _set_workflow_span_attributes,
     start_splunk_ao_span,
 )
-
-if OTEL_AVAILABLE:
-    from galileo_core.schemas.logging.llm import Message, MessageRole
-    from galileo_core.schemas.logging.span import WorkflowSpan
-    from galileo_core.schemas.shared.document import Document
-    from splunk_ao.otel import _set_workflow_span_attributes, start_splunk_ao_span
 
 
 class TestSplunkAOOTLPExporter:
@@ -40,7 +34,7 @@ class TestSplunkAOOTLPExporter:
     @pytest.fixture
     def clear_env_vars(self):
         """Clear relevant environment variables and context vars for clean test state."""
-        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_LOG_STREAM"]
+        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_AGENT_STREAM", "SPLUNK_AO_LOG_STREAM"]
         original_values = {var: os.environ.pop(var, None) for var in env_vars}
         _project_context.set(None)
         _log_stream_context.set(None)
@@ -63,7 +57,6 @@ class TestSplunkAOOTLPExporter:
             mock_config_get.return_value = config
             yield config
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     def test_init_and_parameter_priority(self, mock_otlp_init, mock_config, clear_env_vars):
         """Test initialization with params, env vars, and their priority."""
@@ -79,20 +72,18 @@ class TestSplunkAOOTLPExporter:
 
         # Test that params override env vars
         mock_otlp_init.reset_mock()
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_LOG_STREAM": "env-logstream"}):
+        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
             exporter = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream")
             assert exporter.project == "param-project"  # Param wins over env
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     def test_init_with_env_variables(self, mock_otlp_init, mock_config, clear_env_vars):
         """Test initialization using environment variables."""
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_LOG_STREAM": "env-logstream"}):
+        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
             exporter = SplunkAOOTLPExporter()
             assert exporter.project == "env-project"
             assert exporter.logstream == "env-logstream"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     def test_init_uses_default_project(self, mock_otlp_init, mock_config, clear_env_vars):
         """Test default project name is used when no project is provided."""
@@ -102,14 +93,13 @@ class TestSplunkAOOTLPExporter:
         assert call_kwargs["headers"]["project"] == "default"
         assert call_kwargs["headers"]["logstream"] == "default"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     @pytest.mark.parametrize(
         "api_url,expected_endpoint",
         [
-            ("https://api.galileo.ai", "https://api.galileo.ai/otel/traces"),
-            ("https://api.galileo.ai/", "https://api.galileo.ai/otel/traces"),
-            ("http://localhost:8080", "http://localhost:8080/otel/traces"),
+            ("https://api.galileo.ai", "https://api.galileo.ai/otel/v1/traces"),
+            ("https://api.galileo.ai/", "https://api.galileo.ai/otel/v1/traces"),
+            ("http://localhost:8080", "http://localhost:8080/otel/v1/traces"),
         ],
     )
     def test_url_construction(self, mock_otlp_init, api_url, expected_endpoint, mock_config, clear_env_vars):
@@ -118,7 +108,6 @@ class TestSplunkAOOTLPExporter:
         SplunkAOOTLPExporter()
         assert mock_otlp_init.call_args[1]["endpoint"] == expected_endpoint
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_init_missing_api_key_raises_error(self, mock_config, clear_env_vars):
         """Test that missing API key raises ValueError."""
         mock_config.api_key = None
@@ -148,7 +137,6 @@ class TestSplunkAOSpanProcessor:
                 "mock_processor_instance": mock_processor_instance,
             }
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_init_with_default_processor(self, mock_processor_setup):
         """Test initialization with default BatchSpanProcessor."""
         mocks = mock_processor_setup
@@ -166,7 +154,6 @@ class TestSplunkAOSpanProcessor:
         assert processor.exporter == mocks["mock_exporter_instance"]
         assert processor.processor == mocks["mock_processor_instance"]
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.SplunkAOOTLPExporter")
     def test_init_with_custom_processor(self, mock_exporter_class):
         """Test initialization with custom span processor class."""
@@ -184,7 +171,6 @@ class TestSplunkAOSpanProcessor:
         mock_custom_processor_class.assert_called_once_with(mock_exporter_instance)
         assert processor.processor == mock_custom_processor_instance
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_on_start_delegates_to_processor(self, mock_processor_setup):
         """Test that on_start delegates to the underlying processor."""
         mocks = mock_processor_setup
@@ -196,18 +182,20 @@ class TestSplunkAOSpanProcessor:
 
         mocks["mock_processor_instance"].on_start.assert_called_once_with(mock_span, mock_context)
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_on_end_delegates_to_processor(self, mock_processor_setup):
         """Test that on_end delegates to the underlying processor."""
         mocks = mock_processor_setup
         processor = SplunkAOSpanProcessor(project="test")
 
         mock_span = Mock()
+        mock_span.attributes = {"gen_ai.conversation_root": True}
         processor.on_end(mock_span)
 
         mocks["mock_processor_instance"].on_end.assert_called_once_with(mock_span)
+        assert mocks["mock_processor_instance"].on_end.call_args.args[0].attributes == {
+            "gen_ai.conversation_root": True
+        }
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_shutdown_delegates_to_processor(self, mock_processor_setup):
         """Test that shutdown delegates to the underlying processor."""
         mocks = mock_processor_setup
@@ -217,7 +205,6 @@ class TestSplunkAOSpanProcessor:
 
         mocks["mock_processor_instance"].shutdown.assert_called_once()
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_force_flush_delegates_to_processor(self, mock_processor_setup):
         """Test that force_flush delegates to the underlying processor."""
         mocks = mock_processor_setup
@@ -229,7 +216,6 @@ class TestSplunkAOSpanProcessor:
         mocks["mock_processor_instance"].force_flush.assert_called_once_with(30000)
         assert result is True
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_force_flush_default_timeout(self, mock_processor_setup):
         """Test that force_flush uses default timeout when not specified."""
         mocks = mock_processor_setup
@@ -239,7 +225,6 @@ class TestSplunkAOSpanProcessor:
 
         mocks["mock_processor_instance"].force_flush.assert_called_once_with(40000)
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_init_passes_all_parameters_to_exporter(self, mock_processor_setup):
         """Test that all initialization parameters are passed to the exporter."""
         mocks = mock_processor_setup
@@ -270,7 +255,6 @@ class TestOTelUnavailable:
 class TestOTelIntegration:
     """Integration tests for OpenTelemetry functionality."""
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.BatchSpanProcessor")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     @patch("splunk_ao.otel.SplunkAOConfig.get")
@@ -333,7 +317,6 @@ class TestOTelContextIntegration:
             mock_config_get.return_value = config
             yield SplunkAOOTLPExporter(project="test-project", logstream="test-logstream")
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
     @patch("splunk_ao.otel.SplunkAOConfig.get")
     def test_exporter_context_vars_and_override(self, mock_config_get, mock_otlp_init, reset_decorator_context):
@@ -358,7 +341,6 @@ class TestOTelContextIntegration:
         assert exporter2.project == "param-project"
         assert exporter2.logstream == "param-logstream"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_processor_context_and_fallback(self, mock_processor_deps, reset_decorator_context):
         """Test processor reads context vars and uses init values as fallback."""
         # Test context vars
@@ -377,12 +359,11 @@ class TestOTelContextIntegration:
         assert processor2._project == "init-project"
         assert processor2._logstream == "init-logstream"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_processor_on_start_sets_span_attributes(self, mock_processor_deps, reset_decorator_context, monkeypatch):
         """Test on_start sets context attributes on spans, handling None values."""
         # Pin env vars for this test to avoid flakiness from parallel workers
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "test-project")
-        monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "test-log-stream")
+        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
 
         # Given: all context vars set (experiment_id takes priority over logstream)
         _project_context.set("test-project")
@@ -410,7 +391,7 @@ class TestOTelContextIntegration:
         _session_id_context.set(None)
 
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "test-log-stream")
+        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
         try:
             processor2 = SplunkAOSpanProcessor()
             mock_span2 = Mock()
@@ -420,12 +401,11 @@ class TestOTelContextIntegration:
             assert mock_span2.set_attribute.call_count == 2
             actual_calls = {(args[0], args[1]) for args, _ in mock_span2.set_attribute.call_args_list}
             assert ("splunk_ao.project.name", "test-project") in actual_calls
-            # Falls back to SPLUNK_AO_LOG_STREAM env var
+            # Falls back to SPLUNK_AO_AGENT_STREAM env var
             assert ("splunk_ao.logstream.name", "test-log-stream") in actual_calls
         finally:
             monkeypatch.undo()
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.export")
     @patch("splunk_ao.otel.Resource")
     def test_exporter_export_merges_resource_attributes(self, mock_resource_class, mock_parent_export):
@@ -497,7 +477,6 @@ class TestOTelContextIntegration:
 class TestSetToolSpanAttributes:
     """Test suite for _set_tool_span_attributes function."""
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_tool_span_with_all_fields(self):
         """Test setting attributes when all ToolSpan fields are populated."""
         # Given: a ToolSpan with input, output, and tool_call_id
@@ -514,7 +493,10 @@ class TestSetToolSpanAttributes:
         _set_tool_span_attributes(mock_otel_span, tool_span)
 
         # Then: all attributes are set correctly
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "test-tool"
         assert calls["gen_ai.tool.call.arguments"] == "tool input data"
@@ -524,7 +506,6 @@ class TestSetToolSpanAttributes:
         assert calls["gen_ai.tool.call.id"] == "call-123"
         assert mock_otel_span.set_attribute.call_count == 7
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_tool_span_with_only_input(self):
         """Test setting attributes when only input is provided."""
         # Given: a ToolSpan with only input (output and tool_call_id are None)
@@ -545,7 +526,6 @@ class TestSetToolSpanAttributes:
         assert "gen_ai.tool.call.id" not in calls
         assert mock_otel_span.set_attribute.call_count == 4
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_tool_span_with_output_no_tool_call_id(self):
         """Test setting attributes when output is provided but tool_call_id is None."""
         # Given: a ToolSpan with input and output, but no tool_call_id
@@ -579,7 +559,6 @@ class TestStartSplunkAOSpan:
         yield
         _TRACE_PROVIDER_CONTEXT_VAR.set(None)
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_start_splunk_ao_span_dispatches_tool_span(self):
         """Test that start_splunk_ao_span routes a ToolSpan to _set_tool_span_attributes."""
         # Given: a ToolSpan with all fields populated and a mock tracer provider
@@ -613,7 +592,6 @@ class TestStartSplunkAOSpan:
         assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output result"}])
         assert calls["gen_ai.tool.call.id"] == "call-789"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_start_splunk_ao_span_tool_span_with_none_output(self):
         """Test that start_splunk_ao_span handles a ToolSpan with None output and tool_call_id."""
         # Given: a ToolSpan with only input populated
@@ -641,6 +619,84 @@ class TestStartSplunkAOSpan:
         assert "gen_ai.output.messages" not in calls
         assert "gen_ai.tool.call.id" not in calls
 
+    @pytest.mark.parametrize(
+        "galileo_span",
+        [
+            WorkflowSpan(name="workflow", input="input", output="output"),
+            AgentSpan(name="agent", input="input", output="output"),
+        ],
+    )
+    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, galileo_span):
+        """Eligible spans with no caller parent receive the standard root marker."""
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
+            with start_splunk_ao_span(galileo_span):
+                pass
+
+        calls = {
+            args[0]: args[1] if len(args) > 1 else kwargs["value"]
+            for args, kwargs in mock_otel_span.set_attribute.call_args_list
+        }
+        assert calls["gen_ai.conversation_root"] is True
+
+    def test_start_splunk_ao_span_does_not_mark_span_with_parent(self):
+        """A valid caller parent prevents a new conversation root marker."""
+        workflow_span = WorkflowSpan(name="workflow", input="input", output="output")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = True
+            with start_splunk_ao_span(workflow_span):
+                pass
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert "gen_ai.conversation_root" not in calls
+
+    @pytest.mark.parametrize(
+        "galileo_span",
+        [
+            ToolSpan(name="tool", input="input", output="output"),
+            LlmSpan(
+                name="llm",
+                input=[Message(role=MessageRole.user, content="input")],
+                output=Message(role=MessageRole.assistant, content="output"),
+                model="model",
+            ),
+            RetrieverSpan(name="retriever", input="input", output=[]),
+        ],
+    )
+    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, galileo_span):
+        """LLM, tool, and retriever spans are never conversation roots."""
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with patch("splunk_ao.otel.trace") as mock_trace:
+            mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
+            with start_splunk_ao_span(galileo_span):
+                pass
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert "gen_ai.conversation_root" not in calls
+
 
 class TestWorkflowSpanAttributes:
     """Test suite for WorkflowSpan OpenTelemetry attribute mapping."""
@@ -653,7 +709,6 @@ class TestWorkflowSpanAttributes:
             mock_json_module.dumps.return_value = '"test"'
             yield {"span": mock_span, "trace": mock_trace_module, "json": mock_json_module}
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_workflow_span_with_string_input_output(self, mock_dependencies):
         """Test WorkflowSpan with string input and output."""
         # Given: a WorkflowSpan with string input and output
@@ -677,7 +732,6 @@ class TestWorkflowSpanAttributes:
         assert output_call[0][0] == "gen_ai.output.messages"
         mock_json.dumps.assert_any_call([{"role": "assistant", "content": "output text"}])
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_workflow_span_with_message_input_output(self, mock_dependencies):
         """Test WorkflowSpan with Message input and output."""
         # Given: a WorkflowSpan with Message input and output
@@ -696,7 +750,6 @@ class TestWorkflowSpanAttributes:
         output_call = mock_span.set_attribute.call_args_list[1]
         assert output_call[0][0] == "gen_ai.output.messages"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_workflow_span_with_document_sequence_output(self, mock_dependencies):
         """Test WorkflowSpan with Document sequence output."""
         # Given: a WorkflowSpan with string input and Document sequence output
@@ -721,7 +774,6 @@ class TestWorkflowSpanAttributes:
         output_call = mock_span.set_attribute.call_args_list[1]
         assert output_call[0][0] == "gen_ai.output.messages"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_workflow_span_with_none_output(self, mock_dependencies):
         """Test WorkflowSpan with None output (should not set output attribute)."""
         # Given: a WorkflowSpan with None output
@@ -736,7 +788,6 @@ class TestWorkflowSpanAttributes:
         input_call = mock_span.set_attribute.call_args_list[0]
         assert input_call[0][0] == "gen_ai.input.messages"
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_workflow_span_in_start_splunk_ao_span(self, mock_dependencies):
         """Test that WorkflowSpan is handled in start_splunk_ao_span context manager."""
         # Given: a WorkflowSpan
@@ -789,7 +840,6 @@ class TestDatasetContext:
             mock_batch.return_value = Mock()
             yield {"exporter": mock_exp, "batch": mock_batch}
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_splunk_ao_dataset_context_sets_values(self, reset_dataset_context):
         """Test that splunk_ao_dataset_context sets context variables correctly."""
         # Given: dataset context is initially empty
@@ -811,7 +861,6 @@ class TestDatasetContext:
         assert _dataset_output_context.get(None) is None
         assert _dataset_metadata_context.get(None) is None
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_splunk_ao_dataset_context_nested_contexts(self, reset_dataset_context):
         """Test that nested splunk_ao_dataset_context managers work correctly."""
         # Given: outer context with initial values
@@ -833,7 +882,6 @@ class TestDatasetContext:
         assert _dataset_input_context.get(None) is None
         assert _dataset_output_context.get(None) is None
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_splunk_ao_dataset_context_exception_handling(self, reset_dataset_context):
         """Test that context variables are reset even when exception occurs."""
         # Given/When: an exception is raised inside the context
@@ -846,7 +894,6 @@ class TestDatasetContext:
         assert _dataset_input_context.get(None) is None
         assert _dataset_output_context.get(None) is None
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_processor_on_start_sets_dataset_attributes(self, mock_processor_deps, reset_dataset_context):
         """Test that on_start sets dataset attributes on spans from context."""
         # Given: dataset context variables are set
@@ -866,7 +913,6 @@ class TestDatasetContext:
         assert ("splunk_ao.dataset.output", "expected answer") in actual_calls
         assert ("splunk_ao.dataset.metadata", json.dumps({"source": "test_dataset"})) in actual_calls
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     @patch("splunk_ao.otel.OTLPSpanExporter.export")
     @patch("splunk_ao.otel.Resource")
     def test_exporter_export_merges_dataset_attributes(
@@ -915,7 +961,6 @@ class TestDatasetContext:
         mock_span.resource.merge.assert_called_once_with(mock_new_resource)
         assert mock_span._resource == mock_merged_resource
 
-    @pytest.mark.skipif(not OTEL_AVAILABLE, reason="OpenTelemetry not available")
     def test_splunk_ao_dataset_context_partial_values(self, reset_dataset_context):
         """Test that splunk_ao_dataset_context works with partial values."""
         # When: only some values are provided
