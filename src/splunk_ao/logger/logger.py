@@ -39,10 +39,10 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.traces_logger import TracesLogger
+from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.exceptions import SplunkAOLoggerException
-from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 from splunk_ao.projects import Projects
@@ -1849,9 +1849,7 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
-        if isinstance(self.current_parent(), LoggedTrace):
-            span.conversation_root = True
-            span.user_metadata = {"gen_ai.conversation_root": "true", **(span.user_metadata or {})}
+        self._mark_conversation_root(span)
         return self._attach_parentable_span(span, status_code)
 
     @nop_sync
@@ -1935,10 +1933,14 @@ class SplunkAOLogger(TracesLogger):
             id=uuid.uuid4(),
             step_number=step_number,
         )
+        self._mark_conversation_root(span)
+        return self._attach_parentable_span(span, status_code)
+
+    def _mark_conversation_root(self, span: LoggedWorkflowSpan | LoggedAgentSpan) -> None:
+        """Mark eligible native trace children and add the interim metadata bridge."""
         if isinstance(self.current_parent(), LoggedTrace):
             span.conversation_root = True
             span.user_metadata = {"gen_ai.conversation_root": "true", **(span.user_metadata or {})}
-        return self._attach_parentable_span(span, status_code)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))

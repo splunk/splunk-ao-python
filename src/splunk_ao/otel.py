@@ -371,6 +371,8 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         yield span
         span.set_attribute("gen_ai.system", "galileo-otel")
         if is_conversation_root:
+            # OTel semantic-convention attributes are boolean; the native route's
+            # string-valued user_metadata bridge is an interim compatibility path.
             span.set_attribute(GEN_AI_CONVERSATION_ROOT, value=True)
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
