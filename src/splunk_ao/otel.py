@@ -148,7 +148,6 @@ def _with_routing_resource(span: ReadableSpan, routing_resource: Resource) -> Re
         events=span.events,
         links=span.links,
         kind=span.kind,
-        instrumentation_info=span.instrumentation_info,
         status=span.status,
         start_time=span.start_time,
         end_time=span.end_time,
@@ -163,6 +162,10 @@ class SplunkAOOTLPExporter(SpanExporter):
     This exporter wraps the standard OTLPSpanExporter with deployment-aware
     configuration, authentication, and immutable routing. For most applications, use
     SplunkAOSpanProcessor instead, which provides a complete tracing solution.
+
+    Routing is captured when the exporter is constructed and remains fixed for its
+    lifetime. Applications that export to multiple destinations must use a separate
+    exporter and span processor for each destination.
     """
 
     def __init__(
@@ -231,6 +234,8 @@ class SplunkAOSpanProcessor(SpanProcessor):
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
     It handles the complete lifecycle of spans from creation to export to Galileo.
+    Project, log-stream, and experiment routing is fixed when the processor's exporter
+    is constructed. Use separate processors and exporters for separate destinations.
 
     Examples
     --------
@@ -266,7 +271,14 @@ class SplunkAOSpanProcessor(SpanProcessor):
         SpanProcessor : type, optional
             Custom span processor class. Defaults to BatchSpanProcessor for optimal performance.
 
+        Raises
+        ------
+        ValueError
+            When a prebuilt exporter is combined with exporter configuration options.
         """
+        if _exporter is not None and kwargs:
+            raise ValueError("OTLP exporter options cannot be used with _exporter")
+
         self._exporter = (
             _exporter
             if _exporter is not None

@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
@@ -286,7 +287,6 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
         "events",
         "links",
         "kind",
-        "instrumentation_info",
         "status",
         "start_time",
         "end_time",
@@ -298,6 +298,18 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
     assert exported.attributes["gen_ai.provider.name"] == "openai"
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
     assert exported.attributes["custom.attribute"] == "preserved"
+    exporter.shutdown()
+
+
+def test_exporter_does_not_read_deprecated_instrumentation_info() -> None:
+    factory = RecordingExporterFactory()
+    exporter = build_exporter(DeploymentMode.O11Y, factory, project="project")
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always", DeprecationWarning)
+        exporter.export((make_span(),))
+
+    assert not any("instrumentation_scope" in str(warning.message) for warning in captured)
     exporter.shutdown()
 
 
@@ -354,6 +366,11 @@ def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
         _exporter_factory=exporter_factory,
     )
     processor.shutdown()
+
+
+def test_processor_rejects_prebuilt_exporter_with_otlp_options() -> None:
+    with pytest.raises(ValueError, match="OTLP exporter options cannot be used with _exporter"):
+        SplunkAOSpanProcessor(_exporter=RecordingExporter(), timeout=10)
 
 
 def test_helper_constructs_registers_and_returns_processor() -> None:
