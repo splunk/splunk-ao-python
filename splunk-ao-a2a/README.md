@@ -73,10 +73,10 @@ For standalone Splunk AO:
 | Environment Variable | Description |
 |---------------------|-------------|
 | `SPLUNK_AO_API_KEY` | Splunk AO API key (required) |
-| `SPLUNK_AO_CONSOLE_URL` | Splunk AO console URL (required) |
+| `SPLUNK_AO_CONSOLE_URL` | Splunk AO console URL (required for self-hosted deployments, e.g. `http://localhost:8088`) |
 | `SPLUNK_AO_API_URL` | Explicit API URL (optional; otherwise derived from the console URL) |
 | `SPLUNK_AO_PROJECT` / `SPLUNK_AO_PROJECT_ID` | Project name or ID |
-| `SPLUNK_AO_LOG_STREAM` / `SPLUNK_AO_LOG_STREAM_ID` | Log-stream name or ID |
+| `SPLUNK_AO_AGENT_STREAM` / `SPLUNK_AO_AGENT_STREAM_ID` | Agent-stream name or ID |
 
 For Splunk Observability Cloud:
 
@@ -85,10 +85,11 @@ For Splunk Observability Cloud:
 | `SPLUNK_AO_REALM` | Observability Cloud realm (required) |
 | `SPLUNK_AO_SF_TOKEN` | SignalFlow ingest token used for OTLP export (required) |
 | `SPLUNK_AO_PROJECT` / `SPLUNK_AO_PROJECT_ID` | Optional project routing |
-| `SPLUNK_AO_LOG_STREAM` / `SPLUNK_AO_LOG_STREAM_ID` | Optional log-stream routing |
+| `SPLUNK_AO_AGENT_STREAM` / `SPLUNK_AO_AGENT_STREAM_ID` | Optional agent-stream routing |
 
-O11y routing may be omitted entirely. In that case, the exporter sends only
-authentication and ingestion assigns the trace to the unknown-project bucket.
+Applications should configure project and agent-stream routing. If it is
+accidentally absent, export remains non-blocking and ingestion may assign the
+trace to the unknown-project bucket.
 The same Python setup works for both deployments; only the environment changes.
 
 ## Features

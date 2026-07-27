@@ -2898,94 +2898,6 @@ paths:
         - APIKeyHeader: []
         - OAuth2PasswordBearer: []
         - HTTPBasic: []
-  /jobs/{job_id}:
-    get:
-      tags:
-        - jobs
-      summary: Get Job
-      description: Get a job by id.
-      operationId: get_job_jobs__job_id__get
-      security:
-        - ClassicAPIKeyHeader: []
-        - APIKeyHeader: []
-        - OAuth2PasswordBearer: []
-        - HTTPBasic: []
-      parameters:
-        - name: job_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid4
-            title: Job Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobDB'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /projects/{project_id}/runs/{run_id}/jobs:
-    get:
-      tags:
-        - jobs
-      summary: Get Jobs For Project Run
-      description: 'Get all jobs for a project and run.
-
-
-        Returns them in order of creation from newest to oldest.'
-      operationId: get_jobs_for_project_run_projects__project_id__runs__run_id__jobs_get
-      security:
-        - ClassicAPIKeyHeader: []
-        - APIKeyHeader: []
-        - OAuth2PasswordBearer: []
-        - HTTPBasic: []
-      parameters:
-        - name: project_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid4
-            title: Project Id
-        - name: run_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid4
-            title: Run Id
-        - name: status
-          in: query
-          required: false
-          schema:
-            anyOf:
-              - type: string
-              - type: 'null'
-            title: Status
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobDB'
-                title: Response Get Jobs For Project Run Projects  Project Id  Runs  Run
-                  Id  Jobs Get
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /projects/{project_id}/runs/{run_id}/scorer-settings:
     patch:
       tags:
@@ -14039,38 +13951,12 @@ components:
       required:
         - metric
       title: BillingUsageResponse
-    BleuScorer:
-      properties:
-        name:
-          type: string
-          const: bleu
-          title: Name
-          default: bleu
-        filters:
-          anyOf:
-            - items:
-                oneOf:
-                  - $ref: '#/components/schemas/NodeNameFilter'
-                  - $ref: '#/components/schemas/MetadataFilter'
-                  - $ref: '#/components/schemas/ModalityFilter'
-                discriminator:
-                  propertyName: name
-                  mapping:
-                    metadata: '#/components/schemas/MetadataFilter'
-                    modality: '#/components/schemas/ModalityFilter'
-                    node_name: '#/components/schemas/NodeNameFilter'
-              type: array
-            - type: 'null'
-          title: Filters
-          description: List of filters to apply to the scorer.
-      type: object
-      title: BleuScorer
     Body_create_code_scorer_version_scorers__scorer_id__version_code_post:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
           title: File
+          format: binary
         validation_result:
           type: string
           title: Validation Result
@@ -14102,7 +13988,7 @@ components:
         file:
           anyOf:
             - type: string
-              contentMediaType: application/octet-stream
+              format: binary
             - type: 'null'
           title: File
         copy_from_dataset_id:
@@ -14173,14 +14059,14 @@ components:
         query_files:
           items:
             type: string
-            contentMediaType: application/octet-stream
+            format: binary
           type: array
           title: Query Files
           default: []
         response_files:
           items:
             type: string
-            contentMediaType: application/octet-stream
+            format: binary
           type: array
           title: Response Files
           default: []
@@ -14192,8 +14078,8 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
           title: File
+          format: binary
         dataset_id:
           type: string
           format: uuid
@@ -14242,8 +14128,8 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
           title: File
+          format: binary
         log_stream_id:
           anyOf:
             - type: string
@@ -14301,8 +14187,8 @@ components:
       properties:
         file:
           type: string
-          contentMediaType: application/octet-stream
           title: File
+          format: binary
         test_input:
           anyOf:
             - type: string
@@ -15728,7 +15614,6 @@ components:
                 oneOf:
                   - $ref: '#/components/schemas/AgenticWorkflowSuccessScorer'
                   - $ref: '#/components/schemas/AgenticSessionSuccessScorer'
-                  - $ref: '#/components/schemas/BleuScorer'
                   - $ref: '#/components/schemas/ChunkAttributionUtilizationScorer'
                   - $ref: '#/components/schemas/CompletenessScorer'
                   - $ref: '#/components/schemas/ContextAdherenceScorer'
@@ -15745,17 +15630,13 @@ components:
                   - $ref: '#/components/schemas/OutputToneScorer'
                   - $ref: '#/components/schemas/OutputToxicityScorer'
                   - $ref: '#/components/schemas/PromptInjectionScorer'
-                  - $ref: '#/components/schemas/PromptPerplexityScorer'
-                  - $ref: '#/components/schemas/RougeScorer'
                   - $ref: '#/components/schemas/ToolErrorRateScorer'
                   - $ref: '#/components/schemas/ToolSelectionQualityScorer'
-                  - $ref: '#/components/schemas/UncertaintyScorer'
                 discriminator:
                   propertyName: name
                   mapping:
                     agentic_session_success: '#/components/schemas/AgenticSessionSuccessScorer'
                     agentic_workflow_success: '#/components/schemas/AgenticWorkflowSuccessScorer'
-                    bleu: '#/components/schemas/BleuScorer'
                     chunk_attribution_utilization: '#/components/schemas/ChunkAttributionUtilizationScorer'
                     completeness: '#/components/schemas/CompletenessScorer'
                     context_adherence: '#/components/schemas/ContextAdherenceScorer'
@@ -15772,11 +15653,8 @@ components:
                     output_tone: '#/components/schemas/OutputToneScorer'
                     output_toxicity: '#/components/schemas/OutputToxicityScorer'
                     prompt_injection: '#/components/schemas/PromptInjectionScorer'
-                    prompt_perplexity: '#/components/schemas/PromptPerplexityScorer'
-                    rouge: '#/components/schemas/RougeScorer'
                     tool_error_rate: '#/components/schemas/ToolErrorRateScorer'
                     tool_selection_quality: '#/components/schemas/ToolSelectionQualityScorer'
-                    uncertainty: '#/components/schemas/UncertaintyScorer'
               type: array
             - type: 'null'
           title: Scorers
@@ -16056,7 +15934,6 @@ components:
                 oneOf:
                   - $ref: '#/components/schemas/AgenticWorkflowSuccessScorer'
                   - $ref: '#/components/schemas/AgenticSessionSuccessScorer'
-                  - $ref: '#/components/schemas/BleuScorer'
                   - $ref: '#/components/schemas/ChunkAttributionUtilizationScorer'
                   - $ref: '#/components/schemas/CompletenessScorer'
                   - $ref: '#/components/schemas/ContextAdherenceScorer'
@@ -16073,17 +15950,13 @@ components:
                   - $ref: '#/components/schemas/OutputToneScorer'
                   - $ref: '#/components/schemas/OutputToxicityScorer'
                   - $ref: '#/components/schemas/PromptInjectionScorer'
-                  - $ref: '#/components/schemas/PromptPerplexityScorer'
-                  - $ref: '#/components/schemas/RougeScorer'
                   - $ref: '#/components/schemas/ToolErrorRateScorer'
                   - $ref: '#/components/schemas/ToolSelectionQualityScorer'
-                  - $ref: '#/components/schemas/UncertaintyScorer'
                 discriminator:
                   propertyName: name
                   mapping:
                     agentic_session_success: '#/components/schemas/AgenticSessionSuccessScorer'
                     agentic_workflow_success: '#/components/schemas/AgenticWorkflowSuccessScorer'
-                    bleu: '#/components/schemas/BleuScorer'
                     chunk_attribution_utilization: '#/components/schemas/ChunkAttributionUtilizationScorer'
                     completeness: '#/components/schemas/CompletenessScorer'
                     context_adherence: '#/components/schemas/ContextAdherenceScorer'
@@ -16100,11 +15973,8 @@ components:
                     output_tone: '#/components/schemas/OutputToneScorer'
                     output_toxicity: '#/components/schemas/OutputToxicityScorer'
                     prompt_injection: '#/components/schemas/PromptInjectionScorer'
-                    prompt_perplexity: '#/components/schemas/PromptPerplexityScorer'
-                    rouge: '#/components/schemas/RougeScorer'
                     tool_error_rate: '#/components/schemas/ToolErrorRateScorer'
                     tool_selection_quality: '#/components/schemas/ToolSelectionQualityScorer'
-                    uncertainty: '#/components/schemas/UncertaintyScorer'
               type: array
             - type: 'null'
           title: Scorers
@@ -23733,16 +23603,6 @@ components:
               sortable: true
             - applicable_types: []
               category: metric
-              data_type: floating_point
-              filterable: true
-              id: metrics/average_bleu
-              is_empty: false
-              is_optional: false
-              label: Average Bleu
-              multi_valued: false
-              sortable: true
-            - applicable_types: []
-              category: metric
               data_type: integer
               filterable: true
               id: metrics/total_responses
@@ -30512,104 +30372,6 @@ components:
         - stage_metadata
         - action_result
       title: InvokeResponse
-    JobDB:
-      properties:
-        id:
-          type: string
-          format: uuid4
-          title: Id
-        created_at:
-          type: string
-          format: date-time
-          title: Created At
-        updated_at:
-          type: string
-          format: date-time
-          title: Updated At
-        failed_at:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          title: Failed At
-        completed_at:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          title: Completed At
-        processing_started:
-          anyOf:
-            - type: string
-              format: date-time
-            - type: 'null'
-          title: Processing Started
-        job_name:
-          type: string
-          title: Job Name
-        migration_name:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Migration Name
-        project_id:
-          type: string
-          format: uuid4
-          title: Project Id
-        run_id:
-          type: string
-          format: uuid4
-          title: Run Id
-        monitor_batch_id:
-          anyOf:
-            - type: string
-              format: uuid4
-            - type: 'null'
-          title: Monitor Batch Id
-        status:
-          type: string
-          title: Status
-        retries:
-          type: integer
-          title: Retries
-        request_data:
-          additionalProperties: true
-          type: object
-          title: Request Data
-        error_message:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Error Message
-        progress_message:
-          anyOf:
-            - type: string
-            - type: 'null'
-          title: Progress Message
-        steps_completed:
-          type: integer
-          title: Steps Completed
-          default: 0
-        steps_total:
-          type: integer
-          title: Steps Total
-          default: 0
-        progress_percent:
-          type: number
-          title: Progress Percent
-          default: 0.0
-      type: object
-      required:
-        - id
-        - created_at
-        - updated_at
-        - job_name
-        - project_id
-        - run_id
-        - status
-        - retries
-        - request_data
-      title: JobDB
     JobProgress:
       properties:
         progress_message:
@@ -30784,10 +30546,7 @@ components:
                   updated_at: '#/components/schemas/AnnotationQueueUpdatedAtSort'
             - type: 'null'
           title: Sort
-          default:
-            name: created_at
-            ascending: false
-            sort_type: column
+          default: None
       type: object
       title: ListAnnotationQueueParams
     ListAnnotationQueueResponse:
@@ -31571,14 +31330,14 @@ components:
       examples:
         - columns:
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Input to the trace or span.
@@ -31592,14 +31351,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Output of the trace or span.
@@ -31613,14 +31372,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Name of the trace, span or session.
@@ -31634,14 +31393,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: timestamp
               description: Timestamp of the trace or span's creation.
@@ -31655,13 +31414,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: string_list
               description: Tags associated with this trace or span.
@@ -31675,13 +31434,13 @@ components:
               multi_valued: true
               sortable: false
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: integer
               description: Status code of the trace or span. Used for logging failure
@@ -31696,14 +31455,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: A user-provided session, trace or span ID.
@@ -31717,13 +31476,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Input to the dataset associated with this trace
@@ -31737,13 +31496,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Output from the dataset associated with this trace
@@ -31757,14 +31516,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the session, trace or span
@@ -31778,13 +31537,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the session containing the trace (or the
@@ -31799,13 +31558,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the project associated with this trace or
@@ -31820,13 +31579,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the run (log stream or experiment) associated
@@ -31841,13 +31600,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: timestamp
               description: Timestamp of the session or trace or span's last update
@@ -31861,13 +31620,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: boolean
               description: Whether or not this trace or span has child spans
@@ -31881,14 +31640,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Runner progress text written directly to CH span
@@ -31902,14 +31661,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
-                - control
+                - llm
+                - retriever
+                - agent
                 - session
+                - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Runner error text written directly to CH span
@@ -31923,13 +31682,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: boolean
               description: Whether the parent trace is complete or not
@@ -31943,21 +31702,21 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - session
                 - workflow
                 - trace
-                - agent
-                - retriever
-                - llm
-              applicable_types:
                 - tool
+              applicable_types:
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: text
               description: Type of the trace, span or session.
@@ -31971,12 +31730,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the trace containing the span (or the same
@@ -31991,12 +31750,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: uuid
               description: Galileo ID of the parent of this span
@@ -32010,12 +31769,12 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - tool
+                - llm
+                - retriever
+                - agent
                 - control
                 - workflow
-                - agent
-                - retriever
-                - llm
+                - tool
               category: standard
               data_type: integer
               description: Topological step number of the span.
@@ -32029,14 +31788,14 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - react
-                - classifier
-                - judge
-                - default
-                - supervisor
-                - reflection
-                - planner
                 - router
+                - classifier
+                - supervisor
+                - react
+                - reflection
+                - default
+                - judge
+                - planner
               applicable_types:
                 - agent
               category: standard
@@ -32151,8 +31910,8 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - post
                 - pre
+                - post
               applicable_types:
                 - control
               category: standard
@@ -32243,21 +32002,6 @@ components:
                   - Medium
                   - High
                 inverted: true
-            - applicable_types: []
-              category: metric
-              data_type: floating_point
-              description: BLEU is a case-sensitive measurement of the difference
-                between an model generation and target generation at the sentence-level.
-              filter_type: number
-              filterable: true
-              group_label: Output Quality
-              id: metrics/bleu
-              is_empty: false
-              is_optional: false
-              label: BLEU - DEPRECATED
-              multi_valued: false
-              roll_up_method: average
-              sortable: true
     LogRecordsBooleanFilter:
       properties:
         column_id:
@@ -33214,7 +32958,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-14T04:36:10.771215Z'
+              created_at: '2026-07-20T08:45:58.273859Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33233,7 +32977,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-14T04:36:10.771367Z'
+              created_at: '2026-07-20T08:45:58.273988Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33513,7 +33257,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-14T04:36:10.765574Z'
+              created_at: '2026-07-20T08:45:58.268461Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33538,7 +33282,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-07-14T04:36:10.765743Z'
+              created_at: '2026-07-20T08:45:58.268641Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -33871,14 +33615,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           parent_id: 11000011-0000-0000-0000-110000110000
           spans:
-            - created_at: '2026-07-14T04:36:10.732598Z'
+            - created_at: '2026-07-20T08:45:58.240888Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-14T04:36:10.718011Z'
+                - created_at: '2026-07-20T08:45:58.225454Z'
                   dataset_metadata: {}
                   id: 22222222-2222-4222-a222-222222222222
                   input:
@@ -34525,14 +34269,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           session_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-07-14T04:36:10.711971Z'
+            - created_at: '2026-07-20T08:45:58.219922Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-14T04:36:10.711921Z'
+                - created_at: '2026-07-20T08:45:58.219876Z'
                   dataset_metadata: {}
                   input:
                     - content: 'Question: who is a smart LLM?'
@@ -34550,14 +34294,14 @@ components:
               user_metadata: {}
         - experiment_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-07-14T04:36:10.712528Z'
+            - created_at: '2026-07-20T08:45:58.220779Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-07-14T04:36:10.712477Z'
+                - created_at: '2026-07-20T08:45:58.220729Z'
                   dataset_metadata: {}
                   id: 11111111-1111-4111-a111-111111111111
                   input:
@@ -40163,32 +39907,6 @@ components:
       description: 'Template for the prompt injection metric,
 
         containing all the info necessary to send the prompt injection prompt.'
-    PromptPerplexityScorer:
-      properties:
-        name:
-          type: string
-          const: prompt_perplexity
-          title: Name
-          default: prompt_perplexity
-        filters:
-          anyOf:
-            - items:
-                oneOf:
-                  - $ref: '#/components/schemas/NodeNameFilter'
-                  - $ref: '#/components/schemas/MetadataFilter'
-                  - $ref: '#/components/schemas/ModalityFilter'
-                discriminator:
-                  propertyName: name
-                  mapping:
-                    metadata: '#/components/schemas/MetadataFilter'
-                    modality: '#/components/schemas/ModalityFilter'
-                    node_name: '#/components/schemas/NodeNameFilter'
-              type: array
-            - type: 'null'
-          title: Filters
-          description: List of filters to apply to the scorer.
-      type: object
-      title: PromptPerplexityScorer
     PromptRunSettings:
       properties:
         logprobs:
@@ -41180,32 +40898,6 @@ components:
         Maps fine-grained StepType values to the three top-level categories
 
         used throughout the platform: session, trace, and span.'
-    RougeScorer:
-      properties:
-        name:
-          type: string
-          const: rouge
-          title: Name
-          default: rouge
-        filters:
-          anyOf:
-            - items:
-                oneOf:
-                  - $ref: '#/components/schemas/NodeNameFilter'
-                  - $ref: '#/components/schemas/MetadataFilter'
-                  - $ref: '#/components/schemas/ModalityFilter'
-                discriminator:
-                  propertyName: name
-                  mapping:
-                    metadata: '#/components/schemas/MetadataFilter'
-                    modality: '#/components/schemas/ModalityFilter'
-                    node_name: '#/components/schemas/NodeNameFilter'
-              type: array
-            - type: 'null'
-          title: Filters
-          description: List of filters to apply to the scorer.
-      type: object
-      title: RougeScorer
     Rule:
       properties:
         metric:
@@ -41396,6 +41088,12 @@ components:
               format: uuid4
             - type: 'null'
           title: Dataset Version Id
+        prompt_template_version_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Prompt Template Version Id
         id:
           type: string
           format: uuid4
@@ -41484,6 +41182,12 @@ components:
               format: uuid4
             - type: 'null'
           title: Dataset Version Id
+        prompt_template_version_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Prompt Template Version Id
         id:
           type: string
           format: uuid4
@@ -42809,14 +42513,6 @@ components:
           type: boolean
           title: Input Pii
           default: false
-        bleu:
-          type: boolean
-          title: Bleu
-          default: true
-        rouge:
-          type: boolean
-          title: Rouge
-          default: true
         protect_status:
           type: boolean
           title: Protect Status
@@ -42897,10 +42593,6 @@ components:
           type: boolean
           title: Action Advancement Luna
           default: false
-        uncertainty:
-          type: boolean
-          title: Uncertainty
-          default: false
         factuality:
           type: boolean
           title: Factuality
@@ -42908,10 +42600,6 @@ components:
         groundedness:
           type: boolean
           title: Groundedness
-          default: false
-        prompt_perplexity:
-          type: boolean
-          title: Prompt Perplexity
           default: false
         chunk_attribution_utilization_gpt:
           type: boolean
@@ -44750,32 +44438,6 @@ components:
         - label
         - id
       title: TreeChoiceNode
-    UncertaintyScorer:
-      properties:
-        name:
-          type: string
-          const: uncertainty
-          title: Name
-          default: uncertainty
-        filters:
-          anyOf:
-            - items:
-                oneOf:
-                  - $ref: '#/components/schemas/NodeNameFilter'
-                  - $ref: '#/components/schemas/MetadataFilter'
-                  - $ref: '#/components/schemas/ModalityFilter'
-                discriminator:
-                  propertyName: name
-                  mapping:
-                    metadata: '#/components/schemas/MetadataFilter'
-                    modality: '#/components/schemas/ModalityFilter'
-                    node_name: '#/components/schemas/NodeNameFilter'
-              type: array
-            - type: 'null'
-          title: Filters
-          description: List of filters to apply to the scorer.
-      type: object
-      title: UncertaintyScorer
     UpdateAnnotationQueueRequest:
       properties:
         name:
@@ -46409,12 +46071,13 @@ components:
       type: string
       enum:
         - action_advancement_luna
+        - action_completion_audio
         - action_completion_luna
+        - action_completion_vision
         - agent_efficiency
         - agent_flow
         - agentic_session_success
         - agentic_workflow_success
-        - bleu
         - chunk_attribution_utilization
         - chunk_attribution_utilization_luna
         - chunk_relevance
@@ -46430,7 +46093,11 @@ components:
         - context_relevance_luna
         - conversation_quality
         - correctness
+        - correctness_audio
+        - correctness_vision
         - ground_truth_adherence
+        - ground_truth_adherence_audio
+        - ground_truth_adherence_vision
         - input_pii
         - input_pii_gpt
         - input_sexist
@@ -46456,9 +46123,9 @@ components:
         - precision_at_k
         - prompt_injection
         - prompt_injection_luna
-        - prompt_perplexity
         - reasoning_coherence
-        - rouge
+        - reasoning_coherence_audio
+        - reasoning_coherence_vision
         - sql_adherence
         - sql_correctness
         - sql_efficiency
@@ -46467,8 +46134,9 @@ components:
         - tool_error_rate_luna
         - tool_selection_quality
         - tool_selection_quality_luna
-        - uncertainty
         - user_intent_change
+        - user_intent_change_audio
+        - user_intent_change_vision
         - visual_fidelity
         - visual_quality
       title: CoreScorerName
@@ -46633,7 +46301,6 @@ components:
         - _factuality
         - _groundedness
         - _latency
-        - _prompt_perplexity
         - _protect_status
         - _pii
         - _input_pii
@@ -46652,10 +46319,7 @@ components:
         - _user_submitted
         - _user_generated
         - _user_finetuned
-        - _uncertainty
-        - _bleu
         - _cost
-        - _rouge
         - _prompt_injection_gpt
         - _prompt_injection
         - _rag_nli

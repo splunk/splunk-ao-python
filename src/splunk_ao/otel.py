@@ -14,7 +14,7 @@ from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace import Tracer
 
-from galileo_core.schemas.logging.span import RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import AgentSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as GalileoSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.decorator import (
@@ -44,6 +44,8 @@ from splunk_ao.utils.env_helpers import (
 from splunk_ao.utils.retrievers import document_adapter
 
 logger = logging.getLogger(__name__)
+
+GEN_AI_CONVERSATION_ROOT = "gen_ai.conversation_root"
 
 
 class TracerProvider(Protocol):
@@ -429,8 +431,15 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
+    is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
+        galileo_span, WorkflowSpan | AgentSpan
+    )
     with tracer.start_as_current_span(galileo_span.name) as span:
         yield span
+        if is_conversation_root:
+            # OTel semantic-convention attributes are boolean; the native route's
+            # string-valued user_metadata bridge is an interim compatibility path.
+            span.set_attribute(GEN_AI_CONVERSATION_ROOT, value=True)
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(
             span, galileo_span.dataset_input, galileo_span.dataset_output, galileo_span.dataset_metadata

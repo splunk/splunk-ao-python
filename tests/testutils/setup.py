@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from splunk_ao.log_streams import LogStream
+from splunk_ao.agent_streams import AgentStream
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.projects import Project
 from splunk_ao.resources.models import ExperimentResponse, ProjectType
@@ -214,7 +214,7 @@ def setup_mock_logstreams_client(mock_logstreams_client: Mock):
     now = datetime.datetime.now()
     mock_instance = mock_logstreams_client.return_value
     mock_instance.get = Mock(
-        return_value=LogStream(
+        return_value=AgentStream(
             LogStreamResponse(
                 id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b",
                 project_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a",
@@ -225,7 +225,7 @@ def setup_mock_logstreams_client(mock_logstreams_client: Mock):
         )
     )
     mock_instance.create = Mock(
-        return_value=LogStream(
+        return_value=AgentStream(
             LogStreamResponse(
                 id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b",
                 project_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a",

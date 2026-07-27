@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from io import BytesIO
 from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import UNSET, Unset
+from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost")
 
@@ -16,7 +17,7 @@ T = TypeVar("T", bound="BodyValidateCodeScorerLogRecordScorersCodeValidateLogRec
 class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     """
     Attributes:
-        file (str):
+        file (File):
         log_stream_id (None | str | Unset):
         experiment_id (None | str | Unset):
         limit (int | Unset):  Default: 100.
@@ -27,7 +28,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
         scoreable_node_types (list[str] | None | str | Unset):
     """
 
-    file: str
+    file: File
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     limit: int | Unset = 100
@@ -39,7 +40,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        file = self.file
+        file = self.file.to_tuple()
 
         log_stream_id: None | str | Unset
         if isinstance(self.log_stream_id, Unset):
@@ -116,7 +117,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     def to_multipart(self) -> types.RequestFiles:
         files: types.RequestFiles = []
 
-        files.append(("file", (None, str(self.file).encode(), "text/plain")))
+        files.append(("file", self.file.to_tuple()))
 
         if not isinstance(self.log_stream_id, Unset):
             if isinstance(self.log_stream_id, str):
@@ -184,7 +185,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        file = d.pop("file")
+        file = File(payload=BytesIO(d.pop("file")))
 
         def _parse_log_stream_id(data: object) -> None | str | Unset:
             if data is None:

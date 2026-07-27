@@ -25,7 +25,7 @@ from openai.types.responses.response_usage import InputTokensDetails, OutputToke
 _os.environ["SPLUNK_AO_CONSOLE_URL"] = "http://fake.test:8088"
 _os.environ["SPLUNK_AO_API_KEY"] = "api-1234567890"
 _os.environ["SPLUNK_AO_PROJECT"] = "test-project"
-_os.environ["SPLUNK_AO_LOG_STREAM"] = "test-log-stream"
+_os.environ["SPLUNK_AO_AGENT_STREAM"] = "test-log-stream"
 _os.environ["OPENAI_API_KEY"] = "sk-test"
 del _os  # Clean up temporary import
 # fmt: on

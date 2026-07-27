@@ -43,7 +43,7 @@ env = [
     "SPLUNK_AO_CONSOLE_URL=http://fake.test:8088",
     "SPLUNK_AO_API_KEY=api-1234567890",
     "SPLUNK_AO_PROJECT=test-project",
-    "SPLUNK_AO_LOG_STREAM=test-log-stream",
+    "SPLUNK_AO_AGENT_STREAM=test-log-stream",
 ]
 addopts = [
     "-v",
@@ -138,6 +138,9 @@ dev = [
     "coverage>=7.9.2",
     "splunk-ao>=0.1.0,<1.0.0",
     "galileo-core[testing]>=3.82.0",
+    # 1.13.0 is the only stable release and is yanked; >=1.12.0a0 opts this package into
+    # pre-releases so uv picks the latest non-yanked version automatically.
+    "opentelemetry-resourcedetector-gcp>=1.12.0a0",
 ]
 
 [build-system]

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, splunk_ao_context, log, start_session
+from splunk_ao import Message, MessageRole, log, splunk_ao_context, start_session
 from splunk_ao.decorator import _session_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -21,7 +21,7 @@ def reset_context():
     splunk_ao_context.reset()
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_reset(
@@ -54,7 +54,7 @@ def test_decorator_context_reset(
     assert splunk_ao_context.get_current_log_stream() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_init(
@@ -75,7 +75,7 @@ def test_decorator_context_init(
     assert splunk_ao_context.get_current_log_stream() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush(
@@ -109,7 +109,7 @@ def test_decorator_context_flush(
     assert splunk_ao_context.get_current_span_stack() == []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush_specific_project_and_log_stream(
@@ -158,7 +158,7 @@ def test_decorator_context_flush_specific_project_and_log_stream(
     assert splunk_ao_context.get_current_trace() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_context_flush_all(
@@ -205,7 +205,7 @@ def test_decorator_context_flush_all(
     assert splunk_ao_context.get_current_span_stack() == []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span(
@@ -232,7 +232,7 @@ def test_decorator_llm_span(
     assert payload.traces[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_output_int(
@@ -257,9 +257,10 @@ def test_decorator_workflow_span_output_int(
     assert payload.traces[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].input == '{"arg1": 1, "arg2": 2}'
     assert payload.traces[0].spans[0].output == "3"
+    assert payload.traces[0].spans[0].conversation_root is True
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_io_object(
@@ -294,7 +295,7 @@ def test_decorator_workflow_span_io_object(
     assert payload.traces[0].spans[0].output == '{"content": "response", "metadata": {"arg1": "val1", "arg2": "val2"}}'
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_tool_span_io_object(
@@ -329,7 +330,7 @@ def test_decorator_tool_span_io_object(
     assert payload.traces[0].spans[0].output == '{"content": "response", "metadata": {"arg1": "val1", "arg2": "val2"}}'
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span(
@@ -356,7 +357,7 @@ def test_decorator_agent_span(
     assert payload.traces[0].spans[0].output == "arg1 arg2"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_with_agent_type(
@@ -384,7 +385,7 @@ def test_decorator_agent_span_with_agent_type(
     assert payload.traces[0].spans[0].agent_type == "planner"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_with_nested_span(
@@ -415,13 +416,14 @@ def test_decorator_agent_span_with_nested_span(
     assert payload.traces[0].spans[0].input == '{"arg1": "arg1", "arg2": "arg2"}'
     assert payload.traces[0].spans[0].output == "arg1"
     assert payload.traces[0].spans[0].agent_type == "planner"
+    assert payload.traces[0].spans[0].conversation_root is True
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0].spans[0], ToolSpan)
     assert payload.traces[0].spans[0].spans[0].input == '{"arg1": "arg1"}'
     assert payload.traces[0].spans[0].spans[0].output == "arg1"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_nested_span(
@@ -449,6 +451,7 @@ def test_decorator_nested_span(
     assert len(payload.traces[0].spans[0].spans) == 1
     assert isinstance(payload.traces[0].spans[0], WorkflowSpan)
     assert isinstance(payload.traces[0].spans[0].spans[0], LlmSpan)
+    assert payload.traces[0].spans[0].conversation_root is True
     assert payload.traces[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].input == '{"nested_query": "input"}'
     assert payload.traces[0].spans[0].output == output
@@ -456,7 +459,7 @@ def test_decorator_nested_span(
     assert payload.traces[0].spans[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_multiple_nested_spans(
@@ -494,7 +497,7 @@ def test_decorator_multiple_nested_spans(
     assert payload.traces[0].spans[0].spans[0].output == Message(content="response", role=MessageRole.assistant)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_str(
@@ -518,7 +521,7 @@ def test_decorator_retriever_span_str(
     assert payload.traces[0].spans[0].output == [Document(content="response1", metadata=None)]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_str(
@@ -545,7 +548,7 @@ def test_decorator_retriever_span_list_str(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_dict(
@@ -572,7 +575,7 @@ def test_decorator_retriever_span_list_dict(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_retriever_span_list_document(
@@ -599,7 +602,7 @@ def test_decorator_retriever_span_list_document(
     ]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_we_should_create_trace_but_reraise_exception(
@@ -624,7 +627,7 @@ def test_decorator_we_should_create_trace_but_reraise_exception(
     assert len(payload.traces[0].spans) == 1
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_start_session(
@@ -653,7 +656,7 @@ def test_decorator_start_session(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_standalone_start_session(
@@ -684,7 +687,7 @@ def test_standalone_start_session(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_start_session_empty_values(
@@ -711,7 +714,7 @@ def test_decorator_start_session_empty_values(
     assert payload.session_id == UUID("6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c")
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_clear_session(
@@ -742,7 +745,7 @@ def test_decorator_clear_session(
     assert payload.session_id is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_set_session(
@@ -785,7 +788,7 @@ class ComplexPydanticModel(BaseModel):
     items: list = []
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_input_serialization_deserialization(
@@ -816,7 +819,7 @@ def test_decorator_input_serialization_deserialization(
     )
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_list_output_serialization(
@@ -842,7 +845,7 @@ def test_decorator_llm_span_list_output_serialization(
     assert span.output.content == '["response1", "response2", "response3"]'
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_tuple_output_serialization(
@@ -869,7 +872,7 @@ def test_decorator_llm_span_tuple_output_serialization(
     assert span.output.content == '["response1", "response2"]'
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_llm_span_dict_output_preserved(
@@ -897,7 +900,7 @@ def test_decorator_llm_span_dict_output_preserved(
     assert '"number": 42' in span.output.content
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_span_complex_output_serialization(
@@ -928,7 +931,7 @@ def test_decorator_workflow_span_complex_output_serialization(
     assert span.output == expected_content
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_pydantic_model_input_serialization(
@@ -957,7 +960,7 @@ def test_decorator_pydantic_model_input_serialization(
     assert '"optional_field"' not in span.input
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_pydantic_model_output_serialization(
@@ -984,7 +987,7 @@ def test_decorator_pydantic_model_output_serialization(
     assert '"value": 123' in span.output
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_null_output_handling(
@@ -1010,7 +1013,7 @@ def test_decorator_null_output_handling(
     assert span.output is None or span.output == ""
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_tool_span_output_serialization(
@@ -1038,7 +1041,7 @@ def test_decorator_tool_span_output_serialization(
     assert '"items": [1, 2, 3]' in span.output
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_agent_span_output_serialization(
@@ -1066,7 +1069,7 @@ def test_decorator_agent_span_output_serialization(
     assert '"actions": ["analyze", "respond"]' in span.output
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_content_blocks_output_preserved(
@@ -1103,7 +1106,7 @@ def test_decorator_workflow_content_blocks_output_preserved(
     assert isinstance(span_output, list)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_decorator_workflow_message_list_output_serialized(
@@ -1138,7 +1141,7 @@ def test_decorator_workflow_message_list_output_serialized(
 # ============================================================================
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_init_default(
@@ -1154,7 +1157,7 @@ def test_mode_context_init_default(
     assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_init_explicit(
@@ -1170,7 +1173,7 @@ def test_mode_context_init_explicit(
     assert splunk_ao_context.get_current_mode() == "distributed"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_call_default(
@@ -1185,7 +1188,7 @@ def test_mode_context_call_default(
         assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_call_explicit(
@@ -1200,7 +1203,7 @@ def test_mode_context_call_explicit(
         assert splunk_ao_context.get_current_mode() == "distributed"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_nested_push_pop(
@@ -1223,7 +1226,7 @@ def test_mode_context_nested_push_pop(
     assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_multiple_nested_levels(
@@ -1253,7 +1256,7 @@ def test_mode_context_multiple_nested_levels(
     assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_context_reset(
@@ -1271,7 +1274,7 @@ def test_mode_context_reset(
     assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_flush_with_explicit_mode(
@@ -1302,7 +1305,7 @@ def test_mode_flush_with_explicit_mode(
     assert splunk_ao_context.get_current_trace() is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_mode_flush_different_mode_no_reset(
@@ -1333,7 +1336,7 @@ def test_mode_flush_different_mode_no_reset(
     assert splunk_ao_context.get_current_trace() == current_trace
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 @patch.dict("os.environ", {"SPLUNK_AO_MODE": "distributed"})
@@ -1351,7 +1354,7 @@ def test_mode_from_environment_variable(
     assert splunk_ao_context.get_current_mode() == "distributed"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 @patch.dict("os.environ", {"SPLUNK_AO_MODE": "distributed"})
@@ -1369,7 +1372,7 @@ def test_mode_explicit_overrides_environment(
     assert splunk_ao_context.get_current_mode() == "batch"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_get_logger_instance_with_explicit_mode(
@@ -1395,7 +1398,7 @@ def test_get_logger_instance_with_explicit_mode(
     assert logger_distributed.mode == "distributed"
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
@@ -1450,7 +1453,7 @@ def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
     assert len(logger.traces) == 0
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_id_context_manager(
@@ -1476,7 +1479,7 @@ def test_session_id_context_manager(
     assert payload.session_id == UUID(test_session_id)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_id_nested_context_stacking(
@@ -1506,7 +1509,7 @@ def test_session_id_nested_context_stacking(
     assert splunk_ao_context.get_logger_instance().session_id is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_session_id_cleared_on_reset_and_init(
@@ -1532,7 +1535,7 @@ def test_session_id_cleared_on_reset_and_init(
     assert splunk_ao_context.get_logger_instance().session_id is None
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_start_session_overrides_context_session(
@@ -1554,7 +1557,7 @@ def test_start_session_overrides_context_session(
         assert _session_id_context.get() == new_session_id
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_called_when_flush_raises(
@@ -1585,7 +1588,7 @@ def test_flush_on_error_called_when_flush_raises(
     assert isinstance(on_error.call_args[0][0], Exception)
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_warns_when_flush_raises_without_on_error(
@@ -1613,7 +1616,7 @@ def test_flush_warns_when_flush_raises_without_on_error(
         assert "flush failed" in mock_logger.warning.call_args[0][0]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_callback_raises_is_swallowed(
@@ -1643,7 +1646,7 @@ def test_flush_on_error_callback_raises_is_swallowed(
         assert "on_error callback raised" in mock_logger.warning.call_args[0][0]
 
 
-@patch("splunk_ao.logger.logger.LogStreams")
+@patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
 def test_flush_on_error_logs_at_debug_not_warning(

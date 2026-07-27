@@ -99,7 +99,14 @@ def reset_otel_context(monkeypatch: pytest.MonkeyPatch):
     for context_var in contexts:
         context_var.set(None)
     _TRACE_PROVIDER_CONTEXT_VAR.set(None)
-    for name in ("SPLUNK_AO_PROJECT", "SPLUNK_AO_PROJECT_ID", "SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID"):
+    for name in (
+        "SPLUNK_AO_PROJECT",
+        "SPLUNK_AO_PROJECT_ID",
+        "SPLUNK_AO_AGENT_STREAM",
+        "SPLUNK_AO_AGENT_STREAM_ID",
+        "SPLUNK_AO_LOG_STREAM",
+        "SPLUNK_AO_LOG_STREAM_ID",
+    ):
         monkeypatch.delenv(name, raising=False)
     yield
     for context_var in contexts:

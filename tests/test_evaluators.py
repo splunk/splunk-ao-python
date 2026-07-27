@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.metrics import Metrics, create_custom_llm_metric, delete_metric, get_metrics
+from splunk_ao.evaluators import Evaluators, create_custom_llm_evaluator, delete_evaluator, get_evaluators
 from splunk_ao.resources.models import (
     BucketedMetrics,
     HTTPValidationError,
@@ -78,10 +78,10 @@ def _log_records_metrics_response_factory() -> LogRecordsMetricsResponse:
 
 
 class TestMetrics:
-    """Test cases for the Metrics class."""
+    """Test cases for the Evaluators class."""
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_create_custom_llm_metric_success(
         self, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -90,10 +90,10 @@ class TestMetrics:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test with default parameters
-        result = metrics.create_custom_llm_metric(name="test_metric", user_prompt="Rate the quality of this response")
+        result = metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Rate the quality of this response")
 
         # Verify the result
         assert result == mock_scorer_version_response
@@ -124,8 +124,8 @@ class TestMetrics:
         assert version_request.user_prompt == "Rate the quality of this response"
         assert create_version_call.kwargs["scorer_id"] == mock_scorer_response.id
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_create_custom_llm_metric_with_custom_parameters(
         self, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -134,10 +134,10 @@ class TestMetrics:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test with custom parameters
-        result = metrics.create_custom_llm_metric(
+        result = metrics.create_custom_llm_evaluator(
             name="custom_metric",
             user_prompt="Custom prompt for evaluation",
             node_level=StepType.workflow,
@@ -169,24 +169,24 @@ class TestMetrics:
         version_request = mock_create_version.sync.call_args.kwargs["body"]
         assert version_request.user_prompt == "Custom prompt for evaluation"
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_create_custom_llm_metric_scorer_creation_failure(self, mock_create_scorer, mock_create_version) -> None:
         """Test handling of scorer creation failure."""
         # Setup mock to raise exception
         mock_create_scorer.sync.side_effect = Exception("Scorer creation failed")
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test that exception is propagated
         with pytest.raises(Exception, match="Scorer creation failed"):
-            metrics.create_custom_llm_metric(name="test_metric", user_prompt="Test prompt")
+            metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt")
 
         # Verify create_version was not called
         mock_create_version.sync.assert_not_called()
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_create_custom_llm_metric_version_creation_failure(
         self, mock_create_scorer, mock_create_version, mock_scorer_response
     ) -> None:
@@ -195,19 +195,19 @@ class TestMetrics:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.side_effect = Exception("Version creation failed")
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test that exception is propagated
         with pytest.raises(Exception, match="Version creation failed"):
-            metrics.create_custom_llm_metric(name="test_metric", user_prompt="Test prompt")
+            metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt")
 
         # Verify create_scorer was called but create_version failed
         mock_create_scorer.sync.assert_called_once()
         mock_create_version.sync.assert_called_once()
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
-    @patch("splunk_ao.metrics._logger")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
+    @patch("splunk_ao.evaluators._logger")
     def test_create_custom_llm_metric_logging(
         self, mock_logger, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -216,21 +216,21 @@ class TestMetrics:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Create metric
-        metrics.create_custom_llm_metric(name="test_metric", user_prompt="Test prompt")
+        metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt")
 
         # Verify logging was called
         mock_logger.info.assert_called_once_with("Created custom LLM metric: %s", "test_metric")
 
-    @patch("splunk_ao.metrics.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
     @patch("splunk_ao.scorers.Scorers.list")
     def test_delete_metric_success(self, mock_list_scorers, mock_delete_scorer, mock_scorer_response) -> None:
         """Test successful deletion of a metric."""
         mock_list_scorers.return_value = [mock_scorer_response]
-        metrics = Metrics()
-        metrics.delete_metric(name="test_metric")
+        metrics = Evaluators()
+        metrics.delete_evaluator(name="test_metric")
 
         mock_list_scorers.assert_called_once_with(name="test_metric")
         mock_delete_scorer.sync.assert_called_once_with(
@@ -241,37 +241,37 @@ class TestMetrics:
     def test_delete_metric_not_found(self, mock_list_scorers) -> None:
         """Test deleting a metric that does not exist."""
         mock_list_scorers.return_value = []
-        metrics = Metrics()
+        metrics = Evaluators()
 
         with pytest.raises(ValueError, match="Scorer with name test_metric not found."):
-            metrics.delete_metric(name="test_metric")
+            metrics.delete_evaluator(name="test_metric")
 
-    @patch("splunk_ao.metrics.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
     @patch("splunk_ao.scorers.Scorers.list")
     def test_delete_metric_api_failure(self, mock_list_scorers, mock_delete_scorer, mock_scorer_response) -> None:
         """Test API failure when deleting a metric."""
         mock_list_scorers.return_value = [mock_scorer_response]
         mock_delete_scorer.sync.return_value = None
-        metrics = Metrics()
+        metrics = Evaluators()
 
         with pytest.raises(ValueError, match="Failed to delete metric."):
-            metrics.delete_metric(name="test_metric")
+            metrics.delete_evaluator(name="test_metric")
 
 
 class TestPublicFunctions:
     """Test cases for public functions."""
 
-    @patch("splunk_ao.metrics.Metrics")
+    @patch("splunk_ao.evaluators.Evaluators")
     def test_create_custom_llm_metric_function(self, mock_metrics_class) -> None:
-        """Test the public create_custom_llm_metric function."""
+        """Test the public create_custom_llm_evaluator function."""
         # Setup mock
         mock_metrics_instance = Mock()
         mock_metrics_class.return_value = mock_metrics_instance
         mock_result = Mock(spec=BaseScorerVersionResponse)
-        mock_metrics_instance.create_custom_llm_metric.return_value = mock_result
+        mock_metrics_instance.create_custom_llm_evaluator.return_value = mock_result
 
         # Call the public function
-        result = create_custom_llm_metric(
+        result = create_custom_llm_evaluator(
             name="test_metric",
             user_prompt="Test prompt",
             node_level=StepType.workflow,
@@ -284,11 +284,11 @@ class TestPublicFunctions:
             ground_truth=True,
         )
 
-        # Verify Metrics class was instantiated
+        # Verify Evaluators class was instantiated
         mock_metrics_class.assert_called_once()
 
         # Verify the method was called with correct parameters
-        mock_metrics_instance.create_custom_llm_metric.assert_called_once_with(
+        mock_metrics_instance.create_custom_llm_evaluator.assert_called_once_with(
             "test_metric",
             "Test prompt",
             StepType.workflow,
@@ -304,20 +304,20 @@ class TestPublicFunctions:
         # Verify the result is returned
         assert result == mock_result
 
-    @patch("splunk_ao.metrics.Metrics")
+    @patch("splunk_ao.evaluators.Evaluators")
     def test_create_custom_llm_metric_function_default_parameters(self, mock_metrics_class) -> None:
         """Test the public function with default parameters."""
         # Setup mock
         mock_metrics_instance = Mock()
         mock_metrics_class.return_value = mock_metrics_instance
         mock_result = Mock(spec=BaseScorerVersionResponse)
-        mock_metrics_instance.create_custom_llm_metric.return_value = mock_result
+        mock_metrics_instance.create_custom_llm_evaluator.return_value = mock_result
 
         # Call the public function with minimal parameters
-        result = create_custom_llm_metric(name="test_metric", user_prompt="Test prompt")
+        result = create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt")
 
         # Verify the method was called with default parameters
-        mock_metrics_instance.create_custom_llm_metric.assert_called_once_with(
+        mock_metrics_instance.create_custom_llm_evaluator.assert_called_once_with(
             "test_metric",
             "Test prompt",
             StepType.llm,  # default
@@ -333,22 +333,22 @@ class TestPublicFunctions:
         # Verify the result is returned
         assert result == mock_result
 
-    @patch("splunk_ao.metrics.Metrics")
+    @patch("splunk_ao.evaluators.Evaluators")
     def test_delete_metric_function(self, mock_metrics_class) -> None:
-        """Test the public delete_metric function."""
+        """Test the public delete_evaluator function."""
         mock_metrics_instance = Mock()
         mock_metrics_class.return_value = mock_metrics_instance
 
-        delete_metric(name="test_metric")
+        delete_evaluator(name="test_metric")
         mock_metrics_class.assert_called_once()
-        mock_metrics_instance.delete_metric.assert_called_once_with("test_metric")
+        mock_metrics_instance.delete_evaluator.assert_called_once_with("test_metric")
 
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_empty_string_parameters(
         self, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -357,10 +357,10 @@ class TestEdgeCases:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test with empty strings
-        result = metrics.create_custom_llm_metric(
+        result = metrics.create_custom_llm_evaluator(
             name="",  # Empty name
             user_prompt="",  # Empty prompt
             description="",
@@ -378,8 +378,8 @@ class TestEdgeCases:
         version_request = mock_create_version.sync.call_args.kwargs["body"]
         assert version_request.user_prompt == ""
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_large_num_judges(
         self, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -388,10 +388,10 @@ class TestEdgeCases:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test with large number of judges
-        result = metrics.create_custom_llm_metric(name="test_metric", user_prompt="Test prompt", num_judges=100)
+        result = metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt", num_judges=100)
 
         # Verify the result
         assert result == mock_scorer_version_response
@@ -403,8 +403,8 @@ class TestEdgeCases:
         version_request = mock_create_version.sync.call_args.kwargs["body"]
         assert version_request.user_prompt == "Test prompt"
 
-    @patch("splunk_ao.metrics.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
-    @patch("splunk_ao.metrics.create_scorers_post")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
     def test_long_tag_list(
         self, mock_create_scorer, mock_create_version, mock_scorer_response, mock_scorer_version_response
     ) -> None:
@@ -413,11 +413,11 @@ class TestEdgeCases:
         mock_create_scorer.sync.return_value = mock_scorer_response
         mock_create_version.sync.return_value = mock_scorer_version_response
 
-        metrics = Metrics()
+        metrics = Evaluators()
 
         # Test with many tags
         long_tag_list = [f"tag_{i}" for i in range(50)]
-        result = metrics.create_custom_llm_metric(name="test_metric", user_prompt="Test prompt", tags=long_tag_list)
+        result = metrics.create_custom_llm_evaluator(name="test_metric", user_prompt="Test prompt", tags=long_tag_list)
 
         # Verify the result
         assert result == mock_scorer_version_response
@@ -429,7 +429,7 @@ class TestEdgeCases:
 
 
 class TestGetMetrics:
-    @patch("splunk_ao.metrics.query_metrics_projects_project_id_metrics_search_post.sync")
+    @patch("splunk_ao.evaluators.query_metrics_projects_project_id_metrics_search_post.sync")
     def test_successful_call(self, mock_api_call):
         mock_response = _log_records_metrics_response_factory()
         mock_api_call.return_value = mock_response
@@ -437,13 +437,13 @@ class TestGetMetrics:
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(hours=1)
 
-        response = get_metrics(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
+        response = get_evaluators(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
 
         mock_api_call.assert_called_once()
         assert FIXED_PROJECT_ID in mock_api_call.call_args[1]["project_id"]
         assert response == mock_response
 
-    @patch("splunk_ao.metrics.query_metrics_projects_project_id_metrics_search_post.sync")
+    @patch("splunk_ao.evaluators.query_metrics_projects_project_id_metrics_search_post.sync")
     def test_api_failure_raises_value_error(self, mock_api_call):
         mock_api_call.return_value = None
 
@@ -451,11 +451,11 @@ class TestGetMetrics:
         end_time = start_time + datetime.timedelta(hours=1)
 
         with pytest.raises(ValueError, match="Failed to query for metrics."):
-            get_metrics(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
+            get_evaluators(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
 
         mock_api_call.assert_called_once()
 
-    @patch("splunk_ao.metrics.query_metrics_projects_project_id_metrics_search_post.sync")
+    @patch("splunk_ao.evaluators.query_metrics_projects_project_id_metrics_search_post.sync")
     def test_http_validation_error_raises_exception(self, mock_api_call):
         detail = [ValidationError(loc=["body", "project_id"], msg="value is not a valid uuid", type_="type_error.uuid")]
         mock_api_call.return_value = HTTPValidationError(detail=detail)
@@ -464,9 +464,9 @@ class TestGetMetrics:
         end_time = start_time + datetime.timedelta(hours=1)
 
         with pytest.raises(ValueError, match=re.escape(str(detail))):
-            get_metrics(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
+            get_evaluators(project_id=FIXED_PROJECT_ID, start_time=start_time, end_time=end_time)
 
-    @patch("splunk_ao.metrics.query_metrics_projects_project_id_metrics_search_post.sync")
+    @patch("splunk_ao.evaluators.query_metrics_projects_project_id_metrics_search_post.sync")
     def test_passes_all_parameters_correctly(self, mock_api_call):
         mock_api_call.return_value = _log_records_metrics_response_factory()
 
@@ -478,7 +478,7 @@ class TestGetMetrics:
         group_by = "some_column"
         interval = 10
 
-        get_metrics(
+        get_evaluators(
             project_id=FIXED_PROJECT_ID,
             start_time=start_time,
             end_time=end_time,

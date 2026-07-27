@@ -38,7 +38,7 @@ def _get_kwargs(project_id: str, log_stream_id: str, *, body: LogStreamUpdateReq
 
     headers["Content-Type"] = "application/json"
 
-    headers["X-Galileo-SDK"] = get_sdk_header()
+    headers["Splunk-AO-SDK"] = get_sdk_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

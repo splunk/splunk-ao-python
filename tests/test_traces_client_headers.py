@@ -45,6 +45,6 @@ class TestTracesHeaders:
         assert "Splunk-AO-SDK" in content_headers
         # The header should include version and dynamic method name from get_method_name()
         header_value = content_headers["Splunk-AO-SDK"]
-        assert header_value.startswith(f"galileo-python/{get_package_version()}")
+        assert header_value.startswith(f"splunk-ao/{get_package_version()}")
         # Should contain the method name (e.g., "_make_async_request@splunk_ao.traces")
         assert "@splunk_ao.traces" in header_value
