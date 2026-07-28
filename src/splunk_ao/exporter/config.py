@@ -2,8 +2,13 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace.export import SpanExporter
+
+from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 
 
 @dataclass
@@ -25,7 +30,7 @@ class RoutingAttrs:
     experiment_id: str | None = None
 
 
-ExporterFactory = Callable[..., OTLPSpanExporter]
+ExporterFactory = Callable[..., SpanExporter]
 
 
 def resolve_exporter_config(endpoint: str, auth_header: tuple[str, str], routing: RoutingAttrs) -> ExporterConfig:
@@ -69,7 +74,9 @@ def build_exporter(
     auth_header: tuple[str, str],
     routing: RoutingAttrs,
     _exporter_factory: ExporterFactory = OTLPSpanExporter,
-) -> OTLPSpanExporter:
+    **exporter_kwargs: Any,
+) -> SpanExporter:
     """Build an OTLP HTTP exporter from shared resolved configuration."""
     config = resolve_exporter_config(endpoint, auth_header, routing)
-    return _exporter_factory(endpoint=config.endpoint, headers=config.headers)
+    delegate = _exporter_factory(endpoint=config.endpoint, headers=config.headers, **exporter_kwargs)
+    return NormalizingSpanExporter(delegate, Resource(routing_resource_attributes(routing)))
