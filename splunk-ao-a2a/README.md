@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- [Splunk AO A2A Integration](https://agent-observability-docs.splunk.com/sdk-api/third-party-integrations/a2a)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com)
 - [A2A Protocol Specification](https://a2a-protocol.org)
 - [a2a-sdk Documentation](https://pypi.org/project/a2a-sdk)
 
