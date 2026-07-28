@@ -12,10 +12,10 @@ from opentelemetry.trace import Link, NonRecordingSpan, SpanContext, TraceFlags
 
 from splunk_ao_a2a._constants import (
     AGNTCY_OBSERVE_KEY,
-    SPLUNK_AO_OBSERVE_KEY,
     LINK_FROM_AGENT,
     LINK_TYPE,
     LINK_TYPE_AGENT_HANDOFF,
+    SPLUNK_AO_OBSERVE_KEY,
 )
 
 _logger = logging.getLogger(__name__)

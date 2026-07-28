@@ -73,8 +73,14 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
     }
     exported = delegate.spans[0]
     assert exported.instrumentation_scope.name == INSTRUMENTOR_NAME
-    assert exported.attributes["gen_ai.system"] == "a2a"
+    assert "gen_ai.system" not in exported.attributes
+    assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
     assert exported.attributes["a2a.rpc.method"] == "SendMessage"
+    assert "splunk_ao.a2a.rpc.method" not in exported.attributes
+    assert exported.attributes["gen_ai.conversation.id"] == "context-id"
+    assert exported.attributes["splunk_ao.session.id"] == "context-id"
+    assert exported.attributes["gen_ai.operation.name"] == "invoke_agent"
+    assert exported.attributes["splunk_ao.operation.name"] == "invoke_agent"
     assert exported.resource.attributes["splunk_ao.project.name"] == "a2a-project"
     assert exported.resource.attributes["splunk_ao.logstream.name"] == "a2a-agent-stream"
     assert "splunk_ao.project.name" not in exported.attributes

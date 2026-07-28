@@ -7,6 +7,7 @@ import pytest
 from splunk_ao.deployment import O11yConfig
 from splunk_ao.exporter.config import RoutingAttrs
 from splunk_ao.exporter.o11y import build_o11y_exporter, resolve_o11y_exporter_config
+from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.shared.exceptions import MissingConfigurationError
 
 
@@ -98,7 +99,8 @@ def test_build_o11y_exporter_passes_resolved_public_config_to_factory() -> None:
         _exporter_factory=exporter_factory,
     )
 
-    assert exporter is expected_exporter
+    assert isinstance(exporter, NormalizingSpanExporter)
+    assert exporter.delegate is expected_exporter
     assert captured == {
         "endpoint": "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp",
         "headers": {"X-SF-Token": "tok", "projectid": "pid", "logstreamid": "lsid"},
