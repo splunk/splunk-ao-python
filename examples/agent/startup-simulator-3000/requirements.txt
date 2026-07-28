@@ -10,7 +10,7 @@ galileo-core
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1
-idna==3.10
+idna==3.15
 jinja2==3.1.6
 jiter==0.10.0
 jsonpatch==1.33
@@ -26,7 +26,7 @@ langgraph-sdk==0.1.70
 langsmith==0.3.44
 markupsafe==3.0.2
 openai==1.84.0
-orjson==3.10.18
+orjson==3.11.9
 ormsgpack==1.10.0
 packaging==24.2
 pydantic
@@ -47,7 +47,7 @@ tiktoken==0.9.0
 tqdm==4.67.1
 typing-extensions==4.14.0
 typing-inspection==0.4.1
-urllib3==2.4.0
+urllib3==2.6.3
 wrapt==1.17.2
 xxhash==3.5.0
 zstandard==0.23.0

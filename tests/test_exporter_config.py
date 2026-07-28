@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from splunk_ao.deployment import StandaloneConfig
 from splunk_ao.exporter.config import RoutingAttrs, routing_resource_attributes
+from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.exporter.standalone import build_standalone_exporter, resolve_standalone_exporter_config
 from splunk_ao.logger import logger as logger_module
 from splunk_ao.logger.logger import SplunkAOLogger
@@ -132,7 +133,8 @@ def test_build_standalone_exporter_passes_resolved_public_config_to_factory() ->
         make_standalone_cfg(), make_routing(project_name="p"), _exporter_factory=exporter_factory
     )
 
-    assert exporter is expected_exporter
+    assert isinstance(exporter, NormalizingSpanExporter)
+    assert exporter.delegate is expected_exporter
     assert captured == {
         "endpoint": "https://api.demo.galileocloud.io/otel/v1/traces",
         "headers": {"Splunk-AO-API-Key": "key", "project": "p"},

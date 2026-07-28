@@ -17,15 +17,14 @@ from splunk_ao_a2a._constants import (
     ERROR_STATES,
     FINISH_REASON_STOP,
     GENAI_AGENT_NAME,
+    GENAI_CONVERSATION_ID,
     GENAI_INPUT_MESSAGES,
     GENAI_OPERATION_NAME,
     GENAI_OUTPUT_MESSAGES,
     GENAI_RESPONSE_FINISH_REASONS,
-    GENAI_SYSTEM,
     GENAI_TOOL_NAME,
     ROLE_ASSISTANT,
     ROLE_USER,
-    SESSION_ID,
 )
 
 
@@ -68,7 +67,6 @@ def set_client_attributes(
 ) -> None:
     """Set standard A2A and GenAI attributes on a client span."""
     span.set_attribute(GENAI_OPERATION_NAME, "invoke_agent")
-    span.set_attribute(GENAI_SYSTEM, "a2a")
     span.set_attribute(A2A_RPC_METHOD, rpc_method)
 
     if agent_name:
@@ -76,7 +74,7 @@ def set_client_attributes(
 
     if hasattr(request, "context_id") and request.context_id:
         span.set_attribute(A2A_CONTEXT_ID, str(request.context_id))
-        span.set_attribute(SESSION_ID, str(request.context_id))
+        span.set_attribute(GENAI_CONVERSATION_ID, str(request.context_id))
 
     if hasattr(request, "task_id") and request.task_id:
         span.set_attribute(A2A_TASK_ID, str(request.task_id))
@@ -90,7 +88,6 @@ def set_server_attributes(
 ) -> None:
     """Set standard A2A and GenAI attributes on a server span."""
     span.set_attribute(GENAI_OPERATION_NAME, "invoke_agent")
-    span.set_attribute(GENAI_SYSTEM, "a2a")
     span.set_attribute(A2A_RPC_METHOD, rpc_method)
 
     if agent_name:
@@ -101,7 +98,7 @@ def set_server_attributes(
         context_id = getattr(message, "context_id", None)
         if context_id:
             span.set_attribute(A2A_CONTEXT_ID, str(context_id))
-            span.set_attribute(SESSION_ID, str(context_id))
+            span.set_attribute(GENAI_CONVERSATION_ID, str(context_id))
 
         task_id = getattr(message, "task_id", None)
         if task_id:
@@ -111,7 +108,6 @@ def set_server_attributes(
 def set_tool_attributes(span: trace.Span, rpc_method: str) -> None:
     """Set attributes for tool-like A2A operations (get_task, cancel_task, get_card)."""
     span.set_attribute(GENAI_OPERATION_NAME, "execute_tool")
-    span.set_attribute(GENAI_SYSTEM, "a2a")
     span.set_attribute(A2A_RPC_METHOD, rpc_method)
     span.set_attribute(GENAI_TOOL_NAME, rpc_method)
 
@@ -180,7 +176,7 @@ def set_simple_input(span: trace.Span, args: tuple, rpc_method: str) -> None:
 def track_task_state(span: trace.Span, obj: Any) -> None:
     """Record A2A task state and ID on *span*.
 
-    Sets ``a2a.task.state``, ``a2a.task.id``, and ``gen_ai.response.finish_reasons``.
+    Sets the A2A task state and ID plus ``gen_ai.response.finish_reasons``.
     Marks the span as an error when the task enters a terminal error state.
     """
     if obj is None:
@@ -195,9 +191,9 @@ def track_task_state(span: trace.Span, obj: Any) -> None:
 
             if state_value in ERROR_STATES:
                 span.set_status(StatusCode.ERROR, f"A2A task {state_value}")
-                span.set_attribute(GENAI_RESPONSE_FINISH_REASONS, json.dumps([state_value]))
+                span.set_attribute(GENAI_RESPONSE_FINISH_REASONS, (state_value,))
             elif state_value == "completed":
-                span.set_attribute(GENAI_RESPONSE_FINISH_REASONS, json.dumps([FINISH_REASON_STOP]))
+                span.set_attribute(GENAI_RESPONSE_FINISH_REASONS, (FINISH_REASON_STOP,))
 
     task_id = getattr(obj, "id", None)
     if task_id:

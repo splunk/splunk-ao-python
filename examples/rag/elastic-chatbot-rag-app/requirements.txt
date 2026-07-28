@@ -39,7 +39,7 @@ certifi==2025.1.31
     #   sentry-sdk
 charset-normalizer==3.4.1
     # via requests
-click==8.1.8
+click==8.3.3
     # via flask
 cohere==5.14.0
     # via langchain-cohere
@@ -70,7 +70,7 @@ elasticsearch[vectorstore-mmr]==8.17.2
     #   langchain-elasticsearch
 fastavro==1.10.0
     # via cohere
-filelock==3.18.0
+filelock==3.20.1
     # via
     #   huggingface-hub
     #   transformers
@@ -168,7 +168,7 @@ huggingface-hub==0.29.3
     # via
     #   tokenizers
     #   transformers
-idna==3.10
+idna==3.15
     # via
     #   anyio
     #   httpx
@@ -313,7 +313,7 @@ opentelemetry-semantic-conventions==0.52b0
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-sqlalchemy
     #   opentelemetry-sdk
-orjson==3.10.15
+orjson==3.11.9
     # via langsmith
 packaging==24.2
     # via
@@ -336,7 +336,7 @@ proto-plus==1.26.1
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-resource-manager
-protobuf==5.29.3
+protobuf==5.29.6
     # via
     #   google-api-core
     #   google-cloud-aiplatform
@@ -348,7 +348,7 @@ protobuf==5.29.3
     #   proto-plus
 psutil==7.0.0
     # via opentelemetry-instrumentation-system-metrics
-pyasn1==0.6.1
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   rsa
@@ -482,7 +482,7 @@ typing-inspect==0.9.0
     # via dataclasses-json
 ujson==5.10.0
     # via langtrace-python-sdk
-urllib3==2.3.0
+urllib3==2.6.3
     # via
     #   botocore
     #   elastic-transport
