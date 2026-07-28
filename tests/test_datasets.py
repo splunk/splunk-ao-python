@@ -653,7 +653,7 @@ def test_extend_dataset_api_failure(extend_dataset_mock: Mock) -> None:
     extend_dataset_mock.sync.return_value = HTTPValidationError()
 
     # Call should raise DatasetAPIException
-    with pytest.raises(DatasetAPIException, match=r"Request to extend dataset failed\."):
+    with pytest.raises(DatasetAPIException, match=r"Request to extend dataset failed:"):
         extend_dataset(prompt_settings={"model_alias": "GPT-4o mini"}, prompt="Test prompt", count=1)
 
 

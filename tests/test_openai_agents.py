@@ -164,9 +164,9 @@ def test_processor_marks_direct_trace_child_agent(
             },
         )
     )
-    logger.conclude(output="output")
-
     assert logger.traces[0].spans[0].conversation_root is True
+
+    logger.conclude(output="output")
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:

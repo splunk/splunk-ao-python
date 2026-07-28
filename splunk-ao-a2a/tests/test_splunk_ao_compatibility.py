@@ -45,7 +45,7 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
     ):
         exporter = SplunkAOOTLPExporter(
             project="a2a-project",
-            logstream="a2a-log-stream",
+            agentstream="a2a-agent-stream",
             _exporter_factory=exporter_factory,
         )
         processor = SplunkAOSpanProcessor(SpanProcessor=SimpleSpanProcessor, _exporter=exporter)
@@ -68,7 +68,7 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
         "headers": {
             "Splunk-AO-API-Key": "standalone-key",
             "project": "a2a-project",
-            "logstream": "a2a-log-stream",
+            "logstream": "a2a-agent-stream",
         },
     }
     exported = delegate.spans[0]
@@ -82,5 +82,5 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
     assert exported.attributes["gen_ai.operation.name"] == "invoke_agent"
     assert exported.attributes["splunk_ao.operation.name"] == "invoke_agent"
     assert exported.resource.attributes["splunk_ao.project.name"] == "a2a-project"
-    assert exported.resource.attributes["splunk_ao.logstream.name"] == "a2a-log-stream"
+    assert exported.resource.attributes["splunk_ao.logstream.name"] == "a2a-agent-stream"
     assert "splunk_ao.project.name" not in exported.attributes
