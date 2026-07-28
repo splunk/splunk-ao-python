@@ -603,13 +603,13 @@ class TestStartSplunkAOSpan:
         assert "gen_ai.tool.call.id" not in calls
 
     @pytest.mark.parametrize(
-        "galileo_span",
+        "splunk_ao_span",
         [
             WorkflowSpan(name="workflow", input="input", output="output"),
             AgentSpan(name="agent", input="input", output="output"),
         ],
     )
-    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, galileo_span):
+    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, splunk_ao_span):
         """Eligible spans with no caller parent receive the standard root marker."""
         mock_otel_span = Mock()
         mock_tracer = Mock()
@@ -621,7 +621,7 @@ class TestStartSplunkAOSpan:
 
         with patch("splunk_ao.otel.trace") as mock_trace:
             mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
-            with start_splunk_ao_span(galileo_span):
+            with start_splunk_ao_span(splunk_ao_span):
                 pass
 
         calls = {
@@ -650,7 +650,7 @@ class TestStartSplunkAOSpan:
         assert "gen_ai.conversation_root" not in calls
 
     @pytest.mark.parametrize(
-        "galileo_span",
+        "splunk_ao_span",
         [
             ToolSpan(name="tool", input="input", output="output"),
             LlmSpan(
@@ -662,7 +662,7 @@ class TestStartSplunkAOSpan:
             RetrieverSpan(name="retriever", input="input", output=[]),
         ],
     )
-    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, galileo_span):
+    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, splunk_ao_span):
         """LLM, tool, and retriever spans are never conversation roots."""
         mock_otel_span = Mock()
         mock_tracer = Mock()
@@ -674,7 +674,7 @@ class TestStartSplunkAOSpan:
 
         with patch("splunk_ao.otel.trace") as mock_trace:
             mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
-            with start_splunk_ao_span(galileo_span):
+            with start_splunk_ao_span(splunk_ao_span):
                 pass
 
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
