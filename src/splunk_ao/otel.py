@@ -2,20 +2,17 @@ from __future__ import annotations
 
 import json
 import logging
-import typing
-from collections.abc import Generator
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Protocol, cast
-from urllib.parse import urljoin
 
 from opentelemetry import context, trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import Span, SpanProcessor
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.trace import Tracer
-from requests import Session
 
 from galileo_core.schemas.logging.span import AgentSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as GalileoSpan
@@ -29,7 +26,21 @@ from splunk_ao.decorator import (
     _project_context,
     _session_id_context,
 )
-from splunk_ao.utils.env_helpers import _get_log_stream_or_default, _get_project_or_default
+from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
+from splunk_ao.exporter import (
+    RoutingAttrs,
+    resolve_o11y_exporter_config,
+    resolve_standalone_exporter_config,
+    routing_resource_attributes,
+)
+from splunk_ao.utils.env_helpers import (
+    _get_log_stream_from_env,
+    _get_log_stream_id_from_env,
+    _get_log_stream_or_default,
+    _get_project_from_env,
+    _get_project_id_from_env,
+    _get_project_or_default,
+)
 from splunk_ao.utils.retrievers import document_adapter
 
 logger = logging.getLogger(__name__)
@@ -52,27 +63,141 @@ class TracerProvider(Protocol):
 _TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
 
 
-class SplunkAOOTLPExporter(OTLPSpanExporter):
-    """
-    OpenTelemetry OTLP span exporter preconfigured for Galileo platform integration.
+ROUTING_ATTRIBUTE_KEYS = frozenset(
+    {
+        "splunk_ao.project.name",
+        "splunk_ao.project.id",
+        "splunk_ao.logstream.name",
+        "splunk_ao.logstream.id",
+        "splunk_ao.experiment.id",
+    }
+)
 
-    This exporter extends the standard OTLPSpanExporter with Galileo-specific
-    configuration and authentication. For most applications, consider using
+_LEGACY_ROUTING_OPTIONS = {"logstream": "agentstream", "log_stream_id": "agent_stream_id"}
+
+
+def _reject_legacy_routing_options(options: dict[str, Any]) -> None:
+    for legacy_name, replacement in _LEGACY_ROUTING_OPTIONS.items():
+        if legacy_name in options:
+            raise TypeError(f"{legacy_name} is not supported; use {replacement}")
+
+
+def _resolve_name_or_id(
+    explicit_name: str | None,
+    explicit_id: str | None,
+    context_name: str | None,
+    environment_name: str | None,
+    environment_id: str | None,
+    default_name: str | None,
+) -> tuple[str | None, str | None]:
+    """Resolve one immutable routing identity while preserving its supplied form."""
+    if explicit_name:
+        return explicit_name, None
+    if explicit_id:
+        return None, explicit_id
+    if context_name:
+        return context_name, None
+    if environment_name:
+        return environment_name, None
+    if environment_id:
+        return None, environment_id
+    return default_name, None
+
+
+def _resolve_routing(
+    deployment: DeploymentMode,
+    project: str | None,
+    project_id: str | None,
+    agentstream: str | None,
+    agent_stream_id: str | None,
+    experiment_id: str | None,
+) -> RoutingAttrs:
+    """Capture routing once for one exporter without resolving names to IDs."""
+    standalone = deployment == DeploymentMode.STANDALONE
+    project_name, resolved_project_id = _resolve_name_or_id(
+        project,
+        project_id,
+        _project_context.get(None),
+        _get_project_from_env(),
+        _get_project_id_from_env(),
+        _get_project_or_default(None) if standalone else None,
+    )
+    log_stream_name, resolved_log_stream_id = _resolve_name_or_id(
+        agentstream,
+        agent_stream_id,
+        _log_stream_context.get(None),
+        _get_log_stream_from_env(),
+        _get_log_stream_id_from_env(),
+        _get_log_stream_or_default(None) if standalone else None,
+    )
+    return RoutingAttrs(
+        project_name=project_name,
+        project_id=resolved_project_id,
+        log_stream_name=log_stream_name,
+        log_stream_id=resolved_log_stream_id,
+        experiment_id=experiment_id or _experiment_id_context.get(None),
+    )
+
+
+def _with_routing_resource(span: ReadableSpan, routing_resource: Resource) -> ReadableSpan:
+    """Return an immutable copy with authoritative routing in its Resource."""
+    attributes = {key: value for key, value in (span.attributes or {}).items() if key not in ROUTING_ATTRIBUTE_KEYS}
+    source_resource = span.resource or Resource({})
+    base_resource = Resource(
+        {key: value for key, value in source_resource.attributes.items() if key not in ROUTING_ATTRIBUTE_KEYS},
+        schema_url=source_resource.schema_url,
+    )
+    return ReadableSpan(
+        name=span.name,
+        context=span.context,
+        parent=span.parent,
+        resource=base_resource.merge(routing_resource),
+        attributes=attributes,
+        events=span.events,
+        links=span.links,
+        kind=span.kind,
+        status=span.status,
+        start_time=span.start_time,
+        end_time=span.end_time,
+        instrumentation_scope=span.instrumentation_scope,
+    )
+
+
+class SplunkAOOTLPExporter(SpanExporter):
+    """
+    OpenTelemetry OTLP span exporter preconfigured for Splunk AO.
+
+    This exporter wraps the standard OTLPSpanExporter with deployment-aware
+    configuration, authentication, and immutable routing. For most applications, use
     SplunkAOSpanProcessor instead, which provides a complete tracing solution.
+
+    Routing is captured when the exporter is constructed and remains fixed for its
+    lifetime. Applications that export to multiple destinations must use a separate
+    exporter and span processor for each destination.
     """
 
-    _session: Session
-
-    def __init__(self, project: str | None = None, logstream: str | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        project: str | None = None,
+        project_id: str | None = None,
+        agentstream: str | None = None,
+        agent_stream_id: str | None = None,
+        experiment_id: str | None = None,
+        *,
+        _exporter_factory: Callable[..., SpanExporter] = OTLPSpanExporter,
+        **kwargs: Any,
+    ) -> None:
         """
-        Initialize the Galileo OTLP exporter with authentication and endpoint configuration.
+        Initialize the Splunk AO OTLP exporter with deployment-aware configuration.
 
         Parameters
         ----------
-        project : str, optional
-            Target Galileo project name. Falls back to SPLUNK_AO_PROJECT environment variable.
-        logstream : str, optional
-            Target logstream for trace organization. Uses default logstream if not specified.
+        project, project_id : str, optional
+            Target project name or ID.
+        agentstream, agent_stream_id : str, optional
+            Target agent-stream name or ID.
+        experiment_id : str, optional
+            Target experiment ID. Takes precedence over agent-stream routing.
         **kwargs
             Additional configuration options passed to the underlying OTLPSpanExporter.
 
@@ -81,87 +206,34 @@ class SplunkAOOTLPExporter(OTLPSpanExporter):
         ValueError
             When configuration is not properly initialized with required credentials.
         """
-        # Get configuration from SplunkAOConfig
+        _reject_legacy_routing_options(kwargs)
         config = SplunkAOConfig.get()
+        deployment = config.resolve_deployment()
+        self._routing = _resolve_routing(deployment, project, project_id, agentstream, agent_stream_id, experiment_id)
+        if deployment == DeploymentMode.O11Y:
+            exporter_config = resolve_o11y_exporter_config(O11yConfig.from_env(), self._routing)
+        else:
+            exporter_config = resolve_standalone_exporter_config(StandaloneConfig.from_env(), self._routing)
 
-        if not config.api_url:
-            # This should never happen, but we'll raise an error just in case
-            raise ValueError("API URL is required.")
+        self.project = self._routing.project_name
+        self.project_id = self._routing.project_id
+        self.agentstream = self._routing.log_stream_name
+        self.agent_stream_id = self._routing.log_stream_id
+        self.experiment_id = self._routing.experiment_id
+        self._routing_resource = Resource(routing_resource_attributes(self._routing))
+        self._delegate = _exporter_factory(endpoint=exporter_config.endpoint, headers=exporter_config.headers, **kwargs)
 
-        # Get API URL and construct OTLP endpoint
-        base_url = str(config.api_url)
-        # Ensure base_url ends with / for proper joining
-        if not base_url.endswith("/"):
-            base_url += "/"
-        endpoint: str = urljoin(base_url, "otel/v1/traces")
-        api_key = config.api_key.get_secret_value() if config.api_key else None
+    def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
+        """Export immutable copies with authoritative routing Resources."""
+        return self._delegate.export(tuple(_with_routing_resource(span, self._routing_resource) for span in spans))
 
-        if not api_key:
-            raise ValueError("API key is required.")
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Flush the delegate exporter."""
+        return self._delegate.force_flush(timeout_millis)
 
-        # Resolve project and logstream: param first, then context var, then env var with default fallback
-        ctx_project = project if project is not None else _project_context.get(None)
-        ctx_logstream = logstream if logstream is not None else _log_stream_context.get(None)
-
-        self.project = _get_project_or_default(ctx_project)
-        self.logstream = _get_log_stream_or_default(ctx_logstream)
-
-        exporter_headers = {"Splunk-AO-API-Key": api_key, "project": self.project, "logstream": self.logstream}
-
-        super().__init__(endpoint=endpoint, headers=exporter_headers, **kwargs)
-
-    def export(self, spans: typing.Sequence[Any]) -> Any:
-        """Override export to set resource attributes from span attributes before serialization."""
-        is_experiment = False
-        for span in spans:
-            # Read from span attributes (set during on_start when context was available)
-            project = span.attributes.get("splunk_ao.project.name")
-            logstream = span.attributes.get("splunk_ao.logstream.name")
-            session_id = span.attributes.get("splunk_ao.session.id")
-            experiment_id = span.attributes.get("splunk_ao.experiment.id")
-            dataset_input = span.attributes.get("splunk_ao.dataset.input")
-            dataset_output = span.attributes.get("splunk_ao.dataset.output")
-            dataset_metadata = span.attributes.get("splunk_ao.dataset.metadata")
-
-            # Build resource attributes dict, filtering out None values
-            resource_attrs = {}
-            if project:
-                resource_attrs["splunk_ao.project.name"] = project
-            # We can only have either logstream or experiment, if it's an experiment we want to prioritize it.
-            if logstream and not experiment_id:
-                resource_attrs["splunk_ao.logstream.name"] = logstream
-            if session_id:
-                resource_attrs["splunk_ao.session.id"] = session_id
-            if experiment_id:
-                resource_attrs["splunk_ao.experiment.id"] = experiment_id
-                is_experiment = True
-            if dataset_input:
-                resource_attrs["splunk_ao.dataset.input"] = dataset_input
-            if dataset_output:
-                resource_attrs["splunk_ao.dataset.output"] = dataset_output
-            if dataset_metadata:
-                resource_attrs["splunk_ao.dataset.metadata"] = dataset_metadata
-
-            if resource_attrs:
-                # Merge new attributes into span's resource
-                new_resource = span.resource.merge(Resource(resource_attrs))
-                # Mutate the internal _resource (ReadableSpan stores it there)
-                span._resource = new_resource
-
-        # for the last span update the headers
-        if spans:
-            last_span = spans[-1]
-            self._session.headers.update(
-                {
-                    "project": last_span.attributes.get("splunk_ao.project.name"),
-                    "logstream": last_span.attributes.get("splunk_ao.logstream.name"),
-                }
-            )
-            if is_experiment:
-                self._session.headers.update({"experimentid": last_span.attributes.get("splunk_ao.experiment.id")})
-                self._session.headers.pop("logstream", None)  # Remove logstream header if experiment is present
-
-        return super().export(spans)
+    def shutdown(self) -> None:
+        """Shut down the delegate exporter."""
+        self._delegate.shutdown()
 
 
 class SplunkAOSpanProcessor(SpanProcessor):
@@ -171,40 +243,70 @@ class SplunkAOSpanProcessor(SpanProcessor):
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
     It handles the complete lifecycle of spans from creation to export to Galileo.
+    Project, agent-stream, and experiment routing is fixed when the processor's exporter
+    is constructed. Use separate processors and exporters for separate destinations.
 
     Examples
     --------
     >>> from opentelemetry.sdk.trace import TracerProvider
     >>> tracer_provider = TracerProvider()
-    >>> processor = SplunkAOSpanProcessor(project="my-project")
-    >>> add_splunk_ao_span_processor(tracer_provider, processor)
+    >>> processor = add_splunk_ao_span_processor(tracer_provider, project="my-project")
     """
 
     def __init__(
-        self, project: str | None = None, logstream: str | None = None, SpanProcessor: type | None = None, **kwargs: Any
+        self,
+        project: str | None = None,
+        project_id: str | None = None,
+        agentstream: str | None = None,
+        agent_stream_id: str | None = None,
+        experiment_id: str | None = None,
+        SpanProcessor: type | None = None,
+        *,
+        _exporter: SpanExporter | None = None,
+        _exporter_factory: Callable[..., SpanExporter] = OTLPSpanExporter,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize the Galileo span processor with export configuration.
 
         Parameters
         ----------
-        project : str, optional
-            Target Galileo project for trace data. Falls back to SPLUNK_AO_PROJECT environment variable.
-        logstream : str, optional
-            Target logstream for trace organization. Uses default logstream if not specified.
+        project, project_id : str, optional
+            Target project name or ID.
+        agentstream, agent_stream_id : str, optional
+            Target agent-stream name or ID.
+        experiment_id : str, optional
+            Target experiment ID. Takes precedence over agent-stream routing.
         SpanProcessor : type, optional
             Custom span processor class. Defaults to BatchSpanProcessor for optimal performance.
 
+        Raises
+        ------
+        ValueError
+            When a prebuilt exporter is combined with exporter configuration options.
         """
-        # Resolve project and logstream: param first, then context var, then env var with default fallback
-        ctx_project = project if project is not None else _project_context.get(None)
-        ctx_logstream = logstream if logstream is not None else _log_stream_context.get(None)
+        _reject_legacy_routing_options(kwargs)
+        routing_provided = any(
+            value is not None for value in (project, project_id, agentstream, agent_stream_id, experiment_id)
+        )
+        if _exporter is not None and (routing_provided or kwargs):
+            raise ValueError("Routing and OTLP exporter options cannot be used with _exporter")
 
-        self._project = _get_project_or_default(ctx_project)
-        self._logstream = _get_log_stream_or_default(ctx_logstream)
-
-        # Create the exporter using the config-based approach
-        self._exporter = SplunkAOOTLPExporter(**kwargs)
+        self._exporter = (
+            _exporter
+            if _exporter is not None
+            else SplunkAOOTLPExporter(
+                project=project,
+                project_id=project_id,
+                agentstream=agentstream,
+                agent_stream_id=agent_stream_id,
+                experiment_id=experiment_id,
+                _exporter_factory=_exporter_factory,
+                **kwargs,
+            )
+        )
+        self._project = getattr(self._exporter, "project", project)
+        self._agentstream = getattr(self._exporter, "agentstream", agentstream)
 
         if SpanProcessor is None:
             SpanProcessor = BatchSpanProcessor
@@ -213,20 +315,8 @@ class SplunkAOSpanProcessor(SpanProcessor):
 
     def on_start(self, span: Span, parent_context: context.Context | None = None) -> None:
         """Handle span start events by delegating to the underlying processor."""
-        # Set Galileo context attributes on the span
-        # Use context var if set and not None, otherwise fall back to instance defaults
-        project = _project_context.get(None) or self._project
-        log_stream = _log_stream_context.get(None) or self._logstream
-        experiment_id = _experiment_id_context.get(None)
         session_id = _session_id_context.get(None)
 
-        if project:
-            span.set_attribute("splunk_ao.project.name", project)
-        # We can only have either logstream or experiment, if it's an experiment we want to prioritize it.
-        if log_stream and not experiment_id:
-            span.set_attribute("splunk_ao.logstream.name", log_stream)
-        if experiment_id:
-            span.set_attribute("splunk_ao.experiment.id", experiment_id)
         if session_id:
             span.set_attribute("splunk_ao.session.id", session_id)
 
@@ -240,7 +330,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
 
         self._processor.on_start(span, parent_context)
 
-    def on_end(self, span: Span) -> None:
+    def on_end(self, span: ReadableSpan) -> None:
         """Handle span completion events by delegating to the underlying processor."""
         self._processor.on_end(span)
 
@@ -248,18 +338,16 @@ class SplunkAOSpanProcessor(SpanProcessor):
         """Gracefully shutdown the processor and flush any remaining spans."""
         self._processor.shutdown()
         logger.info(
-            "Galileo span processor shutdown for project %s and logstream %s",
-            self.exporter.project,
-            self.exporter.logstream,
+            "Splunk AO span processor shutdown for project %s and agentstream %s", self._project, self._agentstream
         )
 
-    def force_flush(self, timeout_millis: int = 40000) -> None:
+    def force_flush(self, timeout_millis: int = 40000) -> bool:
         """Force immediate export of all pending spans with specified timeout."""
         return self._processor.force_flush(timeout_millis)
 
     @property
-    def exporter(self) -> SplunkAOOTLPExporter:
-        """Access to the underlying Galileo OTLP exporter instance."""
+    def exporter(self) -> SpanExporter:
+        """Access to the underlying Splunk AO OTLP exporter instance."""
         return self._exporter
 
     @property
@@ -268,10 +356,17 @@ class SplunkAOSpanProcessor(SpanProcessor):
         return self._processor
 
 
-def add_splunk_ao_span_processor(tracer_provider: TracerProvider, processor: SplunkAOSpanProcessor) -> None:
-    """Add the Galileo span processor to the tracer provider."""
-    tracer_provider.add_span_processor(processor)
+def add_splunk_ao_span_processor(
+    tracer_provider: TracerProvider, processor: SplunkAOSpanProcessor | None = None, **processor_kwargs: Any
+) -> SplunkAOSpanProcessor:
+    """Construct or accept, register, and return a Splunk AO span processor."""
+    if processor is not None and processor_kwargs:
+        raise ValueError("processor_kwargs cannot be used with an existing processor")
+
+    resolved_processor = processor if processor is not None else SplunkAOSpanProcessor(**processor_kwargs)
+    tracer_provider.add_span_processor(resolved_processor)
     _TRACE_PROVIDER_CONTEXT_VAR.set(tracer_provider)
+    return resolved_processor
 
 
 def _set_retriever_span_attributes(span: trace.Span, galileo_span: RetrieverSpan) -> None:
@@ -363,13 +458,11 @@ def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("galileo-tracer")
-    is_conversation_root = (
-        not trace.get_current_span().get_span_context().is_valid
-        and isinstance(galileo_span, WorkflowSpan | AgentSpan)
+    is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
+        galileo_span, WorkflowSpan | AgentSpan
     )
     with tracer.start_as_current_span(galileo_span.name) as span:
         yield span
-        span.set_attribute("gen_ai.system", "galileo-otel")
         if is_conversation_root:
             # OTel semantic-convention attributes are boolean; the native route's
             # string-valued user_metadata bridge is an interim compatibility path.
