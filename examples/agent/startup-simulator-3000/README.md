@@ -240,7 +240,7 @@ cat .env
 - **Custom Agent Development**: Study the `agent_framework/` directory to understand
   agent architecture
 - **Splunk AO Observability**:
-  [Splunk AO Documentation](https://docs.galileo.ai/)
+  [Splunk AO Documentation](https://agent-observability-docs.splunk.com/)
 
 ### For Web Developers
 

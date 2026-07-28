@@ -2,7 +2,7 @@
 
 This is an example project demonstrating how to use Splunk AO experiments with applications that use RAG and tools.
 
-This code is used in the [Run an experiment against a RAG app](http://docs.galileo.ai/how-to-guides/experiments/rag-app/rag-app) how-to guide in the Splunk AO documentation.
+This code is used in the [Run an experiment against a RAG app](https://agent-observability-docs.splunk.com/how-to-guides/experiments/rag-app/rag-app) how-to guide in the Splunk AO documentation.
 
 ## Get Started
 

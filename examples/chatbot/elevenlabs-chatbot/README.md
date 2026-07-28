@@ -67,5 +67,5 @@ Edit `.env` with your credentials. Note for `ELEVENLABS_*` variables you can [si
 ## Learn More
 
 - [Video tutorial](https://youtu.be/1QNEhDV2r5U)
-- [Splunk AO Documentation](https://docs.galileo.ai/what-is-galileo)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com/what-is-galileo)
 - [ElevenLabs Conversational AI](https://elevenlabs.io/docs/conversational-ai)

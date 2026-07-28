@@ -1,6 +1,6 @@
 # SplunkAOLogger Examples
 
-The examples in this folder demonstrates how to use [`SplunkAOLogger`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger) to log data to Splunk AO. Other ways of logging to Splunk AO can be found in [how-to guides](https://docs.galileo.ai/how-to-guides/basics/basic-example).
+The examples in this folder demonstrates how to use [`SplunkAOLogger`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger) to log data to Splunk AO. Other ways of logging to Splunk AO can be found in [how-to guides](https://agent-observability-docs.splunk.com/how-to-guides/basics/basic-example).
 
 ## Setup Instructions
 
@@ -84,7 +84,7 @@ python redaction-example.py
 
 This example logs traces with `redacted_input` (input excluding sensitive info such as social security numbers or email adddresses).
 
-The optional parameters `redacted_input` and `redacted_output` can be provided to [`SplunkAOLogger`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger) methods such as [`start_trace`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger#start_trace) and [`add_retriever_span`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger#add_retriever_span).
+The optional parameters `redacted_input` and `redacted_output` can be provided to [`SplunkAOLogger`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger) methods such as [`start_trace`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger#start_trace) and [`add_retriever_span`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger#add_retriever_span).
 
 The example's expected output includes an export of logged traces, as well as the Splunk AO URL of the log stream. Go to this URL in your browser to confirm the logged data.
 
@@ -104,7 +104,7 @@ python metadata-example.py
 
 This example logs a session, trace, and span with metadata (optional key-value attributes).
 
-The optional parameter `metadata` can be provided to [`SplunkAOLogger`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger) methods such as [`start_session`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger#start_session), [`start_trace`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger#start_trace) and [`add_llm_span`](https://docs.galileo.ai/sdk-api/python/reference/logger/logger#add_llm_span).
+The optional parameter `metadata` can be provided to [`SplunkAOLogger`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger) methods such as [`start_session`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger#start_session), [`start_trace`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger#start_trace) and [`add_llm_span`](https://agent-observability-docs.splunk.com/sdk-api/python/reference/logger/logger#add_llm_span).
 
 The example's expected output includes the Splunk AO URL of the log stream. Go to this URL in your browser to confirm the logged data.
 

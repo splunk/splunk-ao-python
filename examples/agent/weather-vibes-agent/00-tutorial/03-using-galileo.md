@@ -52,7 +52,7 @@ python galileo_agent.py --location "Tokyo" --units imperial --mood relaxing --ve
 
 ## Understanding the Spans
 
-The Splunk AO-instrumented version of the agent includes several span types. Learn more about spans, the atomic unit of logging in Splunk AO, [here](https://docs.galileo.ai/getting-started/logging).
+The Splunk AO-instrumented version of the agent includes several span types. Learn more about spans, the atomic unit of logging in Splunk AO, [here](https://agent-observability-docs.splunk.com/getting-started/logging).
 
 1. **Workflow Span** (`workflow`):
    - Captures the main agent workflow in `process_request`
@@ -109,4 +109,4 @@ If you encounter issues with Splunk AO:
 - Verify that your spans are correctly configured
 - Check the Splunk AO documentation for more information
 
-For more information, visit the [Splunk AO documentation](https://docs.galileo.ai/what-is-galileo).
+For more information, visit the [Splunk AO documentation](https://agent-observability-docs.splunk.com/what-is-galileo).
