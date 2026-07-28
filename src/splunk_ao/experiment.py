@@ -1138,10 +1138,6 @@ class Experiment(StateManagementMixin):
         ----------
         poll_interval_seconds : float, optional
             Seconds to wait between status polls. Defaults to 2.0.
-            Note: in a prior version, ``job_id`` was the first positional
-            parameter. That parameter has been removed; callers that passed a
-            job ID string positionally will now receive a ``TypeError`` from
-            ``sleep()``. Use ``job_id=`` as a keyword argument instead.
         timeout_seconds : float or None, optional
             Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
             (one hour). Pass None to wait indefinitely (not recommended).
