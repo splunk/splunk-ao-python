@@ -276,8 +276,9 @@ class SplunkAOLogger(TracesLogger):
             Local metrics
         mode: Optional[str]
             Logger mode: "batch" or "distributed". Defaults to SPLUNK_AO_MODE env var, or "batch" if not set.
-            - "batch": Batches traces and sends on flush() (default)
-            - "distributed": Enables distributed tracing with immediate updates to backend
+            Both modes enqueue completed spans for scheduled OTLP batch export, and
+            flush() only drains the export queue. "distributed" additionally enables
+            the legacy trace_id/span_id continuation parameters.
         ingestion_hook: Optional[Callable[[TracesIngestRequest], None]]
                 A callable that intercepts trace data before ingestion.
                 This hook is called when the logger is flushed and can be a
@@ -370,12 +371,6 @@ class SplunkAOLogger(TracesLogger):
 
         if local_metrics:
             self.local_metrics = local_metrics
-
-        if self.mode == "distributed":
-            self._max_retries = STREAMING_MAX_RETRIES
-            self._max_time = STREAMING_MAX_TIME_SECONDS
-            self._task_handler = ThreadPoolTaskHandler()
-            self._trace_completion_submitted = False
 
         if self._deployment == DeploymentMode.STANDALONE:
             if not self.project_id:
@@ -2363,22 +2358,7 @@ class SplunkAOLogger(TracesLogger):
                 self._update_trace_streaming(trace, is_complete=True)
 
     async def _flush_distributed(self) -> list[LoggedTrace]:
-        """Flush in distributed mode: conclude traces and wait for pending tasks.
-
-        In distributed mode, traces/spans are sent immediately via conclude(). This method:
-        1. Concludes any unconcluded traces
-        2. Waits for all pending async HTTP requests to complete
-
-        Note: When using the decorator, traces are already concluded in the finally block,
-        so step 1 is typically a no-op. It only matters for direct logger usage.
-
-        What we're waiting for:
-        - Background ThreadPoolExecutor tasks that send trace/span updates to the backend
-        - These were submitted during conclude() calls throughout execution
-        - We poll (with timeout) because ThreadPoolExecutor doesn't support async await
-
-        Returns empty list since traces were already sent.
-        """
+        """Legacy proprietary distributed flush path, unused by OTLP egress."""
         self._auto_conclude_trace()
 
         # Wait for all pending trace/span update requests to complete
@@ -2479,23 +2459,6 @@ class SplunkAOLogger(TracesLogger):
                 self.disable_agent_control()
             except Exception as exc:
                 self._logger.warning("SplunkAOLogger.terminate: agent control unregister failed: %s", exc)
-
-            # Always release the worker threads so the process can exit promptly,
-            # even if the wait above timed out or raised. Without this, the daemon
-            # EventLoopThreads keep running until interpreter teardown — and any
-            # blocked future inside `_wait_for_all_tasks_sync` would have already
-            # cost up to `terminate_timeout_seconds` of busy-polling.
-            #
-            # `_task_handler` is only set in distributed mode, so it may
-            # be absent for batch-mode loggers. Also use getattr to be safe
-            # against partial init failures (terminate may run via the
-            # atexit handler even if __init__ raised midway through).
-            task_handler = getattr(self, "_task_handler", None)
-            if task_handler is not None:
-                try:
-                    task_handler.terminate()
-                except Exception as exc:
-                    self._logger.warning("SplunkAOLogger.terminate: pool stop failed: %s", exc)
 
             # Surface slow shutdowns so we can spot busy-poll regressions in CI
             # logs. The fast path should complete in milliseconds; anything over

@@ -77,7 +77,7 @@ def test_distributed_mode_does_not_call_proprietary_telemetry_client(
     client.ingest_spans.assert_not_called()
     client.update_trace.assert_not_called()
     client.update_span.assert_not_called()
-    assert logger._task_handler._tasks == {}
+    assert not hasattr(logger, "_task_handler")
 
 
 def test_distributed_flush_only_drains_completed_spans(
