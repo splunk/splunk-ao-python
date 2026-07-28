@@ -448,7 +448,7 @@ def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     emitted = logger._sink.spans[0]
     assert emitted.parent == logger._otel_ids[workflow.id].span_context
     assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
-    assert logger._task_handler._tasks == {}
+    assert not hasattr(logger, "_task_handler")
     mock_traces_client_instance.ingest_spans.assert_not_called()
 
 
