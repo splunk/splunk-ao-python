@@ -19,7 +19,7 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
         setup_mock_logstreams_client(mock_logstreams_client)
-        return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+        return SplunkAOLogger(project="my_project", log_stream="my_log_stream", ingestion_hook=lambda _: None)
 
     @pytest.fixture
     def handler(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOAsyncBaseHandler, None, None]:

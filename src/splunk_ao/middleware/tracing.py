@@ -149,8 +149,8 @@ def get_request_logger() -> SplunkAOLogger:
     """
     Get a request-scoped SplunkAOLogger configured for distributed mode.
 
-    Note: Distributed mode enables distributed tracing across services by propagating
-    trace context and sending updates immediately to the backend.
+    Distributed mode enables the legacy trace_id/span_id continuation parameters.
+    Completed spans use the same scheduled OTLP batch export as batch mode.
 
     This function should be called within a request handler after the TracingMiddleware has
     been registered. It creates a new SplunkAOLogger instance per request that automatically

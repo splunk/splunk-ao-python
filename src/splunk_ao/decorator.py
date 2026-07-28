@@ -875,7 +875,6 @@ class SplunkAODecorator:
                             if status_code is not None:
                                 current_parent.status_code = status_code
 
-                            logger._update_trace_streaming(current_parent, is_complete=False)
             else:
                 # Non-concludable spans (llm, tool, retriever) are  added to the parent
                 span_methods = {"llm": "add_llm_span", "tool": "add_tool_span", "retriever": "add_retriever_span"}
@@ -988,7 +987,9 @@ class SplunkAODecorator:
     def get_logger_instance(
         self,
         project: str | None = None,
+        project_id: str | None = None,
         log_stream: str | None = None,
+        log_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         ingestion_hook: Callable | None = None,
@@ -1000,8 +1001,12 @@ class SplunkAODecorator:
         ----------
         project
             Optional project name to use
+        project_id
+            Optional project ID to use
         log_stream
             Optional log stream name to use
+        log_stream_id
+            Optional log stream ID to use
         experiment_id
             Optional experiment ID to use
         mode
@@ -1012,8 +1017,14 @@ class SplunkAODecorator:
         SplunkAOLogger instance configured with the specified project and log stream
         """
         kwargs = {
-            "project": project or _project_context.get(),
-            "log_stream": log_stream or _log_stream_context.get(),
+            "project": project if project is not None else (None if project_id is not None else _project_context.get()),
+            "project_id": project_id,
+            "log_stream": (
+                log_stream
+                if log_stream is not None
+                else (None if log_stream_id is not None else _log_stream_context.get())
+            ),
+            "log_stream_id": log_stream_id,
             "experiment_id": experiment_id or _experiment_id_context.get(),
             "mode": _get_mode_or_default(mode) if mode is not None else _mode_context.get(),
         }
