@@ -53,10 +53,10 @@ class TestSplunkAOSpanProcessor:
         """Test initialization with default BatchSpanProcessor."""
         mocks = mock_processor_setup
 
-        processor = SplunkAOSpanProcessor(project="test-project", logstream="test-logstream")
+        processor = SplunkAOSpanProcessor(project="test-project", agentstream="test-agentstream")
 
         # Verify exporter was created with correct parameters
-        # Note: exporter is now created without explicit project/logstream params (reads from context)
+        # Note: exporter is now created without explicit project/agentstream params (reads from context)
         mocks["mock_exporter_class"].assert_called_once()
 
         # Verify BatchSpanProcessor was created with the exporter
@@ -141,9 +141,9 @@ class TestSplunkAOSpanProcessor:
         """Test that all initialization parameters are passed to the exporter."""
         mocks = mock_processor_setup
 
-        SplunkAOSpanProcessor(project="test-project", logstream="test-logstream")
+        SplunkAOSpanProcessor(project="test-project", agentstream="test-agentstream")
 
-        # Note: exporter is now created without explicit project/logstream params (reads from context)
+        # Note: exporter is now created without explicit project/agentstream params (reads from context)
         mocks["mock_exporter_class"].assert_called_once()
 
 
@@ -166,7 +166,7 @@ class TestOTelIntegration:
                 patch("splunk_ao.otel.SplunkAOConfig.get", return_value=mock_config),
                 patch("splunk_ao.otel.StandaloneConfig.from_env", return_value=standalone),
             ):
-                processor = SplunkAOSpanProcessor(project="integration-test", logstream="integration-logstream")
+                processor = SplunkAOSpanProcessor(project="integration-test", agentstream="integration-agentstream")
         finally:
             _experiment_id_context.reset(experiment_token)
 
@@ -176,7 +176,7 @@ class TestOTelIntegration:
             headers={
                 "Splunk-AO-API-Key": "test-key",
                 "project": "integration-test",
-                "logstream": "integration-logstream",
+                "logstream": "integration-agentstream",
             },
         )
         mock_batch_processor.assert_called_once()
@@ -230,12 +230,12 @@ class TestOTelContextIntegration:
             # Exporter uses context values
             exporter = SplunkAOOTLPExporter()
             assert exporter.project == "context-project"
-            assert exporter.logstream == "context-logstream"
+            assert exporter.agentstream == "context-logstream"
 
             # Explicit params override context
-            exporter2 = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream")
+            exporter2 = SplunkAOOTLPExporter(project="param-project", agentstream="param-agentstream")
             assert exporter2.project == "param-project"
-            assert exporter2.logstream == "param-logstream"
+            assert exporter2.agentstream == "param-agentstream"
 
     def test_processor_captures_context_at_exporter_construction(self, mock_processor_deps, reset_decorator_context):
         """Test processor passes routing inputs to its immutable exporter."""

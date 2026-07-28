@@ -73,6 +73,14 @@ ROUTING_ATTRIBUTE_KEYS = frozenset(
     }
 )
 
+_LEGACY_ROUTING_OPTIONS = {"logstream": "agentstream", "log_stream_id": "agent_stream_id"}
+
+
+def _reject_legacy_routing_options(options: dict[str, Any]) -> None:
+    for legacy_name, replacement in _LEGACY_ROUTING_OPTIONS.items():
+        if legacy_name in options:
+            raise TypeError(f"{legacy_name} is not supported; use {replacement}")
+
 
 def _resolve_name_or_id(
     explicit_name: str | None,
@@ -100,8 +108,8 @@ def _resolve_routing(
     deployment: DeploymentMode,
     project: str | None,
     project_id: str | None,
-    logstream: str | None,
-    log_stream_id: str | None,
+    agentstream: str | None,
+    agent_stream_id: str | None,
     experiment_id: str | None,
 ) -> RoutingAttrs:
     """Capture routing once for one exporter without resolving names to IDs."""
@@ -115,8 +123,8 @@ def _resolve_routing(
         _get_project_or_default(None) if standalone else None,
     )
     log_stream_name, resolved_log_stream_id = _resolve_name_or_id(
-        logstream,
-        log_stream_id,
+        agentstream,
+        agent_stream_id,
         _log_stream_context.get(None),
         _get_log_stream_from_env(),
         _get_log_stream_id_from_env(),
@@ -172,8 +180,8 @@ class SplunkAOOTLPExporter(SpanExporter):
         self,
         project: str | None = None,
         project_id: str | None = None,
-        logstream: str | None = None,
-        log_stream_id: str | None = None,
+        agentstream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         *,
         _exporter_factory: Callable[..., SpanExporter] = OTLPSpanExporter,
@@ -186,10 +194,10 @@ class SplunkAOOTLPExporter(SpanExporter):
         ----------
         project, project_id : str, optional
             Target project name or ID.
-        logstream, log_stream_id : str, optional
-            Target log-stream name or ID.
+        agentstream, agent_stream_id : str, optional
+            Target agent-stream name or ID.
         experiment_id : str, optional
-            Target experiment ID. Takes precedence over log-stream routing.
+            Target experiment ID. Takes precedence over agent-stream routing.
         **kwargs
             Additional configuration options passed to the underlying OTLPSpanExporter.
 
@@ -198,9 +206,10 @@ class SplunkAOOTLPExporter(SpanExporter):
         ValueError
             When configuration is not properly initialized with required credentials.
         """
+        _reject_legacy_routing_options(kwargs)
         config = SplunkAOConfig.get()
         deployment = config.resolve_deployment()
-        self._routing = _resolve_routing(deployment, project, project_id, logstream, log_stream_id, experiment_id)
+        self._routing = _resolve_routing(deployment, project, project_id, agentstream, agent_stream_id, experiment_id)
         if deployment == DeploymentMode.O11Y:
             exporter_config = resolve_o11y_exporter_config(O11yConfig.from_env(), self._routing)
         else:
@@ -208,8 +217,8 @@ class SplunkAOOTLPExporter(SpanExporter):
 
         self.project = self._routing.project_name
         self.project_id = self._routing.project_id
-        self.logstream = self._routing.log_stream_name
-        self.log_stream_id = self._routing.log_stream_id
+        self.agentstream = self._routing.log_stream_name
+        self.agent_stream_id = self._routing.log_stream_id
         self.experiment_id = self._routing.experiment_id
         self._routing_resource = Resource(routing_resource_attributes(self._routing))
         self._delegate = _exporter_factory(endpoint=exporter_config.endpoint, headers=exporter_config.headers, **kwargs)
@@ -234,7 +243,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
     It handles the complete lifecycle of spans from creation to export to Galileo.
-    Project, log-stream, and experiment routing is fixed when the processor's exporter
+    Project, agent-stream, and experiment routing is fixed when the processor's exporter
     is constructed. Use separate processors and exporters for separate destinations.
 
     Examples
@@ -248,8 +257,8 @@ class SplunkAOSpanProcessor(SpanProcessor):
         self,
         project: str | None = None,
         project_id: str | None = None,
-        logstream: str | None = None,
-        log_stream_id: str | None = None,
+        agentstream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         SpanProcessor: type | None = None,
         *,
@@ -264,10 +273,10 @@ class SplunkAOSpanProcessor(SpanProcessor):
         ----------
         project, project_id : str, optional
             Target project name or ID.
-        logstream, log_stream_id : str, optional
-            Target log-stream name or ID.
+        agentstream, agent_stream_id : str, optional
+            Target agent-stream name or ID.
         experiment_id : str, optional
-            Target experiment ID. Takes precedence over log-stream routing.
+            Target experiment ID. Takes precedence over agent-stream routing.
         SpanProcessor : type, optional
             Custom span processor class. Defaults to BatchSpanProcessor for optimal performance.
 
@@ -276,8 +285,12 @@ class SplunkAOSpanProcessor(SpanProcessor):
         ValueError
             When a prebuilt exporter is combined with exporter configuration options.
         """
-        if _exporter is not None and kwargs:
-            raise ValueError("OTLP exporter options cannot be used with _exporter")
+        _reject_legacy_routing_options(kwargs)
+        routing_provided = any(
+            value is not None for value in (project, project_id, agentstream, agent_stream_id, experiment_id)
+        )
+        if _exporter is not None and (routing_provided or kwargs):
+            raise ValueError("Routing and OTLP exporter options cannot be used with _exporter")
 
         self._exporter = (
             _exporter
@@ -285,15 +298,15 @@ class SplunkAOSpanProcessor(SpanProcessor):
             else SplunkAOOTLPExporter(
                 project=project,
                 project_id=project_id,
-                logstream=logstream,
-                log_stream_id=log_stream_id,
+                agentstream=agentstream,
+                agent_stream_id=agent_stream_id,
                 experiment_id=experiment_id,
                 _exporter_factory=_exporter_factory,
                 **kwargs,
             )
         )
         self._project = getattr(self._exporter, "project", project)
-        self._logstream = getattr(self._exporter, "logstream", logstream)
+        self._agentstream = getattr(self._exporter, "agentstream", agentstream)
 
         if SpanProcessor is None:
             SpanProcessor = BatchSpanProcessor
@@ -324,7 +337,9 @@ class SplunkAOSpanProcessor(SpanProcessor):
     def shutdown(self) -> None:
         """Gracefully shutdown the processor and flush any remaining spans."""
         self._processor.shutdown()
-        logger.info("Splunk AO span processor shutdown for project %s and logstream %s", self._project, self._logstream)
+        logger.info(
+            "Splunk AO span processor shutdown for project %s and agentstream %s", self._project, self._agentstream
+        )
 
     def force_flush(self, timeout_millis: int = 40000) -> bool:
         """Force immediate export of all pending spans with specified timeout."""

@@ -173,7 +173,7 @@ def build_exporter(mode: DeploymentMode, factory: RecordingExporterFactory, **ro
 
 def test_standalone_exporter_uses_shared_config_and_name_routing() -> None:
     factory = RecordingExporterFactory()
-    exporter = build_exporter(DeploymentMode.STANDALONE, factory, project="payments", logstream="production")
+    exporter = build_exporter(DeploymentMode.STANDALONE, factory, project="payments", agentstream="production")
 
     assert factory.calls == [
         {
@@ -190,7 +190,7 @@ def test_o11y_exporter_supports_id_and_experiment_routing() -> None:
         DeploymentMode.O11Y,
         factory,
         project_id="project-id",
-        log_stream_id="ignored-log-stream-id",
+        agent_stream_id="ignored-agent-stream-id",
         experiment_id="experiment-id",
     )
 
@@ -237,13 +237,13 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
     factory = RecordingExporterFactory()
 
     exporter = build_exporter(
-        DeploymentMode.O11Y, factory, project_id="explicit-project-id", log_stream_id="explicit-log-stream-id"
+        DeploymentMode.O11Y, factory, project_id="explicit-project-id", agent_stream_id="explicit-agent-stream-id"
     )
 
     assert factory.calls[0]["headers"] == {
         "X-SF-Token": "o11y-token",
         "projectid": "explicit-project-id",
-        "logstreamid": "explicit-log-stream-id",
+        "logstreamid": "explicit-agent-stream-id",
     }
     exporter.shutdown()
 
@@ -251,7 +251,7 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
 def test_exporter_copies_span_without_mutating_source() -> None:
     factory = RecordingExporterFactory()
     exporter = build_exporter(
-        DeploymentMode.O11Y, factory, project="authoritative-project", logstream="authoritative-log-stream"
+        DeploymentMode.O11Y, factory, project="authoritative-project", agentstream="authoritative-agent-stream"
     )
     source = make_span()
     source_resource = source.resource
@@ -266,7 +266,7 @@ def test_exporter_copies_span_without_mutating_source() -> None:
     assert source.resource.attributes["splunk_ao.project.name"] == "stale-resource-project"
     assert source.attributes["splunk_ao.project.name"] == "stale-span-project"
     assert exported.resource.attributes["splunk_ao.project.name"] == "authoritative-project"
-    assert exported.resource.attributes["splunk_ao.logstream.name"] == "authoritative-log-stream"
+    assert exported.resource.attributes["splunk_ao.logstream.name"] == "authoritative-agent-stream"
     assert "splunk_ao.project.name" not in (exported.attributes or {})
     assert exported.resource.attributes["service.name"] == "checkout"
     exporter.shutdown()
@@ -326,9 +326,7 @@ def test_exporter_delegates_force_flush_and_shutdown() -> None:
 
 def test_processor_does_not_put_routing_on_span_attributes() -> None:
     exporter = RecordingExporter()
-    processor = SplunkAOSpanProcessor(
-        project="project", logstream="log-stream", SpanProcessor=RecordingSpanProcessor, _exporter=exporter
-    )
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
     _project_context.set("later-project")
     _log_stream_context.set("later-log-stream")
     _experiment_id_context.set("later-experiment")
@@ -351,7 +349,7 @@ def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
     with patch("splunk_ao.otel.SplunkAOOTLPExporter", return_value=exporter) as exporter_class:
         processor = SplunkAOSpanProcessor(
             project_id="project-id",
-            log_stream_id="log-stream-id",
+            agent_stream_id="agent-stream-id",
             experiment_id="experiment-id",
             SpanProcessor=RecordingSpanProcessor,
             _exporter_factory=exporter_factory,
@@ -360,8 +358,8 @@ def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
     exporter_class.assert_called_once_with(
         project=None,
         project_id="project-id",
-        logstream=None,
-        log_stream_id="log-stream-id",
+        agentstream=None,
+        agent_stream_id="agent-stream-id",
         experiment_id="experiment-id",
         _exporter_factory=exporter_factory,
     )
@@ -369,8 +367,35 @@ def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
 
 
 def test_processor_rejects_prebuilt_exporter_with_otlp_options() -> None:
-    with pytest.raises(ValueError, match="OTLP exporter options cannot be used with _exporter"):
+    with pytest.raises(ValueError, match="Routing and OTLP exporter options cannot be used with _exporter"):
         SplunkAOSpanProcessor(_exporter=RecordingExporter(), timeout=10)
+
+
+@pytest.mark.parametrize(
+    "routing",
+    [
+        {"project": "project"},
+        {"project_id": "project-id"},
+        {"agentstream": "agent-stream"},
+        {"agent_stream_id": "agent-stream-id"},
+        {"experiment_id": "experiment-id"},
+    ],
+)
+def test_processor_rejects_prebuilt_exporter_with_routing(routing: dict[str, str]) -> None:
+    with pytest.raises(ValueError, match="Routing and OTLP exporter options cannot be used with _exporter"):
+        SplunkAOSpanProcessor(_exporter=RecordingExporter(), **routing)
+
+
+@pytest.mark.parametrize(
+    ("legacy_name", "replacement"), [("logstream", "agentstream"), ("log_stream_id", "agent_stream_id")]
+)
+def test_exporter_rejects_legacy_routing_options(legacy_name: str, replacement: str) -> None:
+    factory = RecordingExporterFactory()
+
+    with pytest.raises(TypeError, match=rf"{legacy_name} is not supported; use {replacement}"):
+        build_exporter(DeploymentMode.O11Y, factory, **{legacy_name: "legacy-value"})
+
+    assert factory.calls == []
 
 
 def test_helper_constructs_registers_and_returns_processor() -> None:
