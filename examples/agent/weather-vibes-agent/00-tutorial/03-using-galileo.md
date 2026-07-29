@@ -109,4 +109,4 @@ If you encounter issues with Splunk AO:
 - Verify that your spans are correctly configured
 - Check the Splunk AO documentation for more information
 
-For more information, visit the [Splunk AO documentation](https://agent-observability-docs.splunk.com/what-is-galileo).
+For more information, visit the [Splunk AO documentation](https://agent-observability-docs.splunk.com/what-is-splunk-agent-observability).
