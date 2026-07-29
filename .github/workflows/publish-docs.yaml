@@ -50,7 +50,7 @@ jobs:
       - name: Create a branch
         working-directory: ./splunk-ao-docs
         run: |
-          git fetch origin feat/update-docs-${GITHUB_REF_NAME} 2>/dev/null && git checkout feat/update-docs-${GITHUB_REF_NAME} || git checkout -b feat/update-docs-${GITHUB_REF_NAME}
+          git fetch origin feat/update-docs-${GITHUB_REF_NAME} 2>/dev/null && git checkout -B feat/update-docs-${GITHUB_REF_NAME} FETCH_HEAD || git checkout -b feat/update-docs-${GITHUB_REF_NAME}
 
       - name: Update SDK docs
         run: |
@@ -59,6 +59,7 @@ jobs:
           cp -r ./splunk-ao-python/.generated_docs/reference ./splunk-ao-docs/sdk-api/python/
 
       - name: Commit changes
+        id: commit
         working-directory: ./splunk-ao-docs
         env:
           PAT: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
@@ -68,14 +69,15 @@ jobs:
           git remote set-url origin https://x-access-token:${PAT}@github.com/splunk/agent-observability-docs.git
           git add .
           if git diff --cached --quiet; then
-            COMMIT_MSG="No doc changes — run refresh from ${GITHUB_REF_NAME}"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            COMMIT_MSG="Updating docs from ${GITHUB_REF_NAME}"
+            git commit -m "Updating docs from ${GITHUB_REF_NAME}"
+            git push origin feat/update-docs-${GITHUB_REF_NAME} --force
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
-          git commit --allow-empty -m "$COMMIT_MSG"
-          git push origin feat/update-docs-${GITHUB_REF_NAME} --force
 
       - name: Create PR
+        if: steps.commit.outputs.has_changes == 'true'
         working-directory: ./splunk-ao-docs
         env:
           GH_TOKEN: ${{ secrets.PAT_AO_DOC_AUTOMATION }}
@@ -96,9 +98,9 @@ jobs:
             **DO NOT** approve this PR until you have completed these checks.
         run: |
           BRANCH_NAME=feat/update-docs-${GITHUB_REF_NAME}
-          EXISTING_PR=$(gh pr list --head $BRANCH_NAME --state open --json number --jq '.[0].number')
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --state open --json number --jq '.[0].number')
           if [ -n "$EXISTING_PR" ]; then
             echo "PR #$EXISTING_PR already open for branch $BRANCH_NAME — updated via force push"
           else
-            gh pr create -B main -H $BRANCH_NAME --title "Updated Python SDK docs" --body "$PR_BODY"
+            gh pr create -B main -H "$BRANCH_NAME" --title "Updated Python SDK docs" --body "$PR_BODY"
           fi
