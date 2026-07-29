@@ -8,10 +8,12 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.responses import ResponseCompletedEvent
 
 from galileo_core.schemas.logging.span import LlmSpan, WorkflowSpan
-from splunk_ao import Message, MessageRole, splunk_ao_context, log
+from splunk_ao import Message, MessageRole, log, splunk_ao_context
 from splunk_ao.openai import OpenAIGalileo, openai
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 from tests.testutils.streaming import EventStream, ResponsesEventStream
+
+pytestmark = pytest.mark.usefixtures("legacy_logger_capture")
 
 
 @pytest.fixture(autouse=True)

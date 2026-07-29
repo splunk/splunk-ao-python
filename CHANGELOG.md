@@ -3,6 +3,12 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- `SplunkAOLogger.flush()` and `async_flush()` now return `None` and only drain
+  completed spans already queued for OTLP export. They no longer conclude open
+  spans or return uploaded proprietary trace objects.
+
 ### Security
 
 - **deps (VULN-88813)**: Raise the optional `starlette` floor to `>=1.3.1` (from `>=0.27.0`) to remediate urlencoded form limit bypass in `request.form()`. Starlette 1.x removes APIs deprecated since 0.x; consumers of the `middleware`, `openai`, or `crewai` extras who rely on removed Starlette 0.x APIs may need to update custom middleware.

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 import dataclasses
 import datetime
+import json
 import sys
 import types
 import uuid
@@ -14,13 +14,7 @@ import pytest
 from splunk_ao.handlers.agent_control import setup_agent_control_bridge
 from splunk_ao.logger.control import ControlResult, ControlSpan
 from splunk_ao.logger.logger import SplunkAOLogger
-from splunk_ao.schema.trace import SpansIngestRequest, TracesIngestRequest
-from tests.testutils.setup import (
-    setup_mock_logstreams_client,
-    setup_mock_projects_client,
-    setup_mock_traces_client,
-    setup_thread_pool_request_capture,
-)
+from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 @dataclass
@@ -124,7 +118,7 @@ def _make_event(logger: SplunkAOLogger, **overrides: object) -> FakeControlExecu
         "action": "observe",
         "matched": True,
         "confidence": 0.91,
-        "timestamp": datetime.datetime.now(tz=datetime.timezone.utc),
+        "timestamp": datetime.datetime.now(tz=datetime.UTC),
         "execution_duration_ms": 12.5,
         "evaluator_name": "regex",
         "selector_path": "input",
@@ -359,16 +353,21 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     assert control_span.user_metadata["primary_selector_path"] == "input"
     assert control_span.user_metadata["all_selector_paths"] == '["input", "output"]'
 
-    # When: the logger flushes in batch mode
+    # Then: the completed control span is immediately enqueued through OTLP
+    assert len(logger._sink.spans) == 1
+    emitted = logger._sink.spans[0]
+    assert emitted.parent == logger._otel_ids[workflow.id].span_context
+    assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
+    assert json.loads((emitted.attributes or {})["gen_ai.input.messages"]) == [
+        {"parts": [{"content": "selected text", "type": "text"}], "role": "user"}
+    ]
+
+    # When: the logger drains in batch mode
     logger.flush()
 
-    # Then: the control span is buffered normally and sent with the trace payload
-    payload = mock_traces_client_instance.ingest_traces.call_args.args[0]
-    assert isinstance(payload, TracesIngestRequest)
-    flushed_control_span = payload.traces[0].spans[0].spans[0]
-    assert isinstance(flushed_control_span, ControlSpan)
-    assert flushed_control_span.id == uuid.UUID(event.control_execution_id)
-    assert flushed_control_span.control_id == 7
+    # Then: draining does not duplicate it or use the proprietary client
+    assert logger._sink.spans == [emitted]
+    mock_traces_client_instance.ingest_traces.assert_not_called()
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -424,15 +423,14 @@ def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_agent_control_event_streams_immediately_in_distributed_mode(
+def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
 ) -> None:
-    # Given: a distributed logger with request capture enabled
+    # Given: a distributed logger with an active workflow
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
     logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
-    capture = setup_thread_pool_request_capture(logger)
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)
@@ -441,31 +439,17 @@ def test_agent_control_event_streams_immediately_in_distributed_mode(
     # When: the bridge receives the event
     result = bridge.write_events([event])
 
-    # Then: the control span is attached locally and streamed immediately
+    # Then: the control span is attached locally and enqueued through OTLP
     assert result.accepted == 1
     assert result.dropped == 0
     assert logger.current_parent() == workflow
 
-    control_requests = [
-        task.request
-        for task in capture.get_all_tasks()
-        if isinstance(task.request, SpansIngestRequest) and task.request.spans[0].type == "control"
-    ]
-    assert len(control_requests) == 1
-    request = control_requests[0]
-    assert isinstance(request.spans[0], ControlSpan)
-    assert request.spans[0].id == uuid.UUID(event.control_execution_id)
-    assert request.spans[0].trace_id == logger.traces[0].id
-    assert request.spans[0].parent_id == workflow.id
-    assert request.parent_id == workflow.id
-
-    latest_control_task = next(
-        task
-        for task in capture.get_all_tasks()
-        if isinstance(task.request, SpansIngestRequest) and task.request.spans[0].type == "control"
-    )
-    asyncio.run(latest_control_task.task_func())
-    mock_traces_client_instance.ingest_spans.assert_called_with(request)
+    assert len(logger._sink.spans) == 1
+    emitted = logger._sink.spans[0]
+    assert emitted.parent == logger._otel_ids[workflow.id].span_context
+    assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
+    assert not hasattr(logger, "_task_handler")
+    mock_traces_client_instance.ingest_spans.assert_not_called()
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")

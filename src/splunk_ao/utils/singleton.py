@@ -3,9 +3,11 @@ import threading
 from collections.abc import Callable
 from typing import ClassVar
 
+from splunk_ao.deployment import resolve_deployment
+from splunk_ao.exporter import resolve_routing
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.metrics import LocalMetricConfig
-from splunk_ao.utils.env_helpers import _get_log_stream_or_default, _get_mode_or_default, _get_project_or_default
+from splunk_ao.utils.env_helpers import _get_mode_or_default
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +48,9 @@ class SplunkAOLoggerSingleton:
     @staticmethod
     def _get_key(
         project: str | None,
+        project_id: str | None,
         log_stream: str | None,
+        log_stream_id: str | None,
         mode: str,
         experiment_id: str | None = None,
         trace_id: str | None = None,
@@ -54,18 +58,18 @@ class SplunkAOLoggerSingleton:
         ingestion_hook_id: int | None = None,
     ) -> tuple[str, ...]:
         """
-        Generate a key tuple based on project, log_stream, and tracing parameters.
-
-        If project or log_stream are None, the method attempts to retrieve them
-        from environment variables (SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM). If still
-        None, defaults to "default".
+        Generate a deployment-aware key from routing and tracing parameters.
 
         Parameters
         ----------
         project: (Optional[str])
             The project name.
+        project_id: (Optional[str])
+            The project ID.
         log_stream: (Optional[str])
             The log stream name.
+        log_stream_id: (Optional[str])
+            The log stream ID.
         experiment_id: (Optional[str])
             The experiment ID.
         mode:
@@ -74,6 +78,8 @@ class SplunkAOLoggerSingleton:
             The distributed trace ID.
         span_id: (Optional[str])
             The distributed parent span ID.
+        ingestion_hook_id: (Optional[int])
+            Identity of the temporary ingestion hook compatibility path.
 
         Returns
         -------
@@ -87,14 +93,33 @@ class SplunkAOLoggerSingleton:
         current_thread_name = threading.current_thread().name
         key = (current_thread_name, mode)
 
-        # Get project and log_stream with environment variable fallbacks
-        project = _get_project_or_default(project)
-        log_stream = _get_log_stream_or_default(log_stream)
-
-        # Include trace_id and span_id in key for async web server isolation
-        # This ensures different concurrent requests on the same thread get separate loggers
-        base_key: tuple[str, ...] = (*key, project)
-        base_key = (*base_key, experiment_id) if experiment_id is not None else (*base_key, log_stream)
+        if ingestion_hook_id is not None:
+            base_key: tuple[str, ...] = (
+                *key,
+                "hook",
+                project or project_id or "",
+                experiment_id or log_stream or log_stream_id or "",
+            )
+        else:
+            deployment = resolve_deployment()
+            routing = resolve_routing(
+                deployment,
+                project=project,
+                project_id=project_id,
+                log_stream=log_stream,
+                log_stream_id=log_stream_id,
+                experiment_id=experiment_id,
+            )
+            project_key = (
+                f"name:{routing.project_name}" if routing.project_name is not None else f"id:{routing.project_id or ''}"
+            )
+            if routing.experiment_id is not None:
+                destination_key = f"experiment:{routing.experiment_id}"
+            elif routing.log_stream_name is not None:
+                destination_key = f"name:{routing.log_stream_name}"
+            else:
+                destination_key = f"id:{routing.log_stream_id or ''}"
+            base_key = (*key, deployment.value, project_key, destination_key)
 
         # Add trace_id and span_id to key if present (for distributed tracing)
         if trace_id is not None:
@@ -106,11 +131,30 @@ class SplunkAOLoggerSingleton:
 
         return base_key
 
+    @staticmethod
+    def _get_base_keys(
+        project: str | None,
+        project_id: str | None,
+        log_stream: str | None,
+        log_stream_id: str | None,
+        mode: str,
+        experiment_id: str | None,
+    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        standard_key = SplunkAOLoggerSingleton._get_key(
+            project, project_id, log_stream, log_stream_id, mode, experiment_id
+        )
+        hook_key = SplunkAOLoggerSingleton._get_key(
+            project, project_id, log_stream, log_stream_id, mode, experiment_id, ingestion_hook_id=0
+        )[:-1]
+        return standard_key, hook_key
+
     def get(
         self,
         *,
         project: str | None = None,
+        project_id: str | None = None,
         log_stream: str | None = None,
+        log_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
@@ -148,7 +192,9 @@ class SplunkAOLoggerSingleton:
         # Compute the key based on provided parameters or environment variables.
         key = SplunkAOLoggerSingleton._get_key(
             project,
+            project_id,
             log_stream,
+            log_stream_id,
             mode,
             experiment_id,
             trace_id,
@@ -169,7 +215,9 @@ class SplunkAOLoggerSingleton:
             # Prepare initialization arguments, only including non-None values.
             galileo_client_init_args = {
                 "project": project,
+                "project_id": project_id,
                 "log_stream": log_stream,
+                "log_stream_id": log_stream_id,
                 "experiment_id": experiment_id,
                 "local_metrics": local_metrics,
                 "mode": mode,
@@ -191,6 +239,9 @@ class SplunkAOLoggerSingleton:
         log_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
+        *,
+        project_id: str | None = None,
+        log_stream_id: str | None = None,
     ) -> None:
         """
         Reset (terminate and remove) one or all SplunkAOLogger instances.
@@ -199,8 +250,12 @@ class SplunkAOLoggerSingleton:
         ----------
         project (Optional[str], optional)
             The project name. Defaults to None.
+        project_id (Optional[str], optional)
+            The project ID. Defaults to None.
         log_stream (Optional[str], optional)
             The log stream name. Defaults to None.
+        log_stream_id (Optional[str], optional)
+            The log stream ID. Defaults to None.
         experiment_id (Optional[str], optional)
             The experiment ID. Defaults to None.
         mode (Optional[str], optional)
@@ -209,10 +264,14 @@ class SplunkAOLoggerSingleton:
         mode = _get_mode_or_default(mode)
 
         with self._lock:
-            # Terminate and remove loggers matching the base key (project, log_stream, mode, experiment_id)
-            # This will clean up all loggers including those with trace_id/span_id
-            base_key = SplunkAOLoggerSingleton._get_key(project, log_stream, mode, experiment_id)
-            keys_to_remove = [k for k in self._splunk_ao_loggers if k[: len(base_key)] == base_key]
+            base_keys = SplunkAOLoggerSingleton._get_base_keys(
+                project, project_id, log_stream, log_stream_id, mode, experiment_id
+            )
+            keys_to_remove = [
+                key
+                for key in self._splunk_ao_loggers
+                if any(key[: len(base_key)] == base_key for base_key in base_keys)
+            ]
             for key in keys_to_remove:
                 self._splunk_ao_loggers[key].terminate()
                 del self._splunk_ao_loggers[key]
@@ -231,6 +290,9 @@ class SplunkAOLoggerSingleton:
         log_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
+        *,
+        project_id: str | None = None,
+        log_stream_id: str | None = None,
     ) -> None:
         """
         Flush (upload and clear) a SplunkAOLogger instance.
@@ -243,8 +305,12 @@ class SplunkAOLoggerSingleton:
         ----------
         project (Optional[str], optional)
             The project name. Defaults to None.
+        project_id (Optional[str], optional)
+            The project ID. Defaults to None.
         log_stream (Optional[str], optional)
             The log stream name. Defaults to None.
+        log_stream_id (Optional[str], optional)
+            The log stream ID. Defaults to None.
         experiment_id (Optional[str], optional)
             The experiment ID. Defaults to None.
         mode (Optional[str], optional)
@@ -253,10 +319,14 @@ class SplunkAOLoggerSingleton:
         mode = _get_mode_or_default(mode)
 
         with self._lock:
-            # Flush loggers matching the base key (project, log_stream, mode, experiment_id)
-            # This will flush all loggers including those with trace_id/span_id
-            base_key = SplunkAOLoggerSingleton._get_key(project, log_stream, mode, experiment_id)
-            keys_to_flush = [k for k in self._splunk_ao_loggers if k[: len(base_key)] == base_key]
+            base_keys = SplunkAOLoggerSingleton._get_base_keys(
+                project, project_id, log_stream, log_stream_id, mode, experiment_id
+            )
+            keys_to_flush = [
+                key
+                for key in self._splunk_ao_loggers
+                if any(key[: len(base_key)] == base_key for base_key in base_keys)
+            ]
             for key in keys_to_flush:
                 self._splunk_ao_loggers[key].flush()
 

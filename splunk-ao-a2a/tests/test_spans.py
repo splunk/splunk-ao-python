@@ -14,13 +14,12 @@ from splunk_ao_a2a._constants import (
     A2A_TASK_ID,
     A2A_TASK_STATE,
     GENAI_AGENT_NAME,
+    GENAI_CONVERSATION_ID,
     GENAI_INPUT_MESSAGES,
     GENAI_OPERATION_NAME,
     GENAI_OUTPUT_MESSAGES,
     GENAI_RESPONSE_FINISH_REASONS,
-    GENAI_SYSTEM,
     GENAI_TOOL_NAME,
-    SESSION_ID,
 )
 
 
@@ -55,12 +54,12 @@ class TestSetClientAttributes:
 
         # Then: all expected attributes are set
         span.set_attribute.assert_any_call(GENAI_OPERATION_NAME, "invoke_agent")
-        span.set_attribute.assert_any_call(GENAI_SYSTEM, "a2a")
         span.set_attribute.assert_any_call(A2A_RPC_METHOD, "SendMessage")
         span.set_attribute.assert_any_call(GENAI_AGENT_NAME, "my-agent")
         span.set_attribute.assert_any_call(A2A_CONTEXT_ID, "ctx-1")
-        span.set_attribute.assert_any_call(SESSION_ID, "ctx-1")
+        span.set_attribute.assert_any_call(GENAI_CONVERSATION_ID, "ctx-1")
         span.set_attribute.assert_any_call(A2A_TASK_ID, "task-1")
+        assert "gen_ai.system" not in [call.args[0] for call in span.set_attribute.call_args_list]
 
     def test_skips_agent_name_when_none(self, span):
         # Given: no agent name
@@ -84,7 +83,7 @@ class TestSetServerAttributes:
 
         # Then: attributes extracted from message
         span.set_attribute.assert_any_call(A2A_CONTEXT_ID, "ctx-2")
-        span.set_attribute.assert_any_call(SESSION_ID, "ctx-2")
+        span.set_attribute.assert_any_call(GENAI_CONVERSATION_ID, "ctx-2")
         span.set_attribute.assert_any_call(A2A_TASK_ID, "task-2")
 
 
@@ -183,7 +182,7 @@ class TestTrackTaskState:
 
         # Then: state and finish reason set
         span.set_attribute.assert_any_call(A2A_TASK_STATE, "completed")
-        span.set_attribute.assert_any_call(GENAI_RESPONSE_FINISH_REASONS, json.dumps(["stop"]))
+        span.set_attribute.assert_any_call(GENAI_RESPONSE_FINISH_REASONS, ("stop",))
         span.set_attribute.assert_any_call(A2A_TASK_ID, "t-1")
 
     @pytest.mark.parametrize("state", ["failed", "rejected", "canceled"])

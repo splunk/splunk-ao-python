@@ -14,7 +14,6 @@ from splunk_ao import splunk_ao_context
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.serialization import serialize_to_str
-
 from splunk_ao_adk.data_converters import (
     convert_adk_content_to_splunk_ao_messages,
     convert_adk_tools_to_splunk_ao_format,
@@ -142,6 +141,9 @@ class SplunkAOObserver:
         project: str | None = None,
         log_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
+        *,
+        project_id: str | None = None,
+        log_stream_id: str | None = None,
     ) -> None:
         self._current_adk_session: str | None = None
 
@@ -156,7 +158,12 @@ class SplunkAOObserver:
             )
         else:
             self._trace_builder = None
-            splunk_ao_logger = splunk_ao_context.get_logger_instance(project=project, log_stream=log_stream)
+            splunk_ao_logger = splunk_ao_context.get_logger_instance(
+                project=project,
+                project_id=project_id,
+                log_stream=log_stream,
+                log_stream_id=log_stream_id,
+            )
             self._handler = SplunkAOBaseHandler(
                 splunk_ao_logger=splunk_ao_logger,
                 start_new_trace=True,
@@ -292,6 +299,8 @@ class SplunkAOObserver:
 
         # Normal mode: create/find session on backend
         logger = self._handler._splunk_ao_logger
+        if not logger._has_session_routing():
+            return
         previous_session_id = logger.session_id
         logger.start_session(
             name=adk_session_id,

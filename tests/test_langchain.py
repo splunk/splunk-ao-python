@@ -32,7 +32,7 @@ class TestSplunkAOCallback:
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
         setup_mock_logstreams_client(mock_logstreams_client)
-        return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+        return SplunkAOLogger(project="my_project", log_stream="my_log_stream", ingestion_hook=lambda _: None)
 
     @pytest.fixture
     def callback(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOCallback, None, None]:
@@ -996,7 +996,7 @@ class TestSplunkAOCallback:
             )
 
             mock_start_node.assert_called_once()
-            args, kwargs = mock_start_node.call_args
+            args, _kwargs = mock_start_node.call_args
 
             # Verify UUIDs were converted to UUID4
             converted_parent_id = args[1]  # parent_run_id
@@ -1015,7 +1015,7 @@ class TestSplunkAOCallback:
             callback.on_llm_new_token(token="test", run_id=uuid7_run_id)
 
             mock_get_node.assert_called_once()
-            args, kwargs = mock_get_node.call_args
+            args, _kwargs = mock_get_node.call_args
 
             converted_run_id = args[0]  # run_id
             assert converted_run_id.version == 4
@@ -1040,7 +1040,9 @@ class TestSplunkAOCallbackWithIngestionHook:
         [
             lambda hook: SplunkAOCallback(ingestion_hook=hook),
             lambda hook: SplunkAOCallback(splunk_ao_logger=SplunkAOLogger(), ingestion_hook=hook),
-            lambda hook: SplunkAOCallback(splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook),
+            lambda hook: SplunkAOCallback(
+                splunk_ao_logger=splunk_ao_context.get_logger_instance(), ingestion_hook=hook
+            ),
         ],
     )
     def test_on_chain_end_with_ingestion_hook(self, callback_builder):

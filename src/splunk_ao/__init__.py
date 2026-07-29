@@ -44,13 +44,7 @@ from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.decorator import SplunkAODecorator, log, splunk_ao_context, start_session
-from splunk_ao.evaluator import (
-    CodeEvaluator,
-    Evaluator,
-    LlmEvaluator,
-    LocalEvaluator,
-    SplunkAOEvaluator,
-)
+from splunk_ao.evaluator import CodeEvaluator, Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -93,18 +87,13 @@ from splunk_ao.utils.log_config import enable_console_logging
 __version__ = "0.1.0"
 
 __all__ = [
-    # New canonical names (HYBIM-730)
-    "AgentStream",
-    "CodeEvaluator",
-    "Evaluator",
-    "LlmEvaluator",
-    "LocalEvaluator",
-    "SplunkAOEvaluator",
     # Stable / unchanged
     "APIError",
     "AgentControlTarget",
     "AgentControlTargetUnresolvedError",
     "AgentSpan",
+    # New canonical names (HYBIM-730)
+    "AgentStream",
     "AmbiguousConfigurationError",
     "AnnotationField",
     "AnnotationQueue",
@@ -116,6 +105,7 @@ __all__ = [
     "AzureProvider",
     "BadRequestError",
     "BedrockProvider",
+    "CodeEvaluator",
     "Collaborator",
     "CollaboratorRole",
     "Configuration",
@@ -127,10 +117,13 @@ __all__ = [
     "ControlSpan",
     "Dataset",
     "Document",
+    "Evaluator",
     "Experiment",
     "ForbiddenError",
     "Integration",
+    "LlmEvaluator",
     "LlmSpan",
+    "LocalEvaluator",
     "Message",
     "MessageRole",
     "MetricSpec",
@@ -152,6 +145,7 @@ __all__ = [
     "SplunkAOAgentControlBridge",
     "SplunkAOConfigError",
     "SplunkAODecorator",
+    "SplunkAOEvaluator",
     "SplunkAOFutureError",
     "SplunkAOLogger",
     "SplunkAOLoggerException",
@@ -193,4 +187,3 @@ __all__ = [
     "update_annotation_queue_field",
     "update_annotation_queue_user",
 ]
-

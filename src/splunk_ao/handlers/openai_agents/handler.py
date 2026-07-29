@@ -180,7 +180,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 status_code=node.span_params.get("status_code", 200),
                 id=uuid.uuid4(),
             )
-            self._splunk_ao_logger.add_child_span_to_parent(span)
+            self._splunk_ao_logger._add_completed_leaf(span)
         elif node.node_type == "retriever":
             self._splunk_ao_logger.add_retriever_span(
                 input=input,

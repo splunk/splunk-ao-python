@@ -1,12 +1,13 @@
 """Unit tests for SplunkAOObserver extraction methods."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao_adk.observer import SplunkAOObserver
 
-from .mocks import MockContent, MockEvent, MockPart
+from .mocks import MockContent, MockEvent, MockInvocationContext, MockPart
 
 
 @pytest.fixture
@@ -275,3 +276,39 @@ class TestUpdateSessionIfChanged:
         # Then: the parent session is preserved
         assert logger._session_external_id == "parent-session"
         assert observer._current_adk_session == "parent-session"
+
+    def test_o11y_without_routing_skips_session_crud_and_exports_telemetry(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        for name in (
+            "SPLUNK_AO_API_KEY",
+            "SPLUNK_AO_CONSOLE_URL",
+            "SPLUNK_AO_API_URL",
+            "SPLUNK_AO_PROJECT",
+            "SPLUNK_AO_PROJECT_ID",
+            "SPLUNK_AO_LOG_STREAM",
+            "SPLUNK_AO_LOG_STREAM_ID",
+        ):
+            monkeypatch.delenv(name, raising=False)
+        monkeypatch.setenv("SPLUNK_AO_REALM", "us1")
+        monkeypatch.setenv("SPLUNK_AO_SF_TOKEN", "ingest-token")
+
+        sink = MagicMock()
+        sink.force_flush.return_value = True
+        logger = SplunkAOLogger(_sink=sink)
+        try:
+            with patch("splunk_ao_adk.observer.splunk_ao_context.get_logger_instance", return_value=logger):
+                observer = SplunkAOObserver()
+
+            observer.update_session_if_changed("adk-session")
+            run_id = observer.on_run_start(MockInvocationContext(), MockContent(text="hello"))
+            observer.on_run_end(run_id, "done")
+
+            assert observer.current_adk_session == "adk-session"
+            assert logger._traces_client is None
+            sink.emit.assert_called_once()
+            emitted = sink.emit.call_args.args[0]
+            assert (emitted.attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
+            assert emitted.parent is None
+        finally:
+            logger.terminate()

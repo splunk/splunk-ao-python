@@ -1,13 +1,12 @@
 import json
-import os
 from unittest.mock import Mock, patch
 
 import pytest
-from pydantic import SecretStr
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.shared.document import Document
+from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
     _dataset_input_context,
     _dataset_metadata_context,
@@ -18,101 +17,13 @@ from splunk_ao.decorator import (
     _session_id_context,
     splunk_ao_dataset_context,
 )
+from splunk_ao.deployment import DeploymentMode, StandaloneConfig
 from splunk_ao.otel import (
     _TRACE_PROVIDER_CONTEXT_VAR,
     SplunkAOOTLPExporter,
     SplunkAOSpanProcessor,
-    _set_tool_span_attributes,
-    _set_workflow_span_attributes,
     start_splunk_ao_span,
 )
-
-
-class TestSplunkAOOTLPExporter:
-    """Test suite for SplunkAOOTLPExporter class."""
-
-    @pytest.fixture
-    def clear_env_vars(self):
-        """Clear relevant environment variables and context vars for clean test state."""
-        env_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT", "SPLUNK_AO_AGENT_STREAM", "SPLUNK_AO_LOG_STREAM"]
-        original_values = {var: os.environ.pop(var, None) for var in env_vars}
-        _project_context.set(None)
-        _log_stream_context.set(None)
-
-        yield
-
-        for var, value in original_values.items():
-            if value is not None:
-                os.environ[var] = value
-        _project_context.set(None)
-        _log_stream_context.set(None)
-
-    @pytest.fixture
-    def mock_config(self):
-        """Create a mock config with default values."""
-        with patch("splunk_ao.otel.SplunkAOConfig.get") as mock_config_get:
-            config = Mock()
-            config.api_url = "https://api.galileo.ai"
-            config.api_key = SecretStr("test-key")
-            mock_config_get.return_value = config
-            yield config
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    def test_init_and_parameter_priority(self, mock_otlp_init, mock_config, clear_env_vars):
-        """Test initialization with params, env vars, and their priority."""
-        # Test with explicit params
-        exporter = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream", timeout=30)
-        assert exporter.project == "param-project"
-        assert exporter.logstream == "param-logstream"
-
-        call_kwargs = mock_otlp_init.call_args[1]
-        assert call_kwargs["headers"]["project"] == "param-project"
-        assert call_kwargs["headers"]["logstream"] == "param-logstream"
-        assert call_kwargs["timeout"] == 30
-
-        # Test that params override env vars
-        mock_otlp_init.reset_mock()
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
-            exporter = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream")
-            assert exporter.project == "param-project"  # Param wins over env
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    def test_init_with_env_variables(self, mock_otlp_init, mock_config, clear_env_vars):
-        """Test initialization using environment variables."""
-        with patch.dict(os.environ, {"SPLUNK_AO_PROJECT": "env-project", "SPLUNK_AO_AGENT_STREAM": "env-logstream"}):
-            exporter = SplunkAOOTLPExporter()
-            assert exporter.project == "env-project"
-            assert exporter.logstream == "env-logstream"
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    def test_init_uses_default_project(self, mock_otlp_init, mock_config, clear_env_vars):
-        """Test default project name is used when no project is provided."""
-        SplunkAOOTLPExporter()
-
-        call_kwargs = mock_otlp_init.call_args[1]
-        assert call_kwargs["headers"]["project"] == "default"
-        assert call_kwargs["headers"]["logstream"] == "default"
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    @pytest.mark.parametrize(
-        "api_url,expected_endpoint",
-        [
-            ("https://api.galileo.ai", "https://api.galileo.ai/otel/v1/traces"),
-            ("https://api.galileo.ai/", "https://api.galileo.ai/otel/v1/traces"),
-            ("http://localhost:8080", "http://localhost:8080/otel/v1/traces"),
-        ],
-    )
-    def test_url_construction(self, mock_otlp_init, api_url, expected_endpoint, mock_config, clear_env_vars):
-        """Test URL construction with various formats."""
-        mock_config.api_url = api_url
-        SplunkAOOTLPExporter()
-        assert mock_otlp_init.call_args[1]["endpoint"] == expected_endpoint
-
-    def test_init_missing_api_key_raises_error(self, mock_config, clear_env_vars):
-        """Test that missing API key raises ValueError."""
-        mock_config.api_key = None
-        with pytest.raises(ValueError, match="API key is required"):
-            SplunkAOOTLPExporter()
 
 
 class TestSplunkAOSpanProcessor:
@@ -141,10 +52,10 @@ class TestSplunkAOSpanProcessor:
         """Test initialization with default BatchSpanProcessor."""
         mocks = mock_processor_setup
 
-        processor = SplunkAOSpanProcessor(project="test-project", logstream="test-logstream")
+        processor = SplunkAOSpanProcessor(project="test-project", agentstream="test-agentstream")
 
         # Verify exporter was created with correct parameters
-        # Note: exporter is now created without explicit project/logstream params (reads from context)
+        # Note: exporter is now created without explicit project/agentstream params (reads from context)
         mocks["mock_exporter_class"].assert_called_once()
 
         # Verify BatchSpanProcessor was created with the exporter
@@ -229,33 +140,44 @@ class TestSplunkAOSpanProcessor:
         """Test that all initialization parameters are passed to the exporter."""
         mocks = mock_processor_setup
 
-        SplunkAOSpanProcessor(project="test-project", logstream="test-logstream")
+        SplunkAOSpanProcessor(project="test-project", agentstream="test-agentstream")
 
-        # Note: exporter is now created without explicit project/logstream params (reads from context)
+        # Note: exporter is now created without explicit project/agentstream params (reads from context)
         mocks["mock_exporter_class"].assert_called_once()
 
 
 class TestOTelIntegration:
     """Integration tests for OpenTelemetry functionality."""
 
-    @patch("splunk_ao.otel.BatchSpanProcessor")
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    @patch("splunk_ao.otel.SplunkAOConfig.get")
-    def test_exporter_and_processor_integration(self, mock_config_get, mock_otlp_init, mock_batch_processor):
+    def test_exporter_and_processor_integration(self):
         """Test that SplunkAOSpanProcessor correctly integrates with SplunkAOOTLPExporter."""
         mock_batch_instance = Mock()
-        mock_batch_processor.return_value = mock_batch_instance
-
-        # Mock the config
         mock_config = Mock()
-        mock_config.api_url = "https://api.galileo.ai"
-        mock_config.api_key = SecretStr("test-key")
-        mock_config_get.return_value = mock_config
-
-        processor = SplunkAOSpanProcessor(project="integration-test", logstream="integration-logstream")
+        mock_config.resolve_deployment.return_value = DeploymentMode.STANDALONE
+        standalone = StandaloneConfig(
+            api_key="test-key", console_url="https://console.example.com", api_url="https://api.example.com"
+        )
+        experiment_token = _experiment_id_context.set(None)
+        try:
+            with (
+                patch("splunk_ao.otel.BatchSpanProcessor", return_value=mock_batch_instance) as mock_batch_processor,
+                patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None) as mock_otlp_init,
+                patch("splunk_ao.otel.SplunkAOConfig.get", return_value=mock_config),
+                patch("splunk_ao.otel.StandaloneConfig.from_env", return_value=standalone),
+            ):
+                processor = SplunkAOSpanProcessor(project="integration-test", agentstream="integration-agentstream")
+        finally:
+            _experiment_id_context.reset(experiment_token)
 
         # Verify the exporter was created and passed to the processor
-        assert mock_otlp_init.called
+        mock_otlp_init.assert_called_once_with(
+            endpoint="https://api.example.com/otel/v1/traces",
+            headers={
+                "Splunk-AO-API-Key": "test-key",
+                "project": "integration-test",
+                "logstream": "integration-agentstream",
+            },
+        )
         mock_batch_processor.assert_called_once()
 
         # Verify the processor has access to both components
@@ -287,68 +209,43 @@ class TestOTelContextIntegration:
             mock_batch.return_value = Mock()
             yield {"exporter": mock_exp, "batch": mock_batch}
 
-    @pytest.fixture
-    def mock_exporter(self):
-        """Create a mock exporter for export tests."""
-        with (
-            patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
-            patch("splunk_ao.otel.SplunkAOConfig.get") as mock_config_get,
-        ):
-            config = Mock()
-            config.api_url = "https://api.galileo.ai"
-            config.api_key = SecretStr("test-key")
-            mock_config_get.return_value = config
-            yield SplunkAOOTLPExporter(project="test-project", logstream="test-logstream")
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None)
-    @patch("splunk_ao.otel.SplunkAOConfig.get")
-    def test_exporter_context_vars_and_override(self, mock_config_get, mock_otlp_init, reset_decorator_context):
+    def test_exporter_context_vars_and_override(self, reset_decorator_context):
         """Test exporter reads from context vars and params override them."""
         mock_config = Mock()
-        mock_config.api_url = "https://api.galileo.ai"
-        mock_config.api_key = SecretStr("test-key")
-        mock_config_get.return_value = mock_config
+        mock_config.resolve_deployment.return_value = DeploymentMode.STANDALONE
+        standalone = StandaloneConfig(
+            api_key="test-key", console_url="https://console.example.com", api_url="https://api.example.com"
+        )
 
         # Set context variables
         _project_context.set("context-project")
         _log_stream_context.set("context-logstream")
 
-        # Exporter uses context values
-        exporter = SplunkAOOTLPExporter()
-        assert exporter.project == "context-project"
-        assert exporter.logstream == "context-logstream"
+        with (
+            patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
+            patch("splunk_ao.otel.SplunkAOConfig.get", return_value=mock_config),
+            patch("splunk_ao.otel.StandaloneConfig.from_env", return_value=standalone),
+        ):
+            # Exporter uses context values
+            exporter = SplunkAOOTLPExporter()
+            assert exporter.project == "context-project"
+            assert exporter.agentstream == "context-logstream"
 
-        # Explicit params override context
-        mock_otlp_init.reset_mock()
-        exporter2 = SplunkAOOTLPExporter(project="param-project", logstream="param-logstream")
-        assert exporter2.project == "param-project"
-        assert exporter2.logstream == "param-logstream"
+            # Explicit params override context
+            exporter2 = SplunkAOOTLPExporter(project="param-project", agentstream="param-agentstream")
+            assert exporter2.project == "param-project"
+            assert exporter2.agentstream == "param-agentstream"
 
-    def test_processor_context_and_fallback(self, mock_processor_deps, reset_decorator_context):
-        """Test processor reads context vars and uses init values as fallback."""
-        # Test context vars
+    def test_processor_captures_context_at_exporter_construction(self, mock_processor_deps, reset_decorator_context):
+        """Test processor passes routing inputs to its immutable exporter."""
         _project_context.set("context-project")
         _log_stream_context.set("context-logstream")
 
-        processor = SplunkAOSpanProcessor()
-        assert processor._project == "context-project"
-        assert processor._logstream == "context-logstream"
+        SplunkAOSpanProcessor()
+        mock_processor_deps["exporter"].assert_called_once()
 
-        # Test fallback to init values when context is empty
-        _project_context.set(None)
-        _log_stream_context.set(None)
-
-        processor2 = SplunkAOSpanProcessor(project="init-project", logstream="init-logstream")
-        assert processor2._project == "init-project"
-        assert processor2._logstream == "init-logstream"
-
-    def test_processor_on_start_sets_span_attributes(self, mock_processor_deps, reset_decorator_context, monkeypatch):
-        """Test on_start sets context attributes on spans, handling None values."""
-        # Pin env vars for this test to avoid flakiness from parallel workers
-        monkeypatch.setenv("SPLUNK_AO_PROJECT", "test-project")
-        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
-
-        # Given: all context vars set (experiment_id takes priority over logstream)
+    def test_processor_on_start_sets_content_not_routing_attributes(self, mock_processor_deps, reset_decorator_context):
+        """Test on_start keeps session content and omits request routing."""
         _project_context.set("test-project")
         _log_stream_context.set("test-logstream")
         _experiment_id_context.set("test-experiment")
@@ -360,105 +257,15 @@ class TestOTelContextIntegration:
         # When: the processor starts a span
         processor.on_start(mock_span, None)
 
-        # Then: experiment_id is set and logstream is excluded (experiment takes priority)
-        assert mock_span.set_attribute.call_count == 3
+        assert mock_span.set_attribute.call_count == 1
         actual_calls = {(args[0], args[1]) for args, _ in mock_span.set_attribute.call_args_list}
-        assert ("splunk_ao.project.name", "test-project") in actual_calls
-        assert ("splunk_ao.session.id", "test-session") in actual_calls
-        assert ("splunk_ao.experiment.id", "test-experiment") in actual_calls
-        assert ("splunk_ao.logstream.name", "test-logstream") not in actual_calls
-
-        # Given: context vars are None, falling back to env vars
-        _log_stream_context.set(None)
-        _experiment_id_context.set(None)
-        _session_id_context.set(None)
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setenv("SPLUNK_AO_AGENT_STREAM", "test-log-stream")
-        try:
-            processor2 = SplunkAOSpanProcessor()
-            mock_span2 = Mock()
-            processor2.on_start(mock_span2, None)
-
-            # Then: project and logstream are set from env var fallbacks
-            assert mock_span2.set_attribute.call_count == 2
-            actual_calls = {(args[0], args[1]) for args, _ in mock_span2.set_attribute.call_args_list}
-            assert ("splunk_ao.project.name", "test-project") in actual_calls
-            # Falls back to SPLUNK_AO_AGENT_STREAM env var
-            assert ("splunk_ao.logstream.name", "test-log-stream") in actual_calls
-        finally:
-            monkeypatch.undo()
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.export")
-    @patch("splunk_ao.otel.Resource")
-    def test_exporter_export_merges_resource_attributes(self, mock_resource_class, mock_parent_export):
-        """Test export merges Galileo attributes into resource, handles partial/no attributes."""
-        # Create a real exporter with mocked dependencies
-        with (
-            patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
-            patch("splunk_ao.otel.SplunkAOConfig.get") as mock_config_get,
-        ):
-            config = Mock()
-            config.api_url = "https://api.galileo.ai"
-            config.api_key = SecretStr("test-key")
-            mock_config_get.return_value = config
-
-            exporter = SplunkAOOTLPExporter(project="test-project", logstream="test-logstream")
-            # Mock the _session attribute that export() uses
-            exporter._session = Mock()
-            exporter._session.headers = {}
-
-        # Given: a span with experiment_id present (logstream should be excluded)
-        mock_span = Mock()
-        mock_span.attributes = {
-            "splunk_ao.project.name": "span-project",
-            "splunk_ao.logstream.name": "span-logstream",
-            "splunk_ao.session.id": "span-session",
-            "splunk_ao.experiment.id": "span-experiment",
-            "other.attribute": "value",
-        }
-        mock_merged_resource = Mock()
-        mock_span.resource = Mock()
-        mock_span.resource.merge.return_value = mock_merged_resource
-        mock_new_resource = Mock()
-        mock_resource_class.return_value = mock_new_resource
-
-        exporter.export([mock_span])
-
-        # Then: resource was created with Galileo attributes (logstream excluded when experiment present)
-        call_args = mock_resource_class.call_args[0][0]
-        assert "splunk_ao.project.name" in call_args
-        assert call_args["splunk_ao.project.name"] == "span-project"
-        # Then: logstream is not included because experiment takes priority
-        assert "splunk_ao.logstream.name" not in call_args
-        assert "splunk_ao.session.id" in call_args
-        assert "splunk_ao.experiment.id" in call_args
-        assert "other.attribute" not in call_args
-
-        # Verify resource was merged and span._resource was updated
-        mock_span.resource.merge.assert_called_once_with(mock_new_resource)
-        assert mock_span._resource == mock_merged_resource
-
-        # Verify parent export was called
-        mock_parent_export.assert_called_once_with([mock_span])
-
-        # Test with no Galileo attributes
-        mock_parent_export.reset_mock()
-        mock_resource_class.reset_mock()
-        mock_span2 = Mock()
-        mock_span2.attributes = {"other.attribute": "value"}
-        mock_span2.resource = Mock()
-
-        exporter.export([mock_span2])
-
-        # No resource should be created when there are no Galileo attributes
-        mock_resource_class.assert_not_called()
-        mock_span2.resource.merge.assert_not_called()
-        mock_parent_export.assert_called_once_with([mock_span2])
+        assert ("gen_ai.conversation.id", "test-session") in actual_calls
+        routing_keys = {"splunk_ao.project.name", "splunk_ao.logstream.name", "splunk_ao.experiment.id"}
+        assert not routing_keys.intersection(key for key, _ in actual_calls)
 
 
 class TestSetToolSpanAttributes:
-    """Test suite for _set_tool_span_attributes function."""
+    """Test the canonical tool-span builder."""
 
     def test_tool_span_with_all_fields(self):
         """Test setting attributes when all ToolSpan fields are populated."""
@@ -470,44 +277,27 @@ class TestSetToolSpanAttributes:
             tool_call_id="call-123",
             status_code=200,
         )
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: all attributes are set correctly
-        calls = {
-            args[0]: args[1] if len(args) > 1 else kwargs["value"]
-            for args, kwargs in mock_otel_span.set_attribute.call_args_list
-        }
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input data"
-        assert calls["gen_ai.tool.call.result"] == "tool output result"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input data"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output result"}])
-        assert calls["gen_ai.tool.call.id"] == "call-123"
-        assert mock_otel_span.set_attribute.call_count == 7
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input data"}
+        assert json.loads(attrs["gen_ai.tool.call.result"]) == {"value": "tool output result"}
+        assert attrs["gen_ai.tool.call.id"] == "call-123"
+        assert "gen_ai.input.messages" not in attrs
+        assert "gen_ai.output.messages" not in attrs
 
     def test_tool_span_with_only_input(self):
         """Test setting attributes when only input is provided."""
         # Given: a ToolSpan with only input (output and tool_call_id are None)
         tool_span = ToolSpan(name="test-tool", input="tool input only", output=None, tool_call_id=None, status_code=200)
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: operation name, tool name, and input attributes are set, but not output or tool_call_id
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input only"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input only"}])
-        assert "gen_ai.tool.call.result" not in calls
-        assert "gen_ai.output.messages" not in calls
-        assert "gen_ai.tool.call.id" not in calls
-        assert mock_otel_span.set_attribute.call_count == 4
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input only"}
+        assert "gen_ai.tool.call.result" not in attrs
+        assert "gen_ai.tool.call.id" not in attrs
 
     def test_tool_span_with_output_no_tool_call_id(self):
         """Test setting attributes when output is provided but tool_call_id is None."""
@@ -515,21 +305,13 @@ class TestSetToolSpanAttributes:
         tool_span = ToolSpan(
             name="test-tool", input="tool input", output="tool output", tool_call_id=None, status_code=200
         )
-        mock_otel_span = Mock()
+        attrs = build_span_attributes(tool_span)
 
-        # When: setting tool span attributes
-        _set_tool_span_attributes(mock_otel_span, tool_span)
-
-        # Then: operation name, tool name, input, and output attributes are set, but not tool_call_id
-        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.operation.name"] == "execute_tool"
-        assert calls["gen_ai.tool.name"] == "test-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input"
-        assert calls["gen_ai.tool.call.result"] == "tool output"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output"}])
-        assert "gen_ai.tool.call.id" not in calls
-        assert mock_otel_span.set_attribute.call_count == 6
+        assert attrs["gen_ai.operation.name"] == "execute_tool"
+        assert attrs["gen_ai.tool.name"] == "test-tool"
+        assert json.loads(attrs["gen_ai.tool.call.arguments"]) == {"value": "tool input"}
+        assert json.loads(attrs["gen_ai.tool.call.result"]) == {"value": "tool output"}
+        assert "gen_ai.tool.call.id" not in attrs
 
 
 class TestStartSplunkAOSpan:
@@ -564,15 +346,13 @@ class TestStartSplunkAOSpan:
         with start_splunk_ao_span(tool_span) as span:
             assert span is mock_otel_span
 
-        # Then: the span has gen_ai.system set and tool-specific attributes
+        # Then: tool-specific attributes are retained without an SDK provider injection
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.system"] == "splunk-ao-otel"
+        assert "gen_ai.system" not in calls
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "my-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "tool input data"
-        assert calls["gen_ai.tool.call.result"] == "tool output result"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "tool input data"}])
-        assert calls["gen_ai.output.messages"] == json.dumps([{"role": "tool", "content": "tool output result"}])
+        assert json.loads(calls["gen_ai.tool.call.arguments"]) == {"value": "tool input data"}
+        assert json.loads(calls["gen_ai.tool.call.result"]) == {"value": "tool output result"}
         assert calls["gen_ai.tool.call.id"] == "call-789"
 
     def test_start_splunk_ao_span_tool_span_with_none_output(self):
@@ -591,19 +371,114 @@ class TestStartSplunkAOSpan:
         with start_splunk_ao_span(tool_span) as span:
             assert span is mock_otel_span
 
-        # Then: gen_ai.system, operation name, tool name, tool arguments, and input are set (no output or tool_call_id)
+        # Then: tool attributes are set without output, call ID, or an SDK provider injection
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
-        assert calls["gen_ai.system"] == "splunk-ao-otel"
+        assert "gen_ai.system" not in calls
         assert calls["gen_ai.operation.name"] == "execute_tool"
         assert calls["gen_ai.tool.name"] == "minimal-tool"
-        assert calls["gen_ai.tool.call.arguments"] == "just input"
-        assert calls["gen_ai.input.messages"] == json.dumps([{"role": "tool", "content": "just input"}])
+        assert json.loads(calls["gen_ai.tool.call.arguments"]) == {"value": "just input"}
         assert "gen_ai.tool.call.result" not in calls
-        assert "gen_ai.output.messages" not in calls
         assert "gen_ai.tool.call.id" not in calls
 
     @pytest.mark.parametrize(
         "splunk_ao_span",
+        [
+            LlmSpan(input="prompt", output="answer", model="gpt-4o"),
+            ToolSpan(name="search", input="query", output="result"),
+            RetrieverSpan(name="retrieval", input="query", output=[Document(content="result", metadata={})]),
+            WorkflowSpan(name="workflow", input="question", output="answer"),
+            AgentSpan(name="agent", input="question", output="answer"),
+        ],
+    )
+    def test_start_span_applies_canonical_builder_for_every_supported_type(self, galileo_span):
+        expected = build_span_attributes(galileo_span, session_id="session-id")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+        token = _session_id_context.set("session-id")
+
+        try:
+            with start_splunk_ao_span(galileo_span):
+                pass
+        finally:
+            _session_id_context.reset(token)
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert {key: calls[key] for key in expected} == expected
+
+    def test_start_span_applies_canonical_attributes_when_body_raises(self):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_otel_span = Mock()
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with pytest.raises(RuntimeError, match="failure"), start_splunk_ao_span(galileo_span):
+            raise RuntimeError("failure")
+
+        calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
+        assert calls["gen_ai.operation.name"] == "execute_tool"
+        assert calls["gen_ai.tool.name"] == "search"
+
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid partial span"))
+    def test_start_span_finalization_does_not_mask_body_exception(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with pytest.raises(RuntimeError, match="user failure"), start_splunk_ao_span(galileo_span):
+            raise RuntimeError("user failure")
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid span"))
+    def test_start_span_finalization_failure_does_not_fail_successful_body(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with start_splunk_ao_span(galileo_span):
+            pass
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
+    @patch("splunk_ao.otel.logger.warning")
+    @patch("splunk_ao.otel.build_span_attributes", return_value={"gen_ai.operation.name": "execute_tool"})
+    def test_start_span_contains_attribute_write_failure(self, _mock_build, mock_warning):
+        galileo_span = ToolSpan(name="search", input="query", output="result")
+        mock_otel_span = Mock()
+        mock_otel_span.set_attribute.side_effect = ValueError("attribute rejected")
+        mock_tracer = Mock()
+        mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
+        mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
+        mock_provider = Mock()
+        mock_provider.get_tracer.return_value = mock_tracer
+        _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
+
+        with start_splunk_ao_span(galileo_span):
+            pass
+
+        mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
+
+    @pytest.mark.parametrize(
+        "galileo_span",
         [
             WorkflowSpan(name="workflow", input="input", output="output"),
             AgentSpan(name="agent", input="input", output="output"),
@@ -684,56 +559,36 @@ class TestStartSplunkAOSpan:
 class TestWorkflowSpanAttributes:
     """Test suite for WorkflowSpan OpenTelemetry attribute mapping."""
 
-    @pytest.fixture
-    def mock_dependencies(self):
-        """Set up mocks for testing workflow span attributes."""
-        with patch("splunk_ao.otel.trace") as mock_trace_module, patch("splunk_ao.otel.json") as mock_json_module:
-            mock_span = Mock()
-            mock_json_module.dumps.return_value = '"test"'
-            yield {"span": mock_span, "trace": mock_trace_module, "json": mock_json_module}
-
-    def test_workflow_span_with_string_input_output(self, mock_dependencies):
+    def test_workflow_span_with_string_input_output(self):
         """Test WorkflowSpan with string input and output."""
         # Given: a WorkflowSpan with string input and output
         workflow_span = WorkflowSpan(name="test-workflow", input="input text", output="output text", status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_json = mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert attrs["gen_ai.operation.name"] == "invoke_workflow"
+        assert attrs["gen_ai.workflow.name"] == "test-workflow"
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "input text"}]}
+        ]
+        assert json.loads(attrs["gen_ai.output.messages"]) == [
+            {"role": "assistant", "parts": [{"type": "text", "content": "output text"}], "finish_reason": "unknown"}
+        ]
 
-        # Then: input and output should be wrapped in message format
-        assert mock_span.set_attribute.call_count == 2
-
-        # Check first call (input)
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-        mock_json.dumps.assert_any_call([{"role": "user", "content": "input text"}])
-
-        # Check second call (output)
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-        mock_json.dumps.assert_any_call([{"role": "assistant", "content": "output text"}])
-
-    def test_workflow_span_with_message_input_output(self, mock_dependencies):
+    def test_workflow_span_with_message_input_output(self):
         """Test WorkflowSpan with Message input and output."""
         # Given: a WorkflowSpan with Message input and output
         input_msg = Message(role=MessageRole.user, content="user question")
         workflow_span = WorkflowSpan(name="test-workflow", input=[input_msg], output=input_msg, status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "user question"}]}
+        ]
+        assert json.loads(attrs["gen_ai.output.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "user question"}], "finish_reason": "unknown"}
+        ]
 
-        # Then: input and output should serialize Message objects
-        assert mock_span.set_attribute.call_count == 2
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-
-    def test_workflow_span_with_document_sequence_output(self, mock_dependencies):
+    def test_workflow_span_with_document_sequence_output(self):
         """Test WorkflowSpan with Document sequence output."""
         # Given: a WorkflowSpan with string input and Document sequence output
         documents = [
@@ -746,37 +601,28 @@ class TestWorkflowSpanAttributes:
         workflow_span = WorkflowSpan.model_construct(
             name="test-workflow", input="query", output=documents, status_code=200
         )
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        output = json.loads(attrs["gen_ai.output.messages"])
+        documents = json.loads(output[0]["parts"][0]["content"])
+        assert [document["content"] for document in documents] == ["doc1 content", "doc2 content"]
 
-        # Then: output should be wrapped in assistant message with documents
-        assert mock_span.set_attribute.call_count == 2
-        output_call = mock_span.set_attribute.call_args_list[1]
-        assert output_call[0][0] == "gen_ai.output.messages"
-
-    def test_workflow_span_with_none_output(self, mock_dependencies):
+    def test_workflow_span_with_none_output(self):
         """Test WorkflowSpan with None output (should not set output attribute)."""
         # Given: a WorkflowSpan with None output
         workflow_span = WorkflowSpan(name="test-workflow", input="input text", output=None, status_code=200)
-        mock_span = mock_dependencies["span"]
+        attrs = build_span_attributes(workflow_span)
 
-        # When: setting workflow span attributes
-        _set_workflow_span_attributes(mock_span, workflow_span)
+        assert json.loads(attrs["gen_ai.input.messages"]) == [
+            {"role": "user", "parts": [{"type": "text", "content": "input text"}]}
+        ]
+        assert "gen_ai.output.messages" not in attrs
 
-        # Then: only input attribute should be set, not output
-        assert mock_span.set_attribute.call_count == 1
-        input_call = mock_span.set_attribute.call_args_list[0]
-        assert input_call[0][0] == "gen_ai.input.messages"
-
-    def test_workflow_span_in_start_splunk_ao_span(self, mock_dependencies):
+    def test_workflow_span_in_start_splunk_ao_span(self):
         """Test that WorkflowSpan is handled in start_splunk_ao_span context manager."""
         # Given: a WorkflowSpan
         workflow_span = WorkflowSpan(name="test-workflow", input="input", output="output", status_code=200)
-        mock_span = mock_dependencies["span"]
-        mock_dependencies["json"]
+        mock_span = Mock()
 
         # Setup the mock tracer
         mock_tracer = Mock()
@@ -792,10 +638,10 @@ class TestWorkflowSpanAttributes:
             with start_splunk_ao_span(workflow_span):
                 pass
 
-        # Then: WorkflowSpan attributes should be set
-        assert mock_span.set_attribute.call_count >= 2  # gen_ai.system + at least input
+        # Then: WorkflowSpan attributes should be set without an SDK provider injection
+        assert mock_span.set_attribute.call_count >= 2
         system_call = [call for call in mock_span.set_attribute.call_args_list if call[0][0] == "gen_ai.system"]
-        assert len(system_call) == 1
+        assert system_call == []
 
 
 class TestDatasetContext:
@@ -895,54 +741,6 @@ class TestDatasetContext:
         assert ("splunk_ao.dataset.input", "input question") in actual_calls
         assert ("splunk_ao.dataset.output", "expected answer") in actual_calls
         assert ("splunk_ao.dataset.metadata", json.dumps({"source": "test_dataset"})) in actual_calls
-
-    @patch("splunk_ao.otel.OTLPSpanExporter.export")
-    @patch("splunk_ao.otel.Resource")
-    def test_exporter_export_merges_dataset_attributes(
-        self, mock_resource_class, mock_parent_export, reset_dataset_context
-    ):
-        """Test that export merges dataset attributes from span into resource."""
-        # Given: an exporter with mocked dependencies
-        with (
-            patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
-            patch("splunk_ao.otel.SplunkAOConfig.get") as mock_config_get,
-        ):
-            config = Mock()
-            config.api_url = "https://api.galileo.ai"
-            config.api_key = SecretStr("test-key")
-            mock_config_get.return_value = config
-
-            exporter = SplunkAOOTLPExporter(project="test-project", logstream="test-logstream")
-            exporter._session = Mock()
-            exporter._session.headers = {}
-
-        # Given: a span with dataset attributes (set during on_start)
-        mock_span = Mock()
-        mock_span.attributes = {
-            "splunk_ao.project.name": "test-project",
-            "splunk_ao.logstream.name": "test-logstream",
-            "splunk_ao.dataset.input": "test input",
-            "splunk_ao.dataset.output": "expected output",
-            "splunk_ao.dataset.metadata": json.dumps({"key": "value"}),
-        }
-        mock_merged_resource = Mock()
-        mock_span.resource = Mock()
-        mock_span.resource.merge.return_value = mock_merged_resource
-        mock_new_resource = Mock()
-        mock_resource_class.return_value = mock_new_resource
-
-        # When: export is called
-        exporter.export([mock_span])
-
-        # Then: Resource is created with dataset attributes
-        resource_call_kwargs = mock_resource_class.call_args[0][0]
-        assert resource_call_kwargs["splunk_ao.dataset.input"] == "test input"
-        assert resource_call_kwargs["splunk_ao.dataset.output"] == "expected output"
-        assert resource_call_kwargs["splunk_ao.dataset.metadata"] == json.dumps({"key": "value"})
-
-        # Then: resource was merged into the span
-        mock_span.resource.merge.assert_called_once_with(mock_new_resource)
-        assert mock_span._resource == mock_merged_resource
 
     def test_splunk_ao_dataset_context_partial_values(self, reset_dataset_context):
         """Test that splunk_ao_dataset_context works with partial values."""

@@ -4,7 +4,8 @@ from typing import Any
 from unittest.mock import patch
 
 from splunk_ao.deployment import StandaloneConfig
-from splunk_ao.exporter.config import RoutingAttrs, routing_resource_attributes
+from splunk_ao.exporter.config import RoutingAttrs, create_otel_resource, routing_resource_attributes
+from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.exporter.standalone import build_standalone_exporter, resolve_standalone_exporter_config
 from splunk_ao.logger import logger as logger_module
 from splunk_ao.logger.logger import SplunkAOLogger
@@ -120,6 +121,36 @@ def test_routing_resource_attributes_empty_when_routing_absent() -> None:
     assert routing_resource_attributes(RoutingAttrs()) == {}
 
 
+def test_otel_resource_honors_service_name_and_preserves_routing(monkeypatch: Any) -> None:
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "travel-planner")
+
+    resource = create_otel_resource(make_routing(project_name="project", log_stream_name="stream"))
+
+    assert resource.attributes["service.name"] == "travel-planner"
+    assert resource.attributes["splunk_ao.project.name"] == "project"
+    assert resource.attributes["splunk_ao.logstream.name"] == "stream"
+
+
+def test_otel_resource_supplies_default_service_name(monkeypatch: Any) -> None:
+    monkeypatch.delenv("OTEL_SERVICE_NAME", raising=False)
+    monkeypatch.delenv("OTEL_RESOURCE_ATTRIBUTES", raising=False)
+
+    resource = create_otel_resource(make_routing())
+
+    assert str(resource.attributes["service.name"]).startswith("unknown_service")
+
+
+def test_explicit_routing_overrides_environment_resource_routing(monkeypatch: Any) -> None:
+    monkeypatch.setenv(
+        "OTEL_RESOURCE_ATTRIBUTES", "splunk_ao.project.name=environment-project,deployment.environment.name=test"
+    )
+
+    resource = create_otel_resource(make_routing(project_name="explicit-project"))
+
+    assert resource.attributes["splunk_ao.project.name"] == "explicit-project"
+    assert resource.attributes["deployment.environment.name"] == "test"
+
+
 def test_build_standalone_exporter_passes_resolved_public_config_to_factory() -> None:
     captured: dict[str, Any] = {}
     expected_exporter = object()
@@ -132,7 +163,8 @@ def test_build_standalone_exporter_passes_resolved_public_config_to_factory() ->
         make_standalone_cfg(), make_routing(project_name="p"), _exporter_factory=exporter_factory
     )
 
-    assert exporter is expected_exporter
+    assert isinstance(exporter, NormalizingSpanExporter)
+    assert exporter.delegate is expected_exporter
     assert captured == {
         "endpoint": "https://api.demo.galileocloud.io/otel/v1/traces",
         "headers": {"Splunk-AO-API-Key": "key", "project": "p"},
