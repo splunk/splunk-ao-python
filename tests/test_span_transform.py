@@ -63,7 +63,7 @@ def test_copy_span_for_export_is_immutable_and_combines_normalization_with_routi
     source_resource = source.resource
 
     exported = copy_span_for_export(
-        source, Resource({"splunk_ao.project.id": "project-id", "splunk_ao.logstream.id": "log-stream-id"})
+        source, Resource({"splunk_ao.project.id": "project-id", "splunk_ao.agentstream.id": "log-stream-id"})
     )
 
     assert exported is not source
@@ -74,7 +74,7 @@ def test_copy_span_for_export_is_immutable_and_combines_normalization_with_routi
     assert "gen_ai.input.messages" not in exported.attributes
     assert "splunk_ao.project.name" not in exported.attributes
     assert exported.resource.attributes["splunk_ao.project.id"] == "project-id"
-    assert exported.resource.attributes["splunk_ao.logstream.id"] == "log-stream-id"
+    assert exported.resource.attributes["splunk_ao.agentstream.id"] == "log-stream-id"
     assert "splunk_ao.project.name" not in exported.resource.attributes
     assert exported.resource.attributes["service.name"] == "checkout"
 

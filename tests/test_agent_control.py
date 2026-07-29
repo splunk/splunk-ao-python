@@ -47,10 +47,10 @@ def test_get_agent_control_target_uses_explicit_log_stream_id() -> None:
     log_stream_id = str(uuid4())
 
     # When: resolving an Agent Control target
-    target = get_agent_control_target(log_stream_id=log_stream_id)
+    target = get_agent_control_target(agent_stream_id=log_stream_id)
 
     # Then: the target is log-stream scoped
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id)
 
 
 def test_get_agent_control_target_uses_env_project_id_with_explicit_log_stream_id(monkeypatch) -> None:
@@ -60,10 +60,10 @@ def test_get_agent_control_target_uses_env_project_id_with_explicit_log_stream_i
     monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", project_id)
 
     # When: resolving an Agent Control target
-    target = get_agent_control_target(log_stream_id=log_stream_id)
+    target = get_agent_control_target(agent_stream_id=log_stream_id)
 
     # Then: the helper includes the informational project ID consistently
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_uses_explicit_future_target() -> None:
@@ -88,7 +88,7 @@ def test_get_agent_control_target_uses_env_log_stream_id(monkeypatch) -> None:
     target = get_agent_control_target()
 
     # Then: the target uses the env-provided IDs
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_strips_env_ids(monkeypatch) -> None:
@@ -102,7 +102,7 @@ def test_get_agent_control_target_strips_env_ids(monkeypatch) -> None:
     target = get_agent_control_target()
 
     # Then: the returned IDs are normalized before validation and use
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_strips_explicit_log_stream_target_id() -> None:
@@ -113,7 +113,7 @@ def test_get_agent_control_target_strips_explicit_log_stream_target_id() -> None
     target = get_agent_control_target(target_id=f"  {log_stream_id}  ")
 
     # Then: the explicit target ID is normalized before validation and use
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id)
 
 
 def test_get_agent_control_target_uses_cached_context_logger(monkeypatch) -> None:
@@ -134,7 +134,7 @@ def test_get_agent_control_target_uses_cached_context_logger(monkeypatch) -> Non
         target = get_agent_control_target()
 
     # Then: the helper reads the resolved IDs without creating a new logger
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_uses_cached_default_logger(monkeypatch) -> None:
@@ -154,7 +154,7 @@ def test_get_agent_control_target_uses_cached_default_logger(monkeypatch) -> Non
     target = get_agent_control_target()
 
     # Then: the helper reuses the default logger's resolved log-stream ID
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_uses_cached_env_default_logger(monkeypatch) -> None:
@@ -176,7 +176,7 @@ def test_get_agent_control_target_uses_cached_env_default_logger(monkeypatch) ->
     target = get_agent_control_target()
 
     # Then: the helper follows Galileo's env fallback and reuses the resolved ID
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=project_id)
 
 
 def test_get_agent_control_target_ignores_cached_logger_from_other_thread(monkeypatch) -> None:
@@ -216,7 +216,7 @@ def test_get_agent_control_target_prefers_cached_logger_project_id_over_env(monk
     target = get_agent_control_target()
 
     # Then: the informational project ID matches the resolved log stream
-    assert target == AgentControlTarget(target_type="log_stream", target_id=log_stream_id, project_id=cached_project_id)
+    assert target == AgentControlTarget(target_type="agent_stream", target_id=log_stream_id, project_id=cached_project_id)
 
 
 def test_get_agent_control_target_uses_explicit_project_id_with_cached_logger(monkeypatch) -> None:
@@ -238,7 +238,7 @@ def test_get_agent_control_target_uses_explicit_project_id_with_cached_logger(mo
 
     # Then: explicit input wins over the cached informational project ID
     assert target == AgentControlTarget(
-        target_type="log_stream", target_id=log_stream_id, project_id=explicit_project_id
+        target_type="agent_stream", target_id=log_stream_id, project_id=explicit_project_id
     )
 
 
@@ -255,8 +255,8 @@ def test_get_agent_control_target_rejects_invalid_explicit_log_stream_id() -> No
     # Given: an invalid explicit Galileo log stream ID
 
     # When/Then: resolving the target fails before sending a malformed target to Agent Control
-    with pytest.raises(AgentControlTargetUnresolvedError, match="log_stream_id='prod' is not a valid UUID"):
-        get_agent_control_target(log_stream_id="prod")
+    with pytest.raises(AgentControlTargetUnresolvedError, match="agent_stream_id='prod' is not a valid UUID"):
+        get_agent_control_target(agent_stream_id="prod")
 
 
 def test_get_agent_control_target_rejects_invalid_explicit_log_stream_target_id() -> None:
@@ -279,8 +279,8 @@ def test_get_agent_control_target_rejects_conflicting_ids() -> None:
     # Given: conflicting target ID inputs
 
     # When/Then: resolving the target fails before choosing one arbitrarily
-    with pytest.raises(AgentControlTargetUnresolvedError, match="target_id and log_stream_id must match"):
-        get_agent_control_target(target_id=str(uuid4()), log_stream_id=str(uuid4()))
+    with pytest.raises(AgentControlTargetUnresolvedError, match="target_id and agent_stream_id must match"):
+        get_agent_control_target(target_id=str(uuid4()), agent_stream_id=str(uuid4()))
 
 
 def test_get_agent_control_target_errors_when_unresolved() -> None:

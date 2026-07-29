@@ -29,12 +29,12 @@ class ExporterConfig:
 
 @dataclass
 class RoutingAttrs:
-    """Optional project, log-stream, and experiment routing values."""
+    """Optional project, agent-stream, and experiment routing values."""
 
     project_name: str | None = None
     project_id: str | None = None
-    log_stream_name: str | None = None
-    log_stream_id: str | None = None
+    agent_stream_name: str | None = None
+    agent_stream_id: str | None = None
     experiment_id: str | None = None
 
 
@@ -71,13 +71,13 @@ def resolve_routing(
     *,
     project: str | None = None,
     project_id: str | None = None,
-    log_stream: str | None = None,
-    log_stream_id: str | None = None,
+    agent_stream: str | None = None,
+    agent_stream_id: str | None = None,
     experiment_id: str | None = None,
     context_project: str | None = None,
     context_project_id: str | None = None,
-    context_log_stream: str | None = None,
-    context_log_stream_id: str | None = None,
+    context_agent_stream: str | None = None,
+    context_agent_stream_id: str | None = None,
     context_experiment_id: str | None = None,
 ) -> RoutingAttrs:
     """Capture routing once using explicit, context, environment, then default precedence."""
@@ -92,12 +92,12 @@ def resolve_routing(
         _get_project_id_from_env(),
         DEFAULT_PROJECT_NAME if standalone else None,
     )
-    log_stream_name, resolved_log_stream_id = _resolve_name_or_id(
-        "log stream",
-        log_stream,
-        log_stream_id,
-        context_log_stream,
-        context_log_stream_id,
+    agent_stream_name, resolved_agent_stream_id = _resolve_name_or_id(
+        "agent stream",
+        agent_stream,
+        agent_stream_id,
+        context_agent_stream,
+        context_agent_stream_id,
         _get_log_stream_from_env(),
         _get_log_stream_id_from_env(),
         DEFAULT_LOG_STREAM_NAME if standalone else None,
@@ -105,8 +105,8 @@ def resolve_routing(
     return RoutingAttrs(
         project_name=project_name,
         project_id=resolved_project_id,
-        log_stream_name=log_stream_name,
-        log_stream_id=resolved_log_stream_id,
+        agent_stream_name=agent_stream_name,
+        agent_stream_id=resolved_agent_stream_id,
         experiment_id=experiment_id or context_experiment_id,
     )
 
@@ -121,10 +121,10 @@ def resolve_exporter_config(endpoint: str, auth_header: tuple[str, str], routing
 
     if routing.experiment_id:
         headers["experimentid"] = routing.experiment_id
-    elif routing.log_stream_name:
-        headers["logstream"] = routing.log_stream_name
-    elif routing.log_stream_id:
-        headers["logstreamid"] = routing.log_stream_id
+    elif routing.agent_stream_name:
+        headers["agentstream"] = routing.agent_stream_name
+    elif routing.agent_stream_id:
+        headers["agentstreamid"] = routing.agent_stream_id
 
     return ExporterConfig(endpoint=endpoint, headers=headers)
 
@@ -139,10 +139,10 @@ def routing_resource_attributes(routing: RoutingAttrs) -> dict[str, str]:
 
     if routing.experiment_id:
         attributes["splunk_ao.experiment.id"] = routing.experiment_id
-    elif routing.log_stream_name:
-        attributes["splunk_ao.logstream.name"] = routing.log_stream_name
-    elif routing.log_stream_id:
-        attributes["splunk_ao.logstream.id"] = routing.log_stream_id
+    elif routing.agent_stream_name:
+        attributes["splunk_ao.agentstream.name"] = routing.agent_stream_name
+    elif routing.agent_stream_id:
+        attributes["splunk_ao.agentstream.id"] = routing.agent_stream_id
 
     return attributes
 

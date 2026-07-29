@@ -82,7 +82,7 @@ async def test_complex_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=lambda _: None)
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -117,7 +117,7 @@ async def test_simple_agent(
     async def capture_payload(payload):
         await mock_traces_client_instance.ingest_traces(payload)
 
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=capture_payload)
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -148,7 +148,7 @@ def test_processor_marks_direct_trace_child_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", agent_stream="test")
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
     logger.start_trace(input="input")
 
@@ -249,7 +249,7 @@ async def test_pre_built_tools_multiple_types(
     async def capture_payload(payload):
         await mock_traces_client_instance.ingest_traces(payload)
 
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test", ingestion_hook=capture_payload)
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")

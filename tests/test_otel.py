@@ -175,7 +175,7 @@ class TestOTelIntegration:
             headers={
                 "Splunk-AO-API-Key": "test-key",
                 "project": "integration-test",
-                "logstream": "integration-agentstream",
+                "agentstream": "integration-agentstream",
             },
         )
         mock_batch_processor.assert_called_once()
@@ -260,7 +260,7 @@ class TestOTelContextIntegration:
         assert mock_span.set_attribute.call_count == 1
         actual_calls = {(args[0], args[1]) for args, _ in mock_span.set_attribute.call_args_list}
         assert ("gen_ai.conversation.id", "test-session") in actual_calls
-        routing_keys = {"splunk_ao.project.name", "splunk_ao.logstream.name", "splunk_ao.experiment.id"}
+        routing_keys = {"splunk_ao.project.name", "splunk_ao.agentstream.name", "splunk_ao.experiment.id"}
         assert not routing_keys.intersection(key for key, _ in actual_calls)
 
 

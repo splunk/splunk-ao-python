@@ -106,8 +106,8 @@ class SplunkAOLoggerSingleton:
                 deployment,
                 project=project,
                 project_id=project_id,
-                log_stream=log_stream,
-                log_stream_id=log_stream_id,
+                agent_stream=log_stream,
+                agent_stream_id=log_stream_id,
                 experiment_id=experiment_id,
             )
             project_key = (
@@ -115,10 +115,10 @@ class SplunkAOLoggerSingleton:
             )
             if routing.experiment_id is not None:
                 destination_key = f"experiment:{routing.experiment_id}"
-            elif routing.log_stream_name is not None:
-                destination_key = f"name:{routing.log_stream_name}"
+            elif routing.agent_stream_name is not None:
+                destination_key = f"name:{routing.agent_stream_name}"
             else:
-                destination_key = f"id:{routing.log_stream_id or ''}"
+                destination_key = f"id:{routing.agent_stream_id or ''}"
             base_key = (*key, deployment.value, project_key, destination_key)
 
         # Add trace_id and span_id to key if present (for distributed tracing)
@@ -216,8 +216,8 @@ class SplunkAOLoggerSingleton:
             galileo_client_init_args = {
                 "project": project,
                 "project_id": project_id,
-                "log_stream": log_stream,
-                "log_stream_id": log_stream_id,
+                "agent_stream": log_stream,
+                "agent_stream_id": log_stream_id,
                 "experiment_id": experiment_id,
                 "local_metrics": local_metrics,
                 "mode": mode,

@@ -28,7 +28,7 @@ class RecordingSink:
 @pytest.fixture
 def distributed_logger() -> Generator[tuple[SplunkAOLogger, RecordingSink], None, None]:
     sink = RecordingSink()
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", mode="distributed", _sink=sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", mode="distributed", _sink=sink)
     yield logger, sink
     logger.terminate()
 

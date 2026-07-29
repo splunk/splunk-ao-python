@@ -156,7 +156,7 @@ class SplunkAOLogger(TracesLogger):
 
     ```python
     logger = SplunkAOLogger(project="my_project",
-                           log_stream="my_log_stream",
+                           agent_stream="my_log_stream",
                            mode="batch")
     ```
 
@@ -234,8 +234,8 @@ class SplunkAOLogger(TracesLogger):
         self,
         project: str | None = None,
         project_id: str | None = None,
-        log_stream: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         trace_id: str | None = None,
         span_id: str | None = None,
@@ -254,10 +254,10 @@ class SplunkAOLogger(TracesLogger):
             Project name. If not provided, will use the project_id param or the project name from the environment variable SPLUNK_AO_PROJECT.
         project_id: Optional[str]
             Project ID.
-        log_stream: Optional[str]
-            Log stream name. If not provided, will use the log_stream_id param or the log stream name from the environment variable SPLUNK_AO_AGENT_STREAM.
-        log_stream_id: Optional[str]
-            Log stream ID.
+        agent_stream: Optional[str]
+            Agent stream name. If not provided, will use the agent_stream_id param or the agent stream name from the environment variable SPLUNK_AO_AGENT_STREAM.
+        agent_stream_id: Optional[str]
+            Agent stream ID.
         experiment_id: Optional[str]
             Experiment ID. Used by the experiment runner.
         trace_id: Optional[str]
@@ -303,8 +303,8 @@ class SplunkAOLogger(TracesLogger):
         if ingestion_hook:
             self.project_name = project
             self.project_id = project_id
-            self.log_stream_name = log_stream
-            self.log_stream_id = log_stream_id
+            self.log_stream_name = agent_stream
+            self.log_stream_id = agent_stream_id
             self.experiment_id = experiment_id
             if local_metrics:
                 self.local_metrics = local_metrics
@@ -337,8 +337,8 @@ class SplunkAOLogger(TracesLogger):
             self.trace_id = trace_id
             self.span_id = span_id
 
-        if (log_stream or log_stream_id) and experiment_id:
-            raise SplunkAOLoggerException("User cannot specify both a log stream and an experiment.")
+        if (agent_stream or agent_stream_id) and experiment_id:
+            raise SplunkAOLoggerException("User cannot specify both an agent stream and an experiment.")
 
         self._deployment = resolve_deployment()
         try:
@@ -346,8 +346,8 @@ class SplunkAOLogger(TracesLogger):
                 self._deployment,
                 project=project,
                 project_id=project_id,
-                log_stream=log_stream,
-                log_stream_id=log_stream_id,
+                agent_stream=agent_stream,
+                agent_stream_id=agent_stream_id,
                 experiment_id=experiment_id,
             )
         except ValueError as exc:
@@ -358,8 +358,8 @@ class SplunkAOLogger(TracesLogger):
         self.project_id = routing.project_id
         self.experiment_id = routing.experiment_id
         if self.experiment_id is None:
-            self.log_stream_name = routing.log_stream_name
-            self.log_stream_id = routing.log_stream_id
+            self.log_stream_name = routing.agent_stream_name
+            self.log_stream_id = routing.agent_stream_id
 
         if self._deployment == DeploymentMode.STANDALONE:
             if self.project_name is None and self.project_id is None:
@@ -367,7 +367,7 @@ class SplunkAOLogger(TracesLogger):
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
             if self.experiment_id is None and self.log_stream_name is None and self.log_stream_id is None:
-                raise SplunkAOLoggerException("log_stream or log_stream_id is required to initialize SplunkAOLogger.")
+                raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
 
         if local_metrics:
             self.local_metrics = local_metrics

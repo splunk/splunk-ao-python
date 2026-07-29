@@ -386,7 +386,7 @@ def thread_pool_capture():
 
     Usage:
         def test_distributed_method(thread_pool_capture):
-            logger = SplunkAOLogger(project="test", log_stream="test", mode="distributed")
+            logger = SplunkAOLogger(project="test", agent_stream="test", mode="distributed")
             capture = thread_pool_capture(logger)
 
             logger._ingest_trace_streaming(trace)
