@@ -1,4 +1,4 @@
-"""Convert completed Galileo spans to OpenTelemetry spans."""
+"""Convert completed Splunk AO spans to OpenTelemetry spans."""
 
 from __future__ import annotations
 
@@ -75,7 +75,7 @@ def _end_time_ns(span: BaseStep, start_time_ns: int, end_time_ns: int | None) ->
 
 
 class SpanConverter:
-    """Convert one completed Galileo span into an OTel readable span."""
+    """Convert one completed Splunk AO span into an OTel readable span."""
 
     def convert_span(
         self,

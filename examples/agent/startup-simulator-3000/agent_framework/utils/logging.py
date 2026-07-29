@@ -23,47 +23,47 @@ theme = Theme(
 
 console = Console(theme=theme)
 
-# 👀 GALILEO GLOBAL VARIABLE: This holds the centralized Splunk AO logger instance
+# 👀 SPLUNK AO GLOBAL VARIABLE: This holds the centralized Splunk AO logger instance
 # This ensures all parts of the application use the same Splunk AO connection
-_global_galileo_logger = None
+_global_splunk_ao_logger = None
 
 
-def get_galileo_logger():
+def get_splunk_ao_logger():
     """Get the global Splunk AO logger instance, initializing it if needed"""
-    global _global_galileo_logger
+    global _global_splunk_ao_logger
 
-    if _global_galileo_logger is None:
+    if _global_splunk_ao_logger is None:
         import os
         from dotenv import load_dotenv
 
         # Load environment variables
         load_dotenv()
 
-        # 👀 GALILEO API KEY CHECK: Get the Splunk AO API key from environment variables
+        # 👀 SPLUNK AO API KEY CHECK: Get the Splunk AO API key from environment variables
         # This key is required to authenticate with the Splunk AO service
         api_key = os.getenv("SPLUNK_AO_API_KEY")
 
         if api_key:
             try:
-                # 👀 GALILEO IMPORT: Import the SplunkAOLogger class from the galileo library
+                # 👀 SPLUNK AO IMPORT: Import the SplunkAOLogger class from the splunk_ao library
                 # This is the main class that handles all Splunk AO logging functionality
                 from splunk_ao import SplunkAOLogger
 
-                # 👀 GALILEO INITIALIZATION: Create a new SplunkAOLogger instance
+                # 👀 SPLUNK AO INITIALIZATION: Create a new SplunkAOLogger instance
                 # This logger will automatically use environment variables for configuration:
                 # - SPLUNK_AO_API_KEY: Your API key for authentication
                 # - SPLUNK_AO_PROJECT: Your project name/ID
                 # - SPLUNK_AO_AGENT_STREAM: The log stream to use
-                _global_galileo_logger = SplunkAOLogger()
+                _global_splunk_ao_logger = SplunkAOLogger()
                 print("✅ Splunk AO logger initialized successfully using environment variables")
             except Exception as e:
                 print(f"⚠️  Warning: Could not initialize Splunk AO logger: {e}")
-                _global_galileo_logger = None
+                _global_splunk_ao_logger = None
         else:
             print("⚠️  Warning: SPLUNK_AO_API_KEY not set. Splunk AO logging will be disabled.")
-            _global_galileo_logger = None
+            _global_splunk_ao_logger = None
 
-    return _global_galileo_logger
+    return _global_splunk_ao_logger
 
 
 class AgentLogger(ABC):

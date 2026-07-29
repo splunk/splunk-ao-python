@@ -1,8 +1,8 @@
 """
-Unified type definitions for the Galileo API.
+Unified type definitions for the Splunk AO API.
 
-This module provides type aliases that reduce friction when working with metrics
-and other Galileo objects.
+This module provides type aliases that reduce friction when working with evaluators
+and other Splunk AO objects.
 """
 
 from splunk_ao.evaluator import Evaluator

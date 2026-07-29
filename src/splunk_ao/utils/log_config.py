@@ -1,5 +1,5 @@
 """
-Python logging configuration utilities for the Galileo SDK.
+Python logging configuration utilities for the Splunk AO SDK.
 
 This module provides utilities to configure Python's logging module for the SDK,
 including silent-by-default behavior and console output helpers.

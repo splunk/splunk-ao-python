@@ -12,12 +12,12 @@ _logger = logging.getLogger(__name__)
 
 class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
     """
-    Async Callback handler for logging traces to the Galileo platform.
+    Async Callback handler for logging traces to the Splunk AO platform.
 
     Attributes
     ----------
     _splunk_ao_logger : SplunkAOLogger
-        The Galileo logger instance.
+        The Splunk AO logger instance.
     _nodes : dict[UUID, Node]
         A dictionary of nodes, where the key is the run_id and the value is the node.
     _start_new_trace : bool
@@ -27,7 +27,7 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
     """
 
     async def async_commit(self) -> None:
-        """Commit the nodes to the trace using the Galileo Logger. Optionally flush the trace."""
+        """Commit the nodes to the trace using the Splunk AO Logger. Optionally flush the trace."""
         if not self._nodes:
             _logger.warning("No nodes to commit")
             return
@@ -61,7 +61,7 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             )
 
         if self._flush_on_chain_end:
-            # Upload the trace to Galileo
+            # Upload the trace to Splunk AO
             await self._splunk_ao_logger.async_flush()
 
         # Clear nodes after successful commit

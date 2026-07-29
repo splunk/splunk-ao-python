@@ -56,7 +56,7 @@ cp .env.example .env
 ```
 
 In addition to API keys, you’ll need to specify a Splunk AO project and log stream (e.g. SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM). All CrewAI run data will be logged to this destination in Splunk AO. See
-[Understanding the Splunk AO Integration](#understanding-the-galileo-integration) for more detail.
+[Understanding the Splunk AO Integration](#understanding-the-splunk-ao-integration) for more detail.
 
 3. Install project dependencies into the active environment:
 

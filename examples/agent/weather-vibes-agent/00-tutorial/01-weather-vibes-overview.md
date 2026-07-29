@@ -117,7 +117,7 @@ By completing this tutorial, you will:
 4. **Follow the Tutorial Sections**:
    - 01-weather-vibes-overview.md (this file)
    - 02-installation-instructions.md
-   - 03-using-galileo.md
+   - 03-using-splunk-ao.md
 
 6. **Run the Weather Vibes App**:
    ```bash

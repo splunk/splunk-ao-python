@@ -1,7 +1,7 @@
 # OpenTelemetry Collector config used by the docker-compose demo.
 #
 # In production, point OTEL_EXPORTER_OTLP_ENDPOINT at your own collector
-# instead — copy the `otlphttp/galileo` exporter block below into its config
+# instead — copy the `otlphttp/splunk_ao` exporter block below into its config
 # and add it to your traces pipeline.
 #
 # Pipeline: receive OTLP from both services, batch, forward to Splunk AO.
@@ -23,7 +23,7 @@ processors:
     send_batch_size: 512
 
 exporters:
-  otlphttp/galileo:
+  otlphttp/splunk_ao:
     endpoint: ${env:SPLUNK_AO_API_URL}/otel
     headers:
       Splunk-AO-API-Key: ${env:SPLUNK_AO_API_KEY}
@@ -51,7 +51,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/galileo, debug]
+      exporters: [otlphttp/splunk_ao, debug]
   telemetry:
     logs:
       level: info

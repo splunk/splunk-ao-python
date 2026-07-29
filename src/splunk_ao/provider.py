@@ -37,7 +37,7 @@ class Provider(StateManagementMixin, ABC):
     Base class for provider-specific integration objects.
 
     Providers represent configured integrations (e.g., OpenAI, Azure, Bedrock)
-    that are stored remotely in the Galileo API. Providers are immutable proxies
+    that are stored remotely in the Splunk AO API. Providers are immutable proxies
     that only store minimal metadata (id, name, timestamps). No credentials are
     stored locally for security reasons.
 
@@ -290,7 +290,7 @@ class OpenAIProvider(Provider):
     """
     OpenAI integration provider.
 
-    This is an immutable proxy to an OpenAI integration stored in the Galileo API.
+    This is an immutable proxy to an OpenAI integration stored in the Splunk AO API.
     Credentials are never stored locally - they are only sent to the API during
     create/update operations.
     """
@@ -417,7 +417,7 @@ class AzureProvider(Provider):
     """
     Azure OpenAI integration provider.
 
-    This is an immutable proxy to an Azure integration stored in the Galileo API.
+    This is an immutable proxy to an Azure integration stored in the Splunk AO API.
     Credentials are never stored locally - they are only sent to the API during
     create/update operations.
     """
@@ -545,7 +545,7 @@ class BedrockProvider(Provider):
     """
     AWS Bedrock integration provider.
 
-    This is an immutable proxy to a Bedrock integration stored in the Galileo API.
+    This is an immutable proxy to a Bedrock integration stored in the Splunk AO API.
     Credentials are never stored locally - they are only sent to the API during
     create/update operations.
     """
@@ -701,7 +701,7 @@ class AnthropicProvider(Provider):
     """
     Anthropic (Claude) integration provider.
 
-    This is an immutable proxy to an Anthropic integration stored in the Galileo API.
+    This is an immutable proxy to an Anthropic integration stored in the Splunk AO API.
     Credentials are never stored locally - they are only sent to the API during
     create/update operations.
     """
@@ -854,7 +854,7 @@ class UnconfiguredProvider:
         # When Azure is not configured:
         >>> Integration.azure.models
         IntegrationNotConfiguredError: No 'azure' integration configured.
-        Create one using Integration.create_azure() or configure it in the Galileo console.
+        Create one using Integration.create_azure() or configure it in the Splunk AO console.
 
         # Truthiness check still works:
         >>> if Integration.azure:
