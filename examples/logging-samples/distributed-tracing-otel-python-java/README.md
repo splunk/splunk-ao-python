@@ -136,7 +136,7 @@ This is a demo convenience — not something you deploy.
 
 In any real environment you almost certainly already run an OTel Collector. To point the services at it instead:
 
-1. Add a Splunk AO exporter to your existing collector config (see [`otel-collector/config.yaml`](./otel-collector/config.yaml) for the `otlphttp/galileo` block to copy).
+1. Add a Splunk AO exporter to your existing collector config (see [`otel-collector/config.yaml`](./otel-collector/config.yaml) for the `otlphttp/splunk_ao` block to copy).
 2. Set `OTEL_EXPORTER_OTLP_ENDPOINT` in `.env` (or your deployment config) to your collector's OTLP/HTTP endpoint, e.g. `https://otel-collector.internal.example.com:4318`.
 3. Remove the `otel-collector` service from `docker-compose.yml` (or just stop pointing at it).
 

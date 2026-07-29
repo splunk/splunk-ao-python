@@ -10,8 +10,8 @@ from pydantic import Field
 
 # Set up the OTel tracer provider with the Splunk AO span processor
 tracer_provider = TracerProvider()
-galileo_processor = SplunkAOSpanProcessor()
-add_splunk_ao_span_processor(tracer_provider, galileo_processor)
+splunk_ao_processor = SplunkAOSpanProcessor()
+add_splunk_ao_span_processor(tracer_provider, splunk_ao_processor)
 trace.set_tracer_provider(tracer_provider)
 
 # Enable the Microsoft Agent Framework's built-in OTel instrumentation.

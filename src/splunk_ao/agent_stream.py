@@ -820,7 +820,7 @@ class AgentStream(StateManagementMixin):
 
     def context(self) -> Any:
         """
-        Get a galileo context manager for this log stream.
+        Get a Splunk AO context manager for this log stream.
 
         This is a convenient method that returns a pre-configured splunk_ao_context
         for this log stream, eliminating the need to specify project and log stream names.

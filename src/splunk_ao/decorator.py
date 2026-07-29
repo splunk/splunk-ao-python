@@ -143,7 +143,7 @@ class SplunkAODecorator:
             The decorator instance for use in a with statement
         """
         # Nothing to do here since __call__ has already set up the context
-        return self  # Allows `as galileo` usage
+        return self  # Allows `as splunk_ao` usage
 
     def __exit__(
         self, exc_type: BaseException | None, exc_value: BaseException | None, traceback: TracebackType | None

@@ -155,16 +155,16 @@ def main():
     Get the user's horoscope
     """
     # Start a session and trace
-    galileo_logger = splunk_ao_context.get_logger_instance()
-    galileo_logger.start_session("RAG with Tools Example")
-    galileo_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
-    galileo_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
+    splunk_ao_logger = splunk_ao_context.get_logger_instance()
+    splunk_ao_logger.start_session("RAG with Tools Example")
+    splunk_ao_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
+    splunk_ao_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
 
     response = get_users_horoscope("Aquarius")
 
     # Conclude the trace and flush
-    galileo_logger.conclude(response)
-    galileo_logger.flush()
+    splunk_ao_logger.conclude(response)
+    splunk_ao_logger.flush()
 
     print(response)
 

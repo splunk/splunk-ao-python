@@ -143,7 +143,7 @@ def _wrap(
     else:
         # If we don't have an active trace, start a new trace
         # We will conclude it at the end
-        # convert to list of galileo messages since we can't send list of messages to span and want consistency
+        # convert to list of splunk_ao messages since we can't send list of messages to span and want consistency
         if isinstance(input_data.input, list):
             trace_input_messages = [convert_to_splunk_ao_message(msg) for msg in input_data.input]
         else:
@@ -185,7 +185,7 @@ def _wrap(
 
         duration_ns = round((end_time - start_time).total_seconds() * 1e9)
 
-        # convert to list of galileo messages since we can't send a regular list to span input
+        # convert to list of splunk_ao messages since we can't send a regular list to span input
         if isinstance(input_data.input, list):
             span_input = [convert_to_splunk_ao_message(msg) for msg in input_data.input]
         else:
@@ -282,7 +282,7 @@ def _wrap(
         raise RuntimeError("Failed to process the OpenAI Request") from ex
 
 
-class OpenAIGalileo:
+class OpenAISplunkAO:
     """
     This class is responsible for logging OpenAI API calls and logging them to Splunk AO.
     It wraps the OpenAI client methods to add logging functionality without changing
@@ -332,5 +332,5 @@ class OpenAIGalileo:
             )
 
 
-modifier = OpenAIGalileo()
+modifier = OpenAISplunkAO()
 modifier.register_tracing()

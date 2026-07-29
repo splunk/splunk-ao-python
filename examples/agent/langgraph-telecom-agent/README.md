@@ -165,7 +165,7 @@ python test_tools.py
 langgraph-telecom-agent/
 ├── app.py                              # Main Chainlit application
 ├── src/
-│   └── galileo_langgraph_fsi_agent/
+│   └── splunk_ao_langgraph_fsi_agent/
 │       ├── agents/                     # Agent implementations
 │       │   ├── supervisor_agent.py     # Orchestrator
 │       │   ├── billing_account_agent.py

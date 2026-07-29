@@ -2403,7 +2403,7 @@ class SplunkAOLogger(TracesLogger):
                 # Run sync hooks on a worker thread (not on this event-loop
                 # thread). The supported pattern is for a sync hook to call
                 # `another_logger.ingest_traces(...)`, which routes through
-                # `async_run()` -> submit to the shared `galileo_async_run`
+                # `async_run()` -> submit to the shared `splunk_ao_async_run`
                 # `EventLoopThreadPool` -> `random.choice(threads)` to pick a
                 # worker. If the hook ran inline, the pick could land on the
                 # same thread that is currently blocked awaiting `_flush_batch`,
