@@ -213,7 +213,7 @@ class SplunkAOLoggerSingleton:
                 return self._splunk_ao_loggers[key]
 
             # Prepare initialization arguments, only including non-None values.
-            galileo_client_init_args = {
+            splunk_ao_client_init_args = {
                 "project": project,
                 "project_id": project_id,
                 "agent_stream": agent_stream,
@@ -226,7 +226,7 @@ class SplunkAOLoggerSingleton:
                 "ingestion_hook": ingestion_hook,
             }
             # Create the logger with filtered kwargs.
-            logger = SplunkAOLogger(**{k: v for k, v in galileo_client_init_args.items() if v is not None})
+            logger = SplunkAOLogger(**{k: v for k, v in splunk_ao_client_init_args.items() if v is not None})
 
             # Cache the newly created logger.
             if logger:

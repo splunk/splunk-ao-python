@@ -9,7 +9,7 @@ from flask_cors import CORS
 from agent import SimpleAgent
 from agent_framework.llm.openai_provider import OpenAIProvider
 from agent_framework.llm.models import LLMConfig
-from agent_framework.utils.logging import get_galileo_logger
+from agent_framework.utils.logging import get_splunk_ao_logger
 
 # Load environment variables
 load_dotenv()
@@ -51,7 +51,7 @@ def generate_startup():
             return jsonify({"error": "All fields are required"}), 400
 
         # Get the centralized Splunk AO logger instance
-        logger = get_galileo_logger()
+        logger = get_splunk_ao_logger()
 
         # Start individual trace for this request if logger is available
         if logger:

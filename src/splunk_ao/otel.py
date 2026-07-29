@@ -46,7 +46,7 @@ class TracerProvider(Protocol):
     ) -> Tracer: ...
 
 
-_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
+_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("splunk_ao_trace_provider", default=None)
 
 _LEGACY_ROUTING_OPTIONS = {"logstream": "agentstream", "log_stream_id": "agent_stream_id"}
 
@@ -154,11 +154,11 @@ class SplunkAOOTLPExporter(SpanExporter):
 
 class SplunkAOSpanProcessor(SpanProcessor):
     """
-    Complete OpenTelemetry span processor with integrated Galileo export functionality.
+    Complete OpenTelemetry span processor with integrated Splunk AO export functionality.
 
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
-    It handles the complete lifecycle of spans from creation to export to Galileo.
+    It handles the complete lifecycle of spans from creation to export to Splunk AO.
     Project, agent-stream, and experiment routing is fixed when the processor's exporter
     is constructed. Use separate processors and exporters for separate destinations.
 
@@ -183,7 +183,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the Galileo span processor with export configuration.
+        Initialize the Splunk AO span processor with export configuration.
 
         Parameters
         ----------
@@ -298,21 +298,21 @@ def _apply_dataset_attributes(
 
 
 @contextmanager
-def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
-    tracer = tracer_provider.get_tracer("galileo-tracer")
+    tracer = tracer_provider.get_tracer("splunk-ao-tracer")
     is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
-        galileo_span, WorkflowSpan | AgentSpan
+        splunk_ao_span, WorkflowSpan | AgentSpan
     )
-    with tracer.start_as_current_span(galileo_span.name) as span:
+    with tracer.start_as_current_span(splunk_ao_span.name) as span:
         try:
             yield span
         finally:
             try:
-                attributes = build_span_attributes(galileo_span, _session_id_context.get(None))
+                attributes = build_span_attributes(splunk_ao_span, _session_id_context.get(None))
                 if is_conversation_root:
                     attributes[GEN_AI_CONVERSATION_ROOT] = True
                 for key, value in attributes.items():

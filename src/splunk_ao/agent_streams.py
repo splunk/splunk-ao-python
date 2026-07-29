@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 class AgentStream(LogStreamResponse):
     """
-    Log streams are used to organize logs within a project on the Galileo platform.
+    Log streams are used to organize logs within a project on the Splunk AO platform.
     They provide a way to categorize and group related logs, making it easier to
     analyze and monitor specific parts of your application or different environments
     (e.g., production, staging, development).
@@ -151,7 +151,7 @@ class AgentStream(LogStreamResponse):
         -------
         builtins.list[LocalMetricConfig]
             List of local metric configurations that must be computed client-side.
-            Server-side metrics are automatically registered with Galileo and don't
+            Server-side metrics are automatically registered with Splunk AO and don't
             need to be returned since users don't interact with them.
 
         Raises
@@ -161,7 +161,7 @@ class AgentStream(LogStreamResponse):
             - If any specified metrics are unknown or unavailable
             - If there are issues with metric configuration or registration
         GalileoHTTPException
-            If there are network or API errors when communicating with Galileo services
+            If there are network or API errors when communicating with Splunk AO services
 
         Examples
         --------
@@ -702,7 +702,7 @@ def enable_evaluators(
     Environment Variables (Optional Fallbacks)
     ------------------------------------------
     SPLUNK_AO_PROJECT : str
-        The name of the Galileo project (used when project_name not provided)
+        The name of the Splunk AO project (used when project_name not provided)
     SPLUNK_AO_AGENT_STREAM : str
         The name of the log stream (used when agent_stream_name not provided)
 
@@ -725,7 +725,7 @@ def enable_evaluators(
     -------
     builtins.list[LocalMetricConfig]
         List of local metric configurations that must be computed client-side.
-        Server-side metrics are automatically registered with Galileo and don't
+        Server-side metrics are automatically registered with Splunk AO and don't
         need to be returned since users don't interact with them.
 
     Raises

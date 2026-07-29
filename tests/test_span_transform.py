@@ -79,6 +79,16 @@ def test_copy_span_for_export_is_immutable_and_combines_normalization_with_routi
     assert exported.resource.attributes["service.name"] == "checkout"
 
 
+def test_source_service_name_precedes_exporter_resource_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "exporter-default")
+    source = make_span()
+
+    exported = copy_span_for_export(source, Resource.create({"splunk_ao.project.name": "project"}))
+
+    assert exported.resource.attributes["service.name"] == "checkout"
+    assert exported.resource.attributes["splunk_ao.project.name"] == "project"
+
+
 def test_copy_span_preserves_unaffected_readable_span_fields() -> None:
     source = make_span()
     exported = copy_span_for_export(source)

@@ -165,16 +165,15 @@ python test_tools.py
 langgraph-telecom-agent/
 ├── app.py                              # Main Chainlit application
 ├── src/
-│   └── galileo_langgraph_fsi_agent/
-│       ├── agents/                     # Agent implementations
-│       │   ├── supervisor_agent.py     # Orchestrator
-│       │   ├── billing_account_agent.py
-│       │   ├── technical_support_agent.py
-│       │   └── plan_advisor_agent.py
-│       └── tools/                      # Mock tool implementations
-│           ├── billing_tool.py
-│           ├── technical_support_tool.py
-│           └── pinecone_retrieval_tool.py
+│   ├── agents/                         # Agent implementations
+│   │   ├── supervisor_agent.py         # Orchestrator
+│   │   ├── billing_account_agent.py
+│   │   ├── technical_support_agent.py
+│   │   └── plan_advisor_agent.py
+│   └── tools/                          # Mock tool implementations
+│       ├── billing_tool.py
+│       ├── technical_support_tool.py
+│       └── pinecone_retrieval_tool.py
 └── source-docs/                        # Telecom knowledge base
     ├── telecom-plans.md               # Plan catalog
     └── network-troubleshooting.md     # Support guides

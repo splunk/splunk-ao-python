@@ -291,6 +291,7 @@ def test_o11y_names_build_routing_without_eager_lookup(
     monkeypatch: pytest.MonkeyPatch, recording_sink: RecordingSink
 ) -> None:
     configure_o11y(monkeypatch)
+    monkeypatch.setenv("OTEL_SERVICE_NAME", "travel-planner")
 
     with (
         patch.object(SplunkAOLogger, "_init_project") as init_project,
@@ -300,6 +301,7 @@ def test_o11y_names_build_routing_without_eager_lookup(
 
     assert logger._deployment == DeploymentMode.O11Y
     assert logger._traces_client is None
+    assert logger._resource.attributes["service.name"] == "travel-planner"
     assert logger._resource.attributes["splunk_ao.project.name"] == "project"
     assert logger._resource.attributes["splunk_ao.logstream.name"] == "stream"
     init_project.assert_not_called()

@@ -4,7 +4,7 @@ from typing import cast
 from pydantic import TypeAdapter, ValidationError
 
 from galileo_core.schemas.shared.document import Document
-from splunk_ao.schema.trace import Document as GalileoDocument
+from splunk_ao.schema.trace import Document as SplunkAODocument
 from splunk_ao.schema.trace import RetrieverSpanAllowedOutputType
 
 document_adapter = TypeAdapter(list[Document])
@@ -18,11 +18,11 @@ def convert_to_documents(data: RetrieverSpanAllowedOutputType, field_name: str |
     if isinstance(data, list):
         if all(isinstance(doc, Document) for doc in data):
             return data
-        if all(isinstance(doc, GalileoDocument) for doc in data):
+        if all(isinstance(doc, SplunkAODocument) for doc in data):
             return [
                 Document(content=doc.content, metadata=doc.metadata.to_dict() if doc.metadata else {})
                 for doc in data
-                if isinstance(doc, GalileoDocument)
+                if isinstance(doc, SplunkAODocument)
             ]
         if all(isinstance(doc, str) for doc in data):
             return [Document(content=cast(str, doc), metadata={}) for doc in data]

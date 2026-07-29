@@ -1,5 +1,5 @@
 """
-Decorators for conditionally enabling/disabling Galileo telemetry.
+Decorators for conditionally enabling/disabling Splunk AO telemetry.
 
 These decorators check the SPLUNK_AO_LOGGING_DISABLED environment variable
 and skip execution of telemetry operations when disabled.
@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 def splunk_ao_logging_enabled() -> bool:
     """
-    Check if Galileo logging/telemetry is enabled.
+    Check if Splunk AO logging/telemetry is enabled.
 
     Returns
     -------
@@ -28,7 +28,7 @@ def splunk_ao_logging_enabled() -> bool:
 
 def nop_sync(f: Callable) -> Callable:
     """
-    Decorator that skips execution of sync functions when Galileo logging is disabled.
+    Decorator that skips execution of sync functions when Splunk AO logging is disabled.
 
     When SPLUNK_AO_LOGGING_DISABLED is set to "true", "1", or "t", the decorated
     function will not execute and will return None instead.
@@ -56,7 +56,7 @@ def nop_sync(f: Callable) -> Callable:
 
 def nop_async(f: Callable) -> Callable:
     """
-    Decorator that skips execution of async functions when Galileo logging is disabled.
+    Decorator that skips execution of async functions when Splunk AO logging is disabled.
 
     When SPLUNK_AO_LOGGING_DISABLED is set to "true", "1", or "t", the decorated
     function will not execute and will return None instead.

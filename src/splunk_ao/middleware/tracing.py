@@ -2,7 +2,7 @@
 Distributed tracing middleware for Starlette-based applications.
 
 This middleware automatically extracts distributed tracing headers from incoming HTTP requests
-and makes them available to the Galileo logger within request handlers.
+and makes them available to the Splunk AO logger within request handlers.
 
 Works with any ASGI framework built on Starlette:
 - FastAPI

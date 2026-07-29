@@ -1,17 +1,17 @@
-# Galileo API client
+# Splunk AO API client
 
-A client library for accessing the Galileo platform API
+A client library for accessing the Splunk AO platform API
 
 ## Usage
 
 First, create a client:
 
 ```python
-from splunk_ao.api_client import GalileoApiClient
+from splunk_ao.resources.client import Client
 
 # Make sure you've set the SPLUNK_AO_CONSOLE_URL and SPLUNK_AO_API_KEY env vars
 # Optionally, you can specify both base_url and api_key
-client = GalileoApiClient()
+client = Client(base_url="https://your-splunk-ao-instance")
 ```
 
 Now call your endpoint and use your models:
@@ -41,7 +41,8 @@ response: Response[MyDataModel] = await get_my_data_model.asyncio_detailed(clien
 By default, when you're calling an HTTPS API it will attempt to verify that SSL is working correctly. Using certificate verification is highly recommended most of the time, but sometimes you may need to authenticate to a server (especially an internal server) using a custom certificate bundle.
 
 ```python
-client = GalileoApiClient(
+client = Client(
+    base_url="https://your-splunk-ao-instance",
     verify_ssl="/path/to/certificate_bundle.pem",
 )
 ```
@@ -49,7 +50,7 @@ client = GalileoApiClient(
 You can also disable certificate validation altogether, but beware that **this is a security risk**.
 
 ```python
-client = GalileoApiClient(verify_ssl=False)
+client = Client(base_url="https://your-splunk-ao-instance", verify_ssl=False)
 ```
 
 Things to know:
@@ -67,10 +68,10 @@ Things to know:
 
 ## Advanced customizations
 
-There are more settings on the `GalileoApiClient` class which let you control more runtime behavior, check out the docstring on that class for more info. You can also customize the underlying `httpx.Client` or `httpx.AsyncClient` (depending on your use-case):
+There are more settings on the `Client` class which let you control more runtime behavior, check out the docstring on that class for more info. You can also customize the underlying `httpx.Client` or `httpx.AsyncClient` (depending on your use-case):
 
 ```python
-from splunk_ao.api_client import GalileoApiClient
+from splunk_ao.resources.client import Client
 
 def log_request(request):
     print(f"Request event hook: {request.method} {request.url} - Waiting for response")
@@ -79,7 +80,8 @@ def log_response(response):
     request = response.request
     print(f"Response event hook: {request.method} {request.url} - Status {response.status_code}")
 
-client = GalileoApiClient(
+client = Client(
+    base_url="https://your-splunk-ao-instance",
     httpx_args={"event_hooks": {"request": [log_request], "response": [log_response]}},
 )
 
@@ -90,9 +92,9 @@ You can even set the httpx client directly, but beware that this will override a
 
 ```python
 import httpx
-from splunk_ao.api_client import GalileoApiClient
+from splunk_ao.resources.client import Client
 
-client = GalileoApiClient()
+client = Client(base_url="https://your-splunk-ao-instance")
 # Note that base_url needs to be re-set, as would any shared cookies, headers, etc.
 client.set_httpx_client(httpx.Client(base_url=base_url, proxies="http://localhost:8030"))
 ```

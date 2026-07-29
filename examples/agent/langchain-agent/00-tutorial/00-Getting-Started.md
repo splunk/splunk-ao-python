@@ -23,7 +23,7 @@ pip install -r requirements.txt
 
 - `langchain` and `langchain-openai` are for building and running the agent.
 - `python-dotenv` is for loading environment variables (API keys).
-- `galileo` is for Splunk AO monitoring.
+- `splunk_ao` is for Splunk AO monitoring.
 
 ---
 

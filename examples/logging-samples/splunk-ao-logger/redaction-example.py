@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from splunk_ao import SplunkAOLogger
 from splunk_ao.config import SplunkAOConfig  # For displaying the log stream URL
 from splunk_ao.export import export_records
-from splunk_ao.log_streams import get_log_stream
+from splunk_ao.agent_streams import get_agent_stream
 from splunk_ao.projects import get_project
 from splunk_ao.resources.models.root_type import RootType
 
@@ -49,9 +49,9 @@ project_name = os.getenv("SPLUNK_AO_PROJECT")
 agent_stream_name = os.getenv("SPLUNK_AO_AGENT_STREAM")
 
 project = get_project(name=project_name)
-agent_stream = get_log_stream(name=agent_stream_name, project_name=project_name)
+agent_stream = get_agent_stream(name=agent_stream_name, project_name=project_name)
 
-records = export_records(project_id=project.id, agent_stream_id=log_stream.id, root_type=RootType.TRACE)
+records = export_records(project_id=project.id, agent_stream_id=agent_stream.id, root_type=RootType.TRACE)
 
 print(list(records))
 

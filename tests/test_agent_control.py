@@ -193,7 +193,7 @@ def test_get_agent_control_target_ignores_cached_logger_from_other_thread(monkey
     )
 
     # When/Then: resolving the target does not use another thread's logger
-    with pytest.raises(AgentControlTargetUnresolvedError, match="Could not resolve Galileo agent stream ID"):
+    with pytest.raises(AgentControlTargetUnresolvedError, match="Could not resolve Splunk AO agent stream ID"):
         get_agent_control_target()
 
 
@@ -287,5 +287,5 @@ def test_get_agent_control_target_errors_when_unresolved() -> None:
     # Given: no explicit ID, env ID, or cached context logger
 
     # When/Then: resolving the target fails with the supported resolution options
-    with pytest.raises(AgentControlTargetUnresolvedError, match="Could not resolve Galileo agent stream ID"):
+    with pytest.raises(AgentControlTargetUnresolvedError, match="Could not resolve Splunk AO agent stream ID"):
         get_agent_control_target()

@@ -16,7 +16,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor  # Efficiently bat
 dotenv.load_dotenv()
 
 # ============================================================================
-# OPENTELEMETRY & GALILEO IMPORTS
+# OPENTELEMETRY & SPLUNK AO IMPORTS
 # ============================================================================
 # OpenTelemetry (OTel) is an observability framework that helps you collect
 # traces, metrics, and logs from your applications. Think of it as a way to

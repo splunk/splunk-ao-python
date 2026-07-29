@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 import backoff
 from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
 from pydantic import PrivateAttr
@@ -51,8 +50,8 @@ from splunk_ao.exporter import (
     build_o11y_exporter,
     build_span_sink,
     build_standalone_exporter,
+    create_otel_resource,
     resolve_routing,
-    routing_resource_attributes,
 )
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
@@ -151,7 +150,7 @@ _otel_context_state: ContextVar[OtelContextState | None] = ContextVar("_otel_con
 
 class SplunkAOLogger(TracesLogger):
     """
-    This class can be used to upload traces to Galileo.
+    This class can be used to upload traces to Splunk AO.
     First initialize a new SplunkAOLogger object with an existing project and agent stream.
 
     ```python
@@ -162,7 +161,7 @@ class SplunkAOLogger(TracesLogger):
 
     Next, we can add traces.
     Let's add a simple trace with just one span (llm call) in it,
-    and log it to Galileo using `conclude`.
+    and log it to Splunk AO using `conclude`.
 
     ```python
     logger
@@ -284,7 +283,7 @@ class SplunkAOLogger(TracesLogger):
                 This hook is called when the logger is flushed and can be a
                 synchronous or asynchronous function. This is useful for implementing
                 custom logic such as data redaction before the traces are sent to
-                Galileo via the `ingest_traces` method.
+                Splunk AO via the ingest_traces method.
         """
         super().__init__()
         mode = _get_mode_or_default(mode)
@@ -299,7 +298,7 @@ class SplunkAOLogger(TracesLogger):
             raise SplunkAOLoggerException("ingestion_hook can only be used in batch mode")
 
         # Ingestion hook mode: skip project/log_stream validation and backend initialization
-        # The user's hook handles all trace flushing, so no Galileo credentials are needed
+        # The user's hook handles all trace flushing, so no Splunk AO credentials are needed
         if ingestion_hook:
             self.project_name = project
             self.project_id = project_id
@@ -383,7 +382,7 @@ class SplunkAOLogger(TracesLogger):
         elif self.project_id and (self.agent_stream_id or self.experiment_id):
             self._traces_client = self._create_traces_client()
 
-        self._resource = Resource(routing_resource_attributes(routing))
+        self._resource = create_otel_resource(routing)
         self._converter = SpanConverter()
         if _sink is not None:
             self._sink = _sink
@@ -689,7 +688,7 @@ class SplunkAOLogger(TracesLogger):
             self._logger.info(f"🚀 Creating new project... project {self.project_name} created!")
         else:
             if project_obj.type != "gen_ai":
-                raise Exception(f"Project {self.project_name} is not a Galileo 2.0 project")
+                raise Exception(f"Project {self.project_name} is not a Splunk AO project")
             self.project_id = project_obj.id
 
     @nop_sync
@@ -2062,9 +2061,9 @@ class SplunkAOLogger(TracesLogger):
         Add a control span to the current parent.
 
         Control spans are leaf spans representing a single Agent Control
-        evaluation result attached to the active Galileo parent.
+        evaluation result attached to the active Splunk AO parent.
 
-        When provided, ``id`` is used as the canonical Galileo span ID for the
+        When provided, ``id`` is used as the canonical Splunk AO span ID for the
         control execution. This is the right place to map an upstream
         control-execution identifier such as Agent Control's
         ``control_execution_id``.
@@ -2403,7 +2402,7 @@ class SplunkAOLogger(TracesLogger):
                 # Run sync hooks on a worker thread (not on this event-loop
                 # thread). The supported pattern is for a sync hook to call
                 # `another_logger.ingest_traces(...)`, which routes through
-                # `async_run()` -> submit to the shared `galileo_async_run`
+                # `async_run()` -> submit to the shared `splunk_ao_async_run`
                 # `EventLoopThreadPool` -> `random.choice(threads)` to pick a
                 # worker. If the hook ran inline, the pick could land on the
                 # same thread that is currently blocked awaiting `_flush_batch`,
@@ -2633,7 +2632,7 @@ class SplunkAOLogger(TracesLogger):
     @async_warn_catch_exception(exceptions=(Exception,))
     async def async_ingest_traces(self, ingest_request: TracesIngestRequest) -> None:
         """
-        Async ingest traces to Galileo.
+        Async ingest traces to Splunk AO.
 
         Can be used in combination with the `ingestion_hook` to ingest modified traces.
         """
@@ -2645,7 +2644,7 @@ class SplunkAOLogger(TracesLogger):
     @warn_catch_exception(exceptions=(Exception,))
     def ingest_traces(self, ingest_request: TracesIngestRequest) -> None:
         """
-        Ingest traces to Galileo.
+        Ingest traces to Splunk AO.
 
         Can be used in combination with the `ingestion_hook` to ingest modified traces.
         """

@@ -25,8 +25,8 @@ _logger = logging.getLogger(__name__)
 
 class Traces:
     """
-    A class for interacting with the Galileo API using the galileo_core package.
-    Currently used by the SplunkAOLogger to create and upload traces to Galileo.
+    A class for interacting with the Splunk AO API using the galileo_core package.
+    Currently used by the SplunkAOLogger to create and upload traces to Splunk AO.
 
     Attributes
     ----------
@@ -165,7 +165,7 @@ class Traces:
 
 
 class IngestTraces:
-    """Client that sends traces/spans directly to the Galileo ingest service.
+    """Client that sends traces/spans directly to the Splunk AO ingest service.
 
     Used when the ingest service healthz check succeeds, posting to the dedicated
     Go ingest service instead of the standard API client.

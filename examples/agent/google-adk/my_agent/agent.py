@@ -10,8 +10,8 @@ load_dotenv()
 
 # Create tracer provider and register Splunk AO span processor
 tracer_provider = trace_sdk.TracerProvider()
-galileo_span_processor = otel.SplunkAOSpanProcessor()
-tracer_provider.add_span_processor(galileo_span_processor)
+splunk_ao_span_processor = otel.SplunkAOSpanProcessor()
+tracer_provider.add_span_processor(splunk_ao_span_processor)
 
 # Instrument Google ADK with OpenInference (this captures inputs/outputs)
 GoogleADKInstrumentor().instrument(tracer_provider=tracer_provider)

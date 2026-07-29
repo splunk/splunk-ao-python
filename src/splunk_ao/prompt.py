@@ -115,9 +115,9 @@ class PromptVersion:
 
 class Prompt(StateManagementMixin):
     """
-    Object-centric interface for Galileo prompts.
+    Object-centric interface for Splunk AO prompts.
 
-    This class provides an intuitive way to work with Galileo prompts,
+    This class provides an intuitive way to work with Splunk AO prompts,
     encapsulating prompt management operations including version management.
 
     Attributes

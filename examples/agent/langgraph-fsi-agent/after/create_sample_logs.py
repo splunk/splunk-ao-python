@@ -15,7 +15,7 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain_core.callbacks import Callbacks
 from langchain_core.messages import HumanMessage
 
-from src.galileo_langgraph_fsi_agent.agents.supervisor_agent import (
+from src.splunk_ao_langgraph_fsi_agent.agents.supervisor_agent import (
     create_supervisor_agent,
 )
 
@@ -44,10 +44,10 @@ for row in dataset_content:
 
     # Create the callback. This needs to be created in the same thread as the session
     # so that it uses the same session context.
-    galileo_callback = SplunkAOCallback()
+    splunk_ao_callback = SplunkAOCallback()
 
     config: dict[str, Any] = {"configurable": {"thread_id": random.randint(1, 1000)}}
-    callbacks: Callbacks = [galileo_callback]  # type: ignore
+    callbacks: Callbacks = [splunk_ao_callback]  # type: ignore
 
     # Set up the config for the streaming response
     runnable_config = RunnableConfig(callbacks=callbacks, **config)
