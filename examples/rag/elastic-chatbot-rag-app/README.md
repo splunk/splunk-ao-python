@@ -10,7 +10,7 @@ This is a sample app that combines Elasticsearch, Langchain and a number of diff
 
 ## Setup a Splunk AO project:
 
-On your cluster or [https://app.galileo.ai](https://app.galileo.ai) create an account, a logstream project and api keys. You can follow [this guide](https://agent-observability-docs.splunk.com/concepts/projects#whats-in-a-project).
+On your cluster or [https://app.galileo.ai](https://app.galileo.ai) create an account, a logstream project and api keys. You can follow [this guide](https://agent-observability-docs.splunk.com/concepts/projects#what%E2%80%99s-in-a-project.
 
 Make sure to set your Splunk AO logging env variables
 
