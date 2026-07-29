@@ -17,6 +17,8 @@ ROUTING_ATTRIBUTE_KEYS = frozenset(
         "splunk_ao.project.id",
         "splunk_ao.agentstream.name",
         "splunk_ao.agentstream.id",
+        "splunk_ao.logstream.name",
+        "splunk_ao.logstream.id",
         "splunk_ao.experiment.id",
     }
 )

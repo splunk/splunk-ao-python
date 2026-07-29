@@ -365,7 +365,7 @@ def test_o11y_no_routing_exports_but_explicit_session_fails(
     assert len(recording_sink.spans) == 1
     assert recording_sink.spans[0].parent is None
     assert logger._resource.attributes.get("splunk_ao.project.name") is None
-    with pytest.raises(SplunkAOLoggerException, match=r"project.*log stream or experiment"):
+    with pytest.raises(SplunkAOLoggerException, match=r"project.*agent stream or experiment"):
         logger.start_session(name="session")
     assert logger._traces_client is None
     logger.terminate()

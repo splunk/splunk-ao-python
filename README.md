@@ -195,7 +195,7 @@ You can also use the `SplunkAOLogger` for manual logging scenarios:
 from splunk_ao.logger import SplunkAOLogger
 
 # This will log to the project and log stream specified in the logger constructor
-logger = SplunkAOLogger(project="gen-ai-project", log_stream="test3")
+logger = SplunkAOLogger(project="gen-ai-project", agent_stream="test3")
 trace = logger.start_trace("Say this is a test")
 
 logger.add_llm_span(
@@ -215,7 +215,7 @@ logger.flush() # This will upload the trace to Agent Observability
 #### Using Agent Observability context with Agent Control
 
 If you use Agent Control hosted by Splunk, initialize Agent Control with the
-current Agent Observability log stream as the runtime target:
+current Agent Observability agent stream as the runtime target:
 
 ```python
 import agent_control
@@ -234,9 +234,10 @@ agent_control.init(
 )
 ```
 
-The helper resolves an explicit log stream ID, `SPLUNK_AO_LOG_STREAM_ID`, or an
-already-initialized `splunk_ao_context` logger. It does not import the Agent
-Control SDK or resolve log stream names over the network. If you use a direct
+The helper resolves an explicit agent stream ID, `SPLUNK_AO_AGENT_STREAM_ID` (or the
+deprecated `SPLUNK_AO_LOG_STREAM_ID` alias), or an already-initialized
+`splunk_ao_context` logger. It does not import the Agent Control SDK or resolve
+agent stream names over the network. If you use a direct
 Agent Control client instead of `agent_control.init(...)`, pass
 `target.target_type` and `target.target_id` on each evaluation call.
 
@@ -438,7 +439,7 @@ Sessions allow you to group related traces together. By default, a session is cr
 ```python
 from splunk_ao import SplunkAOLogger
 
-logger = SplunkAOLogger(project="gen-ai-project", log_stream="my-log-stream")
+logger = SplunkAOLogger(project="gen-ai-project", agent_stream="my-log-stream")
 session_id =logger.start_session(name="my-session-name")
 
 ...
@@ -452,7 +453,7 @@ You can continue a previous session by using the same session ID that was previo
 ```python
 from splunk_ao import SplunkAOLogger
 
-logger = SplunkAOLogger(project="gen-ai-project", log_stream="my-log-stream")
+logger = SplunkAOLogger(project="gen-ai-project", agent_stream="my-log-stream")
 logger.set_session(session_id="123e4567-e89b-12d3-a456-426614174000")
 
 ...

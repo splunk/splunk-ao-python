@@ -17,7 +17,7 @@ with splunk_ao_context(project="my-project", log_stream="production"):
 
 # Direct logger approach
 # project/log_stream are constructor args, not start_session args
-logger = SplunkAOLogger(project="my-project", log_stream="production")
+logger = SplunkAOLogger(project="my-project", agent_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg

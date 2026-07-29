@@ -152,7 +152,7 @@ _otel_context_state: ContextVar[OtelContextState | None] = ContextVar("_otel_con
 class SplunkAOLogger(TracesLogger):
     """
     This class can be used to upload traces to Galileo.
-    First initialize a new SplunkAOLogger object with an existing project and log stream.
+    First initialize a new SplunkAOLogger object with an existing project and agent stream.
 
     ```python
     logger = SplunkAOLogger(project="my_project",
@@ -700,7 +700,7 @@ class SplunkAOLogger(TracesLogger):
         if log_stream_obj is None:
             # Create log stream if it doesn't exist
             self.log_stream_id = log_streams_client.create(name=self.log_stream_name, project_id=self.project_id).id
-            self._logger.info(f"🚀 Creating new log stream... log stream {self.log_stream_name} created!")
+            self._logger.info(f"🚀 Creating new agent stream... agent stream {self.log_stream_name} created!")
         else:
             self.log_stream_id = log_stream_obj.id
 
@@ -730,7 +730,7 @@ class SplunkAOLogger(TracesLogger):
             return self._traces_client
         if not self._has_session_routing():
             raise SplunkAOLoggerException(
-                "Session operations require a project and a log stream or experiment identity."
+                "Session operations require a project and an agent stream or experiment identity."
             )
 
         if not self.project_id:

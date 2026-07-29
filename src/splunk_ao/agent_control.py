@@ -63,8 +63,8 @@ def get_agent_control_target(
     3. ``SPLUNK_AO_AGENT_STREAM_ID`` for ``agent_stream`` targets.
     4. An already-initialized ``splunk_ao_context`` logger.
 
-    This helper does not resolve log stream names over the network. If only a
-    log stream name is available, resolve it with the Galileo SDK first and pass
+    This helper does not resolve agent stream names over the network. If only an
+    agent stream name is available, resolve it with the Galileo SDK first and pass
     the resulting ID explicitly.
     """
     explicit_project_id = _strip_optional_string(project_id)
@@ -113,10 +113,10 @@ def get_agent_control_target(
         )
 
     raise AgentControlTargetUnresolvedError(
-        "Could not resolve Galileo log stream ID for Agent Control. Provide one of:\n"
+        "Could not resolve Galileo agent stream ID for Agent Control. Provide one of:\n"
         "  1. target_id=<uuid> or agent_stream_id=<uuid> argument\n"
         "  2. SPLUNK_AO_AGENT_STREAM_ID environment variable\n"
-        "  3. An initialized splunk_ao_context with a resolved log stream ID"
+        "  3. An initialized splunk_ao_context with a resolved agent stream ID"
     )
 
 
@@ -139,9 +139,9 @@ def _resolve_log_stream_from_cached_context() -> AgentControlTarget | None:
     current_thread_name = threading.current_thread().name
 
     # Read cached logger state directly so this helper never creates or resolves
-    # projects/log streams as a side effect of building an Agent Control target.
+    # projects/agent streams as a side effect of building an Agent Control target.
     # Use the same default/env fallback as SplunkAOLogger so callers that rely on
-    # default project/log-stream creation can still reuse the resolved IDs.
+    # default project/agent-stream creation can still reuse the resolved IDs.
     for key, logger in SplunkAOLoggerSingleton().get_all_loggers().items():
         if not key or key[0] != current_thread_name:
             continue

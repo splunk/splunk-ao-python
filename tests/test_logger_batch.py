@@ -393,7 +393,7 @@ def test_nested_span_trace_to_galileo(
     mock_traces_client_instance.ingest_traces.assert_called_once()
     payload = mock_traces_client_instance.ingest_traces.call_args.args[0]
     expected_payload = TracesIngestRequest(
-        agent_stream_id=None,  # TODO: fix this
+        log_stream_id=None,
         experiment_id=None,
         traces=[trace],
     )
@@ -424,7 +424,7 @@ def test_add_agent_span(mock_traces_client: Mock, mock_projects_client: Mock, mo
 
     mock_traces_client_instance.ingest_traces.assert_called_once()
     payload = mock_traces_client_instance.ingest_traces.call_args.args[0]
-    expected_payload = TracesIngestRequest(agent_stream_id=None, experiment_id=None, traces=[trace])
+    expected_payload = TracesIngestRequest(log_stream_id=None, experiment_id=None, traces=[trace])
     assert payload == expected_payload
     assert isinstance(payload.traces[0].spans[0], AgentSpan)
     assert payload.traces[0].spans[0].agent_type == AgentType.default
