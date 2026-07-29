@@ -147,6 +147,11 @@ def routing_resource_attributes(routing: RoutingAttrs) -> dict[str, str]:
     return attributes
 
 
+def create_otel_resource(routing: RoutingAttrs) -> Resource:
+    """Create a Resource with standard OTel detection and Splunk AO routing."""
+    return Resource.create(routing_resource_attributes(routing))
+
+
 def build_exporter(
     endpoint: str,
     auth_header: tuple[str, str],
@@ -157,4 +162,4 @@ def build_exporter(
     """Build an OTLP HTTP exporter from shared resolved configuration."""
     config = resolve_exporter_config(endpoint, auth_header, routing)
     delegate = _exporter_factory(endpoint=config.endpoint, headers=config.headers, **exporter_kwargs)
-    return NormalizingSpanExporter(delegate, Resource(routing_resource_attributes(routing)))
+    return NormalizingSpanExporter(delegate, create_otel_resource(routing))

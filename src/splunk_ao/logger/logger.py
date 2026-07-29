@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 import backoff
 from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
 from pydantic import PrivateAttr
@@ -51,8 +50,8 @@ from splunk_ao.exporter import (
     build_o11y_exporter,
     build_span_sink,
     build_standalone_exporter,
+    create_otel_resource,
     resolve_routing,
-    routing_resource_attributes,
 )
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
@@ -383,7 +382,7 @@ class SplunkAOLogger(TracesLogger):
         elif self.project_id and (self.log_stream_id or self.experiment_id):
             self._traces_client = self._create_traces_client()
 
-        self._resource = Resource(routing_resource_attributes(routing))
+        self._resource = create_otel_resource(routing)
         self._converter = SpanConverter()
         if _sink is not None:
             self._sink = _sink
