@@ -9,14 +9,14 @@ This example demonstrates how to add comprehensive observability to your LangGra
 
 - Python 3.12+
 - [UV package manager](https://docs.astral.sh/uv/getting-started/installation/)
-- [Splunk AO account](https://app.Splunk AO.ai) (free)
+- [Splunk AO account](https://app.galileo.ai) (free)
 - OpenAI API key
 
 ### Installation
 
 ```bash
 # Clone and navigate
-git clone https://github.com/runSplunk AO/sdk-examples
+git clone https://github.com/rungalileo/sdk-examples
 cd sdk-examples/python/agent/langgraph-traceloop
 
 # Install dependencies
@@ -32,9 +32,9 @@ cp .env.example .env
 Create a `.env` file in the project root with the following variables:
 
 ```bash
-# Your Splunk AO API key (get from https://app.Splunk AO.ai/settings/api-keys)
+# Your Splunk AO API key (get from https://app.galileo.ai/settings/api-keys)
 
-TRACELOOP_BASE_URL=https://api.Splunk AO.ai/otel
+TRACELOOP_BASE_URL=https://api.galileo.ai/otel
 
 TRACELOOP_HEADERS="Splunk-AO-API-Key=your_splunk_ao_api_key_here, project=traceloop, logstream=default, X-Use-Otel-New=true"
 
