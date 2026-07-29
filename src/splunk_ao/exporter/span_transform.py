@@ -44,7 +44,7 @@ def copy_span_for_export(
         {key: value for key, value in source_resource.attributes.items() if key not in ROUTING_ATTRIBUTE_KEYS},
         schema_url=source_resource.schema_url,
     )
-    resource = base_resource.merge(routing_resource) if routing_resource is not None else base_resource
+    resource = routing_resource.merge(base_resource) if routing_resource is not None else base_resource
 
     return ReadableSpan(
         name=span.name,
