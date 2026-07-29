@@ -151,7 +151,7 @@ _otel_context_state: ContextVar[OtelContextState | None] = ContextVar("_otel_con
 
 class SplunkAOLogger(TracesLogger):
     """
-    This class can be used to upload traces to Galileo.
+    This class can be used to upload traces to Splunk AO.
     First initialize a new SplunkAOLogger object with an existing project and log stream.
 
     ```python
@@ -162,7 +162,7 @@ class SplunkAOLogger(TracesLogger):
 
     Next, we can add traces.
     Let's add a simple trace with just one span (llm call) in it,
-    and log it to Galileo using `conclude`.
+    and log it to Splunk AO using `conclude`.
 
     ```python
     logger
@@ -284,7 +284,7 @@ class SplunkAOLogger(TracesLogger):
                 This hook is called when the logger is flushed and can be a
                 synchronous or asynchronous function. This is useful for implementing
                 custom logic such as data redaction before the traces are sent to
-                Galileo via the `ingest_traces` method.
+                Splunk AO via the ingest_traces method.
         """
         super().__init__()
         mode = _get_mode_or_default(mode)
@@ -299,7 +299,7 @@ class SplunkAOLogger(TracesLogger):
             raise SplunkAOLoggerException("ingestion_hook can only be used in batch mode")
 
         # Ingestion hook mode: skip project/log_stream validation and backend initialization
-        # The user's hook handles all trace flushing, so no Galileo credentials are needed
+        # The user's hook handles all trace flushing, so no Splunk AO credentials are needed
         if ingestion_hook:
             self.project_name = project
             self.project_id = project_id
@@ -689,7 +689,7 @@ class SplunkAOLogger(TracesLogger):
             self._logger.info(f"🚀 Creating new project... project {self.project_name} created!")
         else:
             if project_obj.type != "gen_ai":
-                raise Exception(f"Project {self.project_name} is not a Galileo 2.0 project")
+                raise Exception(f"Project {self.project_name} is not a Splunk AO project")
             self.project_id = project_obj.id
 
     @nop_sync
@@ -2062,9 +2062,9 @@ class SplunkAOLogger(TracesLogger):
         Add a control span to the current parent.
 
         Control spans are leaf spans representing a single Agent Control
-        evaluation result attached to the active Galileo parent.
+        evaluation result attached to the active Splunk AO parent.
 
-        When provided, ``id`` is used as the canonical Galileo span ID for the
+        When provided, ``id`` is used as the canonical Splunk AO span ID for the
         control execution. This is the right place to map an upstream
         control-execution identifier such as Agent Control's
         ``control_execution_id``.
@@ -2633,7 +2633,7 @@ class SplunkAOLogger(TracesLogger):
     @async_warn_catch_exception(exceptions=(Exception,))
     async def async_ingest_traces(self, ingest_request: TracesIngestRequest) -> None:
         """
-        Async ingest traces to Galileo.
+        Async ingest traces to Splunk AO.
 
         Can be used in combination with the `ingestion_hook` to ingest modified traces.
         """
@@ -2645,7 +2645,7 @@ class SplunkAOLogger(TracesLogger):
     @warn_catch_exception(exceptions=(Exception,))
     def ingest_traces(self, ingest_request: TracesIngestRequest) -> None:
         """
-        Ingest traces to Galileo.
+        Ingest traces to Splunk AO.
 
         Can be used in combination with the `ingestion_hook` to ingest modified traces.
         """

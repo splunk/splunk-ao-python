@@ -154,11 +154,11 @@ class SplunkAOOTLPExporter(SpanExporter):
 
 class SplunkAOSpanProcessor(SpanProcessor):
     """
-    Complete OpenTelemetry span processor with integrated Galileo export functionality.
+    Complete OpenTelemetry span processor with integrated Splunk AO export functionality.
 
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
-    It handles the complete lifecycle of spans from creation to export to Galileo.
+    It handles the complete lifecycle of spans from creation to export to Splunk AO.
     Project, agent-stream, and experiment routing is fixed when the processor's exporter
     is constructed. Use separate processors and exporters for separate destinations.
 
@@ -183,7 +183,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the Galileo span processor with export configuration.
+        Initialize the Splunk AO span processor with export configuration.
 
         Parameters
         ----------

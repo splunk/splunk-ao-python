@@ -1,4 +1,4 @@
-"""Canonical Galileo-field and OTLP wire-attribute mapping."""
+"""Canonical Splunk AO field and OTLP wire-attribute mapping."""
 
 from __future__ import annotations
 
@@ -455,7 +455,7 @@ def _set_generic_content(attrs: MutableMapping[str, AttributeValue], span: BaseS
 
 
 def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict[str, AttributeValue]:
-    """Build preliminary attributes for one proprietary Galileo span."""
+    """Build preliminary attributes for one proprietary Splunk AO span."""
     attrs: dict[str, AttributeValue] = {}
     set_common_attributes(attrs, span, session_id)
     set_dataset_attributes(attrs, span)

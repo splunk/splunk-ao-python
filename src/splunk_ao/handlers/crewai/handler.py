@@ -55,7 +55,7 @@ def _resolve_crewai_imports() -> None:
 
 class CrewAIEventListener:
     """
-    CrewAI event listener for logging traces to the Galileo platform.
+    CrewAI event listener for logging traces to the Splunk AO platform.
 
     Attributes
     ----------

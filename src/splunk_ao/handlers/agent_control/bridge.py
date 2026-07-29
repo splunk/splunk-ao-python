@@ -115,7 +115,7 @@ def _normalize_context_id(value: Any) -> str | None:
 
 
 def _dispatch_trace_context() -> dict[str, str] | None:
-    """Return the active Galileo trace context without letting idle loggers mask active ones.
+    """Return the active Splunk AO trace context without letting idle loggers mask active ones.
 
     Agent Control exposes a single process-wide trace-context provider. Multiple
     ``SplunkAOLogger`` instances can coexist in the same process, so we keep one
@@ -124,8 +124,8 @@ def _dispatch_trace_context() -> dict[str, str] | None:
     "latest active logger wins" behavior while allowing older active loggers to
     continue providing context if a newer logger is merely idle.
 
-    When no Galileo bridge has an active parent, the dispatcher falls back to
-    whatever provider was installed before Galileo registered itself.
+    When no Splunk AO bridge has an active parent, the dispatcher falls back to
+    whatever provider was installed before Splunk AO registered itself.
     """
     with _REGISTRATION_LOCK:
         bridges = list(_REGISTERED_BRIDGES)
@@ -151,12 +151,12 @@ class _SplunkAOControlEventSink:
 
 
 class SplunkAOAgentControlBridge:
-    """Bridge Agent Control telemetry into the active Galileo logger hierarchy.
+    """Bridge Agent Control telemetry into the active Splunk AO logger hierarchy.
 
     Bridge rules:
     - Events are converted only when the logger has an active trace parent.
     - Events are converted only when their ``trace_id`` and ``span_id`` match the
-      current Galileo trace/span context advertised through the public provider.
+      current Splunk AO trace/span context advertised through the public provider.
     - Events that fail validation or do not match the active context are dropped
       safely rather than attached to the wrong logger hierarchy.
     """
@@ -168,7 +168,7 @@ class SplunkAOAgentControlBridge:
         self._registered = False
 
     def register(self) -> SplunkAOAgentControlBridge:
-        """Register this bridge and install the shared Galileo trace-context dispatcher."""
+        """Register this bridge and install the shared Splunk AO trace-context dispatcher."""
         with _REGISTRATION_LOCK:
             global _PREVIOUS_TRACE_CONTEXT_PROVIDER
 
@@ -187,7 +187,7 @@ class SplunkAOAgentControlBridge:
         return self
 
     def unregister(self) -> None:
-        """Unregister this bridge and restore the previous provider only if Galileo still owns the slot."""
+        """Unregister this bridge and restore the previous provider only if Splunk AO still owns the slot."""
         with _REGISTRATION_LOCK:
             global _PREVIOUS_TRACE_CONTEXT_PROVIDER
 
@@ -203,7 +203,7 @@ class SplunkAOAgentControlBridge:
                     self._modules.trace_context.set_trace_context_provider(_PREVIOUS_TRACE_CONTEXT_PROVIDER)
                 else:
                     logger.debug(
-                        "Agent Control trace-context provider changed while Galileo bridge was active; "
+                        "Agent Control trace-context provider changed while Splunk AO bridge was active; "
                         "leaving current provider unchanged."
                     )
                 _PREVIOUS_TRACE_CONTEXT_PROVIDER = None
@@ -211,7 +211,7 @@ class SplunkAOAgentControlBridge:
             self._registered = False
 
     def write_events(self, events: Any) -> Any:
-        """Convert Agent Control events into Galileo control spans."""
+        """Convert Agent Control events into Splunk AO control spans."""
         active_context = self._active_context()
         if active_context is None:
             return self._sink_result(accepted=0, dropped=len(events))
@@ -301,5 +301,5 @@ class SplunkAOAgentControlBridge:
 
 
 def setup_agent_control_bridge(splunk_ao_logger: SplunkAOLogger) -> SplunkAOAgentControlBridge:
-    """Create and register an Agent Control bridge for a Galileo logger."""
+    """Create and register an Agent Control bridge for a Splunk AO logger."""
     return splunk_ao_logger.enable_agent_control()

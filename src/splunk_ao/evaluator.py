@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 class BuiltInEvaluators:
     """
-    Provides convenient access to built-in Galileo metrics (formerly "scorers").
+    Provides convenient access to built-in Splunk AO evaluators (formerly "scorers").
 
     Examples
     --------
@@ -87,12 +87,12 @@ BuiltInScorers = BuiltInEvaluators
 
 class Evaluator(StateManagementMixin, ABC):
     """
-    Base class for all Galileo metrics.
+    Base class for all Splunk AO evaluators.
 
     This is an abstract base class that defines common attributes and methods
     for all metric types. Use one of the concrete metric classes instead:
 
-    - **SplunkAOEvaluator**: Built-in Galileo scorers (access via Evaluator.scorers)
+    - **SplunkAOEvaluator**: Built-in Splunk AO evaluators (access via Evaluator.metrics)
     - **LlmEvaluator**: Custom LLM-based metrics with prompt templates
     - **LocalEvaluator**: Local function-based metrics
     - **CodeEvaluator**: Code-based metrics (future support)
@@ -110,11 +110,11 @@ class Evaluator(StateManagementMixin, ABC):
 
     Class Attributes
     ----------------
-        metrics (BuiltInEvaluators): Access built-in Galileo metrics.
+        metrics (BuiltInEvaluators): Access built-in Splunk AO evaluators.
 
     Examples
     --------
-        # 1. Use built-in Galileo scorers
+        # 1. Use built-in Splunk AO evaluators
         from splunk_ao import Evaluator, SplunkAOEvaluator, LlmEvaluator, LocalEvaluator, AgentStream
 
         agent_stream = AgentStream.get(name="my-stream", project_name="my-project")
@@ -157,7 +157,7 @@ class Evaluator(StateManagementMixin, ABC):
     updated_at: datetime | None
     version: int | None
 
-    # Scorer defaults - available for LLM and built-in Galileo metrics
+    # Scorer defaults - available for LLM and built-in Splunk AO evaluators
     # These are returned by the API in the ScorerDefaults object
     model: str | None
     judges: int | None
@@ -185,7 +185,7 @@ class Evaluator(StateManagementMixin, ABC):
         self.updated_at = None
         self.scorer_type = None
 
-        # Initialize scorer defaults (populated from API for LLM and Galileo metrics)
+        # Initialize scorer defaults (populated from API for LLM and Splunk AO evaluators)
         self.model = None
         self.judges = None
         self.cot_enabled = None
@@ -383,7 +383,7 @@ class Evaluator(StateManagementMixin, ABC):
         created_at = None if isinstance(scorer_response.created_at, Unset) else scorer_response.created_at
         updated_at = None if isinstance(scorer_response.updated_at, Unset) else scorer_response.updated_at
 
-        # Extract defaults - available for LLM and built-in Galileo metrics
+        # Extract defaults - available for LLM and built-in Splunk AO evaluators
         # These are returned by the API for preset scorers too
         if not isinstance(scorer_response.defaults, Unset) and scorer_response.defaults is not None:
             model = scorer_response.defaults.model_name if hasattr(scorer_response.defaults, "model_name") else None
@@ -959,7 +959,7 @@ class CodeEvaluator(Evaluator):
         Validate the code by submitting it to the validation endpoint and polling for results.
 
         Args:
-            config: The Galileo configuration with API client.
+            config: The Splunk AO configuration with API client.
 
         Returns
         -------
@@ -1163,9 +1163,9 @@ class CodeEvaluator(Evaluator):
 
 class SplunkAOEvaluator(Evaluator):
     """
-    Built-in Galileo scorer metric.
+    Built-in Splunk AO evaluator.
 
-    This metric type represents Galileo's built-in scorers like correctness,
+    This evaluator type represents Splunk AO's built-in scorers like correctness,
     completeness, toxicity, etc. Access these via `Evaluator.metrics`.
 
     Examples
@@ -1189,7 +1189,7 @@ class SplunkAOEvaluator(Evaluator):
         self, name: str, *, description: str = "", tags: list[str] | None = None, version: int | None = None
     ) -> None:
         """
-        Initialize a Galileo metric.
+        Initialize a Splunk AO evaluator.
 
         Args:
             name: The name of the metric.
@@ -1198,7 +1198,7 @@ class SplunkAOEvaluator(Evaluator):
             version: Specific version to reference (for existing metrics).
         """
         super().__init__(name=name, description=description, tags=tags, version=version)
-        # Galileo metrics can have various scorer types, set during population
+        # Splunk AO evaluators can have various scorer types, set during population
 
 
 class LocalEvaluator(Evaluator):

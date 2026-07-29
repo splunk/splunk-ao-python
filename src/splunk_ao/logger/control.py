@@ -67,7 +67,7 @@ except ImportError:
         dataset_metadata: dict[str, str] = Field(
             default_factory=dict, description="Dataset metadata inherited from the parent."
         )
-        id: UUID | str | None = Field(default=None, description="Galileo ID of the control span.")
+        id: UUID | str | None = Field(default=None, description="Splunk AO ID of the control span.")
         session_id: UUID | str | None = Field(default=None, description="Session ID associated with the span.")
         trace_id: UUID | str | None = Field(default=None, description="Trace ID associated with the span.")
         parent_id: UUID | str | None = Field(default=None, description="Parent span ID associated with the span.")

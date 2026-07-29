@@ -1,9 +1,9 @@
 """
-Galileo wrapper for OpenAI that automatically logs prompts and responses.
+Splunk AO wrapper for OpenAI that automatically logs prompts and responses.
 
 This module provides a drop-in replacement for the OpenAI library that automatically
-logs all prompts, responses, and related metadata to Galileo. It works by intercepting
-calls to the OpenAI API and logging them using the Galileo logging system.
+logs all prompts, responses, and related metadata to Splunk AO. It works by intercepting
+calls to the OpenAI API and logging them using the Splunk AO logging system.
 
 Note that the original OpenAI package is still required as a project dependency to use this wrapper.
 
@@ -22,7 +22,7 @@ response = openai.chat.completions.create(
     ]
 )
 
-# All prompts and responses are automatically logged to Galileo
+# All prompts and responses are automatically logged to Splunk AO
 print(response.choices[0].message.content)
 
 # You can also use it with the splunk_ao_context for more control
@@ -80,7 +80,7 @@ _logger = logging.getLogger(__name__)
 
 def _safe_initialize_logger(initialize: Callable[[], SplunkAOLogger | None]) -> SplunkAOLogger | None:
     """
-    Safely initialize the Galileo logger.
+    Safely initialize the Splunk AO logger.
 
     This function wraps the initialization callable with exception handling to ensure
     that telemetry initialization errors do not crash user code. Any exception during
@@ -99,7 +99,7 @@ def _safe_initialize_logger(initialize: Callable[[], SplunkAOLogger | None]) -> 
     try:
         return initialize()
     except Exception as e:
-        _logger.warning(f"Galileo logging initialization failed, continuing without logging: {e}")
+        _logger.warning(f"Splunk AO logging initialization failed, continuing without logging: {e}")
         return None
 
 
@@ -284,21 +284,21 @@ def _wrap(
 
 class OpenAIGalileo:
     """
-    This class is responsible for logging OpenAI API calls and logging them to Galileo.
+    This class is responsible for logging OpenAI API calls and logging them to Splunk AO.
     It wraps the OpenAI client methods to add logging functionality without changing
     the original API behavior.
 
     Attributes
     ----------
     _splunk_ao_logger : Optional[SplunkAOLogger]
-        The Galileo logger instance used for logging OpenAI API calls.
+        The Splunk AO logger instance used for logging OpenAI API calls.
     """
 
     _splunk_ao_logger: SplunkAOLogger | None = None
 
     def initialize(self) -> SplunkAOLogger | None:
         """
-        Initialize a Galileo logger.
+        Initialize a Splunk AO logger.
 
         Parameters
         ----------
@@ -310,7 +310,7 @@ class OpenAIGalileo:
         Returns
         -------
         Optional[SplunkAOLogger]
-            The initialized Galileo logger instance.
+            The initialized Splunk AO logger instance.
         """
         self._splunk_ao_logger = splunk_ao_context.get_logger_instance()
 
@@ -318,7 +318,7 @@ class OpenAIGalileo:
 
     def register_tracing(self) -> None:
         """
-        This method wraps the OpenAI client methods to intercept calls and log them to Galileo.
+        This method wraps the OpenAI client methods to intercept calls and log them to Splunk AO.
         It is called automatically when the module is imported.
 
         The wrapped methods include:

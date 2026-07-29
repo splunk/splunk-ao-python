@@ -216,7 +216,7 @@ class OpenAiArgsExtractor:
 
 
 def convert_to_splunk_ao_message(data: Any, default_role: str = "user") -> Message:
-    """Convert OpenAI response data to a Galileo Message object."""
+    """Convert OpenAI response data to a Splunk AO Message object."""
     if hasattr(data, "type") and data.type == "function_call":
         tool_call = ToolCall(
             id=getattr(data, "call_id", ""),
