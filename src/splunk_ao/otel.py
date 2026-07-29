@@ -298,21 +298,21 @@ def _apply_dataset_attributes(
 
 
 @contextmanager
-def start_splunk_ao_span(ao_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
     tracer = tracer_provider.get_tracer("splunk-ao-tracer")
     is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
-        ao_span, WorkflowSpan | AgentSpan
+        splunk_ao_span, WorkflowSpan | AgentSpan
     )
-    with tracer.start_as_current_span(ao_span.name) as span:
+    with tracer.start_as_current_span(splunk_ao_span.name) as span:
         try:
             yield span
         finally:
             try:
-                attributes = build_span_attributes(ao_span, _session_id_context.get(None))
+                attributes = build_span_attributes(splunk_ao_span, _session_id_context.get(None))
                 if is_conversation_root:
                     attributes[GEN_AI_CONVERSATION_ROOT] = True
                 for key, value in attributes.items():
