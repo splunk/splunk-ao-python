@@ -69,7 +69,7 @@ def test_standalone_exporter_logstream_header_absent_when_experiment() -> None:
         make_standalone_cfg(), routing=make_routing(project_name="p", agent_stream_name="ls", experiment_id="exp1")
     )
 
-    assert "agentstream" not in result.headers
+    assert "logstream" not in result.headers
     assert result.headers["experimentid"] == "exp1"
 
 
@@ -78,14 +78,14 @@ def test_standalone_exporter_logstream_id_header() -> None:
         make_standalone_cfg(), routing=make_routing(project_id="pid", agent_stream_id="lsid")
     )
 
-    assert "agentstream" not in result.headers
-    assert result.headers["agentstreamid"] == "lsid"
+    assert "logstream" not in result.headers
+    assert result.headers["logstreamid"] == "lsid"
 
 
 def test_standalone_exporter_no_routing_headers_when_routing_absent() -> None:
     result = resolve_standalone_exporter_config(make_standalone_cfg(), routing=make_routing())
 
-    for header in ("project", "projectid", "agentstream", "agentstreamid", "experimentid"):
+    for header in ("project", "projectid", "logstream", "logstreamid", "experimentid"):
         assert header not in result.headers
 
 
@@ -95,7 +95,7 @@ def test_routing_resource_attributes_match_name_headers() -> None:
     attrs = routing_resource_attributes(routing)
 
     assert cfg.headers["project"] == attrs["splunk_ao.project.name"] == "p"
-    assert cfg.headers["agentstream"] == attrs["splunk_ao.agentstream.name"] == "ls"
+    assert cfg.headers["logstream"] == attrs["splunk_ao.logstream.name"] == "ls"
 
 
 def test_routing_resource_attributes_match_id_headers() -> None:
@@ -104,7 +104,7 @@ def test_routing_resource_attributes_match_id_headers() -> None:
     attrs = routing_resource_attributes(routing)
 
     assert cfg.headers["projectid"] == attrs["splunk_ao.project.id"] == "pid"
-    assert cfg.headers["agentstreamid"] == attrs["splunk_ao.agentstream.id"] == "lsid"
+    assert cfg.headers["logstreamid"] == attrs["splunk_ao.logstream.id"] == "lsid"
 
 
 def test_routing_resource_attributes_prioritize_experiment() -> None:
@@ -113,8 +113,8 @@ def test_routing_resource_attributes_prioritize_experiment() -> None:
     )
 
     assert attrs["splunk_ao.experiment.id"] == "exp"
-    assert "splunk_ao.agentstream.name" not in attrs
-    assert "splunk_ao.agentstream.id" not in attrs
+    assert "splunk_ao.logstream.name" not in attrs
+    assert "splunk_ao.logstream.id" not in attrs
 
 
 def test_routing_resource_attributes_empty_when_routing_absent() -> None:

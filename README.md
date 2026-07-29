@@ -101,7 +101,7 @@ from splunk_ao import splunk_ao_context
 from splunk_ao.openai import openai
 
 # If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
-splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
+splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # Initialize the Agent Observability wrapped OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -132,7 +132,7 @@ def make_nested_call():
     call_openai()
 
 # If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
-splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
+splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # This will create a trace with a workflow span and two nested LLM spans containing the OpenAI calls
 make_nested_call()
@@ -184,7 +184,7 @@ with splunk_ao_context():
 from splunk_ao import splunk_ao_context
 
 # This will log to the project and log stream specified in the context manager
-with splunk_ao_context(project="gen-ai-project", log_stream="test2"):
+with splunk_ao_context(project="gen-ai-project", agent_stream="test2"):
     content = make_nested_call()
     print(content)
 ```
@@ -221,7 +221,7 @@ current Agent Observability agent stream as the runtime target:
 import agent_control
 from splunk_ao import splunk_ao_context, get_agent_control_target
 
-splunk_ao_context.init(project="my-project", log_stream="prod")
+splunk_ao_context.init(project="my-project", agent_stream="prod")
 
 target = get_agent_control_target()
 
@@ -271,7 +271,7 @@ import os
 from splunk_ao import splunk_ao_context
 from splunk_ao.openai import openai
 
-splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
+splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # Initialize the Agent Observability wrapped OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))

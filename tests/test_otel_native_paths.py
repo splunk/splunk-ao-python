@@ -16,7 +16,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -32,8 +32,8 @@ from splunk_ao.shared.exceptions import MissingConfigurationError
 ROUTING_KEYS = {
     "splunk_ao.project.name",
     "splunk_ao.project.id",
-    "splunk_ao.agentstream.name",
-    "splunk_ao.agentstream.id",
+    "splunk_ao.logstream.name",
+    "splunk_ao.logstream.id",
     "splunk_ao.experiment.id",
 }
 
@@ -90,7 +90,7 @@ class RecordingSpanProcessor:
 def reset_otel_context(monkeypatch: pytest.MonkeyPatch):
     contexts = (
         _project_context,
-        _log_stream_context,
+        _agent_stream_context,
         _experiment_id_context,
         _session_id_context,
         _dataset_input_context,
@@ -178,7 +178,7 @@ def test_standalone_exporter_uses_shared_config_and_name_routing() -> None:
     assert factory.calls == [
         {
             "endpoint": "https://api.example.com/otel/v1/traces",
-            "headers": {"Splunk-AO-API-Key": "standalone-key", "project": "payments", "agentstream": "production"},
+            "headers": {"Splunk-AO-API-Key": "standalone-key", "project": "payments", "logstream": "production"},
         }
     ]
     exporter.shutdown()
@@ -233,7 +233,7 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
     monkeypatch.setenv("SPLUNK_AO_PROJECT", "environment-project")
     monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "environment-log-stream")
     _project_context.set("context-project")
-    _log_stream_context.set("context-log-stream")
+    _agent_stream_context.set("context-log-stream")
     factory = RecordingExporterFactory()
 
     exporter = build_exporter(
@@ -243,7 +243,7 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
     assert factory.calls[0]["headers"] == {
         "X-SF-Token": "o11y-token",
         "projectid": "explicit-project-id",
-        "agentstreamid": "explicit-agent-stream-id",
+        "logstreamid": "explicit-agent-stream-id",
     }
     exporter.shutdown()
 
@@ -266,7 +266,7 @@ def test_exporter_copies_span_without_mutating_source() -> None:
     assert source.resource.attributes["splunk_ao.project.name"] == "stale-resource-project"
     assert source.attributes["splunk_ao.project.name"] == "stale-span-project"
     assert exported.resource.attributes["splunk_ao.project.name"] == "authoritative-project"
-    assert exported.resource.attributes["splunk_ao.agentstream.name"] == "authoritative-agent-stream"
+    assert exported.resource.attributes["splunk_ao.logstream.name"] == "authoritative-agent-stream"
     assert "splunk_ao.project.name" not in (exported.attributes or {})
     assert exported.resource.attributes["service.name"] == "checkout"
     exporter.shutdown()
@@ -331,7 +331,7 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
     exporter = RecordingExporter()
     processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
     _project_context.set("later-project")
-    _log_stream_context.set("later-log-stream")
+    _agent_stream_context.set("later-log-stream")
     _experiment_id_context.set("later-experiment")
     _session_id_context.set("session-id")
     _dataset_input_context.set("question")

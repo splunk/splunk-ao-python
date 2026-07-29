@@ -166,7 +166,7 @@ def test_converter_leaves_final_export_normalization_to_the_sink() -> None:
 
 def test_resource_routing_is_preserved_without_becoming_a_span_attribute() -> None:
     resource = Resource.create(
-        {"service.name": "travel-agent", "splunk_ao.project.name": "project", "splunk_ao.agentstream.name": "log-stream"}
+        {"service.name": "travel-agent", "splunk_ao.project.name": "project", "splunk_ao.logstream.name": "log-stream"}
     )
 
     result = convert(ToolSpan(name="search"), resource=resource)
@@ -174,7 +174,7 @@ def test_resource_routing_is_preserved_without_becoming_a_span_attribute() -> No
     assert result.resource is resource
     assert result.resource.attributes["splunk_ao.project.name"] == "project"
     assert "splunk_ao.project.name" not in (result.attributes or {})
-    assert "splunk_ao.agentstream.name" not in (result.attributes or {})
+    assert "splunk_ao.logstream.name" not in (result.attributes or {})
 
 
 def test_context_parent_flags_and_trace_state_are_preserved() -> None:

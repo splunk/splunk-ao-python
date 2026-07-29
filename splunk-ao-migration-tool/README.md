@@ -178,8 +178,8 @@ All sub-module paths follow the same rename pattern:
 - from galileo import galileo_context
 + from splunk_ao import splunk_ao_context
 
-- with galileo_context(project="my-project", log_stream="prod"):
-+ with splunk_ao_context(project="my-project", log_stream="prod"):
+- with galileo_context(project="my-project", agent_stream="prod"):
++ with splunk_ao_context(project="my-project", agent_stream="prod"):
       result = my_llm_call()
 ```
 
@@ -370,12 +370,12 @@ os.environ["GALILEO_LOG_STREAM"] = "production"
 def call_llm(prompt: str) -> str:
     return "response"
 
-with galileo_context(project="my-project", log_stream="production"):
+with galileo_context(project="my-project", agent_stream="production"):
     result = call_llm("Hello")
 
 # Direct logger approach
 # project/log_stream are constructor args, not start_session args
-logger = GalileoLogger(project="my-project", log_stream="production")
+logger = GalileoLogger(project="my-project", agent_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg
@@ -397,7 +397,7 @@ os.environ["SPLUNK_AO_LOG_STREAM"] = "production"
 def call_llm(prompt: str) -> str:
     return "response"
 
-with splunk_ao_context(project="my-project", log_stream="production"):
+with splunk_ao_context(project="my-project", agent_stream="production"):
     result = call_llm("Hello")
 
 # Direct logger approach

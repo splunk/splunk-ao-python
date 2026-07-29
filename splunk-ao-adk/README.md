@@ -24,7 +24,7 @@ from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", agent_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -60,7 +60,7 @@ from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", agent_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -97,7 +97,7 @@ from google.adk.agents.run_config import RunConfig
 from google.genai import types
 
 async def main():
-    plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
+    plugin = SplunkAOADKPlugin(project="my-project", agent_stream="production")
     agent = LlmAgent(name="assistant", model="gemini-2.0-flash", instruction="You are helpful.")
     runner = Runner(agent=agent, plugins=[plugin])
 
@@ -137,7 +137,7 @@ from google.adk.agents import LlmAgent
 from google.genai import types
 
 async def main():
-    callback = SplunkAOADKCallback(project="my-project", log_stream="production")
+    callback = SplunkAOADKCallback(project="my-project", agent_stream="production")
 
     agent = LlmAgent(
         name="assistant",
@@ -194,7 +194,7 @@ from google.genai import types
 
 logger = SplunkAOLogger(
     project=os.getenv("SPLUNK_AO_PROJECT", "my-project"),
-    log_stream=os.getenv("SPLUNK_AO_AGENT_STREAM", "dev"),
+    agent_stream=os.getenv("SPLUNK_AO_AGENT_STREAM", "dev"),
 )
 
 def my_ingestion_hook(request):

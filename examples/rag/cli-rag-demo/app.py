@@ -17,7 +17,7 @@ logging_enabled = os.environ.get("SPLUNK_AO_API_KEY") is not None
 
 logger = SplunkAOLogger(
     project="rag-test",
-    log_stream="dev",
+    agent_stream="dev",
 )
 
 # Initialize OpenAI client directly

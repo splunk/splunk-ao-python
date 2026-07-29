@@ -72,7 +72,7 @@ def greet(name: str) -> str:
     return f"Hello, {name}! 👋"
 
 # 3. Set up Splunk AO monitoring context
-with splunk_ao_context(project="langchain-docs", log_stream="my_log_stream"):
+with splunk_ao_context(project="langchain-docs", agent_stream="my_log_stream"):
     # 4. Initialize the agent with the Splunk AO callback for monitoring
     agent = initialize_agent(
         tools=[greet],

@@ -73,7 +73,7 @@ def test_o11y_exporter_logstream_header_absent_when_experiment() -> None:
         cfg, routing=make_routing(project_name="p", agent_stream_name="ls", experiment_id="exp1")
     )
 
-    assert "agentstream" not in result.headers
+    assert "logstream" not in result.headers
     assert result.headers["experimentid"] == "exp1"
 
 
@@ -81,7 +81,7 @@ def test_o11y_exporter_no_routing_headers_when_routing_absent() -> None:
     cfg = O11yConfig(realm="us1", sf_token="tok")
     result = resolve_o11y_exporter_config(cfg, routing=make_routing())
 
-    for header in ("project", "projectid", "agentstream", "agentstreamid", "experimentid"):
+    for header in ("project", "projectid", "logstream", "logstreamid", "experimentid"):
         assert header not in result.headers
 
 
@@ -103,5 +103,5 @@ def test_build_o11y_exporter_passes_resolved_public_config_to_factory() -> None:
     assert exporter.delegate is expected_exporter
     assert captured == {
         "endpoint": "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp",
-        "headers": {"X-SF-Token": "tok", "projectid": "pid", "agentstreamid": "lsid"},
+        "headers": {"X-SF-Token": "tok", "projectid": "pid", "logstreamid": "lsid"},
     }

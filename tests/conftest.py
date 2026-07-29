@@ -469,8 +469,8 @@ def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
     original_handlers = logger.handlers[:]
     original_propagate = logger.propagate
 
-    log_stream = StringIO()
-    handler = logging.StreamHandler(log_stream)
+    agent_stream = StringIO()
+    handler = logging.StreamHandler(agent_stream)
     handler.setFormatter(logging.Formatter("%(levelname)s - %(name)s - %(message)s"))
 
     logger.handlers = [handler]
@@ -478,7 +478,7 @@ def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
     logger.propagate = False
 
     try:
-        yield logger, log_stream
+        yield logger, agent_stream
     finally:
         logger.handlers = original_handlers
         logger.setLevel(original_level)

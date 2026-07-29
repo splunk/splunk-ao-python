@@ -94,7 +94,7 @@ def _is_uuid(value: str) -> bool:
 
 def create_metric_configs(
     project_id: str,
-    run_id: str | None,  # Can be experiment_id, log_stream_id, or None (for trigger=True flow)
+    run_id: str | None,  # Can be experiment_id, agent_stream_id, or None (for trigger=True flow)
     metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
 ) -> tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]:
     """

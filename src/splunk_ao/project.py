@@ -55,7 +55,7 @@ class Project(StateManagementMixin):
         projects = Project.list()
 
         # Create a log stream for the project
-        log_stream = project.create_agent_stream(name="Production Logs")
+        agent_stream = project.create_agent_stream(name="Production Logs")
 
         # List log streams for the project
         log_streams = project.list_agent_streams()

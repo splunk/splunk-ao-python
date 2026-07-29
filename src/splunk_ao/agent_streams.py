@@ -13,7 +13,7 @@ from splunk_ao.resources.models.log_stream_create_request import LogStreamCreate
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.resources.types import Unset
 from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
-from splunk_ao.utils.env_helpers import _get_log_stream_from_env, _get_project_from_env
+from splunk_ao.utils.env_helpers import _get_agent_stream_from_env, _get_project_from_env
 from splunk_ao.utils.log_config import get_logger
 from splunk_ao.utils.metrics import create_metric_configs
 
@@ -51,14 +51,14 @@ class AgentStream(LogStreamResponse):
     from splunk_ao.agent_streams import create_agent_stream
 
     # Create by project ID
-    log_stream = create_agent_stream(name="Production Logs", project_id="project-123")
+    agent_stream = create_agent_stream(name="Production Logs", project_id="project-123")
 
     # Create by project name
-    log_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
+    agent_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # Get a log stream by name
     from splunk_ao.agent_streams import get_agent_stream
-    log_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
+    agent_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # List all log streams in a project
     from splunk_ao.agent_streams import list_agent_streams
@@ -70,7 +70,7 @@ class AgentStream(LogStreamResponse):
     from splunk_ao.openai import openai
     from splunk_ao import splunk_ao_context
 
-    with splunk_ao_context(project="My AI Project", log_stream="Production Logs"):
+    with splunk_ao_context(project="My AI Project", agent_stream="Production Logs"):
         response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": "Hello, world!"}]
@@ -100,26 +100,26 @@ class AgentStream(LogStreamResponse):
     ```
     """
 
-    def __init__(self, log_stream: None | LogStreamResponse = None):
+    def __init__(self, agent_stream: None | LogStreamResponse = None):
         """
         Initialize a AgentStream instance.
 
         Parameters
         ----------
-        log_stream : Union[None, LogStreamResponse], optional
+        agent_stream : Union[None, LogStreamResponse], optional
             The log stream data to initialize from. If None, creates an empty log stream instance.
             Defaults to None.
         """
-        if log_stream is not None:
+        if agent_stream is not None:
             super().__init__(
-                created_at=log_stream.created_at,
-                id=log_stream.id,
-                name=log_stream.name,
-                project_id=log_stream.project_id,
-                updated_at=log_stream.updated_at,
-                created_by=log_stream.created_by,
+                created_at=agent_stream.created_at,
+                id=agent_stream.id,
+                name=agent_stream.name,
+                project_id=agent_stream.project_id,
+                updated_at=agent_stream.updated_at,
+                created_by=agent_stream.created_by,
             )
-            self.additional_properties = log_stream.additional_properties.copy()
+            self.additional_properties = agent_stream.additional_properties.copy()
             return
 
     def enable_evaluators(
@@ -173,7 +173,7 @@ class AgentStream(LogStreamResponse):
 
         # Get a log stream first
         log_streams = AgentStreams()
-        log_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
 
         # Enable metrics directly - clean and intuitive!
         local_metrics = log_stream.enable_evaluators([
@@ -302,7 +302,7 @@ class AgentStreams:
         if response is None:
             raise ValueError("Unexpected empty response while listing log streams")
 
-        return [AgentStream(log_stream=log_stream) for log_stream in response.log_streams]
+        return [AgentStream(agent_stream=ls) for ls in response.log_streams]
 
     # Page size used by `_list_all`. Larger than the default `list()` page size so
     # full scans (name-based `get`, oldest-stream fallback) issue fewer round trips.
@@ -337,7 +337,7 @@ class AgentStreams:
             if response is None:
                 raise ValueError("Unexpected empty response while paginating log streams")
 
-            all_log_streams.extend(AgentStream(log_stream=log_stream) for log_stream in response.log_streams)
+            all_log_streams.extend(AgentStream(agent_stream=ls) for ls in response.log_streams)
 
             next_token = response.next_starting_token
             if next_token is None or isinstance(next_token, Unset) or not response.paginated:
@@ -408,11 +408,11 @@ class AgentStreams:
 
         if id:
             log_stream_response = get_log_stream_projects_project_id_log_streams_log_stream_id_get.sync(
-                project_id=project_id, log_stream_id=id, client=self.config.api_client
+                project_id=project_id, agent_stream_id=id, client=self.config.api_client
             )
             if not log_stream_response:
                 return None
-            return AgentStream(log_stream=log_stream_response)
+            return AgentStream(agent_stream=log_stream_response)
 
         if name:
             for log_stream in self._list_all(project_id=project_id):
@@ -474,7 +474,7 @@ class AgentStreams:
         if not response:
             raise ValueError("Unable to create log stream")
 
-        return AgentStream(log_stream=response)
+        return AgentStream(agent_stream=response)
 
     def enable_evaluators(
         self,
@@ -559,7 +559,7 @@ class AgentStreams:
         """
         # Apply environment variable fallbacks
         project_name = project_name or _get_project_from_env()
-        agent_stream_name = agent_stream_name or _get_log_stream_from_env()
+        agent_stream_name = agent_stream_name or _get_agent_stream_from_env()
 
         # Get project using environment fallbacks
         project_obj = Projects().get_with_env_fallbacks(name=project_name)
@@ -569,12 +569,12 @@ class AgentStreams:
         # Get log stream - error out if not found
         if not agent_stream_name:
             raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_AGENT_STREAM env var)")
-        log_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
-        if not log_stream:
+        agent_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
+        if not agent_stream:
             raise ValueError(f"Log stream '{agent_stream_name}' not found in project '{project_obj.name}'")
 
         # Use the shared utility function directly
-        _, local_metrics = create_metric_configs(project_obj.id, log_stream.id, metrics)
+        _, local_metrics = create_metric_configs(project_obj.id, agent_stream.id, metrics)
         return local_metrics
 
 

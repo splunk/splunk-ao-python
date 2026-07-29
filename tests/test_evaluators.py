@@ -473,7 +473,7 @@ class TestGetMetrics:
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(hours=1)
         experiment_id = str(uuid4())
-        log_stream_id = "test_stream"
+        agent_stream_id = "test_stream"
         filters = [Mock()]
         group_by = "some_column"
         interval = 10
@@ -483,7 +483,7 @@ class TestGetMetrics:
             start_time=start_time,
             end_time=end_time,
             experiment_id=experiment_id,
-            log_stream_id=log_stream_id,
+            agent_stream_id=agent_stream_id,
             filters=filters,
             group_by=group_by,
             interval=interval,
@@ -497,7 +497,7 @@ class TestGetMetrics:
         assert body.start_time == start_time
         assert body.end_time == end_time
         assert body.experiment_id == experiment_id
-        assert body.log_stream_id == log_stream_id
+        assert body.log_stream_id == agent_stream_id
         assert body.filters == filters
         assert body.group_by == group_by
         assert body.interval == interval

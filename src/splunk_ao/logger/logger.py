@@ -212,9 +212,9 @@ class SplunkAOLogger(TracesLogger):
     """
 
     project_name: str | None = None
-    log_stream_name: str | None = None
+    agent_stream_name: str | None = None
     project_id: str | None = None
-    log_stream_id: str | None = None
+    agent_stream_id: str | None = None
     experiment_id: str | None = None
     session_id: str | None = None
     trace_id: str | None = None
@@ -303,8 +303,8 @@ class SplunkAOLogger(TracesLogger):
         if ingestion_hook:
             self.project_name = project
             self.project_id = project_id
-            self.log_stream_name = agent_stream
-            self.log_stream_id = agent_stream_id
+            self.agent_stream_name = agent_stream
+            self.agent_stream_id = agent_stream_id
             self.experiment_id = experiment_id
             if local_metrics:
                 self.local_metrics = local_metrics
@@ -358,15 +358,15 @@ class SplunkAOLogger(TracesLogger):
         self.project_id = routing.project_id
         self.experiment_id = routing.experiment_id
         if self.experiment_id is None:
-            self.log_stream_name = routing.agent_stream_name
-            self.log_stream_id = routing.agent_stream_id
+            self.agent_stream_name = routing.agent_stream_name
+            self.agent_stream_id = routing.agent_stream_id
 
         if self._deployment == DeploymentMode.STANDALONE:
             if self.project_name is None and self.project_id is None:
                 raise SplunkAOLoggerException(
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
-            if self.experiment_id is None and self.log_stream_name is None and self.log_stream_id is None:
+            if self.experiment_id is None and self.agent_stream_name is None and self.agent_stream_id is None:
                 raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
 
         if local_metrics:
@@ -376,11 +376,11 @@ class SplunkAOLogger(TracesLogger):
             if not self.project_id:
                 self._init_project()
 
-            if not (self.log_stream_id or self.experiment_id):
-                self._init_log_stream()
+            if not (self.agent_stream_id or self.experiment_id):
+                self._init_agent_stream()
 
             self._traces_client = self._create_traces_client()
-        elif self.project_id and (self.log_stream_id or self.experiment_id):
+        elif self.project_id and (self.agent_stream_id or self.experiment_id):
             self._traces_client = self._create_traces_client()
 
         self._resource = Resource(routing_resource_attributes(routing))
@@ -693,35 +693,35 @@ class SplunkAOLogger(TracesLogger):
             self.project_id = project_obj.id
 
     @nop_sync
-    def _init_log_stream(self) -> None:
+    def _init_agent_stream(self) -> None:
         """Initializes the log stream ID."""
         log_streams_client = AgentStreams()
-        log_stream_obj = log_streams_client.get(name=self.log_stream_name, project_id=self.project_id)
+        log_stream_obj = log_streams_client.get(name=self.agent_stream_name, project_id=self.project_id)
         if log_stream_obj is None:
             # Create log stream if it doesn't exist
-            self.log_stream_id = log_streams_client.create(name=self.log_stream_name, project_id=self.project_id).id
-            self._logger.info(f"🚀 Creating new agent stream... agent stream {self.log_stream_name} created!")
+            self.agent_stream_id = log_streams_client.create(name=self.agent_stream_name, project_id=self.project_id).id
+            self._logger.info(f"🚀 Creating new agent stream... agent stream {self.agent_stream_name} created!")
         else:
-            self.log_stream_id = log_stream_obj.id
+            self.agent_stream_id = log_stream_obj.id
 
     @nop_sync
     def _create_traces_client(self) -> Traces:
         """Create the client retained for session CRUD and legacy ingestion paths."""
         if not self.project_id:
             self._init_project()
-        if not (self.log_stream_id or self.experiment_id):
-            self._init_log_stream()
+        if not (self.agent_stream_id or self.experiment_id):
+            self._init_agent_stream()
 
-        if self.log_stream_id:
-            return Traces(project_id=self.project_id, log_stream_id=self.log_stream_id)
+        if self.agent_stream_id:
+            return Traces(project_id=self.project_id, agent_stream_id=self.agent_stream_id)
         if self.experiment_id:
             return Traces(project_id=self.project_id, experiment_id=self.experiment_id)
-        raise SplunkAOLoggerException("Cannot create Traces client: no log_stream_id or experiment_id available.")
+        raise SplunkAOLoggerException("Cannot create Traces client: no agent_stream_id or experiment_id available.")
 
     def _has_session_routing(self) -> bool:
         """Return whether session CRUD has a complete destination identity."""
         has_project = bool(self.project_id or self.project_name)
-        has_destination = bool(self.experiment_id or self.log_stream_id or self.log_stream_name)
+        has_destination = bool(self.experiment_id or self.agent_stream_id or self.agent_stream_name)
         return has_project and has_destination
 
     def _ensure_session_crud_client(self) -> Traces:
@@ -735,8 +735,8 @@ class SplunkAOLogger(TracesLogger):
 
         if not self.project_id:
             self._init_project()
-        if not (self.log_stream_id or self.experiment_id):
-            self._init_log_stream()
+        if not (self.agent_stream_id or self.experiment_id):
+            self._init_agent_stream()
         self._traces_client = self._create_traces_client()
         return self._traces_client
 
@@ -1052,7 +1052,7 @@ class SplunkAOLogger(TracesLogger):
             output = trace.output if isinstance(trace.output, str) else serialize_to_str(trace.output)
         trace_update_request = TraceUpdateRequest(
             trace_id=trace.id,
-            log_stream_id=self.log_stream_id,
+            log_stream_id=self.agent_stream_id,
             experiment_id=self.experiment_id,
             output=output,
             status_code=trace.status_code,
@@ -1117,7 +1117,7 @@ class SplunkAOLogger(TracesLogger):
     def _update_span_streaming(self, span: Span) -> None:
         span_update_request = SpanUpdateRequest(
             span_id=span.id,
-            log_stream_id=self.log_stream_id,
+            log_stream_id=self.agent_stream_id,
             experiment_id=self.experiment_id,
             output=span.output,
             status_code=span.status_code,

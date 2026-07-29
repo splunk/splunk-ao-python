@@ -14,10 +14,10 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from splunk_ao.decorator import splunk_ao_context
-from splunk_ao.utils.env_helpers import _get_log_stream_or_default, _get_project_or_default
+from splunk_ao.utils.env_helpers import _get_agent_stream_or_default, _get_project_or_default
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
-AGENT_STREAM_TARGET_TYPE = "agent_stream"
+LOG_STREAM_TARGET_TYPE = "log_stream"
 
 
 class AgentControlTargetUnresolvedError(ValueError):
@@ -32,7 +32,7 @@ class AgentControlTarget:
     ----------
     target_type
         Opaque Agent Control target type. Agent Control treats this value as
-        deployer-defined; Galileo currently auto-resolves only ``agent_stream``
+        deployer-defined; Galileo currently auto-resolves only ``log_stream``
         targets.
     target_id
         Opaque Agent Control target ID.
@@ -49,7 +49,7 @@ class AgentControlTarget:
 
 def get_agent_control_target(
     *,
-    target_type: str = AGENT_STREAM_TARGET_TYPE,
+    target_type: str = LOG_STREAM_TARGET_TYPE,
     target_id: str | None = None,
     agent_stream_id: str | None = None,
     project_id: str | None = None,
@@ -59,8 +59,8 @@ def get_agent_control_target(
     Resolution order:
 
     1. Explicit ``target_id``.
-    2. Explicit ``agent_stream_id`` for ``agent_stream`` targets.
-    3. ``SPLUNK_AO_AGENT_STREAM_ID`` for ``agent_stream`` targets.
+    2. Explicit ``agent_stream_id`` for ``log_stream`` targets.
+    3. ``SPLUNK_AO_AGENT_STREAM_ID`` for ``log_stream`` targets.
     4. An already-initialized ``splunk_ao_context`` logger.
 
     This helper does not resolve agent stream names over the network. If only an
@@ -71,24 +71,24 @@ def get_agent_control_target(
     env_project_id = _strip_optional_string(os.getenv("SPLUNK_AO_PROJECT_ID"))
     resolved_project_id = explicit_project_id or env_project_id
 
-    if target_type == AGENT_STREAM_TARGET_TYPE:
+    if target_type == LOG_STREAM_TARGET_TYPE:
         target_id = _strip_optional_string(target_id)
     agent_stream_id = _strip_optional_string(agent_stream_id)
 
-    if target_type != AGENT_STREAM_TARGET_TYPE and agent_stream_id is not None:
-        raise AgentControlTargetUnresolvedError("agent_stream_id can only be used with target_type='agent_stream'.")
+    if target_type != LOG_STREAM_TARGET_TYPE and agent_stream_id is not None:
+        raise AgentControlTargetUnresolvedError("agent_stream_id can only be used with target_type='log_stream'.")
 
     if target_id is not None and agent_stream_id is not None and target_id != agent_stream_id:
         raise AgentControlTargetUnresolvedError("target_id and agent_stream_id must match when both are provided.")
 
     resolved_target_id = target_id if target_id is not None else agent_stream_id
     if resolved_target_id is not None:
-        if target_type == AGENT_STREAM_TARGET_TYPE:
+        if target_type == LOG_STREAM_TARGET_TYPE:
             source_label = "target_id" if target_id is not None else "agent_stream_id"
             _validate_uuid(resolved_target_id, source_label)
         return AgentControlTarget(target_type=target_type, target_id=resolved_target_id, project_id=resolved_project_id)
 
-    if target_type != AGENT_STREAM_TARGET_TYPE:
+    if target_type != LOG_STREAM_TARGET_TYPE:
         raise AgentControlTargetUnresolvedError(
             f"Could not resolve Agent Control target for target_type={target_type!r}. "
             "Provide target_id=<id> explicitly."
@@ -101,10 +101,10 @@ def get_agent_control_target(
     if env_log_stream_id:
         _validate_uuid(env_log_stream_id, "SPLUNK_AO_AGENT_STREAM_ID")
         return AgentControlTarget(
-            target_type=AGENT_STREAM_TARGET_TYPE, target_id=env_log_stream_id, project_id=resolved_project_id
+            target_type=LOG_STREAM_TARGET_TYPE, target_id=env_log_stream_id, project_id=resolved_project_id
         )
 
-    context_target = _resolve_log_stream_from_cached_context()
+    context_target = _resolve_agent_stream_from_cached_context()
     if context_target is not None:
         return AgentControlTarget(
             target_type=context_target.target_type,
@@ -133,9 +133,9 @@ def _strip_optional_string(value: str | None) -> str | None:
     return value.strip()
 
 
-def _resolve_log_stream_from_cached_context() -> AgentControlTarget | None:
+def _resolve_agent_stream_from_cached_context() -> AgentControlTarget | None:
     current_project = _get_project_or_default(splunk_ao_context.get_current_project())
-    current_log_stream = _get_log_stream_or_default(splunk_ao_context.get_current_log_stream())
+    current_log_stream = _get_agent_stream_or_default(splunk_ao_context.get_current_agent_stream())
     current_thread_name = threading.current_thread().name
 
     # Read cached logger state directly so this helper never creates or resolves
@@ -145,12 +145,12 @@ def _resolve_log_stream_from_cached_context() -> AgentControlTarget | None:
     for key, logger in SplunkAOLoggerSingleton().get_all_loggers().items():
         if not key or key[0] != current_thread_name:
             continue
-        if logger.project_name != current_project or logger.log_stream_name != current_log_stream:
+        if logger.project_name != current_project or logger.agent_stream_name != current_log_stream:
             continue
-        if logger.log_stream_id is None:
+        if logger.agent_stream_id is None:
             continue
         return AgentControlTarget(
-            target_type=AGENT_STREAM_TARGET_TYPE, target_id=logger.log_stream_id, project_id=logger.project_id
+            target_type=LOG_STREAM_TARGET_TYPE, target_id=logger.agent_stream_id, project_id=logger.project_id
         )
 
     return None

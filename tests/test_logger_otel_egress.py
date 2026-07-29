@@ -294,14 +294,14 @@ def test_o11y_names_build_routing_without_eager_lookup(
 
     with (
         patch.object(SplunkAOLogger, "_init_project") as init_project,
-        patch.object(SplunkAOLogger, "_init_log_stream") as init_log_stream,
+        patch.object(SplunkAOLogger, "_init_agent_stream") as init_log_stream,
     ):
         logger = SplunkAOLogger(project="project", agent_stream="stream", _sink=recording_sink)
 
     assert logger._deployment == DeploymentMode.O11Y
     assert logger._traces_client is None
     assert logger._resource.attributes["splunk_ao.project.name"] == "project"
-    assert logger._resource.attributes["splunk_ao.agentstream.name"] == "stream"
+    assert logger._resource.attributes["splunk_ao.logstream.name"] == "stream"
     init_project.assert_not_called()
     init_log_stream.assert_not_called()
     logger.terminate()
@@ -314,7 +314,7 @@ def test_o11y_ids_construct_session_client_without_lookup(
 
     with (
         patch.object(SplunkAOLogger, "_init_project") as init_project,
-        patch.object(SplunkAOLogger, "_init_log_stream") as init_log_stream,
+        patch.object(SplunkAOLogger, "_init_agent_stream") as init_log_stream,
     ):
         logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=recording_sink)
 
@@ -335,11 +335,11 @@ def test_o11y_name_session_client_is_resolved_lazily(
         logger.project_id = "project-id"
 
     def resolve_log_stream() -> None:
-        logger.log_stream_id = "stream-id"
+        logger.agent_stream_id = "stream-id"
 
     with (
         patch.object(logger, "_init_project", side_effect=resolve_project) as init_project,
-        patch.object(logger, "_init_log_stream", side_effect=resolve_log_stream) as init_log_stream,
+        patch.object(logger, "_init_agent_stream", side_effect=resolve_log_stream) as init_log_stream,
         patch.object(logger, "_create_traces_client", return_value=session_client),
     ):
         assert logger._ensure_session_crud_client() is session_client
@@ -381,13 +381,13 @@ def test_o11y_crud_only_token_cannot_construct_telemetry_logger(monkeypatch: pyt
 def test_singleton_keeps_id_routes_distinct_and_resets_one(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_o11y(monkeypatch)
     singleton = SplunkAOLoggerSingleton()
-    first = singleton.get(project_id="project-1", log_stream_id="stream")
-    second = singleton.get(project_id="project-2", log_stream_id="stream")
+    first = singleton.get(project_id="project-1", agent_stream_id="stream")
+    second = singleton.get(project_id="project-2", agent_stream_id="stream")
 
-    assert first is singleton.get(project_id="project-1", log_stream_id="stream")
+    assert first is singleton.get(project_id="project-1", agent_stream_id="stream")
     assert first is not second
 
-    singleton.reset(project_id="project-1", log_stream_id="stream")
+    singleton.reset(project_id="project-1", agent_stream_id="stream")
 
     assert first._terminated
     assert not second._terminated
@@ -396,9 +396,9 @@ def test_singleton_keeps_id_routes_distinct_and_resets_one(monkeypatch: pytest.M
 
 def test_singleton_reset_matches_ingestion_hook_logger() -> None:
     singleton = SplunkAOLoggerSingleton()
-    logger = singleton.get(project="project", log_stream="stream", ingestion_hook=lambda _: None)
+    logger = singleton.get(project="project", agent_stream="stream", ingestion_hook=lambda _: None)
 
-    singleton.reset(project="project", log_stream="stream")
+    singleton.reset(project="project", agent_stream="stream")
 
     assert logger._terminated
     assert singleton.get_all_loggers() == {}

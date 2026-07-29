@@ -62,7 +62,7 @@ class QueryResult:
     Examples
     --------
         # Basic iteration
-        log_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
         result = log_stream.get_spans(limit=10)
 
         for record in result:

@@ -1,7 +1,7 @@
 from typing import Literal
 
 DEFAULT_PROJECT_NAME = "default"
-DEFAULT_LOG_STREAM_NAME = "default"
+DEFAULT_AGENT_STREAM_NAME = "default"
 DEFAULT_MODE = "batch"
 
 DEFAULT_API_URL = "https://api.galileo.ai/"
@@ -16,7 +16,7 @@ LoggerModeType = Literal["batch", "distributed"]
 __all__ = (
     "DEFAULT_API_URL",
     "DEFAULT_CONSOLE_URL",
-    "DEFAULT_LOG_STREAM_NAME",
+    "DEFAULT_AGENT_STREAM_NAME",
     "DEFAULT_MODE",
     "DEFAULT_PROJECT_NAME",
     "SPLUNK_AO_HEADER_PREFIX",

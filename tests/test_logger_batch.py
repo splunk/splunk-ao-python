@@ -393,7 +393,7 @@ def test_nested_span_trace_to_galileo(
     mock_traces_client_instance.ingest_traces.assert_called_once()
     payload = mock_traces_client_instance.ingest_traces.call_args.args[0]
     expected_payload = TracesIngestRequest(
-        log_stream_id=None,
+        agent_stream_id=None,
         experiment_id=None,
         traces=[trace],
     )
@@ -1482,7 +1482,7 @@ def test_logger_init_with_project_id_and_log_stream_id(
     mock_logstreams_client.get.assert_not_called()
 
     assert logger.project_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a"
-    assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
+    assert logger.agent_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -1501,7 +1501,7 @@ def test_logger_init_with_project_id_and_log_stream_name(
     mock_logstreams_client.get.assert_called_once()
 
     assert logger.project_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a"
-    assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
+    assert logger.agent_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -1520,7 +1520,7 @@ def test_logger_init_with_project_name_and_log_stream_id(
     mock_logstreams_client.get.assert_not_called()
 
     assert logger.project_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a"
-    assert logger.log_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
+    assert logger.agent_stream_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -1539,7 +1539,7 @@ def test_logger_init_with_project_name_and_experiment_id(
     mock_logstreams_client.get.assert_not_called()
 
     assert logger.project_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a"
-    assert logger.log_stream_id is None
+    assert logger.agent_stream_id is None
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
@@ -1561,7 +1561,7 @@ def test_logger_init_with_project_id_and_experiment_id(
     mock_logstreams_client.get.assert_not_called()
 
     assert logger.project_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a"
-    assert logger.log_stream_id is None
+    assert logger.agent_stream_id is None
     assert logger.experiment_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
 
 
@@ -2194,7 +2194,7 @@ def test_ingestion_hook_without_project_or_log_stream(monkeypatch) -> None:
     # Given: an ingestion hook
     hook = Mock()
 
-    # When: creating a logger with only ingestion_hook (no explicit project or log_stream)
+    # When: creating a logger with only ingestion_hook (no explicit project or agent_stream)
     # This would have raised SplunkAOLoggerException without the fix
     logger = _legacy_logger(ingestion_hook=hook)
 

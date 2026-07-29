@@ -12,7 +12,7 @@ os.environ["SPLUNK_AO_LOG_STREAM"] = "production"
 def call_llm(prompt: str) -> str:
     return "response"
 
-with splunk_ao_context(project="my-project", log_stream="production"):
+with splunk_ao_context(project="my-project", agent_stream="production"):
     result = call_llm("Hello")
 
 # Direct logger approach

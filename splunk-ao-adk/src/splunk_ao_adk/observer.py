@@ -139,11 +139,11 @@ class SplunkAOObserver:
     def __init__(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
         *,
         project_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
     ) -> None:
         self._current_adk_session: str | None = None
 
@@ -161,8 +161,8 @@ class SplunkAOObserver:
             splunk_ao_logger = splunk_ao_context.get_logger_instance(
                 project=project,
                 project_id=project_id,
-                log_stream=log_stream,
-                log_stream_id=log_stream_id,
+                agent_stream=agent_stream,
+                agent_stream_id=agent_stream_id,
             )
             self._handler = SplunkAOBaseHandler(
                 splunk_ao_logger=splunk_ao_logger,

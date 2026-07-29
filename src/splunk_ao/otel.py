@@ -22,7 +22,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -74,7 +74,7 @@ def _resolve_routing(
         agent_stream_id=agent_stream_id,
         experiment_id=experiment_id,
         context_project=_project_context.get(None),
-        context_agent_stream=_log_stream_context.get(None),
+        context_agent_stream=_agent_stream_context.get(None),
         context_experiment_id=_experiment_id_context.get(None),
     )
 

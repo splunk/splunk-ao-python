@@ -8,12 +8,12 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.export import SpanExporter
 
-from splunk_ao.constants import DEFAULT_LOG_STREAM_NAME, DEFAULT_PROJECT_NAME
+from splunk_ao.constants import DEFAULT_AGENT_STREAM_NAME, DEFAULT_PROJECT_NAME
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.utils.env_helpers import (
-    _get_log_stream_from_env,
-    _get_log_stream_id_from_env,
+    _get_agent_stream_from_env,
+    _get_agent_stream_id_from_env,
     _get_project_from_env,
     _get_project_id_from_env,
 )
@@ -98,9 +98,9 @@ def resolve_routing(
         agent_stream_id,
         context_agent_stream,
         context_agent_stream_id,
-        _get_log_stream_from_env(),
-        _get_log_stream_id_from_env(),
-        DEFAULT_LOG_STREAM_NAME if standalone else None,
+        _get_agent_stream_from_env(),
+        _get_agent_stream_id_from_env(),
+        DEFAULT_AGENT_STREAM_NAME if standalone else None,
     )
     return RoutingAttrs(
         project_name=project_name,
@@ -122,9 +122,9 @@ def resolve_exporter_config(endpoint: str, auth_header: tuple[str, str], routing
     if routing.experiment_id:
         headers["experimentid"] = routing.experiment_id
     elif routing.agent_stream_name:
-        headers["agentstream"] = routing.agent_stream_name
+        headers["logstream"] = routing.agent_stream_name
     elif routing.agent_stream_id:
-        headers["agentstreamid"] = routing.agent_stream_id
+        headers["logstreamid"] = routing.agent_stream_id
 
     return ExporterConfig(endpoint=endpoint, headers=headers)
 
@@ -140,9 +140,9 @@ def routing_resource_attributes(routing: RoutingAttrs) -> dict[str, str]:
     if routing.experiment_id:
         attributes["splunk_ao.experiment.id"] = routing.experiment_id
     elif routing.agent_stream_name:
-        attributes["splunk_ao.agentstream.name"] = routing.agent_stream_name
+        attributes["splunk_ao.logstream.name"] = routing.agent_stream_name
     elif routing.agent_stream_id:
-        attributes["splunk_ao.agentstream.id"] = routing.agent_stream_id
+        attributes["splunk_ao.logstream.id"] = routing.agent_stream_id
 
     return attributes
 
