@@ -25,7 +25,7 @@ SPLUNK_AO_PROJECT=
 SPLUNK_AO_AGENT_STREAM=
 ```
 
-For the `SPLUNK_AO_API_ENDPOINT`, you only need to set this if you are using a custom Splunk AO deployment. There is no need to set this if you ae using [app.galileo.ai](https://app.galileo.ai). This endpoint is different to the console URL that you would normally use. See the [Splunk AO OpenTelemetry documentation](https://docs.galileo.ai/sdk-api/third-party-integrations/opentelemetry-and-openinference#self-hosted-deployments) for more details.
+For the `SPLUNK_AO_API_ENDPOINT`, you only need to set this if you are using a custom Splunk AO deployment. There is no need to set this if you ae using [app.galileo.ai](https://app.galileo.ai). This endpoint is different to the console URL that you would normally use. See the [Splunk AO OpenTelemetry documentation](https://agent-observability-docs.splunk.com/sdk-api/third-party-integrations/opentelemetry-and-openinference#self-hosted-deployments:~:text=Self%2Dhosted%20deployments%3A%20Set%20the%20OTel%20endpoint) for more details.
 
 ## Usage
 

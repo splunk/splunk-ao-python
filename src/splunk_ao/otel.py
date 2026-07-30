@@ -22,7 +22,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -77,11 +77,11 @@ def _resolve_routing(
         deployment,
         project=project,
         project_id=project_id,
-        log_stream=agentstream,
-        log_stream_id=agent_stream_id,
+        agent_stream=agentstream,
+        agent_stream_id=agent_stream_id,
         experiment_id=experiment_id,
         context_project=_project_context.get(None),
-        context_log_stream=_log_stream_context.get(None),
+        context_agent_stream=_agent_stream_context.get(None),
         context_experiment_id=_experiment_id_context.get(None),
     )
 
@@ -142,8 +142,8 @@ class SplunkAOOTLPExporter(SpanExporter):
 
         self.project = self._routing.project_name
         self.project_id = self._routing.project_id
-        self.agentstream = self._routing.log_stream_name
-        self.agent_stream_id = self._routing.log_stream_id
+        self.agentstream = self._routing.agent_stream_name
+        self.agent_stream_id = self._routing.agent_stream_id
         self.experiment_id = self._routing.experiment_id
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:

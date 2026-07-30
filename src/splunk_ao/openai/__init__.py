@@ -28,7 +28,7 @@ print(response.choices[0].message.content)
 # You can also use it with the splunk_ao_context for more control
 from splunk_ao import splunk_ao_context
 
-with splunk_ao_context(project="my-project", log_stream="my-log-stream"):
+with splunk_ao_context(project="my-project", agent_stream="my-log-stream"):
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -304,7 +304,7 @@ class OpenAISplunkAO:
         ----------
         project : Optional[str]
             The project to log to. If None, uses the default project.
-        log_stream : Optional[str]
+        agent_stream : Optional[str]
             The log stream to log to. If None, uses the default log stream.
 
         Returns

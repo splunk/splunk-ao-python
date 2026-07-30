@@ -18,7 +18,7 @@ def greet(name: str) -> str:
 
 
 # Use the Splunk AO context manager to specify project and log stream
-with splunk_ao_context(project="langchain-docs", log_stream="my_log_stream"):
+with splunk_ao_context(project="langchain-docs", agent_stream="my_log_stream"):
     agent = initialize_agent(
         tools=[greet],
         llm=ChatOpenAI(model="gpt-4", temperature=0.7, callbacks=[SplunkAOCallback()]),

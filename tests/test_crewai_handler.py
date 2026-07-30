@@ -90,7 +90,7 @@ def mock_splunk_ao_logger():
 
         from splunk_ao.logger.logger import SplunkAOLogger
 
-        return SplunkAOLogger(project="test_project", log_stream="test_log_stream", ingestion_hook=lambda _: None)
+        return SplunkAOLogger(project="test_project", agent_stream="test_log_stream", ingestion_hook=lambda _: None)
 
 
 @pytest.fixture

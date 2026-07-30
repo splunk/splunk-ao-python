@@ -27,7 +27,7 @@ class TestTracesHeaders:
     def traces_client(self, mock_config):
         """Create a Traces instance for testing."""
         return Traces(
-            project_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a", log_stream_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
+            project_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a", agent_stream_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9b"
         )
 
     @pytest.mark.asyncio

@@ -35,7 +35,7 @@ class Search:
         project_id: str,
         record_type: RecordType,
         experiment_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
         filters: list[FilterType] | None = None,
         sort: LogRecordsSortClause | None = None,
         limit: int = 100,
@@ -43,7 +43,7 @@ class Search:
     ) -> LogRecordsQueryResponse:
         body = LogRecordsQueryRequest(
             experiment_id=experiment_id,
-            log_stream_id=log_stream_id,
+            log_stream_id=agent_stream_id,
             filters=filters or [],
             sort=sort or LogRecordsSortClause(column_id="created_at", ascending=False),
             limit=limit,
@@ -71,7 +71,7 @@ class Search:
 def get_spans(
     project_id: str,
     experiment_id: str | None = None,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     filters: list[FilterType] | None = None,
     sort: LogRecordsSortClause | None = None,
     limit: int = 100,
@@ -85,8 +85,8 @@ def get_spans(
         The unique identifier of the project.
     experiment_id
         Filter records by a specific experiment ID.
-    log_stream_id
-        Filter records by a specific run ID.
+    agent_stream_id
+        Filter records by a specific agent stream ID.
     filters
         A list of filters to apply to the query.
     sort
@@ -104,7 +104,7 @@ def get_spans(
         project_id=project_id,
         record_type=RecordType.SPAN,
         experiment_id=experiment_id,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         filters=filters,
         sort=sort,
         limit=limit,
@@ -115,7 +115,7 @@ def get_spans(
 def get_traces(
     project_id: str,
     experiment_id: str | None = None,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     filters: list[FilterType] | None = None,
     sort: LogRecordsSortClause | None = None,
     limit: int = 100,
@@ -129,8 +129,8 @@ def get_traces(
         The unique identifier of the project.
     experiment_id
         Filter records by a specific experiment ID.
-    log_stream_id
-        Filter records by a specific run ID.
+    agent_stream_id
+        Filter records by a specific agent stream ID.
     filters
         A list of filters to apply to the query.
     sort
@@ -148,7 +148,7 @@ def get_traces(
         project_id=project_id,
         record_type=RecordType.TRACE,
         experiment_id=experiment_id,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         filters=filters,
         sort=sort,
         limit=limit,
@@ -159,7 +159,7 @@ def get_traces(
 def get_sessions(
     project_id: str,
     experiment_id: str | None = None,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     filters: list[FilterType] | None = None,
     sort: LogRecordsSortClause | None = None,
     limit: int = 100,
@@ -173,8 +173,8 @@ def get_sessions(
         The unique identifier of the project.
     experiment_id
         Filter records by a specific experiment ID.
-    log_stream_id
-        Filter records by a specific run ID.
+    agent_stream_id
+        Filter records by a specific agent stream ID.
     filters
         A list of filters to apply to the query.
     sort
@@ -192,7 +192,7 @@ def get_sessions(
         project_id=project_id,
         record_type=RecordType.SESSION,
         experiment_id=experiment_id,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         filters=filters,
         sort=sort,
         limit=limit,

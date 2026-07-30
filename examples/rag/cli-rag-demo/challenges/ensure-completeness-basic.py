@@ -58,7 +58,7 @@ def query(question: str):
 def main():
     with splunk_ao_context(
         project=os.getenv("SPLUNK_AO_PROJECT", "ensure-completeness"),
-        log_stream="basic_approach",
+        agent_stream="basic_approach",
     ):
         console = Console()
         console.print("\nBasic Completeness Demo")

@@ -34,7 +34,7 @@ def test_export_records_basic(mock_export_records_stream):
             root_type=RootType.TRACE,
             column_ids=column_ids,
             sort=sort,
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
 
@@ -51,14 +51,14 @@ def test_export_records_basic(mock_export_records_stream):
 @patch("splunk_ao.export.export_records_stream")
 def test_export_records_with_defaults(mock_export_records_stream):
     project_id = str(uuid4())
-    log_stream_id = str(uuid4())
+    agent_stream_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
 
-    list(export_records(project_id=project_id, log_stream_id=log_stream_id))
+    list(export_records(project_id=project_id, agent_stream_id=agent_stream_id))
 
     mock_export_records_stream.assert_called_once()
     request_body = mock_export_records_stream.call_args.kwargs["body"]
-    assert request_body.log_stream_id == log_stream_id
+    assert request_body.log_stream_id == agent_stream_id
     assert request_body.root_type == RootType.TRACE
     assert request_body.filters == []
     assert request_body.sort == LogRecordsSortClause(column_id="created_at", ascending=False)
@@ -106,7 +106,7 @@ def test_export_records_no_default_log_stream(mock_export_records_stream, mock_l
     mock_log_streams_list_all.return_value = []
     mock_export_records_stream.return_value = iter([])
 
-    with pytest.raises(ValueError, match="Exactly one of log_stream_id or experiment_id must be provided."):
+    with pytest.raises(ValueError, match="Exactly one of agent_stream_id or experiment_id must be provided."):
         list(export_records(project_id=project_id))
 
     mock_log_streams_list_all.assert_called_once_with(project_id=project_id)
@@ -116,17 +116,17 @@ def test_export_records_no_default_log_stream(mock_export_records_stream, mock_l
 @patch("splunk_ao.export.export_records_stream")
 def test_export_records_id_validation(mock_export_records_stream):
     project_id = str(uuid4())
-    log_stream_id = str(uuid4())
+    agent_stream_id = str(uuid4())
     experiment_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
 
     # Test that ValueError is raised when both log_stream_id and experiment_id are provided
-    with pytest.raises(ValueError, match="Exactly one of log_stream_id or experiment_id must be provided."):
+    with pytest.raises(ValueError, match="Exactly one of agent_stream_id or experiment_id must be provided."):
         list(
             export_records(
                 project_id=project_id,
                 root_type=RootType.TRACE,
-                log_stream_id=log_stream_id,
+                agent_stream_id=agent_stream_id,
                 experiment_id=experiment_id,
                 filters=[],
                 sort=LogRecordsSortClause(column_id="created_at", ascending=False),
@@ -146,7 +146,7 @@ def test_export_records_with_filters(mock_export_records_stream):
             root_type=RootType.TRACE,
             filters=filters,
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
 
@@ -167,7 +167,7 @@ def test_export_records_api_failure(mock_export_records_stream):
                 root_type=RootType.TRACE,
                 filters=[],
                 sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-                log_stream_id=str(uuid4()),
+                agent_stream_id=str(uuid4()),
             )
         )
 
@@ -184,7 +184,7 @@ def test_export_records_all_root_types(mock_export_records_stream, root_type):
             root_type=root_type,
             filters=[],
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
 
@@ -204,7 +204,7 @@ def test_export_records_empty_response(mock_export_records_stream):
             root_type=RootType.TRACE,
             filters=[],
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
     assert len(result) == 0
@@ -223,7 +223,7 @@ def test_export_records_malformed_json(mock_export_records_stream):
                 root_type=RootType.TRACE,
                 filters=[],
                 sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-                log_stream_id=str(uuid4()),
+                agent_stream_id=str(uuid4()),
             )
         )
 
@@ -241,7 +241,7 @@ def test_export_records_csv(mock_export_records_stream):
             export_format=LLMExportFormat.CSV,
             filters=[],
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
 
@@ -264,7 +264,7 @@ def test_export_records_redact(mock_export_records_stream, redact_param):
             root_type=RootType.TRACE,
             filters=[],
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
             redact=redact_param,
         )
     )
@@ -279,7 +279,7 @@ def test_export_records_include_code_metric_metadata_default(mock_export_records
     project_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
 
-    list(export_records(project_id=project_id, log_stream_id=str(uuid4())))
+    list(export_records(project_id=project_id, agent_stream_id=str(uuid4())))
 
     request_body = mock_export_records_stream.call_args.kwargs["body"]
     assert request_body.include_code_metric_metadata is False
@@ -291,7 +291,7 @@ def test_export_records_include_code_metric_metadata_opt_in(mock_export_records_
     project_id = str(uuid4())
     mock_export_records_stream.return_value = iter([])
 
-    list(export_records(project_id=project_id, log_stream_id=str(uuid4()), include_code_metric_metadata=True))
+    list(export_records(project_id=project_id, agent_stream_id=str(uuid4()), include_code_metric_metadata=True))
 
     request_body = mock_export_records_stream.call_args.kwargs["body"]
     assert request_body.include_code_metric_metadata is True
@@ -311,7 +311,7 @@ def test_export_records_jsonl_flat(mock_export_records_stream):
             export_format=LLMExportFormat.JSONL_FLAT,
             filters=[],
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
-            log_stream_id=str(uuid4()),
+            agent_stream_id=str(uuid4()),
         )
     )
 
