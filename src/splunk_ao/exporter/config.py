@@ -157,12 +157,12 @@ def build_exporter(
     endpoint: str,
     auth_header: tuple[str, str],
     routing: RoutingAttrs,
+    deployment: DeploymentMode,
     _exporter_factory: ExporterFactory = OTLPSpanExporter,
     **exporter_kwargs: Any,
 ) -> SpanExporter:
     """Build an OTLP HTTP exporter from shared resolved configuration."""
     config = resolve_exporter_config(endpoint, auth_header, routing)
-    deployment = DeploymentMode.O11Y if auth_header[0].lower() == "x-sf-token" else DeploymentMode.STANDALONE
     if _exporter_factory is OTLPSpanExporter:
         delegate: SpanExporter = DiagnosticOTLPSpanExporter(
             endpoint=config.endpoint, headers=config.headers, deployment=deployment, **exporter_kwargs

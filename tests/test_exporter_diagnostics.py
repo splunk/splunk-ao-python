@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import FrozenInstanceError
 from typing import Any
@@ -107,12 +108,27 @@ def test_positive_otlp_partial_success_returns_failure_without_retry() -> None:
     assert exporter._attempt_local.response is None
 
 
+@pytest.mark.parametrize("rejected_spans", [3, "3"])
+def test_positive_json_otlp_partial_success_returns_failure_without_backend_detail(rejected_spans: int | str) -> None:
+    body = json.dumps(
+        {"partialSuccess": {"rejectedSpans": rejected_spans, "errorMessage": "do not retain this backend detail"}}
+    ).encode()
+    exporter = diagnostic_exporter(FakeSession(response(body=body)))
+
+    assert exporter.export(()) == SpanExportResult.FAILURE
+    assert exporter.export_health.last_failure is not None
+    assert "Rejected spans: 3" in exporter.export_health.last_failure.message
+    assert "backend detail" not in exporter.export_health.last_failure.message
+
+
 @pytest.mark.parametrize(
     ("body", "content_type"),
     [
         (b"", "application/x-protobuf"),
         (b'{"valid":1}', "application/json"),
         (b'{"other":"value"}', "application/json"),
+        (b'{"partialSuccess":{"rejectedSpans":"0","errorMessage":"advisory"}}', "application/json"),
+        (b'{"partialSuccess":{"rejectedSpans":"invalid"}}', "application/json"),
         (b"not-json", "application/json"),
         (b"\x80", "application/x-protobuf"),
     ],
@@ -201,7 +217,7 @@ def test_export_health_snapshots_are_immutable_and_thread_safe() -> None:
 def test_logger_path_reports_rejection_without_failing_the_logged_operation() -> None:
     exporter = diagnostic_exporter(FakeSession(response(body=b'{"valid":0}')))
     sink = build_span_sink(exporter, BatchConfig(schedule_delay_millis=60_000))
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="stream-id", _sink=sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
     try:
         logger.add_single_llm_span_trace(input="question", output="answer", model="test-model")
 

@@ -5,7 +5,7 @@ from typing import Any
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace.export import SpanExporter
 
-from splunk_ao.deployment import O11yConfig
+from splunk_ao.deployment import DeploymentMode, O11yConfig
 from splunk_ao.exporter.config import (
     ExporterConfig,
     ExporterFactory,
@@ -32,5 +32,10 @@ def build_o11y_exporter(
 ) -> SpanExporter:
     """Build an OTLP exporter authenticated for Splunk Observability Cloud."""
     return build_exporter(
-        config.otlp_endpoint, _o11y_auth_header(config), routing, _exporter_factory, **exporter_kwargs
+        config.otlp_endpoint,
+        _o11y_auth_header(config),
+        routing,
+        deployment=DeploymentMode.O11Y,
+        _exporter_factory=_exporter_factory,
+        **exporter_kwargs,
     )

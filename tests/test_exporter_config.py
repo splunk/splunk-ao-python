@@ -3,7 +3,7 @@
 from typing import Any
 from unittest.mock import patch
 
-from splunk_ao.deployment import StandaloneConfig
+from splunk_ao.deployment import DeploymentMode, StandaloneConfig
 from splunk_ao.exporter.config import RoutingAttrs, create_otel_resource, routing_resource_attributes
 from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.exporter.standalone import build_standalone_exporter, resolve_standalone_exporter_config
@@ -169,6 +169,14 @@ def test_build_standalone_exporter_passes_resolved_public_config_to_factory() ->
         "endpoint": "https://api.demo.galileocloud.io/otel/v1/traces",
         "headers": {"Splunk-AO-API-Key": "key", "project": "p"},
     }
+
+
+def test_standalone_exporter_passes_deployment_explicitly_to_diagnostics() -> None:
+    with patch("splunk_ao.exporter.config.DiagnosticOTLPSpanExporter") as diagnostic_exporter:
+        exporter = build_standalone_exporter(make_standalone_cfg(), make_routing())
+
+    assert exporter.delegate is diagnostic_exporter.return_value
+    assert diagnostic_exporter.call_args.kwargs["deployment"] == DeploymentMode.STANDALONE
 
 
 def test_healthz_probe_no_longer_called_on_exporter_construction() -> None:

@@ -47,7 +47,12 @@ class ExportFailure:
 
 @dataclass(frozen=True)
 class ExportHealth:
-    """Immutable health of successful HTTP acknowledgements inspected by the SDK."""
+    """Immutable acknowledgement health.
+
+    ``healthy`` is ``None`` before export and after ordinary transport or
+    non-2xx failures, ``True`` after an accepted 2xx response, and ``False``
+    after a 2xx response that rejects telemetry.
+    """
 
     healthy: bool | None
     consecutive_failures: int
@@ -225,10 +230,27 @@ def _classify_json_acknowledgement(body: bytes, status_code: int) -> _RejectionD
     if not isinstance(payload, dict):
         return None
 
+    partial_success = payload.get("partialSuccess")
+    if isinstance(partial_success, dict):
+        rejected_spans = _positive_json_integer(partial_success.get("rejectedSpans"))
+        if rejected_spans is not None:
+            return _RejectionDetail(status_code, f"Rejected spans: {rejected_spans}.")
+
     invalid = payload.get("invalid")
     if payload.get("valid") != 0 and not invalid:
         return None
     return _RejectionDetail(status_code, _summarize_rejections(invalid))
+
+
+def _positive_json_integer(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str) and value.isdecimal():
+        parsed = int(value)
+        return parsed if parsed > 0 else None
+    return None
 
 
 def _classify_protobuf_acknowledgement(body: bytes, status_code: int) -> _RejectionDetail | None:
