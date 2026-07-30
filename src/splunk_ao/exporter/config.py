@@ -40,6 +40,16 @@ class RoutingAttrs:
 
 ExporterFactory = Callable[..., SpanExporter]
 
+RESERVED_ROUTING_RESOURCE_ATTRIBUTES = frozenset(
+    {
+        "splunk_ao.project.name",
+        "splunk_ao.project.id",
+        "splunk_ao.logstream.name",
+        "splunk_ao.logstream.id",
+        "splunk_ao.experiment.id",
+    }
+)
+
 
 def _resolve_name_or_id(
     label: str,
@@ -149,7 +159,14 @@ def routing_resource_attributes(routing: RoutingAttrs) -> dict[str, str]:
 
 def create_otel_resource(routing: RoutingAttrs) -> Resource:
     """Create a Resource with standard OTel detection and Splunk AO routing."""
-    return Resource.create(routing_resource_attributes(routing))
+    detected_resource = Resource.create()
+    attributes = {
+        key: value
+        for key, value in detected_resource.attributes.items()
+        if key not in RESERVED_ROUTING_RESOURCE_ATTRIBUTES
+    }
+    attributes.update(routing_resource_attributes(routing))
+    return Resource(attributes, schema_url=detected_resource.schema_url)
 
 
 def build_exporter(

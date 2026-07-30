@@ -38,7 +38,7 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         callback = SplunkAOAsyncBaseHandler(splunk_ao_logger=splunk_ao_logger)
         assert callback._splunk_ao_logger == splunk_ao_logger
         assert callback._start_new_trace is True
-        assert callback._flush_on_chain_end is True
+        assert callback._flush_on_chain_end is False
         assert callback._nodes == {}
 
         # Custom initialization
@@ -101,3 +101,17 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         assert traces[0].spans[0].type == "workflow"
         assert traces[0].spans[0].input == '{"query": "test"}'
         assert traces[0].spans[0].output == '{"result": "test result"}'
+
+    @pytest.mark.asyncio
+    async def test_commit_failure_concludes_handler_owned_trace(
+        self, handler: SplunkAOAsyncBaseHandler, splunk_ao_logger: SplunkAOLogger
+    ) -> None:
+        run_id = uuid.uuid4()
+        await handler.async_start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
+
+        with patch.object(handler, "log_node_tree", side_effect=RuntimeError("conversion failed")):
+            await handler.async_end_node(run_id, output="result")
+
+        assert splunk_ao_logger.current_parent() is None
+        assert handler._nodes == {}
+        assert handler._root_node is None

@@ -42,31 +42,34 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             _logger.warning("Unable to add nodes to trace: Root node does not exist")
             return
 
-        if self._start_new_trace:
-            self._splunk_ao_logger.start_trace(
-                input=serialize_to_str(root_node.span_params.get("input", "")),
-                name=root_node.span_params.get("name"),
-                metadata=root_node.span_params.get("metadata"),
-            )
+        owned_trace = None
+        try:
+            if self._start_new_trace:
+                owned_trace = self._splunk_ao_logger.start_trace(
+                    input=serialize_to_str(root_node.span_params.get("input", "")),
+                    name=root_node.span_params.get("name"),
+                    metadata=root_node.span_params.get("metadata"),
+                )
 
-        self.log_node_tree(root_node)
+            self.log_node_tree(root_node)
+            root_output = root_node.span_params.get("output", "")
 
-        # Conclude the trace with the root node's output
-        root_output = root_node.span_params.get("output", "")
+            if self._start_new_trace:
+                self._conclude_owned_trace(
+                    owned_trace,
+                    output=serialize_to_str(root_output),
+                    status_code=root_node.span_params.get("status_code"),
+                )
 
-        if self._start_new_trace:
-            # If we started a new trace, we need to conclude it
-            self._splunk_ao_logger.conclude(
-                output=serialize_to_str(root_output), status_code=root_node.span_params.get("status_code")
-            )
-
-        if self._flush_on_chain_end:
-            # Upload the trace to Splunk AO
-            await self._splunk_ao_logger.async_flush()
-
-        # Clear nodes after successful commit
-        self._nodes.clear()
-        self._root_node = None
+            if self._flush_on_chain_end:
+                await self._splunk_ao_logger.async_flush()
+        except Exception:
+            if owned_trace is not None:
+                self._conclude_owned_trace(owned_trace, output="", status_code=500)
+            _logger.warning("Failed to commit async handler telemetry", exc_info=True)
+        finally:
+            self._nodes.clear()
+            self._root_node = None
 
     async def async_end_node(self, run_id: UUID, **kwargs: Any) -> None:
         """

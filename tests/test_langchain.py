@@ -47,7 +47,7 @@ class TestSplunkAOCallback:
         callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger)
         assert callback._handler._splunk_ao_logger == splunk_ao_logger
         assert callback._handler._start_new_trace is True
-        assert callback._handler._flush_on_chain_end is True
+        assert callback._handler._flush_on_chain_end is False
         assert callback._handler._nodes == {}
 
         # Custom initialization

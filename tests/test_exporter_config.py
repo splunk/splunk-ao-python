@@ -151,6 +151,37 @@ def test_explicit_routing_overrides_environment_resource_routing(monkeypatch: An
     assert resource.attributes["deployment.environment.name"] == "test"
 
 
+def test_resource_drops_reserved_environment_routing_when_sdk_routing_absent(monkeypatch: Any) -> None:
+    monkeypatch.setenv(
+        "OTEL_RESOURCE_ATTRIBUTES",
+        (
+            "splunk_ao.project.name=environment-project,"
+            "splunk_ao.logstream.id=environment-stream,"
+            "splunk_ao.experiment.id=environment-experiment,"
+            "deployment.environment.name=test"
+        ),
+    )
+
+    resource = create_otel_resource(make_routing())
+
+    for key in ("splunk_ao.project.name", "splunk_ao.logstream.id", "splunk_ao.experiment.id"):
+        assert key not in resource.attributes
+    assert resource.attributes["deployment.environment.name"] == "test"
+
+
+def test_resource_removes_conflicting_routing_forms(monkeypatch: Any) -> None:
+    monkeypatch.setenv(
+        "OTEL_RESOURCE_ATTRIBUTES", "splunk_ao.project.name=stale-project,splunk_ao.logstream.name=stale-stream"
+    )
+
+    resource = create_otel_resource(make_routing(project_id="project-id", log_stream_id="stream-id"))
+
+    assert "splunk_ao.project.name" not in resource.attributes
+    assert "splunk_ao.logstream.name" not in resource.attributes
+    assert resource.attributes["splunk_ao.project.id"] == "project-id"
+    assert resource.attributes["splunk_ao.logstream.id"] == "stream-id"
+
+
 def test_build_standalone_exporter_passes_resolved_public_config_to_factory() -> None:
     captured: dict[str, Any] = {}
     expected_exporter = object()

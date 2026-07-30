@@ -41,7 +41,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         Stores Node objects keyed by their OpenAI span_id or trace_id (for root).
     """
 
-    def __init__(self, splunk_ao_logger: SplunkAOLogger | None = None, flush_on_trace_end: bool = True):
+    def __init__(self, splunk_ao_logger: SplunkAOLogger | None = None, flush_on_trace_end: bool = False):
         """
         OpenAI Agents TracingProcessor for logging traces to Splunk AO.
 
@@ -58,6 +58,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         self._last_output: Any = None
         self._last_status_code: int | None = None
         self._first_input: Any = None
+        self._owned_trace: Any = None
 
     def on_trace_start(self, trace: Trace) -> None:
         """Called when an OpenAI Agent trace starts."""
@@ -82,17 +83,19 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
         node.span_params["duration_ns"] = convert_time_delta_to_ns(_get_timestamp() - node.span_params["start_time"])
 
-        # Log the trace to Splunk AO (this includes concluding the trace)
-        self._commit_trace(trace)
-        self._nodes = {}
-
-        self._last_output = None
-        self._last_status_code = None
-        self._first_input = None
-
-        # Optionally flush the log batch
-        if self._flush_on_trace_end:
-            self._splunk_ao_logger.flush()
+        try:
+            self._commit_trace(trace)
+            if self._flush_on_trace_end:
+                self._splunk_ao_logger.flush()
+        except Exception:
+            self._conclude_current_trace_on_failure()
+            _logger.warning("Failed to commit OpenAI Agents telemetry", exc_info=True)
+        finally:
+            self._nodes = {}
+            self._last_output = None
+            self._last_status_code = None
+            self._first_input = None
+            self._owned_trace = None
 
     def _commit_trace(self, trace: Trace) -> None:
         if not self._nodes:
@@ -105,6 +108,20 @@ class SplunkAOTracingProcessor(TracingProcessor):
         else:
             _logger.warning(f"Root node {trace.trace_id} not found")
         self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
+
+    def _conclude_current_trace_on_failure(self) -> None:
+        if self._owned_trace is None:
+            return
+
+        current_parent = self._splunk_ao_logger.current_parent()
+        if current_parent is None:
+            return
+
+        root = current_parent
+        while root._parent is not None:
+            root = root._parent
+        if root is self._owned_trace:
+            self._splunk_ao_logger.conclude(output="", status_code=500, conclude_all=True)
 
     def _log_node_tree(self, node: Node, first_node: bool = False) -> None:
         """
@@ -129,7 +146,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         if metadata is not None:
             metadata = convert_to_string_dict(metadata)
         if first_node:
-            self._splunk_ao_logger.add_trace(
+            self._owned_trace = self._splunk_ao_logger.add_trace(
                 input=self._first_input or "Agent Workflow",
                 output=self._last_output,
                 duration_ns=node.span_params.get("duration_ns"),

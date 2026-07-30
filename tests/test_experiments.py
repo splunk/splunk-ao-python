@@ -1591,18 +1591,16 @@ class TestExperiments:
             payload = call[0][0]
             all_traces.extend(payload.traces)
 
-        # Each record creates a trace, and they're all sent in one batch
-        assert len(all_traces) >= 1  # At least one trace object
+        # Each record creates an independent operation trace.
+        assert len(all_traces) == len(local_dataset)
 
         # Count the actual workflow spans (each represents a processed record)
         total_spans = sum(len(trace.spans) for trace in all_traces)
         assert total_spans == len(local_dataset)
 
-        # Verify both records were processed (checking the input data in the spans)
-        first_trace = all_traces[0]
-        assert len(first_trace.spans) == 2
-        # Check that we have inputs for both Spain and Japan questions
-        span_inputs = [span.input for span in first_trace.spans]
+        # Verify both records were processed without sharing a trace.
+        assert all(len(trace.spans) == 1 for trace in all_traces)
+        span_inputs = [trace.spans[0].input for trace in all_traces]
         assert '{"input": "Which continent is Spain in?"}' in span_inputs[0]
         assert '{"input": "Which continent is Japan in?"}' in span_inputs[1]
 

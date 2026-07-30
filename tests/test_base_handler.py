@@ -34,7 +34,7 @@ class TestSplunkAOBaseHandler:
         handler = SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger)
         assert handler._splunk_ao_logger == splunk_ao_logger
         assert handler._start_new_trace is True
-        assert handler._flush_on_chain_end is True
+        assert handler._flush_on_chain_end is False
         assert handler._nodes == {}
 
         # Custom initialization
@@ -139,3 +139,30 @@ class TestSplunkAOBaseHandler:
         # Then: neither flush nor terminate is called
         mock_logger.flush.assert_not_called()
         mock_logger.terminate.assert_not_called()
+
+    def test_commit_failure_concludes_only_handler_owned_trace(
+        self, handler: SplunkAOBaseHandler, splunk_ao_logger: SplunkAOLogger
+    ) -> None:
+        run_id = uuid.uuid4()
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
+
+        with patch.object(handler, "log_node_tree", side_effect=RuntimeError("conversion failed")):
+            handler.end_node(run_id, output="result")
+
+        assert splunk_ao_logger.current_parent() is None
+        assert handler._nodes == {}
+        assert handler._root_node is None
+
+    def test_commit_failure_preserves_caller_owned_trace(self, splunk_ao_logger: SplunkAOLogger) -> None:
+        caller_trace = splunk_ao_logger.start_trace(input="request", name="caller")
+        handler = SplunkAOBaseHandler(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
+        run_id = uuid.uuid4()
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
+
+        with patch.object(handler, "log_node_tree", side_effect=RuntimeError("conversion failed")):
+            handler.end_node(run_id, output="result")
+
+        assert splunk_ao_logger.current_parent() is caller_trace
+        splunk_ao_logger.conclude(output="done")

@@ -49,13 +49,15 @@ def test_decorator_get_tracing_headers(reset_context: None, distributed_clients:
 
     @log(span_type="workflow")
     def orchestrator(query: str) -> dict:
-        return {"result": query, "headers": get_tracing_headers()}
+        trace = splunk_ao_context.get_current_trace()
+        return {"result": query, "headers": get_tracing_headers(), "trace_id": str(trace.id)}
 
     result = orchestrator("test input")
 
     headers = result["headers"]
-    assert headers[TRACE_ID_HEADER] == str(logger.traces[0].id)
+    assert headers[TRACE_ID_HEADER] == result["trace_id"]
     assert PARENT_ID_HEADER in headers
+    assert logger.current_parent() is None
 
 
 def test_decorator_respects_incoming_distributed_context(reset_context: None, distributed_clients: Mock) -> None:
@@ -76,7 +78,7 @@ def test_decorator_respects_incoming_distributed_context(reset_context: None, di
     assert (logger._sink.spans[-1].attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
 
 
-def test_completed_workflow_is_enqueued_and_flush_does_not_complete_root(
+def test_completed_workflow_is_enqueued_and_flush_does_not_change_ownership(
     reset_context: None, distributed_clients: Mock
 ) -> None:
     logger = init_logger()
@@ -95,14 +97,12 @@ def test_completed_workflow_is_enqueued_and_flush_does_not_complete_root(
         {"finish_reason": "unknown", "parts": [{"content": "output: test input", "type": "text"}], "role": "assistant"}
     ]
     assert emitted[0].end_time >= emitted[0].start_time
-    root = logger.current_parent()
-    assert root is not None
-    assert root.output == "output: test input"
+    assert logger.current_parent() is None
 
     logger.flush()
 
     assert logger._sink.spans == emitted
-    assert logger.current_parent() is root
+    assert logger.current_parent() is None
     distributed_clients.ingest_traces.assert_not_called()
     distributed_clients.ingest_spans.assert_not_called()
     distributed_clients.update_trace.assert_not_called()
@@ -120,10 +120,12 @@ def test_workflow_empty_output_is_preserved(reset_context: None, distributed_cli
     assert json.loads((logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"]) == [
         {"finish_reason": "unknown", "parts": [{"content": "", "type": "text"}], "role": "assistant"}
     ]
-    assert logger.current_parent().output == ""
+    assert logger.current_parent() is None
 
 
-def test_trace_duration_accumulates_without_proprietary_updates(reset_context: None, distributed_clients: Mock) -> None:
+def test_top_level_workflows_have_independent_durations_and_traces(
+    reset_context: None, distributed_clients: Mock
+) -> None:
     logger = init_logger()
 
     @log(span_type="workflow")
@@ -135,17 +137,17 @@ def test_trace_duration_accumulates_without_proprietary_updates(reset_context: N
         return "second"
 
     first()
-    first_duration = logger.current_parent().metrics.duration_ns
     second()
-    second_duration = logger.current_parent().metrics.duration_ns
+    first_span, second_span = logger._sink.spans
 
-    assert first_duration is not None and first_duration >= 0
-    assert second_duration is not None and second_duration >= first_duration
-    assert len(logger._sink.spans) == 2
+    assert first_span.end_time >= first_span.start_time
+    assert second_span.end_time >= second_span.start_time
+    assert first_span.context.trace_id != second_span.context.trace_id
+    assert logger.current_parent() is None
     distributed_clients.update_trace.assert_not_called()
 
 
-def test_content_blocks_are_preserved_on_open_trace(reset_context: None, distributed_clients: Mock) -> None:
+def test_content_blocks_are_preserved_on_completed_operation(reset_context: None, distributed_clients: Mock) -> None:
     logger = init_logger()
     blocks = [
         TextContentBlock(text="Here is the result"),
@@ -158,24 +160,33 @@ def test_content_blocks_are_preserved_on_open_trace(reset_context: None, distrib
 
     workflow()
 
-    assert logger.current_parent().output == blocks
+    output_messages = (logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"]
+    assert "Here is the result" in output_messages
+    assert "https://example.com/img.png" in output_messages
+    assert logger.current_parent() is None
 
 
 @pytest.mark.parametrize(
-    ("output", "expected_values"),
+    ("output", "expected_values", "expect_messages"),
     [
         (
             [Message(content="Hello", role=MessageRole.user), Message(content="Hi!", role=MessageRole.assistant)],
             ("Hello", "Hi!"),
+            True,
         ),
         (
             [Document(content="Tokyo is the capital of Japan."), Document(content="Mount Fuji is 3776m tall.")],
             ("Tokyo", "Mount Fuji"),
+            False,
         ),
     ],
 )
-def test_structured_outputs_are_serialized_on_open_trace(
-    reset_context: None, distributed_clients: Mock, output: list, expected_values: tuple[str, str]
+def test_only_message_outputs_use_otel_message_schema(
+    reset_context: None,
+    distributed_clients: Mock,
+    output: list,
+    expected_values: tuple[str, str],
+    expect_messages: bool,
 ) -> None:
     logger = init_logger()
 
@@ -184,7 +195,11 @@ def test_structured_outputs_are_serialized_on_open_trace(
         return output
 
     workflow()
-    trace_output = logger.current_parent().output
+    trace_output = (logger._sink.spans[-1].attributes or {}).get("gen_ai.output.messages")
 
-    assert isinstance(trace_output, str)
-    assert all(value in trace_output for value in expected_values)
+    if expect_messages:
+        assert isinstance(trace_output, str)
+        assert all(value in trace_output for value in expected_values)
+    else:
+        assert trace_output is None
+    assert logger.current_parent() is None

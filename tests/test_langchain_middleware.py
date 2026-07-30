@@ -131,7 +131,7 @@ class TestSplunkAOMiddlewareInitialization:
         assert middleware._handler._splunk_ao_logger == splunk_ao_logger
         assert middleware._async_handler._splunk_ao_logger == splunk_ao_logger
         assert middleware._handler._start_new_trace is True
-        assert middleware._handler._flush_on_chain_end is True
+        assert middleware._handler._flush_on_chain_end is False
         assert middleware._root_run_id is None
 
     def test_custom_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:

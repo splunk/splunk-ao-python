@@ -46,7 +46,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
         self,
         splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
-        flush_on_chain_end: bool = True,
+        flush_on_chain_end: bool | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ):
         self._handler = SplunkAOAsyncBaseHandler(
