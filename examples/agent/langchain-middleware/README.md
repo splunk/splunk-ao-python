@@ -60,4 +60,4 @@ The middleware creates a hierarchical trace with:
 | Complexity | Simple                 | Manual setup required  |
 | Best for   | LangGraph agents       | Complex LangChain apps |
 
-For more details, see the [middleware documentation](https://docs.galileo.ai/sdk-api/third-party-integrations/langchain/middleware).
+For more details, see the [middleware documentation](https://agent-observability-docs.splunk.com/sdk-api/third-party-integrations/langchain/middleware).

@@ -242,7 +242,7 @@ async def main():
         location = input("Enter location (default: New York): ") or "New York"
 
     # Use splunk_ao_context with the log stream from environment
-    with splunk_ao_context(log_stream=splunk_ao_log_stream):
+    with splunk_ao_context(agent_stream=splunk_ao_log_stream):
         # Create a dictionary of inputs as metadata
 
         # Run the agent with the wrapped function to log inputs

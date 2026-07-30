@@ -31,7 +31,7 @@ How to use decorators:
    ```python
    from splunk_ao import splunk_ao_context
 
-   with splunk_ao_context(project="my-project", log_stream="production"):
+   with splunk_ao_context(project="my-project", agent_stream="production"):
        result1 = my_function()
        result2 = another_function()
    ```
@@ -87,7 +87,7 @@ R = TypeVar("R")
 # TODO: We should have the context variables store valid values not optional values.
 # Context variables for current values
 _project_context: ContextVar[str | None] = ContextVar("project_context", default=None)
-_log_stream_context: ContextVar[str | None] = ContextVar("log_stream_context", default=None)
+_agent_stream_context: ContextVar[str | None] = ContextVar("log_stream_context", default=None)
 _trace_context: ContextVar[Trace | None] = ContextVar("trace_context", default=None)
 _experiment_id_context: ContextVar[str | None] = ContextVar("experiment_id_context", default=None)
 _span_stack_context: ContextVar[list[WorkflowSpan] | None] = ContextVar("span_stack_context", default=None)
@@ -107,7 +107,7 @@ _dataset_metadata_context: ContextVar[dict[str, str] | None] = ContextVar("datas
 
 # Stack variables for storing previous values (for proper nesting)
 _project_stack: ContextVar[list[str | None] | None] = ContextVar("project_stack", default=None)
-_log_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
+_agent_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
 _trace_stack: ContextVar[list[Trace | None] | None] = ContextVar("trace_stack", default=None)
 _experiment_id_stack: ContextVar[list[str | None] | None] = ContextVar("experiment_id_stack", default=None)
 _session_id_stack: ContextVar[list[str | None] | None] = ContextVar("session_id_stack", default=None)
@@ -175,7 +175,7 @@ class SplunkAODecorator:
         # Flush the logger instance
         self.get_logger_instance(
             project=_project_context.get(),
-            log_stream=_log_stream_context.get(),
+            agent_stream=_agent_stream_context.get(),
             experiment_id=_experiment_id_context.get(),
         ).flush()
 
@@ -183,7 +183,7 @@ class SplunkAODecorator:
 
         # Pop values from the stacks and restore the previous context
         _project_context.set(_get_or_init_list(_project_stack).pop())
-        _log_stream_context.set(_get_or_init_list(_log_stream_stack).pop())
+        _agent_stream_context.set(_get_or_init_list(_agent_stream_stack).pop())
         _experiment_id_context.set(_get_or_init_list(_experiment_id_stack).pop())
         _trace_context.set(_get_or_init_list(_trace_stack).pop())
         _mode_context.set(_get_or_init_list(_mode_stack).pop())
@@ -194,7 +194,7 @@ class SplunkAODecorator:
         self,
         *,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         session_id: str | None = None,
@@ -204,7 +204,7 @@ class SplunkAODecorator:
 
         This allows usage like:
         ```python
-        with splunk_ao_context(project="my_project", log_stream="my_stream"):
+        with splunk_ao_context(project="my_project", agent_stream="my_stream"):
             # Code to be traced
         ```
 
@@ -212,7 +212,7 @@ class SplunkAODecorator:
         ----------
         project
             The project name to use for this context
-        log_stream: The log stream name to use for this context
+        agent_stream: The log stream name to use for this context
             The log stream name to use for this context
         experiment_id
             The experiment ID to use for this context
@@ -228,7 +228,7 @@ class SplunkAODecorator:
         """
         # Push current values onto the stacks
         _get_or_init_list(_project_stack).append(_project_context.get())
-        _get_or_init_list(_log_stream_stack).append(_log_stream_context.get())
+        _get_or_init_list(_agent_stream_stack).append(_agent_stream_context.get())
         _get_or_init_list(_experiment_id_stack).append(_experiment_id_context.get())
         _get_or_init_list(_trace_stack).append(_trace_context.get())
         _get_or_init_list(_mode_stack).append(_mode_context.get())
@@ -241,7 +241,7 @@ class SplunkAODecorator:
 
         # Set request context values to defaults
         _project_context.set(None)
-        _log_stream_context.set(None)
+        _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
         _session_id_context.set(None)
@@ -249,8 +249,8 @@ class SplunkAODecorator:
         # Override with explicitly provided values
         if project is not None:
             _project_context.set(project)
-        if log_stream is not None:
-            _log_stream_context.set(log_stream)
+        if agent_stream is not None:
+            _agent_stream_context.set(agent_stream)
         if experiment_id is not None:
             _experiment_id_context.set(experiment_id)
         if mode is not None:
@@ -1194,8 +1194,8 @@ class SplunkAODecorator:
         self,
         project: str | None = None,
         project_id: str | None = None,
-        log_stream: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         ingestion_hook: Callable | None = None,
@@ -1225,12 +1225,12 @@ class SplunkAODecorator:
         kwargs = {
             "project": project if project is not None else (None if project_id is not None else _project_context.get()),
             "project_id": project_id,
-            "log_stream": (
-                log_stream
-                if log_stream is not None
-                else (None if log_stream_id is not None else _log_stream_context.get())
+            "agent_stream": (
+                agent_stream
+                if agent_stream is not None
+                else (None if agent_stream_id is not None else _agent_stream_context.get())
             ),
-            "log_stream_id": log_stream_id,
+            "agent_stream_id": agent_stream_id,
             "experiment_id": experiment_id or _experiment_id_context.get(),
             "mode": _get_mode_or_default(mode) if mode is not None else _mode_context.get(),
         }
@@ -1256,7 +1256,7 @@ class SplunkAODecorator:
         """
         return _project_context.get()
 
-    def get_current_log_stream(self) -> str | None:
+    def get_current_agent_stream(self) -> str | None:
         """
         Retrieve the current log stream name from context.
 
@@ -1265,7 +1265,7 @@ class SplunkAODecorator:
         str | None
             The current log stream context
         """
-        return _log_stream_context.get()
+        return _agent_stream_context.get()
 
     def get_current_span_stack(self) -> list[WorkflowSpan]:
         """
@@ -1303,7 +1303,7 @@ class SplunkAODecorator:
     def flush(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         on_error: Callable[[Exception], None] | None = None,
@@ -1342,7 +1342,7 @@ class SplunkAODecorator:
 
         try:
             self.get_logger_instance(
-                project=project, log_stream=log_stream, experiment_id=experiment_id, mode=mode
+                project=project, agent_stream=agent_stream, experiment_id=experiment_id, mode=mode
             ).flush(on_error=_on_flush_error)
         except Exception as e:
             _on_flush_error(e)
@@ -1363,12 +1363,12 @@ class SplunkAODecorator:
         """
         SplunkAOLoggerSingleton().reset(
             project=_project_context.get(),
-            log_stream=_log_stream_context.get(),
+            agent_stream=_agent_stream_context.get(),
             experiment_id=_experiment_id_context.get(),
         )
         # Reset current context values
         _project_context.set(None)
-        _log_stream_context.set(None)
+        _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
         _span_stack_context.set([])
@@ -1380,7 +1380,7 @@ class SplunkAODecorator:
 
         # Clear all stacks
         _get_or_init_list(_project_stack).clear()
-        _get_or_init_list(_log_stream_stack).clear()
+        _get_or_init_list(_agent_stream_stack).clear()
         _get_or_init_list(_trace_stack).clear()
         _get_or_init_list(_experiment_id_stack).clear()
         _get_or_init_list(_mode_stack).clear()
@@ -1395,7 +1395,7 @@ class SplunkAODecorator:
     def init(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
         mode: str | None = None,
@@ -1420,16 +1420,20 @@ class SplunkAODecorator:
         mode
             The logger mode.
         """
-        SplunkAOLoggerSingleton().reset(project=project, log_stream=log_stream, experiment_id=experiment_id)
+        SplunkAOLoggerSingleton().reset(project=project, agent_stream=agent_stream, experiment_id=experiment_id)
         logger_instance = SplunkAOLoggerSingleton().get(
-            project=project, log_stream=log_stream, experiment_id=experiment_id, local_metrics=local_metrics, mode=mode
+            project=project,
+            agent_stream=agent_stream,
+            experiment_id=experiment_id,
+            local_metrics=local_metrics,
+            mode=mode,
         )
         # Reset the logger's parent tracking to ensure clean state
         # Each logger has its own ContextVar, so this resets only this instance
         logger_instance.reset_parent_tracking()
 
         _project_context.set(project)
-        _log_stream_context.set(log_stream)
+        _agent_stream_context.set(agent_stream)
         _experiment_id_context.set(experiment_id)
         _mode_context.set(_get_mode_or_default(mode))
         _span_stack_context.set([])

@@ -18,7 +18,7 @@ def initialized_context() -> Generator[None, None, None]:
         setup_mock_traces_client(traces)
         setup_mock_projects_client(projects)
         setup_mock_logstreams_client(agent_streams)
-        splunk_ao_context.init(project="project", log_stream="stream")
+        splunk_ao_context.init(project="project", agent_stream="stream")
         yield
         splunk_ao_context.reset()
 

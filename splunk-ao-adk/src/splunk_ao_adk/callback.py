@@ -54,17 +54,17 @@ class SplunkAOADKCallback:
         Splunk AO project name. Can also be set via SPLUNK_AO_PROJECT env var.
     project_id : str, optional
         Splunk AO project ID.
-    log_stream : str, optional
+    agent_stream : str, optional
         Agent stream name within the project. Can also be set via
         SPLUNK_AO_AGENT_STREAM env var.
-    log_stream_id : str, optional
+    agent_stream_id : str, optional
         Splunk AO agent stream ID.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
         Custom callback to receive trace data instead of sending to Splunk AO.
 
     Example
     -------
-    >>> callback = SplunkAOADKCallback(project="my-project", log_stream="production")
+    >>> callback = SplunkAOADKCallback(project="my-project", agent_stream="production")
     >>> agent = Agent(
     ...     before_agent_callback=callback.before_agent_callback,
     ...     after_agent_callback=callback.after_agent_callback,
@@ -74,17 +74,17 @@ class SplunkAOADKCallback:
     def __init__(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
         *,
         project_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
     ) -> None:
         self._observer = SplunkAOObserver(
             project=project,
             project_id=project_id,
-            log_stream=log_stream,
-            log_stream_id=log_stream_id,
+            agent_stream=agent_stream,
+            agent_stream_id=agent_stream_id,
             ingestion_hook=ingestion_hook,
         )
         self._tracker = SpanTracker()

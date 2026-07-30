@@ -55,7 +55,7 @@ class TestSearchHelpers:
 
     def test_passes_all_parameters_correctly(self, test_function, patch_target):
         experiment_id = str(uuid4())
-        log_stream_id = "test_stream"
+        agent_stream_id = "test_stream"
         limit = 50
         starting_token = 10
         filters = [Mock()]
@@ -66,7 +66,7 @@ class TestSearchHelpers:
             test_function(
                 project_id=FIXED_PROJECT_ID,
                 experiment_id=experiment_id,
-                log_stream_id=log_stream_id,
+                agent_stream_id=agent_stream_id,
                 filters=filters,
                 sort=sort,
                 limit=limit,
@@ -79,7 +79,7 @@ class TestSearchHelpers:
 
             assert called_kwargs["project_id"] == FIXED_PROJECT_ID
             assert body.experiment_id == experiment_id
-            assert body.log_stream_id == log_stream_id
+            assert body.log_stream_id == agent_stream_id
             assert body.filters == filters
             assert body.sort == sort
             assert body.limit == limit

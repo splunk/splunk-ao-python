@@ -40,7 +40,7 @@ def distributed_clients(set_distributed_mode: None) -> Generator[Mock, None, Non
 
 
 def init_logger():
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
+    splunk_ao_context.init(project="test-project", agent_stream="test-stream")
     return splunk_ao_context.get_logger_instance()
 
 
