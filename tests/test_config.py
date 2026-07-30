@@ -336,3 +336,7 @@ def test_reset_removes_all_bridgeable_galileo_vars() -> None:
                 f"reset() is expected to remove {galileo_key} "
                 f"(bridge owns all GALILEO_* keys; no SDK consumer sets them directly)"
             )
+
+
+def test_config_filename_default() -> None:
+    assert SplunkAOConfig.model_fields["config_filename"].default == "splunk-ao-config.json"
