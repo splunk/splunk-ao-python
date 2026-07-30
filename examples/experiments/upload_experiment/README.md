@@ -172,5 +172,5 @@ After running the script, your Splunk AO project will contain:
 
 - [Splunk AO Documentation](https://agent-observability-docs.splunk.com/what-is-splunk-agent-observability)
 - [Splunk AO SDK Reference](https://agent-observability-docs.splunk.com/sdk-api/overview)
-- [Creating Custom Metrics](https://agent-observability-docs.splunk.com/concepts/metrics/custom-metrics/custom-metrics-ui-llm)
+- [Creating Custom Metrics](https://agent-observability-docs.splunk.com/concepts/evaluators/custom-evaluators/custom-evaluators-ui-llm)
 - [Understanding Experiments](https://agent-observability-docs.splunk.com/sdk-api/experiments/experiments)
