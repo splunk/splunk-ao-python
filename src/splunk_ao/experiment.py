@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import datetime
 import re
-import warnings
 from collections.abc import Iterator
 from time import sleep
 from typing import TYPE_CHECKING, Any
@@ -1126,7 +1125,6 @@ class Experiment(StateManagementMixin):
         poll_interval_seconds: float = 2.0,
         *,
         timeout_seconds: float | None = 3600.0,
-        job_id: str | None = None,
     ) -> None:
         """
         Monitor the progress of the experiment with a progress bar.
@@ -1141,9 +1139,6 @@ class Experiment(StateManagementMixin):
         timeout_seconds : float or None, optional
             Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
             (one hour). Pass None to wait indefinitely (not recommended).
-        job_id : str or None, optional
-            Deprecated. This parameter is ignored; it existed in a prior version
-            that polled the jobs table, which has been retired.
 
         Returns
         -------
@@ -1168,14 +1163,6 @@ class Experiment(StateManagementMixin):
 
             experiment.monitor_progress()
         """
-        if job_id is not None:
-            warnings.warn(
-                "The 'job_id' parameter of monitor_progress() is deprecated and will be removed in a future release. "
-                "Progress is now tracked directly via experiment status; the job_id value is ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         if self.id is None:
             raise ValueError("Experiment ID is not set. Cannot monitor progress for a local-only experiment.")
         if self.project_id is None:
