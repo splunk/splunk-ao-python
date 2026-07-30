@@ -20,7 +20,7 @@ from splunk_ao.datasets import create_dataset, get_dataset, delete_dataset
 from splunk_ao.experiments import get_experiment, run_experiment
 from splunk_ao.handlers.langchain import SplunkAOCallback
 
-from src.galileo_langgraph_fsi_agent.agents.supervisor_agent import (
+from src.splunk_ao_langgraph_fsi_agent.agents.supervisor_agent import (
     create_supervisor_agent,
 )
 
@@ -75,8 +75,8 @@ def send_message_to_supervisor_agent(message: str):
     This function simulates sending a message to the supervisor agent and getting a response.
     It is used in the test to interact with the chatbot.
     """
-    galileo_logger = splunk_ao_context.get_logger_instance()
-    callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+    splunk_ao_logger = splunk_ao_context.get_logger_instance()
+    callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
 
     messages: dict[str, Any] = {"messages": [HumanMessage(content=message)]}
     callbacks: Callbacks = [callback]

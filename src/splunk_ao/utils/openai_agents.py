@@ -31,7 +31,7 @@ class SplunkAOCustomSpan(CustomSpanData):
 
 
 def _map_span_type(span_data: SpanData, span: Span[Any] | None = None) -> SPAN_TYPE | Literal["splunk_ao_custom"]:
-    """Determine the Galileo span type based on the OpenAI Agent span data."""
+    """Determine the Splunk AO span type based on the OpenAI Agent span data."""
     if isinstance(span_data, GenerationSpanData | ResponseSpanData):
         return "llm"
     if isinstance(span_data, FunctionSpanData | GuardrailSpanData):
@@ -273,7 +273,7 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
                 data["metadata"]["instructions"] = response.instructions
 
     # Serialize complex inputs/outputs for logging
-    # Galileo expects input/output as serialized strings for llm spans
+    # Splunk AO expects input/output as serialized strings for llm spans
     data["input"] = serialize_to_str(data["input"])
     data["output"] = serialize_to_str(data["output"])
 
@@ -304,7 +304,7 @@ def _extract_tool_data(span_data: FunctionSpanData | GuardrailSpanData) -> dict[
         data["metadata"]["triggered"] = span_data.triggered
         if span_data.triggered:
             # Indicate potential issue if guardrail triggered
-            # Note: Galileo doesn't have a specific warning status, use metadata
+            # Note: Splunk AO doesn't have a specific warning status, use metadata
             data["metadata"]["status"] = "warning"
 
     # Clean up None values, keeping essential keys

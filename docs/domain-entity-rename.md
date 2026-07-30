@@ -1,7 +1,7 @@
 # Domain Entity Rename: Log Streams → Agent Streams, Metrics → Evaluators
 
-**Ticket:** [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730)  
-**Branch:** `feat/HYBIM-730-domain-rename`  
+**Ticket:** [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730)
+**Branch:** `feat/HYBIM-730-domain-rename`
 **Status:** Implemented — hard cut-over, no backward compatibility
 
 ---

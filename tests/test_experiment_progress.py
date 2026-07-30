@@ -122,4 +122,3 @@ class TestMonitorProgress:
         # Use a tiny timeout and a non-zero interval so the real clock eventually trips it
         with pytest.raises(TimeoutError, match="did not complete within"):
             exp.monitor_progress(poll_interval_seconds=0.001, timeout_seconds=0.0)
-

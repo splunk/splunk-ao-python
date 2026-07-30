@@ -17,7 +17,7 @@ This document explains how to use Splunk AO for evaluating and monitoring the We
 ### 1. Install Splunk AO SDK
 
 ```bash
-pip install -r requirements-galileo.txt
+pip install -r requirements-splunk-ao.txt
 ```
 
 ### 2. Configure Splunk AO details
@@ -41,13 +41,13 @@ You can get your API key from the Splunk AO dashboard.
 Run the agent with Splunk AO instrumentation:
 
 ```bash
-python galileo_agent.py "San Francisco"
+python splunk_ao_agent.py "San Francisco"
 ```
 
 You can use all the same command-line arguments as the regular agent:
 
 ```bash
-python galileo_agent.py --location "Tokyo" --units imperial --mood relaxing --verbose
+python splunk_ao_agent.py --location "Tokyo" --units imperial --mood relaxing --verbose
 ```
 
 ## Understanding the Spans

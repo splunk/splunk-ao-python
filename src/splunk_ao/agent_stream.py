@@ -46,9 +46,9 @@ __all__ = ["AgentStream"]
 
 class AgentStream(StateManagementMixin):
     """
-    Object-centric interface for Galileo log streams.
+    Object-centric interface for Splunk AO log streams.
 
-    This class provides an intuitive way to work with Galileo log streams,
+    This class provides an intuitive way to work with Splunk AO log streams,
     offering methods for managing log streams and their associated metrics.
 
     Attributes
@@ -820,14 +820,14 @@ class AgentStream(StateManagementMixin):
 
     def context(self) -> Any:
         """
-        Get a galileo context manager for this log stream.
+        Get a Splunk AO context manager for this log stream.
 
         This is a convenient method that returns a pre-configured splunk_ao_context
         for this log stream, eliminating the need to specify project and log stream names.
 
         Returns
         -------
-            A context manager for Galileo logging configured with this log stream.
+            A context manager for Splunk AO logging configured with this log stream.
 
         Examples
         --------

@@ -26,31 +26,31 @@ _logger = logging.getLogger(__name__)
 
 class SplunkAOTracingProcessor(TracingProcessor):
     """
-    OpenAI Agents TracingProcessor for logging traces to Galileo.
+    OpenAI Agents TracingProcessor for logging traces to Splunk AO.
 
     Builds a tree of spans during agent execution and logs them hierarchically
-    to Galileo upon trace completion.
+    to Splunk AO upon trace completion.
 
     Attributes
     ----------
     _splunk_ao_logger : SplunkAOLogger
-        The Galileo logger instance.
+        The Splunk AO logger instance.
     _flush_on_trace_end : bool
-        Whether to automatically flush the log batch to Galileo when a trace ends.
+        Whether to automatically flush the log batch to Splunk AO when a trace ends.
     _nodes : dict[str, Node]
         Stores Node objects keyed by their OpenAI span_id or trace_id (for root).
     """
 
     def __init__(self, splunk_ao_logger: SplunkAOLogger | None = None, flush_on_trace_end: bool = True):
         """
-        OpenAI Agents TracingProcessor for logging traces to Galileo.
+        OpenAI Agents TracingProcessor for logging traces to Splunk AO.
 
         Parameters
         ----------
         splunk_ao_logger : Optional[SplunkAOLogger]
-            The Galileo logger instance. If None, a default instance is created.
+            The Splunk AO logger instance. If None, a default instance is created.
         flush_on_trace_end : bool
-            Whether to automatically flush the log batch to Galileo when a trace ends.
+            Whether to automatically flush the log batch to Splunk AO when a trace ends.
         """
         self._splunk_ao_logger: SplunkAOLogger = splunk_ao_logger or splunk_ao_context.get_logger_instance()
         self._flush_on_trace_end: bool = flush_on_trace_end
@@ -82,7 +82,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
         node.span_params["duration_ns"] = convert_time_delta_to_ns(_get_timestamp() - node.span_params["start_time"])
 
-        # Log the trace to Galileo (this includes concluding the trace)
+        # Log the trace to Splunk AO (this includes concluding the trace)
         self._commit_trace(trace)
         self._nodes = {}
 
@@ -180,7 +180,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 status_code=node.span_params.get("status_code", 200),
                 id=uuid.uuid4(),
             )
-            self._splunk_ao_logger.add_child_span_to_parent(span)
+            self._splunk_ao_logger._add_completed_leaf(span)
         elif node.node_type == "retriever":
             self._splunk_ao_logger.add_retriever_span(
                 input=input,
@@ -493,7 +493,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
     @staticmethod
     def add_splunk_ao_custom_span(span: GalileoSpan) -> Span[SplunkAOCustomSpan]:
-        """Add a Galileo custom span to the trace."""
+        """Add a Splunk AO custom span to the trace."""
         trace_provider = get_trace_provider()
         current_span = get_current_span()
         custom_span = SplunkAOCustomSpan(span, span.user_metadata)

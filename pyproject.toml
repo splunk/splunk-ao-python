@@ -239,7 +239,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Ignore most linting rules for test files (focus on functionality, not style)
-"tests/**/*.py" = [
+"tests/**" = [
     # Type annotations (not critical for tests)
     "ANN",      # All annotation rules
     # Complexity (tests can be complex)
@@ -260,6 +260,7 @@ ignore = [
     "PT",       # Pytest style rules (can be overly strict)
     "T201",     # Print statements (allowed in tests for debugging)
     "D",        # All docstring rules (not critical for tests)
+    "PLC0415",  # Local imports for patched and optional dependencies
 ]
 # Allow print statements in examples (they're documentation) and scripts (utility tools)
 "examples/**/*.py" = [

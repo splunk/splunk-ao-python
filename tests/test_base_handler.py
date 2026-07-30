@@ -19,7 +19,7 @@ class TestSplunkAOBaseHandler:
         setup_mock_traces_client(mock_traces_client)
         setup_mock_projects_client(mock_projects_client)
         setup_mock_logstreams_client(mock_logstreams_client)
-        return SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+        return SplunkAOLogger(project="my_project", log_stream="my_log_stream", ingestion_hook=lambda _: None)
 
     @pytest.fixture
     def handler(self, splunk_ao_logger: SplunkAOLogger) -> Generator[SplunkAOBaseHandler, None, None]:
@@ -38,7 +38,9 @@ class TestSplunkAOBaseHandler:
         assert handler._nodes == {}
 
         # Custom initialization
-        handler = SplunkAOBaseHandler(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
+        handler = SplunkAOBaseHandler(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
         assert handler._start_new_trace is False
         assert handler._flush_on_chain_end is False
 

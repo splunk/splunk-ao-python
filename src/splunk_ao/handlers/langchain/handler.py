@@ -33,7 +33,7 @@ except ImportError:
 
 class SplunkAOCallback(BaseCallbackHandler):
     """
-    Langchain callback handler for logging traces to the Galileo platform.
+    Langchain callback handler for logging traces to the Splunk AO platform.
 
     Attributes
     ----------

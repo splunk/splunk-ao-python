@@ -101,7 +101,7 @@ def create_metric_configs(
     Process metrics and create scorer configurations for experiments or log streams.
 
     This unified function categorizes metrics into server-side and client-side types,
-    validates they exist, and registers server-side metrics with Galileo.
+    validates they exist, and registers server-side metrics with Splunk AO.
 
     Metrics can be specified as:
     - SplunkAOMetrics enum values (human-readable labels like "Correctness")
@@ -124,13 +124,13 @@ def create_metric_configs(
     -------
     tuple[list[ScorerConfig], list[LocalMetricConfig]]
         A tuple containing:
-        - List of ScorerConfig objects for server-side metrics configured in Galileo
+        - List of ScorerConfig objects for server-side metrics configured in Splunk AO
         - List of LocalMetricConfig objects for client-side metrics to process locally
 
     Raises
     ------
     ValueError
-        If any specified metrics are unknown or don't exist in Galileo
+        If any specified metrics are unknown or don't exist in Splunk AO
     """
     local_metric_configs: list[LocalMetricConfig] = []
     scorer_ids: list[str] = []
@@ -201,7 +201,7 @@ def create_metric_configs(
             "One or more non-existent metrics are specified: " + ", ".join(f"'{metric}'" for metric in unknown_metrics)
         )
 
-    # Register server-side metrics with Galileo.
+    # Register server-side metrics with Splunk AO.
     # Skip registration when run_id is None (trigger=True flow — API handles it).
     if run_id is not None and scorers:
         ScorerSettings().create(project_id=project_id, run_id=run_id, scorers=scorers)

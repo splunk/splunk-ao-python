@@ -92,7 +92,7 @@ class Agent(ABC):
             plan=self._current_plan,  # Pass the current plan in the context
         )
 
-    # 👀 GALILEO DECORATOR: This decorator automatically creates a span for tool execution
+    # 👀 SPLUNK AO DECORATOR: This decorator automatically creates a span for tool execution
     # The @log decorator wraps this method and automatically logs it to Splunk AO
     # This means every tool call will be tracked in your Splunk AO dashboard
     @log(span_type="tool", name="tool_execution")

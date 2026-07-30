@@ -15,7 +15,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 
 @pytest.fixture
-def reset_context():
+def reset_context(legacy_logger_capture):
     splunk_ao_context.reset()
     yield
     splunk_ao_context.reset()

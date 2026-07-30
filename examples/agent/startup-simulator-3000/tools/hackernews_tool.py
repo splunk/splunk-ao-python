@@ -4,7 +4,7 @@ from splunk_ao import log  # 🔍 Splunk AO decorator import for tool spans
 from agent_framework.tools.base import BaseTool
 from agent_framework.models import ToolMetadata
 from agent_framework.utils.logging import (
-    get_galileo_logger,
+    get_splunk_ao_logger,
 )  # 🔍 Splunk AO helper import - gets centralized logger
 from dotenv import load_dotenv
 from datetime import datetime
@@ -20,9 +20,9 @@ class HackerNewsTool(BaseTool):
         super().__init__()
         self.name = "hackernews_tool"
         self.description = "Fetch trending stories from HackerNews for creative inspiration"
-        # 👀 GALILEO INITIALIZATION: Get the centralized Splunk AO logger instance
+        # 👀 SPLUNK AO INITIALIZATION: Get the centralized Splunk AO logger instance
         # This ensures all tools use the same Splunk AO configuration and connection
-        self.galileo_logger = get_galileo_logger()
+        self.splunk_ao_logger = get_splunk_ao_logger()
 
     @classmethod
     def get_metadata(cls) -> ToolMetadata:
@@ -47,7 +47,7 @@ class HackerNewsTool(BaseTool):
             },
         )
 
-    # 👀 GALILEO TOOL SPAN DECORATOR: This decorator creates a tool span for HTTP API calls
+    # 👀 SPLUNK AO TOOL SPAN DECORATOR: This decorator creates a tool span for HTTP API calls
     # Since this tool makes HTTP requests to HackerNews API (not LLM calls), we use span_type="tool"
     # The name "Tool-HackerNews" will appear in your Splunk AO dashboard as a tool span
     @log(span_type="tool", name="Tool-HackerNews")
@@ -58,15 +58,15 @@ class HackerNewsTool(BaseTool):
         inputs = {"limit": limit, "timestamp": datetime.now().isoformat()}
         print(f"HackerNews Tool Inputs: {json.dumps(inputs, indent=2)}")
 
-        # 👀 GALILEO LOGGER SETUP: Get the Splunk AO logger for this execution
+        # 👀 SPLUNK AO LOGGER SETUP: Get the Splunk AO logger for this execution
         # This logger will be used to create traces and spans for observability
-        logger = self.galileo_logger
+        logger = self.splunk_ao_logger
         if not logger:
             print("⚠️  Warning: Splunk AO logger not available, proceeding without logging")
             # ℹ️ FALLBACK: If Splunk AO is not available, use the non-logging version
-            return await self._execute_without_galileo(limit)
+            return await self._execute_without_splunk_ao(limit)
 
-        # 👀 GALILEO TRACE START: Create a new trace for this tool execution
+        # 👀 SPLUNK AO TRACE START: Create a new trace for this tool execution
         # A trace represents the entire lifecycle of this tool call
         # This will appear as a top-level trace in your Splunk AO dashboard
         logger.start_trace(f"HackerNews Tool - Fetching {limit} stories")
@@ -133,24 +133,24 @@ class HackerNewsTool(BaseTool):
             }
             print(f"HackerNews Tool Output: {json.dumps(output_log, indent=2)}")
 
-            # 👀 GALILEO TRACE CONCLUSION: Successfully conclude the trace
+            # 👀 SPLUNK AO TRACE CONCLUSION: Successfully conclude the trace
             # This marks the trace as completed successfully in Splunk AO
             # The trace will show as "success" in your dashboard
             logger.conclude(output=context, duration_ns=0)
             logger.flush()
 
             # Return JSON string for proper Splunk AO logging display
-            galileo_output = {
+            splunk_ao_output = {
                 "tool_result": "hackernews_tool",
                 "formatted_output": json.dumps(output, indent=2),
                 "context": context,
                 "metadata": output,
             }
 
-            return json.dumps(galileo_output, indent=2)
+            return json.dumps(splunk_ao_output, indent=2)
 
         except Exception as e:
-            # 👀 GALILEO ERROR HANDLING: Conclude the trace with error status
+            # 👀 SPLUNK AO ERROR HANDLING: Conclude the trace with error status
             # This marks the trace as failed in Splunk AO and includes the error message
             # The trace will show as "error" in your dashboard with error details
             if logger:
@@ -159,7 +159,7 @@ class HackerNewsTool(BaseTool):
 
             raise e
 
-    async def _execute_without_galileo(self, limit: int = 3) -> str:
+    async def _execute_without_splunk_ao(self, limit: int = 3) -> str:
         """Fallback execution without Splunk AO logging"""
         # ℹ️ FALLBACK METHOD: This method runs when Splunk AO is not available
         # It performs the same functionality but without any observability logging
@@ -208,14 +208,14 @@ class HackerNewsTool(BaseTool):
         }
 
         # Return JSON string for proper Splunk AO logging display
-        galileo_output = {
+        splunk_ao_output = {
             "tool_result": "hackernews_tool",
             "formatted_output": json.dumps(output, indent=2),
             "context": context,
             "metadata": output,
         }
 
-        return json.dumps(galileo_output, indent=2)
+        return json.dumps(splunk_ao_output, indent=2)
 
 
 # ℹ️ TEST FUNCTION: This function can be used to test the tool independently

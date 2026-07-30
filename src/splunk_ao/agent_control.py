@@ -1,6 +1,6 @@
-"""Resolve Galileo context for Agent Control calls.
+"""Resolve Splunk AO context for Agent Control calls.
 
-This module produces generic Agent Control targets from Galileo state. It does
+This module produces generic Agent Control targets from Splunk AO state. It does
 not import the Agent Control SDK; callers wire the two SDKs together explicitly.
 
 For Agent Control telemetry ingestion, use ``splunk_ao.handlers.agent_control``.
@@ -32,12 +32,12 @@ class AgentControlTarget:
     ----------
     target_type
         Opaque Agent Control target type. Agent Control treats this value as
-        deployer-defined; Galileo currently auto-resolves only ``log_stream``
+        deployer-defined; Splunk AO currently auto-resolves only ``log_stream``
         targets.
     target_id
         Opaque Agent Control target ID.
     project_id
-        Galileo project ID for logs, debugging, and audit context only. Agent
+        Splunk AO project ID for logs, debugging, and audit context only. Agent
         Control resolves project ownership from ``target_type`` and
         ``target_id``.
     """
@@ -54,7 +54,7 @@ def get_agent_control_target(
     log_stream_id: str | None = None,
     project_id: str | None = None,
 ) -> AgentControlTarget:
-    """Resolve an Agent Control target from explicit inputs or Galileo context.
+    """Resolve an Agent Control target from explicit inputs or Splunk AO context.
 
     Resolution order:
 
@@ -64,7 +64,7 @@ def get_agent_control_target(
     4. An already-initialized ``splunk_ao_context`` logger.
 
     This helper does not resolve log stream names over the network. If only a
-    log stream name is available, resolve it with the Galileo SDK first and pass
+    log stream name is available, resolve it with the Splunk AO SDK first and pass
     the resulting ID explicitly.
     """
     explicit_project_id = _strip_optional_string(project_id)
@@ -113,7 +113,7 @@ def get_agent_control_target(
         )
 
     raise AgentControlTargetUnresolvedError(
-        "Could not resolve Galileo log stream ID for Agent Control. Provide one of:\n"
+        "Could not resolve Splunk AO log stream ID for Agent Control. Provide one of:\n"
         "  1. target_id=<uuid> or log_stream_id=<uuid> argument\n"
         "  2. SPLUNK_AO_AGENT_STREAM_ID environment variable\n"
         "  3. An initialized splunk_ao_context with a resolved log stream ID"

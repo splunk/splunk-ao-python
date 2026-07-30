@@ -68,7 +68,7 @@ async def orchestrator_agent(question: str) -> str:
     context = format_context(context_analysis, retrieved_docs)
 
     # Step 4: Call LLM with retrieved context
-    # The galileo wrapped OpenAI client automatically logs LLM spans
+    # The Splunk AO wrapped OpenAI client automatically logs LLM spans
     response = openai_client.chat.completions.create(
         messages=[
             {

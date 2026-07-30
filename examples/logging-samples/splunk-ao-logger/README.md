@@ -8,7 +8,7 @@ The examples in this folder demonstrates how to use [`SplunkAOLogger`](https://a
 
 ```bash
 # Navigate to the logger example folder
-cd examples/logging-samples/galileologger
+cd examples/logging-samples/splunk-ao-logger
 
 # Create virtual environment
 python -m venv venv

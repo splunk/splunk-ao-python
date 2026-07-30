@@ -7,7 +7,7 @@ from typing import Dict
 from agent_framework.tools.base import BaseTool
 from agent_framework.models import ToolMetadata
 from agent_framework.utils.logging import (
-    get_galileo_logger,
+    get_splunk_ao_logger,
 )  # 🔍 Splunk AO helper import - gets centralized logger
 import asyncio
 from dotenv import load_dotenv
@@ -16,7 +16,7 @@ from datetime import datetime
 # Load environment variables
 load_dotenv()
 
-# 👀 GALILEO-WRAPPED OPENAI CLIENT: Use Splunk AO's OpenAI wrapper for automatic LLM logging
+# 👀 SPLUNK AO-WRAPPED OPENAI CLIENT: Use Splunk AO's OpenAI wrapper for automatic LLM logging
 # This automatically logs all OpenAI API calls to Splunk AO with detailed metrics
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -28,9 +28,9 @@ class SeriousStartupSimulatorTool(BaseTool):
         super().__init__()
         self.name = "serious_startup_simulator"
         self.description = "Generate a professional startup business plan based on industry, audience, and market trends"
-        # 👀 GALILEO INITIALIZATION: Get the centralized Splunk AO logger instance
+        # 👀 SPLUNK AO INITIALIZATION: Get the centralized Splunk AO logger instance
         # This ensures all tools use the same Splunk AO configuration and connection
-        self.galileo_logger = get_galileo_logger()
+        self.splunk_ao_logger = get_splunk_ao_logger()
 
     @classmethod
     def get_metadata(cls) -> ToolMetadata:
@@ -76,21 +76,21 @@ class SeriousStartupSimulatorTool(BaseTool):
         }
         print(f"Serious Startup Simulator Inputs: {json.dumps(inputs, indent=2)}")
 
-        # 👀 GALILEO LOGGER SETUP: Get the Splunk AO logger for this execution
+        # 👀 SPLUNK AO LOGGER SETUP: Get the Splunk AO logger for this execution
         # This logger will be used to create traces and spans for observability
-        logger = self.galileo_logger
+        logger = self.splunk_ao_logger
         if not logger:
             print("⚠️  Warning: Splunk AO logger not available, proceeding without logging")
             # ℹ️ FALLBACK: If Splunk AO is not available, use the non-logging version
-            return await self._execute_without_galileo(industry, audience, random_word, news_context)
+            return await self._execute_without_splunk_ao(industry, audience, random_word, news_context)
 
-        # 👀 GALILEO TRACE START: Create a new trace for this tool execution
+        # 👀 SPLUNK AO TRACE START: Create a new trace for this tool execution
         # A trace represents the entire lifecycle of this tool call
         # This will appear as a top-level trace in your Splunk AO dashboard
         logger.start_trace(f"Serious Startup Simulator - {industry} targeting {audience}")
 
         try:
-            # 👀 GALILEO SPAN START: Add an LLM span to mark the beginning of tool execution
+            # 👀 SPLUNK AO SPAN START: Add an LLM span to mark the beginning of tool execution
             # This span shows when the tool started working and what inputs it received
             logger.add_llm_span(
                 input=f"Generate business plan for {industry} targeting {audience} with concept '{random_word}'",
@@ -117,7 +117,7 @@ class SeriousStartupSimulatorTool(BaseTool):
             # Create messages
             messages = [{"role": "user", "content": prompt}]
 
-            # 👀 GALILEO-ENHANCED API CALL: Execute the API call using Splunk AO-wrapped OpenAI client
+            # 👀 SPLUNK AO-ENHANCED API CALL: Execute the API call using Splunk AO-wrapped OpenAI client
             # This automatically logs the LLM call to Splunk AO with detailed metrics
             # You'll see input/output tokens, model used, and response in your Splunk AO dashboard
             response = client.chat.completions.create(
@@ -156,7 +156,7 @@ class SeriousStartupSimulatorTool(BaseTool):
             }
             print(f"Serious Startup Simulator Output: {json.dumps(output_log, indent=2)}")
 
-            # 👀 GALILEO SPAN COMPLETION: Add an LLM span to mark successful completion
+            # 👀 SPLUNK AO SPAN COMPLETION: Add an LLM span to mark successful completion
             # This span shows the final output and completion status
             # It includes token counts and the actual result for observability
             logger.add_llm_span(
@@ -169,24 +169,24 @@ class SeriousStartupSimulatorTool(BaseTool):
                 duration_ns=0,
             )
 
-            # 👀 GALILEO TRACE CONCLUSION: Successfully conclude the trace
+            # 👀 SPLUNK AO TRACE CONCLUSION: Successfully conclude the trace
             # This marks the trace as completed successfully in Splunk AO
             # The trace will show as "success" in your dashboard
             logger.conclude(output=pitch, duration_ns=0)
             logger.flush()
 
             # Return JSON string for proper Splunk AO logging display
-            galileo_output = {
+            splunk_ao_output = {
                 "tool_result": "serious_startup_simulator",
                 "formatted_output": json.dumps(output, indent=2),
                 "pitch": output["pitch"],
                 "metadata": output,
             }
 
-            return json.dumps(galileo_output, indent=2)
+            return json.dumps(splunk_ao_output, indent=2)
 
         except Exception as e:
-            # 👀 GALILEO ERROR HANDLING: Conclude the trace with error status
+            # 👀 SPLUNK AO ERROR HANDLING: Conclude the trace with error status
             # This marks the trace as failed in Splunk AO and includes the error message
             # The trace will show as "error" in your dashboard with error details
             if logger:
@@ -195,7 +195,7 @@ class SeriousStartupSimulatorTool(BaseTool):
 
             raise e
 
-    async def _execute_without_galileo(self, industry: str, audience: str, random_word: str, news_context: str = "") -> str:
+    async def _execute_without_splunk_ao(self, industry: str, audience: str, random_word: str, news_context: str = "") -> str:
         """Fallback execution without Splunk AO logging"""
         # ℹ️ FALLBACK METHOD: This method runs when Splunk AO is not available
         # It performs the same functionality but without any observability logging
@@ -238,14 +238,14 @@ class SeriousStartupSimulatorTool(BaseTool):
         }
 
         # Return JSON string for proper Splunk AO logging display
-        galileo_output = {
+        splunk_ao_output = {
             "tool_result": "serious_startup_simulator",
             "formatted_output": json.dumps(output, indent=2),
             "pitch": output["pitch"],
             "metadata": output,
         }
 
-        return json.dumps(galileo_output, indent=2)
+        return json.dumps(splunk_ao_output, indent=2)
 
     def _parse_business_pitch(self, content: str) -> Dict[str, str]:
         """Parse the business pitch into structured components"""

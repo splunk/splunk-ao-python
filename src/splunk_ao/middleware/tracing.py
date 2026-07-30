@@ -2,7 +2,7 @@
 Distributed tracing middleware for Starlette-based applications.
 
 This middleware automatically extracts distributed tracing headers from incoming HTTP requests
-and makes them available to the Galileo logger within request handlers.
+and makes them available to the Splunk AO logger within request handlers.
 
 Works with any ASGI framework built on Starlette:
 - FastAPI
@@ -149,8 +149,8 @@ def get_request_logger() -> SplunkAOLogger:
     """
     Get a request-scoped SplunkAOLogger configured for distributed mode.
 
-    Note: Distributed mode enables distributed tracing across services by propagating
-    trace context and sending updates immediately to the backend.
+    Distributed mode enables the legacy trace_id/span_id continuation parameters.
+    Completed spans use the same scheduled OTLP batch export as batch mode.
 
     This function should be called within a request handler after the TracingMiddleware has
     been registered. It creates a new SplunkAOLogger instance per request that automatically

@@ -1,5 +1,5 @@
 """
-Galileo Decorator Module.
+Splunk AO Decorator Module.
 
 This module provides decorators for logging and tracing function calls in your application.
 Decorators allow you to add logging functionality to your existing code with minimal changes.
@@ -37,10 +37,10 @@ How to use decorators:
    ```
 
 Setup requirements:
-- Galileo API key must be set (via environment variable SPLUNK_AO_API_KEY or programmatically)
+- Splunk AO API key must be set (via environment variable SPLUNK_AO_API_KEY or programmatically)
 - Project and Log Stream names should be defined if using the `log` decorator (either via environment variables SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM, or via `splunk_ao_context.init()`)
 
-For more examples and detailed usage, see the Galileo SDK documentation.
+For more examples and detailed usage, see the Splunk AO SDK documentation.
 """
 
 import asyncio
@@ -126,7 +126,7 @@ def _get_or_init_list(context_var: ContextVar, default_factory: Callable = list)
 class SplunkAODecorator:
     """
     Main decorator class that provides both decorator and context manager functionality
-    for logging and tracing in Galileo.
+    for logging and tracing in Splunk AO.
 
     This class can be used as:
     1. A function decorator via the `log` method
@@ -143,7 +143,7 @@ class SplunkAODecorator:
             The decorator instance for use in a with statement
         """
         # Nothing to do here since __call__ has already set up the context
-        return self  # Allows `as galileo` usage
+        return self  # Allows `as splunk_ao` usage
 
     def __exit__(
         self, exc_type: BaseException | None, exc_value: BaseException | None, traceback: TracebackType | None
@@ -638,9 +638,9 @@ class SplunkAODecorator:
             return True
         except Exception as e:
             if isinstance(e, ConfigurationError):
-                _logger.error("Galileo logging initialization failed: %s", e, exc_info=True)
+                _logger.error("Splunk AO logging initialization failed: %s", e, exc_info=True)
             else:
-                _logger.warning("Galileo logging initialization failed, continuing without logging: %s", e)
+                _logger.warning("Splunk AO logging initialization failed, continuing without logging: %s", e)
             return False
 
     def _prepare_call(
@@ -875,7 +875,6 @@ class SplunkAODecorator:
                             if status_code is not None:
                                 current_parent.status_code = status_code
 
-                            logger._update_trace_streaming(current_parent, is_complete=False)
             else:
                 # Non-concludable spans (llm, tool, retriever) are  added to the parent
                 span_methods = {"llm": "add_llm_span", "tool": "add_tool_span", "retriever": "add_retriever_span"}
@@ -988,20 +987,26 @@ class SplunkAODecorator:
     def get_logger_instance(
         self,
         project: str | None = None,
+        project_id: str | None = None,
         log_stream: str | None = None,
+        log_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         ingestion_hook: Callable | None = None,
     ) -> SplunkAOLogger:
         """
-        Get the Galileo Logger instance for the current decorator context.
+        Get the Splunk AO Logger instance for the current decorator context.
 
         Parameters
         ----------
         project
             Optional project name to use
+        project_id
+            Optional project ID to use
         log_stream
             Optional log stream name to use
+        log_stream_id
+            Optional log stream ID to use
         experiment_id
             Optional experiment ID to use
         mode
@@ -1012,8 +1017,14 @@ class SplunkAODecorator:
         SplunkAOLogger instance configured with the specified project and log stream
         """
         kwargs = {
-            "project": project or _project_context.get(),
-            "log_stream": log_stream or _log_stream_context.get(),
+            "project": project if project is not None else (None if project_id is not None else _project_context.get()),
+            "project_id": project_id,
+            "log_stream": (
+                log_stream
+                if log_stream is not None
+                else (None if log_stream_id is not None else _log_stream_context.get())
+            ),
+            "log_stream_id": log_stream_id,
             "experiment_id": experiment_id or _experiment_id_context.get(),
             "mode": _get_mode_or_default(mode) if mode is not None else _mode_context.get(),
         }
@@ -1092,7 +1103,7 @@ class SplunkAODecorator:
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Upload all captured traces under a project and log stream context to Galileo.
+        Upload all captured traces under a project and log stream context to Splunk AO.
 
         If no project or log stream is provided, then the currently initialized context is used.
 
@@ -1115,13 +1126,13 @@ class SplunkAODecorator:
         # "splunk_ao.decorator._logger") and then forwards to the user callback.
         def _on_flush_error(exc: Exception) -> None:
             if on_error is not None:
-                _logger.debug(f"Galileo flush failed, continuing without flushing: {exc}")
+                _logger.debug(f"Splunk AO flush failed, continuing without flushing: {exc}")
                 try:
                     on_error(exc)
                 except Exception as cb_exc:
-                    _logger.warning(f"Galileo flush on_error callback raised: {cb_exc}")
+                    _logger.warning(f"Splunk AO flush on_error callback raised: {cb_exc}")
             else:
-                _logger.warning(f"Galileo flush failed, continuing without flushing: {exc}")
+                _logger.warning(f"Splunk AO flush failed, continuing without flushing: {exc}")
 
         try:
             self.get_logger_instance(
@@ -1147,7 +1158,7 @@ class SplunkAODecorator:
 
     def flush_all(self) -> None:
         """
-        Upload all captured traces under all contexts to Galileo.
+        Upload all captured traces under all contexts to Splunk AO.
 
         This method flushes all traces regardless of project or log stream.
         """
