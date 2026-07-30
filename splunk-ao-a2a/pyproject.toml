@@ -23,7 +23,7 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/splunk/splunk-ao-python"
 
-# UV-specific configuration (path for dev, ignored when installed from PyPI)
+required-version = ">=0.9.6"
 [tool.uv]
 required-version = ">=0.8.6"
 sources = { "splunk-ao" = { path = "../", editable = true } }
