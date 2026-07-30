@@ -174,7 +174,7 @@ def test_resource_removes_conflicting_routing_forms(monkeypatch: Any) -> None:
         "OTEL_RESOURCE_ATTRIBUTES", "splunk_ao.project.name=stale-project,splunk_ao.logstream.name=stale-stream"
     )
 
-    resource = create_otel_resource(make_routing(project_id="project-id", log_stream_id="stream-id"))
+    resource = create_otel_resource(make_routing(project_id="project-id", agent_stream_id="stream-id"))
 
     assert "splunk_ao.project.name" not in resource.attributes
     assert "splunk_ao.logstream.name" not in resource.attributes
