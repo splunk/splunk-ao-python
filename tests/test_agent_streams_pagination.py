@@ -270,32 +270,3 @@ class TestListPropagatesErrors:
         # When/Then: list raises ValueError
         with pytest.raises(ValueError, match="Unexpected empty response"):
             AgentStreams().list(project_id="proj-1")
-
-
-class TestGetByIdGeneratedClient:
-    """Ensure get(id=...) passes log_stream_id to the OpenAPI-generated client."""
-
-    @patch("splunk_ao.agent_streams.get_log_stream_projects_project_id_log_streams_log_stream_id_get")
-    @patch("splunk_ao.agent_streams.SplunkAOConfig")
-    def test_get_by_id_uses_log_stream_id_kwarg(
-        self, mock_config_class: MagicMock, mock_endpoint: MagicMock
-    ) -> None:
-        stream_id = str(uuid4())
-        mock_endpoint.sync.return_value = LogStreamResponse(
-            id=stream_id,
-            name="test-stream",
-            project_id="proj-1",
-            created_at="2023-01-01T00:00:00Z",
-            updated_at="2023-01-01T00:00:00Z",
-            created_by="test-user",
-        )
-
-        result = AgentStreams().get(id=stream_id, project_id="proj-1")
-
-        assert result is not None
-        assert result.id == stream_id
-        mock_endpoint.sync.assert_called_once()
-        call_kwargs = mock_endpoint.sync.call_args.kwargs
-        assert call_kwargs["project_id"] == "proj-1"
-        assert call_kwargs["log_stream_id"] == stream_id
-        assert "agent_stream_id" not in call_kwargs

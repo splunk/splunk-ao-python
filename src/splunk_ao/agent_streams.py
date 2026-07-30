@@ -408,7 +408,7 @@ class AgentStreams:
 
         if id:
             log_stream_response = get_log_stream_projects_project_id_log_streams_log_stream_id_get.sync(
-                project_id=project_id, log_stream_id=id, client=self.config.api_client
+                project_id=project_id, agent_stream_id=id, client=self.config.api_client
             )
             if not log_stream_response:
                 return None
