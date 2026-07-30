@@ -1,5 +1,5 @@
 [project]
-name = "galileo-langgraph-fsi-agent"
+name = "splunk-ao-langgraph-fsi-agent"
 version = "0.1.0"
 description = "A demo langgraph Financial Services agent with Splunk AO evaluations"
 license = "MIT"

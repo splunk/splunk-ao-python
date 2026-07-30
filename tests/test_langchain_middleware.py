@@ -96,7 +96,7 @@ def splunk_ao_logger(mock_traces_client: Mock, mock_projects_client: Mock, mock_
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    return SplunkAOLogger(project="my_project", log_stream="my_log_stream", ingestion_hook=lambda _: None)
+    return SplunkAOLogger(project="my_project", agent_stream="my_log_stream", ingestion_hook=lambda _: None)
 
 
 @pytest.fixture

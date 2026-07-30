@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize the SplunkAOLogger
-logger = SplunkAOLogger(project="chatbot", log_stream="test")
+logger = SplunkAOLogger(project="chatbot", agent_stream="test")
 
 # Initialize the standard OpenAI client
 client = openai.OpenAI(

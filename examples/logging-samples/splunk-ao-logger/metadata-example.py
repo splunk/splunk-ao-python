@@ -33,7 +33,7 @@ logger.flush()
 # Show link to Splunk AO log stream
 config = SplunkAOConfig.get()
 project_url = f"{config.console_url}project/{logger.project_id}"
-log_stream_url = f"{project_url}/log-streams/{logger.log_stream_id}"
+log_stream_url = f"{project_url}/log-streams/{logger.agent_stream_id}"
 
 print("🚀 Splunk AO Log Stream:")
 print(log_stream_url)

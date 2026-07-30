@@ -1,4 +1,4 @@
-"""Agent Control bridge for Galileo logger-backed control span ingestion.
+"""Agent Control bridge for Splunk AO logger-backed control span ingestion.
 
 For Agent Control target resolution, use ``splunk_ao.agent_control``.
 """

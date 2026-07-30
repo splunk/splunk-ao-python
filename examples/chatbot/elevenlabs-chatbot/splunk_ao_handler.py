@@ -43,7 +43,7 @@ class SplunkAOHandler:
         try:
             self._logger = SplunkAOLogger(
                 project=self._project_name,
-                log_stream=self._log_stream,
+                agent_stream=self._log_stream,
             )
             print(f"[SPLUNK_AO] Logger initialized for project: {self._project_name}")
         except Exception as e:

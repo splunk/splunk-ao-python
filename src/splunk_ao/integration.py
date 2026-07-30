@@ -32,14 +32,14 @@ logger = logging.getLogger(__name__)
 
 class Integration(StateManagementMixin):
     """
-    Factory interface for managing Galileo integrations.
+    Factory interface for managing Splunk AO integrations.
 
     Integration is the main entry point for working with LLM providers and other
-    external services in the Galileo platform. It provides factory methods to create
+    external services in the Splunk AO platform. It provides factory methods to create
     new integrations and list existing ones.
 
     The Integration class returns Provider objects, which are immutable proxies to
-    integrations stored in the Galileo API. Provider classes should not be imported
+    integrations stored in the Splunk AO API. Provider classes should not be imported
     or instantiated directly - always use the Integration class methods.
 
     Attributes

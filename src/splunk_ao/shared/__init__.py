@@ -1,1 +1,1 @@
-"""Shared utilities for the galileo package."""
+"""Shared utilities for the splunk_ao package."""

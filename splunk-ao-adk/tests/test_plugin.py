@@ -52,19 +52,19 @@ class TestSplunkAOADKPluginInit:
         mock_context.get_logger_instance.assert_called_once_with(
             project=None,
             project_id=None,
-            log_stream=None,
-            log_stream_id=None,
+            agent_stream=None,
+            agent_stream_id=None,
         )
 
     def test_init_forwards_id_routing(self) -> None:
         with patch("splunk_ao_adk.observer.splunk_ao_context") as mock_context:
-            SplunkAOADKPlugin(project_id="project-id", log_stream_id="stream-id")
+            SplunkAOADKPlugin(project_id="project-id", agent_stream_id="stream-id")
 
         mock_context.get_logger_instance.assert_called_once_with(
             project=None,
             project_id="project-id",
-            log_stream=None,
-            log_stream_id="stream-id",
+            agent_stream=None,
+            agent_stream_id="stream-id",
         )
 
 

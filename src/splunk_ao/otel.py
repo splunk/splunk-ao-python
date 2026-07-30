@@ -22,7 +22,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -46,7 +46,7 @@ class TracerProvider(Protocol):
     ) -> Tracer: ...
 
 
-_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
+_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("splunk_ao_trace_provider", default=None)
 
 _LEGACY_ROUTING_OPTIONS = {"logstream": "agentstream", "log_stream_id": "agent_stream_id"}
 
@@ -70,11 +70,11 @@ def _resolve_routing(
         deployment,
         project=project,
         project_id=project_id,
-        log_stream=agentstream,
-        log_stream_id=agent_stream_id,
+        agent_stream=agentstream,
+        agent_stream_id=agent_stream_id,
         experiment_id=experiment_id,
         context_project=_project_context.get(None),
-        context_log_stream=_log_stream_context.get(None),
+        context_agent_stream=_agent_stream_context.get(None),
         context_experiment_id=_experiment_id_context.get(None),
     )
 
@@ -135,8 +135,8 @@ class SplunkAOOTLPExporter(SpanExporter):
 
         self.project = self._routing.project_name
         self.project_id = self._routing.project_id
-        self.agentstream = self._routing.log_stream_name
-        self.agent_stream_id = self._routing.log_stream_id
+        self.agentstream = self._routing.agent_stream_name
+        self.agent_stream_id = self._routing.agent_stream_id
         self.experiment_id = self._routing.experiment_id
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
@@ -154,11 +154,11 @@ class SplunkAOOTLPExporter(SpanExporter):
 
 class SplunkAOSpanProcessor(SpanProcessor):
     """
-    Complete OpenTelemetry span processor with integrated Galileo export functionality.
+    Complete OpenTelemetry span processor with integrated Splunk AO export functionality.
 
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
-    It handles the complete lifecycle of spans from creation to export to Galileo.
+    It handles the complete lifecycle of spans from creation to export to Splunk AO.
     Project, agent-stream, and experiment routing is fixed when the processor's exporter
     is constructed. Use separate processors and exporters for separate destinations.
 
@@ -183,7 +183,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the Galileo span processor with export configuration.
+        Initialize the Splunk AO span processor with export configuration.
 
         Parameters
         ----------

@@ -28,7 +28,7 @@ class RecordingSink:
 @pytest.fixture
 def distributed_logger() -> Generator[tuple[SplunkAOLogger, RecordingSink], None, None]:
     sink = RecordingSink()
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", mode="distributed", _sink=sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", mode="distributed", _sink=sink)
     yield logger, sink
     logger.terminate()
 
@@ -131,7 +131,7 @@ def test_distributed_continuation_keeps_stub_parent_local() -> None:
     parent_id = str(uuid4())
     logger = SplunkAOLogger(
         project_id="project-id",
-        log_stream_id="log-stream-id",
+        agent_stream_id="log-stream-id",
         mode="distributed",
         trace_id=trace_id,
         span_id=parent_id,
@@ -153,7 +153,7 @@ def test_distributed_terminate_discards_unfinished_stubs() -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(
         project_id="project-id",
-        log_stream_id="log-stream-id",
+        agent_stream_id="log-stream-id",
         mode="distributed",
         trace_id=str(uuid4()),
         span_id=str(uuid4()),

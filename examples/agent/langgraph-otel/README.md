@@ -6,7 +6,7 @@ This example demonstrates how to add comprehensive observability to your LangGra
 
 **OpenTelemetry** is an observability framework that creates traces showing what functions ran, their timing, and data flow through your application. **OpenInference** automatically instruments AI frameworks like LangChain and OpenAI. **Splunk AO** provides a sophisticated platform for visualizing and analyzing your AI application traces.
 
-For detailed explanations and advanced patterns, see the [LangGraph OpenTelemetry cookbook](https://docs.galileo.ai/cookbooks/features/integrations/langgraph-otel-cookbook)
+For detailed explanations and advanced patterns, see the [LangGraph OpenTelemetry cookbook](https://agent-observability-docs.splunk.com/cookbooks/features/integrations/langgraph-otel-cookbook)
 
 ## Quick start
 
@@ -117,8 +117,8 @@ Each span includes rich metadata:
 
 ## Learn more
 
-- [LangGraph OpenTelemetry cookbook](https://docs.galileo.ai/cookbooks/features/integrations/langgraph-otel-cookbook)
+- [LangGraph OpenTelemetry cookbook](https://agent-observability-docs.splunk.com/cookbooks/features/integrations/langgraph-otel-cookbook)
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
 - [OpenTelemetry Python](https://opentelemetry.io/docs/instrumentation/python/)
-- [Splunk AO Documentation](https://docs.galileo.ai/)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com/)
 - [UV Package Manager](https://docs.astral.sh/uv/)

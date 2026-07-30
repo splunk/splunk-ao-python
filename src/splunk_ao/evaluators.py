@@ -120,7 +120,7 @@ class Evaluators:
         start_time: datetime.datetime,
         end_time: datetime.datetime,
         experiment_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
         filters: list[FilterType] | None = None,
         group_by: str | None = None,
         interval: int = 5,
@@ -129,7 +129,7 @@ class Evaluators:
             start_time=start_time,
             end_time=end_time,
             experiment_id=experiment_id,
-            log_stream_id=log_stream_id,
+            log_stream_id=agent_stream_id,
             filters=filters or [],
             group_by=group_by,
             interval=interval,
@@ -204,7 +204,7 @@ def get_evaluators(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     experiment_id: str | None = None,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     filters: list[FilterType] | None = None,
     group_by: str | None = None,
     interval: int = 5,
@@ -221,8 +221,8 @@ def get_evaluators(
         The end of the time range for the query.
     experiment_id
         Filter records by a specific experiment ID.
-    log_stream_id
-        Filter records by a specific run ID.
+    agent_stream_id
+        Filter records by a specific agent stream ID.
     filters
         A list of filters to apply to the query.
     group_by
@@ -240,7 +240,7 @@ def get_evaluators(
         start_time=start_time,
         end_time=end_time,
         experiment_id=experiment_id,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         filters=filters,
         group_by=group_by,
         interval=interval,

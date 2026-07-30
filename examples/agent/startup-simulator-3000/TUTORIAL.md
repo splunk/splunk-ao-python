@@ -209,7 +209,7 @@ def generate_startup():
 ```python
 logger = SplunkAOLogger(
     project=os.environ.get("SPLUNK_AO_PROJECT"),
-    log_stream=os.environ.get("SPLUNK_AO_AGENT_STREAM")
+    agent_stream=os.environ.get("SPLUNK_AO_AGENT_STREAM")
 )
 trace = logger.start_trace(f"Generate startup pitch - {mode} mode")
 ```

@@ -34,7 +34,7 @@ except ImportError:
 
 class SplunkAOAsyncCallback(AsyncCallbackHandler):
     """
-    Async Langchain callback handler for logging traces to the Galileo platform.
+    Async Langchain callback handler for logging traces to the Splunk AO platform.
 
     Attributes
     ----------

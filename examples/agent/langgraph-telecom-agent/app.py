@@ -34,10 +34,10 @@ async def on_chat_start() -> None:
     This function is called when a new chat session starts.
     It initializes the chat with a welcome message.
     """
-    create_galileo_session()
+    create_splunk_ao_session()
 
 
-def create_galileo_session():
+def create_splunk_ao_session():
     """
     Create a new Splunk AO session for tracking user interactions.
 
@@ -49,16 +49,16 @@ def create_galileo_session():
 
         # Create the callback. This needs to be created in the same thread as the session
         # so that it uses the same session context.
-        galileo_callback = SplunkAOAsyncCallback()
-        cl.user_session.set("galileo_callback", galileo_callback)
+        splunk_ao_callback = SplunkAOAsyncCallback()
+        cl.user_session.set("splunk_ao_callback", splunk_ao_callback)
 
         # Store session info in user session for later use
-        cl.user_session.set("galileo_session_started", True)
+        cl.user_session.set("splunk_ao_session_started", True)
 
     except Exception as e:
         print(f"❌ Failed to start Splunk AO session: {str(e)}")
         # Continue without Splunk AO rather than failing completely
-        cl.user_session.set("galileo_session_started", False)
+        cl.user_session.set("splunk_ao_session_started", False)
 
 
 @cl.on_message
@@ -80,9 +80,9 @@ async def main(msg: cl.Message) -> None:
 
     # Create a callback handler to log the response to Splunk AO
     callbacks: Callbacks = []
-    if cl.user_session.get("galileo_session_started", False):
-        galileo_callback = cl.user_session.get("galileo_callback")
-        callbacks: Callbacks = [galileo_callback]  # type: ignore
+    if cl.user_session.get("splunk_ao_session_started", False):
+        splunk_ao_callback = cl.user_session.get("splunk_ao_callback")
+        callbacks: Callbacks = [splunk_ao_callback]  # type: ignore
     else:
         print("Splunk AO session not started, using default callbacks.")
 

@@ -1,6 +1,6 @@
 # Multi-Turn Experiment Example
 
-The example in this folder demonstrates how to use [create_experiment](https://docs.galileo.ai/sdk-api/python/reference/experiments#create_experiment) to compute a session-level metric for a multi-turn conversation. 
+The example in this folder demonstrates how to use [create_experiment](https://agent-observability-docs.splunk.com/sdk-api/python/reference/experiments#create_experiment) to compute a session-level metric for a multi-turn conversation. 
 
 ## Setup Instructions
 
@@ -47,7 +47,7 @@ The session-level metric in this example uses an LLM.
 
 Make sure that you've configured a valid LLM integration in the Splunk AO console.
 
-Related documentation: [Configure an LLM integration](https://docs.galileo.ai/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration)
+Related documentation: [Configure an LLM integration](https://agent-observability-docs.splunk.com/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration)
 
 ## Basic Example
 
@@ -69,7 +69,7 @@ Pre-defined session-level metrics include:
 - `SplunkAOMetrics.context_relevance`
 - `SplunkAOMetrics.tool_error_rate`
 
-Related documentation: [Metrics Comparison](https://docs.galileo.ai/concepts/metrics/metric-comparison)
+Related documentation: [Metrics Comparison](https://agent-observability-docs.splunk.com/concepts/metrics/metric-comparison)
 
 Optionally, you can define your own custom session-level metric in the Splunk AO Console UI, and then add the custom metric name. 
 
@@ -81,7 +81,7 @@ Visit the "Sessions" tab of the Experiment in the Splunk AO Console to confirm t
 
 ![Troubleshooting auth error](screenshot-session-level-metric-auth-error.png)
 
-If you see an auth error, go to the metric details and make sure that a [valid integration](https://docs.galileo.ai/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration) has been configured. 
+If you see an auth error, go to the metric details and make sure that a [valid integration](https://agent-observability-docs.splunk.com/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration) has been configured. 
 
 ![Metric details](screenshot-session-level-metric-details.png)
 

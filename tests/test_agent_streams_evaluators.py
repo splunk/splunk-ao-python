@@ -41,7 +41,7 @@ def mock_project():
 def mock_log_stream():
     """Mock log stream object."""
     return AgentStream(
-        log_stream=LogStreamResponse(
+        agent_stream=LogStreamResponse(
             id="log-stream-123",
             name="Test Log Stream",
             project_id=str(UUID(int=1)),
@@ -169,10 +169,10 @@ class TestLogStreamMetrics:
 
     def test_log_stream_enable_metrics_missing_ids(self) -> None:
         """Test AgentStream enable_evaluators raises error when IDs are missing."""
-        log_stream = AgentStream()  # Empty log stream without IDs
+        agent_stream = AgentStream()  # Empty log stream without IDs
 
         with pytest.raises(ValueError, match="Log stream must have id and project_id to enable metrics"):
-            log_stream.enable_evaluators(["correctness"])
+            agent_stream.enable_evaluators(["correctness"])
 
     @patch("splunk_ao.agent_streams.Projects")
     @patch.object(AgentStreams, "get")

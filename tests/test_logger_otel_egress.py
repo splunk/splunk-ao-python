@@ -43,7 +43,7 @@ def recording_sink() -> RecordingSink:
 
 @pytest.fixture
 def otlp_logger(recording_sink: RecordingSink) -> Generator[SplunkAOLogger, None, None]:
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=recording_sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=recording_sink)
     yield logger
     logger.terminate()
 
@@ -146,7 +146,7 @@ def test_top_level_span_inherits_external_upstream_parent(recording_sink: Record
     remote_context = propagate.extract({"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"})
     upstream_context = trace.get_current_span(remote_context).get_span_context()
     token = context.attach(remote_context)
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=recording_sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=recording_sink)
     try:
         root = logger.start_trace(input="question")
         envelope_context = logger._otel_ids[root.id].span_context
@@ -255,7 +255,7 @@ def test_flush_does_not_use_session_crud_client(otlp_logger: SplunkAOLogger, rec
 
 def test_terminate_drains_shuts_down_once_and_discards_unfinished_context() -> None:
     sink = RecordingSink()
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=sink)
     logger.start_trace(input="unfinished")
 
     logger.terminate()
@@ -271,7 +271,7 @@ def test_terminate_drains_shuts_down_once_and_discards_unfinished_context() -> N
 
 def test_terminate_still_shuts_down_when_drain_raises() -> None:
     sink = RecordingSink(force_flush_error=RuntimeError("drain failed"))
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=sink)
 
     logger.terminate()
 
@@ -281,7 +281,7 @@ def test_terminate_still_shuts_down_when_drain_raises() -> None:
 
 def test_logger_does_not_replace_global_tracer_provider(recording_sink: RecordingSink) -> None:
     provider = trace.get_tracer_provider()
-    logger = SplunkAOLogger(project_id="project-id", log_stream_id="log-stream-id", _sink=recording_sink)
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=recording_sink)
 
     assert trace.get_tracer_provider() is provider
     logger.terminate()
@@ -295,9 +295,9 @@ def test_o11y_names_build_routing_without_eager_lookup(
 
     with (
         patch.object(SplunkAOLogger, "_init_project") as init_project,
-        patch.object(SplunkAOLogger, "_init_log_stream") as init_log_stream,
+        patch.object(SplunkAOLogger, "_init_agent_stream") as init_log_stream,
     ):
-        logger = SplunkAOLogger(project="project", log_stream="stream", _sink=recording_sink)
+        logger = SplunkAOLogger(project="project", agent_stream="stream", _sink=recording_sink)
 
     assert logger._deployment == DeploymentMode.O11Y
     assert logger._traces_client is None
@@ -316,9 +316,9 @@ def test_o11y_ids_construct_session_client_without_lookup(
 
     with (
         patch.object(SplunkAOLogger, "_init_project") as init_project,
-        patch.object(SplunkAOLogger, "_init_log_stream") as init_log_stream,
+        patch.object(SplunkAOLogger, "_init_agent_stream") as init_log_stream,
     ):
-        logger = SplunkAOLogger(project_id="project-id", log_stream_id="stream-id", _sink=recording_sink)
+        logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=recording_sink)
 
     assert logger._traces_client is not None
     init_project.assert_not_called()
@@ -330,18 +330,18 @@ def test_o11y_name_session_client_is_resolved_lazily(
     monkeypatch: pytest.MonkeyPatch, recording_sink: RecordingSink
 ) -> None:
     configure_o11y(monkeypatch)
-    logger = SplunkAOLogger(project="project", log_stream="stream", _sink=recording_sink)
+    logger = SplunkAOLogger(project="project", agent_stream="stream", _sink=recording_sink)
     session_client = MagicMock()
 
     def resolve_project() -> None:
         logger.project_id = "project-id"
 
     def resolve_log_stream() -> None:
-        logger.log_stream_id = "stream-id"
+        logger.agent_stream_id = "stream-id"
 
     with (
         patch.object(logger, "_init_project", side_effect=resolve_project) as init_project,
-        patch.object(logger, "_init_log_stream", side_effect=resolve_log_stream) as init_log_stream,
+        patch.object(logger, "_init_agent_stream", side_effect=resolve_log_stream) as init_log_stream,
         patch.object(logger, "_create_traces_client", return_value=session_client),
     ):
         assert logger._ensure_session_crud_client() is session_client
@@ -367,7 +367,7 @@ def test_o11y_no_routing_exports_but_explicit_session_fails(
     assert len(recording_sink.spans) == 1
     assert recording_sink.spans[0].parent is None
     assert logger._resource.attributes.get("splunk_ao.project.name") is None
-    with pytest.raises(SplunkAOLoggerException, match=r"project.*log stream or experiment"):
+    with pytest.raises(SplunkAOLoggerException, match=r"project.*agent stream or experiment"):
         logger.start_session(name="session")
     assert logger._traces_client is None
     logger.terminate()
@@ -377,19 +377,19 @@ def test_o11y_crud_only_token_cannot_construct_telemetry_logger(monkeypatch: pyt
     configure_o11y(monkeypatch, ingest_token=False)
 
     with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
-        SplunkAOLogger(project="project", log_stream="stream")
+        SplunkAOLogger(project="project", agent_stream="stream")
 
 
 def test_singleton_keeps_id_routes_distinct_and_resets_one(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_o11y(monkeypatch)
     singleton = SplunkAOLoggerSingleton()
-    first = singleton.get(project_id="project-1", log_stream_id="stream")
-    second = singleton.get(project_id="project-2", log_stream_id="stream")
+    first = singleton.get(project_id="project-1", agent_stream_id="stream")
+    second = singleton.get(project_id="project-2", agent_stream_id="stream")
 
-    assert first is singleton.get(project_id="project-1", log_stream_id="stream")
+    assert first is singleton.get(project_id="project-1", agent_stream_id="stream")
     assert first is not second
 
-    singleton.reset(project_id="project-1", log_stream_id="stream")
+    singleton.reset(project_id="project-1", agent_stream_id="stream")
 
     assert first._terminated
     assert not second._terminated
@@ -398,9 +398,9 @@ def test_singleton_keeps_id_routes_distinct_and_resets_one(monkeypatch: pytest.M
 
 def test_singleton_reset_matches_ingestion_hook_logger() -> None:
     singleton = SplunkAOLoggerSingleton()
-    logger = singleton.get(project="project", log_stream="stream", ingestion_hook=lambda _: None)
+    logger = singleton.get(project="project", agent_stream="stream", ingestion_hook=lambda _: None)
 
-    singleton.reset(project="project", log_stream="stream")
+    singleton.reset(project="project", agent_stream="stream")
 
     assert logger._terminated
     assert singleton.get_all_loggers() == {}

@@ -70,7 +70,7 @@ def test_o11y_exporter_project_id_header_present() -> None:
 def test_o11y_exporter_logstream_header_absent_when_experiment() -> None:
     cfg = O11yConfig(realm="us1", sf_token="tok")
     result = resolve_o11y_exporter_config(
-        cfg, routing=make_routing(project_name="p", log_stream_name="ls", experiment_id="exp1")
+        cfg, routing=make_routing(project_name="p", agent_stream_name="ls", experiment_id="exp1")
     )
 
     assert "logstream" not in result.headers
@@ -95,7 +95,7 @@ def test_build_o11y_exporter_passes_resolved_public_config_to_factory() -> None:
 
     exporter = build_o11y_exporter(
         O11yConfig(realm="us1", sf_token="tok"),
-        make_routing(project_id="pid", log_stream_id="lsid"),
+        make_routing(project_id="pid", agent_stream_id="lsid"),
         _exporter_factory=exporter_factory,
     )
 

@@ -124,7 +124,7 @@ class SimpleAgent(Agent):
         # Used in "serious" mode to get professional context
         self.tool_registry.register(metadata=NewsAPITool.get_metadata(), implementation=NewsAPITool)
 
-    async def _format_result(self, task: str, results: List[tuple[str, Any]], galileo_logger: SplunkAOLogger) -> str:
+    async def _format_result(self, task: str, results: List[tuple[str, Any]], splunk_ao_logger: SplunkAOLogger) -> str:
         """
         Format the final result from tool executions.
 
@@ -135,14 +135,14 @@ class SimpleAgent(Agent):
         Args:
             task: The original user request
             results: List of (tool_name, result) tuples from executed tools
-            galileo_logger: Splunk AO logger instance for span creation
+            splunk_ao_logger: Splunk AO logger instance for span creation
 
         Returns:
             Formatted string response for the user
         """
 
         # Add LLM span for result formatting
-        galileo_logger.add_llm_span(
+        splunk_ao_logger.add_llm_span(
             input=f"Formatting results for task: {task}",
             output="Formatting started",
             model="result_formatter",
@@ -175,7 +175,7 @@ class SimpleAgent(Agent):
                         print(f"Agent Result Data (Silly): {json.dumps(result_data, indent=2)}")
 
                         # Add LLM span for formatting completion
-                        galileo_logger.add_llm_span(
+                        splunk_ao_logger.add_llm_span(
                             input=f"Result formatting completed for {tool_name}",
                             output=pitch,
                             model="result_formatter",
@@ -189,7 +189,7 @@ class SimpleAgent(Agent):
 
                     except json.JSONDecodeError as e:
                         print(f"Error parsing startup simulator result: {e}")
-                        galileo_logger.add_llm_span(
+                        splunk_ao_logger.add_llm_span(
                             input=f"Error parsing result for {tool_name}",
                             output=str(e),
                             model="result_formatter",
@@ -220,7 +220,7 @@ class SimpleAgent(Agent):
                         print(f"Agent Result Data (Serious): {json.dumps(result_data, indent=2)}")
 
                         # Add LLM span for formatting completion
-                        galileo_logger.add_llm_span(
+                        splunk_ao_logger.add_llm_span(
                             input=f"Result formatting completed for {tool_name}",
                             output=pitch,
                             model="result_formatter",
@@ -234,7 +234,7 @@ class SimpleAgent(Agent):
 
                     except json.JSONDecodeError as e:
                         print(f"Error parsing serious startup simulator result: {e}")
-                        galileo_logger.add_llm_span(
+                        splunk_ao_logger.add_llm_span(
                             input=f"Error parsing result for {tool_name}",
                             output=str(e),
                             model="result_formatter",
@@ -247,7 +247,7 @@ class SimpleAgent(Agent):
 
             # If no startup simulator results found, return a summary
             summary = f"Generated results for {len(results)} tools: {[r[0] for r in results]}"
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input="No startup simulator results found",
                 output=summary,
                 model="result_formatter",
@@ -259,7 +259,7 @@ class SimpleAgent(Agent):
             return summary
 
         except Exception as e:
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input="Error in result formatting",
                 output=str(e),
                 model="result_formatter",
@@ -270,7 +270,7 @@ class SimpleAgent(Agent):
             )
             raise e
 
-    async def _execute_hackernews_tool(self, limit: int = 3, galileo_logger: SplunkAOLogger = None) -> str:
+    async def _execute_hackernews_tool(self, limit: int = 3, splunk_ao_logger: SplunkAOLogger = None) -> str:
         """
         Execute the HackerNews tool to get trending stories for context.
 
@@ -279,15 +279,15 @@ class SimpleAgent(Agent):
 
         Args:
             limit: Number of stories to fetch
-            galileo_logger: Splunk AO logger instance for span creation
+            splunk_ao_logger: Splunk AO logger instance for span creation
 
         Returns:
             JSON string with HackerNews context
         """
 
-        if galileo_logger:
+        if splunk_ao_logger:
             # Add LLM span for tool execution start
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input=f"Executing HackerNews tool with limit: {limit}",
                 output="Tool execution started",
                 model="hackernews_tool",
@@ -304,8 +304,8 @@ class SimpleAgent(Agent):
                 startup_result = await startup_tool.execute(limit=limit)
 
                 # Add LLM span for tool completion
-                if galileo_logger:
-                    galileo_logger.add_llm_span(
+                if splunk_ao_logger:
+                    splunk_ao_logger.add_llm_span(
                         input="HackerNews tool execution completed",
                         output=(startup_result[:200] + "..." if len(startup_result) > 200 else startup_result),
                         model="hackernews_tool",
@@ -318,8 +318,8 @@ class SimpleAgent(Agent):
                 return startup_result
 
             # Tool not found
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="HackerNews tool not found",
                     output="",
                     model="hackernews_tool",
@@ -331,8 +331,8 @@ class SimpleAgent(Agent):
             return ""
 
         except Exception as e:
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Error in HackerNews tool execution",
                     output=str(e),
                     model="hackernews_tool",
@@ -347,7 +347,7 @@ class SimpleAgent(Agent):
         self,
         category: str = "business",
         limit: int = 5,
-        galileo_logger: SplunkAOLogger = None,
+        splunk_ao_logger: SplunkAOLogger = None,
     ) -> str:
         """
         Execute the NewsAPI tool to get business news for context.
@@ -358,15 +358,15 @@ class SimpleAgent(Agent):
         Args:
             category: News category to fetch
             limit: Number of articles to fetch
-            galileo_logger: Splunk AO logger instance for span creation
+            splunk_ao_logger: Splunk AO logger instance for span creation
 
         Returns:
             JSON string with business news context
         """
 
-        if galileo_logger:
+        if splunk_ao_logger:
             # Add LLM span for tool execution start
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input=f"Executing News API tool with category: {category}, limit: {limit}",
                 output="Tool execution started",
                 model="news_api_tool",
@@ -383,8 +383,8 @@ class SimpleAgent(Agent):
                 startup_result = await startup_tool.execute(category=category, limit=limit)
 
                 # Add LLM span for tool completion
-                if galileo_logger:
-                    galileo_logger.add_llm_span(
+                if splunk_ao_logger:
+                    splunk_ao_logger.add_llm_span(
                         input="News API tool execution completed",
                         output=(startup_result[:200] + "..." if len(startup_result) > 200 else startup_result),
                         model="news_api_tool",
@@ -397,8 +397,8 @@ class SimpleAgent(Agent):
                 return startup_result
 
             # Tool not found
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="News API tool not found",
                     output="",
                     model="news_api_tool",
@@ -410,8 +410,8 @@ class SimpleAgent(Agent):
             return ""
 
         except Exception as e:
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Error in News API tool execution",
                     output=str(e),
                     model="news_api_tool",
@@ -428,7 +428,7 @@ class SimpleAgent(Agent):
         audience: str,
         random_word: str,
         hn_context: str = "",
-        galileo_logger: SplunkAOLogger = None,
+        splunk_ao_logger: SplunkAOLogger = None,
     ) -> str:
         """
         Execute the startup simulator tool for silly mode.
@@ -441,15 +441,15 @@ class SimpleAgent(Agent):
             audience: Target audience for the startup
             random_word: Random word to include in the pitch
             hn_context: HackerNews context for inspiration
-            galileo_logger: Splunk AO logger instance for span creation
+            splunk_ao_logger: Splunk AO logger instance for span creation
 
         Returns:
             JSON string with generated startup pitch
         """
 
-        if galileo_logger:
+        if splunk_ao_logger:
             # Add LLM span for tool execution start
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input=f"Executing startup simulator for {industry} targeting {audience} with word '{random_word}'",
                 output="Tool execution started",
                 model="startup_simulator",
@@ -471,8 +471,8 @@ class SimpleAgent(Agent):
                 )
 
                 # Add LLM span for tool completion
-                if galileo_logger:
-                    galileo_logger.add_llm_span(
+                if splunk_ao_logger:
+                    splunk_ao_logger.add_llm_span(
                         input="Startup simulator execution completed",
                         output=(startup_result[:200] + "..." if len(startup_result) > 200 else startup_result),
                         model="startup_simulator",
@@ -485,8 +485,8 @@ class SimpleAgent(Agent):
                 return startup_result
 
             # Tool not found
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Startup simulator tool not found",
                     output="",
                     model="startup_simulator",
@@ -498,8 +498,8 @@ class SimpleAgent(Agent):
             return ""
 
         except Exception as e:
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Error in startup simulator execution",
                     output=str(e),
                     model="startup_simulator",
@@ -516,7 +516,7 @@ class SimpleAgent(Agent):
         audience: str,
         random_word: str,
         news_context: str = "",
-        galileo_logger: SplunkAOLogger = None,
+        splunk_ao_logger: SplunkAOLogger = None,
     ) -> str:
         """
         Execute the serious startup simulator tool for professional mode.
@@ -529,15 +529,15 @@ class SimpleAgent(Agent):
             audience: Target audience for the startup
             random_word: Random word to include in the plan
             news_context: Business news context for market analysis
-            galileo_logger: Splunk AO logger instance for span creation
+            splunk_ao_logger: Splunk AO logger instance for span creation
 
         Returns:
             JSON string with generated startup plan
         """
 
-        if galileo_logger:
+        if splunk_ao_logger:
             # Add LLM span for tool execution start
-            galileo_logger.add_llm_span(
+            splunk_ao_logger.add_llm_span(
                 input=f"Executing serious startup simulator for {industry} targeting {audience} with word '{random_word}'",
                 output="Tool execution started",
                 model="serious_startup_simulator",
@@ -559,8 +559,8 @@ class SimpleAgent(Agent):
                 )
 
                 # Add LLM span for tool completion
-                if galileo_logger:
-                    galileo_logger.add_llm_span(
+                if splunk_ao_logger:
+                    splunk_ao_logger.add_llm_span(
                         input="Serious startup simulator execution completed",
                         output=(startup_result[:200] + "..." if len(startup_result) > 200 else startup_result),
                         model="serious_startup_simulator",
@@ -573,8 +573,8 @@ class SimpleAgent(Agent):
                 return startup_result
 
             # Tool not found
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Serious startup simulator tool not found",
                     output="",
                     model="serious_startup_simulator",
@@ -586,8 +586,8 @@ class SimpleAgent(Agent):
             return ""
 
         except Exception as e:
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Error in serious startup simulator execution",
                     output=str(e),
                     model="serious_startup_simulator",
@@ -638,18 +638,18 @@ class SimpleAgent(Agent):
         print(f"Agent Workflow Start: {json.dumps(workflow_data, indent=2)}")
 
         # Get the centralized Splunk AO logger instance
-        from agent_framework.utils.logging import get_galileo_logger
+        from agent_framework.utils.logging import get_splunk_ao_logger
 
-        galileo_logger = get_galileo_logger()
+        splunk_ao_logger = get_splunk_ao_logger()
 
         # Start the main agent trace - this is the parent trace for the entire workflow
-        if galileo_logger:
-            galileo_logger.start_trace(f"agent_workflow_{self.mode}")
+        if splunk_ao_logger:
+            splunk_ao_logger.start_trace(f"agent_workflow_{self.mode}")
 
         try:
             # Add LLM span for workflow start if logger is available
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input=f"Agent workflow started for task: {task}",
                     output="Workflow initialization",
                     model="agent_workflow",
@@ -665,7 +665,7 @@ class SimpleAgent(Agent):
             if self.mode == "serious":
                 # Step 1: Get news context first
                 print("🔍 Step 1: Fetching business news for context...")
-                news_context = await self._execute_news_api_tool(category="business", limit=5, galileo_logger=galileo_logger)
+                news_context = await self._execute_news_api_tool(category="business", limit=5, splunk_ao_logger=splunk_ao_logger)
                 results.append(("news_api", news_context))
 
                 # Step 2: Generate serious startup pitch using the news context
@@ -675,14 +675,14 @@ class SimpleAgent(Agent):
                     audience=audience,
                     random_word=random_word,
                     news_context=news_context,
-                    galileo_logger=galileo_logger,
+                    splunk_ao_logger=splunk_ao_logger,
                 )
                 results.append(("serious_startup_simulator", startup_result))
 
             else:  # silly mode
                 # Step 1: Get HackerNews context first
                 print("🔍 Step 1: Fetching HackerNews stories for inspiration...")
-                hn_context = await self._execute_hackernews_tool(limit=3, galileo_logger=galileo_logger)
+                hn_context = await self._execute_hackernews_tool(limit=3, splunk_ao_logger=splunk_ao_logger)
                 results.append(("hackernews", hn_context))
 
                 # Step 2: Generate silly startup pitch using the HN context
@@ -692,13 +692,13 @@ class SimpleAgent(Agent):
                     audience=audience,
                     random_word=random_word,
                     hn_context=hn_context,
-                    galileo_logger=galileo_logger,
+                    splunk_ao_logger=splunk_ao_logger,
                 )
                 results.append(("startup_simulator", startup_result))
 
             # Step 3: Format the final result
             print("✨ Step 3: Formatting final result...")
-            formatted_result = await self._format_result(task, results, galileo_logger)
+            formatted_result = await self._format_result(task, results, splunk_ao_logger)
 
             # Log workflow completion as JSON
             completion_data = {
@@ -713,8 +713,8 @@ class SimpleAgent(Agent):
             print(f"Agent Workflow Complete: {json.dumps(completion_data, indent=2)}")
 
             # Add LLM span for workflow completion if logger is available
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Agent workflow completed successfully",
                     output=formatted_result,
                     model="agent_workflow",
@@ -740,17 +740,17 @@ class SimpleAgent(Agent):
                 await self.logger.on_agent_done(formatted_result, self.message_history)
 
             # Conclude the trace successfully and flush immediately
-            if galileo_logger:
-                galileo_logger.conclude(output=formatted_result, duration_ns=0)
-                galileo_logger.flush()
+            if splunk_ao_logger:
+                splunk_ao_logger.conclude(output=formatted_result, duration_ns=0)
+                splunk_ao_logger.flush()
 
             # Return structured JSON string for Splunk AO workflow logging
             return json.dumps(workflow_result, indent=2)
 
         except Exception as e:
             # Add LLM span for workflow error if logger is available
-            if galileo_logger:
-                galileo_logger.add_llm_span(
+            if splunk_ao_logger:
+                splunk_ao_logger.add_llm_span(
                     input="Agent workflow error",
                     output=str(e),
                     model="agent_workflow",
@@ -761,8 +761,8 @@ class SimpleAgent(Agent):
                 )
 
                 # Conclude the trace with error and flush immediately
-                galileo_logger.conclude(output=str(e), duration_ns=0, error=True)
-                galileo_logger.flush()
+                splunk_ao_logger.conclude(output=str(e), duration_ns=0, error=True)
+                splunk_ao_logger.flush()
 
             raise e
         finally:

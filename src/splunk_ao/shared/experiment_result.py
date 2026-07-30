@@ -284,7 +284,7 @@ class ExperimentRunResult:
 
     Attributes
     ----------
-        link (str): URL to view experiment results in Galileo console.
+        link (str): URL to view experiment results in Splunk AO console.
         message (str): Status message about the experiment.
         status (ExperimentStatusInfo): Detailed status information.
         experiment_id (str): The experiment ID.

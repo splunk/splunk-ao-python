@@ -110,7 +110,7 @@ def create_or_get_dataset(dataset_name: str, evaluation_data: list) -> Any:
     return dataset
 
 
-def prepare_dataset_for_galileo(json_path: str, dataset_name: str) -> Any:
+def prepare_dataset_for_splunk_ao(json_path: str, dataset_name: str) -> Any:
     """
     Upload your evaluation data to Splunk AO as a dataset.
 
@@ -131,12 +131,12 @@ def prepare_dataset_for_galileo(json_path: str, dataset_name: str) -> Any:
 
     # Transform to Splunk AO dataset format
     # Only include input and expected output for clean evaluation
-    galileo_dataset = []
+    splunk_ao_dataset = []
     for row in raw_data:
-        galileo_row = {"input": row["question"], "output": row.get("ground_truth_answer", "")}
-        galileo_dataset.append(galileo_row)
+        splunk_ao_row = {"input": row["question"], "output": row.get("ground_truth_answer", "")}
+        splunk_ao_dataset.append(splunk_ao_row)
 
-    return create_or_get_dataset(dataset_name, galileo_dataset)
+    return create_or_get_dataset(dataset_name, splunk_ao_dataset)
 
 
 def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_prompt: Optional[str] = None):
@@ -300,7 +300,7 @@ def main():
 
     # Step 1: Create or retrieve dataset
     print(f"\n📊 Preparing dataset: {DATASET_NAME}")
-    dataset = prepare_dataset_for_galileo(EVALUATION_DATA_PATH, DATASET_NAME)
+    dataset = prepare_dataset_for_splunk_ao(EVALUATION_DATA_PATH, DATASET_NAME)
 
     # Step 2: Upload experiment with full traces
     print("\n🚀 Uploading experiment...")

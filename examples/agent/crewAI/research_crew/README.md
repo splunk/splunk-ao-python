@@ -1,9 +1,9 @@
 # CrewAI and Splunk AO Cookbook
 
 This tutorial is a completed version of the [CrewAI quickstart](https://docs.crewai.com/en/quickstart) and adds the
-Splunk AO [CrewAIEventListener](https://docs.galileo.ai/sdk-api/python/reference/handlers/crewai/handler),
+Splunk AO [CrewAIEventListener](https://agent-observability-docs.splunk.com/sdk-api/python/reference/handlers/crewai/handler),
 an event handler implemented on top of OpenTelemetry (OTel). For more information, see
-Splunk AO’s [Add Splunk AO to a CrewAI Application](https://docs.galileo.ai/how-to-guides/third-party-integrations/add-galileo-to-crewai/add-galileo-to-crewai)
+Splunk AO’s [Add Splunk AO to a CrewAI Application](https://agent-observability-docs.splunk.com/how-to-guides/third-party-integrations/add-galileo-to-crewai/add-galileo-to-crewai)
 how-to guide.
 
 Below you'll find concise setup steps, configuration notes, and a short primer on Splunk AO so you know why we add it and what it provides.
@@ -12,7 +12,7 @@ Below you'll find concise setup steps, configuration notes, and a short primer o
 
 The relevant guides:
 
-- [Add Splunk AO to CrewAI](https://docs.galileo.ai/how-to-guides/third-party-integrations/add-galileo-to-crewai/add-galileo-to-crewai)
+- [Add Splunk AO to CrewAI](https://agent-observability-docs.splunk.com/how-to-guides/third-party-integrations/add-galileo-to-crewai/add-galileo-to-crewai)
 - [CrewAI quickstart](https://docs.crewai.com/en/guides/crews/first-crew)
 
 ## What is Splunk AO?
@@ -56,7 +56,7 @@ cp .env.example .env
 ```
 
 In addition to API keys, you’ll need to specify a Splunk AO project and log stream (e.g. SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM). All CrewAI run data will be logged to this destination in Splunk AO. See
-[Understanding the Splunk AO Integration](#understanding-the-galileo-integration) for more detail.
+[Understanding the Splunk AO Integration](#understanding-the-splunk-ao-integration) for more detail.
 
 3. Install project dependencies into the active environment:
 

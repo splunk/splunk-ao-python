@@ -82,7 +82,7 @@ RECORD_TYPE_TO_ROOT_TYPE = {
 
 class Experiment(StateManagementMixin):
     """
-    Object-centric interface for Galileo experiments.
+    Object-centric interface for Splunk AO experiments.
 
     An experiment represents a systematic evaluation framework for running controlled
     tests on datasets to measure and compare AI model performance.
@@ -1275,7 +1275,7 @@ class Experiment(StateManagementMixin):
         response = search_service.query(
             project_id=project_id,
             record_type=record_type,
-            experiment_id=experiment_id,  # Use experiment_id for experiments (not log_stream_id)
+            experiment_id=experiment_id,  # Use experiment_id for experiments (not agent_stream_id)
             filters=filters,
             sort=sort,
             limit=limit,
@@ -1470,7 +1470,7 @@ class Experiment(StateManagementMixin):
             filters=filters,
             sort=sort,
             export_format=export_format,
-            log_stream_id=self.id,  # Experiments use log_stream_id param for run_id
+            agent_stream_id=self.id,  # Experiments use log_stream_id param for run_id
             column_ids=column_ids,
             redact=redact,
         )
