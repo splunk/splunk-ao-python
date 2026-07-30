@@ -10,6 +10,7 @@ from opentelemetry.sdk.trace.export import SpanExporter
 
 from splunk_ao.constants import DEFAULT_LOG_STREAM_NAME, DEFAULT_PROJECT_NAME
 from splunk_ao.deployment import DeploymentMode
+from splunk_ao.exporter.diagnostics import DiagnosticOTLPSpanExporter
 from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.utils.env_helpers import (
     _get_log_stream_from_env,
@@ -161,5 +162,11 @@ def build_exporter(
 ) -> SpanExporter:
     """Build an OTLP HTTP exporter from shared resolved configuration."""
     config = resolve_exporter_config(endpoint, auth_header, routing)
-    delegate = _exporter_factory(endpoint=config.endpoint, headers=config.headers, **exporter_kwargs)
+    deployment = DeploymentMode.O11Y if auth_header[0].lower() == "x-sf-token" else DeploymentMode.STANDALONE
+    if _exporter_factory is OTLPSpanExporter:
+        delegate: SpanExporter = DiagnosticOTLPSpanExporter(
+            endpoint=config.endpoint, headers=config.headers, deployment=deployment, **exporter_kwargs
+        )
+    else:
+        delegate = _exporter_factory(endpoint=config.endpoint, headers=config.headers, **exporter_kwargs)
     return NormalizingSpanExporter(delegate, create_otel_resource(routing))

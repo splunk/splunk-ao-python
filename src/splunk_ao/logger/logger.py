@@ -46,6 +46,7 @@ from splunk_ao.converter import SpanConverter
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig, resolve_deployment
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.exporter import (
+    ExportHealth,
     SpanSink,
     build_o11y_exporter,
     build_span_sink,
@@ -53,6 +54,7 @@ from splunk_ao.exporter import (
     create_otel_resource,
     resolve_routing,
 )
+from splunk_ao.exporter.diagnostics import get_export_health
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
 from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 from splunk_ao.projects import Projects
@@ -400,6 +402,11 @@ class SplunkAOLogger(TracesLogger):
         # cleans up when the python interpreter closes
         atexit.register(self.terminate)
         self._auto_enable_agent_control_if_available()
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(getattr(self, "_sink", None))
 
     def _set_current_parent(self, parent: StepWithChildSpans | None) -> None:
         """Set the proprietary parent and mirror its open chain in OTel context."""

@@ -10,6 +10,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 from splunk_ao.converter.attribute_mapping import normalize_attributes_for_export
+from splunk_ao.exporter.diagnostics import ExportHealth, get_export_health
 
 ROUTING_ATTRIBUTE_KEYS = frozenset(
     {
@@ -80,6 +81,11 @@ class NormalizingSpanExporter(SpanExporter):
     def delegate(self) -> SpanExporter:
         """Return the wrapped exporter for SDK composition and diagnostics."""
         return self._delegate
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the delegate's receiver-acknowledgement health snapshot."""
+        return get_export_health(self._delegate)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export normalized immutable copies of the supplied spans."""
