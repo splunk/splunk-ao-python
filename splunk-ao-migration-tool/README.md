@@ -340,6 +340,16 @@ The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluat
 + scorer = SplunkAOEvaluators.completeness
 ```
 
+### 5.3 On-Disk Config File Renamed
+
+The SDK credentials file written to `~/.galileo/` has been renamed:
+
+| Old | New |
+|-----|-----|
+| `~/.galileo/galileo-python-config.json` | `~/.galileo/splunk-ao-config.json` |
+
+If you have saved credentials on disk, either rename the file manually or delete it and re-authenticate by running your code once.
+
 ---
 
 ## 6. HTTP Tracing Headers
@@ -422,13 +432,13 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - Optional extra names (`[langchain]`, `[openai]`, `[otel]`, `[all]`, etc.)
 - `TracingMiddleware` class name
 - `OPENAI_API_KEY` environment variable
-- On-disk config file name: `galileo-python-config.json`
 - Default console/API URLs (`https://app.galileo.ai/`, `https://api.galileo.ai/`)
 
 ---
 
 ## 9. Migration Checklist
 
+- [ ] Rename on-disk config file: `~/.galileo/galileo-python-config.json` → `~/.galileo/splunk-ao-config.json` (or delete it and re-authenticate)
 - [ ] Update Python to **≥ 3.11**
 - [ ] Replace `galileo` with `splunk-ao` in `requirements.txt` / `pyproject.toml`
 - [ ] Add `grpcio>=1.80.0,<2.0.0` if using the `otel` extra (or use `splunk-ao[otel]`)
