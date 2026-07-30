@@ -244,7 +244,7 @@ class TestConfigurationEnvFileLoading:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test that malformed .env file logs error but doesn't crash the application."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Create malformed env file (will cause parsing to fail)
         mock_env_file.write_text("INVALID_LINE_WITHOUT_EQUALS\n")
@@ -267,7 +267,7 @@ class TestConfigurationConnect:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test successful connection with valid API key and console URL logs appropriately."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Set valid configuration
         monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
@@ -277,7 +277,7 @@ class TestConfigurationConnect:
         Configuration.connect()
 
         # Verify logging occurred (no print statements)
-        logs = log_stream.getvalue()
+        logs = agent_stream.getvalue()
         assert "Validating Splunk AO configuration" in logs
         assert "Successfully connected to Splunk AO" in logs
 
@@ -289,7 +289,7 @@ class TestConfigurationConnect:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test successful connection with valid API key and should default to default console URL."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Set valid configuration
         monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
@@ -298,7 +298,7 @@ class TestConfigurationConnect:
         Configuration.connect()
 
         # Verify logging occurred (no print statements)
-        logs = log_stream.getvalue()
+        logs = agent_stream.getvalue()
         assert "Validating Splunk AO configuration" in logs
         assert "Successfully connected to Splunk AO" in logs
 
@@ -313,7 +313,7 @@ class TestConfigurationConnect:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test connect() raises ConfigurationError when API key is missing."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Set only console URL
         monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://app.splunkao.ai")
@@ -347,7 +347,7 @@ class TestConfigurationConnect:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test connect() properly wraps and reports different types of connection errors."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Set valid configuration
         monkeypatch.setenv("SPLUNK_AO_API_KEY", "valid-key")
@@ -363,7 +363,7 @@ class TestConfigurationConnect:
         assert expected_in_error.lower() in str(exc_info.value).lower()
 
         # Verify error is logged
-        logs = log_stream.getvalue()
+        logs = agent_stream.getvalue()
         assert "Failed to connect to Splunk AO" in logs
 
 
@@ -504,7 +504,7 @@ class TestConfigurationIntegration:
         capture_logs: tuple[logging.Logger, StringIO],
     ) -> None:
         """Test complete configuration workflow from setup to connection."""
-        _, log_stream = capture_logs
+        _, agent_stream = capture_logs
 
         # Start with unconfigured state
         assert not Configuration.is_configured()
@@ -531,7 +531,7 @@ class TestConfigurationIntegration:
         assert config["is_configured"] is True
 
         # Verify logging was used throughout
-        logs = log_stream.getvalue()
+        logs = agent_stream.getvalue()
         assert "Validating Splunk AO configuration" in logs
         assert "Successfully connected to Splunk AO" in logs
 

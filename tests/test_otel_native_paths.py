@@ -16,7 +16,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -90,7 +90,7 @@ class RecordingSpanProcessor:
 def reset_otel_context(monkeypatch: pytest.MonkeyPatch):
     contexts = (
         _project_context,
-        _log_stream_context,
+        _agent_stream_context,
         _experiment_id_context,
         _session_id_context,
         _dataset_input_context,
@@ -233,7 +233,7 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
     monkeypatch.setenv("SPLUNK_AO_PROJECT", "environment-project")
     monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "environment-log-stream")
     _project_context.set("context-project")
-    _log_stream_context.set("context-log-stream")
+    _agent_stream_context.set("context-log-stream")
     factory = RecordingExporterFactory()
 
     exporter = build_exporter(
@@ -331,7 +331,7 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
     exporter = RecordingExporter()
     processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
     _project_context.set("later-project")
-    _log_stream_context.set("later-log-stream")
+    _agent_stream_context.set("later-log-stream")
     _experiment_id_context.set("later-experiment")
     _session_id_context.set("session-id")
     _dataset_input_context.set("question")

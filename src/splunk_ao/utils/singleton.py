@@ -21,7 +21,7 @@ class SplunkAOLoggerSingleton:
     the given 'project' and 'log_stream' parameters. If the parameters are not provided,
     the class attempts to read the values from the environment variables
     SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM. The loggers are stored in a dictionary
-    using a tuple (project, log_stream) as the key.
+    using a tuple (project, agent_stream) as the key.
     """
 
     _instance = None  # Class-level attribute to hold the singleton instance.
@@ -49,8 +49,8 @@ class SplunkAOLoggerSingleton:
     def _get_key(
         project: str | None,
         project_id: str | None,
-        log_stream: str | None,
-        log_stream_id: str | None,
+        agent_stream: str | None,
+        agent_stream_id: str | None,
         mode: str,
         experiment_id: str | None = None,
         trace_id: str | None = None,
@@ -66,9 +66,9 @@ class SplunkAOLoggerSingleton:
             The project name.
         project_id: (Optional[str])
             The project ID.
-        log_stream: (Optional[str])
+        agent_stream: (Optional[str])
             The log stream name.
-        log_stream_id: (Optional[str])
+        agent_stream_id: (Optional[str])
             The log stream ID.
         experiment_id: (Optional[str])
             The experiment ID.
@@ -98,7 +98,7 @@ class SplunkAOLoggerSingleton:
                 *key,
                 "hook",
                 project or project_id or "",
-                experiment_id or log_stream or log_stream_id or "",
+                experiment_id or agent_stream or agent_stream_id or "",
             )
         else:
             deployment = resolve_deployment()
@@ -106,8 +106,8 @@ class SplunkAOLoggerSingleton:
                 deployment,
                 project=project,
                 project_id=project_id,
-                log_stream=log_stream,
-                log_stream_id=log_stream_id,
+                agent_stream=agent_stream,
+                agent_stream_id=agent_stream_id,
                 experiment_id=experiment_id,
             )
             project_key = (
@@ -115,10 +115,10 @@ class SplunkAOLoggerSingleton:
             )
             if routing.experiment_id is not None:
                 destination_key = f"experiment:{routing.experiment_id}"
-            elif routing.log_stream_name is not None:
-                destination_key = f"name:{routing.log_stream_name}"
+            elif routing.agent_stream_name is not None:
+                destination_key = f"name:{routing.agent_stream_name}"
             else:
-                destination_key = f"id:{routing.log_stream_id or ''}"
+                destination_key = f"id:{routing.agent_stream_id or ''}"
             base_key = (*key, deployment.value, project_key, destination_key)
 
         # Add trace_id and span_id to key if present (for distributed tracing)
@@ -135,16 +135,16 @@ class SplunkAOLoggerSingleton:
     def _get_base_keys(
         project: str | None,
         project_id: str | None,
-        log_stream: str | None,
-        log_stream_id: str | None,
+        agent_stream: str | None,
+        agent_stream_id: str | None,
         mode: str,
         experiment_id: str | None,
     ) -> tuple[tuple[str, ...], tuple[str, ...]]:
         standard_key = SplunkAOLoggerSingleton._get_key(
-            project, project_id, log_stream, log_stream_id, mode, experiment_id
+            project, project_id, agent_stream, agent_stream_id, mode, experiment_id
         )
         hook_key = SplunkAOLoggerSingleton._get_key(
-            project, project_id, log_stream, log_stream_id, mode, experiment_id, ingestion_hook_id=0
+            project, project_id, agent_stream, agent_stream_id, mode, experiment_id, ingestion_hook_id=0
         )[:-1]
         return standard_key, hook_key
 
@@ -153,8 +153,8 @@ class SplunkAOLoggerSingleton:
         *,
         project: str | None = None,
         project_id: str | None = None,
-        log_stream: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
@@ -193,8 +193,8 @@ class SplunkAOLoggerSingleton:
         key = SplunkAOLoggerSingleton._get_key(
             project,
             project_id,
-            log_stream,
-            log_stream_id,
+            agent_stream,
+            agent_stream_id,
             mode,
             experiment_id,
             trace_id,
@@ -216,8 +216,8 @@ class SplunkAOLoggerSingleton:
             splunk_ao_client_init_args = {
                 "project": project,
                 "project_id": project_id,
-                "log_stream": log_stream,
-                "log_stream_id": log_stream_id,
+                "agent_stream": agent_stream,
+                "agent_stream_id": agent_stream_id,
                 "experiment_id": experiment_id,
                 "local_metrics": local_metrics,
                 "mode": mode,
@@ -236,12 +236,12 @@ class SplunkAOLoggerSingleton:
     def reset(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         *,
         project_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
     ) -> None:
         """
         Reset (terminate and remove) one or all SplunkAOLogger instances.
@@ -265,7 +265,7 @@ class SplunkAOLoggerSingleton:
 
         with self._lock:
             base_keys = SplunkAOLoggerSingleton._get_base_keys(
-                project, project_id, log_stream, log_stream_id, mode, experiment_id
+                project, project_id, agent_stream, agent_stream_id, mode, experiment_id
             )
             keys_to_remove = [
                 key
@@ -287,19 +287,19 @@ class SplunkAOLoggerSingleton:
     def flush(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         *,
         project_id: str | None = None,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
     ) -> None:
         """
         Flush (upload and clear) a SplunkAOLogger instance.
 
         If both project and log_stream are None, then all cached loggers are flushed
         and cleared. Otherwise, only the specific logger corresponding to the provided
-        key (project, log_stream) is flushed and removed.
+        key (project, agent_stream) is flushed and removed.
 
         Parameters
         ----------
@@ -320,7 +320,7 @@ class SplunkAOLoggerSingleton:
 
         with self._lock:
             base_keys = SplunkAOLoggerSingleton._get_base_keys(
-                project, project_id, log_stream, log_stream_id, mode, experiment_id
+                project, project_id, agent_stream, agent_stream_id, mode, experiment_id
             )
             keys_to_flush = [
                 key

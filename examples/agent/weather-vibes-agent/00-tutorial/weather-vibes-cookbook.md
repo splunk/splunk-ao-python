@@ -300,7 +300,7 @@ The main workflow in `agent.py` ties everything together and adds Splunk AO inst
 
 1. **Setting Up the Context:**
    ```python
-   with splunk_ao_context(log_stream=splunk_ao_log_stream):
+   with splunk_ao_context(agent_stream=splunk_ao_log_stream):
        # Agent execution happens here
    ```
 

@@ -66,7 +66,7 @@ def test_standalone_exporter_project_id_header() -> None:
 
 def test_standalone_exporter_logstream_header_absent_when_experiment() -> None:
     result = resolve_standalone_exporter_config(
-        make_standalone_cfg(), routing=make_routing(project_name="p", log_stream_name="ls", experiment_id="exp1")
+        make_standalone_cfg(), routing=make_routing(project_name="p", agent_stream_name="ls", experiment_id="exp1")
     )
 
     assert "logstream" not in result.headers
@@ -75,7 +75,7 @@ def test_standalone_exporter_logstream_header_absent_when_experiment() -> None:
 
 def test_standalone_exporter_logstream_id_header() -> None:
     result = resolve_standalone_exporter_config(
-        make_standalone_cfg(), routing=make_routing(project_id="pid", log_stream_id="lsid")
+        make_standalone_cfg(), routing=make_routing(project_id="pid", agent_stream_id="lsid")
     )
 
     assert "logstream" not in result.headers
@@ -90,7 +90,7 @@ def test_standalone_exporter_no_routing_headers_when_routing_absent() -> None:
 
 
 def test_routing_resource_attributes_match_name_headers() -> None:
-    routing = make_routing(project_name="p", log_stream_name="ls")
+    routing = make_routing(project_name="p", agent_stream_name="ls")
     cfg = resolve_standalone_exporter_config(make_standalone_cfg(), routing)
     attrs = routing_resource_attributes(routing)
 
@@ -99,7 +99,7 @@ def test_routing_resource_attributes_match_name_headers() -> None:
 
 
 def test_routing_resource_attributes_match_id_headers() -> None:
-    routing = make_routing(project_id="pid", log_stream_id="lsid")
+    routing = make_routing(project_id="pid", agent_stream_id="lsid")
     cfg = resolve_standalone_exporter_config(make_standalone_cfg(), routing)
     attrs = routing_resource_attributes(routing)
 
@@ -109,7 +109,7 @@ def test_routing_resource_attributes_match_id_headers() -> None:
 
 def test_routing_resource_attributes_prioritize_experiment() -> None:
     attrs = routing_resource_attributes(
-        make_routing(project_name="p", log_stream_name="ls", log_stream_id="lsid", experiment_id="exp")
+        make_routing(project_name="p", agent_stream_name="ls", agent_stream_id="lsid", experiment_id="exp")
     )
 
     assert attrs["splunk_ao.experiment.id"] == "exp"
@@ -124,7 +124,7 @@ def test_routing_resource_attributes_empty_when_routing_absent() -> None:
 def test_otel_resource_honors_service_name_and_preserves_routing(monkeypatch: Any) -> None:
     monkeypatch.setenv("OTEL_SERVICE_NAME", "travel-planner")
 
-    resource = create_otel_resource(make_routing(project_name="project", log_stream_name="stream"))
+    resource = create_otel_resource(make_routing(project_name="project", agent_stream_name="stream"))
 
     assert resource.attributes["service.name"] == "travel-planner"
     assert resource.attributes["splunk_ao.project.name"] == "project"

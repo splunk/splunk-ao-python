@@ -12,7 +12,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
     splunk_ao_dataset_context,
@@ -192,10 +192,10 @@ class TestOTelContextIntegration:
     @pytest.fixture
     def reset_decorator_context(self):
         """Reset decorator context before each test."""
-        for ctx in [_project_context, _log_stream_context, _experiment_id_context, _session_id_context]:
+        for ctx in [_project_context, _agent_stream_context, _experiment_id_context, _session_id_context]:
             ctx.set(None)
         yield
-        for ctx in [_project_context, _log_stream_context, _experiment_id_context, _session_id_context]:
+        for ctx in [_project_context, _agent_stream_context, _experiment_id_context, _session_id_context]:
             ctx.set(None)
 
     @pytest.fixture
@@ -219,7 +219,7 @@ class TestOTelContextIntegration:
 
         # Set context variables
         _project_context.set("context-project")
-        _log_stream_context.set("context-logstream")
+        _agent_stream_context.set("context-logstream")
 
         with (
             patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
@@ -239,7 +239,7 @@ class TestOTelContextIntegration:
     def test_processor_captures_context_at_exporter_construction(self, mock_processor_deps, reset_decorator_context):
         """Test processor passes routing inputs to its immutable exporter."""
         _project_context.set("context-project")
-        _log_stream_context.set("context-logstream")
+        _agent_stream_context.set("context-logstream")
 
         SplunkAOSpanProcessor()
         mock_processor_deps["exporter"].assert_called_once()
@@ -247,7 +247,7 @@ class TestOTelContextIntegration:
     def test_processor_on_start_sets_content_not_routing_attributes(self, mock_processor_deps, reset_decorator_context):
         """Test on_start keeps session content and omits request routing."""
         _project_context.set("test-project")
-        _log_stream_context.set("test-logstream")
+        _agent_stream_context.set("test-logstream")
         _experiment_id_context.set("test-experiment")
         _session_id_context.set("test-session")
 

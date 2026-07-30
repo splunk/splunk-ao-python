@@ -91,11 +91,11 @@ def mock_log_streams(mock_request: Callable) -> Generator[None, None, None]:
     - GET /projects/{project_id}/log_streams - list log streams
     - POST /projects/{project_id}/log_streams - create log stream
     """
-    log_stream_id = str(uuid4())
+    agent_stream_id = str(uuid4())
     project_id = str(uuid4())
     user_id = str(uuid4())
     log_stream_response = {
-        "id": log_stream_id,
+        "id": agent_stream_id,
         "name": "test-log-stream",
         "project_id": project_id,
         "created_at": "2024-01-01T00:00:00Z",

@@ -63,7 +63,7 @@ def query(question: str):
 def main():
     with splunk_ao_context(
         project=os.getenv("SPLUNK_AO_PROJECT", "chunk-utilization"),
-        log_stream="basic_approach",
+        agent_stream="basic_approach",
     ):
         console = Console()
         console.print("\nBasic Chunk Utilization Demo")

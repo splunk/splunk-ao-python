@@ -36,7 +36,7 @@ class ExportClient:
         filters: list[FilterType] | None = None,
         sort: LogRecordsSortClause = LogRecordsSortClause(column_id="created_at", ascending=False),
         export_format: LLMExportFormat = LLMExportFormat.JSONL,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         column_ids: list[str] | None = None,
         redact: bool = True,
@@ -51,7 +51,7 @@ class ExportClient:
             body=LogRecordsExportRequest(
                 root_type=root_type,
                 export_format=export_format,
-                log_stream_id=log_stream_id,
+                log_stream_id=agent_stream_id,
                 experiment_id=experiment_id,
                 filters=filters,
                 column_ids=column_ids,
@@ -76,7 +76,7 @@ def export_records(
     filters: list[FilterType] | None = None,
     sort: LogRecordsSortClause = LogRecordsSortClause(column_id="created_at", ascending=False),
     export_format: LLMExportFormat = LLMExportFormat.JSONL,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     experiment_id: str | None = None,
     column_ids: list[str] | None = None,
     redact: bool = True,
@@ -84,7 +84,7 @@ def export_records(
 ) -> Iterator[dict[str, Any]]:
     """Exports records from a Splunk AO project.
 
-    Defaults to the first logstream if `log_stream_id` and `experiment_id` are not provided.
+    Defaults to the first agent stream if `agent_stream_id` and `experiment_id` are not provided.
 
     Parameters
     ----------
@@ -94,8 +94,8 @@ def export_records(
         The type of records to export.
     export_format
         The desired format for the exported data.
-    log_stream_id
-        Filter records by a specific run ID.
+    agent_stream_id
+        Filter records by a specific agent stream ID.
     experiment_id
         Filter records by a specific experiment ID.
     filters
@@ -118,22 +118,22 @@ def export_records(
     if filters is None:
         filters = []
 
-    if log_stream_id is None and experiment_id is None:
+    if agent_stream_id is None and experiment_id is None:
         # Use _list_all to paginate across all pages so we pick the globally oldest
         # stream, not just the oldest in the first page (default page size is 100).
-        log_streams = AgentStreams()._list_all(project_id=project_id)
-        if log_streams:
-            sorted_log_streams = sorted(log_streams, key=lambda ls: (ls.created_at, ls.id))
-            log_stream_id = sorted_log_streams[0].id
+        agent_streams = AgentStreams()._list_all(project_id=project_id)
+        if agent_streams:
+            sorted_agent_streams = sorted(agent_streams, key=lambda ls: (ls.created_at, ls.id))
+            agent_stream_id = sorted_agent_streams[0].id
 
-    if (log_stream_id is None) == (experiment_id is None):
-        raise ValueError("Exactly one of log_stream_id or experiment_id must be provided.")
+    if (agent_stream_id is None) == (experiment_id is None):
+        raise ValueError("Exactly one of agent_stream_id or experiment_id must be provided.")
 
     return ExportClient().records(
         project_id=project_id,
         root_type=root_type,
         export_format=export_format,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         experiment_id=experiment_id,
         filters=filters,
         column_ids=column_ids,
