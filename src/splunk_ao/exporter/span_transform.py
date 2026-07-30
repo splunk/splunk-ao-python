@@ -22,16 +22,16 @@ ROUTING_ATTRIBUTE_KEYS = frozenset(
 )
 
 _NORMALIZATION_ENV = "SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION"
-_FALSE_VALUES = frozenset({"0", "false", "no", "off"})
+_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
 
 def _normalization_enabled() -> bool:
     value = os.environ.get(_NORMALIZATION_ENV)
-    return value is None or value.strip().lower() not in _FALSE_VALUES
+    return value is not None and value.strip().lower() in _TRUE_VALUES
 
 
 def copy_span_for_export(
-    span: ReadableSpan, routing_resource: Resource | None = None, *, normalize_attributes: bool = True
+    span: ReadableSpan, routing_resource: Resource | None = None, *, normalize_attributes: bool = False
 ) -> ReadableSpan:
     """Return an immutable span copy with final attributes and routing."""
     source_attributes = {

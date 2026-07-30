@@ -12,11 +12,11 @@ from opentelemetry.trace import Link, SpanContext, SpanKind, TraceFlags
 from opentelemetry.trace.status import Status, StatusCode
 
 from splunk_ao.decorator import (
+    _agent_stream_context,
     _dataset_input_context,
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -295,9 +295,9 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
         assert getattr(exported, field) == getattr(source, field)
     assert exported.resource.schema_url == source.resource.schema_url
     assert exported.attributes["gen_ai.request.model"] == "gpt-4o"
-    assert exported.attributes["splunk_ao.request.model"] == "gpt-4o"
+    assert "splunk_ao.request.model" not in exported.attributes
     assert exported.attributes["gen_ai.provider.name"] == "openai"
-    assert exported.attributes["splunk_ao.provider.name"] == "openai"
+    assert "splunk_ao.provider.name" not in exported.attributes
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
     assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
     assert exported.attributes["custom.attribute"] == "preserved"
