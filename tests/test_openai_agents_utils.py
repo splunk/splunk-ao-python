@@ -296,7 +296,7 @@ class TestMapSpanType:
         """Test mapping various span data types."""
         assert _map_span_type(span_data) == expected_type
 
-    def test_galileo_custom_span(self) -> None:
+    def test_splunk_ao_custom_span(self) -> None:
         """Test mapping SplunkAOCustomSpan."""
         splunk_ao_span = WorkflowSpan(name="Test", input="input", output="output", status_code=200)
         assert _map_span_type(SplunkAOCustomSpan(splunk_ao_span, {})) == "splunk_ao_custom"
