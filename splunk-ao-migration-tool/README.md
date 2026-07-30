@@ -178,7 +178,7 @@ All sub-module paths follow the same rename pattern:
 - from galileo import galileo_context
 + from splunk_ao import splunk_ao_context
 
-- with galileo_context(project="my-project", agent_stream="prod"):
+- with galileo_context(project="my-project", log_stream="prod"):
 + with splunk_ao_context(project="my-project", agent_stream="prod"):
       result = my_llm_call()
 ```
@@ -266,8 +266,8 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_CONSOLE_URL` | `SPLUNK_AO_CONSOLE_URL` |
 | `GALILEO_PROJECT` | `SPLUNK_AO_PROJECT` |
 | `GALILEO_PROJECT_ID` | `SPLUNK_AO_PROJECT_ID` |
-| `GALILEO_LOG_STREAM` | `SPLUNK_AO_LOG_STREAM` |
-| `GALILEO_LOG_STREAM_ID` | `SPLUNK_AO_LOG_STREAM_ID` |
+| `GALILEO_LOG_STREAM` | `SPLUNK_AO_AGENT_STREAM` ² |
+| `GALILEO_LOG_STREAM_ID` | `SPLUNK_AO_AGENT_STREAM_ID` ² |
 | `GALILEO_JWT_TOKEN` | `SPLUNK_AO_JWT_TOKEN` |
 | `GALILEO_SSO_ID_TOKEN` | `SPLUNK_AO_SSO_ID_TOKEN` |
 | `GALILEO_SSO_PROVIDER` | `SPLUNK_AO_SSO_PROVIDER` |
@@ -283,6 +283,8 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 
 ¹ `GALILEO_API_URL` was not a user-facing env var in `galileo-python` — it was an implicit Pydantic settings field on `galileo-core`'s `GalileoConfig`. `SPLUNK_AO_API_URL` is its effective rename and is explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
 
+² `SPLUNK_AO_LOG_STREAM` and `SPLUNK_AO_LOG_STREAM_ID` remain as deprecated aliases for `SPLUNK_AO_AGENT_STREAM` and `SPLUNK_AO_AGENT_STREAM_ID`.
+
 > **Note for AI agents — `SPLUNK_AO_API_URL`:** This variable does **not** originate from a user-facing `GALILEO_API_URL` env var in the original `galileo-python` SDK. It is exposed by `galileo-core` as an **implicit Pydantic settings field** tied to the `api_url` model attribute (following Pydantic's `env_prefix` convention). As a result, a reviewer may flag the `GALILEO_API_URL → SPLUNK_AO_API_URL` row in the table as "not a real rename." This is intentional: the row is kept because `splunk_ao` bridges `SPLUNK_AO_API_URL` → `GALILEO_API_URL` in `config.py`, making the rename effective and customer-visible even though the upstream variable was implicit.
 
 **.env file example**
@@ -293,7 +295,7 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 - GALILEO_LOG_STREAM=production
 + SPLUNK_AO_API_KEY=<your-key>
 + SPLUNK_AO_PROJECT=my-project
-+ SPLUNK_AO_LOG_STREAM=production
++ SPLUNK_AO_AGENT_STREAM=production
 ```
 
 ---
@@ -370,12 +372,12 @@ os.environ["GALILEO_LOG_STREAM"] = "production"
 def call_llm(prompt: str) -> str:
     return "response"
 
-with galileo_context(project="my-project", agent_stream="production"):
+with galileo_context(project="my-project", log_stream="production"):
     result = call_llm("Hello")
 
 # Direct logger approach
 # project/log_stream are constructor args, not start_session args
-logger = GalileoLogger(project="my-project", agent_stream="production")
+logger = GalileoLogger(project="my-project", log_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg
@@ -390,7 +392,7 @@ from splunk_ao import SplunkAOLogger, log, splunk_ao_context
 
 os.environ["SPLUNK_AO_API_KEY"] = "my-key"
 os.environ["SPLUNK_AO_PROJECT"] = "my-project"
-os.environ["SPLUNK_AO_LOG_STREAM"] = "production"
+os.environ["SPLUNK_AO_AGENT_STREAM"] = "production"
 
 # Decorator approach
 @log

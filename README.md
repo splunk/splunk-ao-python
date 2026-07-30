@@ -74,12 +74,12 @@ cannot be derived from the console URL:
 export SPLUNK_AO_API_URL="https://api.galileo.ai"
 ```
 
-For either deployment, project and log-stream routing can be supplied through
+For either deployment, project and agent-stream routing can be supplied through
 the SDK APIs or environment variables:
 
 ```shell
 export SPLUNK_AO_PROJECT="your-project-name"
-export SPLUNK_AO_LOG_STREAM="your-log-stream-name"
+export SPLUNK_AO_AGENT_STREAM="your-agent-stream-name"
 ```
 
 When using `SplunkAOSpanProcessor`, routing is captured when its exporter is
@@ -100,7 +100,7 @@ import os
 from splunk_ao import splunk_ao_context
 from splunk_ao.openai import openai
 
-# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # Initialize the Agent Observability wrapped OpenAI client
@@ -131,7 +131,7 @@ def make_nested_call():
     call_openai()
     call_openai()
 
-# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_LOG_STREAM env vars, you can skip this step
+# If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
 splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # This will create a trace with a workflow span and two nested LLM spans containing the OpenAI calls
