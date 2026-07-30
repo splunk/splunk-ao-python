@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- [Splunk AO Documentation](https://docs.galileo.ai)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com)
 - [A2A Protocol Specification](https://a2a-protocol.org)
 - [a2a-sdk Documentation](https://pypi.org/project/a2a-sdk)
 
