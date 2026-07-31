@@ -188,26 +188,20 @@ def test_content_blocks_are_preserved_on_completed_operation(reset_context: None
 
 
 @pytest.mark.parametrize(
-    ("output", "expected_values", "expect_messages"),
+    ("output", "expected_values"),
     [
         (
             [Message(content="Hello", role=MessageRole.user), Message(content="Hi!", role=MessageRole.assistant)],
             ("Hello", "Hi!"),
-            True,
         ),
         (
             [Document(content="Tokyo is the capital of Japan."), Document(content="Mount Fuji is 3776m tall.")],
             ("Tokyo", "Mount Fuji"),
-            False,
         ),
     ],
 )
-def test_only_message_outputs_use_otel_message_schema(
-    reset_context: None,
-    distributed_clients: Mock,
-    output: list,
-    expected_values: tuple[str, str],
-    expect_messages: bool,
+def test_structured_outputs_are_preserved_in_otel_message_schema(
+    reset_context: None, distributed_clients: Mock, output: list, expected_values: tuple[str, str]
 ) -> None:
     logger = init_logger()
 
@@ -218,9 +212,6 @@ def test_only_message_outputs_use_otel_message_schema(
     workflow()
     trace_output = (logger._sink.spans[-1].attributes or {}).get("gen_ai.output.messages")
 
-    if expect_messages:
-        assert isinstance(trace_output, str)
-        assert all(value in trace_output for value in expected_values)
-    else:
-        assert trace_output is None
+    assert isinstance(trace_output, str)
+    assert all(value in trace_output for value in expected_values)
     assert logger.current_parent() is None
