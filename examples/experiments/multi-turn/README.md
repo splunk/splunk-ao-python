@@ -69,7 +69,7 @@ Pre-defined session-level metrics include:
 - `SplunkAOEvaluators.context_relevance`
 - `SplunkAOEvaluators.tool_error_rate`
 
-Related documentation: [Metrics Comparison](https://agent-observability-docs.splunk.com/concepts/metrics/metric-comparison)
+Related documentation: [Metrics Comparison](https://agent-observability-docs.splunk.com/concepts/evaluators/evaluator-comparison)
 
 Optionally, you can define your own custom session-level metric in the Splunk AO Console UI, and then add the custom metric name. 
 

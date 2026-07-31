@@ -71,7 +71,7 @@ These moons are significant for their unique geological features and potential f
 
 Every run of the app is logged as a new session in Splunk AO, with each prompt and response a separate trace.
 
-To evaluate the chatbot, head to your project and Log stream in the Splunk AO console. Turn on [instruction adherence](https://agent-observability-docs.splunk.com/concepts/metrics/response-quality/instruction-adherence) and [correctness](https://agent-observability-docs.splunk.com/concepts/metrics/response-quality/correctness) for your Log stream.
+To evaluate the chatbot, head to your project and Log stream in the Splunk AO console. Turn on [instruction adherence](https://agent-observability-docs.splunk.com/concepts/evaluators/response-quality/instruction-adherence) and [correctness](https://agent-observability-docs.splunk.com/concepts/evaluators/response-quality/correctness) for your Log stream.
 
 Then when you run the chatbot, these metrics will be evaluated.
 
