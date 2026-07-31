@@ -41,34 +41,44 @@ from the variables that are present and rejects ambiguous configurations.
 
 #### O11y Cloud user
 
-Set your Splunk Observability Cloud realm and access token:
+| Environment variable | Description |
+| --- | --- |
+| `SPLUNK_AO_REALM` | Splunk Observability Cloud realm (required) |
+| `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (required for telemetry) |
+| `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token used for CRUD operations (optional) |
+
+For telemetry export, set your realm and O11y ingest token:
 
 ```shell
 export SPLUNK_AO_REALM="us1"
-export SPLUNK_AO_SF_TOKEN="your-splunk-ingest-token"
+export SPLUNK_AO_O11Y_TOKEN="your-o11y-ingest-token"
 ```
 
-`SPLUNK_AO_SF_TOKEN` is required to export telemetry. It is also used for CRUD
-operations when it contains the necessary API permissions and no dedicated API
-token is configured.
+`SPLUNK_AO_O11Y_TOKEN` can also authorize CRUD operations when it includes API
+permissions and no dedicated API token is configured.
 
 You may configure a separate token for CRUD operations:
 
 ```shell
-export SPLUNK_AO_SF_API_TOKEN="your-splunk-api-token"
+export SPLUNK_AO_O11Y_API_TOKEN="your-o11y-api-token"
 ```
 
-When both tokens are set, `SPLUNK_AO_SF_API_TOKEN` is preferred for CRUD and
-`SPLUNK_AO_SF_TOKEN` is used for telemetry ingestion. For CRUD only use, you
-may set `SPLUNK_AO_REALM` and `SPLUNK_AO_SF_API_TOKEN` without setting
-`SPLUNK_AO_SF_TOKEN`. Note that attempting to export telemetry without
-`SPLUNK_AO_SF_TOKEN` raises a configuration error.
+When both tokens are set, `SPLUNK_AO_O11Y_API_TOKEN` is preferred for CRUD and
+`SPLUNK_AO_O11Y_TOKEN` is used for telemetry ingestion. For CRUD-only use, set
+`SPLUNK_AO_REALM` and `SPLUNK_AO_O11Y_API_TOKEN`; an ingest token is not
+required until the application exports telemetry.
 
 The SDK derives the console, API and OTLP ingest endpoints from the
 realm. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
 Cloud.
 
 #### Standalone Agent Observability user
+
+| Environment variable | Description |
+| --- | --- |
+| `SPLUNK_AO_API_KEY` | Agent Observability API key (required) |
+| `SPLUNK_AO_CONSOLE_URL` | Agent Observability console URL (required) |
+| `SPLUNK_AO_API_URL` | Explicit API URL when it cannot be derived from the console URL (optional) |
 
 Set your Agent Observability API key and console URL:
 
@@ -87,37 +97,32 @@ export SPLUNK_AO_API_URL="https://api.galileo.ai"
 
 #### Routing
 
-For either deployment, configure Project and Agent Stream routing by name:
+Routing configuration is shared by both deployments:
+
+| Environment variable | Description |
+| --- | --- |
+| `SPLUNK_AO_PROJECT` | Project name |
+| `SPLUNK_AO_AGENT_STREAM` | Agent Stream name |
+
+Configure Project and Agent Stream routing by name:
 
 ```shell
 export SPLUNK_AO_PROJECT="your-project-name"
 export SPLUNK_AO_AGENT_STREAM="your-agent-stream-name"
 ```
 
-You can instead route by ID:
-
-```shell
-export SPLUNK_AO_PROJECT_ID="your-project-id"
-export SPLUNK_AO_AGENT_STREAM_ID="your-agent-stream-id"
-```
-
-Do not set both the name and ID for the same resource. Explicit SDK arguments
-take precedence over the active `splunk_ao_context`, which takes precedence
-over environment variables. The deprecated `SPLUNK_AO_LOG_STREAM` and
-`SPLUNK_AO_LOG_STREAM_ID` variables remain compatibility aliases; use the
-Agent Stream names above in new applications.
+Explicit SDK arguments take precedence over the active `splunk_ao_context`,
+which takes precedence over environment variables. The deprecated
+`SPLUNK_AO_LOG_STREAM` variable remains a compatibility alias; use
+`SPLUNK_AO_AGENT_STREAM` in new applications.
 
 Routing is captured when an OTLP exporter is constructed and remains fixed for
 that exporter's lifetime. Use a separate processor and exporter for each
 additional destination.
 
 Routing is SDK configuration, not a general OpenTelemetry Resource setting. Do
-not set `splunk_ao.project.name`, `splunk_ao.project.id`,
-`splunk_ao.logstream.name`, `splunk_ao.logstream.id`, or
-`splunk_ao.experiment.id` in `OTEL_RESOURCE_ATTRIBUTES`. The SDK removes those
-reserved keys and emits the routing values resolved from its supported
-arguments, context, and `SPLUNK_AO_*` variables so Resource attributes and
-request headers remain consistent.
+not set Agent Observability routing in `OTEL_RESOURCE_ATTRIBUTES`. Use the
+supported SDK arguments, context, or `SPLUNK_AO_*` environment variables.
 
 Set a meaningful OpenTelemetry service name when you want traces to appear
 under a recognizable service in APM:
@@ -541,9 +546,9 @@ finally:
 
 `start_session()` uses session CRUD in both deployment modes and requires
 complete Project plus Agent Stream or experiment routing. The O11y Cloud
-telemetry logger requires `SPLUNK_AO_SF_TOKEN`; session CRUD uses
-`SPLUNK_AO_SF_API_TOKEN` when configured, otherwise the ingest token must also
-include API permissions. Standalone uses its configured API credentials.
+telemetry logger requires `SPLUNK_AO_O11Y_TOKEN`; session CRUD uses
+`SPLUNK_AO_O11Y_API_TOKEN` when configured, otherwise the ingest token must
+also include API permissions. Standalone uses its configured API credentials.
 
 You can continue a previous session by using the same session ID that was
 previously generated:

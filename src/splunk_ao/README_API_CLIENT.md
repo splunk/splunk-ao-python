@@ -4,14 +4,21 @@ A client library for accessing the Splunk AO platform API
 
 ## Usage
 
-First, create a client:
+This is the low-level client generated from the platform API schema. It does
+not read `SPLUNK_AO_*` environment variables or perform deployment-aware
+configuration. Most applications should use the public Splunk AO SDK APIs,
+which configure authentication and endpoints automatically.
+
+When using the generated client directly, provide its base URL and any
+required authentication headers explicitly:
 
 ```python
 from splunk_ao.resources.client import Client
 
-# Make sure you've set the SPLUNK_AO_CONSOLE_URL and SPLUNK_AO_API_KEY env vars
-# Optionally, you can specify both base_url and api_key
-client = Client(base_url="https://your-splunk-ao-instance")
+client = Client(
+    base_url="https://your-splunk-ao-instance",
+    headers={"your-auth-header": "your-token"},
+)
 ```
 
 Now call your endpoint and use your models:

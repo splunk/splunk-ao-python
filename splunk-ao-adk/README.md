@@ -12,7 +12,8 @@ Splunk AO observability for [Google ADK](https://github.com/google/adk-python) a
 pip install splunk-ao-adk
 ```
 
-**Requirements:** Python 3.11+, a [Splunk AO API key](https://www.splunk.com/), and a [Google AI API key](https://aistudio.google.com/apikey)
+**Requirements:** Python 3.11+, Splunk AO standalone or Splunk Observability
+Cloud credentials, and a [Google AI API key](https://aistudio.google.com/apikey).
 
 ## Quick Start
 
@@ -34,17 +35,41 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
+    # Configure one Splunk AO deployment below, plus GOOGLE_API_KEY.
     asyncio.run(main())
 ```
 
 ## Configuration
 
-| Parameter | Environment Variable | Description |
-|-----------|---------------------|-------------|
-| `project` | `SPLUNK_AO_PROJECT` | Project name (required unless `ingestion_hook` provided) |
-| `log_stream` | `SPLUNK_AO_AGENT_STREAM` | Log stream name (required unless `ingestion_hook` provided) |
-| `ingestion_hook` | - | Custom callback for trace data (bypasses Splunk AO backend) |
+| Parameter | Description |
+|-----------|-------------|
+| `project` | Project name. Explicit arguments override environment routing. |
+| `agent_stream` | Agent Stream name. Explicit arguments override environment routing. |
+| `ingestion_hook` | Deprecated compatibility callback that receives proprietary trace requests and bypasses normal OTLP export. |
+
+For standalone Splunk AO:
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `SPLUNK_AO_API_KEY` | Splunk AO API key (required) |
+| `SPLUNK_AO_CONSOLE_URL` | Splunk AO console URL (required for self-hosted deployments) |
+| `SPLUNK_AO_API_URL` | Explicit API URL (optional; otherwise derived from the console URL) |
+| `SPLUNK_AO_PROJECT` | Project name |
+| `SPLUNK_AO_AGENT_STREAM` | Agent Stream name |
+
+For Splunk Observability Cloud:
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `SPLUNK_AO_REALM` | Observability Cloud realm (required) |
+| `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (required) |
+| `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token used for session and other CRUD operations (optional) |
+| `SPLUNK_AO_PROJECT` | Project name |
+| `SPLUNK_AO_AGENT_STREAM` | Agent Stream name |
+
+When both O11y tokens are configured, the API token is preferred for CRUD and
+the ingest token is used for telemetry. A combined token can perform both when
+it includes both permissions.
 
 ## Features
 
@@ -80,7 +105,7 @@ async def main():
             print(f"Response 2: {event.content.parts[0].text}")
 
 if __name__ == "__main__":
-    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
+    # Configure one Splunk AO deployment above, plus GOOGLE_API_KEY.
     asyncio.run(main())
 ```
 
@@ -121,7 +146,7 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
+    # Configure one Splunk AO deployment above, plus GOOGLE_API_KEY.
     asyncio.run(main())
 ```
 
@@ -158,7 +183,7 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
+    # Configure one Splunk AO deployment above, plus GOOGLE_API_KEY.
     asyncio.run(main())
 ```
 
@@ -181,7 +206,10 @@ tool = FunctionTool(search_docs)
 
 ### Ingestion Hook
 
-Intercept traces for custom processing before forwarding to Splunk AO:
+The proprietary ingestion hook remains available as deprecated migration
+compatibility. It bypasses the normal OTLP export path. New custom telemetry
+pipelines should use OpenTelemetry `SpanProcessor` and `SpanExporter`
+extension points instead.
 
 ```python
 import asyncio
@@ -198,7 +226,7 @@ logger = SplunkAOLogger(
 )
 
 def my_ingestion_hook(request):
-    """Hook that captures traces locally and forwards to Galileo with session management."""
+    """Capture traces locally and forward them with session management."""
     if hasattr(request, "traces") and request.traces:
         print(f"\n[Ingestion Hook] Intercepted {len(request.traces)} trace(s)")
         for trace in request.traces:
@@ -206,11 +234,11 @@ def my_ingestion_hook(request):
             span_types = [getattr(s, "type", "unknown") for s in spans]
             print(f"  - Trace with {len(spans)} span(s): {span_types}")
 
-    # Session management: same external_id returns the same Galileo session
-    galileo_session_id = logger.start_session(external_id=request.session_external_id)
-    request.session_id = galileo_session_id
+    # The same external ID returns the same Agent Observability session.
+    session_id = logger.start_session(external_id=request.session_external_id)
+    request.session_id = session_id
 
-    # Forward traces to Galileo
+    # Forward traces through the legacy proprietary endpoint.
     logger.ingest_traces(request)
 
 async def main():
@@ -224,13 +252,13 @@ async def main():
             print(event.content.parts[0].text)
 
 if __name__ == "__main__":
-    # Set environment variables: SPLUNK_AO_API_KEY, GOOGLE_API_KEY
+    # Configure one Splunk AO deployment above, plus GOOGLE_API_KEY.
     asyncio.run(main())
 ```
 
 ## Resources
 
-- [Splunk AO Documentation](https://docs.rungalileo.io/)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com)
 - [Google ADK Documentation](https://google.github.io/adk-docs/)
 
 ## License

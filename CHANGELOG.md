@@ -6,6 +6,8 @@
 
 - Added deployment-aware configuration and authentication for Splunk
   Observability Cloud and standalone Agent Observability deployments.
+- Added O11y Cloud configuration through `SPLUNK_AO_REALM`,
+  `SPLUNK_AO_O11Y_TOKEN`, and the optional `SPLUNK_AO_O11Y_API_TOKEN`.
 - Added native OTLP trace export for SDK handlers and standard OpenTelemetry or
   OpenInference instrumentations.
 - Added Project and Agent Stream routing by name or ID in both OTLP request
