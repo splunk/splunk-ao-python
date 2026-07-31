@@ -168,7 +168,9 @@ example wait for delivery before it exits.
 
 Use the `@log` decorator to capture application operations. Every independent
 top-level decorated call owns and concludes its trace. Nested decorated calls
-become children of the outer operation:
+become children of the outer operation. Captured function arguments and return
+values are preserved as the operation input and output, including supported
+structured and multimodal content:
 
 ```python
 from splunk_ao import log, splunk_ao_context
