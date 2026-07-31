@@ -109,6 +109,27 @@ def test_completed_workflow_is_enqueued_and_flush_does_not_complete_root(
     distributed_clients.update_span.assert_not_called()
 
 
+def test_decorator_workflow_arguments_and_result_reach_otel_span(
+    reset_context: None, distributed_clients: Mock
+) -> None:
+    logger = init_logger()
+
+    @log(span_type="workflow")
+    def add(arg1: int, arg2: int) -> dict[str, int]:
+        return {"sum": arg1 + arg2}
+
+    assert add(1, 2) == {"sum": 3}
+
+    [span] = logger._sink.spans
+    attrs = span.attributes or {}
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        {"role": "user", "parts": [{"type": "text", "content": '{"arg1":1,"arg2":2}'}]}
+    ]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [{"type": "text", "content": '{"sum":3}'}], "finish_reason": "unknown"}
+    ]
+
+
 def test_workflow_empty_output_is_preserved(reset_context: None, distributed_clients: Mock) -> None:
     logger = init_logger()
 

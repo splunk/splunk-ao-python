@@ -63,7 +63,9 @@ def test_copy_span_for_export_is_immutable_and_combines_normalization_with_routi
     source_resource = source.resource
 
     exported = copy_span_for_export(
-        source, Resource({"splunk_ao.project.id": "project-id", "splunk_ao.logstream.id": "log-stream-id"})
+        source,
+        Resource({"splunk_ao.project.id": "project-id", "splunk_ao.logstream.id": "log-stream-id"}),
+        normalize_attributes=True,
     )
 
     assert exported is not source
@@ -112,7 +114,9 @@ def test_copy_span_preserves_unaffected_readable_span_fields() -> None:
 
 def test_exporter_normalizes_once_and_delegates_lifecycle_once() -> None:
     delegate = RecordingExporter()
-    exporter = NormalizingSpanExporter(delegate, Resource({"splunk_ao.project.name": "project"}))
+    exporter = NormalizingSpanExporter(
+        delegate, Resource({"splunk_ao.project.name": "project"}), normalize_attributes=True
+    )
 
     assert exporter.export((make_span(),)) == SpanExportResult.SUCCESS
     assert exporter.force_flush(1234) is True
@@ -137,8 +141,7 @@ def test_private_environment_switch_disables_only_attribute_normalization(
     exporter.export((source,))
     exported = delegate.batches[0][0]
 
-    assert exported.attributes == source.attributes
-    assert "splunk_ao.system" not in exported.attributes
+    assert exported.attributes == {**source.attributes, "splunk_ao.system": "splunk_ao_python"}
     assert exported.resource.attributes["splunk_ao.project.name"] == "project"
 
 
@@ -153,11 +156,30 @@ def test_private_environment_switch_is_read_at_exporter_construction(monkeypatch
     assert "splunk_ao.request.model" not in delegate.batches[0][0].attributes
 
 
-def test_default_normalization_is_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_default_normalization_is_disabled_but_sdk_marker_is_present(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION", raising=False)
     delegate = RecordingExporter()
     exporter = NormalizingSpanExporter(delegate)
 
     exporter.export((make_span(),))
 
-    assert delegate.batches[0][0].attributes["splunk_ao.system"] == "splunk_ao_python"
+    attributes = delegate.batches[0][0].attributes
+    assert attributes["gen_ai.request.model"] == "gpt-4o"
+    assert "splunk_ao.request.model" not in attributes
+    assert attributes["splunk_ao.system"] == "splunk_ao_python"
+
+
+@pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
+def test_private_environment_switch_explicitly_enables_normalization(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION", value)
+    delegate = RecordingExporter()
+    exporter = NormalizingSpanExporter(delegate)
+
+    exporter.export((make_span({"gen_ai.input.messages": "input-json"}),))
+
+    attributes = delegate.batches[0][0].attributes
+    assert "gen_ai.input.messages" not in attributes
+    assert attributes["splunk_ao.input.messages"] == "input-json"
+    assert attributes["splunk_ao.system"] == "splunk_ao_python"
