@@ -14,7 +14,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, Spa
 from opentelemetry.trace import Tracer
 
 from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
@@ -27,7 +27,14 @@ from splunk_ao.decorator import (
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter, resolve_routing
+from splunk_ao.exporter import (
+    ExportHealth,
+    RoutingAttrs,
+    build_o11y_exporter,
+    build_standalone_exporter,
+    resolve_routing,
+)
+from splunk_ao.exporter.diagnostics import get_export_health
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +149,11 @@ class SplunkAOOTLPExporter(SpanExporter):
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export through the shared immutable normalization pipeline."""
         return self._delegate.export(spans)
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._delegate)
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Flush the delegate exporter."""
@@ -262,6 +274,11 @@ class SplunkAOSpanProcessor(SpanProcessor):
         return self._processor.force_flush(timeout_millis)
 
     @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._exporter)
+
+    @property
     def exporter(self) -> SpanExporter:
         """Access to the underlying Splunk AO OTLP exporter instance."""
         return self._exporter
@@ -298,7 +315,7 @@ def _apply_dataset_attributes(
 
 
 @contextmanager
-def start_splunk_ao_span(splunk_ao_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()

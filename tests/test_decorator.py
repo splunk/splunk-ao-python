@@ -42,7 +42,7 @@ def test_decorator_context_reset(
     llm_call(query="input")
 
     assert len(splunk_ao_context.get_logger_instance().traces) == 1
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
     assert splunk_ao_context.get_current_project() == "project-X"
     assert splunk_ao_context.get_current_agent_stream() == "log-stream-X"
 
@@ -93,7 +93,7 @@ def test_decorator_context_flush(
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     splunk_ao_context.flush()
 
@@ -129,7 +129,7 @@ def test_decorator_context_flush_specific_project_and_log_stream(
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     splunk_ao_context.init(project="project-Y", agent_stream="log-stream-Y")
 
@@ -137,7 +137,7 @@ def test_decorator_context_flush_specific_project_and_log_stream(
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X")
 
@@ -146,7 +146,7 @@ def test_decorator_context_flush_specific_project_and_log_stream(
     assert len(payload.traces) == 1
     assert len(payload.traces[0].spans) == 1
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     splunk_ao_context.flush(project="project-Y", agent_stream="log-stream-Y")
 
@@ -176,20 +176,20 @@ def test_decorator_context_flush_all(
 
     llm_call(query="input_X")
 
-    trace_X = splunk_ao_context.get_current_trace()
+    logger_X = splunk_ao_context.get_logger_instance(project="project-X", agent_stream="log-stream-X")
+    trace_X = logger_X.traces[-1]
     assert trace_X.input == '{"query": "input_X"}'
 
-    logger_X = splunk_ao_context.get_logger_instance(project="project-X", agent_stream="log-stream-X")
     assert len(logger_X.traces) == 1
 
     splunk_ao_context.init(project="project-Y", agent_stream="log-stream-Y")
 
     llm_call(query="input_Y")
 
-    trace_Y = splunk_ao_context.get_current_trace()
+    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", agent_stream="log-stream-Y")
+    trace_Y = logger_Y.traces[-1]
     assert trace_Y.input == '{"query": "input_Y"}'
 
-    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", agent_stream="log-stream-Y")
     assert len(logger_Y.traces) == 1
 
     # Flush both loggers
@@ -1293,7 +1293,7 @@ def test_mode_flush_with_explicit_mode(
         return "response"
 
     llm_call(query="input")
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     # Flush with explicit mode
     splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X", mode="batch")
@@ -1308,10 +1308,10 @@ def test_mode_flush_with_explicit_mode(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_mode_flush_different_mode_no_reset(
+def test_mode_flush_different_mode_preserves_completed_operation_state(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
-    """Test that flush with different mode doesn't reset current trace context."""
+    """Test that flushing another logger does not create or restore operation state."""
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
@@ -1325,14 +1325,13 @@ def test_mode_flush_different_mode_no_reset(
 
     llm_call(query="input")
     current_trace = splunk_ao_context.get_current_trace()
-    assert current_trace is not None
+    assert current_trace is None
 
     # Flush with a different mode shouldn't reset the current trace context
     # Since the logger instances are different
     splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X", mode="distributed")
 
-    # Current trace should still exist since we didn't flush the batch mode instance
-    assert splunk_ao_context.get_current_trace() is not None
+    # The completed operation remains concluded.
     assert splunk_ao_context.get_current_trace() == current_trace
 
 
@@ -1401,11 +1400,11 @@ def test_get_logger_instance_with_explicit_mode(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
+def test_multiple_workflow_calls_create_independent_traces(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
     """
-    Test that multiple workflow-level function calls are added as spans to a single trace in batch mode.
+    Test that each top-level decorated operation owns an independent trace.
     """
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
@@ -1427,26 +1426,23 @@ def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
     assert result2 == "Processed: query 2"
     assert result3 == "Processed: query 3"
 
-    # Before flush, verify only 1 trace was created with 3 workflow spans
+    # Before flush, verify each call produced one concluded trace.
     logger = splunk_ao_context.get_logger_instance()
-    assert len(logger.traces) == 1, f"Expected 1 trace, got {len(logger.traces)}"
-
-    # Verify the single trace has 3 workflow spans
-    trace = logger.traces[0]
-    assert len(trace.spans) == 3, f"Expected 3 spans, got {len(trace.spans)}"
-
-    # Verify each span has the correct input
-    assert trace.spans[0].input == '{"query": "query 1"}'
-    assert trace.spans[1].input == '{"query": "query 2"}'
-    assert trace.spans[2].input == '{"query": "query 3"}'
+    assert len(logger.traces) == 3
+    assert all(len(trace.spans) == 1 for trace in logger.traces)
+    assert [trace.spans[0].input for trace in logger.traces] == [
+        '{"query": "query 1"}',
+        '{"query": "query 2"}',
+        '{"query": "query 3"}',
+    ]
 
     # Flush the trace
     splunk_ao_context.flush()
 
-    # Verify ingest_traces was called with 1 trace containing 3 spans
+    # Verify all three operation traces are uploaded.
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
-    assert len(payload.traces) == 1
-    assert len(payload.traces[0].spans) == 3
+    assert len(payload.traces) == 3
+    assert all(len(trace.spans) == 1 for trace in payload.traces)
 
     # After flush, trace context should be cleared
     assert splunk_ao_context.get_current_trace() is None

@@ -169,6 +169,59 @@ def test_processor_marks_direct_trace_child_agent(
     logger.conclude(output="output")
 
 
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_commit_failure_concludes_handler_owned_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test")
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    owned_traces = []
+
+    def fail_after_starting_trace(*args, **kwargs):
+        processor._owned_trace = logger.add_trace(input="input", name="Trace")
+        owned_traces.append(processor._owned_trace)
+        raise RuntimeError("conversion failed")
+
+    with patch.object(processor, "_log_node_tree", side_effect=fail_after_starting_trace):
+        processor.on_trace_end(trace)
+
+    assert logger.current_parent() is None
+    assert owned_traces[0].status_code == 500
+    assert processor._nodes == {}
+    assert processor._owned_trace is None
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_commit_failure_preserves_caller_owned_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test")
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    caller_trace = logger.start_trace(input="request", name="caller")
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+
+    with patch.object(processor, "_commit_trace", side_effect=RuntimeError("conversion failed")):
+        processor.on_trace_end(trace)
+
+    assert logger.current_parent() is caller_trace
+    assert processor._nodes == {}
+    assert processor._owned_trace is None
+    logger.conclude(output="done")
+
+
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:
     """Create a mock OpenAI API response with embedded tool calls."""
     return {
