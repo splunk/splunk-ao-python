@@ -35,7 +35,7 @@ CI: mypy + pytest on Python 3.11–3.14 × Linux/macOS/Windows. Pre-commit: ruff
 
 ```
 src/splunk_ao/
-├── __future__/          # Object-centric API (Project, Dataset, Experiment, …)
+├── project.py, dataset.py, experiment.py, prompt.py  # Object-centric API (import via splunk_ao.__future__)
 ├── logger/              # SplunkAOLogger — trace/span management
 ├── handlers/            # LangChain, CrewAI, OpenAI Agents integrations
 ├── openai/              # Drop-in OpenAI client wrapper
@@ -82,13 +82,13 @@ with splunk_ao_context(project="my-project", agent_stream="prod"):
     my_workflow()
 ```
 
-**Handlers:** `splunk_ao.handlers.langchain` (`SplunkAOCallback`), `splunk_ao.handlers.crewai` (use `auto_setup_listeners=False` in tests), `splunk_ao.openai` (drop-in wrapper).
+**Handlers:** `splunk_ao.handlers.langchain` (`SplunkAOCallback`), `splunk_ao.handlers.crewai` (`CrewAIEventListener`), `splunk_ao.openai` (drop-in wrapper).
 
 ## Testing
 
 Fixtures in `tests/conftest.py`: `mock_request`, `mock_healthcheck`, `mock_login_api_key`. Tests use `--disable-socket`; env vars set in conftest for pytest-xdist.
 
-CrewAI has import side effects — lazy-import inside tests, set `auto_setup_listeners=False`.
+CrewAI wraps stdout/stderr at import time. In tests, patch `_crewai_imports_resolved` / `CREWAI_AVAILABLE`, mock `AgentStreams`/`Projects`/`Traces`, and pass a mock `SplunkAOLogger` (see `tests/test_crewai_handler.py`).
 
 Use Given/When/Then comments in tests (`# Given: …`, `# When: …`, `# Then: …`).
 
@@ -106,10 +106,9 @@ Use Given/When/Then comments in tests (`# Given: …`, `# When: …`, `# Then: �
 
 1. **galileo-core dependency** — private package, contributor friction
 2. **Config state** — split across `Configuration`, `os.environ`, `SplunkAOConfig`; `connect()` must be called explicitly
-3. **Prompt versions** — `Prompt.create_version()` creates a new prompt, not a version of the same template
-4. **Dataset versions** — API is 1-based, not 0-based
-5. **Experiment vs Playground** — SDK `Experiment` conflates two API concepts
-6. **Metadata** — SDK stringifies values; Trace vs Dataset APIs behave differently
+3. **Dataset versions** — API is 1-based, not 0-based
+4. **Experiment vs Playground** — SDK `Experiment` conflates two API concepts
+5. **Metadata** — SDK stringifies values in handlers; Trace vs Dataset APIs behave differently
 
 ## References
 
