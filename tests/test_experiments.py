@@ -47,7 +47,7 @@ from splunk_ao.resources.models import (
 from splunk_ao.resources.types import UNSET
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
-from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOEvaluators
 from splunk_ao.utils.datasets import load_dataset_and_records
 from splunk_ao.utils.exceptions import _format_http_validation_error
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -929,7 +929,7 @@ class TestExperiments:
             project="awesome-new-project",
             dataset_id=dataset_id,
             prompt_template=prompt_template(),
-            metrics=[SplunkAOMetrics.correctness],
+            metrics=[SplunkAOEvaluators.correctness],
         )
 
         mock_get_project.assert_called_once_with(id=None, name="awesome-new-project")

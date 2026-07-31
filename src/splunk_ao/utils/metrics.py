@@ -9,7 +9,7 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.resources.models.scorer_config import ScorerConfig
 from splunk_ao.resources.models.scorer_response import ScorerResponse
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.scorers import Scorers, ScorerSettings
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def _is_uuid(value: str) -> bool:
 def create_metric_configs(
     project_id: str,
     run_id: str | None,  # Can be experiment_id, agent_stream_id, or None (for trigger=True flow)
-    metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
+    metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
 ) -> tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]:
     """
     Process metrics and create scorer configurations for experiments or log streams.
@@ -104,7 +104,7 @@ def create_metric_configs(
     validates they exist, and registers server-side metrics with Splunk AO.
 
     Metrics can be specified as:
-    - SplunkAOMetrics enum values (human-readable labels like "Correctness")
+    - SplunkAOEvaluators enum values (human-readable labels like "Correctness")
     - Metric objects with name and optional version
     - UUID strings (scorer IDs for direct lookup)
     - Plain strings (searched by label with name fallback)
@@ -138,7 +138,7 @@ def create_metric_configs(
 
     # Categorize metrics by type
     for metric in metrics:
-        if isinstance(metric, SplunkAOMetrics):
+        if isinstance(metric, SplunkAOEvaluators):
             label_searches.append((metric.value, None))
         elif isinstance(metric, Metric):
             label_searches.append((metric.name, metric.version))

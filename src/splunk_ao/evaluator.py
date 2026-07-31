@@ -39,7 +39,7 @@ from splunk_ao.resources.models import (
 )
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.types import UNSET, File, Unset
-from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOEvaluators
 from splunk_ao.schema.metrics import Metric as SchemaMetric
 from splunk_ao.scorers import Scorers
 from splunk_ao.shared.base import StateManagementMixin, SyncState
@@ -68,17 +68,17 @@ class BuiltInEvaluators:
         Evaluator.metrics.toxicity
     """
 
-    def __getattr__(self, name: str) -> SplunkAOMetrics:
+    def __getattr__(self, name: str) -> SplunkAOEvaluators:
         """Allow attribute-style access to built-in metrics."""
         # Try to find the metric by name (enum names match UI-visible names)
-        for scorer in SplunkAOMetrics:
+        for scorer in SplunkAOEvaluators:
             if scorer.name == name:
                 return scorer
-        raise AttributeError(f"Built-in metric '{name}' not found. Available: {[s.name for s in SplunkAOMetrics]}")
+        raise AttributeError(f"Built-in metric '{name}' not found. Available: {[s.name for s in SplunkAOEvaluators]}")
 
     def __dir__(self) -> list[str]:
         """Return list of available metric names for autocomplete."""
-        return [scorer.name for scorer in SplunkAOMetrics]
+        return [scorer.name for scorer in SplunkAOEvaluators]
 
 
 # Backwards-compatible alias
