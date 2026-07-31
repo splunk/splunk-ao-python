@@ -12,7 +12,7 @@ from splunk_ao.resources.models.http_validation_error import HTTPValidationError
 from splunk_ao.resources.models.log_stream_create_request import LogStreamCreateRequest
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.resources.types import Unset
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.utils.env_helpers import _get_agent_stream_from_env, _get_project_from_env
 from splunk_ao.utils.log_config import get_logger
 from splunk_ao.utils.metrics import create_metric_configs
@@ -78,7 +78,7 @@ class AgentStream(LogStreamResponse):
 
     # Enable metrics on a log stream - RECOMMENDED APPROACH
     from splunk_ao.agent_streams import enable_evaluators
-    from splunk_ao.schema.metrics import SplunkAOMetrics
+    from splunk_ao.schema.metrics import SplunkAOEvaluators
 
     # Set environment variables first
     # export SPLUNK_AO_AGENT_STREAM="Production Logs"
@@ -86,8 +86,8 @@ class AgentStream(LogStreamResponse):
 
     # Clean and simple - just pass the metrics!
     local_metrics = enable_evaluators([
-        SplunkAOMetrics.correctness,
-        SplunkAOMetrics.completeness,
+        SplunkAOEvaluators.correctness,
+        SplunkAOEvaluators.completeness,
         "context_relevance"
     ])
 
@@ -123,7 +123,7 @@ class AgentStream(LogStreamResponse):
             return
 
     def enable_evaluators(
-        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
+        self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Enable metrics directly on this log stream instance.
@@ -139,10 +139,10 @@ class AgentStream(LogStreamResponse):
 
         Parameters
         ----------
-        metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+        metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
             List of metrics to enable on this log stream. Supports multiple input formats:
 
-            - **SplunkAOMetrics enum values**: Built-in metrics like `SplunkAOMetrics.correctness`
+            - **SplunkAOEvaluators enum values**: Built-in metrics like `SplunkAOEvaluators.correctness`
             - **Metric objects**: Custom metrics with optional version specifications
             - **LocalMetricConfig objects**: Client-side metrics with custom scoring functions
             - **String names**: Built-in metric names like "correctness" or "toxicity"
@@ -169,7 +169,7 @@ class AgentStream(LogStreamResponse):
 
         ```python
         from splunk_ao.agent_streams import AgentStreams
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
 
         # Get a log stream first
         log_streams = AgentStreams()
@@ -177,8 +177,8 @@ class AgentStream(LogStreamResponse):
 
         # Enable metrics directly - clean and intuitive!
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance",
             "toxicity"
         ])
@@ -196,7 +196,7 @@ class AgentStream(LogStreamResponse):
             return 0.75  # Your scoring logic
 
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
+            SplunkAOEvaluators.correctness,
             "completeness",
             Metric(name="domain_relevance", version=3),
             LocalMetricConfig(name="custom_metric", scorer_fn=custom_scorer)
@@ -481,7 +481,7 @@ class AgentStreams:
         *,
         agent_stream_name: str | None = None,
         project_name: str | None = None,
-        metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
+        metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
     ) -> builtins.list[LocalMetricConfig]:
         """
         Enable metrics for a log stream by configuring scorers.
@@ -498,9 +498,9 @@ class AgentStreams:
             The name of the log stream. Takes precedence over the SPLUNK_AO_AGENT_STREAM environment variable. Defaults to None.
         project_name : Optional[str], optional
             The name of the project. Takes precedence over the SPLUNK_AO_PROJECT environment variable. Defaults to None.
-        metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+        metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
             List of metrics to enable. Can include:
-            - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+            - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
             - Metric objects with name and optional version
             - LocalMetricConfig objects for custom local metrics
             - String names of built-in metrics
@@ -520,15 +520,15 @@ class AgentStreams:
         ```python
         # Enable built-in metrics with explicit parameters
         from splunk_ao.agent_streams import AgentStreams
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
 
         log_streams = AgentStreams()
         scorer_configs, local_metrics = log_streams.enable_evaluators(
             agent_stream_name="Production Logs",
             project_name="My AI Project",
             metrics=[
-                SplunkAOMetrics.correctness,
-                SplunkAOMetrics.completeness,
+                SplunkAOEvaluators.correctness,
+                SplunkAOEvaluators.completeness,
                 "context_relevance",
             ],
         )
@@ -686,7 +686,7 @@ def enable_evaluators(
     *,
     agent_stream_name: str | None = None,
     project_name: str | None = None,
-    metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
+    metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
 ) -> builtins.list[LocalMetricConfig]:
     """
     Enable metrics for a log stream with flexible parameter and environment variable support.
@@ -714,9 +714,9 @@ def enable_evaluators(
     project_name : Optional[str], optional
         The name of the project. Takes precedence over SPLUNK_AO_PROJECT environment variable.
         If None, will use SPLUNK_AO_PROJECT env var. Defaults to None.
-    metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+    metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
         List of metrics to enable on the log stream. Can include:
-        - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+        - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
         - Metric objects with name and optional version for custom metrics
         - LocalMetricConfig objects for client-side custom scoring functions
         - String names of built-in metrics (e.g., "correctness", "toxicity")
@@ -742,14 +742,14 @@ def enable_evaluators(
     ```python
     # Enable built-in metrics with explicit parameters
     from splunk_ao.agent_streams import enable_evaluators
-    from splunk_ao.schema.metrics import SplunkAOMetrics
+    from splunk_ao.schema.metrics import SplunkAOEvaluators
 
     local_metrics = enable_evaluators(
         agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=[
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance",
         ],
     )
@@ -772,7 +772,7 @@ def enable_evaluators(
     local_metrics = enable_evaluators(
         agent_stream_name="Development Logs",
         metrics=[
-            SplunkAOMetrics.correctness,
+            SplunkAOEvaluators.correctness,
             "toxicity",
             Metric(name="my_custom_metric", version=2),
             LocalMetricConfig(

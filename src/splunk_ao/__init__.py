@@ -67,7 +67,7 @@ from splunk_ao.prompt import Prompt
 from splunk_ao.provider import AnthropicProvider, AzureProvider, BedrockProvider, OpenAIProvider, Provider
 from splunk_ao.resources.models.document import Document
 from splunk_ao.schema.message import Message
-from splunk_ao.schema.metrics import SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOEvaluators
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import (
     AmbiguousConfigurationError,
@@ -149,7 +149,7 @@ __all__ = [
     "SplunkAOFutureError",
     "SplunkAOLogger",
     "SplunkAOLoggerException",
-    "SplunkAOMetrics",
+    "SplunkAOEvaluators",
     "StepType",
     "StepWithChildSpans",
     "SyncState",

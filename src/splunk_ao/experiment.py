@@ -45,7 +45,7 @@ from splunk_ao.resources.types import Unset
 # TODO: DatasetRecord needed for function-based experiments
 # from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.filters import FilterType
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.search import RecordType, Search
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ValidationError
@@ -176,7 +176,7 @@ class Experiment(StateManagementMixin):
     prompt_name: str | None
     created_at: datetime.datetime | None
     updated_at: datetime.datetime | None
-    metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None
+    metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str] | None
     # TODO: Function-based experiments temporarily disabled - need to validate implementation
     # function: Callable | None
     model_alias: str | None
@@ -209,7 +209,7 @@ class Experiment(StateManagementMixin):
         prompt: Prompt | PromptTemplate | str | None = None,
         prompt_name: str | None = None,
         model: Model | str | None = None,
-        metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None = None,
+        metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str] | None = None,
         project_id: str | None = None,
         project_name: str | None = None,
         prompt_settings: PromptRunSettings | None = None,
@@ -2031,14 +2031,14 @@ class Experiment(StateManagementMixin):
         columns = [Column(col) for col in response.columns]
         return ColumnCollection(columns)
 
-    def get_metric_aggregate(self, metric: SplunkAOMetrics | str) -> MetricAggregates | None:
+    def get_metric_aggregate(self, metric: SplunkAOEvaluators | str) -> MetricAggregates | None:
         """Return aggregate statistics for a specific metric.
 
         Looks up a metric by any of the following identifiers, tried in order:
 
-        1. :class:`~splunk_ao.schema.metrics.SplunkAOMetrics` enum value — its
+        1. :class:`~splunk_ao.schema.metrics.SplunkAOEvaluators` enum value — its
            ``value`` IS the human-readable label (e.g.
-           ``SplunkAOMetrics.correctness`` → ``"Correctness"``).
+           ``SplunkAOEvaluators.correctness`` → ``"Correctness"``).
         2. Scorer UUID string — direct lookup in :attr:`metric_aggregates`,
            no column resolution needed.
         3. Human-readable label string (e.g. ``"Correctness"``) — resolved
@@ -2052,7 +2052,7 @@ class Experiment(StateManagementMixin):
         Parameters
         ----------
         metric :
-            Any of: a :class:`SplunkAOMetrics` enum value, scorer UUID string,
+            Any of: a :class:`SplunkAOEvaluators` enum value, scorer UUID string,
             human-readable label, or legacy metric_key_alias.
 
         Returns
@@ -2066,21 +2066,21 @@ class Experiment(StateManagementMixin):
         --------
         Poll until a specific metric is computed, then assert::
 
-            from splunk_ao.schema.metrics import SplunkAOMetrics
+            from splunk_ao.schema.metrics import SplunkAOEvaluators
 
-            while experiment.get_metric_aggregate(SplunkAOMetrics.correctness) is None:
+            while experiment.get_metric_aggregate(SplunkAOEvaluators.correctness) is None:
                 time.sleep(5)
                 experiment.refresh()
 
-            agg = experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
+            agg = experiment.get_metric_aggregate(SplunkAOEvaluators.correctness)
             assert agg.avg >= 0.95
         """
         aggregates = self.metric_aggregates
         if not aggregates:
             return None
 
-        # SplunkAOMetrics.value IS the human-readable label (e.g. "Correctness")
-        metric_str = metric.value if isinstance(metric, SplunkAOMetrics) else metric
+        # SplunkAOEvaluators.value IS the human-readable label (e.g. "Correctness")
+        metric_str = metric.value if isinstance(metric, SplunkAOEvaluators) else metric
 
         # Scorer UUID → direct lookup, no column resolution needed
         if _UUID_RE.fullmatch(metric_str):

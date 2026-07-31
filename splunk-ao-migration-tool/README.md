@@ -196,12 +196,12 @@ All sub-module paths follow the same rename pattern:
 | Old | New |
 |-----|-----|
 | `GalileoMetric` | `SplunkAOMetric` |
-| `GalileoMetrics` | `SplunkAOMetrics` |
+| `GalileoMetrics` | `SplunkAOEvaluators` |
 | `GalileoScorers` | **Removed** (see §5.2) |
 
 ```diff
 - from galileo import GalileoMetric, GalileoMetrics
-+ from splunk_ao import SplunkAOMetric, SplunkAOMetrics
++ from splunk_ao import SplunkAOMetric, SplunkAOEvaluators
 ```
 
 ### 3.4 Handlers & Middleware
@@ -330,14 +330,14 @@ The following symbols from `galileo` are **not available** in `splunk-ao`:
 
 ### 5.2 `GalileoScorers` Removed
 
-The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOMetrics`:
+The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluators`:
 
 ```diff
 - from galileo.schema.metrics import GalileoScorers
-+ from splunk_ao.schema.metrics import SplunkAOMetrics
++ from splunk_ao.schema.metrics import SplunkAOEvaluators
 
 - scorer = GalileoScorers.completeness
-+ scorer = SplunkAOMetrics.completeness
++ scorer = SplunkAOEvaluators.completeness
 ```
 
 ---
@@ -441,8 +441,8 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - [ ] Rename `GalileoLoggerException` → `SplunkAOLoggerException`
 - [ ] Rename `GalileoFutureError` → `SplunkAOFutureError`
 - [ ] Rename `GalileoMetric` → `SplunkAOMetric`
-- [ ] Rename `GalileoMetrics` → `SplunkAOMetrics`
-- [ ] Replace `GalileoScorers` with `SplunkAOMetrics`
+- [ ] Rename `GalileoMetrics` → `SplunkAOEvaluators`
+- [ ] Replace `GalileoScorers` with `SplunkAOEvaluators`
 - [ ] Rename `GalileoAgentControlBridge` → `SplunkAOAgentControlBridge`
 - [ ] Rename all `GALILEO_*` environment variables to `SPLUNK_AO_*`
 - [ ] Update `.env`, `.env.example`, CI/CD secrets, and deployment configs

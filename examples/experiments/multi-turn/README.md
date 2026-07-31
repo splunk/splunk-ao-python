@@ -61,13 +61,13 @@ The `METRIC_NAME` variable in this script cites a session-level metric.
 
 Pre-defined session-level metrics include:
 
-- `SplunkAOMetrics.conversation_quality`
-- `SplunkAOMetrics.action_completion`
-- `SplunkAOMetrics.action_advancement`
-- `SplunkAOMetrics.agent_efficiency`
-- `SplunkAOMetrics.context_adherence`
-- `SplunkAOMetrics.context_relevance`
-- `SplunkAOMetrics.tool_error_rate`
+- `SplunkAOEvaluators.conversation_quality`
+- `SplunkAOEvaluators.action_completion`
+- `SplunkAOEvaluators.action_advancement`
+- `SplunkAOEvaluators.agent_efficiency`
+- `SplunkAOEvaluators.context_adherence`
+- `SplunkAOEvaluators.context_relevance`
+- `SplunkAOEvaluators.tool_error_rate`
 
 Related documentation: [Metrics Comparison](https://agent-observability-docs.splunk.com/concepts/metrics/metric-comparison)
 

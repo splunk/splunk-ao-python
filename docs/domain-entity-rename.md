@@ -45,8 +45,8 @@ stream = AgentStream.get(name="prod-traces", project_name="my-project")
 streams = AgentStream.list(project_name="my-project")
 
 # Enable evaluators on the stream
-from splunk_ao.schema.metrics import SplunkAOMetrics
-stream.enable_evaluators([SplunkAOMetrics.correctness, SplunkAOMetrics.completeness])
+from splunk_ao.schema.metrics import SplunkAOEvaluators
+stream.enable_evaluators([SplunkAOEvaluators.correctness, SplunkAOEvaluators.completeness])
 ```
 
 ```python

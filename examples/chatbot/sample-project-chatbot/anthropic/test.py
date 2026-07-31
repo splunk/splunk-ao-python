@@ -12,7 +12,7 @@ import time
 
 from dotenv import load_dotenv
 
-from splunk_ao import SplunkAOMetrics
+from splunk_ao import SplunkAOEvaluators
 from splunk_ao.datasets import create_dataset, get_dataset
 from splunk_ao.experiments import get_experiment, run_experiment
 
@@ -75,8 +75,8 @@ def test_run_experiment_with_dataset():
         dataset_name="simple-chatbot-unit-test-dataset",
         function=chat_with_llm,
         metrics=[
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.instruction_adherence,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.instruction_adherence,
         ],
         project=os.getenv("SPLUNK_AO_PROJECT"),
     )
