@@ -6,6 +6,7 @@
 
 [![PyPI][pypi-badge]][pypi-url]
 [![Python Version][python-badge]][python-url]
+[![License][license-badge]][license-url]
 
 </div>
 
@@ -13,6 +14,8 @@
 [pypi-url]: https://pypi.org/project/splunk-ao/
 [python-badge]: https://img.shields.io/pypi/pyversions/splunk-ao.svg
 [python-url]: https://www.python.org/downloads/
+[license-badge]: https://img.shields.io/pypi/l/splunk-ao.svg
+[license-url]: https://github.com/splunk/splunk-ao-python/blob/main/LICENSE
 
 ## Getting Started
 
