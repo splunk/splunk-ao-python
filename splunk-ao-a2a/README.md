@@ -83,7 +83,7 @@ For Splunk Observability Cloud:
 | Environment Variable | Description |
 |---------------------|-------------|
 | `SPLUNK_AO_REALM` | Observability Cloud realm (required) |
-| `SPLUNK_AO_SF_TOKEN` | SignalFlow ingest token used for OTLP export (required) |
+| `SPLUNK_AO_O11Y_TOKEN` | Splunk O11y ingest token used for OTLP export (required) |
 | `SPLUNK_AO_PROJECT` / `SPLUNK_AO_PROJECT_ID` | Optional project routing |
 | `SPLUNK_AO_AGENT_STREAM` / `SPLUNK_AO_AGENT_STREAM_ID` | Optional agent-stream routing |
 
