@@ -162,7 +162,7 @@ def build_exporter(mode: DeploymentMode, factory: RecordingExporterFactory, **ro
     standalone = StandaloneConfig(
         api_key="standalone-key", console_url="https://console.example.com", api_url="https://api.example.com"
     )
-    o11y = O11yConfig(realm="us1", sf_token="o11y-token")
+    o11y = O11yConfig(realm="us1", o11y_token="o11y-token")
     with (
         patch("splunk_ao.otel.SplunkAOConfig.get", return_value=config),
         patch("splunk_ao.otel.StandaloneConfig.from_env", return_value=standalone),
@@ -217,12 +217,12 @@ def test_o11y_exporter_rejects_crud_only_config_before_delegate_construction() -
     factory = RecordingExporterFactory()
     config = MagicMock()
     config.resolve_deployment.return_value = DeploymentMode.O11Y
-    crud_only = O11yConfig(realm="us1", sf_api_token="api-token")
+    crud_only = O11yConfig(realm="us1", o11y_api_token="api-token")
 
     with (
         patch("splunk_ao.otel.SplunkAOConfig.get", return_value=config),
         patch("splunk_ao.otel.O11yConfig.from_env", return_value=crud_only),
-        pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"),
+        pytest.raises(MissingConfigurationError, match="SPLUNK_AO_O11Y_TOKEN"),
     ):
         SplunkAOOTLPExporter(_exporter_factory=factory)
 

@@ -291,7 +291,7 @@ class TestUpdateSessionIfChanged:
         ):
             monkeypatch.delenv(name, raising=False)
         monkeypatch.setenv("SPLUNK_AO_REALM", "us1")
-        monkeypatch.setenv("SPLUNK_AO_SF_TOKEN", "ingest-token")
+        monkeypatch.setenv("SPLUNK_AO_O11Y_TOKEN", "ingest-token")
 
         sink = MagicMock()
         sink.force_flush.return_value = True

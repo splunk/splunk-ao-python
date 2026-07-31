@@ -54,8 +54,9 @@ export SPLUNK_AO_REALM="us1"
 export SPLUNK_AO_O11Y_TOKEN="your-o11y-ingest-token"
 ```
 
-`SPLUNK_AO_O11Y_TOKEN` can also authorize CRUD operations when it includes API
-permissions and no dedicated API token is configured.
+`SPLUNK_AO_O11Y_TOKEN` is required to export telemetry. It is also used for CRUD
+operations when it contains the necessary API permissions and no dedicated API
+token is configured.
 
 You may configure a separate token for CRUD operations:
 
@@ -66,7 +67,8 @@ export SPLUNK_AO_O11Y_API_TOKEN="your-o11y-api-token"
 When both tokens are set, `SPLUNK_AO_O11Y_API_TOKEN` is preferred for CRUD and
 `SPLUNK_AO_O11Y_TOKEN` is used for telemetry ingestion. For CRUD-only use, set
 `SPLUNK_AO_REALM` and `SPLUNK_AO_O11Y_API_TOKEN`; an ingest token is not
-required until the application exports telemetry.
+required until the application exports telemetry. Attempting to construct an
+OTLP exporter without `SPLUNK_AO_O11Y_TOKEN` raises a configuration error.
 
 The SDK derives the console, API and OTLP ingest endpoints from the
 realm. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
