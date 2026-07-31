@@ -7,7 +7,7 @@ from agents import Span, Trace, TracingProcessor
 from agents.tracing import ResponseSpanData, get_current_span, get_trace_provider
 
 from galileo_core.schemas.logging.span import LlmMetrics, LlmSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao import SplunkAOLogger, splunk_ao_context
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils import _get_timestamp
@@ -492,7 +492,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         return serialize_to_str(item_dict.get("output") or item_dict.get("results"))
 
     @staticmethod
-    def add_splunk_ao_custom_span(span: GalileoSpan) -> Span[SplunkAOCustomSpan]:
+    def add_splunk_ao_custom_span(span: SplunkAOSpan) -> Span[SplunkAOCustomSpan]:
         """Add a Splunk AO custom span to the trace."""
         trace_provider = get_trace_provider()
         current_span = get_current_span()

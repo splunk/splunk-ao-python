@@ -14,7 +14,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, Spa
 from opentelemetry.trace import Tracer
 
 from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
@@ -298,7 +298,7 @@ def _apply_dataset_attributes(
 
 
 @contextmanager
-def start_splunk_ao_span(splunk_ao_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
