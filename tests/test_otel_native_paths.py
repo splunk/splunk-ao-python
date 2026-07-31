@@ -320,11 +320,25 @@ def test_exporter_delegates_force_flush_and_shutdown() -> None:
     factory = RecordingExporterFactory()
     exporter = build_exporter(DeploymentMode.O11Y, factory)
 
+    assert exporter.export_health.healthy is None
+    assert exporter.export((make_span(),)) == SpanExportResult.SUCCESS
+    assert exporter.export_health.healthy is None
     assert exporter.force_flush(1234) is True
     exporter.shutdown()
 
     assert factory.exporter.force_flush_timeouts == [1234]
     assert factory.exporter.shutdown_calls == 1
+
+
+def test_processor_forwards_export_health() -> None:
+    factory = RecordingExporterFactory()
+    exporter = build_exporter(DeploymentMode.O11Y, factory)
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+
+    assert processor.export_health.healthy is None
+    exporter.export((make_span(),))
+    assert processor.export_health.healthy is None
+    processor.shutdown()
 
 
 def test_processor_does_not_put_routing_on_span_attributes() -> None:

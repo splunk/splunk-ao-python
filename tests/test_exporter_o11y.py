@@ -1,10 +1,11 @@
 """Tests for Splunk Observability Cloud OTLP exporter configuration."""
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
-from splunk_ao.deployment import O11yConfig
+from splunk_ao.deployment import DeploymentMode, O11yConfig
 from splunk_ao.exporter.config import RoutingAttrs
 from splunk_ao.exporter.o11y import build_o11y_exporter, resolve_o11y_exporter_config
 from splunk_ao.exporter.span_transform import NormalizingSpanExporter
@@ -105,3 +106,11 @@ def test_build_o11y_exporter_passes_resolved_public_config_to_factory() -> None:
         "endpoint": "https://ingest.us1.observability.splunkcloud.com/v2/trace/otlp",
         "headers": {"X-SF-Token": "tok", "projectid": "pid", "logstreamid": "lsid"},
     }
+
+
+def test_o11y_exporter_passes_deployment_explicitly_to_diagnostics() -> None:
+    with patch("splunk_ao.exporter.config.DiagnosticOTLPSpanExporter") as diagnostic_exporter:
+        exporter = build_o11y_exporter(O11yConfig(realm="us1", sf_token="tok"), make_routing())
+
+    assert exporter.delegate is diagnostic_exporter.return_value
+    assert diagnostic_exporter.call_args.kwargs["deployment"] == DeploymentMode.O11Y

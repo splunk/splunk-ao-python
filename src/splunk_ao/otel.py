@@ -27,7 +27,14 @@ from splunk_ao.decorator import (
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter, resolve_routing
+from splunk_ao.exporter import (
+    ExportHealth,
+    RoutingAttrs,
+    build_o11y_exporter,
+    build_standalone_exporter,
+    resolve_routing,
+)
+from splunk_ao.exporter.diagnostics import get_export_health
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +149,11 @@ class SplunkAOOTLPExporter(SpanExporter):
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export through the shared immutable normalization pipeline."""
         return self._delegate.export(spans)
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._delegate)
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Flush the delegate exporter."""
@@ -260,6 +272,11 @@ class SplunkAOSpanProcessor(SpanProcessor):
     def force_flush(self, timeout_millis: int = 40000) -> bool:
         """Force immediate export of all pending spans with specified timeout."""
         return self._processor.force_flush(timeout_millis)
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._exporter)
 
     @property
     def exporter(self) -> SpanExporter:
