@@ -1,0 +1,11 @@
+[project]
+name = "openai-agents-sdk"
+version = "0.1.0"
+description = "OpenAI Agents SDK example with Splunk AO trace processor"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "splunk-ao",
+    "openai-agents>=0.0.17",
+    "python-dotenv>=1.0.0",
+]

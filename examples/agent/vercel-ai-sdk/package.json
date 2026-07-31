@@ -1,0 +1,26 @@
+{
+  "name": "vercel-ai-sdk-splunk-ao",
+  "version": "0.1.0",
+  "description": "Vercel AI SDK example with Splunk AO OTel trace export",
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx main.ts"
+  },
+  "dependencies": {
+    "ai": "^4.0.0",
+    "@ai-sdk/openai": "^1.0.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
