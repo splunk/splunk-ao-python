@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
@@ -23,7 +24,8 @@ class RecordingExporter(SpanExporter):
         pass
 
 
-def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
+def test_a2a_native_span_uses_user_wired_deployment_aware_processor(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION", raising=False)
     delegate = RecordingExporter()
     captured_config: dict[str, object] = {}
 
@@ -78,9 +80,9 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
     assert exported.attributes["a2a.rpc.method"] == "SendMessage"
     assert "splunk_ao.a2a.rpc.method" not in exported.attributes
     assert exported.attributes["gen_ai.conversation.id"] == "context-id"
-    assert exported.attributes["splunk_ao.session.id"] == "context-id"
+    assert "splunk_ao.session.id" not in exported.attributes
     assert exported.attributes["gen_ai.operation.name"] == "invoke_agent"
-    assert exported.attributes["splunk_ao.operation.name"] == "invoke_agent"
+    assert "splunk_ao.operation.name" not in exported.attributes
     assert exported.resource.attributes["splunk_ao.project.name"] == "a2a-project"
     assert exported.resource.attributes["splunk_ao.logstream.name"] == "a2a-agent-stream"
     assert "splunk_ao.project.name" not in exported.attributes
