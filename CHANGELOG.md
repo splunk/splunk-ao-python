@@ -30,10 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `splunk-ao-config.json`. Users with an existing saved config must either rename
   the file manually or delete it and re-authenticate.
 
-- `SplunkAOLogger.flush()` and `async_flush()` now return `None` and only drain
-  completed spans already queued for OTLP export. They no longer conclude open
-  spans or return uploaded proprietary trace objects.
-
 ### Added
 
 - Added deployment-aware configuration and authentication for Splunk
