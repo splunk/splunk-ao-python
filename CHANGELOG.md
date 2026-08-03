@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- **`monitor_progress()` `job_id` parameter removed** (HYBIM-931): The deprecated
+  `job_id` keyword argument of `Experiment.monitor_progress()` has been fully removed.
+  Callers passing `job_id=` must remove that argument.
+
 ### Added
 
 - Added deployment-aware configuration and authentication for Splunk
