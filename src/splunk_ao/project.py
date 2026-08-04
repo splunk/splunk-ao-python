@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 
 class Project(StateManagementMixin):
     """
-    Object-centric interface for Galileo projects.
+    Object-centric interface for Splunk AO projects.
 
-    This class provides an intuitive way to work with Galileo projects,
+    This class provides an intuitive way to work with Splunk AO projects,
     encapsulating project management operations and providing seamless
     integration with log stream management.
 
@@ -55,7 +55,7 @@ class Project(StateManagementMixin):
         projects = Project.list()
 
         # Create a log stream for the project
-        log_stream = project.create_agent_stream(name="Production Logs")
+        agent_stream = project.create_agent_stream(name="Production Logs")
 
         # List log streams for the project
         log_streams = project.list_agent_streams()

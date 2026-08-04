@@ -30,9 +30,9 @@ class ExperimentCompareTwoModels:
         """
         self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        self.galileo_project = os.getenv("SPLUNK_AO_PROJECT")
+        self.splunk_ao_project = os.getenv("SPLUNK_AO_PROJECT")
 
-        if not self.galileo_project:
+        if not self.splunk_ao_project:
             raise ValueError("SPLUNK_AO_PROJECT environment variable is required")
 
         self.model_configs = {
@@ -103,7 +103,7 @@ class ExperimentCompareTwoModels:
         except Exception as e:
             raise Exception(f"Error reading JSONL file: {e}") from e
 
-    def create_galileo_dataset(self, transactions: List[Dict[str, Any]], dataset_name: str) -> Any:
+    def create_splunk_ao_dataset(self, transactions: List[Dict[str, Any]], dataset_name: str) -> Any:
         """
         Creates a Splunk AO dataset from a list of transactions.
 
@@ -199,7 +199,7 @@ class ExperimentCompareTwoModels:
                     prompt_template=params["prompt_template"],
                     prompt_settings={"max_tokens": 1000, "model_alias": params["model_config"]["name"], "temperature": 0.8},
                     metrics=["correctness", "structural_correctness_fin_tx"],
-                    project=self.galileo_project,
+                    project=self.splunk_ao_project,
                 )
 
                 print(f"Experiment results for {experiment_name}: {results}")
@@ -234,7 +234,7 @@ class ExperimentCompareTwoModels:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 dataset_name = f"financial-transactions-{timestamp}"
 
-            dataset = self.create_galileo_dataset(transactions, dataset_name)
+            dataset = self.create_splunk_ao_dataset(transactions, dataset_name)
 
             prompt_template = self.get_or_create_prompt_template()
 

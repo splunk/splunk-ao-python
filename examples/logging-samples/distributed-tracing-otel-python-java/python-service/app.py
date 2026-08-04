@@ -6,9 +6,9 @@ import chromadb
 import chromadb.utils.embedding_functions as ef
 import openai
 from fastapi import FastAPI
-from splunk_ao.otel import start_galileo_span
-from splunk_ao_core.schemas.logging.span import RetrieverSpan
-from splunk_ao_core.schemas.shared.document import Document
+from splunk_ao.otel import start_splunk_ao_span
+from galileo_core.schemas.logging.span import RetrieverSpan
+from galileo_core.schemas.shared.document import Document
 from langgraph.graph import END, START, StateGraph
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from openinference.instrumentation.openai import OpenAIInstrumentor
@@ -110,7 +110,7 @@ def retrieve_documents(state: GraphState) -> GraphState:
     query = state["question"]
     retriever_span = RetrieverSpan(name="chromadb_search", input=query)
 
-    with start_galileo_span(retriever_span) as span:
+    with start_splunk_ao_span(retriever_span) as span:
         try:
             collection = chroma.get_collection(CHROMA_COLLECTION, embedding_function=embedding_fn)
             results = collection.query(query_texts=[query], n_results=3)

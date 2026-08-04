@@ -1,8 +1,11 @@
 """Standalone Splunk AO OTLP exporter construction."""
 
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from typing import Any
 
-from splunk_ao.deployment import StandaloneConfig
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import SpanExporter
+
+from splunk_ao.deployment import DeploymentMode, StandaloneConfig
 from splunk_ao.exporter.config import (
     ExporterConfig,
     ExporterFactory,
@@ -22,7 +25,17 @@ def resolve_standalone_exporter_config(config: StandaloneConfig, routing: Routin
 
 
 def build_standalone_exporter(
-    config: StandaloneConfig, routing: RoutingAttrs, _exporter_factory: ExporterFactory = OTLPSpanExporter
-) -> OTLPSpanExporter:
+    config: StandaloneConfig,
+    routing: RoutingAttrs,
+    _exporter_factory: ExporterFactory = OTLPSpanExporter,
+    **exporter_kwargs: Any,
+) -> SpanExporter:
     """Build an OTLP exporter authenticated for standalone Splunk AO."""
-    return build_exporter(config.otlp_endpoint, _standalone_auth_header(config), routing, _exporter_factory)
+    return build_exporter(
+        config.otlp_endpoint,
+        _standalone_auth_header(config),
+        routing,
+        deployment=DeploymentMode.STANDALONE,
+        _exporter_factory=_exporter_factory,
+        **exporter_kwargs,
+    )

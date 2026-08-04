@@ -1,9 +1,9 @@
 """
-Galileo wrapper for OpenAI that automatically logs prompts and responses.
+Splunk AO wrapper for OpenAI that automatically logs prompts and responses.
 
 This module provides a drop-in replacement for the OpenAI library that automatically
-logs all prompts, responses, and related metadata to Galileo. It works by intercepting
-calls to the OpenAI API and logging them using the Galileo logging system.
+logs all prompts, responses, and related metadata to Splunk AO. It works by intercepting
+calls to the OpenAI API and logging them using the Splunk AO logging system.
 
 Note that the original OpenAI package is still required as a project dependency to use this wrapper.
 
@@ -22,13 +22,13 @@ response = openai.chat.completions.create(
     ]
 )
 
-# All prompts and responses are automatically logged to Galileo
+# All prompts and responses are automatically logged to Splunk AO
 print(response.choices[0].message.content)
 
 # You can also use it with the splunk_ao_context for more control
 from splunk_ao import splunk_ao_context
 
-with splunk_ao_context(project="my-project", log_stream="my-log-stream"):
+with splunk_ao_context(project="my-project", agent_stream="my-log-stream"):
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=[
@@ -80,7 +80,7 @@ _logger = logging.getLogger(__name__)
 
 def _safe_initialize_logger(initialize: Callable[[], SplunkAOLogger | None]) -> SplunkAOLogger | None:
     """
-    Safely initialize the Galileo logger.
+    Safely initialize the Splunk AO logger.
 
     This function wraps the initialization callable with exception handling to ensure
     that telemetry initialization errors do not crash user code. Any exception during
@@ -99,7 +99,7 @@ def _safe_initialize_logger(initialize: Callable[[], SplunkAOLogger | None]) -> 
     try:
         return initialize()
     except Exception as e:
-        _logger.warning(f"Galileo logging initialization failed, continuing without logging: {e}")
+        _logger.warning(f"Splunk AO logging initialization failed, continuing without logging: {e}")
         return None
 
 
@@ -143,7 +143,7 @@ def _wrap(
     else:
         # If we don't have an active trace, start a new trace
         # We will conclude it at the end
-        # convert to list of galileo messages since we can't send list of messages to span and want consistency
+        # convert to list of splunk_ao messages since we can't send list of messages to span and want consistency
         if isinstance(input_data.input, list):
             trace_input_messages = [convert_to_splunk_ao_message(msg) for msg in input_data.input]
         else:
@@ -185,7 +185,7 @@ def _wrap(
 
         duration_ns = round((end_time - start_time).total_seconds() * 1e9)
 
-        # convert to list of galileo messages since we can't send a regular list to span input
+        # convert to list of splunk_ao messages since we can't send a regular list to span input
         if isinstance(input_data.input, list):
             span_input = [convert_to_splunk_ao_message(msg) for msg in input_data.input]
         else:
@@ -282,35 +282,35 @@ def _wrap(
         raise RuntimeError("Failed to process the OpenAI Request") from ex
 
 
-class OpenAIGalileo:
+class OpenAISplunkAO:
     """
-    This class is responsible for logging OpenAI API calls and logging them to Galileo.
+    This class is responsible for logging OpenAI API calls and logging them to Splunk AO.
     It wraps the OpenAI client methods to add logging functionality without changing
     the original API behavior.
 
     Attributes
     ----------
     _splunk_ao_logger : Optional[SplunkAOLogger]
-        The Galileo logger instance used for logging OpenAI API calls.
+        The Splunk AO logger instance used for logging OpenAI API calls.
     """
 
     _splunk_ao_logger: SplunkAOLogger | None = None
 
     def initialize(self) -> SplunkAOLogger | None:
         """
-        Initialize a Galileo logger.
+        Initialize a Splunk AO logger.
 
         Parameters
         ----------
         project : Optional[str]
             The project to log to. If None, uses the default project.
-        log_stream : Optional[str]
+        agent_stream : Optional[str]
             The log stream to log to. If None, uses the default log stream.
 
         Returns
         -------
         Optional[SplunkAOLogger]
-            The initialized Galileo logger instance.
+            The initialized Splunk AO logger instance.
         """
         self._splunk_ao_logger = splunk_ao_context.get_logger_instance()
 
@@ -318,7 +318,7 @@ class OpenAIGalileo:
 
     def register_tracing(self) -> None:
         """
-        This method wraps the OpenAI client methods to intercept calls and log them to Galileo.
+        This method wraps the OpenAI client methods to intercept calls and log them to Splunk AO.
         It is called automatically when the module is imported.
 
         The wrapped methods include:
@@ -332,5 +332,5 @@ class OpenAIGalileo:
             )
 
 
-modifier = OpenAIGalileo()
+modifier = OpenAISplunkAO()
 modifier.register_tracing()

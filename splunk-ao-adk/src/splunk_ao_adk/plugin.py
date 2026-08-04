@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 from collections.abc import Callable
 from typing import Any
 from uuid import UUID
 
 from splunk_ao.schema.trace import TracesIngestRequest
-
 from splunk_ao_adk.observer import (
     SplunkAOObserver,
     get_agent_name_from_tool_context,
@@ -117,16 +115,19 @@ class SplunkAOADKPlugin(BasePlugin):
     ----------
     project : str, optional
         Splunk AO project name. Can also be set via SPLUNK_AO_PROJECT env var.
-        Required unless `ingestion_hook` is provided.
-    log_stream : str, optional
-        Log stream name within the project. Can also be set via SPLUNK_AO_AGENT_STREAM env var.
-        Required unless `ingestion_hook` is provided.
+    project_id : str, optional
+        Splunk AO project ID.
+    agent_stream : str, optional
+        Agent stream name within the project. Can also be set via
+        SPLUNK_AO_AGENT_STREAM env var.
+    agent_stream_id : str, optional
+        Splunk AO agent stream ID.
     ingestion_hook : Callable[[TracesIngestRequest], None], optional
         Custom callback to receive trace data instead of sending to Splunk AO.
 
     Example
     -------
-    >>> plugin = SplunkAOADKPlugin(project="my-project", log_stream="production")
+    >>> plugin = SplunkAOADKPlugin(project="my-project", agent_stream="production")
     >>> runner = Runner(agent=agent, plugins=[plugin])
     >>> run_config = RunConfig(custom_metadata={"turn": 1})
     >>> await runner.run_async(..., run_config=run_config)
@@ -135,21 +136,18 @@ class SplunkAOADKPlugin(BasePlugin):
     def __init__(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
+        *,
+        project_id: str | None = None,
+        agent_stream_id: str | None = None,
     ) -> None:
-        effective_project = project or os.environ.get("SPLUNK_AO_PROJECT")
-        effective_log_stream = log_stream or os.environ.get("SPLUNK_AO_AGENT_STREAM")
-        if not ingestion_hook and (not effective_project or not effective_log_stream):
-            raise ValueError(
-                "Both 'project' and 'log_stream' must be provided via parameters or "
-                "SPLUNK_AO_PROJECT/SPLUNK_AO_AGENT_STREAM environment variables"
-            )
-
         super().__init__(name="splunk_ao")
         self._observer = SplunkAOObserver(
             project=project,
-            log_stream=log_stream,
+            project_id=project_id,
+            agent_stream=agent_stream,
+            agent_stream_id=agent_stream_id,
             ingestion_hook=ingestion_hook,
         )
         self._tracker = SpanTracker()

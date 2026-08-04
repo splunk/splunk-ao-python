@@ -45,9 +45,9 @@ class ProjectNotFoundError(ProjectsAPIException):
 
 class Project:
     """
-    Represents a project in the Galileo platform.
+    Represents a project in the Splunk AO platform.
 
-    Projects are containers for logs, traces, and other data in Galileo. All logs are stored
+    Projects are containers for logs, traces, and other data in Splunk AO. All logs are stored
     within a project, and users can create and manage projects to organize their LLM usage data.
 
     Attributes

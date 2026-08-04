@@ -393,7 +393,7 @@ class AnnotationQueues:
         queue_id: str,
         *,
         project_id: str,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         record_ids: builtins.list[str] | None = None,
         record_selector: AnnotationQueueRecordSelector | None = None,
@@ -409,7 +409,7 @@ class AnnotationQueues:
             The ID of the annotation queue.
         project_id : str
             The ID of the project containing the records.
-        log_stream_id : str | None
+        agent_stream_id : str | None
             The ID of the log stream containing the records.
         experiment_id : str | None
             The ID of the experiment containing the records.
@@ -425,7 +425,7 @@ class AnnotationQueues:
         """
         queue_id = _validate_required_string("queue_id", queue_id)
         project_id = _validate_required_string("project_id", project_id)
-        run_id = _to_annotation_queue_run_id(log_stream_id=log_stream_id, experiment_id=experiment_id)
+        run_id = _to_annotation_queue_run_id(agent_stream_id=agent_stream_id, experiment_id=experiment_id)
         selector = _to_annotation_queue_record_selector(record_ids=record_ids, record_selector=record_selector)
 
         body = AddRecordsToQueueRequest(project_id=project_id, run_id=run_id, record_selector=selector)
@@ -886,7 +886,7 @@ def add_records_to_annotation_queue(
     queue_id: str,
     *,
     project_id: str,
-    log_stream_id: str | None = None,
+    agent_stream_id: str | None = None,
     experiment_id: str | None = None,
     record_ids: list[str] | None = None,
     record_selector: AnnotationQueueRecordSelector | None = None,
@@ -896,7 +896,7 @@ def add_records_to_annotation_queue(
     return queues.add_records(
         queue_id=queue_id,
         project_id=project_id,
-        log_stream_id=log_stream_id,
+        agent_stream_id=agent_stream_id,
         experiment_id=experiment_id,
         record_ids=record_ids,
         record_selector=record_selector,
@@ -1056,12 +1056,12 @@ def _validate_required_string(field_name: str, value: str) -> str:
     return value
 
 
-def _to_annotation_queue_run_id(*, log_stream_id: str | None, experiment_id: str | None) -> str:
-    if (log_stream_id is None) == (experiment_id is None):
-        raise ValueError("Exactly one of 'log_stream_id' or 'experiment_id' must be provided")
+def _to_annotation_queue_run_id(*, agent_stream_id: str | None, experiment_id: str | None) -> str:
+    if (agent_stream_id is None) == (experiment_id is None):
+        raise ValueError("Exactly one of 'agent_stream_id' or 'experiment_id' must be provided")
 
-    if log_stream_id is not None:
-        return _validate_required_string("log_stream_id", log_stream_id)
+    if agent_stream_id is not None:
+        return _validate_required_string("agent_stream_id", agent_stream_id)
 
     assert experiment_id is not None
     return _validate_required_string("experiment_id", experiment_id)

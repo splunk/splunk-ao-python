@@ -17,7 +17,7 @@ logging_enabled = os.environ.get("SPLUNK_AO_API_KEY") is not None
 
 logger = SplunkAOLogger(
     project="rag-test",
-    log_stream="dev",
+    agent_stream="dev",
 )
 
 # Initialize OpenAI client directly
@@ -33,7 +33,7 @@ def retrieve_documents(query: str):
             "text": (
                 "Splunk AO is an observability platform for LLM applications. It helps developers monitor, debug, and improve their AI systems by tracking inputs, outputs, and performance metrics."
             ),
-            "metadata": {"source": "galileo_docs", "category": "product_overview"},
+            "metadata": {"source": "splunk_ao_docs", "category": "product_overview"},
         },
         {
             "id": "doc2",

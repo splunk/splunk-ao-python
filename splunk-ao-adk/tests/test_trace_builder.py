@@ -3,8 +3,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from splunk_ao.schema.trace import TracesIngestRequest
 
+from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao_adk.trace_builder import TraceBuilder
 
 
@@ -69,6 +69,23 @@ class TestTraceBuilderTraceLifecycle:
 
         # Then: current parent is cleared
         assert builder.current_parent() is None
+
+    def test_conclude_all_closes_nested_trace(self) -> None:
+        builder = TraceBuilder(ingestion_hook=MagicMock())
+        trace = builder.add_trace(input="trace input")
+        workflow = builder.add_workflow_span(input="workflow input")
+        agent = builder.add_agent_span(input="agent input")
+
+        result = builder.conclude(output="failed", status_code=500, conclude_all=True)
+
+        assert result is None
+        assert builder.current_parent() is None
+        assert trace.output == "failed"
+        assert workflow.output == "failed"
+        assert agent.output == "failed"
+        assert trace.status_code == 500
+        assert workflow.status_code == 500
+        assert agent.status_code == 500
 
 
 class TestTraceBuilderSpans:

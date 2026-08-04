@@ -59,7 +59,7 @@ class Column:
     Examples
     --------
         # Access columns from a log stream
-        log_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
 
         # Filter and sort using columns
         traces = log_stream.get_traces(
@@ -522,7 +522,7 @@ class ColumnCollection(Mapping[str, Column]):
 
     Examples
     --------
-        log_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = LogStream.get(name="Production Logs", project_name="My AI Project")
 
         # Access a column by ID
         input_column = log_stream.trace_columns["input"]

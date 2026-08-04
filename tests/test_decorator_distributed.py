@@ -1,671 +1,217 @@
-"""Tests for decorator with distributed mode for distributed tracing."""
-
-import asyncio
-import os
+import json
+from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
 
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, splunk_ao_context, log
+from splunk_ao import Message, MessageRole, log, splunk_ao_context
 from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.decorator import _parent_id_context, _trace_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
-from splunk_ao.schema.trace import SpanUpdateRequest, TraceUpdateRequest
 from splunk_ao.tracing import get_tracing_headers
-from tests.testutils.setup import (
-    setup_mock_logstreams_client,
-    setup_mock_projects_client,
-    setup_mock_traces_client,
-    setup_thread_pool_request_capture,
-)
+from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
 @pytest.fixture
-def reset_context():
-    """Reset the decorator context before each test."""
+def reset_context() -> Generator[None, None, None]:
     splunk_ao_context.reset()
     yield
     splunk_ao_context.reset()
 
 
 @pytest.fixture
-def set_distributed_mode():
-    """Set SPLUNK_AO_MODE to distributed for tests."""
-    original = os.getenv("SPLUNK_AO_MODE")
-    os.environ["SPLUNK_AO_MODE"] = "distributed"
-    yield
-    if original is None:
-        os.environ.pop("SPLUNK_AO_MODE", None)
-    else:
-        os.environ["SPLUNK_AO_MODE"] = original
+def set_distributed_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SPLUNK_AO_MODE", "distributed")
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_get_tracing_headers(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that decorator can get tracing headers for distributed tracing."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
+@pytest.fixture
+def distributed_clients(set_distributed_mode: None) -> Generator[Mock, None, None]:
+    with (
+        patch("splunk_ao.logger.logger.Traces") as traces_client,
+        patch("splunk_ao.logger.logger.Projects") as projects_client,
+        patch("splunk_ao.logger.logger.AgentStreams") as logstreams_client,
+    ):
+        client = setup_mock_traces_client(traces_client)
+        setup_mock_projects_client(projects_client)
+        setup_mock_logstreams_client(logstreams_client)
+        yield client
 
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
+
+def init_logger():
+    splunk_ao_context.init(project="test-project", agent_stream="test-stream")
+    return splunk_ao_context.get_logger_instance()
+
+
+def test_decorator_get_tracing_headers(reset_context: None, distributed_clients: Mock) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
     def orchestrator(query: str) -> dict:
-        headers = get_tracing_headers()
-        return {"result": query, "headers": headers}
+        trace = splunk_ao_context.get_current_trace()
+        return {"result": query, "headers": get_tracing_headers(), "trace_id": str(trace.id)}
 
     result = orchestrator("test input")
 
-    assert "headers" in result
     headers = result["headers"]
-    assert TRACE_ID_HEADER in headers
+    assert headers[TRACE_ID_HEADER] == result["trace_id"]
     assert PARENT_ID_HEADER in headers
-
-    # Verify the trace ID matches the logger's trace
-    logger = splunk_ao_context.get_logger_instance()
-    assert headers[TRACE_ID_HEADER] == str(logger.traces[0].id)
+    assert logger.current_parent() is None
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_with_middleware_context(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that decorator respects middleware context (distributed tracing)."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    # Simulate middleware setting context variables
+def test_decorator_respects_incoming_distributed_context(reset_context: None, distributed_clients: Mock) -> None:
     trace_id = "12345678-1234-4678-9abc-123456789abc"
     parent_id = "87654321-4321-4876-9cba-987654321cba"
-
     _trace_id_context.set(trace_id)
     _parent_id_context.set(parent_id)
+    logger = init_logger()
 
     @log(span_type="workflow")
     def downstream_service(query: str) -> str:
         return f"processed: {query}"
 
-    result = downstream_service("test input")
-
-    assert result == "processed: test input"
-
-    # Verify logger was created with distributed tracing context
-    logger = splunk_ao_context.get_logger_instance()
+    assert downstream_service("test input") == "processed: test input"
     assert logger.mode == "distributed"
-    assert len(logger.traces) == 1
-
-    # Verify the stub trace was created with correct ID
     assert str(logger.traces[0].id) == trace_id
     assert logger.traces[0].name == "stub_trace"
+    assert (logger._sink.spans[-1].attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_updates_trace_with_output_and_duration(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that decorator calls update_trace with output and duration when it starts a trace."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
+def test_completed_workflow_is_enqueued_and_flush_does_not_change_ownership(
+    reset_context: None, distributed_clients: Mock
+) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
-    def my_function(input_value: str) -> str:
+    def workflow(input_value: str) -> str:
         return f"output: {input_value}"
 
-    result = my_function("test input")
+    assert workflow("test input") == "output: test input"
 
-    assert result == "output: test input"
+    emitted = logger._sink.spans
+    assert len(emitted) == 1
+    attrs = emitted[0].attributes or {}
+    assert attrs["gen_ai.operation.name"] == "invoke_workflow"
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"finish_reason": "unknown", "parts": [{"content": "output: test input", "type": "text"}], "role": "assistant"}
+    ]
+    assert emitted[0].end_time >= emitted[0].start_time
+    assert logger.current_parent() is None
 
-    # After the workflow call, the span is updated but the trace stays open
-    captured_tasks = capture.get_all_tasks()
-    update_span_tasks = [task for task in captured_tasks if task.function_name == "update_span_with_backoff"]
-
-    assert len(update_span_tasks) > 0, "Expected workflow span update to be sent"
-
-    # Verify the span was updated
-    span_task = update_span_tasks[0]
-    span_request = span_task.request
-    assert isinstance(span_request, SpanUpdateRequest)
-    assert span_request.output == "output: test input"
-    assert span_request.duration_ns is not None
-    assert span_request.duration_ns >= 0
-
-    # Now flush to conclude the trace
     logger.flush()
 
-    # After flush, verify trace was concluded
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-
-    assert len(update_trace_tasks) > 0, "Expected trace update after flush"
-
-    # Find the trace update with is_complete=True (should be the last one)
-    complete_trace_tasks = [task for task in update_trace_tasks if task.request.is_complete]
-    assert len(complete_trace_tasks) > 0, (
-        f"Expected at least one trace update with is_complete=True, but got {len(update_trace_tasks)} updates total"
-    )
-
-    trace_task = complete_trace_tasks[0]
-    trace_request = trace_task.request
-    assert isinstance(trace_request, TraceUpdateRequest)
-    assert trace_request.is_complete, "Trace should be marked complete after flush"
+    assert logger._sink.spans == emitted
+    assert logger.current_parent() is None
+    distributed_clients.ingest_traces.assert_not_called()
+    distributed_clients.ingest_spans.assert_not_called()
+    distributed_clients.update_trace.assert_not_called()
+    distributed_clients.update_span.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_server_side_does_not_conclude_trace(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that decorator does NOT conclude trace when receiving distributed tracing headers (server side)."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    # Simulate middleware setting context variables (server receiving trace_id/span_id)
-    trace_id = "12345678-1234-4678-9abc-123456789abc"
-    parent_id = "87654321-4321-4876-9cba-987654321cba"
-
-    _trace_id_context.set(trace_id)
-    _parent_id_context.set(parent_id)
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
+def test_decorator_workflow_arguments_and_result_reach_otel_span(
+    reset_context: None, distributed_clients: Mock
+) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
-    def downstream_service(query: str) -> str:
-        return f"processed: {query}"
+    def add(arg1: int, arg2: int) -> dict[str, int]:
+        return {"sum": arg1 + arg2}
 
-    result = downstream_service("test input")
+    assert add(1, 2) == {"sum": 3}
 
-    assert result == "processed: test input"
-
-    # Verify that update_trace_with_backoff was NOT called (we don't conclude traces we didn't start)
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-
-    # Should have NO trace updates - we didn't start this trace
-    assert len(update_trace_tasks) == 0, "Expected NO update_trace calls when receiving distributed tracing headers"
-
-    # Verify the stub trace was created
-    assert len(logger.traces) == 1
-    assert str(logger.traces[0].id) == trace_id
-    assert logger.traces[0].name == "stub_trace"
+    [span] = logger._sink.spans
+    attrs = span.attributes or {}
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        {"role": "user", "parts": [{"type": "text", "content": '{"arg1":1,"arg2":2}'}]}
+    ]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [{"type": "text", "content": '{"sum":3}'}], "finish_reason": "unknown"}
+    ]
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_client_and_server_side_behavior(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test both client-side (starting trace) and server-side (receiving trace) behavior."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    # CLIENT SIDE: Start a new trace
-    logger = splunk_ao_context.get_logger_instance()
-    capture_client = setup_thread_pool_request_capture(logger)
+def test_workflow_empty_output_is_preserved(reset_context: None, distributed_clients: Mock) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
-    def client_function(query: str) -> str:
-        return f"client output: {query}"
+    def workflow() -> str:
+        return ""
 
-    result_client = client_function("client input")
-    assert result_client == "client output: client input"
+    assert workflow() == ""
+    assert json.loads((logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"]) == [
+        {"finish_reason": "unknown", "parts": [{"content": "", "type": "text"}], "role": "assistant"}
+    ]
+    assert logger.current_parent() is None
 
-    # Verify client-side sends span update (trace stays open until flush)
-    client_tasks = capture_client.get_all_tasks()
-    client_span_tasks = [task for task in client_tasks if task.function_name == "update_span_with_backoff"]
 
-    assert len(client_span_tasks) > 0, "Client side should send span update"
-    client_span_request = client_span_tasks[0].request
-    assert isinstance(client_span_request, SpanUpdateRequest)
-    assert client_span_request.output == "client output: client input"
-    assert client_span_request.duration_ns is not None
-    assert client_span_request.duration_ns >= 0
-
-    # Flush to conclude the trace
-    logger.flush()
-
-    # After flush, verify trace was concluded
-    client_tasks = capture_client.get_all_tasks()
-    client_trace_tasks = [task for task in client_tasks if task.function_name == "update_trace_with_backoff"]
-
-    assert len(client_trace_tasks) > 0, "Client side should conclude trace on flush"
-
-    # Find the trace update with is_complete=True (should be the last one)
-    complete_client_trace_tasks = [task for task in client_trace_tasks if task.request.is_complete]
-    assert len(complete_client_trace_tasks) > 0, (
-        f"Expected at least one trace update with is_complete=True, but got {len(client_trace_tasks)} updates total"
-    )
-
-    client_trace_request = complete_client_trace_tasks[0].request
-    assert isinstance(client_trace_request, TraceUpdateRequest)
-    assert client_trace_request.is_complete, "Trace should be marked complete"
-
-    # Reset context for server-side test
-    splunk_ao_context.reset()
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    # SERVER SIDE: Receive distributed tracing headers
-    trace_id = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
-    parent_id = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
-
-    _trace_id_context.set(trace_id)
-    _parent_id_context.set(parent_id)
-
-    logger_server = splunk_ao_context.get_logger_instance()
-    capture_server = setup_thread_pool_request_capture(logger_server)
+def test_top_level_workflows_have_independent_durations_and_traces(
+    reset_context: None, distributed_clients: Mock
+) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
-    def server_function(query: str) -> str:
-        return f"server output: {query}"
-
-    result_server = server_function("server input")
-    assert result_server == "server output: server input"
-
-    # Verify server-side does NOT conclude the trace (didn't start it)
-    server_tasks = capture_server.get_all_tasks()
-    server_update_tasks = [task for task in server_tasks if task.function_name == "update_trace_with_backoff"]
-
-    assert len(server_update_tasks) == 0, "Server side should NOT conclude trace it didn't start"
-
-    # Verify stub trace was created with the received trace_id
-    assert len(logger_server.traces) == 1
-    assert str(logger_server.traces[0].id) == trace_id
-    assert logger_server.traces[0].name == "stub_trace"
-
-
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_workflow_span_output_is_set(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that workflow span output is properly set when concluded via decorator."""
-    mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
+    def first() -> str:
+        return "first"
 
     @log(span_type="workflow")
-    def my_workflow(input_value: str) -> str:
-        return f"workflow output: {input_value}"
+    def second() -> str:
+        return "second"
 
-    result = my_workflow("test input")
+    first()
+    second()
+    first_span, second_span = logger._sink.spans
 
-    assert result == "workflow output: test input"
-
-    # Verify that update_span_with_backoff was called for the workflow span
-    captured_tasks = capture.get_all_tasks()
-    update_span_tasks = [task for task in captured_tasks if task.function_name == "update_span_with_backoff"]
-
-    assert len(update_span_tasks) > 0, "Expected update_span_with_backoff to be called for workflow span"
-
-    # Get the update span task
-    update_task = update_span_tasks[0]
-    request = update_task.request
-
-    assert isinstance(request, SpanUpdateRequest)
-
-    # Verify the request has output
-    assert request.output == "workflow output: test input", "Workflow span output should be set"
-    assert request.duration_ns is not None, "Expected duration_ns to be set"
-    assert request.duration_ns >= 0, "Expected duration_ns to be non-negative"
-
-    # Verify it was called with the correct request
-    asyncio.run(update_task.task_func())
-    mock_traces_client_instance.update_span.assert_called()
+    assert first_span.end_time >= first_span.start_time
+    assert second_span.end_time >= second_span.start_time
+    assert first_span.context.trace_id != second_span.context.trace_id
+    assert logger.current_parent() is None
+    distributed_clients.update_trace.assert_not_called()
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_both_trace_and_workflow_span_have_output(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that both trace and workflow span have output when using @log without span_type."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
-
-    # @log without span_type creates a workflow span, and starts a trace if needed
-    @log
-    def my_function(input_value: str) -> str:
-        return f"function output: {input_value}"
-
-    result = my_function("test input")
-
-    assert result == "function output: test input"
-
-    # After workflow call, only span update is sent (trace stays open)
-    captured_tasks = capture.get_all_tasks()
-    update_span_tasks = [task for task in captured_tasks if task.function_name == "update_span_with_backoff"]
-
-    assert len(update_span_tasks) > 0, "Expected workflow span update to be sent"
-
-    # Verify workflow span has output
-    span_task = update_span_tasks[0]
-    span_request = span_task.request
-
-    assert isinstance(span_request, SpanUpdateRequest)
-    assert span_request.output == "function output: test input", "Workflow span output should be set"
-    assert span_request.duration_ns is not None
-    assert span_request.duration_ns >= 0
-
-    # Flush to conclude the trace
-    logger.flush()
-
-    # After flush, verify trace was updated
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-
-    assert len(update_trace_tasks) > 0, "Expected trace update after flush"
-
-    # Find the trace update with is_complete=True (should be the last one)
-    complete_trace_tasks = [task for task in update_trace_tasks if task.request.is_complete]
-    assert len(complete_trace_tasks) > 0, (
-        f"Expected at least one trace update with is_complete=True, but got {len(update_trace_tasks)} updates total"
-    )
-
-    trace_task = complete_trace_tasks[0]
-    trace_request = trace_task.request
-    assert isinstance(trace_request, TraceUpdateRequest)
-    assert trace_request.output == "function output: test input", "Trace should inherit span output"
-    assert trace_request.is_complete, "Trace should be marked complete after flush"
-
-
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_workflow_span_empty_string_output_is_set(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that workflow span output is set even when it's an empty string."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
-
-    @log(span_type="workflow")
-    def my_workflow(input_value: str) -> str:
-        return ""  # Return empty string
-
-    result = my_workflow("test input")
-
-    assert result == ""
-
-    # Verify that update_span_with_backoff was called
-    captured_tasks = capture.get_all_tasks()
-    update_span_tasks = [task for task in captured_tasks if task.function_name == "update_span_with_backoff"]
-
-    assert len(update_span_tasks) > 0, "Expected update_span_with_backoff to be called"
-
-    # Get the update span task
-    update_task = update_span_tasks[0]
-    request = update_task.request
-
-    assert isinstance(request, SpanUpdateRequest)
-
-    # Verify the request has empty string output (not None)
-    assert request.output == "", "Workflow span output should be set to empty string, not None"
-
-
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_trace_duration_is_set_and_accumulates(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """Test that trace duration is set and increases across multiple workflows."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
-
-    @log(span_type="workflow")
-    def workflow_step_1() -> str:
-        return "step 1 complete"
-
-    @log(span_type="workflow")
-    def workflow_step_2() -> str:
-        return "step 2 complete"
-
-    # Execute first workflow
-    result1 = workflow_step_1()
-    assert result1 == "step 1 complete"
-
-    tasks_after_first = capture.get_all_tasks()
-    trace_updates_1 = [task for task in tasks_after_first if task.function_name == "update_trace_with_backoff"]
-
-    # Should have at least one trace update after first workflow
-    assert len(trace_updates_1) > 0, "Expected trace update after first workflow"
-    first_trace_update = trace_updates_1[-1].request
-    first_duration = first_trace_update.duration_ns
-
-    # Verify duration is set and is a reasonable value (>= 0)
-    assert first_duration is not None, "First trace duration should be set"
-    assert first_duration >= 0, f"First trace duration should be >= 0, got {first_duration}ns"
-
-    # Execute second workflow
-    result2 = workflow_step_2()
-    assert result2 == "step 2 complete"
-
-    tasks_after_second = capture.get_all_tasks()
-    trace_updates_2 = [task for task in tasks_after_second if task.function_name == "update_trace_with_backoff"]
-
-    # Should have more trace updates now
-    assert len(trace_updates_2) > len(trace_updates_1), "Expected additional trace update after second workflow"
-    second_trace_update = trace_updates_2[-1].request
-    second_duration = second_trace_update.duration_ns
-
-    # Verify second duration is set and >= first duration (time has passed or stayed same)
-    assert second_duration is not None, "Second trace duration should be set"
-    assert second_duration >= first_duration, (
-        f"Second trace duration ({second_duration}ns) should be >= first duration ({first_duration}ns)"
-    )
-
-
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_distributed_content_blocks_preserved_on_trace(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """In distributed mode, List[ContentBlock] workflow output is preserved on parent trace."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
-
+def test_content_blocks_are_preserved_on_completed_operation(reset_context: None, distributed_clients: Mock) -> None:
+    logger = init_logger()
     blocks = [
         TextContentBlock(text="Here is the result"),
         DataContentBlock(modality=ContentModality.image, url="https://example.com/img.png"),
     ]
 
     @log(span_type="workflow")
-    def workflow_with_content_blocks(query: str):
+    def workflow() -> list:
         return blocks
 
-    # When: the workflow is invoked in distributed mode
-    workflow_with_content_blocks("analyze image")
+    workflow()
 
-    # Then: the trace update preserves content blocks
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-    assert len(update_trace_tasks) > 0
-
-    trace_request = update_trace_tasks[-1].request
-    assert isinstance(trace_request, TraceUpdateRequest)
-
-    # The PATCH trace API only accepts str, so content blocks are serialized for the update request
-    assert isinstance(trace_request.output, str)
-    assert "Here is the result" in trace_request.output
-    assert "image" in trace_request.output
+    output_messages = (logger._sink.spans[-1].attributes or {})["gen_ai.output.messages"]
+    assert "Here is the result" in output_messages
+    assert "https://example.com/img.png" in output_messages
+    assert logger.current_parent() is None
 
 
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_distributed_messages_serialized_on_trace(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """In distributed mode, List[Message] workflow output is serialized to string on parent trace."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
+@pytest.mark.parametrize(
+    ("output", "expected_values"),
+    [
+        (
+            [Message(content="Hello", role=MessageRole.user), Message(content="Hi!", role=MessageRole.assistant)],
+            ("Hello", "Hi!"),
+        ),
+        (
+            [Document(content="Tokyo is the capital of Japan."), Document(content="Mount Fuji is 3776m tall.")],
+            ("Tokyo", "Mount Fuji"),
+        ),
+    ],
+)
+def test_structured_outputs_are_preserved_in_otel_message_schema(
+    reset_context: None, distributed_clients: Mock, output: list, expected_values: tuple[str, str]
+) -> None:
+    logger = init_logger()
 
     @log(span_type="workflow")
-    def workflow_with_messages(query: str):
-        return [Message(content="Hello", role=MessageRole.user), Message(content="Hi!", role=MessageRole.assistant)]
+    def workflow() -> list:
+        return output
 
-    # When: the workflow is invoked in distributed mode
-    workflow_with_messages("chat")
+    workflow()
+    trace_output = (logger._sink.spans[-1].attributes or {}).get("gen_ai.output.messages")
 
-    # Then: the trace update serializes messages to string
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-    assert len(update_trace_tasks) > 0
-
-    trace_request = update_trace_tasks[-1].request
-    assert isinstance(trace_request, TraceUpdateRequest)
-
-    # Then: messages are serialized to string (not preserved as list)
-    assert isinstance(trace_request.output, str)
-    assert "Hello" in trace_request.output
-    assert "Hi!" in trace_request.output
-
-
-@patch("splunk_ao.logger.logger.AgentStreams")
-@patch("splunk_ao.logger.logger.Projects")
-@patch("splunk_ao.logger.logger.Traces")
-def test_decorator_distributed_documents_serialized_on_trace(
-    mock_traces_client: Mock,
-    mock_projects_client: Mock,
-    mock_logstreams_client: Mock,
-    reset_context,
-    set_distributed_mode,
-):
-    """In distributed mode, List[Document] workflow output is serialized to string on parent trace."""
-    setup_mock_traces_client(mock_traces_client)
-    setup_mock_projects_client(mock_projects_client)
-    setup_mock_logstreams_client(mock_logstreams_client)
-
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
-
-    logger = splunk_ao_context.get_logger_instance()
-    capture = setup_thread_pool_request_capture(logger)
-
-    @log(span_type="workflow")
-    def workflow_with_documents(query: str):
-        return [Document(content="Tokyo is the capital of Japan."), Document(content="Mount Fuji is 3776m tall.")]
-
-    # When: the workflow is invoked in distributed mode
-    workflow_with_documents("search")
-
-    # Then: the trace update serializes documents to string
-    captured_tasks = capture.get_all_tasks()
-    update_trace_tasks = [task for task in captured_tasks if task.function_name == "update_trace_with_backoff"]
-    assert len(update_trace_tasks) > 0
-
-    trace_request = update_trace_tasks[-1].request
-    assert isinstance(trace_request, TraceUpdateRequest)
-
-    # Then: documents are serialized to string (not preserved as list)
-    assert isinstance(trace_request.output, str)
-    assert "Tokyo" in trace_request.output
-    assert "Mount Fuji" in trace_request.output
+    assert isinstance(trace_output, str)
+    assert all(value in trace_output for value in expected_values)
+    assert logger.current_parent() is None

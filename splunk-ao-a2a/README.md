@@ -39,18 +39,23 @@ Splunk AO observability for [A2A (Agent-to-Agent)](https://github.com/google/A2A
 pip install splunk-ao-a2a
 ```
 
-**Requirements:** Python 3.11+, a [Splunk AO API key](https://www.splunk.com/), and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
+**Requirements:** Python 3.11+, Splunk AO standalone or Splunk Observability Cloud credentials, and [a2a-sdk](https://pypi.org/project/a2a-sdk/) 0.3+
 
 ## Quick Start
 
 ```python
-from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
+from splunk_ao.otel import add_splunk_ao_span_processor
 from splunk_ao_a2a import A2AInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
 provider = TracerProvider()
-add_splunk_ao_span_processor(provider, SplunkAOSpanProcessor())
+add_splunk_ao_span_processor(provider)
 A2AInstrumentor().instrument(tracer_provider=provider, agent_name="orchestrator")
+
+try:
+    run_application()
+finally:
+    provider.shutdown()
 ```
 
 Once instrumented, all `a2a-sdk` client and server interactions produce OTel spans automatically.
@@ -63,14 +68,28 @@ Once instrumented, all `a2a-sdk` client and server interactions produce OTel spa
 | `agent_name` | Name of this agent, set on spans as `gen_ai.agent.name`. |
 | `capture_content` | Set to `False` to disable capturing message content (e.g. for PII compliance). |
 
-Environment variables for the Splunk AO exporter:
+For standalone Splunk AO:
 
 | Environment Variable | Description |
 |---------------------|-------------|
 | `SPLUNK_AO_API_KEY` | Splunk AO API key (required) |
 | `SPLUNK_AO_CONSOLE_URL` | Splunk AO console URL (required for self-hosted deployments, e.g. `http://localhost:8088`) |
-| `SPLUNK_AO_PROJECT` | Project name (alternative to `SplunkAOSpanProcessor(project=...)`) |
-| `SPLUNK_AO_AGENT_STREAM` | Agent stream name (alternative to `SplunkAOSpanProcessor(logstream=...)`) |
+| `SPLUNK_AO_API_URL` | Explicit API URL (optional; otherwise derived from the console URL) |
+| `SPLUNK_AO_PROJECT` | Project name |
+| `SPLUNK_AO_AGENT_STREAM` | Agent Stream name |
+
+For Splunk Observability Cloud:
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `SPLUNK_AO_REALM` | Observability Cloud realm (required) |
+| `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (required) |
+| `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token for core SDK CRUD operations (optional) |
+| `SPLUNK_AO_PROJECT` | Project name |
+| `SPLUNK_AO_AGENT_STREAM` | Agent Stream name |
+
+Applications should configure Project and Agent Stream routing by name.
+The same Python setup works for both deployments; only the environment changes.
 
 ## Features
 
@@ -120,7 +139,7 @@ from a2a.types import (
     AgentCapabilities, AgentCard, AgentSkill, Message, Role,
     TaskState, TaskStatus, TaskStatusUpdateEvent, TextPart,
 )
-from splunk_ao.otel import SplunkAOSpanProcessor, add_splunk_ao_span_processor
+from splunk_ao.otel import add_splunk_ao_span_processor
 from splunk_ao_a2a import A2AInstrumentor
 from langchain.agents import create_agent
 from langchain_core.tools import tool
@@ -133,7 +152,7 @@ from typing_extensions import TypedDict
 
 # ---- Only 4 lines needed for full distributed tracing ----
 provider = TracerProvider()
-add_splunk_ao_span_processor(provider, SplunkAOSpanProcessor())
+add_splunk_ao_span_processor(provider)
 A2AInstrumentor().instrument(tracer_provider=provider, agent_name="orchestrator")
 LangchainInstrumentor().instrument(tracer_provider=provider)
 
@@ -262,7 +281,7 @@ if __name__ == "__main__":
 
 ## Resources
 
-- [Splunk AO Documentation](https://docs.galileo.ai)
+- [Splunk AO Documentation](https://agent-observability-docs.splunk.com)
 - [A2A Protocol Specification](https://a2a-protocol.org)
 - [a2a-sdk Documentation](https://pypi.org/project/a2a-sdk)
 

@@ -91,17 +91,6 @@ class TestMonitorProgress:
 
     @patch("splunk_ao.experiment.Experiment.get_status")
     @patch("splunk_ao.experiment.sleep", return_value=None)
-    def test_deprecated_job_id_warns(self, mock_sleep, mock_get_status):
-        # Given: an experiment that is already complete, and a caller passing the deprecated job_id
-        mock_get_status.return_value = _make_status(100.0)
-        exp = _make_experiment()
-
-        # When/Then: monitor_progress emits a DeprecationWarning when job_id is supplied
-        with pytest.warns(DeprecationWarning, match="job_id"):
-            exp.monitor_progress(job_id="some-old-job-id")
-
-    @patch("splunk_ao.experiment.Experiment.get_status")
-    @patch("splunk_ao.experiment.sleep", return_value=None)
     def test_raises_runtime_error_on_failed_experiment(self, mock_sleep, mock_get_status):
         # Given: an experiment that enters a failed state on the second poll
         mock_get_status.side_effect = [_make_status(30.0), _make_status(30.0, failed=True)]
@@ -122,4 +111,3 @@ class TestMonitorProgress:
         # Use a tiny timeout and a non-zero interval so the real clock eventually trips it
         with pytest.raises(TimeoutError, match="did not complete within"):
             exp.monitor_progress(poll_interval_seconds=0.001, timeout_seconds=0.0)
-

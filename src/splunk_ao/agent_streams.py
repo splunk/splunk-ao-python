@@ -12,8 +12,8 @@ from splunk_ao.resources.models.http_validation_error import HTTPValidationError
 from splunk_ao.resources.models.log_stream_create_request import LogStreamCreateRequest
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
 from splunk_ao.resources.types import Unset
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
-from splunk_ao.utils.env_helpers import _get_log_stream_from_env, _get_project_from_env
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
+from splunk_ao.utils.env_helpers import _get_agent_stream_from_env, _get_project_from_env
 from splunk_ao.utils.log_config import get_logger
 from splunk_ao.utils.metrics import create_metric_configs
 
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 class AgentStream(LogStreamResponse):
     """
-    Log streams are used to organize logs within a project on the Galileo platform.
+    Log streams are used to organize logs within a project on the Splunk AO platform.
     They provide a way to categorize and group related logs, making it easier to
     analyze and monitor specific parts of your application or different environments
     (e.g., production, staging, development).
@@ -51,14 +51,14 @@ class AgentStream(LogStreamResponse):
     from splunk_ao.agent_streams import create_agent_stream
 
     # Create by project ID
-    log_stream = create_agent_stream(name="Production Logs", project_id="project-123")
+    agent_stream = create_agent_stream(name="Production Logs", project_id="project-123")
 
     # Create by project name
-    log_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
+    agent_stream = create_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # Get a log stream by name
     from splunk_ao.agent_streams import get_agent_stream
-    log_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
+    agent_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
 
     # List all log streams in a project
     from splunk_ao.agent_streams import list_agent_streams
@@ -70,7 +70,7 @@ class AgentStream(LogStreamResponse):
     from splunk_ao.openai import openai
     from splunk_ao import splunk_ao_context
 
-    with splunk_ao_context(project="My AI Project", log_stream="Production Logs"):
+    with splunk_ao_context(project="My AI Project", agent_stream="Production Logs"):
         response = openai.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": "Hello, world!"}]
@@ -78,7 +78,7 @@ class AgentStream(LogStreamResponse):
 
     # Enable metrics on a log stream - RECOMMENDED APPROACH
     from splunk_ao.agent_streams import enable_evaluators
-    from splunk_ao.schema.metrics import SplunkAOMetrics
+    from splunk_ao.schema.metrics import SplunkAOEvaluators
 
     # Set environment variables first
     # export SPLUNK_AO_AGENT_STREAM="Production Logs"
@@ -86,8 +86,8 @@ class AgentStream(LogStreamResponse):
 
     # Clean and simple - just pass the metrics!
     local_metrics = enable_evaluators([
-        SplunkAOMetrics.correctness,
-        SplunkAOMetrics.completeness,
+        SplunkAOEvaluators.correctness,
+        SplunkAOEvaluators.completeness,
         "context_relevance"
     ])
 
@@ -100,30 +100,30 @@ class AgentStream(LogStreamResponse):
     ```
     """
 
-    def __init__(self, log_stream: None | LogStreamResponse = None):
+    def __init__(self, agent_stream: None | LogStreamResponse = None):
         """
         Initialize a AgentStream instance.
 
         Parameters
         ----------
-        log_stream : Union[None, LogStreamResponse], optional
+        agent_stream : Union[None, LogStreamResponse], optional
             The log stream data to initialize from. If None, creates an empty log stream instance.
             Defaults to None.
         """
-        if log_stream is not None:
+        if agent_stream is not None:
             super().__init__(
-                created_at=log_stream.created_at,
-                id=log_stream.id,
-                name=log_stream.name,
-                project_id=log_stream.project_id,
-                updated_at=log_stream.updated_at,
-                created_by=log_stream.created_by,
+                created_at=agent_stream.created_at,
+                id=agent_stream.id,
+                name=agent_stream.name,
+                project_id=agent_stream.project_id,
+                updated_at=agent_stream.updated_at,
+                created_by=agent_stream.created_by,
             )
-            self.additional_properties = log_stream.additional_properties.copy()
+            self.additional_properties = agent_stream.additional_properties.copy()
             return
 
     def enable_evaluators(
-        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
+        self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Enable metrics directly on this log stream instance.
@@ -139,10 +139,10 @@ class AgentStream(LogStreamResponse):
 
         Parameters
         ----------
-        metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+        metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
             List of metrics to enable on this log stream. Supports multiple input formats:
 
-            - **SplunkAOMetrics enum values**: Built-in metrics like `SplunkAOMetrics.correctness`
+            - **SplunkAOEvaluators enum values**: Built-in metrics like `SplunkAOEvaluators.correctness`
             - **Metric objects**: Custom metrics with optional version specifications
             - **LocalMetricConfig objects**: Client-side metrics with custom scoring functions
             - **String names**: Built-in metric names like "correctness" or "toxicity"
@@ -151,7 +151,7 @@ class AgentStream(LogStreamResponse):
         -------
         builtins.list[LocalMetricConfig]
             List of local metric configurations that must be computed client-side.
-            Server-side metrics are automatically registered with Galileo and don't
+            Server-side metrics are automatically registered with Splunk AO and don't
             need to be returned since users don't interact with them.
 
         Raises
@@ -161,7 +161,7 @@ class AgentStream(LogStreamResponse):
             - If any specified metrics are unknown or unavailable
             - If there are issues with metric configuration or registration
         GalileoHTTPException
-            If there are network or API errors when communicating with Galileo services
+            If there are network or API errors when communicating with Splunk AO services
 
         Examples
         --------
@@ -169,16 +169,16 @@ class AgentStream(LogStreamResponse):
 
         ```python
         from splunk_ao.agent_streams import AgentStreams
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
 
         # Get a log stream first
         log_streams = AgentStreams()
-        log_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
 
         # Enable metrics directly - clean and intuitive!
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance",
             "toxicity"
         ])
@@ -196,7 +196,7 @@ class AgentStream(LogStreamResponse):
             return 0.75  # Your scoring logic
 
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
+            SplunkAOEvaluators.correctness,
             "completeness",
             Metric(name="domain_relevance", version=3),
             LocalMetricConfig(name="custom_metric", scorer_fn=custom_scorer)
@@ -302,7 +302,7 @@ class AgentStreams:
         if response is None:
             raise ValueError("Unexpected empty response while listing log streams")
 
-        return [AgentStream(log_stream=log_stream) for log_stream in response.log_streams]
+        return [AgentStream(agent_stream=ls) for ls in response.log_streams]
 
     # Page size used by `_list_all`. Larger than the default `list()` page size so
     # full scans (name-based `get`, oldest-stream fallback) issue fewer round trips.
@@ -337,7 +337,7 @@ class AgentStreams:
             if response is None:
                 raise ValueError("Unexpected empty response while paginating log streams")
 
-            all_log_streams.extend(AgentStream(log_stream=log_stream) for log_stream in response.log_streams)
+            all_log_streams.extend(AgentStream(agent_stream=ls) for ls in response.log_streams)
 
             next_token = response.next_starting_token
             if next_token is None or isinstance(next_token, Unset) or not response.paginated:
@@ -412,7 +412,7 @@ class AgentStreams:
             )
             if not log_stream_response:
                 return None
-            return AgentStream(log_stream=log_stream_response)
+            return AgentStream(agent_stream=log_stream_response)
 
         if name:
             for log_stream in self._list_all(project_id=project_id):
@@ -474,14 +474,14 @@ class AgentStreams:
         if not response:
             raise ValueError("Unable to create log stream")
 
-        return AgentStream(log_stream=response)
+        return AgentStream(agent_stream=response)
 
     def enable_evaluators(
         self,
         *,
         agent_stream_name: str | None = None,
         project_name: str | None = None,
-        metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
+        metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
     ) -> builtins.list[LocalMetricConfig]:
         """
         Enable metrics for a log stream by configuring scorers.
@@ -498,9 +498,9 @@ class AgentStreams:
             The name of the log stream. Takes precedence over the SPLUNK_AO_AGENT_STREAM environment variable. Defaults to None.
         project_name : Optional[str], optional
             The name of the project. Takes precedence over the SPLUNK_AO_PROJECT environment variable. Defaults to None.
-        metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+        metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
             List of metrics to enable. Can include:
-            - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+            - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
             - Metric objects with name and optional version
             - LocalMetricConfig objects for custom local metrics
             - String names of built-in metrics
@@ -520,15 +520,15 @@ class AgentStreams:
         ```python
         # Enable built-in metrics with explicit parameters
         from splunk_ao.agent_streams import AgentStreams
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
 
         log_streams = AgentStreams()
         scorer_configs, local_metrics = log_streams.enable_evaluators(
             agent_stream_name="Production Logs",
             project_name="My AI Project",
             metrics=[
-                SplunkAOMetrics.correctness,
-                SplunkAOMetrics.completeness,
+                SplunkAOEvaluators.correctness,
+                SplunkAOEvaluators.completeness,
                 "context_relevance",
             ],
         )
@@ -559,7 +559,7 @@ class AgentStreams:
         """
         # Apply environment variable fallbacks
         project_name = project_name or _get_project_from_env()
-        agent_stream_name = agent_stream_name or _get_log_stream_from_env()
+        agent_stream_name = agent_stream_name or _get_agent_stream_from_env()
 
         # Get project using environment fallbacks
         project_obj = Projects().get_with_env_fallbacks(name=project_name)
@@ -569,12 +569,12 @@ class AgentStreams:
         # Get log stream - error out if not found
         if not agent_stream_name:
             raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_AGENT_STREAM env var)")
-        log_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
-        if not log_stream:
+        agent_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
+        if not agent_stream:
             raise ValueError(f"Log stream '{agent_stream_name}' not found in project '{project_obj.name}'")
 
         # Use the shared utility function directly
-        _, local_metrics = create_metric_configs(project_obj.id, log_stream.id, metrics)
+        _, local_metrics = create_metric_configs(project_obj.id, agent_stream.id, metrics)
         return local_metrics
 
 
@@ -686,7 +686,7 @@ def enable_evaluators(
     *,
     agent_stream_name: str | None = None,
     project_name: str | None = None,
-    metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str],
+    metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
 ) -> builtins.list[LocalMetricConfig]:
     """
     Enable metrics for a log stream with flexible parameter and environment variable support.
@@ -702,7 +702,7 @@ def enable_evaluators(
     Environment Variables (Optional Fallbacks)
     ------------------------------------------
     SPLUNK_AO_PROJECT : str
-        The name of the Galileo project (used when project_name not provided)
+        The name of the Splunk AO project (used when project_name not provided)
     SPLUNK_AO_AGENT_STREAM : str
         The name of the log stream (used when agent_stream_name not provided)
 
@@ -714,9 +714,9 @@ def enable_evaluators(
     project_name : Optional[str], optional
         The name of the project. Takes precedence over SPLUNK_AO_PROJECT environment variable.
         If None, will use SPLUNK_AO_PROJECT env var. Defaults to None.
-    metrics : builtins.list[Union[SplunkAOMetrics, Metric, LocalMetricConfig, str]]
+    metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
         List of metrics to enable on the log stream. Can include:
-        - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+        - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
         - Metric objects with name and optional version for custom metrics
         - LocalMetricConfig objects for client-side custom scoring functions
         - String names of built-in metrics (e.g., "correctness", "toxicity")
@@ -725,7 +725,7 @@ def enable_evaluators(
     -------
     builtins.list[LocalMetricConfig]
         List of local metric configurations that must be computed client-side.
-        Server-side metrics are automatically registered with Galileo and don't
+        Server-side metrics are automatically registered with Splunk AO and don't
         need to be returned since users don't interact with them.
 
     Raises
@@ -742,14 +742,14 @@ def enable_evaluators(
     ```python
     # Enable built-in metrics with explicit parameters
     from splunk_ao.agent_streams import enable_evaluators
-    from splunk_ao.schema.metrics import SplunkAOMetrics
+    from splunk_ao.schema.metrics import SplunkAOEvaluators
 
     local_metrics = enable_evaluators(
         agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=[
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance",
         ],
     )
@@ -772,7 +772,7 @@ def enable_evaluators(
     local_metrics = enable_evaluators(
         agent_stream_name="Development Logs",
         metrics=[
-            SplunkAOMetrics.correctness,
+            SplunkAOEvaluators.correctness,
             "toxicity",
             Metric(name="my_custom_metric", version=2),
             LocalMetricConfig(

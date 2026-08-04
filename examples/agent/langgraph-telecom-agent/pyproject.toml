@@ -1,5 +1,5 @@
 [project]
-name = "galileo-langgraph-telecom-agent"
+name = "splunk-ao-langgraph-telecom-agent"
 version = "0.1.0"
 description = "A demo langgraph Telecom Services agent with Splunk AO evaluations"
 license = "MIT"

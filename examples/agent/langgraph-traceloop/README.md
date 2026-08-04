@@ -44,8 +44,8 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 | Variable             | Required | Description                                                             |
 | -------------------- | -------- | ----------------------------------------------------------------------- |
-| `TRACELOOP_BASE_URL` | Yes      | The base URL for the Traceloop Client it will send traces to galileo    |
-| `TRACELOOP_HEADERS`  | Yes      | The headers for the Traceloop Client to send to galileo                 |
+| `TRACELOOP_BASE_URL` | Yes      | The base URL for the Traceloop Client it will send traces to Splunk AO    |
+| `TRACELOOP_HEADERS`  | Yes      | The headers for the Traceloop Client to send to Splunk AO                 |
 | `OPENAI_API_KEY`     | Yes      | Your OpenAI API key from [OpenAI](https://platform.openai.com/api-keys) |
 
 ### Run

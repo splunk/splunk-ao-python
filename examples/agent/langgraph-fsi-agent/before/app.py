@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 from dotenv import load_dotenv
 
-from src.galileo_langgraph_fsi_agent.agents.supervisor_agent import (
+from src.splunk_ao_langgraph_fsi_agent.agents.supervisor_agent import (
     create_supervisor_agent,
 )
 

@@ -26,7 +26,7 @@ if not openai_api_key:
 client = openai.OpenAI(api_key=openai_api_key)
 print("✓ OpenAI client configured")
 
-galileo_span_processor = otel.SplunkAOSpanProcessor()
+splunk_ao_span_processor = otel.SplunkAOSpanProcessor()
 
 
 resource = Resource.create(
@@ -40,7 +40,7 @@ tracer_provider = trace_sdk.TracerProvider(resource=resource)
 
 
 # Add a span processor that sends traces to Splunk AO
-otel.add_splunk_ao_span_processor(tracer_provider, galileo_span_processor)
+otel.add_splunk_ao_span_processor(tracer_provider, splunk_ao_span_processor)
 
 # OPTIONAL: Console output disabled to reduce noise in Splunk AO
 # Uncomment the next 3 lines if you want local console debugging:

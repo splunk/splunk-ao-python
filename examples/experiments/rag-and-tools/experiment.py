@@ -1,6 +1,6 @@
 import os
 
-from splunk_ao import SplunkAOMetrics
+from splunk_ao import SplunkAOEvaluators
 from splunk_ao.experiments import run_experiment
 
 from app import get_users_horoscope
@@ -25,10 +25,10 @@ def main():
         dataset=dataset,
         function=get_users_horoscope,
         metrics=[
-            SplunkAOMetrics.tool_error_rate,
-            SplunkAOMetrics.tool_selection_quality,
-            SplunkAOMetrics.chunk_attribution_utilization,
-            SplunkAOMetrics.context_adherence,
+            SplunkAOEvaluators.tool_error_rate,
+            SplunkAOEvaluators.tool_selection_quality,
+            SplunkAOEvaluators.chunk_attribution_utilization,
+            SplunkAOEvaluators.context_adherence,
         ],
         project=os.environ["SPLUNK_AO_PROJECT"],
     )

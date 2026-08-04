@@ -4,8 +4,8 @@ Splunk AO-instrumented Weather Vibes Agent.
 Adds tracing and logging for performance evaluation and debugging.
 
 Usage:
-    python galileo_agent.py [location]
-    python galileo_agent.py -l "Tokyo" -u imperial -m relaxing
+    python splunk_ao_agent.py [location]
+    python splunk_ao_agent.py -l "Tokyo" -u imperial -m relaxing
 """
 
 import asyncio
@@ -34,11 +34,11 @@ if any(not os.getenv(key) for key in required_keys):
     sys.exit(1)
 
 # Check for Splunk AO log stream
-galileo_log_stream = os.getenv("SPLUNK_AO_AGENT_STREAM")
-if not galileo_log_stream:
+splunk_ao_log_stream = os.getenv("SPLUNK_AO_AGENT_STREAM")
+if not splunk_ao_log_stream:
     print("Warning: SPLUNK_AO_AGENT_STREAM environment variable not set.")
     print("Using default log stream name.")
-    galileo_log_stream = "weather_vibes_agent"
+    splunk_ao_log_stream = "weather_vibes_agent"
 
 # Import the agent
 from agent.weather_vibes_agent import WeatherVibesAgent
@@ -156,7 +156,7 @@ async def run_agent_with_inputs(location, units, mood, recommendations, verbose)
         "metadata": {
             "user_id": "demo_user",
             "session_id": "demo_session",
-            "galileo_instrumented": True,
+            "splunk_ao_instrumented": True,
         },
     }
 
@@ -242,7 +242,7 @@ async def main():
         location = input("Enter location (default: New York): ") or "New York"
 
     # Use splunk_ao_context with the log stream from environment
-    with splunk_ao_context(log_stream=galileo_log_stream):
+    with splunk_ao_context(agent_stream=splunk_ao_log_stream):
         # Create a dictionary of inputs as metadata
 
         # Run the agent with the wrapped function to log inputs
