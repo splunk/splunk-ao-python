@@ -36,6 +36,12 @@
 - Reserved Agent Observability routing keys in `OTEL_RESOURCE_ATTRIBUTES` are
   removed so SDK routing configuration remains consistent with request headers.
 
+### Fixed
+
+- Agent Control spans exported over OTLP now include the control discriminator
+  and complete `agent_control.*` field set required for backend classification
+  and Controls-card rendering.
+
 ### Diagnostics
 
 - Standard OpenTelemetry exporter logging reports transport,

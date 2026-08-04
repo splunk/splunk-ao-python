@@ -21,8 +21,8 @@ from splunk_ao.converter.attribute_mapping import (
     build_span_attributes,
     normalize_attributes_for_export,
 )
-from splunk_ao.logger.control import ControlResult, ControlSpan
-from splunk_ao.schema import DataContentBlock, LoggedLlmSpan, LoggedMessage, TextContentBlock
+from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
+from splunk_ao.schema import DataContentBlock, LoggedControlSpan, LoggedLlmSpan, LoggedMessage, TextContentBlock
 
 
 def _text_message(role: str, content: str, *, finish_reason: str | None = None) -> dict:
@@ -492,19 +492,79 @@ def test_orchestration_keeps_non_json_strings_as_text_messages() -> None:
     ]
 
 
-def test_control_mapping_preserves_structured_content() -> None:
-    span = ControlSpan(
-        name="guardrail", input="question", output=ControlResult(action="observe", matched=True, confidence=0.9)
+def test_control_mapping_exports_fully_populated_backend_contract() -> None:
+    span = LoggedControlSpan(
+        name="PII Guard",
+        input="question",
+        output=ControlResult(action="deny", matched=True, confidence=0.97),
+        control_id=42,
+        agent_name="planner",
+        check_stage=ControlCheckStage.pre,
+        applies_to=ControlAppliesTo.llm_call,
+        evaluator_name="pii-check",
+        selector_path="$.input",
+        tags=["agent_control", "control"],
+        user_metadata={"source": "agent-control-sdk"},
     )
 
     attrs = build_span_attributes(span)
     output = json.loads(attrs["gen_ai.output.messages"])
 
+    control_attrs = {key: value for key, value in attrs.items() if key.startswith(("agent_control.", "galileo."))}
+    assert control_attrs == {
+        "galileo.span.kind": "control",
+        "agent_control.control_id": 42,
+        "agent_control.control_name": "PII Guard",
+        "agent_control.agent_name": "planner",
+        "agent_control.check_stage": "pre",
+        "agent_control.applies_to": "llm_call",
+        "agent_control.evaluator_name": "pii-check",
+        "agent_control.selector_path": "$.input",
+        "agent_control.action": "deny",
+        "agent_control.matched": True,
+        "agent_control.confidence": 0.97,
+    }
     assert attrs["splunk_ao.operation.name"] == "control"
+    assert attrs["splunk_ao.tags"] == ("agent_control", "control")
+    assert json.loads(attrs["splunk_ao.metadata"]) == {"source": "agent-control-sdk"}
     assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "question")]
     assert output[0]["role"] == "assistant"
     assert output[0]["finish_reason"] == "unknown"
     assert json.loads(output[0]["parts"][0]["content"])["matched"] is True
+
+
+def test_control_mapping_omits_unpopulated_optional_fields() -> None:
+    attrs = build_span_attributes(ControlSpan(name="guardrail", input="question"))
+
+    assert attrs["galileo.span.kind"] == "control"
+    assert attrs["agent_control.control_name"] == "guardrail"
+    for key in (
+        "agent_control.control_id",
+        "agent_control.agent_name",
+        "agent_control.check_stage",
+        "agent_control.applies_to",
+        "agent_control.evaluator_name",
+        "agent_control.selector_path",
+        "agent_control.action",
+        "agent_control.matched",
+        "agent_control.confidence",
+        "agent_control.error_message",
+    ):
+        assert key not in attrs
+
+
+def test_control_mapping_exports_error_result_without_dropping_false() -> None:
+    span = ControlSpan(
+        name="guardrail",
+        output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable"),
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert attrs["agent_control.action"] == "observe"
+    assert attrs["agent_control.matched"] is False
+    assert attrs["agent_control.error_message"] == "evaluator unavailable"
+    assert "agent_control.confidence" not in attrs
 
 
 def test_normalizer_duplicates_ordinary_attributes_and_relocates_all_content() -> None:
