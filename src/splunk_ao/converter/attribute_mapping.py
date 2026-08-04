@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, MutableMapping, Sequence
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
@@ -70,6 +70,7 @@ _OPERATION_BY_STEP_TYPE = {
     StepType.tool: "execute_tool",
     StepType.workflow: "invoke_workflow",
     StepType.agent: "invoke_agent",
+    StepType.control: "control",
 }
 
 
@@ -467,7 +468,7 @@ def _set_generic_content(attrs: MutableMapping[str, AttributeValue], span: BaseS
 def set_control_attributes(attrs: MutableMapping[str, AttributeValue], span: ControlSpan) -> None:
     """Map control identity, context, result, and content fields."""
     attrs["galileo.span.kind"] = "control"
-    attrs["splunk_ao.operation.name"] = "control"
+    _set_operation(attrs, StepType.control)
     _set_if_present(attrs, "agent_control.control_id", span.control_id)
     if span.name:
         attrs["agent_control.control_name"] = span.name
@@ -504,8 +505,8 @@ def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict
         set_agent_attributes(attrs, span)
     elif isinstance(span, WorkflowSpan):
         set_workflow_attributes(attrs, span)
-    elif isinstance(span, ControlSpan):
-        set_control_attributes(attrs, span)
+    elif isinstance(span, ControlSpan) or getattr(span.type, "value", span.type) == "control":
+        set_control_attributes(attrs, cast(ControlSpan, span))
     elif span.type == StepType.trace:
         _set_generic_content(attrs, span)
     else:

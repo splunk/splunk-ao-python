@@ -387,7 +387,8 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
         "agent_control.matched": True,
         "agent_control.confidence": 0.91,
     }
-    assert exported_attrs["splunk_ao.operation.name"] == "control"
+    assert exported_attrs["gen_ai.operation.name"] == "control"
+    assert "splunk_ao.operation.name" not in exported_attrs
     assert json.loads(exported_attrs["gen_ai.input.messages"]) == [
         {"parts": [{"content": "selected text", "type": "text"}], "role": "user"}
     ]
@@ -484,7 +485,7 @@ def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     assert len(logger._sink.spans) == 1
     emitted = logger._sink.spans[0]
     assert emitted.parent == logger._otel_ids[workflow.id].span_context
-    assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
+    assert (emitted.attributes or {})["gen_ai.operation.name"] == "control"
     assert not hasattr(logger, "_task_handler")
     mock_traces_client_instance.ingest_spans.assert_not_called()
 

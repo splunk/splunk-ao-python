@@ -1,4 +1,6 @@
 import json
+from types import SimpleNamespace
+from typing import cast
 from uuid import uuid4
 
 import pytest
@@ -13,6 +15,7 @@ from galileo_core.schemas.logging.span import (
     ToolSpan,
     WorkflowSpan,
 )
+from galileo_core.schemas.logging.step import BaseStep
 from galileo_core.schemas.shared.content_parts import FileContentPart, TextContentPart
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter.attribute_mapping import (
@@ -524,7 +527,8 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
         "agent_control.matched": True,
         "agent_control.confidence": 0.97,
     }
-    assert attrs["splunk_ao.operation.name"] == "control"
+    assert attrs["gen_ai.operation.name"] == "control"
+    assert "splunk_ao.operation.name" not in attrs
     assert attrs["splunk_ao.tags"] == ("agent_control", "control")
     assert json.loads(attrs["splunk_ao.metadata"]) == {"source": "agent-control-sdk"}
     assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "question")]
@@ -553,6 +557,24 @@ def test_control_mapping_omits_unpopulated_optional_fields() -> None:
         assert key not in attrs
 
 
+def test_control_mapping_accepts_schema_compatible_control_span() -> None:
+    source = ControlSpan(
+        name="guardrail",
+        output=ControlResult(action="observe", matched=True),
+        control_id=42,
+    )
+    alternate = SimpleNamespace(
+        **{field_name: getattr(source, field_name) for field_name in type(source).model_fields}, model_extra={}
+    )
+
+    attrs = build_span_attributes(cast(BaseStep, alternate))
+
+    assert not isinstance(alternate, ControlSpan)
+    assert attrs["galileo.span.kind"] == "control"
+    assert attrs["agent_control.control_id"] == 42
+    assert attrs["agent_control.action"] == "observe"
+
+
 def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     span = ControlSpan(
         name="guardrail",
@@ -565,6 +587,18 @@ def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     assert attrs["agent_control.matched"] is False
     assert attrs["agent_control.error_message"] == "evaluator unavailable"
     assert "agent_control.confidence" not in attrs
+
+
+def test_control_operation_name_uses_standard_export_normalization() -> None:
+    attrs = build_span_attributes(ControlSpan())
+
+    assert attrs["gen_ai.operation.name"] == "control"
+    assert "splunk_ao.operation.name" not in attrs
+
+    normalized = normalize_attributes_for_export(attrs)
+
+    assert normalized["gen_ai.operation.name"] == "control"
+    assert normalized["splunk_ao.operation.name"] == "control"
 
 
 def test_normalizer_duplicates_ordinary_attributes_and_relocates_all_content() -> None:
