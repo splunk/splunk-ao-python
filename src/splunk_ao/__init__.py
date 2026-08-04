@@ -84,7 +84,7 @@ from splunk_ao.tracing import get_tracing_headers
 from splunk_ao.types import MetricSpec
 from splunk_ao.utils.log_config import enable_console_logging
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 __all__ = [
     # Stable / unchanged
@@ -146,10 +146,10 @@ __all__ = [
     "SplunkAOConfigError",
     "SplunkAODecorator",
     "SplunkAOEvaluator",
+    "SplunkAOEvaluators",
     "SplunkAOFutureError",
     "SplunkAOLogger",
     "SplunkAOLoggerException",
-    "SplunkAOEvaluators",
     "StepType",
     "StepWithChildSpans",
     "SyncState",
