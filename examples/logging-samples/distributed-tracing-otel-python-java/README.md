@@ -161,4 +161,4 @@ No application code changes. The instrumentation stays identical.
 
 ## Further reading
 
-[Distributed Tracing with OpenTelemetry — Splunk AO Docs](https://docs.galileo.ai/sdk-api/logging/distributed-tracing-otel)
+[Distributed Tracing with OpenTelemetry — Splunk AO Docs](https://agent-observability-docs.splunk.com/sdk-api/logging/distributed-tracing-otel)

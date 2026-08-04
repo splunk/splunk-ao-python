@@ -91,19 +91,19 @@ class TestSplunkAOADKCallbackInit:
         mock_context.get_logger_instance.assert_called_once_with(
             project=None,
             project_id=None,
-            log_stream=None,
-            log_stream_id=None,
+            agent_stream=None,
+            agent_stream_id=None,
         )
 
     def test_init_forwards_id_routing(self) -> None:
         with patch("splunk_ao_adk.observer.splunk_ao_context") as mock_context:
-            SplunkAOADKCallback(project_id="project-id", log_stream_id="stream-id")
+            SplunkAOADKCallback(project_id="project-id", agent_stream_id="stream-id")
 
         mock_context.get_logger_instance.assert_called_once_with(
             project=None,
             project_id="project-id",
-            log_stream=None,
-            log_stream_id="stream-id",
+            agent_stream=None,
+            agent_stream_id="stream-id",
         )
 
 
@@ -121,13 +121,13 @@ class TestSplunkAOADKCallback:
             mock_logger = MagicMock()
             mock_context.get_logger_instance.return_value = mock_logger
 
-            callback = SplunkAOADKCallback(project="test-project", log_stream="test-stream")
+            callback = SplunkAOADKCallback(project="test-project", agent_stream="test-stream")
 
             mock_context.get_logger_instance.assert_called_once_with(
                 project="test-project",
                 project_id=None,
-                log_stream="test-stream",
-                log_stream_id=None,
+                agent_stream="test-stream",
+                agent_stream_id=None,
             )
             assert callback._handler._splunk_ao_logger == mock_logger
 

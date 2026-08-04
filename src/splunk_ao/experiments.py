@@ -28,7 +28,7 @@ from splunk_ao.resources.models import (
 )
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.experiment_group import ExperimentGroupResponse
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.utils.datasets import create_rows_from_records, load_dataset
 from splunk_ao.utils.exceptions import _format_http_validation_error
 from splunk_ao.utils.headers_data import get_sdk_header
@@ -318,7 +318,7 @@ def run_experiment(
     dataset: Dataset | list[dict[str, Any] | str] | str | None = None,
     dataset_id: str | None = None,
     dataset_name: str | None = None,
-    metrics: list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None = None,
+    metrics: list[SplunkAOEvaluators | Metric | LocalMetricConfig | str] | None = None,
     function: Callable | None = None,
     experiment_tags: dict[str, str] | None = None,
     on_error: Callable[[Exception], None] | None = None,

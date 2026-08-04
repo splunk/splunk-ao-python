@@ -500,7 +500,7 @@ files = [
     {file = "cffi-2.1.0-cp315-cp315t-win_arm64.whl", hash = "sha256:cbb7640ce37159548d2147b5b8c241f962143d4c71231431820783f4dc78f210"},
     {file = "cffi-2.1.0.tar.gz", hash = "sha256:efc1cdd798b1aaf39b4610bba7aad28c9bea9b910f25c784ccf9ec1fa719d1f9"},
 ]
-markers = {main = "python_version <= \"3.13\" and platform_python_implementation != \"PyPy\" and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\") or platform_python_implementation != \"PyPy\" and (extra == \"openai\" or extra == \"all\") or (extra == \"langchain\" or extra == \"all\") and platform_python_implementation == \"PyPy\" or python_version <= \"3.13\" and (extra == \"langchain\" or extra == \"all\") and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\") or (extra == \"langchain\" or extra == \"all\") and (extra == \"openai\" or extra == \"all\")", test = "platform_python_implementation == \"PyPy\""}
+markers = {main = "(platform_python_implementation != \"PyPy\" or extra == \"langchain\" or extra == \"all\") and (python_version <= \"3.13\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\" or extra == \"langchain\") and (platform_python_implementation == \"PyPy\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\") and (extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"crewai\")", test = "platform_python_implementation == \"PyPy\""}
 
 [package.dependencies]
 pycparser = {version = "*", markers = "implementation_name != \"PyPy\""}
@@ -869,7 +869,7 @@ description = "cryptography is a package which provides cryptographic recipes an
 optional = true
 python-versions = "!=3.9.0,!=3.9.1,>=3.9"
 groups = ["main"]
-markers = "extra == \"openai\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\")"
+markers = "extra == \"openai\" or extra == \"all\" or extra == \"crewai\""
 files = [
     {file = "cryptography-49.0.0-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:966fe0e9c67490071f14c0d2b1cb2dfb3023c5ce39457343931415f08382f2db"},
     {file = "cryptography-49.0.0-cp311-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:36d1709f992593689b45bda411498d62c6e365f2ca00b84657d4dadd24de16db"},
@@ -1309,7 +1309,7 @@ version = "4.4.0"
 description = ""
 optional = false
 python-versions = ">=3.10.0"
-groups = ["main", "test"]
+groups = ["main"]
 files = [
     {file = "galileo_core-4.4.0-py3-none-any.whl", hash = "sha256:eb7995c43fe09583127b807cc9635941f623f5b08207bae95362ce63460c74e8"},
 ]
@@ -1320,8 +1320,6 @@ pydantic = ">=2.6.0,<3.0.0"
 pydantic-partial = ">=0.10.1,<1.0.0"
 pydantic-settings = ">=2.2.1,<3.0.0"
 pyjwt = ">=2.8.0,<3.0.0"
-pytest = {version = ">=8.2.1,<9.0.0", optional = true, markers = "extra == \"testing\""}
-respx = {version = ">=0.22.0,<1.0.0", optional = true, markers = "extra == \"testing\""}
 typing-extensions = ">=4.12.2,<5.0.0"
 uvloop = {version = ">=0.21.0,<1.0.0", markers = "sys_platform != \"win32\""}
 
@@ -3353,7 +3351,7 @@ description = "PDF parser and analyzer"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "extra == \"crewai\" or extra == \"all\""
 files = [
     {file = "pdfminer_six-20260107-py3-none-any.whl", hash = "sha256:366585ba97e80dffa8f00cebe303d2f381884d8637af4ce422f1df3ef38111a9"},
     {file = "pdfminer_six-20260107.tar.gz", hash = "sha256:96bfd431e3577a55a0efd25676968ca4ce8fd5b53f14565f85716ff363889602"},
@@ -3976,7 +3974,7 @@ files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
-markers = {main = "python_version <= \"3.13\" and implementation_name != \"PyPy\" and platform_python_implementation != \"PyPy\" and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\") or implementation_name != \"PyPy\" and platform_python_implementation != \"PyPy\" and (extra == \"openai\" or extra == \"all\") or implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\") and platform_python_implementation == \"PyPy\" or python_version <= \"3.13\" and implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\") and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\") or implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\") and (extra == \"openai\" or extra == \"all\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
+markers = {main = "(platform_python_implementation != \"PyPy\" or extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and (python_version <= \"3.13\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\" or extra == \"langchain\") and (platform_python_implementation == \"PyPy\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\") and (extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"crewai\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
 
 [[package]]
 name = "pydantic"
@@ -4140,7 +4138,7 @@ version = "0.10.1"
 description = "Create partial models from your pydantic models. Partial models may allow None for certain or all fields."
 optional = false
 python-versions = ">=3.10"
-groups = ["main", "test"]
+groups = ["main"]
 files = [
     {file = "pydantic_partial-0.10.1-py3-none-any.whl", hash = "sha256:6481350a7d5526a11e3825d65caed723a0cca85a0fe5f105ae1aec6fde4d5771"},
     {file = "pydantic_partial-0.10.1.tar.gz", hash = "sha256:32cd8e2df06793375d17603c33a6cce17a94419ba04313de57d6a31c2e9501e1"},
@@ -4155,7 +4153,7 @@ version = "2.10.1"
 description = "Settings management using Pydantic"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "test"]
+groups = ["main"]
 files = [
     {file = "pydantic_settings-2.10.1-py3-none-any.whl", hash = "sha256:a60952460b99cf661dc25c29c0ef171721f98bfcb52ef8d9ea4c943d7c8cc796"},
     {file = "pydantic_settings-2.10.1.tar.gz", hash = "sha256:06f0062169818d0f5524420a360d632d5857b83cffd4d42fe29597807a1614ee"},
@@ -4195,7 +4193,7 @@ version = "2.13.0"
 description = "JSON Web Token implementation in Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "test"]
+groups = ["main"]
 files = [
     {file = "pyjwt-2.13.0-py3-none-any.whl", hash = "sha256:66adcc2aff09b3f1bbd95fc1e1577df8ac8723c978552fd43304c8a290ac5728"},
     {file = "pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423"},
@@ -4283,20 +4281,20 @@ dev = ["build", "flake8", "mypy", "pytest", "twine"]
 
 [[package]]
 name = "pytest"
-version = "8.4.1"
+version = "9.1.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["dev", "test"]
 files = [
-    {file = "pytest-8.4.1-py3-none-any.whl", hash = "sha256:539c70ba6fcead8e78eebbf1115e8b589e7565830d7d006a8723f19ac8a0afb7"},
-    {file = "pytest-8.4.1.tar.gz", hash = "sha256:7c67fd69174877359ed9371ec3af8a3d2b04741818c51e5e99cc1742251fa93c"},
+    {file = "pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c"},
+    {file = "pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313"},
 ]
 
 [package.dependencies]
 colorama = {version = ">=0.4", markers = "sys_platform == \"win32\""}
-iniconfig = ">=1"
-packaging = ">=20"
+iniconfig = ">=1.0.1"
+packaging = ">=22"
 pluggy = ">=1.5,<2"
 pygments = ">=2.7.2"
 
@@ -4305,21 +4303,22 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests
 
 [[package]]
 name = "pytest-asyncio"
-version = "1.1.0"
+version = "1.4.0"
 description = "Pytest support for asyncio"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["test"]
 files = [
-    {file = "pytest_asyncio-1.1.0-py3-none-any.whl", hash = "sha256:5fe2d69607b0bd75c656d1211f969cadba035030156745ee09e7d71740e58ecf"},
-    {file = "pytest_asyncio-1.1.0.tar.gz", hash = "sha256:796aa822981e01b68c12e4827b8697108f7205020f24b5793b3c41555dab68ea"},
+    {file = "pytest_asyncio-1.4.0-py3-none-any.whl", hash = "sha256:933ca923a23075a87fb7070c0ec272a6848489824d887c85c812670932835aa1"},
+    {file = "pytest_asyncio-1.4.0.tar.gz", hash = "sha256:c6c0d2259945122819f171a32ecea2c349ead889ee28176caaf492143424be42"},
 ]
 
 [package.dependencies]
-pytest = ">=8.2,<9"
+pytest = ">=8.4,<10"
+typing-extensions = {version = ">=4.12", markers = "python_version < \"3.13\""}
 
 [package.extras]
-docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)", "sphinx-tabs (>=3.5)"]
 testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
@@ -4452,7 +4451,7 @@ version = "1.1.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "test"]
+groups = ["main"]
 files = [
     {file = "python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc"},
     {file = "python_dotenv-1.1.1.tar.gz", hash = "sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab"},
@@ -5714,7 +5713,7 @@ version = "0.21.0"
 description = "Fast implementation of asyncio event loop on top of libuv"
 optional = false
 python-versions = ">=3.8.0"
-groups = ["main", "test"]
+groups = ["main"]
 markers = "sys_platform != \"win32\""
 files = [
     {file = "uvloop-0.21.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ec7e6b09a6fdded42403182ab6b832b71f4edaf7f37a9a0e371a01db5f0cb45f"},
@@ -6554,8 +6553,8 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["crewai", "langchain", "langchain-core", "langsmith", "litellm", "openai", "openai-agents", "packaging", "starlette"]
-crewai = ["crewai", "litellm"]
+all = ["crewai", "langchain", "langchain-core", "langsmith", "litellm", "openai", "openai-agents", "packaging", "pdfminer-six", "starlette"]
+crewai = ["crewai", "litellm", "pdfminer-six"]
 langchain = ["langchain", "langchain-core", "langsmith"]
 middleware = ["starlette"]
 openai = ["openai", "openai-agents", "packaging"]
@@ -6563,4 +6562,4 @@ openai = ["openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "00a4f6ad3545dd1be36c2b5593276bf619ca2f22f3cd132dadcbebd3915460de"
+content-hash = "0844ec8bd5d1a57af55e48fca65bbe7f47c15decb4b043ac0726e0d3b893020e"

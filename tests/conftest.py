@@ -86,7 +86,8 @@ class _TestSpanSink:
         self.shutdown_calls += 1
 
 
-# Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
+# Note: The mock_request fixture is provided by galileo_core's pytest11 plugin
+# (galileo_core.testing.request_mocker); respx is a direct test dependency.
 
 
 @pytest.fixture
@@ -172,7 +173,7 @@ def set_validated_config(
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
     SplunkAOLoggerSingleton().reset_all()
-    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"):
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
     monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")
@@ -386,7 +387,7 @@ def thread_pool_capture():
 
     Usage:
         def test_distributed_method(thread_pool_capture):
-            logger = SplunkAOLogger(project="test", log_stream="test", mode="distributed")
+            logger = SplunkAOLogger(project="test", agent_stream="test", mode="distributed")
             capture = thread_pool_capture(logger)
 
             logger._ingest_trace_streaming(trace)
@@ -469,8 +470,8 @@ def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
     original_handlers = logger.handlers[:]
     original_propagate = logger.propagate
 
-    log_stream = StringIO()
-    handler = logging.StreamHandler(log_stream)
+    agent_stream = StringIO()
+    handler = logging.StreamHandler(agent_stream)
     handler.setFormatter(logging.Formatter("%(levelname)s - %(name)s - %(message)s"))
 
     logger.handlers = [handler]
@@ -478,7 +479,7 @@ def capture_logs() -> Generator[tuple[logging.Logger, StringIO], None, None]:
     logger.propagate = False
 
     try:
-        yield logger, log_stream
+        yield logger, agent_stream
     finally:
         logger.handlers = original_handlers
         logger.setLevel(original_level)

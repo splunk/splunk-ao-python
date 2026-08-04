@@ -67,7 +67,7 @@ class CrewAIEventListener:
         self,
         splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
-        flush_on_crew_completed: bool = True,
+        flush_on_crew_completed: bool = False,
     ):
         _resolve_crewai_imports()
 

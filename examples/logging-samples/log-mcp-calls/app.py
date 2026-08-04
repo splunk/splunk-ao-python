@@ -2,7 +2,7 @@
 A sample application that shows how to log MCP server calls as tool spans.
 
 This code is described in the Log MCP Server Tool Calls how-to guide in the Splunk AO documentation:
-https://docs.galileo.ai/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls
+https://agent-observability-docs.splunk.com/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls
 """
 
 import asyncio

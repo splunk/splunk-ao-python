@@ -143,7 +143,7 @@ def test_enable_agent_control_registers_provider_and_sink(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
 
@@ -177,7 +177,7 @@ def test_logger_auto_registers_agent_control_bridge_when_available(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # When: creating a new Galileo logger
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
 
     # Then: the Agent Control bridge is registered automatically
     bridge = logger._agent_control_bridge
@@ -200,7 +200,7 @@ def test_logger_init_does_not_raise_when_agent_control_is_missing(
     )
 
     # When: creating a new Galileo logger
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
 
     # Then: logger initialization still succeeds without the optional integration
     assert getattr(logger, "_agent_control_bridge", None) is None
@@ -222,12 +222,12 @@ def test_agent_control_cleanup_restores_previous_provider_across_loggers(
 
     fake_agent_control_modules["trace_context"].set_trace_context_provider(external_provider)
 
-    logger_a = SplunkAOLogger(project="project_a", log_stream="stream_a")
+    logger_a = SplunkAOLogger(project="project_a", agent_stream="stream_a")
     logger_a.start_trace(input="trace a")
     logger_a.add_workflow_span(input="workflow a", name="workflow_a")
     bridge_a = setup_agent_control_bridge(logger_a)
 
-    logger_b = SplunkAOLogger(project="project_b", log_stream="stream_b")
+    logger_b = SplunkAOLogger(project="project_b", agent_stream="stream_b")
     logger_b.start_trace(input="trace b")
     workflow_b = logger_b.add_workflow_span(input="workflow b", name="workflow_b")
     bridge_b = setup_agent_control_bridge(logger_b)
@@ -269,7 +269,7 @@ def test_agent_control_cleanup_does_not_clobber_provider_installed_while_active(
         return {"trace_id": "replacement-trace", "span_id": "replacement-span"}
 
     fake_agent_control_modules["trace_context"].set_trace_context_provider(previous_provider)
-    logger_a = SplunkAOLogger(project="project_a", log_stream="stream_a")
+    logger_a = SplunkAOLogger(project="project_a", agent_stream="stream_a")
     bridge_a = setup_agent_control_bridge(logger_a)
 
     # When: external code replaces the provider while the bridge is active, then the bridge unregisters
@@ -294,13 +294,13 @@ def test_idle_new_logger_does_not_mask_active_logger_context(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger_a = SplunkAOLogger(project="project_a", log_stream="stream_a")
+    logger_a = SplunkAOLogger(project="project_a", agent_stream="stream_a")
     logger_a.start_trace(input="trace a")
     workflow_a = logger_a.add_workflow_span(input="workflow a", name="workflow_a")
     bridge_a = setup_agent_control_bridge(logger_a)
 
     # When: a second logger auto-registers without starting a trace
-    SplunkAOLogger(project="project_b", log_stream="stream_b")
+    SplunkAOLogger(project="project_b", agent_stream="stream_b")
     active_context = fake_agent_control_modules["trace_context"].get_trace_context_from_provider()
 
     # Then: the shared provider still reports the active logger's context
@@ -326,7 +326,7 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)
@@ -380,7 +380,7 @@ def test_agent_control_event_uses_empty_string_when_no_representative_input(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)
@@ -405,7 +405,7 @@ def test_agent_control_event_is_dropped_when_ids_are_not_valid_uuids(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)
@@ -430,7 +430,7 @@ def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream", mode="distributed")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream", mode="distributed")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)
@@ -462,7 +462,7 @@ def test_add_control_span_uses_model_default_name(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     # When: adding a control span without an explicit name
@@ -484,7 +484,7 @@ def test_agent_control_event_is_dropped_when_context_does_not_match(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="my_project", log_stream="my_log_stream")
+    logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
     bridge = setup_agent_control_bridge(logger)

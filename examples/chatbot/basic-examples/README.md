@@ -30,7 +30,7 @@ import openai  # Standard OpenAI library
 from splunk_ao import SplunkAOLogger  # Import SplunkAOLogger for logging
 
 # Initialize the logger
-logger = SplunkAOLogger(project="chatbot", log_stream="test")
+logger = SplunkAOLogger(project="chatbot", agent_stream="test")
 
 # Initialize the standard OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))

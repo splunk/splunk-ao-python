@@ -12,11 +12,11 @@ from opentelemetry.trace import Link, SpanContext, SpanKind, TraceFlags
 from opentelemetry.trace.status import Status, StatusCode
 
 from splunk_ao.decorator import (
+    _agent_stream_context,
     _dataset_input_context,
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
     _project_context,
     _session_id_context,
 )
@@ -90,7 +90,7 @@ class RecordingSpanProcessor:
 def reset_otel_context(monkeypatch: pytest.MonkeyPatch):
     contexts = (
         _project_context,
-        _log_stream_context,
+        _agent_stream_context,
         _experiment_id_context,
         _session_id_context,
         _dataset_input_context,
@@ -162,7 +162,7 @@ def build_exporter(mode: DeploymentMode, factory: RecordingExporterFactory, **ro
     standalone = StandaloneConfig(
         api_key="standalone-key", console_url="https://console.example.com", api_url="https://api.example.com"
     )
-    o11y = O11yConfig(realm="us1", sf_token="o11y-token")
+    o11y = O11yConfig(realm="us1", o11y_token="o11y-token")
     with (
         patch("splunk_ao.otel.SplunkAOConfig.get", return_value=config),
         patch("splunk_ao.otel.StandaloneConfig.from_env", return_value=standalone),
@@ -217,12 +217,12 @@ def test_o11y_exporter_rejects_crud_only_config_before_delegate_construction() -
     factory = RecordingExporterFactory()
     config = MagicMock()
     config.resolve_deployment.return_value = DeploymentMode.O11Y
-    crud_only = O11yConfig(realm="us1", sf_api_token="api-token")
+    crud_only = O11yConfig(realm="us1", o11y_api_token="api-token")
 
     with (
         patch("splunk_ao.otel.SplunkAOConfig.get", return_value=config),
         patch("splunk_ao.otel.O11yConfig.from_env", return_value=crud_only),
-        pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"),
+        pytest.raises(MissingConfigurationError, match="SPLUNK_AO_O11Y_TOKEN"),
     ):
         SplunkAOOTLPExporter(_exporter_factory=factory)
 
@@ -233,7 +233,7 @@ def test_explicit_id_routing_precedes_context_and_environment_names(monkeypatch:
     monkeypatch.setenv("SPLUNK_AO_PROJECT", "environment-project")
     monkeypatch.setenv("SPLUNK_AO_LOG_STREAM", "environment-log-stream")
     _project_context.set("context-project")
-    _log_stream_context.set("context-log-stream")
+    _agent_stream_context.set("context-log-stream")
     factory = RecordingExporterFactory()
 
     exporter = build_exporter(
@@ -295,9 +295,9 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
         assert getattr(exported, field) == getattr(source, field)
     assert exported.resource.schema_url == source.resource.schema_url
     assert exported.attributes["gen_ai.request.model"] == "gpt-4o"
-    assert exported.attributes["splunk_ao.request.model"] == "gpt-4o"
+    assert "splunk_ao.request.model" not in exported.attributes
     assert exported.attributes["gen_ai.provider.name"] == "openai"
-    assert exported.attributes["splunk_ao.provider.name"] == "openai"
+    assert "splunk_ao.provider.name" not in exported.attributes
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
     assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
     assert exported.attributes["custom.attribute"] == "preserved"
@@ -320,6 +320,9 @@ def test_exporter_delegates_force_flush_and_shutdown() -> None:
     factory = RecordingExporterFactory()
     exporter = build_exporter(DeploymentMode.O11Y, factory)
 
+    assert exporter.export_health.healthy is None
+    assert exporter.export((make_span(),)) == SpanExportResult.SUCCESS
+    assert exporter.export_health.healthy is None
     assert exporter.force_flush(1234) is True
     exporter.shutdown()
 
@@ -327,11 +330,22 @@ def test_exporter_delegates_force_flush_and_shutdown() -> None:
     assert factory.exporter.shutdown_calls == 1
 
 
+def test_processor_forwards_export_health() -> None:
+    factory = RecordingExporterFactory()
+    exporter = build_exporter(DeploymentMode.O11Y, factory)
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+
+    assert processor.export_health.healthy is None
+    exporter.export((make_span(),))
+    assert processor.export_health.healthy is None
+    processor.shutdown()
+
+
 def test_processor_does_not_put_routing_on_span_attributes() -> None:
     exporter = RecordingExporter()
     processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
     _project_context.set("later-project")
-    _log_stream_context.set("later-log-stream")
+    _agent_stream_context.set("later-log-stream")
     _experiment_id_context.set("later-experiment")
     _session_id_context.set("session-id")
     _dataset_input_context.set("question")

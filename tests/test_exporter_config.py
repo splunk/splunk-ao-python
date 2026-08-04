@@ -3,7 +3,7 @@
 from typing import Any
 from unittest.mock import patch
 
-from splunk_ao.deployment import StandaloneConfig
+from splunk_ao.deployment import DeploymentMode, StandaloneConfig
 from splunk_ao.exporter.config import RoutingAttrs, create_otel_resource, routing_resource_attributes
 from splunk_ao.exporter.span_transform import NormalizingSpanExporter
 from splunk_ao.exporter.standalone import build_standalone_exporter, resolve_standalone_exporter_config
@@ -66,7 +66,7 @@ def test_standalone_exporter_project_id_header() -> None:
 
 def test_standalone_exporter_logstream_header_absent_when_experiment() -> None:
     result = resolve_standalone_exporter_config(
-        make_standalone_cfg(), routing=make_routing(project_name="p", log_stream_name="ls", experiment_id="exp1")
+        make_standalone_cfg(), routing=make_routing(project_name="p", agent_stream_name="ls", experiment_id="exp1")
     )
 
     assert "logstream" not in result.headers
@@ -75,7 +75,7 @@ def test_standalone_exporter_logstream_header_absent_when_experiment() -> None:
 
 def test_standalone_exporter_logstream_id_header() -> None:
     result = resolve_standalone_exporter_config(
-        make_standalone_cfg(), routing=make_routing(project_id="pid", log_stream_id="lsid")
+        make_standalone_cfg(), routing=make_routing(project_id="pid", agent_stream_id="lsid")
     )
 
     assert "logstream" not in result.headers
@@ -90,7 +90,7 @@ def test_standalone_exporter_no_routing_headers_when_routing_absent() -> None:
 
 
 def test_routing_resource_attributes_match_name_headers() -> None:
-    routing = make_routing(project_name="p", log_stream_name="ls")
+    routing = make_routing(project_name="p", agent_stream_name="ls")
     cfg = resolve_standalone_exporter_config(make_standalone_cfg(), routing)
     attrs = routing_resource_attributes(routing)
 
@@ -99,7 +99,7 @@ def test_routing_resource_attributes_match_name_headers() -> None:
 
 
 def test_routing_resource_attributes_match_id_headers() -> None:
-    routing = make_routing(project_id="pid", log_stream_id="lsid")
+    routing = make_routing(project_id="pid", agent_stream_id="lsid")
     cfg = resolve_standalone_exporter_config(make_standalone_cfg(), routing)
     attrs = routing_resource_attributes(routing)
 
@@ -109,7 +109,7 @@ def test_routing_resource_attributes_match_id_headers() -> None:
 
 def test_routing_resource_attributes_prioritize_experiment() -> None:
     attrs = routing_resource_attributes(
-        make_routing(project_name="p", log_stream_name="ls", log_stream_id="lsid", experiment_id="exp")
+        make_routing(project_name="p", agent_stream_name="ls", agent_stream_id="lsid", experiment_id="exp")
     )
 
     assert attrs["splunk_ao.experiment.id"] == "exp"
@@ -124,7 +124,7 @@ def test_routing_resource_attributes_empty_when_routing_absent() -> None:
 def test_otel_resource_honors_service_name_and_preserves_routing(monkeypatch: Any) -> None:
     monkeypatch.setenv("OTEL_SERVICE_NAME", "travel-planner")
 
-    resource = create_otel_resource(make_routing(project_name="project", log_stream_name="stream"))
+    resource = create_otel_resource(make_routing(project_name="project", agent_stream_name="stream"))
 
     assert resource.attributes["service.name"] == "travel-planner"
     assert resource.attributes["splunk_ao.project.name"] == "project"
@@ -151,6 +151,37 @@ def test_explicit_routing_overrides_environment_resource_routing(monkeypatch: An
     assert resource.attributes["deployment.environment.name"] == "test"
 
 
+def test_resource_drops_reserved_environment_routing_when_sdk_routing_absent(monkeypatch: Any) -> None:
+    monkeypatch.setenv(
+        "OTEL_RESOURCE_ATTRIBUTES",
+        (
+            "splunk_ao.project.name=environment-project,"
+            "splunk_ao.logstream.id=environment-stream,"
+            "splunk_ao.experiment.id=environment-experiment,"
+            "deployment.environment.name=test"
+        ),
+    )
+
+    resource = create_otel_resource(make_routing())
+
+    for key in ("splunk_ao.project.name", "splunk_ao.logstream.id", "splunk_ao.experiment.id"):
+        assert key not in resource.attributes
+    assert resource.attributes["deployment.environment.name"] == "test"
+
+
+def test_resource_removes_conflicting_routing_forms(monkeypatch: Any) -> None:
+    monkeypatch.setenv(
+        "OTEL_RESOURCE_ATTRIBUTES", "splunk_ao.project.name=stale-project,splunk_ao.logstream.name=stale-stream"
+    )
+
+    resource = create_otel_resource(make_routing(project_id="project-id", agent_stream_id="stream-id"))
+
+    assert "splunk_ao.project.name" not in resource.attributes
+    assert "splunk_ao.logstream.name" not in resource.attributes
+    assert resource.attributes["splunk_ao.project.id"] == "project-id"
+    assert resource.attributes["splunk_ao.logstream.id"] == "stream-id"
+
+
 def test_build_standalone_exporter_passes_resolved_public_config_to_factory() -> None:
     captured: dict[str, Any] = {}
     expected_exporter = object()
@@ -169,6 +200,14 @@ def test_build_standalone_exporter_passes_resolved_public_config_to_factory() ->
         "endpoint": "https://api.demo.galileocloud.io/otel/v1/traces",
         "headers": {"Splunk-AO-API-Key": "key", "project": "p"},
     }
+
+
+def test_standalone_exporter_passes_deployment_explicitly_to_diagnostics() -> None:
+    with patch("splunk_ao.exporter.config.DiagnosticOTLPSpanExporter") as diagnostic_exporter:
+        exporter = build_standalone_exporter(make_standalone_cfg(), make_routing())
+
+    assert exporter.delegate is diagnostic_exporter.return_value
+    assert diagnostic_exporter.call_args.kwargs["deployment"] == DeploymentMode.STANDALONE
 
 
 def test_healthz_probe_no_longer_called_on_exporter_construction() -> None:
