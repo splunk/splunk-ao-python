@@ -469,9 +469,10 @@ def set_control_attributes(attrs: MutableMapping[str, AttributeValue], span: Con
     """Map control identity, context, result, and content fields."""
     attrs["galileo.span.kind"] = "control"
     _set_operation(attrs, StepType.control)
-    _set_if_present(attrs, "agent_control.control_id", span.control_id)
-    if span.name:
-        attrs["agent_control.control_name"] = span.name
+    _set_if_present(attrs, "agent_control.control_id", _field(span, "control_id"))
+    control_name = _field(span, "name")
+    if control_name:
+        attrs["agent_control.control_name"] = control_name
 
     for field_name in ("agent_name", "check_stage", "applies_to", "evaluator_name", "selector_path"):
         value = _field(span, field_name)

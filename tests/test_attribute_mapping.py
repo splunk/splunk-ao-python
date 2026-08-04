@@ -575,6 +575,30 @@ def test_control_mapping_accepts_schema_compatible_control_span() -> None:
     assert attrs["agent_control.action"] == "observe"
 
 
+def test_control_mapping_tolerates_span_without_control_fields() -> None:
+    minimal = SimpleNamespace(
+        type="control",
+        name="guardrail",
+        input="question",
+        output=None,
+        redacted_input=None,
+        redacted_output=None,
+        user_metadata={},
+        tags=[],
+        status_code=None,
+        dataset_input=None,
+        dataset_output=None,
+        dataset_metadata={},
+        model_extra={},
+    )
+
+    attrs = build_span_attributes(cast(BaseStep, minimal))
+
+    assert attrs["galileo.span.kind"] == "control"
+    assert attrs["agent_control.control_name"] == "guardrail"
+    assert "agent_control.control_id" not in attrs
+
+
 def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     span = ControlSpan(
         name="guardrail",
