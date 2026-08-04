@@ -82,7 +82,7 @@ async def test_complex_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -113,7 +113,11 @@ async def test_simple_agent(
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+
+    async def capture_payload(payload):
+        await mock_traces_client_instance.ingest_traces(payload)
+
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
@@ -144,7 +148,7 @@ def test_processor_marks_direct_trace_child_agent(
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", agent_stream="test")
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
     logger.start_trace(input="input")
 
@@ -160,9 +164,62 @@ def test_processor_marks_direct_trace_child_agent(
             },
         )
     )
+    assert logger.traces[0].spans[0].conversation_root is True
+
     logger.conclude(output="output")
 
-    assert logger.traces[0].spans[0].conversation_root is True
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_commit_failure_concludes_handler_owned_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test")
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    owned_traces = []
+
+    def fail_after_starting_trace(*args, **kwargs):
+        processor._owned_trace = logger.add_trace(input="input", name="Trace")
+        owned_traces.append(processor._owned_trace)
+        raise RuntimeError("conversion failed")
+
+    with patch.object(processor, "_log_node_tree", side_effect=fail_after_starting_trace):
+        processor.on_trace_end(trace)
+
+    assert logger.current_parent() is None
+    assert owned_traces[0].status_code == 500
+    assert processor._nodes == {}
+    assert processor._owned_trace is None
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_commit_failure_preserves_caller_owned_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test")
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    caller_trace = logger.start_trace(input="request", name="caller")
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+
+    with patch.object(processor, "_commit_trace", side_effect=RuntimeError("conversion failed")):
+        processor.on_trace_end(trace)
+
+    assert logger.current_parent() is caller_trace
+    assert processor._nodes == {}
+    assert processor._owned_trace is None
+    logger.conclude(output="done")
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:
@@ -242,7 +299,10 @@ async def test_pre_built_tools_multiple_types(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_logger = SplunkAOLogger(project="test", log_stream="test")
+    async def capture_payload(payload):
+        await mock_traces_client_instance.ingest_traces(payload)
+
+    splunk_ao_logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=capture_payload)
     gp = SplunkAOTracingProcessor(splunk_ao_logger=splunk_ao_logger, flush_on_trace_end=False)
     set_trace_processors([gp])
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")

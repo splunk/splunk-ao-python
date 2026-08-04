@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import datetime
 import re
-import warnings
 from collections.abc import Iterator
 from time import sleep
 from typing import TYPE_CHECKING, Any
@@ -45,7 +44,7 @@ from splunk_ao.resources.types import Unset
 # TODO: DatasetRecord needed for function-based experiments
 # from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.filters import FilterType
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.search import RecordType, Search
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ValidationError
@@ -82,7 +81,7 @@ RECORD_TYPE_TO_ROOT_TYPE = {
 
 class Experiment(StateManagementMixin):
     """
-    Object-centric interface for Galileo experiments.
+    Object-centric interface for Splunk AO experiments.
 
     An experiment represents a systematic evaluation framework for running controlled
     tests on datasets to measure and compare AI model performance.
@@ -176,7 +175,7 @@ class Experiment(StateManagementMixin):
     prompt_name: str | None
     created_at: datetime.datetime | None
     updated_at: datetime.datetime | None
-    metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None
+    metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str] | None
     # TODO: Function-based experiments temporarily disabled - need to validate implementation
     # function: Callable | None
     model_alias: str | None
@@ -209,7 +208,7 @@ class Experiment(StateManagementMixin):
         prompt: Prompt | PromptTemplate | str | None = None,
         prompt_name: str | None = None,
         model: Model | str | None = None,
-        metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str] | None = None,
+        metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str] | None = None,
         project_id: str | None = None,
         project_name: str | None = None,
         prompt_settings: PromptRunSettings | None = None,
@@ -1126,7 +1125,6 @@ class Experiment(StateManagementMixin):
         poll_interval_seconds: float = 2.0,
         *,
         timeout_seconds: float | None = 3600.0,
-        job_id: str | None = None,
     ) -> None:
         """
         Monitor the progress of the experiment with a progress bar.
@@ -1141,9 +1139,6 @@ class Experiment(StateManagementMixin):
         timeout_seconds : float or None, optional
             Maximum seconds to wait before raising TimeoutError. Defaults to 3600.0
             (one hour). Pass None to wait indefinitely (not recommended).
-        job_id : str or None, optional
-            Deprecated. This parameter is ignored; it existed in a prior version
-            that polled the jobs table, which has been retired.
 
         Returns
         -------
@@ -1168,14 +1163,6 @@ class Experiment(StateManagementMixin):
 
             experiment.monitor_progress()
         """
-        if job_id is not None:
-            warnings.warn(
-                "The 'job_id' parameter of monitor_progress() is deprecated and will be removed in a future release. "
-                "Progress is now tracked directly via experiment status; the job_id value is ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
         if self.id is None:
             raise ValueError("Experiment ID is not set. Cannot monitor progress for a local-only experiment.")
         if self.project_id is None:
@@ -1275,7 +1262,7 @@ class Experiment(StateManagementMixin):
         response = search_service.query(
             project_id=project_id,
             record_type=record_type,
-            experiment_id=experiment_id,  # Use experiment_id for experiments (not log_stream_id)
+            experiment_id=experiment_id,  # Use experiment_id for experiments (not agent_stream_id)
             filters=filters,
             sort=sort,
             limit=limit,
@@ -1470,7 +1457,7 @@ class Experiment(StateManagementMixin):
             filters=filters,
             sort=sort,
             export_format=export_format,
-            log_stream_id=self.id,  # Experiments use log_stream_id param for run_id
+            agent_stream_id=self.id,  # Experiments use log_stream_id param for run_id
             column_ids=column_ids,
             redact=redact,
         )
@@ -2031,14 +2018,14 @@ class Experiment(StateManagementMixin):
         columns = [Column(col) for col in response.columns]
         return ColumnCollection(columns)
 
-    def get_metric_aggregate(self, metric: SplunkAOMetrics | str) -> MetricAggregates | None:
+    def get_metric_aggregate(self, metric: SplunkAOEvaluators | str) -> MetricAggregates | None:
         """Return aggregate statistics for a specific metric.
 
         Looks up a metric by any of the following identifiers, tried in order:
 
-        1. :class:`~splunk_ao.schema.metrics.SplunkAOMetrics` enum value — its
+        1. :class:`~splunk_ao.schema.metrics.SplunkAOEvaluators` enum value — its
            ``value`` IS the human-readable label (e.g.
-           ``SplunkAOMetrics.correctness`` → ``"Correctness"``).
+           ``SplunkAOEvaluators.correctness`` → ``"Correctness"``).
         2. Scorer UUID string — direct lookup in :attr:`metric_aggregates`,
            no column resolution needed.
         3. Human-readable label string (e.g. ``"Correctness"``) — resolved
@@ -2052,7 +2039,7 @@ class Experiment(StateManagementMixin):
         Parameters
         ----------
         metric :
-            Any of: a :class:`SplunkAOMetrics` enum value, scorer UUID string,
+            Any of: a :class:`SplunkAOEvaluators` enum value, scorer UUID string,
             human-readable label, or legacy metric_key_alias.
 
         Returns
@@ -2066,21 +2053,21 @@ class Experiment(StateManagementMixin):
         --------
         Poll until a specific metric is computed, then assert::
 
-            from splunk_ao.schema.metrics import SplunkAOMetrics
+            from splunk_ao.schema.metrics import SplunkAOEvaluators
 
-            while experiment.get_metric_aggregate(SplunkAOMetrics.correctness) is None:
+            while experiment.get_metric_aggregate(SplunkAOEvaluators.correctness) is None:
                 time.sleep(5)
                 experiment.refresh()
 
-            agg = experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
+            agg = experiment.get_metric_aggregate(SplunkAOEvaluators.correctness)
             assert agg.avg >= 0.95
         """
         aggregates = self.metric_aggregates
         if not aggregates:
             return None
 
-        # SplunkAOMetrics.value IS the human-readable label (e.g. "Correctness")
-        metric_str = metric.value if isinstance(metric, SplunkAOMetrics) else metric
+        # SplunkAOEvaluators.value IS the human-readable label (e.g. "Correctness")
+        metric_str = metric.value if isinstance(metric, SplunkAOEvaluators) else metric
 
         # Scorer UUID → direct lookup, no column resolution needed
         if _UUID_RE.fullmatch(metric_str):

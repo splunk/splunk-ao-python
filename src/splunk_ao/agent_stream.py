@@ -21,7 +21,7 @@ from splunk_ao.resources.models.log_records_available_columns_request import Log
 from splunk_ao.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from splunk_ao.resources.types import Unset
 from splunk_ao.schema.filters import FilterType
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.search import RecordType, Search
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ValidationError
@@ -46,9 +46,9 @@ __all__ = ["AgentStream"]
 
 class AgentStream(StateManagementMixin):
     """
-    Object-centric interface for Galileo log streams.
+    Object-centric interface for Splunk AO log streams.
 
-    This class provides an intuitive way to work with Galileo log streams,
+    This class provides an intuitive way to work with Splunk AO log streams,
     offering methods for managing log streams and their associated metrics.
 
     Attributes
@@ -66,22 +66,22 @@ class AgentStream(StateManagementMixin):
     Examples
     --------
         # Create a new log stream and persist it
-        log_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
+        agent_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
 
         # Get an existing log stream
-        log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+        agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
         # AgentStreams can also be created through Project instances
         from splunk_ao.project import Project
 
         project = Project.get(name="My AI Project")
-        log_stream = project.create_agent_stream(name="Production Logs")
+        agent_stream = project.create_agent_stream(name="Production Logs")
 
         # Enable metrics on the log stream
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance"
         ])
 
@@ -128,13 +128,13 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             # Create by project ID
-            log_stream = AgentStream(name="Production Logs", project_id="project-123")
+            agent_stream = AgentStream(name="Production Logs", project_id="project-123")
 
             # Create by project name
-            log_stream = AgentStream(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream(name="Production Logs", project_name="My AI Project")
 
             # Create using SPLUNK_AO_PROJECT environment variable
-            log_stream = AgentStream(name="Production Logs")
+            agent_stream = AgentStream(name="Production Logs")
         """
         super().__init__()
 
@@ -169,7 +169,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
+            agent_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
             assert log_stream.is_synced()
         """
         if not self.name:
@@ -270,19 +270,19 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             # Get by project name
-            log_stream = AgentStream.get(
+            agent_stream = AgentStream.get(
                 name="Production Logs",
                 project_name="My AI Project"
             )
 
             # Get by project ID
-            log_stream = AgentStream.get(
+            agent_stream = AgentStream.get(
                 name="Production Logs",
                 project_id="project-123"
             )
 
             # Get using SPLUNK_AO_PROJECT environment variable
-            log_stream = AgentStream.get(name="Production Logs")
+            agent_stream = AgentStream.get(name="Production Logs")
         """
         project_obj = _resolve_project(project_id, project_name)
 
@@ -420,7 +420,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My Project")
             current_metrics = log_stream.get_metrics()
             print(f"Currently enabled: {current_metrics}")
         """
@@ -441,7 +441,7 @@ class AgentStream(StateManagementMixin):
         return metric_names
 
     def set_metrics(
-        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
+        self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Set (replace) the metrics on this log stream.
@@ -451,7 +451,7 @@ class AgentStream(StateManagementMixin):
 
         Args:
             metrics: List of metrics to set. Supports:
-                - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+                - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
                 - Metric objects (including from Metric.get(id="..."))
                 - LocalMetricConfig objects for custom scoring functions
                 - String names of built-in metrics
@@ -469,7 +469,7 @@ class AgentStream(StateManagementMixin):
         --------
             from splunk_ao import Evaluator, AgentStream
 
-            log_stream = AgentStream.get(name="Production Logs", project_name="My Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My Project")
 
             # Set evaluators (replaces existing)
             log_stream.set_metrics([
@@ -481,10 +481,10 @@ class AgentStream(StateManagementMixin):
         try:
             logger.info(f"AgentStream.enable_evaluators: id='{self.id}' metrics={[str(m) for m in metrics]} - started")
             agent_streams_svc = AgentStreams()
-            log_stream = agent_streams_svc.get(name=self.name, project_id=self.project_id)
-            if log_stream is None:
+            agent_stream = agent_streams_svc.get(name=self.name, project_id=self.project_id)
+            if agent_stream is None:
                 raise ValueError(f"Log stream '{self.name}' not found")
-            result = log_stream.enable_evaluators(metrics)
+            result = agent_stream.enable_evaluators(metrics)
             # Set state to synced after successful operation
             self._set_state(SyncState.SYNCED)
             logger.info(f"AgentStream.enable_evaluators: id='{self.id}' - completed")
@@ -527,7 +527,7 @@ class AgentStream(StateManagementMixin):
         --------
             from splunk_ao.search import RecordType
 
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Query with column-based filters and sort
             results = log_stream.query(
@@ -561,13 +561,13 @@ class AgentStream(StateManagementMixin):
 
         # Capture project_id and log_stream_id for use in pagination function
         project_id = self.project_id
-        log_stream_id = self.id
+        agent_stream_id = self.id
 
         search_service = Search()
         response = search_service.query(
             project_id=project_id,
             record_type=record_type,
-            log_stream_id=log_stream_id,
+            agent_stream_id=agent_stream_id,
             filters=filters,
             sort=sort,
             limit=limit,
@@ -585,7 +585,7 @@ class AgentStream(StateManagementMixin):
             return Search().query(
                 project_id=project_id,
                 record_type=record_type,
-                log_stream_id=log_stream_id,
+                agent_stream_id=agent_stream_id,
                 filters=filters,
                 sort=sort,
                 limit=limit,
@@ -623,7 +623,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get spans with filters and sorting
             spans = log_stream.get_spans(
@@ -676,7 +676,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get traces with filters
             traces = log_stream.get_traces(
@@ -725,7 +725,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get sessions with filters
             sessions = log_stream.get_sessions(
@@ -781,7 +781,7 @@ class AgentStream(StateManagementMixin):
         --------
             from splunk_ao.search import RecordType
 
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Export records with filters
             for record in log_stream.export_records(
@@ -813,25 +813,25 @@ class AgentStream(StateManagementMixin):
             filters=filters,
             sort=sort,
             export_format=export_format,
-            log_stream_id=self.id,
+            agent_stream_id=self.id,
             column_ids=column_ids,
             redact=redact,
         )
 
     def context(self) -> Any:
         """
-        Get a galileo context manager for this log stream.
+        Get a Splunk AO context manager for this log stream.
 
         This is a convenient method that returns a pre-configured splunk_ao_context
         for this log stream, eliminating the need to specify project and log stream names.
 
         Returns
         -------
-            A context manager for Galileo logging configured with this log stream.
+            A context manager for Splunk AO logging configured with this log stream.
 
         Examples
         --------
-            log_stream = AgentStream.get(
+            agent_stream = AgentStream.get(
                 name="Production Logs",
                 project_name="My AI Project"
             )
@@ -840,7 +840,7 @@ class AgentStream(StateManagementMixin):
                 # Your logging code here
                 response = openai_client.chat.completions.create(...)
         """
-        return splunk_ao_context(project=self.project.name if self.project else None, log_stream=self.name)
+        return splunk_ao_context(project=self.project.name if self.project else None, agent_stream=self.name)
 
     def _get_columns(self, api_func: Any, error_msg: str) -> LogRecordsAvailableColumnsResponse:
         """Helper method to retrieve available columns from the API."""
@@ -878,7 +878,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
             columns = log_stream.span_columns
 
             # Access a specific column
@@ -911,7 +911,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
             columns = log_stream.session_columns
 
             # Access a specific column
@@ -945,7 +945,7 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
+            agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
             columns = log_stream.trace_columns
 
             # Access a specific column

@@ -18,7 +18,7 @@ def test_scorer_prompt_types_are_exported():
         "Session",
         "Message",
         "Document",
-        "SplunkAOMetrics",
+        "SplunkAOEvaluators",
     ]
     missing = [name for name in types if not hasattr(splunk_ao, name)]
     assert not missing, f"Types missing from `splunk_ao` public API: {missing}"

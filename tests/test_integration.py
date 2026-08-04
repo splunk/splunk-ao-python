@@ -328,7 +328,7 @@ class TestUnconfiguredProvider:
         error_message = str(exc_info.value)
         assert integration_name in error_message
         assert "Integration.create_" not in error_message
-        assert "Galileo console" in error_message
+        assert "Splunk AO console" in error_message
 
     @pytest.mark.parametrize("integration_name", ["openai", "azure", "aws_bedrock"])
     def test_repr_and_str_show_integration_name(self, integration_name):

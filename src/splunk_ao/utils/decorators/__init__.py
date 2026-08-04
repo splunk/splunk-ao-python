@@ -1,5 +1,5 @@
 """
-Decorators for Galileo SDK operations.
+Decorators for Splunk AO SDK operations.
 
 This module provides decorators for:
 - Exception handling for fire-and-forget telemetry operations

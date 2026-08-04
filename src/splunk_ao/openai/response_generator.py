@@ -25,10 +25,10 @@ except ImportError:
 
 class ResponseGeneratorSync:
     """
-    A wrapper for OpenAI streaming responses that logs the response to Galileo.
+    A wrapper for OpenAI streaming responses that logs the response to Splunk AO.
 
     This class wraps the OpenAI streaming response generator and logs the response
-    to Galileo when the generator is exhausted. It implements the iterator protocol
+    to Splunk AO when the generator is exhausted. It implements the iterator protocol
     to allow for streaming responses.
 
     Attributes
@@ -40,7 +40,7 @@ class ResponseGeneratorSync:
     input_data : OpenAiInputData
         The input data for the OpenAI request.
     logger : SplunkAOLogger
-        The Galileo logger instance.
+        The Splunk AO logger instance.
     should_complete_trace : bool
         Whether to complete the trace when the generator is exhausted.
     """

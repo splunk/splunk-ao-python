@@ -1,4 +1,4 @@
-"""Canonical Galileo-field and OTLP wire-attribute mapping."""
+"""Canonical Splunk AO field and OTLP wire-attribute mapping."""
 
 from __future__ import annotations
 
@@ -127,11 +127,12 @@ def _text_part(value: Any) -> dict[str, Any]:
 
 def _content_part(value: Any) -> dict[str, Any] | None:
     part = _mapping_value(value)
-    if part is None or "type" not in part:
+    if part is None:
         return None
 
-    part_type = _json_compatible(part["type"])
-    part["type"] = str(part_type)
+    part_type = part.get("type")
+    if not isinstance(part_type, str) or not part_type.strip():
+        return None
     if part_type == "text" and "content" not in part and "text" in part:
         part["content"] = part.pop("text")
     return part
@@ -142,7 +143,7 @@ def _content_parts(value: Any) -> list[dict[str, Any]]:
     if part is not None:
         return [part]
 
-    if isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
+    if value and isinstance(value, Sequence) and not isinstance(value, str | bytes | bytearray):
         parts = [_content_part(item) for item in value]
         if all(item is not None for item in parts):
             return [item for item in parts if item is not None]
@@ -204,7 +205,7 @@ def _message_sequence(value: Any, default_role: str) -> list[dict[str, Any]]:
     return [_message(value, default_role)]
 
 
-def _message_container(value: Any) -> tuple[Any | None, bool]:
+def _message_container(value: Any) -> tuple[Any | None, bool, bool]:
     parsed = _parse_json_string(value)
 
     source = _mapping_view(parsed)
@@ -214,35 +215,44 @@ def _message_container(value: Any) -> tuple[Any | None, bool]:
             if container is None or "messages" not in container:
                 continue
             messages = _parse_json_string(container["messages"])
-            if _is_message_sequence(messages):
-                return messages, container is source
+            if _is_message_sequence(messages, allow_empty=True):
+                return messages, container is source, True
 
         if "role" in source or "type" in source:
-            return parsed, False
-        return None, False
+            return parsed, False, True
+        return parsed, False, False
 
     if isinstance(parsed, Sequence) and not isinstance(parsed, str | bytes | bytearray):
         if _is_message_sequence(parsed) or _is_content_part_sequence(parsed):
-            return parsed, False
-        return (parsed, False) if not isinstance(value, str | bytes | bytearray) else (None, False)
+            return parsed, False, True
+        return parsed, False, False
 
-    return parsed, False
+    return parsed, False, False
 
 
-def _is_message_sequence(value: Any) -> bool:
+def _is_message_sequence(value: Any, *, allow_empty: bool = False) -> bool:
     if not isinstance(value, Sequence) or isinstance(value, str | bytes | bytearray):
         message = _mapping_view(value)
         return message is not None and "role" in message
-    return not value or all((message := _mapping_view(item)) is not None and "role" in message for item in value)
+    return (allow_empty and not value) or (
+        bool(value) and all((message := _mapping_view(item)) is not None and "role" in message for item in value)
+    )
 
 
 def _is_content_part_sequence(value: Any) -> bool:
-    return bool(value) and all((part := _mapping_view(item)) is not None and "type" in part for item in value)
+    return bool(value) and all(_content_part(item) is not None for item in value)
 
 
 def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[str, Any]] | None, bool]:
-    container, full_history = _message_container(value)
-    messages = None if container is None else _message_sequence(container, default_role)
+    container, full_history, recognized_messages = _message_container(value)
+    if container is None:
+        messages = None
+    elif recognized_messages and isinstance(container, Sequence) and not container:
+        messages = []
+    elif isinstance(container, Sequence) and not isinstance(container, str | bytes | bytearray) and not container:
+        messages = [_message(container, default_role)]
+    else:
+        messages = _message_sequence(container, default_role)
     return messages, full_history
 
 
@@ -428,8 +438,7 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
         return
     if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
-    if output_messages:
-        attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
+    attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 
 def set_workflow_attributes(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan) -> None:
@@ -455,7 +464,7 @@ def _set_generic_content(attrs: MutableMapping[str, AttributeValue], span: BaseS
 
 
 def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict[str, AttributeValue]:
-    """Build preliminary attributes for one proprietary Galileo span."""
+    """Build preliminary attributes for one proprietary Splunk AO span."""
     attrs: dict[str, AttributeValue] = {}
     set_common_attributes(attrs, span, session_id)
     set_dataset_attributes(attrs, span)
@@ -495,6 +504,7 @@ def normalize_attributes_for_export(
 ) -> dict[str, AttributeValue]:
     """Return final wire attributes without mutating the source mapping."""
     result = dict(attrs)
+    result[SPLUNK_AO_SYSTEM] = SPLUNK_AO_SYSTEM_VALUE
     if not enabled:
         return result
 
@@ -507,5 +517,4 @@ def normalize_attributes_for_export(
     for source_key in CONTENT_ALIAS_BY_GEN_AI:
         result.pop(source_key, None)
 
-    result[SPLUNK_AO_SYSTEM] = SPLUNK_AO_SYSTEM_VALUE
     return result

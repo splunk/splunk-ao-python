@@ -7,7 +7,7 @@ from pydantic import BaseModel, field_validator, model_validator
 
 class DatasetRecord(BaseModel):
     """
-    A single record in a Galileo dataset.
+    A single record in a Splunk AO dataset.
 
     Attributes
     ----------
@@ -18,9 +18,9 @@ class DatasetRecord(BaseModel):
     output : Optional[str]
         The expected output / ground truth.
         **Note:** This field can also be provided as `ground_truth` when creating records.
-        Displayed as "Ground Truth" in the Galileo UI.
+        Displayed as "Ground Truth" in the Splunk AO UI.
     generated_output : Optional[str]
-        The model-generated output. Note: Displayed as "Generated Output" in the Galileo UI.
+        The model-generated output. Note: Displayed as "Generated Output" in the Splunk AO UI.
     metadata : Optional[dict[str, str]]
         Key-value metadata for the record.
 

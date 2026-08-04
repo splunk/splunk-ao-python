@@ -15,12 +15,12 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain_core.callbacks import Callbacks
 from langchain_core.messages import HumanMessage
 
-from splunk_ao import SplunkAOMetrics, splunk_ao_context
+from splunk_ao import SplunkAOEvaluators, splunk_ao_context
 from splunk_ao.datasets import create_dataset, get_dataset, delete_dataset
 from splunk_ao.experiments import get_experiment, run_experiment
 from splunk_ao.handlers.langchain import SplunkAOCallback
 
-from src.galileo_langgraph_fsi_agent.agents.supervisor_agent import (
+from src.splunk_ao_langgraph_fsi_agent.agents.supervisor_agent import (
     create_supervisor_agent,
 )
 
@@ -75,8 +75,8 @@ def send_message_to_supervisor_agent(message: str):
     This function simulates sending a message to the supervisor agent and getting a response.
     It is used in the test to interact with the chatbot.
     """
-    galileo_logger = splunk_ao_context.get_logger_instance()
-    callback = SplunkAOCallback(galileo_logger=galileo_logger, start_new_trace=False, flush_on_chain_end=False)
+    splunk_ao_logger = splunk_ao_context.get_logger_instance()
+    callback = SplunkAOCallback(splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False)
 
     messages: dict[str, Any] = {"messages": [HumanMessage(content=message)]}
     callbacks: Callbacks = [callback]
@@ -108,7 +108,7 @@ def test_run_experiment_with_dataset():
         experiment_name="langgraph-fsi-experiment",
         dataset_name=DATASET_NAME,
         function=send_message_to_supervisor_agent,
-        metrics=[SplunkAOMetrics.action_advancement, SplunkAOMetrics.action_completion, SplunkAOMetrics.tool_error_rate, SplunkAOMetrics.tool_selection_quality],
+        metrics=[SplunkAOEvaluators.action_advancement, SplunkAOEvaluators.action_completion, SplunkAOEvaluators.tool_error_rate, SplunkAOEvaluators.tool_selection_quality],
         project=os.getenv("SPLUNK_AO_PROJECT"),
     )
 

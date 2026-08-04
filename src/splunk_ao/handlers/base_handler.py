@@ -16,12 +16,12 @@ _logger = logging.getLogger(__name__)
 
 class SplunkAOBaseHandler:
     """
-    Callback handler for logging traces to the Galileo platform.
+    Callback handler for logging traces to the Splunk AO platform.
 
     Attributes
     ----------
     _splunk_ao_logger : SplunkAOLogger
-        The Galileo logger instance.
+        The Splunk AO logger instance.
     _nodes : dict[UUID, Node]
         A dictionary of nodes, where the key is the run_id and the value is the node.
     _start_new_trace : bool
@@ -41,7 +41,7 @@ class SplunkAOBaseHandler:
         integration: INTEGRATION = "langchain",
         splunk_ao_logger: SplunkAOLogger | None = None,
         start_new_trace: bool = True,
-        flush_on_chain_end: bool = True,
+        flush_on_chain_end: bool | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
     ):
         self._splunk_ao_logger: SplunkAOLogger = splunk_ao_logger or splunk_ao_context.get_logger_instance(
@@ -52,13 +52,13 @@ class SplunkAOBaseHandler:
                 raise ValueError("ingestion_hook can only be used in batch mode")
             self._splunk_ao_logger._ingestion_hook = ingestion_hook
         self._start_new_trace: bool = start_new_trace
-        self._flush_on_chain_end: bool = flush_on_chain_end
+        self._flush_on_chain_end = ingestion_hook is not None if flush_on_chain_end is None else flush_on_chain_end
         self._nodes: dict[str, Node] = {}
         self._root_node: Node | None = None
         self._integration: INTEGRATION = integration
 
     def commit(self) -> None:
-        """Commit the nodes to the trace using the Galileo Logger. Optionally flush the trace."""
+        """Commit the nodes to the trace using the Splunk AO Logger. Optionally flush the trace."""
         if not self._nodes:
             _logger.warning("No nodes to commit")
             return
@@ -73,9 +73,10 @@ class SplunkAOBaseHandler:
             _logger.warning("Unable to add nodes to trace: Root node does not exist")
             return
 
+        owned_trace = None
         try:
             if self._start_new_trace:
-                self._splunk_ao_logger.start_trace(
+                owned_trace = self._splunk_ao_logger.start_trace(
                     input=SplunkAOLogger._coerce_output(root_node.span_params.get("input", "")),
                     name=root_node.span_params.get("name"),
                     metadata=root_node.span_params.get("metadata"),
@@ -87,17 +88,30 @@ class SplunkAOBaseHandler:
             root_output = root_node.span_params.get("output", "")
 
             if self._start_new_trace:
-                self._splunk_ao_logger.conclude(
+                self._conclude_owned_trace(
+                    owned_trace,
                     output=SplunkAOLogger._coerce_output(root_output),
                     status_code=root_node.span_params.get("status_code"),
                 )
 
             if self._flush_on_chain_end:
                 self._splunk_ao_logger.flush()
+        except Exception:
+            if owned_trace is not None:
+                self._conclude_owned_trace(owned_trace, output="", status_code=500)
+            _logger.warning("Failed to commit handler telemetry", exc_info=True)
         finally:
-            # Always clean up, even if trace building or flush fails
             self._nodes.clear()
             self._root_node = None
+
+    def _conclude_owned_trace(self, trace: Any, output: Any, status_code: int | None) -> None:
+        current_parent = self._splunk_ao_logger.current_parent()
+        root = current_parent
+        while root is not None and root._parent is not None:
+            root = root._parent
+
+        if root is trace:
+            self._splunk_ao_logger.conclude(output=output, status_code=status_code, conclude_all=True)
 
     def log_node_tree(self, node: Node) -> None:
         """

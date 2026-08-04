@@ -1,7 +1,7 @@
 # Domain Entity Rename: Log Streams → Agent Streams, Metrics → Evaluators
 
-**Ticket:** [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730)  
-**Branch:** `feat/HYBIM-730-domain-rename`  
+**Ticket:** [HYBIM-730](https://splunk.atlassian.net/browse/HYBIM-730)
+**Branch:** `feat/HYBIM-730-domain-rename`
 **Status:** Implemented — hard cut-over, no backward compatibility
 
 ---
@@ -45,8 +45,8 @@ stream = AgentStream.get(name="prod-traces", project_name="my-project")
 streams = AgentStream.list(project_name="my-project")
 
 # Enable evaluators on the stream
-from splunk_ao.schema.metrics import SplunkAOMetrics
-stream.enable_evaluators([SplunkAOMetrics.correctness, SplunkAOMetrics.completeness])
+from splunk_ao.schema.metrics import SplunkAOEvaluators
+stream.enable_evaluators([SplunkAOEvaluators.correctness, SplunkAOEvaluators.completeness])
 ```
 
 ```python

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 from splunk_ao.logger import SplunkAOLogger
@@ -11,7 +11,7 @@ def test_rapid_span_creation_ensures_uniqueness(mock_projects_client: Mock, mock
     """Tests that creating spans in a tight loop results in unique, monotonically increasing timestamps."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
     logger.start_trace(input="test")
     for _ in range(5):
         logger.add_llm_span(input="test", output="test", model="test")
@@ -29,11 +29,11 @@ def test_user_provided_timestamps_are_respected(mock_projects_client: Mock, mock
     """Tests that timestamps provided by the user are not modified."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
     logger.start_trace(input="test")
 
     # Create timestamps in reverse order to test that the logger doesn't alter them
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     timestamps = [now - timedelta(seconds=i) for i in range(5)]
 
     for ts in timestamps:
@@ -52,18 +52,18 @@ def test_mixed_default_and_user_timestamps(mock_projects_client: Mock, mock_logs
     """Tests that the internal state for default timestamp generation is not affected by user-provided timestamps."""
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
-    logger = SplunkAOLogger(project="test", log_stream="test")
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
     logger.start_trace(input="test")
 
     # 1. Add a default span
     logger.add_llm_span(input="test", output="test", model="test")
 
     # 2. Add a user-provided span with a timestamp in the past
-    past_timestamp = datetime.now(timezone.utc) - timedelta(seconds=10)
+    past_timestamp = datetime.now(UTC) - timedelta(seconds=10)
     logger.add_llm_span(input="test", output="test", model="test", created_at=past_timestamp)
 
     # 3. Add a user-provided span with a timestamp in the future
-    future_timestamp = datetime.now(timezone.utc) + timedelta(seconds=10)
+    future_timestamp = datetime.now(UTC) + timedelta(seconds=10)
     logger.add_llm_span(input="test", output="test", model="test", created_at=future_timestamp)
 
     # 4. Add a final default span

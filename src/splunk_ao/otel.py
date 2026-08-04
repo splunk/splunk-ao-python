@@ -14,7 +14,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, Spa
 from opentelemetry.trace import Tracer
 
 from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
-from galileo_core.schemas.logging.span import Span as GalileoSpan
+from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
@@ -22,20 +22,19 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.exporter import RoutingAttrs, build_o11y_exporter, build_standalone_exporter
-from splunk_ao.utils.env_helpers import (
-    _get_log_stream_from_env,
-    _get_log_stream_id_from_env,
-    _get_log_stream_or_default,
-    _get_project_from_env,
-    _get_project_id_from_env,
-    _get_project_or_default,
+from splunk_ao.exporter import (
+    ExportHealth,
+    RoutingAttrs,
+    build_o11y_exporter,
+    build_standalone_exporter,
+    resolve_routing,
 )
+from splunk_ao.exporter.diagnostics import get_export_health
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +53,7 @@ class TracerProvider(Protocol):
     ) -> Tracer: ...
 
 
-_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("galileo_trace_provider", default=None)
+_TRACE_PROVIDER_CONTEXT_VAR: ContextVar[TracerProvider | None] = ContextVar("splunk_ao_trace_provider", default=None)
 
 _LEGACY_ROUTING_OPTIONS = {"logstream": "agentstream", "log_stream_id": "agent_stream_id"}
 
@@ -63,28 +62,6 @@ def _reject_legacy_routing_options(options: dict[str, Any]) -> None:
     for legacy_name, replacement in _LEGACY_ROUTING_OPTIONS.items():
         if legacy_name in options:
             raise TypeError(f"{legacy_name} is not supported; use {replacement}")
-
-
-def _resolve_name_or_id(
-    explicit_name: str | None,
-    explicit_id: str | None,
-    context_name: str | None,
-    environment_name: str | None,
-    environment_id: str | None,
-    default_name: str | None,
-) -> tuple[str | None, str | None]:
-    """Resolve one immutable routing identity while preserving its supplied form."""
-    if explicit_name:
-        return explicit_name, None
-    if explicit_id:
-        return None, explicit_id
-    if context_name:
-        return context_name, None
-    if environment_name:
-        return environment_name, None
-    if environment_id:
-        return None, environment_id
-    return default_name, None
 
 
 def _resolve_routing(
@@ -96,29 +73,16 @@ def _resolve_routing(
     experiment_id: str | None,
 ) -> RoutingAttrs:
     """Capture routing once for one exporter without resolving names to IDs."""
-    standalone = deployment == DeploymentMode.STANDALONE
-    project_name, resolved_project_id = _resolve_name_or_id(
-        project,
-        project_id,
-        _project_context.get(None),
-        _get_project_from_env(),
-        _get_project_id_from_env(),
-        _get_project_or_default(None) if standalone else None,
-    )
-    log_stream_name, resolved_log_stream_id = _resolve_name_or_id(
-        agentstream,
-        agent_stream_id,
-        _log_stream_context.get(None),
-        _get_log_stream_from_env(),
-        _get_log_stream_id_from_env(),
-        _get_log_stream_or_default(None) if standalone else None,
-    )
-    return RoutingAttrs(
-        project_name=project_name,
-        project_id=resolved_project_id,
-        log_stream_name=log_stream_name,
-        log_stream_id=resolved_log_stream_id,
-        experiment_id=experiment_id or _experiment_id_context.get(None),
+    return resolve_routing(
+        deployment,
+        project=project,
+        project_id=project_id,
+        agent_stream=agentstream,
+        agent_stream_id=agent_stream_id,
+        experiment_id=experiment_id,
+        context_project=_project_context.get(None),
+        context_agent_stream=_agent_stream_context.get(None),
+        context_experiment_id=_experiment_id_context.get(None),
     )
 
 
@@ -178,13 +142,18 @@ class SplunkAOOTLPExporter(SpanExporter):
 
         self.project = self._routing.project_name
         self.project_id = self._routing.project_id
-        self.agentstream = self._routing.log_stream_name
-        self.agent_stream_id = self._routing.log_stream_id
+        self.agentstream = self._routing.agent_stream_name
+        self.agent_stream_id = self._routing.agent_stream_id
         self.experiment_id = self._routing.experiment_id
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export through the shared immutable normalization pipeline."""
         return self._delegate.export(spans)
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._delegate)
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Flush the delegate exporter."""
@@ -197,11 +166,11 @@ class SplunkAOOTLPExporter(SpanExporter):
 
 class SplunkAOSpanProcessor(SpanProcessor):
     """
-    Complete OpenTelemetry span processor with integrated Galileo export functionality.
+    Complete OpenTelemetry span processor with integrated Splunk AO export functionality.
 
     This processor combines span processing and export capabilities into a single
     component that can be directly attached to any OpenTelemetry TracerProvider.
-    It handles the complete lifecycle of spans from creation to export to Galileo.
+    It handles the complete lifecycle of spans from creation to export to Splunk AO.
     Project, agent-stream, and experiment routing is fixed when the processor's exporter
     is constructed. Use separate processors and exporters for separate destinations.
 
@@ -226,7 +195,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
         **kwargs: Any,
     ) -> None:
         """
-        Initialize the Galileo span processor with export configuration.
+        Initialize the Splunk AO span processor with export configuration.
 
         Parameters
         ----------
@@ -305,6 +274,11 @@ class SplunkAOSpanProcessor(SpanProcessor):
         return self._processor.force_flush(timeout_millis)
 
     @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._exporter)
+
+    @property
     def exporter(self) -> SpanExporter:
         """Access to the underlying Splunk AO OTLP exporter instance."""
         return self._exporter
@@ -341,21 +315,21 @@ def _apply_dataset_attributes(
 
 
 @contextmanager
-def start_splunk_ao_span(galileo_span: GalileoSpan) -> Generator[trace.Span, Any, None]:
+def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, Any, None]:
     tracer_provider = _TRACE_PROVIDER_CONTEXT_VAR.get()
     if tracer_provider is None:
         tracer_provider = trace.get_tracer_provider()
         _TRACE_PROVIDER_CONTEXT_VAR.set(cast(TracerProvider, tracer_provider))
-    tracer = tracer_provider.get_tracer("galileo-tracer")
+    tracer = tracer_provider.get_tracer("splunk-ao-tracer")
     is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
-        galileo_span, WorkflowSpan | AgentSpan
+        splunk_ao_span, WorkflowSpan | AgentSpan
     )
-    with tracer.start_as_current_span(galileo_span.name) as span:
+    with tracer.start_as_current_span(splunk_ao_span.name) as span:
         try:
             yield span
         finally:
             try:
-                attributes = build_span_attributes(galileo_span, _session_id_context.get(None))
+                attributes = build_span_attributes(splunk_ao_span, _session_id_context.get(None))
                 if is_conversation_root:
                     attributes[GEN_AI_CONVERSATION_ROOT] = True
                 for key, value in attributes.items():

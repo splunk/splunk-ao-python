@@ -216,7 +216,7 @@ class OpenAiArgsExtractor:
 
 
 def convert_to_splunk_ao_message(data: Any, default_role: str = "user") -> Message:
-    """Convert OpenAI response data to a Galileo Message object."""
+    """Convert OpenAI response data to a Splunk AO Message object."""
     if hasattr(data, "type") and data.type == "function_call":
         tool_call = ToolCall(
             id=getattr(data, "call_id", ""),
@@ -247,13 +247,13 @@ def convert_to_splunk_ao_message(data: Any, default_role: str = "user") -> Messa
             tool_call_id = data.get("tool_call_id")
 
         # Handle tool calls if present
-        galileo_tool_calls = None
+        splunk_ao_tool_calls = None
         if tool_calls:
-            galileo_tool_calls = []
+            splunk_ao_tool_calls = []
             for tc in tool_calls:
                 if hasattr(tc, "function"):
                     # ChatCompletionMessageFunctionToolCall object
-                    galileo_tool_calls.append(
+                    splunk_ao_tool_calls.append(
                         ToolCall(
                             id=getattr(tc, "id", ""),
                             function=ToolCallFunction(
@@ -263,7 +263,7 @@ def convert_to_splunk_ao_message(data: Any, default_role: str = "user") -> Messa
                     )
                 elif isinstance(tc, dict) and "function" in tc:
                     # Dictionary tool call
-                    galileo_tool_calls.append(
+                    splunk_ao_tool_calls.append(
                         ToolCall(
                             id=tc.get("id", ""),
                             function=ToolCallFunction(
@@ -275,7 +275,7 @@ def convert_to_splunk_ao_message(data: Any, default_role: str = "user") -> Messa
         return Message(
             content=str(content) if content is not None else "",
             role=MessageRole(role),
-            tool_calls=galileo_tool_calls,
+            tool_calls=splunk_ao_tool_calls,
             tool_call_id=tool_call_id,
         )
     return Message(content=str(data), role=MessageRole(default_role))

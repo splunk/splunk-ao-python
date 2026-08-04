@@ -1,4 +1,4 @@
-"""CrewAI integration for Galileo tracing."""
+"""CrewAI integration for Splunk AO tracing."""
 
 from .handler import CrewAIEventListener
 

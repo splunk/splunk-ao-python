@@ -1,7 +1,7 @@
 import os
 import time
 
-from splunk_ao import SplunkAOMetrics, splunk_ao_context
+from splunk_ao import SplunkAOEvaluators, splunk_ao_context
 from splunk_ao.experiments import create_experiment
 from splunk_ao.projects import create_project, get_project
 from splunk_ao.resources.models import MetricSuccess
@@ -9,7 +9,7 @@ from splunk_ao.search import get_sessions
 from splunk_ao.utils.metrics import create_metric_configs
 
 # Provide the name of a session-level metric
-METRIC_NAME = SplunkAOMetrics.conversation_quality
+METRIC_NAME = SplunkAOEvaluators.conversation_quality
 
 # example custom metric name (must be set up in advance)
 # METRIC_NAME = "multi-turn-session-test-metric-apples"

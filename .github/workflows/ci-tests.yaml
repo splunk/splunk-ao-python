@@ -52,11 +52,8 @@ jobs:
         run: |
           poetry env use "${{ steps.setup-python.outputs.python-path }}"
 
-      - name: Install invoke
-        run: pipx install invoke
-
       - name: Install Dependencies
-        run: invoke install
+        run: poetry install --all-extras --no-root
 
       - name: Verify Poetry Python version
         run: |
@@ -70,8 +67,8 @@ jobs:
 
       - name: Validate Types
         if: always()
-        run: invoke type-check
+        run: poetry run invoke type-check
 
       - name: Run Tests
         if: always()
-        run: invoke test-report-xml
+        run: poetry run invoke test-report-xml

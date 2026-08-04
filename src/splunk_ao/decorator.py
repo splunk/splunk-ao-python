@@ -1,5 +1,5 @@
 """
-Galileo Decorator Module.
+Splunk AO Decorator Module.
 
 This module provides decorators for logging and tracing function calls in your application.
 Decorators allow you to add logging functionality to your existing code with minimal changes.
@@ -31,16 +31,16 @@ How to use decorators:
    ```python
    from splunk_ao import splunk_ao_context
 
-   with splunk_ao_context(project="my-project", log_stream="production"):
+   with splunk_ao_context(project="my-project", agent_stream="production"):
        result1 = my_function()
        result2 = another_function()
    ```
 
 Setup requirements:
-- Galileo API key must be set (via environment variable SPLUNK_AO_API_KEY or programmatically)
+- Splunk AO API key must be set (via environment variable SPLUNK_AO_API_KEY or programmatically)
 - Project and Log Stream names should be defined if using the `log` decorator (either via environment variables SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM, or via `splunk_ao_context.init()`)
 
-For more examples and detailed usage, see the Galileo SDK documentation.
+For more examples and detailed usage, see the Splunk AO SDK documentation.
 """
 
 import asyncio
@@ -50,6 +50,7 @@ import logging
 from collections.abc import AsyncGenerator, Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from functools import wraps
 from types import TracebackType
 from typing import Any, TypeVar, cast, overload
@@ -86,7 +87,7 @@ R = TypeVar("R")
 # TODO: We should have the context variables store valid values not optional values.
 # Context variables for current values
 _project_context: ContextVar[str | None] = ContextVar("project_context", default=None)
-_log_stream_context: ContextVar[str | None] = ContextVar("log_stream_context", default=None)
+_agent_stream_context: ContextVar[str | None] = ContextVar("log_stream_context", default=None)
 _trace_context: ContextVar[Trace | None] = ContextVar("trace_context", default=None)
 _experiment_id_context: ContextVar[str | None] = ContextVar("experiment_id_context", default=None)
 _span_stack_context: ContextVar[list[WorkflowSpan] | None] = ContextVar("span_stack_context", default=None)
@@ -106,12 +107,21 @@ _dataset_metadata_context: ContextVar[dict[str, str] | None] = ContextVar("datas
 
 # Stack variables for storing previous values (for proper nesting)
 _project_stack: ContextVar[list[str | None] | None] = ContextVar("project_stack", default=None)
-_log_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
+_agent_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
 _trace_stack: ContextVar[list[Trace | None] | None] = ContextVar("trace_stack", default=None)
 _experiment_id_stack: ContextVar[list[str | None] | None] = ContextVar("experiment_id_stack", default=None)
 _session_id_stack: ContextVar[list[str | None] | None] = ContextVar("session_id_stack", default=None)
 _mode_stack: ContextVar[list[LoggerModeType] | None] = ContextVar("mode_stack", default=None)
 _span_stack_stack: ContextVar[list[list[WorkflowSpan]] | None] = ContextVar("span_stack_stack", default=None)
+
+
+@dataclass(frozen=True)
+class _CallState:
+    logger: SplunkAOLogger
+    trace: Trace
+    owns_trace: bool
+    set_trace_context: bool
+    span_stack_depth: int
 
 
 def _get_or_init_list(context_var: ContextVar, default_factory: Callable = list) -> list:
@@ -126,7 +136,7 @@ def _get_or_init_list(context_var: ContextVar, default_factory: Callable = list)
 class SplunkAODecorator:
     """
     Main decorator class that provides both decorator and context manager functionality
-    for logging and tracing in Galileo.
+    for logging and tracing in Splunk AO.
 
     This class can be used as:
     1. A function decorator via the `log` method
@@ -143,7 +153,7 @@ class SplunkAODecorator:
             The decorator instance for use in a with statement
         """
         # Nothing to do here since __call__ has already set up the context
-        return self  # Allows `as galileo` usage
+        return self  # Allows `as splunk_ao` usage
 
     def __exit__(
         self, exc_type: BaseException | None, exc_value: BaseException | None, traceback: TracebackType | None
@@ -165,7 +175,7 @@ class SplunkAODecorator:
         # Flush the logger instance
         self.get_logger_instance(
             project=_project_context.get(),
-            log_stream=_log_stream_context.get(),
+            agent_stream=_agent_stream_context.get(),
             experiment_id=_experiment_id_context.get(),
         ).flush()
 
@@ -173,7 +183,7 @@ class SplunkAODecorator:
 
         # Pop values from the stacks and restore the previous context
         _project_context.set(_get_or_init_list(_project_stack).pop())
-        _log_stream_context.set(_get_or_init_list(_log_stream_stack).pop())
+        _agent_stream_context.set(_get_or_init_list(_agent_stream_stack).pop())
         _experiment_id_context.set(_get_or_init_list(_experiment_id_stack).pop())
         _trace_context.set(_get_or_init_list(_trace_stack).pop())
         _mode_context.set(_get_or_init_list(_mode_stack).pop())
@@ -184,7 +194,7 @@ class SplunkAODecorator:
         self,
         *,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         session_id: str | None = None,
@@ -194,7 +204,7 @@ class SplunkAODecorator:
 
         This allows usage like:
         ```python
-        with splunk_ao_context(project="my_project", log_stream="my_stream"):
+        with splunk_ao_context(project="my_project", agent_stream="my_stream"):
             # Code to be traced
         ```
 
@@ -202,7 +212,7 @@ class SplunkAODecorator:
         ----------
         project
             The project name to use for this context
-        log_stream: The log stream name to use for this context
+        agent_stream: The log stream name to use for this context
             The log stream name to use for this context
         experiment_id
             The experiment ID to use for this context
@@ -218,7 +228,7 @@ class SplunkAODecorator:
         """
         # Push current values onto the stacks
         _get_or_init_list(_project_stack).append(_project_context.get())
-        _get_or_init_list(_log_stream_stack).append(_log_stream_context.get())
+        _get_or_init_list(_agent_stream_stack).append(_agent_stream_context.get())
         _get_or_init_list(_experiment_id_stack).append(_experiment_id_context.get())
         _get_or_init_list(_trace_stack).append(_trace_context.get())
         _get_or_init_list(_mode_stack).append(_mode_context.get())
@@ -231,7 +241,7 @@ class SplunkAODecorator:
 
         # Set request context values to defaults
         _project_context.set(None)
-        _log_stream_context.set(None)
+        _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
         _session_id_context.set(None)
@@ -239,8 +249,8 @@ class SplunkAODecorator:
         # Override with explicitly provided values
         if project is not None:
             _project_context.set(project)
-        if log_stream is not None:
-            _log_stream_context.set(log_stream)
+        if agent_stream is not None:
+            _agent_stream_context.set(agent_stream)
         if experiment_id is not None:
             _experiment_id_context.set(experiment_id)
         if mode is not None:
@@ -303,17 +313,32 @@ class SplunkAODecorator:
         """
 
         def decorator(func: Callable[P, R]) -> Callable[P, R]:
-            return (
+            if inspect.isasyncgenfunction(func):
+                return cast(
+                    Callable[P, R],
+                    self._async_generator_log(
+                        func, name=name, span_type=span_type, params=params, dataset_record=dataset_record
+                    ),
+                )
+            if inspect.isgeneratorfunction(func):
+                return cast(
+                    Callable[P, R],
+                    self._sync_generator_log(
+                        func, name=name, span_type=span_type, params=params, dataset_record=dataset_record
+                    ),
+                )
+            wrapped = (
                 self._async_log(func, name=name, span_type=span_type, params=params, dataset_record=dataset_record)
                 if asyncio.iscoroutinefunction(func)
                 else self._sync_log(func, name=name, span_type=span_type, params=params, dataset_record=dataset_record)
             )
+            return cast(Callable[P, R], wrapped)
 
         # If the decorator is called without arguments, return the decorator function itself.
         # This allows the decorator to be used with or without arguments.
         if func is None:
             return decorator
-        return decorator(func)
+        return cast(Callable[[Callable[P, R]], Callable[P, R]], decorator(func))
 
     def _async_log(
         self,
@@ -344,7 +369,7 @@ class SplunkAODecorator:
         """
 
         @wraps(func)
-        async def async_wrapper(*args, **kwargs) -> Any:
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             # Copy the span stack to isolate parallel async tasks
             # This prevents concurrent tasks from interfering with each other's span stacks
             current_stack = _get_or_init_list(_span_stack_context)
@@ -363,20 +388,22 @@ class SplunkAODecorator:
                 func_args=args,
                 func_kwargs=kwargs,
             )
+            if span_params is None:
+                return await func(*args, **kwargs)
 
-            logging_enabled = self._safe_prepare_call(span_type, span_params, dataset_record)
+            call_state = self._safe_prepare_call(span_type, span_params, dataset_record)
 
-            result = None
             try:
                 result = await func(*args, **kwargs)
-            except Exception:
+            except BaseException as exc:
                 _logger.error("Error while executing function in async_wrapper", exc_info=True)
+                if call_state is not None:
+                    self._finalize_call(span_type, span_params, None, call_state, error=exc)
                 raise
-            finally:
-                if logging_enabled:
-                    result = self._finalize_call(span_type, span_params, result)
 
-            return result
+            if call_state is None:
+                return result
+            return self._finalize_call(span_type, span_params, result, call_state)
 
         return cast(F, async_wrapper)
 
@@ -409,7 +436,7 @@ class SplunkAODecorator:
         """
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs) -> Any:
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             span_params = self._prepare_input(
                 func=func,
                 name=name or func.__name__,
@@ -419,21 +446,78 @@ class SplunkAODecorator:
                 func_args=args,
                 func_kwargs=kwargs,
             )
+            if span_params is None:
+                return func(*args, **kwargs)
 
-            logging_enabled = self._safe_prepare_call(span_type, span_params, dataset_record)
+            call_state = self._safe_prepare_call(span_type, span_params, dataset_record)
 
-            result = None
             try:
                 result = func(*args, **kwargs)
-            except Exception:
+            except BaseException as exc:
                 _logger.error("Error while executing function in sync_wrapper", exc_info=True)
+                if call_state is not None:
+                    self._finalize_call(span_type, span_params, None, call_state, error=exc)
                 raise
-            finally:
-                if logging_enabled:
-                    self._finalize_call(span_type, span_params, result)
-            return result
+
+            if call_state is None:
+                return result
+            return self._finalize_call(span_type, span_params, result, call_state)
 
         return cast(F, sync_wrapper)
+
+    def _sync_generator_log(
+        self,
+        func: F,
+        *,
+        name: str | None,
+        span_type: SPAN_TYPE | None,
+        params: dict[str, str | Callable] | None = None,
+        dataset_record: DatasetRecord | None = None,
+    ) -> F:
+        @wraps(func)
+        def generator_wrapper(*args: Any, **kwargs: Any) -> Generator:
+            span_params = self._prepare_input(
+                func=func,
+                name=name or func.__name__,
+                span_type=span_type,
+                params=params,
+                is_method=self._is_method(func),
+                func_args=args,
+                func_kwargs=kwargs,
+            )
+            generator = func(*args, **kwargs)
+            if span_params is None:
+                return generator
+            return self._wrap_sync_generator_result(span_type, span_params, generator, dataset_record=dataset_record)
+
+        return cast(F, generator_wrapper)
+
+    def _async_generator_log(
+        self,
+        func: F,
+        *,
+        name: str | None,
+        span_type: SPAN_TYPE | None,
+        params: dict[str, str | Callable] | None = None,
+        dataset_record: DatasetRecord | None = None,
+    ) -> F:
+        @wraps(func)
+        def async_generator_wrapper(*args: Any, **kwargs: Any) -> AsyncGenerator:
+            span_params = self._prepare_input(
+                func=func,
+                name=name or func.__name__,
+                span_type=span_type,
+                params=params,
+                is_method=self._is_method(func),
+                func_args=args,
+                func_kwargs=kwargs,
+            )
+            generator = func(*args, **kwargs)
+            if span_params is None:
+                return generator
+            return self._wrap_async_generator_result(span_type, span_params, generator, dataset_record=dataset_record)
+
+        return cast(F, async_generator_wrapper)
 
     @staticmethod
     def _is_method(func: Callable) -> bool:
@@ -610,9 +694,9 @@ class SplunkAODecorator:
 
     def _safe_prepare_call(
         self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], dataset_record: DatasetRecord | None
-    ) -> bool:
+    ) -> _CallState | None:
         """
-        Safely prepare telemetry, returning False if initialization fails.
+        Safely prepare telemetry, returning None if initialization fails.
 
         This method wraps _prepare_call with exception handling to ensure that
         telemetry initialization errors do not crash user code. Any exception
@@ -630,22 +714,21 @@ class SplunkAODecorator:
 
         Returns
         -------
-        bool
-            True if preparation succeeded, False if it failed
+        _CallState | None
+            Per-call ownership state when preparation succeeds.
         """
         try:
-            self._prepare_call(span_type, span_params, dataset_record)
-            return True
+            return self._prepare_call(span_type, span_params, dataset_record)
         except Exception as e:
             if isinstance(e, ConfigurationError):
-                _logger.error("Galileo logging initialization failed: %s", e, exc_info=True)
+                _logger.error("Splunk AO logging initialization failed: %s", e, exc_info=True)
             else:
-                _logger.warning("Galileo logging initialization failed, continuing without logging: %s", e)
-            return False
+                _logger.warning("Splunk AO logging initialization failed, continuing without logging: %s", e)
+            return None
 
     def _prepare_call(
         self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], dataset_record: DatasetRecord | None
-    ) -> None:
+    ) -> _CallState:
         """
         Prepare the call for logging by setting up trace and span contexts.
 
@@ -663,18 +746,23 @@ class SplunkAODecorator:
         name = span_params.get("name", "")
 
         existing_trace = _trace_context.get()
+        current_parent = client_instance.current_parent()
+        span_stack_depth = len(_get_or_init_list(_span_stack_context))
 
-        # Check if existing trace is still valid (not concluded/flushed)
-        if existing_trace and client_instance.current_parent() is None:
+        if existing_trace and current_parent is None:
             existing_trace = None
             _trace_context.set(None)
 
+        owns_trace = False
+        set_trace_context = False
         if not existing_trace:
-            # If the singleton logger has an active trace, use it
-            if client_instance.has_active_trace():
-                trace = client_instance.traces[-1]
+            if current_parent is not None:
+                trace = current_parent
+                while trace._parent is not None:
+                    trace = trace._parent
+                if not isinstance(trace, Trace):
+                    raise RuntimeError("Active Splunk AO operation does not have a trace root")
             else:
-                # If no trace is available, start a new one
                 trace = client_instance.start_trace(
                     input=input_,
                     name=name,
@@ -683,20 +771,40 @@ class SplunkAODecorator:
                     dataset_output=dataset_record.output if dataset_record else None,
                     dataset_metadata=dataset_record.metadata if dataset_record else None,
                 )
+                owns_trace = True
+            if not isinstance(trace, Trace):
+                raise RuntimeError("Unable to start a Splunk AO operation trace")
             _trace_context.set(trace)
+            set_trace_context = True
+        else:
+            trace = existing_trace
 
-        # Start a workflow or agent span here
-        # If the user hasn't specified a span type, create and add a workflow span
-        if not span_type or span_type in ["workflow", "agent"]:
-            created_at = span_params.get("created_at", _get_timestamp())
-            if span_type == "agent":
-                agent_type = span_params.get("agent_type")
-                span = client_instance.add_agent_span(
-                    input=input_, name=name, agent_type=agent_type, created_at=created_at
-                )
-            else:
-                span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)
-            _get_or_init_list(_span_stack_context).append(span)
+        call_state = _CallState(
+            logger=client_instance,
+            trace=trace,
+            owns_trace=owns_trace,
+            set_trace_context=set_trace_context,
+            span_stack_depth=span_stack_depth,
+        )
+        try:
+            if not span_type or span_type in ["workflow", "agent"]:
+                created_at = span_params.get("created_at", _get_timestamp())
+                if span_type == "agent":
+                    agent_type = span_params.get("agent_type")
+                    span = client_instance.add_agent_span(
+                        input=input_, name=name, agent_type=agent_type, created_at=created_at
+                    )
+                else:
+                    span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)
+                _get_or_init_list(_span_stack_context).append(span)
+        except Exception:
+            if owns_trace:
+                self._conclude_owned_trace(call_state, "", 500)
+            if set_trace_context and _trace_context.get() is trace:
+                _trace_context.set(None)
+            raise
+
+        return call_state
 
     def _get_input_from_func_args(
         self, *, is_method: bool = False, func_args: tuple = (), func_kwargs: dict | None = None
@@ -727,7 +835,13 @@ class SplunkAODecorator:
         return json.loads(json.dumps(raw_input, cls=EventSerializer))
 
     def _finalize_call(
-        self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], result: Any
+        self,
+        span_type: SPAN_TYPE | None,
+        span_params: dict[str, Any],
+        result: Any,
+        call_state: _CallState,
+        *,
+        error: BaseException | None = None,
     ) -> Generator | AsyncGenerator | Any:
         """
         Finalize the call logging by handling the result appropriately.
@@ -749,10 +863,66 @@ class SplunkAODecorator:
         The original result, possibly wrapped if it's a generator
         """
         if inspect.isgenerator(result):
-            return self._wrap_sync_generator_result(span_type, span_params, result)
+            return self._wrap_sync_generator_result(span_type, span_params, result, call_state=call_state)
         if inspect.isasyncgen(result):
-            return self._wrap_async_generator_result(span_type, span_params, result)
-        return self._handle_call_result(span_type, span_params, result)
+            return self._wrap_async_generator_result(span_type, span_params, result, call_state=call_state)
+        return self._complete_call(span_type, span_params, result, call_state, error=error)
+
+    def _complete_call(
+        self,
+        span_type: SPAN_TYPE | None,
+        span_params: dict[str, Any],
+        result: Any,
+        call_state: _CallState,
+        *,
+        error: BaseException | None = None,
+    ) -> Any:
+        final_params = span_params
+        if error is not None and span_params.get("status_code") is None:
+            final_params = {**span_params, "status_code": 500}
+
+        output = final_params.get("output")
+        if output is None:
+            output = result if result is not None else ""
+
+        try:
+            self._handle_call_result(span_type, final_params, result, logger=call_state.logger)
+        finally:
+            try:
+                if call_state.owns_trace:
+                    self._conclude_owned_trace(call_state, output, final_params.get("status_code"))
+            except Exception:
+                _logger.warning("Failed to conclude Splunk AO operation trace", exc_info=True)
+            finally:
+                stack = _get_or_init_list(_span_stack_context)
+                if len(stack) > call_state.span_stack_depth:
+                    _span_stack_context.set(stack[: call_state.span_stack_depth])
+                if call_state.set_trace_context and _trace_context.get() is call_state.trace:
+                    _trace_context.set(None)
+
+        return result
+
+    def _conclude_owned_trace(self, call_state: _CallState, output: Any, status_code: int | None) -> None:
+        current_parent = call_state.logger.current_parent()
+        root = current_parent
+        while root is not None and root._parent is not None:
+            root = root._parent
+
+        if root is not call_state.trace:
+            return
+
+        try:
+            trace_output = self._serialize_output(output, None)
+        except Exception:
+            trace_output = ""
+
+        duration_ns = None
+        if call_state.trace.created_at is not None:
+            duration_ns = convert_time_delta_to_ns(_get_timestamp() - call_state.trace.created_at)
+
+        call_state.logger.conclude(
+            output=trace_output, duration_ns=duration_ns, status_code=status_code, conclude_all=True
+        )
 
     def _serialize_output(self, output: Any, span_type: SPAN_TYPE | None) -> Any:
         """
@@ -788,7 +958,14 @@ class SplunkAODecorator:
         # Serialize and deserialize to ensure proper JSON serialization
         return json.loads(json.dumps(output, cls=EventSerializer))
 
-    def _handle_call_result(self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], result: Any) -> Any:
+    def _handle_call_result(
+        self,
+        span_type: SPAN_TYPE | None,
+        span_params: dict[str, Any],
+        result: Any,
+        *,
+        logger: SplunkAOLogger | None = None,
+    ) -> Any:
         """
         Handle the result of a function call for logging.
 
@@ -809,7 +986,7 @@ class SplunkAODecorator:
         The original result
         """
         # Initialize logger before try block
-        logger = self.get_logger_instance()
+        logger = logger or self.get_logger_instance()
 
         # Serialize output and redacted_output - set to None if serialization fails
         output = span_params.get("output")
@@ -875,7 +1052,6 @@ class SplunkAODecorator:
                             if status_code is not None:
                                 current_parent.status_code = status_code
 
-                            logger._update_trace_streaming(current_parent, is_complete=False)
             else:
                 # Non-concludable spans (llm, tool, retriever) are  added to the parent
                 span_methods = {"llm": "add_llm_span", "tool": "add_tool_span", "retriever": "add_retriever_span"}
@@ -908,7 +1084,13 @@ class SplunkAODecorator:
         return result
 
     def _wrap_sync_generator_result(
-        self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], generator: Generator
+        self,
+        span_type: SPAN_TYPE | None,
+        span_params: dict[str, Any],
+        generator: Generator,
+        *,
+        dataset_record: DatasetRecord | None = None,
+        call_state: _CallState | None = None,
     ) -> Generator:
         """
         Wrap a synchronous generator to log its results.
@@ -930,24 +1112,37 @@ class SplunkAODecorator:
         A wrapped generator that yields the same items as the original
         """
         items = []
+        state = call_state or self._safe_prepare_call(span_type, span_params, dataset_record)
+        error: BaseException | None = None
 
         try:
             for item in generator:
                 items.append(item)
 
                 yield item
-        except Exception as e:
-            _logger.error(f"Failed to wrap generator result: {e}", exc_info=True)
+        except GeneratorExit:
+            generator.close()
+            raise
+        except BaseException as exc:
+            error = exc
+            raise
         finally:
-            output = items
+            output: Any = items
 
             if all(isinstance(item, str) for item in items):
                 output = "".join(items)
 
-            self._handle_call_result(span_type, span_params, output)
+            if state is not None:
+                self._complete_call(span_type, span_params, output, state, error=error)
 
     async def _wrap_async_generator_result(
-        self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], generator: AsyncGenerator
+        self,
+        span_type: SPAN_TYPE | None,
+        span_params: dict[str, Any],
+        generator: AsyncGenerator,
+        *,
+        dataset_record: DatasetRecord | None = None,
+        call_state: _CallState | None = None,
     ) -> AsyncGenerator:
         """
         Wrap an asynchronous generator to log its results.
@@ -968,40 +1163,56 @@ class SplunkAODecorator:
         -------
         A wrapped async generator that yields the same items as the original
         """
+        current_stack = _get_or_init_list(_span_stack_context)
+        _span_stack_context.set(current_stack.copy())
+
         items = []
+        state = call_state or self._safe_prepare_call(span_type, span_params, dataset_record)
+        error: BaseException | None = None
 
         try:
             async for item in generator:
                 items.append(item)
 
                 yield item
-        except Exception as e:
-            _logger.error(f"Failed to wrap generator result: {e}", exc_info=True)
+        except GeneratorExit:
+            await generator.aclose()
+            raise
+        except BaseException as exc:
+            error = exc
+            raise
         finally:
-            output = items
+            output: Any = items
 
             if all(isinstance(item, str) for item in items):
                 output = "".join(items)
 
-            self._handle_call_result(span_type, span_params, output)
+            if state is not None:
+                self._complete_call(span_type, span_params, output, state, error=error)
 
     def get_logger_instance(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        project_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         ingestion_hook: Callable | None = None,
     ) -> SplunkAOLogger:
         """
-        Get the Galileo Logger instance for the current decorator context.
+        Get the Splunk AO Logger instance for the current decorator context.
 
         Parameters
         ----------
         project
             Optional project name to use
+        project_id
+            Optional project ID to use
         log_stream
             Optional log stream name to use
+        log_stream_id
+            Optional log stream ID to use
         experiment_id
             Optional experiment ID to use
         mode
@@ -1012,8 +1223,14 @@ class SplunkAODecorator:
         SplunkAOLogger instance configured with the specified project and log stream
         """
         kwargs = {
-            "project": project or _project_context.get(),
-            "log_stream": log_stream or _log_stream_context.get(),
+            "project": project if project is not None else (None if project_id is not None else _project_context.get()),
+            "project_id": project_id,
+            "agent_stream": (
+                agent_stream
+                if agent_stream is not None
+                else (None if agent_stream_id is not None else _agent_stream_context.get())
+            ),
+            "agent_stream_id": agent_stream_id,
             "experiment_id": experiment_id or _experiment_id_context.get(),
             "mode": _get_mode_or_default(mode) if mode is not None else _mode_context.get(),
         }
@@ -1039,7 +1256,7 @@ class SplunkAODecorator:
         """
         return _project_context.get()
 
-    def get_current_log_stream(self) -> str | None:
+    def get_current_agent_stream(self) -> str | None:
         """
         Retrieve the current log stream name from context.
 
@@ -1048,7 +1265,7 @@ class SplunkAODecorator:
         str | None
             The current log stream context
         """
-        return _log_stream_context.get()
+        return _agent_stream_context.get()
 
     def get_current_span_stack(self) -> list[WorkflowSpan]:
         """
@@ -1086,13 +1303,13 @@ class SplunkAODecorator:
     def flush(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         mode: str | None = None,
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Upload all captured traces under a project and log stream context to Galileo.
+        Upload all captured traces under a project and log stream context to Splunk AO.
 
         If no project or log stream is provided, then the currently initialized context is used.
 
@@ -1115,45 +1332,28 @@ class SplunkAODecorator:
         # "splunk_ao.decorator._logger") and then forwards to the user callback.
         def _on_flush_error(exc: Exception) -> None:
             if on_error is not None:
-                _logger.debug(f"Galileo flush failed, continuing without flushing: {exc}")
+                _logger.debug(f"Splunk AO flush failed, continuing without flushing: {exc}")
                 try:
                     on_error(exc)
                 except Exception as cb_exc:
-                    _logger.warning(f"Galileo flush on_error callback raised: {cb_exc}")
+                    _logger.warning(f"Splunk AO flush on_error callback raised: {cb_exc}")
             else:
-                _logger.warning(f"Galileo flush failed, continuing without flushing: {exc}")
+                _logger.warning(f"Splunk AO flush failed, continuing without flushing: {exc}")
 
         try:
             self.get_logger_instance(
-                project=project, log_stream=log_stream, experiment_id=experiment_id, mode=mode
+                project=project, agent_stream=agent_stream, experiment_id=experiment_id, mode=mode
             ).flush(on_error=_on_flush_error)
         except Exception as e:
             _on_flush_error(e)
 
-        # Reset trace state if we're flushing the current context
-        current_mode = _get_mode_or_default(mode) if mode is not None else _mode_context.get()
-        resolved_project = project if project is not None else _project_context.get()
-        resolved_log_stream = log_stream if log_stream is not None else _log_stream_context.get()
-        resolved_experiment_id = experiment_id if experiment_id is not None else _experiment_id_context.get()
-
-        if (
-            current_mode == _mode_context.get()
-            and resolved_project == _project_context.get()
-            and resolved_log_stream == _log_stream_context.get()
-            and resolved_experiment_id == _experiment_id_context.get()
-        ):
-            _span_stack_context.set([])
-            _trace_context.set(None)
-
     def flush_all(self) -> None:
         """
-        Upload all captured traces under all contexts to Galileo.
+        Upload all captured traces under all contexts to Splunk AO.
 
         This method flushes all traces regardless of project or log stream.
         """
         SplunkAOLoggerSingleton().flush_all()
-        _span_stack_context.set([])
-        _trace_context.set(None)
 
     def reset(self) -> None:
         """
@@ -1163,12 +1363,12 @@ class SplunkAODecorator:
         """
         SplunkAOLoggerSingleton().reset(
             project=_project_context.get(),
-            log_stream=_log_stream_context.get(),
+            agent_stream=_agent_stream_context.get(),
             experiment_id=_experiment_id_context.get(),
         )
         # Reset current context values
         _project_context.set(None)
-        _log_stream_context.set(None)
+        _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
         _span_stack_context.set([])
@@ -1180,7 +1380,7 @@ class SplunkAODecorator:
 
         # Clear all stacks
         _get_or_init_list(_project_stack).clear()
-        _get_or_init_list(_log_stream_stack).clear()
+        _get_or_init_list(_agent_stream_stack).clear()
         _get_or_init_list(_trace_stack).clear()
         _get_or_init_list(_experiment_id_stack).clear()
         _get_or_init_list(_mode_stack).clear()
@@ -1195,7 +1395,7 @@ class SplunkAODecorator:
     def init(
         self,
         project: str | None = None,
-        log_stream: str | None = None,
+        agent_stream: str | None = None,
         experiment_id: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
         mode: str | None = None,
@@ -1220,16 +1420,20 @@ class SplunkAODecorator:
         mode
             The logger mode.
         """
-        SplunkAOLoggerSingleton().reset(project=project, log_stream=log_stream, experiment_id=experiment_id)
+        SplunkAOLoggerSingleton().reset(project=project, agent_stream=agent_stream, experiment_id=experiment_id)
         logger_instance = SplunkAOLoggerSingleton().get(
-            project=project, log_stream=log_stream, experiment_id=experiment_id, local_metrics=local_metrics, mode=mode
+            project=project,
+            agent_stream=agent_stream,
+            experiment_id=experiment_id,
+            local_metrics=local_metrics,
+            mode=mode,
         )
         # Reset the logger's parent tracking to ensure clean state
         # Each logger has its own ContextVar, so this resets only this instance
         logger_instance.reset_parent_tracking()
 
         _project_context.set(project)
-        _log_stream_context.set(log_stream)
+        _agent_stream_context.set(agent_stream)
         _experiment_id_context.set(experiment_id)
         _mode_context.set(_get_mode_or_default(mode))
         _span_stack_context.set([])

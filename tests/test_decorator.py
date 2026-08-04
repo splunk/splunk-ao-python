@@ -15,7 +15,7 @@ from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_proje
 
 
 @pytest.fixture
-def reset_context():
+def reset_context(legacy_logger_capture):
     splunk_ao_context.reset()
     yield
     splunk_ao_context.reset()
@@ -31,7 +31,7 @@ def test_decorator_context_reset(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -42,16 +42,16 @@ def test_decorator_context_reset(
     llm_call(query="input")
 
     assert len(splunk_ao_context.get_logger_instance().traces) == 1
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
     assert splunk_ao_context.get_current_project() == "project-X"
-    assert splunk_ao_context.get_current_log_stream() == "log-stream-X"
+    assert splunk_ao_context.get_current_agent_stream() == "log-stream-X"
 
     splunk_ao_context.reset()
 
     assert len(splunk_ao_context.get_logger_instance().traces) == 0
     assert splunk_ao_context.get_current_trace() is None
     assert splunk_ao_context.get_current_project() is None
-    assert splunk_ao_context.get_current_log_stream() is None
+    assert splunk_ao_context.get_current_agent_stream() is None
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -64,15 +64,15 @@ def test_decorator_context_init(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     assert splunk_ao_context.get_current_project() == "project-X"
-    assert splunk_ao_context.get_current_log_stream() == "log-stream-X"
+    assert splunk_ao_context.get_current_agent_stream() == "log-stream-X"
 
     splunk_ao_context.reset()
 
     assert splunk_ao_context.get_current_project() is None
-    assert splunk_ao_context.get_current_log_stream() is None
+    assert splunk_ao_context.get_current_agent_stream() is None
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -93,7 +93,7 @@ def test_decorator_context_flush(
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     splunk_ao_context.flush()
 
@@ -119,7 +119,7 @@ def test_decorator_context_flush_specific_project_and_log_stream(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -129,26 +129,26 @@ def test_decorator_context_flush_specific_project_and_log_stream(
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
-    splunk_ao_context.init(project="project-Y", log_stream="log-stream-Y")
+    splunk_ao_context.init(project="project-Y", agent_stream="log-stream-Y")
 
     assert splunk_ao_context.get_current_trace() is None
 
     llm_call(query="input")
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
-    splunk_ao_context.flush(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X")
 
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
 
     assert len(payload.traces) == 1
     assert len(payload.traces[0].spans) == 1
 
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
-    splunk_ao_context.flush(project="project-Y", log_stream="log-stream-Y")
+    splunk_ao_context.flush(project="project-Y", agent_stream="log-stream-Y")
 
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
 
@@ -172,33 +172,33 @@ def test_decorator_context_flush_all(
     def llm_call(query: str) -> str:
         return "response"
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     llm_call(query="input_X")
 
-    trace_X = splunk_ao_context.get_current_trace()
+    logger_X = splunk_ao_context.get_logger_instance(project="project-X", agent_stream="log-stream-X")
+    trace_X = logger_X.traces[-1]
     assert trace_X.input == '{"query": "input_X"}'
 
-    logger_X = splunk_ao_context.get_logger_instance(project="project-X", log_stream="log-stream-X")
     assert len(logger_X.traces) == 1
 
-    splunk_ao_context.init(project="project-Y", log_stream="log-stream-Y")
+    splunk_ao_context.init(project="project-Y", agent_stream="log-stream-Y")
 
     llm_call(query="input_Y")
 
-    trace_Y = splunk_ao_context.get_current_trace()
+    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", agent_stream="log-stream-Y")
+    trace_Y = logger_Y.traces[-1]
     assert trace_Y.input == '{"query": "input_Y"}'
 
-    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", log_stream="log-stream-Y")
     assert len(logger_Y.traces) == 1
 
     # Flush both loggers
     splunk_ao_context.flush_all()
 
-    logger_X = splunk_ao_context.get_logger_instance(project="project-X", log_stream="log-stream-X")
+    logger_X = splunk_ao_context.get_logger_instance(project="project-X", agent_stream="log-stream-X")
     assert len(logger_X.traces) == 0
 
-    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", log_stream="log-stream-Y")
+    logger_Y = splunk_ao_context.get_logger_instance(project="project-Y", agent_stream="log-stream-Y")
     assert len(logger_Y.traces) == 0
 
     assert splunk_ao_context.get_current_trace() is None
@@ -1152,7 +1152,7 @@ def test_mode_context_init_default(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     assert splunk_ao_context.get_current_mode() == "batch"
 
@@ -1168,7 +1168,7 @@ def test_mode_context_init_explicit(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="distributed")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="distributed")
 
     assert splunk_ao_context.get_current_mode() == "distributed"
 
@@ -1184,7 +1184,7 @@ def test_mode_context_call_default(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    with splunk_ao_context(project="project-X", log_stream="log-stream-X"):
+    with splunk_ao_context(project="project-X", agent_stream="log-stream-X"):
         assert splunk_ao_context.get_current_mode() == "batch"
 
 
@@ -1199,7 +1199,7 @@ def test_mode_context_call_explicit(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    with splunk_ao_context(project="project-X", log_stream="log-stream-X", mode="distributed"):
+    with splunk_ao_context(project="project-X", agent_stream="log-stream-X", mode="distributed"):
         assert splunk_ao_context.get_current_mode() == "distributed"
 
 
@@ -1215,11 +1215,11 @@ def test_mode_context_nested_push_pop(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Set initial mode
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
     assert splunk_ao_context.get_current_mode() == "batch"
 
     # Enter nested context with different mode
-    with splunk_ao_context(project="project-Y", log_stream="log-stream-Y", mode="distributed"):
+    with splunk_ao_context(project="project-Y", agent_stream="log-stream-Y", mode="distributed"):
         assert splunk_ao_context.get_current_mode() == "distributed"
 
     # After exiting, mode should be restored
@@ -1238,15 +1238,15 @@ def test_mode_context_multiple_nested_levels(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Set initial mode
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
     assert splunk_ao_context.get_current_mode() == "batch"
 
     # First nested level
-    with splunk_ao_context(project="project-Y", log_stream="log-stream-Y", mode="distributed"):
+    with splunk_ao_context(project="project-Y", agent_stream="log-stream-Y", mode="distributed"):
         assert splunk_ao_context.get_current_mode() == "distributed"
 
         # Second nested level - defaults back to batch
-        with splunk_ao_context(project="project-Z", log_stream="log-stream-Z"):
+        with splunk_ao_context(project="project-Z", agent_stream="log-stream-Z"):
             assert splunk_ao_context.get_current_mode() == "batch"
 
         # Back to first nested level
@@ -1267,7 +1267,7 @@ def test_mode_context_reset(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="distributed")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="distributed")
     assert splunk_ao_context.get_current_mode() == "distributed"
 
     splunk_ao_context.reset()
@@ -1286,17 +1286,17 @@ def test_mode_flush_with_explicit_mode(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Initialize with batch mode
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
         return "response"
 
     llm_call(query="input")
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
 
     # Flush with explicit mode
-    splunk_ao_context.flush(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
     assert len(payload.traces) == 1
@@ -1308,16 +1308,16 @@ def test_mode_flush_with_explicit_mode(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_mode_flush_different_mode_no_reset(
+def test_mode_flush_different_mode_preserves_completed_operation_state(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
-    """Test that flush with different mode doesn't reset current trace context."""
+    """Test that flushing another logger does not create or restore operation state."""
     setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Initialize with batch mode
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -1325,14 +1325,13 @@ def test_mode_flush_different_mode_no_reset(
 
     llm_call(query="input")
     current_trace = splunk_ao_context.get_current_trace()
-    assert current_trace is not None
+    assert current_trace is None
 
     # Flush with a different mode shouldn't reset the current trace context
     # Since the logger instances are different
-    splunk_ao_context.flush(project="project-X", log_stream="log-stream-X", mode="distributed")
+    splunk_ao_context.flush(project="project-X", agent_stream="log-stream-X", mode="distributed")
 
-    # Current trace should still exist since we didn't flush the batch mode instance
-    assert splunk_ao_context.get_current_trace() is not None
+    # The completed operation remains concluded.
     assert splunk_ao_context.get_current_trace() == current_trace
 
 
@@ -1349,7 +1348,7 @@ def test_mode_from_environment_variable(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # When mode is not specified, it should use the environment variable
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     assert splunk_ao_context.get_current_mode() == "distributed"
 
@@ -1367,7 +1366,7 @@ def test_mode_explicit_overrides_environment(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Explicit mode should override environment variable
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     assert splunk_ao_context.get_current_mode() == "batch"
 
@@ -1384,12 +1383,12 @@ def test_get_logger_instance_with_explicit_mode(
     setup_mock_logstreams_client(mock_logstreams_client)
 
     # Initialize with batch mode
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     # Get logger instance with different mode
-    logger_batch = splunk_ao_context.get_logger_instance(project="project-X", log_stream="log-stream-X", mode="batch")
+    logger_batch = splunk_ao_context.get_logger_instance(project="project-X", agent_stream="log-stream-X", mode="batch")
     logger_distributed = splunk_ao_context.get_logger_instance(
-        project="project-X", log_stream="log-stream-X", mode="distributed"
+        project="project-X", agent_stream="log-stream-X", mode="distributed"
     )
 
     # They should be different instances
@@ -1401,17 +1400,17 @@ def test_get_logger_instance_with_explicit_mode(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
-def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
+def test_multiple_workflow_calls_create_independent_traces(
     mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
 ) -> None:
     """
-    Test that multiple workflow-level function calls are added as spans to a single trace in batch mode.
+    Test that each top-level decorated operation owns an independent trace.
     """
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X", mode="batch")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X", mode="batch")
 
     @log(span_type="workflow")
     def process_query(query: str) -> str:
@@ -1427,26 +1426,23 @@ def test_multiple_workflow_calls_create_one_trace_with_multiple_spans(
     assert result2 == "Processed: query 2"
     assert result3 == "Processed: query 3"
 
-    # Before flush, verify only 1 trace was created with 3 workflow spans
+    # Before flush, verify each call produced one concluded trace.
     logger = splunk_ao_context.get_logger_instance()
-    assert len(logger.traces) == 1, f"Expected 1 trace, got {len(logger.traces)}"
-
-    # Verify the single trace has 3 workflow spans
-    trace = logger.traces[0]
-    assert len(trace.spans) == 3, f"Expected 3 spans, got {len(trace.spans)}"
-
-    # Verify each span has the correct input
-    assert trace.spans[0].input == '{"query": "query 1"}'
-    assert trace.spans[1].input == '{"query": "query 2"}'
-    assert trace.spans[2].input == '{"query": "query 3"}'
+    assert len(logger.traces) == 3
+    assert all(len(trace.spans) == 1 for trace in logger.traces)
+    assert [trace.spans[0].input for trace in logger.traces] == [
+        '{"query": "query 1"}',
+        '{"query": "query 2"}',
+        '{"query": "query 3"}',
+    ]
 
     # Flush the trace
     splunk_ao_context.flush()
 
-    # Verify ingest_traces was called with 1 trace containing 3 spans
+    # Verify all three operation traces are uploaded.
     payload = mock_traces_client_instance.ingest_traces.call_args[0][0]
-    assert len(payload.traces) == 1
-    assert len(payload.traces[0].spans) == 3
+    assert len(payload.traces) == 3
+    assert all(len(trace.spans) == 1 for trace in payload.traces)
 
     # After flush, trace context should be cleared
     assert splunk_ao_context.get_current_trace() is None
@@ -1470,7 +1466,7 @@ def test_session_id_context_manager(
     def foo() -> str:
         return "response"
 
-    splunk_ao_context.init(project="test-project", log_stream="test-stream")
+    splunk_ao_context.init(project="test-project", agent_stream="test-stream")
     with splunk_ao_context(session_id=test_session_id):
         assert splunk_ao_context.get_logger_instance().session_id == test_session_id
         foo()
@@ -1496,10 +1492,10 @@ def test_session_id_nested_context_stacking(
     # No session initially
     assert splunk_ao_context.get_logger_instance().session_id is None
 
-    with splunk_ao_context(project="p1", log_stream="s1", session_id=session_1):
+    with splunk_ao_context(project="p1", agent_stream="s1", session_id=session_1):
         assert splunk_ao_context.get_logger_instance().session_id == session_1
 
-        with splunk_ao_context(project="p2", log_stream="s2", session_id=session_2):
+        with splunk_ao_context(project="p2", agent_stream="s2", session_id=session_2):
             assert splunk_ao_context.get_logger_instance().session_id == session_2
 
         # Restored after nested context exits
@@ -1520,7 +1516,7 @@ def test_session_id_cleared_on_reset_and_init(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
     splunk_ao_context.start_session(name="test-session")
     assert splunk_ao_context.get_logger_instance().session_id == "6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9c"
 
@@ -1529,9 +1525,9 @@ def test_session_id_cleared_on_reset_and_init(
     assert splunk_ao_context.get_logger_instance().session_id is None
 
     # Re-init also clears session
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
     splunk_ao_context.start_session(name="test-session")
-    splunk_ao_context.init(project="project-Y", log_stream="log-stream-Y")
+    splunk_ao_context.init(project="project-Y", agent_stream="log-stream-Y")
     assert splunk_ao_context.get_logger_instance().session_id is None
 
 
@@ -1548,7 +1544,7 @@ def test_start_session_overrides_context_session(
 
     context_session = "6d4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9d"
 
-    with splunk_ao_context(project="test-project", log_stream="test-stream", session_id=context_session):
+    with splunk_ao_context(project="test-project", agent_stream="test-stream", session_id=context_session):
         assert splunk_ao_context.get_logger_instance().session_id == context_session
 
         # start_session overrides context session
@@ -1572,7 +1568,7 @@ def test_flush_on_error_called_when_flush_raises(
 
     on_error = Mock()
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -1600,7 +1596,7 @@ def test_flush_warns_when_flush_raises_without_on_error(
     setup_mock_logstreams_client(mock_logstreams_client)
     mock_traces_client_instance.ingest_traces.side_effect = RuntimeError("network error")
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -1631,7 +1627,7 @@ def test_flush_on_error_callback_raises_is_swallowed(
     def bad_callback(exc: Exception) -> None:
         raise ValueError("callback failed")
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:
@@ -1658,7 +1654,7 @@ def test_flush_on_error_logs_at_debug_not_warning(
     setup_mock_logstreams_client(mock_logstreams_client)
     mock_traces_client_instance.ingest_traces.side_effect = RuntimeError("network error")
 
-    splunk_ao_context.init(project="project-X", log_stream="log-stream-X")
+    splunk_ao_context.init(project="project-X", agent_stream="log-stream-X")
 
     @log(span_type="llm")
     def llm_call(query: str) -> str:

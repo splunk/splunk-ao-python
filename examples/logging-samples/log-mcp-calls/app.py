@@ -2,7 +2,7 @@
 A sample application that shows how to log MCP server calls as tool spans.
 
 This code is described in the Log MCP Server Tool Calls how-to guide in the Splunk AO documentation:
-https://docs.galileo.ai/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls
+https://agent-observability-docs.splunk.com/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls
 """
 
 import asyncio
@@ -31,7 +31,7 @@ def call_llm(messages, use_tools: bool = True) -> Message:
     Call the LLM with the provided query and return
     the response text
     """
-    galileo_logger = splunk_ao_context.get_logger_instance()
+    splunk_ao_logger = splunk_ao_context.get_logger_instance()
 
     # Capture the current time in nanoseconds for logging
     start_time_ns = datetime.now().timestamp() * 1_000_000_000
@@ -46,7 +46,7 @@ def call_llm(messages, use_tools: bool = True) -> Message:
 
     # Log the LLM call
     for content in [c for c in response.content if c.type == "text"]:
-        galileo_logger.add_llm_span(
+        splunk_ao_logger.add_llm_span(
             input=messages,
             output=content.text,
             model=os.environ["ANTHROPIC_MODEL"],
@@ -65,8 +65,8 @@ async def process_query(query: str) -> str:
     start_time_ns = datetime.now().timestamp() * 1_000_000_000
 
     # Start a Splunk AO Logger trace
-    galileo_logger = splunk_ao_context.get_logger_instance()
-    galileo_logger.start_trace(
+    splunk_ao_logger = splunk_ao_context.get_logger_instance()
+    splunk_ao_logger.start_trace(
         input=query,
         name="MCP Chatbot Query",
     )
@@ -92,7 +92,7 @@ async def process_query(query: str) -> str:
             result = await mcp_client.call_tool(content.name, content.input)
 
             # Log the tool call
-            galileo_logger.add_tool_span(
+            splunk_ao_logger.add_tool_span(
                 input=query,
                 output=result.content[0].text,
                 name=content.name,
@@ -118,11 +118,11 @@ async def process_query(query: str) -> str:
             final_text.append(response.content[0].text)
 
     # Conclude and flush the trace
-    galileo_logger.conclude(
+    splunk_ao_logger.conclude(
         output="\n".join(final_text),
         duration_ns=int((datetime.now().timestamp() * 1_000_000_000) - start_time_ns),
     )
-    galileo_logger.flush()
+    splunk_ao_logger.flush()
 
     # Return the final response text
     return "\n".join(final_text)

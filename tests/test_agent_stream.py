@@ -22,18 +22,18 @@ class TestLogStreamInitialization:
     @pytest.mark.parametrize("project_kwarg", [{"project_id": "test-project-id"}, {"project_name": "Test Project"}])
     def test_init_with_name_and_project(self, project_kwarg: dict, reset_configuration: None) -> None:
         """Test initializing a log stream with name and project creates a local-only instance."""
-        log_stream = AgentStream(name="Test Stream", **project_kwarg)
+        agent_stream = AgentStream(name="Test Stream", **project_kwarg)
 
-        assert log_stream.name == "Test Stream"
-        assert log_stream.id is None
-        assert log_stream.sync_state == SyncState.LOCAL_ONLY
+        assert agent_stream.name == "Test Stream"
+        assert agent_stream.id is None
+        assert agent_stream.sync_state == SyncState.LOCAL_ONLY
 
         if "project_id" in project_kwarg:
-            assert log_stream.project_id == project_kwarg["project_id"]
-            assert log_stream.project_name is None
+            assert agent_stream.project_id == project_kwarg["project_id"]
+            assert agent_stream.project_name is None
         else:
-            assert log_stream.project_name == project_kwarg["project_name"]
-            assert log_stream.project_id is None
+            assert agent_stream.project_name == project_kwarg["project_name"]
+            assert agent_stream.project_id is None
 
     def test_init_without_name_raises_validation_error(self, reset_configuration: None) -> None:
         """Test initializing a log stream without a name raises ValidationError."""
@@ -44,22 +44,22 @@ class TestLogStreamInitialization:
         """Test initializing a log stream without project info succeeds (validated at create time)."""
         # Given: no project_id or project_name provided
         # When: creating a log stream
-        log_stream = AgentStream(name="Test Stream")
+        agent_stream = AgentStream(name="Test Stream")
 
         # Then: log stream is created with LOCAL_ONLY state, project info is None
-        assert log_stream.project_id is None
-        assert log_stream.project_name is None
-        assert log_stream.sync_state == SyncState.LOCAL_ONLY
+        assert agent_stream.project_id is None
+        assert agent_stream.project_name is None
+        assert agent_stream.sync_state == SyncState.LOCAL_ONLY
 
     def test_init_with_both_project_id_and_name_succeeds(self, reset_configuration: None) -> None:
         """Test initializing a log stream with both project_id and project_name succeeds."""
         # Given: both project_id and project_name provided
         # When: creating a log stream
-        log_stream = AgentStream(name="Test Stream", project_id="test-id", project_name="Test Project")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-id", project_name="Test Project")
 
         # Then: log stream is created with both values stored
-        assert log_stream.project_id == "test-id"
-        assert log_stream.project_name == "Test Project"
+        assert agent_stream.project_id == "test-id"
+        assert agent_stream.project_name == "Test Project"
 
 
 class TestLogStreamCreate:
@@ -88,12 +88,12 @@ class TestLogStreamCreate:
         mock_service.create.return_value = mock_logstream
 
         # When: creating log stream with project_id
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id").create()
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id").create()
 
         # Then: log stream is created with resolved project_id
         mock_service.create.assert_called_once_with(name="Test Stream", project_id="test-project-id")
-        assert log_stream.id == mock_logstream.id
-        assert log_stream.is_synced()
+        assert agent_stream.id == mock_logstream.id
+        assert agent_stream.is_synced()
 
     @patch("splunk_ao.agent_stream.AgentStreams")
     @patch("splunk_ao.shared.project_resolver.Projects")
@@ -118,15 +118,15 @@ class TestLogStreamCreate:
         mock_service.create.return_value = mock_logstream
 
         # When: creating log stream with project_name
-        log_stream = AgentStream(name="Test Stream", project_name="Test Project").create()
+        agent_stream = AgentStream(name="Test Stream", project_name="Test Project").create()
 
         # Then: log stream is created with resolved project_id
         mock_service.create.assert_called_once_with(
             name="Test Stream", project_id="resolved-project-id"
         )
-        assert log_stream.id == mock_logstream.id
-        assert log_stream.is_synced()
-        assert log_stream.project_name == "Test Project"
+        assert agent_stream.id == mock_logstream.id
+        assert agent_stream.is_synced()
+        assert agent_stream.project_name == "Test Project"
 
     @patch("splunk_ao.agent_stream.AgentStreams")
     @patch("splunk_ao.shared.project_resolver.Projects")
@@ -147,12 +147,12 @@ class TestLogStreamCreate:
         mock_service.create.side_effect = Exception("API Error")
 
         # When/Then: create() raises error and sets FAILED_SYNC state
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(Exception, match="API Error"):
-            log_stream.create()
+            agent_stream.create()
 
-        assert log_stream.sync_state == SyncState.FAILED_SYNC
+        assert agent_stream.sync_state == SyncState.FAILED_SYNC
 
     @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_names_project_in_error_when_project_name_not_found(
@@ -165,11 +165,11 @@ class TestLogStreamCreate:
         mock_projects_service.get_with_env_fallbacks.return_value = None
 
         # When: creating a log stream with a project_name that doesn't exist on the server
-        log_stream = AgentStream(name="Test Stream", project_name="my-nonexistent-project")
+        agent_stream = AgentStream(name="Test Stream", project_name="my-nonexistent-project")
 
         # Then: error names the project the user specified, not generic guidance
         with pytest.raises(NotFoundError, match=r'Project "my-nonexistent-project" not found'):
-            log_stream.create()
+            agent_stream.create()
 
     @patch("splunk_ao.shared.project_resolver.Projects")
     def test_create_without_project_info_raises_error(
@@ -182,15 +182,15 @@ class TestLogStreamCreate:
         mock_projects_service.get_with_env_fallbacks.return_value = None
 
         # Manually create instance to bypass __init__ validation
-        log_stream = AgentStream._create_empty()
-        log_stream.name = "Test Stream"
-        log_stream.project_id = None
-        log_stream.project_name = None
-        log_stream._set_state(SyncState.LOCAL_ONLY)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = None
+        agent_stream.project_name = None
+        agent_stream._set_state(SyncState.LOCAL_ONLY)
 
         # When/Then: Create() raises NotFoundError with guidance to provide a project identifier
         with pytest.raises(NotFoundError, match="No project specified"):
-            log_stream.create()
+            agent_stream.create()
 
 
 class TestLogStreamGet:
@@ -219,12 +219,12 @@ class TestLogStreamGet:
         mock_service.get.return_value = mock_logstream
 
         # When: calling get with project_id
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
 
         # Then: log stream is returned and project_name is set from resolved project
-        assert log_stream is not None
-        assert log_stream.is_synced()
-        assert log_stream.project_name == "Test Project"
+        assert agent_stream is not None
+        assert agent_stream.is_synced()
+        assert agent_stream.project_name == "Test Project"
         mock_service.get.assert_called_once_with(name="Test Stream", project_id="test-project-id")
 
     @patch("splunk_ao.agent_stream.AgentStreams")
@@ -250,12 +250,12 @@ class TestLogStreamGet:
         mock_service.get.return_value = mock_logstream
 
         # When: calling get with project_name
-        log_stream = AgentStream.get(name="Test Stream", project_name="Test Project")
+        agent_stream = AgentStream.get(name="Test Stream", project_name="Test Project")
 
         # Then: log stream is returned using resolved project_id
-        assert log_stream is not None
-        assert log_stream.is_synced()
-        assert log_stream.project_name == "Test Project"
+        assert agent_stream is not None
+        assert agent_stream.is_synced()
+        assert agent_stream.project_name == "Test Project"
         mock_service.get.assert_called_once_with(name="Test Stream", project_id="resolved-project-id")
 
     @patch("splunk_ao.agent_stream.AgentStreams")
@@ -277,10 +277,10 @@ class TestLogStreamGet:
         mock_service.get.return_value = None
 
         # When: calling get
-        log_stream = AgentStream.get(name="Nonexistent Stream", project_id="test-project-id")
+        agent_stream = AgentStream.get(name="Nonexistent Stream", project_id="test-project-id")
 
         # Then: None is returned
-        assert log_stream is None
+        assert agent_stream is None
 
     @patch("splunk_ao.shared.project_resolver.Projects")
     def test_get_raises_error_without_project_info_and_no_env_fallback(
@@ -349,11 +349,11 @@ class TestLogStreamGet:
         mock_service.get.return_value = mock_logstream
 
         # When: calling get without project params
-        log_stream = AgentStream.get(name="Test Stream")
+        agent_stream = AgentStream.get(name="Test Stream")
 
         # Then: project is resolved from env fallbacks
         mock_projects_service.get_with_env_fallbacks.assert_called_once()
-        assert log_stream.project_name == "Env Project"
+        assert agent_stream.project_name == "Env Project"
 
 
 class TestLogStreamList:
@@ -593,21 +593,21 @@ class TestLogStreamRefresh:
 
         mock_service.get.side_effect = [initial_stream, updated_stream]
 
-        log_stream = AgentStream.get(name="Old Name", project_id="test-project-id")
-        assert log_stream.name == "Old Name"
+        agent_stream = AgentStream.get(name="Old Name", project_id="test-project-id")
+        assert agent_stream.name == "Old Name"
 
-        log_stream.refresh()
+        agent_stream.refresh()
 
-        assert log_stream.name == "New Name"
-        assert log_stream.additional_properties == {"new_key": "new_value"}
-        assert log_stream.is_synced()
+        assert agent_stream.name == "New Name"
+        assert agent_stream.additional_properties == {"new_key": "new_value"}
+        assert agent_stream.is_synced()
 
     def test_refresh_raises_error_for_local_only(self, reset_configuration: None) -> None:
         """Test refresh() raises ValueError for local-only log stream."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(ValueError, match="Log stream ID is not set"):
-            log_stream.refresh()
+            agent_stream.refresh()
 
     @patch("splunk_ao.shared.project_resolver.Projects")
     @patch("splunk_ao.agent_stream.AgentStreams")
@@ -625,12 +625,12 @@ class TestLogStreamRefresh:
         mock_logstreams_class.return_value = mock_service
         mock_service.get.side_effect = [mock_logstream, None]
 
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(ValueError, match="no longer exists"):
-            log_stream.refresh()
+            agent_stream.refresh()
 
-        assert log_stream.sync_state == SyncState.FAILED_SYNC
+        assert agent_stream.sync_state == SyncState.FAILED_SYNC
 
     @patch("splunk_ao.agent_stream.AgentStreams")
     def test_refresh_without_project_id_raises_error(
@@ -638,14 +638,14 @@ class TestLogStreamRefresh:
     ) -> None:
         """Test refresh() raises ValueError when project_id is not set."""
         # Manually create instance with id but no project_id
-        log_stream = AgentStream._create_empty()
-        log_stream.id = str(uuid4())
-        log_stream.name = "Test Stream"
-        log_stream.project_id = None
-        log_stream._set_state(SyncState.SYNCED)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.id = str(uuid4())
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = None
+        agent_stream._set_state(SyncState.SYNCED)
 
         with pytest.raises(ValueError, match="Project ID is not set"):
-            log_stream.refresh()
+            agent_stream.refresh()
 
 
 class TestLogStreamQuery:
@@ -688,19 +688,19 @@ class TestLogStreamQuery:
         mock_response = MagicMock()
         mock_search.query.return_value = mock_response
 
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
 
         # Call the appropriate method
         if method_name == "query":
-            result = log_stream.query(record_type=record_type, limit=limit)
+            result = agent_stream.query(record_type=record_type, limit=limit)
         else:
-            result = getattr(log_stream, method_name)(limit=limit)
+            result = getattr(agent_stream, method_name)(limit=limit)
 
         # Verify Search.query was called with correct parameters
         mock_search.query.assert_called_once_with(
             project_id=mock_logstream.project_id,
             record_type=record_type,
-            log_stream_id=mock_logstream.id,
+            agent_stream_id=mock_logstream.id,
             filters=None,
             sort=None,
             limit=limit,
@@ -712,10 +712,10 @@ class TestLogStreamQuery:
 
     def test_query_raises_error_for_local_only(self, reset_configuration: None) -> None:
         """Test query() raises ValueError for local-only log stream."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(ValueError, match="Log stream ID is not set"):
-            log_stream.query(record_type=RecordType.SPAN)
+            agent_stream.query(record_type=RecordType.SPAN)
 
     @patch("splunk_ao.agent_stream.AgentStreams")
     def test_query_raises_error_without_project_id(
@@ -723,14 +723,14 @@ class TestLogStreamQuery:
     ) -> None:
         """Test query() raises ValueError when project_id is not set."""
         # Manually create instance with id but no project_id
-        log_stream = AgentStream._create_empty()
-        log_stream.id = str(uuid4())
-        log_stream.name = "Test Stream"
-        log_stream.project_id = None
-        log_stream._set_state(SyncState.SYNCED)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.id = str(uuid4())
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = None
+        agent_stream._set_state(SyncState.SYNCED)
 
         with pytest.raises(ValueError, match="Project ID is not set"):
-            log_stream.query(record_type=RecordType.SPAN)
+            agent_stream.query(record_type=RecordType.SPAN)
 
 
 class TestLogStreamExportRecords:
@@ -759,8 +759,8 @@ class TestLogStreamExportRecords:
         mock_iterator = iter([{"data": "test"}])
         mock_export_client.records.return_value = mock_iterator
 
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
-        result = log_stream.export_records()
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        result = agent_stream.export_records()
 
         # Verify ExportClient.records was called with correct parameters
         mock_export_client.records.assert_called_once_with(
@@ -769,7 +769,7 @@ class TestLogStreamExportRecords:
             filters=None,
             sort=LogRecordsSortClause(column_id="created_at", ascending=False),
             export_format=LLMExportFormat.JSONL,
-            log_stream_id=mock_logstream.id,
+            agent_stream_id=mock_logstream.id,
             column_ids=None,
             redact=True,
         )
@@ -798,9 +798,9 @@ class TestLogStreamExportRecords:
         mock_iterator = iter([{"data": "test"}])
         mock_export_client.records.return_value = mock_iterator
 
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
         custom_sort = LogRecordsSortClause(column_id="updated_at", ascending=True)
-        log_stream.export_records(
+        agent_stream.export_records(
             record_type=RecordType.SPAN,
             sort=custom_sort,
             export_format=LLMExportFormat.CSV,
@@ -815,17 +815,17 @@ class TestLogStreamExportRecords:
             filters=None,
             sort=custom_sort,
             export_format=LLMExportFormat.CSV,
-            log_stream_id=mock_logstream.id,
+            agent_stream_id=mock_logstream.id,
             column_ids=["input", "output"],
             redact=False,
         )
 
     def test_export_records_raises_error_for_local_only(self, reset_configuration: None) -> None:
         """Test export_records() raises ValueError for local-only log stream."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(ValueError, match="Log stream ID is not set"):
-            log_stream.export_records()
+            agent_stream.export_records()
 
     @patch("splunk_ao.agent_stream.AgentStreams")
     def test_export_records_raises_error_without_project_id(
@@ -833,14 +833,14 @@ class TestLogStreamExportRecords:
     ) -> None:
         """Test export_records() raises ValueError when project_id is not set."""
         # Manually create instance with id but no project_id
-        log_stream = AgentStream._create_empty()
-        log_stream.id = str(uuid4())
-        log_stream.name = "Test Stream"
-        log_stream.project_id = None
-        log_stream._set_state(SyncState.SYNCED)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.id = str(uuid4())
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = None
+        agent_stream._set_state(SyncState.SYNCED)
 
         with pytest.raises(ValueError, match="Project ID is not set"):
-            log_stream.export_records()
+            agent_stream.export_records()
 
 
 class TestLogStreamContext:
@@ -873,10 +873,10 @@ class TestLogStreamContext:
             mock_project.name = "Test Project"
             mock_project_class.get.return_value = mock_project
 
-            log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
-            result = log_stream.context()
+            agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+            result = agent_stream.context()
 
-            mock_splunk_ao_context.assert_called_once_with(project="Test Project", log_stream="Test Stream")
+            mock_splunk_ao_context.assert_called_once_with(project="Test Project", agent_stream="Test Stream")
             assert result == mock_context
 
 
@@ -906,8 +906,8 @@ class TestLogStreamProject:
         returned_project.name = "Test Project"
         mock_project_class.get.return_value = returned_project
 
-        log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
-        project = log_stream.project
+        agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+        project = agent_stream.project
 
         mock_project_class.get.assert_called_once_with(id=mock_logstream.project_id)
         assert project == returned_project
@@ -975,8 +975,8 @@ class TestLogStreamColumns:
         with patch(f"splunk_ao.agent_stream.{api_func_name}") as mock_api_func:
             mock_api_func.sync.return_value = mock_response
 
-            log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
-            columns = getattr(log_stream, property_name)
+            agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+            columns = getattr(agent_stream, property_name)
 
             # Verify API function was called correctly
             mock_api_func.sync.assert_called_once_with(
@@ -993,10 +993,10 @@ class TestLogStreamColumns:
     @pytest.mark.parametrize("property_name", ["span_columns", "session_columns", "trace_columns"])
     def test_column_properties_raise_error_for_local_only(self, property_name: str, reset_configuration: None) -> None:
         """Test column properties raise ValueError for local-only log streams."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
 
         with pytest.raises(ValueError, match="Log stream ID is not set"):
-            getattr(log_stream, property_name)
+            getattr(agent_stream, property_name)
 
     @pytest.mark.parametrize(
         "property_name,api_func_name",
@@ -1033,10 +1033,10 @@ class TestLogStreamColumns:
         with patch(f"splunk_ao.agent_stream.{api_func_name}") as mock_api_func:
             mock_api_func.sync.return_value = None
 
-            log_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
+            agent_stream = AgentStream.get(name="Test Stream", project_id="test-project-id")
 
             with pytest.raises(ValueError, match="Unable to retrieve"):
-                getattr(log_stream, property_name)
+                getattr(agent_stream, property_name)
 
     def test_column_info_with_control_step_type_does_not_raise(self, reset_configuration: None) -> None:
         """Regression test: 'control' is a valid StepType returned by the API (sc-62628)."""
@@ -1061,21 +1061,21 @@ class TestLogStreamMethods:
 
     def test_str_representation(self, reset_configuration: None) -> None:
         """Test __str__ returns expected format."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
-        log_stream.id = "test-id-123"
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream.id = "test-id-123"
 
-        assert str(log_stream) == "AgentStream(name='Test Stream', id='test-id-123', project_id='test-project-id')"
+        assert str(agent_stream) == "AgentStream(name='Test Stream', id='test-id-123', project_id='test-project-id')"
 
     def test_repr_representation(self, reset_configuration: None) -> None:
         """Test __repr__ returns expected format with created_at."""
-        log_stream = AgentStream(name="Test Stream", project_id="test-project-id")
-        log_stream.id = "test-id-123"
-        log_stream.created_at = "2024-01-01 12:00:00"
+        agent_stream = AgentStream(name="Test Stream", project_id="test-project-id")
+        agent_stream.id = "test-id-123"
+        agent_stream.created_at = "2024-01-01 12:00:00"
 
-        assert "Test Stream" in repr(log_stream)
-        assert "test-id-123" in repr(log_stream)
-        assert "test-project-id" in repr(log_stream)
-        assert "2024-01-01 12:00:00" in repr(log_stream)
+        assert "Test Stream" in repr(agent_stream)
+        assert "test-id-123" in repr(agent_stream)
+        assert "test-project-id" in repr(agent_stream)
+        assert "2024-01-01 12:00:00" in repr(agent_stream)
 
 
 class TestProjectNotFoundErrorBackwardCompat:
@@ -1094,11 +1094,11 @@ class TestProjectNotFoundErrorBackwardCompat:
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.return_value = None
 
-        log_stream = AgentStream(name="Test Stream", project_name="missing-proj")
+        agent_stream = AgentStream(name="Test Stream", project_name="missing-proj")
 
         # When/Then: the raised exception is BOTH a NotFoundError AND a ResourceNotFoundError
         with pytest.raises(NotFoundError) as exc_info:
-            log_stream.create()
+            agent_stream.create()
         assert isinstance(exc_info.value, ResourceNotFoundError)
 
     @patch("splunk_ao.shared.project_resolver.Projects")
@@ -1117,15 +1117,15 @@ class TestProjectNotFoundErrorBackwardCompat:
         monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
         monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
 
-        log_stream = AgentStream._create_empty()
-        log_stream.name = "Test Stream"
-        log_stream.project_id = None
-        log_stream.project_name = None
-        log_stream._set_state(SyncState.LOCAL_ONLY)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = None
+        agent_stream.project_name = None
+        agent_stream._set_state(SyncState.LOCAL_ONLY)
 
         # When/Then: NotFoundError is raised without calling the Projects API at all
         with pytest.raises(NotFoundError, match="No project specified"):
-            log_stream.create()
+            agent_stream.create()
         mock_projects_class.assert_not_called()
 
     @patch("splunk_ao.shared.project_resolver.Projects")
@@ -1143,15 +1143,15 @@ class TestProjectNotFoundErrorBackwardCompat:
         mock_projects_class.return_value = mock_projects_service
         mock_projects_service.get_with_env_fallbacks.side_effect = ValueError("HTTP client blew up")
 
-        log_stream = AgentStream._create_empty()
-        log_stream.name = "Test Stream"
-        log_stream.project_id = "explicit-id"
-        log_stream.project_name = None
-        log_stream._set_state(SyncState.LOCAL_ONLY)
+        agent_stream = AgentStream._create_empty()
+        agent_stream.name = "Test Stream"
+        agent_stream.project_id = "explicit-id"
+        agent_stream.project_name = None
+        agent_stream._set_state(SyncState.LOCAL_ONLY)
 
         # When/Then: ValueError propagates unchanged (no longer rewritten as NotFoundError)
         with pytest.raises(ValueError, match="HTTP client blew up"):
-            log_stream.create()
+            agent_stream.create()
 
 
 class TestNotFoundErrorOverloads:
