@@ -21,10 +21,11 @@ from datetime import datetime
 from typing import Any
 
 from galileo_core.schemas.logging.agent import AgentType
-from galileo_core.schemas.logging.span import LlmMetrics, RetrieverSpan, ToolSpan
+from galileo_core.schemas.logging.span import LlmMetrics, RetrieverSpan, StepWithChildSpans, ToolSpan
 from galileo_core.schemas.logging.step import Metrics
 from galileo_core.schemas.shared.traces_logger import TracesLogger
 from pydantic import PrivateAttr
+
 from splunk_ao.schema.logged import LoggedAgentSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
 from splunk_ao.schema.trace import TracesIngestRequest
 from splunk_ao.utils.retrievers import convert_to_documents
@@ -124,6 +125,23 @@ class TraceBuilder(TracesLogger):
         self.traces.append(trace)
         self._set_current_parent(trace)
         return trace
+
+    def conclude(
+        self,
+        output: str | None = None,
+        redacted_output: str | None = None,
+        duration_ns: int | None = None,
+        status_code: int | None = None,
+        conclude_all: bool = False,
+    ) -> StepWithChildSpans | None:
+        """Conclude the current step, optionally closing its full trace hierarchy."""
+        if not conclude_all:
+            return super().conclude(output, redacted_output, duration_ns, status_code)
+
+        current_parent = None
+        while self.current_parent() is not None:
+            current_parent = super().conclude(output, redacted_output, duration_ns, status_code)
+        return current_parent
 
     @staticmethod
     def _convert_metadata_value(v: Any) -> str:

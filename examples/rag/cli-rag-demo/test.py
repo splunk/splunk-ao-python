@@ -6,7 +6,7 @@ from splunk_ao import splunk_ao_context, openai
 load_dotenv()
 
 # If you've set your SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM env vars, you can skip this step
-splunk_ao_context.init(project="your-project-name", log_stream="your-log-stream-name")
+splunk_ao_context.init(project="your-project-name", agent_stream="your-log-stream-name")
 
 # Initialize the Splunk AO wrapped OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))

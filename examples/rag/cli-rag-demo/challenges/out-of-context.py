@@ -8,7 +8,7 @@ load_dotenv()
 # Check if Splunk AO logging is enabled
 logging_enabled = os.environ.get("SPLUNK_AO_API_KEY") is not None
 
-splunk_ao_context.init(project="out-of-context", log_stream="dev")
+splunk_ao_context.init(project="out-of-context", agent_stream="dev")
 
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))

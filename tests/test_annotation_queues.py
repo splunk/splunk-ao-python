@@ -371,7 +371,7 @@ def test_add_records_to_annotation_queue_accepts_log_stream_id(
 
     # When: adding log stream records to an annotation queue
     add_records_to_annotation_queue(
-        "queue-123", project_id="project-123", log_stream_id=" log-stream-123 ", record_ids=["record-1"]
+        "queue-123", project_id="project-123", agent_stream_id=" log-stream-123 ", record_ids=["record-1"]
     )
 
     # Then: the generated request uses the log stream ID as the API run ID

@@ -32,24 +32,24 @@ class Traces:
     ----------
     project_id : Optional[str]
         The ID of the project.
-    log_stream_id : Optional[str]
+    agent_stream_id : Optional[str]
         The ID of the log stream.
     """
 
     project_id: str | None = None
-    log_stream_id: str | None = None
+    agent_stream_id: str | None = None
     config: SplunkAOConfig
 
     def __init__(
-        self, project_id: str | None = None, log_stream_id: str | None = None, experiment_id: str | None = None
+        self, project_id: str | None = None, agent_stream_id: str | None = None, experiment_id: str | None = None
     ):
         self.config = SplunkAOConfig.get()
         self.project_id = project_id
-        self.log_stream_id = log_stream_id
+        self.agent_stream_id = agent_stream_id
         self.experiment_id = experiment_id
 
-        if self.log_stream_id is None and self.experiment_id is None:
-            raise ValueError("log_stream_id or experiment_id must be set")
+        if self.agent_stream_id is None and self.experiment_id is None:
+            raise ValueError("agent_stream_id or experiment_id must be set")
 
     async def _make_async_request(
         self,
@@ -76,8 +76,8 @@ class Traces:
     async def ingest_traces(self, traces_ingest_request: TracesIngestRequest) -> dict[str, str]:
         if self.experiment_id:
             traces_ingest_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            traces_ingest_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            traces_ingest_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = traces_ingest_request.model_dump(mode="json")
 
@@ -89,8 +89,8 @@ class Traces:
     async def ingest_spans(self, spans_ingest_request: SpansIngestRequest) -> dict[str, str]:
         if self.experiment_id:
             spans_ingest_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            spans_ingest_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            spans_ingest_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = spans_ingest_request.model_dump(mode="json")
 
@@ -102,8 +102,8 @@ class Traces:
     async def update_trace(self, trace_update_request: TraceUpdateRequest) -> dict[str, str]:
         if self.experiment_id:
             trace_update_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            trace_update_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            trace_update_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = trace_update_request.model_dump(mode="json")
 
@@ -117,8 +117,8 @@ class Traces:
     async def update_span(self, span_update_request: SpanUpdateRequest) -> dict[str, str]:
         if self.experiment_id:
             span_update_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            span_update_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            span_update_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = span_update_request.model_dump(mode="json")
 
@@ -132,8 +132,8 @@ class Traces:
     async def create_session(self, session_create_request: SessionCreateRequest) -> dict[str, str]:
         if self.experiment_id:
             session_create_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            session_create_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            session_create_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = session_create_request.model_dump(mode="json")
 
@@ -144,8 +144,8 @@ class Traces:
     async def get_sessions(self, session_search_request: LogRecordsSearchRequest) -> dict[str, str]:
         if self.experiment_id:
             session_search_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            session_search_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            session_search_request.log_stream_id = UUID(self.agent_stream_id)
 
         json = session_search_request.model_dump(mode="json")
 
@@ -176,11 +176,11 @@ class IngestTraces:
         project_id: str,
         base_url: str,
         api_key: str,
-        log_stream_id: str | None = None,
+        agent_stream_id: str | None = None,
         experiment_id: str | None = None,
     ) -> None:
         self.project_id = project_id
-        self.log_stream_id = log_stream_id
+        self.agent_stream_id = agent_stream_id
         self.experiment_id = experiment_id
         self.base_url = base_url.rstrip("/")
         self._headers = {
@@ -201,8 +201,8 @@ class IngestTraces:
     async def ingest_traces(self, traces_ingest_request: TracesIngestRequest) -> dict[str, Any]:
         if self.experiment_id:
             traces_ingest_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            traces_ingest_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            traces_ingest_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = f"{self.base_url}{Routes.ingest_traces.format(project_id=self.project_id)}"
         payload = traces_ingest_request.model_dump(mode="json", exclude_none=True)
@@ -215,8 +215,8 @@ class IngestTraces:
     async def ingest_spans(self, spans_ingest_request: SpansIngestRequest) -> dict[str, Any]:
         if self.experiment_id:
             spans_ingest_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            spans_ingest_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            spans_ingest_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = f"{self.base_url}{Routes.ingest_spans.format(project_id=self.project_id)}"
         payload = spans_ingest_request.model_dump(mode="json", exclude_none=True)
@@ -229,8 +229,8 @@ class IngestTraces:
     async def update_trace(self, trace_update_request: TraceUpdateRequest) -> dict[str, Any]:
         if self.experiment_id:
             trace_update_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            trace_update_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            trace_update_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = (
             f"{self.base_url}{Routes.trace.format(project_id=self.project_id, trace_id=trace_update_request.trace_id)}"
@@ -244,8 +244,8 @@ class IngestTraces:
     async def update_span(self, span_update_request: SpanUpdateRequest) -> dict[str, Any]:
         if self.experiment_id:
             span_update_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            span_update_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            span_update_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = f"{self.base_url}{Routes.span.format(project_id=self.project_id, span_id=span_update_request.span_id)}"
         payload = span_update_request.model_dump(mode="json")
@@ -257,8 +257,8 @@ class IngestTraces:
     async def create_session(self, session_create_request: SessionCreateRequest) -> dict[str, Any]:
         if self.experiment_id:
             session_create_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            session_create_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            session_create_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = f"{self.base_url}{Routes.sessions.format(project_id=self.project_id)}"
         payload = session_create_request.model_dump(mode="json")
@@ -269,8 +269,8 @@ class IngestTraces:
     async def get_sessions(self, session_search_request: LogRecordsSearchRequest) -> dict[str, Any]:
         if self.experiment_id:
             session_search_request.experiment_id = UUID(self.experiment_id)
-        elif self.log_stream_id:
-            session_search_request.log_stream_id = UUID(self.log_stream_id)
+        elif self.agent_stream_id:
+            session_search_request.log_stream_id = UUID(self.agent_stream_id)
 
         url = f"{self.base_url}{Routes.sessions_search.format(project_id=self.project_id)}"
         payload = session_search_request.model_dump(mode="json")

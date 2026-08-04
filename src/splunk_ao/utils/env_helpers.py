@@ -2,7 +2,7 @@
 
 from os import getenv
 
-from splunk_ao.constants import DEFAULT_LOG_STREAM_NAME, DEFAULT_MODE, DEFAULT_PROJECT_NAME, LoggerModeType
+from splunk_ao.constants import DEFAULT_AGENT_STREAM_NAME, DEFAULT_MODE, DEFAULT_PROJECT_NAME, LoggerModeType
 from splunk_ao.exceptions import SplunkAOLoggerException
 
 
@@ -55,13 +55,13 @@ def _get_project_or_default(project: str | None) -> str:
     return project
 
 
-def _get_log_stream_or_default(log_stream: str | None) -> str:
+def _get_agent_stream_or_default(agent_stream: str | None) -> str:
     """
     Get the log stream name, falling back to SPLUNK_AO_AGENT_STREAM env var or default.
 
     Parameters
     ----------
-    log_stream : Optional[str]
+    agent_stream : Optional[str]
         The log stream name, or None to check environment variable.
 
     Returns
@@ -69,10 +69,10 @@ def _get_log_stream_or_default(log_stream: str | None) -> str:
     str
         The log stream name to use.
     """
-    if log_stream is None:
+    if agent_stream is None:
         # SPLUNK_AO_LOG_STREAM is a deprecated alias; SPLUNK_AO_AGENT_STREAM takes precedence.
-        return getenv("SPLUNK_AO_AGENT_STREAM") or getenv("SPLUNK_AO_LOG_STREAM") or DEFAULT_LOG_STREAM_NAME
-    return log_stream
+        return getenv("SPLUNK_AO_AGENT_STREAM") or getenv("SPLUNK_AO_LOG_STREAM") or DEFAULT_AGENT_STREAM_NAME
+    return agent_stream
 
 
 def _get_project_from_env() -> str | None:
@@ -99,7 +99,7 @@ def _get_project_id_from_env() -> str | None:
     return getenv("SPLUNK_AO_PROJECT_ID")
 
 
-def _get_log_stream_from_env() -> str | None:
+def _get_agent_stream_from_env() -> str | None:
     """
     Get the log stream name from SPLUNK_AO_AGENT_STREAM environment variable.
 
@@ -112,7 +112,7 @@ def _get_log_stream_from_env() -> str | None:
     return getenv("SPLUNK_AO_AGENT_STREAM") or getenv("SPLUNK_AO_LOG_STREAM") or None
 
 
-def _get_log_stream_id_from_env() -> str | None:
+def _get_agent_stream_id_from_env() -> str | None:
     """
     Get the log stream ID from SPLUNK_AO_AGENT_STREAM_ID environment variable.
 

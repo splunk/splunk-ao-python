@@ -8,7 +8,7 @@ from splunk_ao.agent_streams import AgentStream, AgentStreams, enable_evaluators
 from splunk_ao.projects import Project
 from splunk_ao.resources.models import ProjectCreateResponse, ScorerResponse, ScorerTypes
 from splunk_ao.resources.models.log_stream_response import LogStreamResponse
-from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOEvaluators
 from splunk_ao.utils.metrics import create_metric_configs
 
 
@@ -41,7 +41,7 @@ def mock_project():
 def mock_log_stream():
     """Mock log stream object."""
     return AgentStream(
-        log_stream=LogStreamResponse(
+        agent_stream=LogStreamResponse(
             id="log-stream-123",
             name="Test Log Stream",
             project_id=str(UUID(int=1)),
@@ -90,7 +90,7 @@ class TestLogStreamMetrics:
 
         # Test with built-in metrics
         scorers, local_metrics = create_metric_configs(
-            "project-123", "logstream-456", [SplunkAOMetrics.correctness, "completeness"]
+            "project-123", "logstream-456", [SplunkAOEvaluators.correctness, "completeness"]
         )
 
         # Verify scorers list_by_labels was called
@@ -143,7 +143,7 @@ class TestLogStreamMetrics:
 
         # Test with mixed metrics (only valid ones to avoid decorator error handling)
         scorers, local_metrics = create_metric_configs(
-            "project-123", "logstream-456", [SplunkAOMetrics.correctness, local_metric]
+            "project-123", "logstream-456", [SplunkAOEvaluators.correctness, local_metric]
         )
 
         # Verify local metrics
@@ -169,10 +169,10 @@ class TestLogStreamMetrics:
 
     def test_log_stream_enable_metrics_missing_ids(self) -> None:
         """Test AgentStream enable_evaluators raises error when IDs are missing."""
-        log_stream = AgentStream()  # Empty log stream without IDs
+        agent_stream = AgentStream()  # Empty log stream without IDs
 
         with pytest.raises(ValueError, match="Log stream must have id and project_id to enable metrics"):
-            log_stream.enable_evaluators(["correctness"])
+            agent_stream.enable_evaluators(["correctness"])
 
     @patch("splunk_ao.agent_streams.Projects")
     @patch.object(AgentStreams, "get")
@@ -431,7 +431,7 @@ class TestCreateMetricConfigsRouting:
         mock_settings_class.return_value.create.return_value = None
 
         # When: passing both a UUID and an enum
-        scorers, _ = create_metric_configs("project-123", "run-456", [scorer_id, SplunkAOMetrics.completeness])
+        scorers, _ = create_metric_configs("project-123", "run-456", [scorer_id, SplunkAOEvaluators.completeness])
 
         # Then: both lookup methods are called
         mock_scorers_class.return_value.list_by_ids.assert_called_once()
@@ -465,7 +465,7 @@ class TestCreateMetricConfigsRouting:
         ]
 
         # When: run_id is None
-        scorers, _ = create_metric_configs("project-123", None, [SplunkAOMetrics.correctness])
+        scorers, _ = create_metric_configs("project-123", None, [SplunkAOEvaluators.correctness])
 
         # Then: scorers are returned but registration is skipped
         mock_settings_class.return_value.create.assert_not_called()

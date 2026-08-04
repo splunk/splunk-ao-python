@@ -1,6 +1,6 @@
 # Elastic Chatbot RAG App + Splunk AO
 
-Read more on how to leverage [Splunk AO for your chat app](https://docs.galileo.ai/cookbooks/use-cases/rag-elastic-langchain-integration)
+Read more on how to leverage [Splunk AO for your chat app](https://agent-observability-docs.splunk.com/cookbooks/use-cases/rag-elastic-langchain-integration)
 
 This is a sample app that combines Elasticsearch, Langchain and a number of different LLMs to create a chatbot experience with ELSER with your own private data.
 
@@ -10,7 +10,7 @@ This is a sample app that combines Elasticsearch, Langchain and a number of diff
 
 ## Setup a Splunk AO project:
 
-On your cluster or [https://app.galileo.ai](https://app.galileo.ai) create an account, a logstream project and api keys. You can follow [this guide](https://docs.galileo.ai/concepts/projects#whats-in-a-project).
+On your cluster or [https://app.galileo.ai](https://app.galileo.ai) create an account, a logstream project and api keys. You can follow [this guide](https://agent-observability-docs.splunk.com/concepts/projects#what%E2%80%99s-in-a-project).
 
 Make sure to set your Splunk AO logging env variables
 
