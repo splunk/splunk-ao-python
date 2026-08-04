@@ -469,7 +469,8 @@ def set_control_attributes(attrs: MutableMapping[str, AttributeValue], span: Con
     attrs["galileo.span.kind"] = "control"
     attrs["splunk_ao.operation.name"] = "control"
     _set_if_present(attrs, "agent_control.control_id", span.control_id)
-    _set_if_present(attrs, "agent_control.control_name", span.name)
+    if span.name:
+        attrs["agent_control.control_name"] = span.name
 
     for field_name in ("agent_name", "check_stage", "applies_to", "evaluator_name", "selector_path"):
         value = _field(span, field_name)

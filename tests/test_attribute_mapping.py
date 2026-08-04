@@ -534,12 +534,12 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
 
 
 def test_control_mapping_omits_unpopulated_optional_fields() -> None:
-    attrs = build_span_attributes(ControlSpan(name="guardrail", input="question"))
+    attrs = build_span_attributes(ControlSpan(input="question"))
 
     assert attrs["galileo.span.kind"] == "control"
-    assert attrs["agent_control.control_name"] == "guardrail"
     for key in (
         "agent_control.control_id",
+        "agent_control.control_name",
         "agent_control.agent_name",
         "agent_control.check_stage",
         "agent_control.applies_to",

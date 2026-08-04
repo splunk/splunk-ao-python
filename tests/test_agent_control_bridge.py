@@ -509,6 +509,8 @@ def test_add_control_span_uses_model_default_name(
     assert isinstance(control_span, ControlSpan)
     assert control_span.name == ControlSpan.model_fields["name"].default
     assert workflow.spans == [control_span]
+    assert len(logger._sink.spans) == 1
+    assert "agent_control.control_name" not in (logger._sink.spans[0].attributes or {})
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
