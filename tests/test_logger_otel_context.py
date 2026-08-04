@@ -106,7 +106,7 @@ def test_completed_leaf_siblings_share_parent_and_do_not_become_active(
     logger.conclude(output="done")
 
 
-def test_otel_identity_failure_does_not_interrupt_span_creation_or_streaming(
+def test_otel_identity_failure_does_not_interrupt_span_creation_or_legacy_streaming(
     make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     logger = make_logger()
@@ -128,13 +128,13 @@ def test_otel_identity_failure_does_not_interrupt_span_creation_or_streaming(
     assert span is not None
     assert span in root.spans
     assert span.id not in logger._otel_ids
-    ingest_step.assert_called_once_with(span)
+    ingest_step.assert_not_called()
     assert "Failed to assign OTel identity" in warning.call_args.args[0]
 
     logger.conclude(output="done")
 
 
-def test_otel_sync_failure_does_not_interrupt_parentable_span_creation_or_streaming(
+def test_otel_sync_failure_does_not_interrupt_parentable_span_creation(
     make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     logger = make_logger()
@@ -154,7 +154,7 @@ def test_otel_sync_failure_does_not_interrupt_parentable_span_creation_or_stream
     assert workflow in root.spans
     assert logger.current_parent() is workflow
     assert workflow.id in logger._otel_ids
-    ingest_step.assert_called_once_with(workflow)
+    ingest_step.assert_not_called()
     assert "Failed to synchronize OTel context" in warning.call_args.args[0]
 
     logger._sync_otel_context(workflow)
@@ -162,7 +162,7 @@ def test_otel_sync_failure_does_not_interrupt_parentable_span_creation_or_stream
     logger.conclude(output="trace-output")
 
 
-def test_otel_sync_and_release_failures_do_not_interrupt_conclusion_or_streaming(
+def test_otel_sync_and_release_failures_do_not_interrupt_hook_conclusion(
     make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     logger = make_logger()
@@ -183,7 +183,7 @@ def test_otel_sync_and_release_failures_do_not_interrupt_conclusion_or_streaming
     assert parent is root
     assert logger.current_parent() is root
     assert workflow.output == "workflow-output"
-    update_step.assert_called_once_with(workflow, is_complete=True)
+    update_step.assert_not_called()
     warning_messages = [call.args[0] for call in warning.call_args_list]
     assert any("Failed to synchronize OTel context" in message for message in warning_messages)
     assert any("Failed to release OTel context" in message for message in warning_messages)
@@ -359,7 +359,7 @@ async def test_concurrent_flush_preserves_other_request_otel_ids(
         else:
             logger.flush()
 
-        assert root.id not in logger._otel_ids
+        assert root.id in logger._otel_ids
         flush_completed.set()
 
     async def continue_second_request() -> None:
@@ -376,6 +376,8 @@ async def test_concurrent_flush_preserves_other_request_otel_ids(
 
     await asyncio.gather(flush_first_request(), continue_second_request())
 
+    assert len(logger._otel_ids) == 1
+    logger.terminate()
     assert logger._otel_ids == {}
 
 

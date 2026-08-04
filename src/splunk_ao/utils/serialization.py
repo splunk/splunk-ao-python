@@ -35,7 +35,7 @@ _DATA_URI_PREFIX = re.compile(r"^data:([^;]+)?(?:;base64)?,")
 
 
 def _convert_langchain_content_block(block: dict) -> dict[str, Any]:
-    """Convert a single LangChain content block dict to Galileo IngestContentBlock shape.
+    """Convert a single LangChain content block dict to Splunk AO IngestContentBlock shape.
 
     LangChain uses {"type": "text", "text": "..."} or
     {"type": "image_url", "image_url": {"url": "..."}}. We map these to
@@ -203,12 +203,12 @@ class EventSerializer(JSONEncoder):
                     if dumped.get("tool_calls") == []:
                         dumped.pop("tool_calls")
 
-                    # Transform LangChain tool_calls format to match Galileo's ToolCall schema
+                    # Transform LangChain tool_calls format to match Splunk AO's ToolCall schema
                     if "tool_calls" in dumped and isinstance(dumped["tool_calls"], list):
                         transformed_tool_calls = []
                         for tool_call in dumped["tool_calls"]:
                             if isinstance(tool_call, dict):
-                                # Check if it's already in Galileo ToolCall format (has 'function' key)
+                                # Check if it's already in Splunk AO ToolCall format (has 'function' key)
                                 if "function" in tool_call:
                                     transformed_tool_calls.append(tool_call)
                                 # Otherwise transform from LangChain format

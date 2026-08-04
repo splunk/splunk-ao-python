@@ -11,7 +11,7 @@ from splunk_ao.resources.models import ExperimentResponse, PromptRunSettings
 from splunk_ao.resources.models.column_category import ColumnCategory
 from splunk_ao.resources.models.column_info import ColumnInfo
 from splunk_ao.resources.models.data_type import DataType
-from splunk_ao.schema.metrics import SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOEvaluators
 from splunk_ao.search import RecordType
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.column import ColumnCollection
@@ -107,7 +107,7 @@ class TestExperimentInitialization:
 
     def test_init_with_metrics(self, reset_configuration: None) -> None:
         """Test initializing an experiment with metrics."""
-        metrics = [SplunkAOMetrics.correctness, "completeness"]
+        metrics = [SplunkAOEvaluators.correctness, "completeness"]
         experiment = Experiment(
             name="Test Experiment",
             dataset_name="test-dataset",
@@ -1492,7 +1492,7 @@ class TestGetMetricAggregate:
         synced_experiment._experiment_response = mock_response
 
         # When: getting a metric aggregate
-        result = synced_experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
+        result = synced_experiment.get_metric_aggregate(SplunkAOEvaluators.correctness)
 
         # Then: None is returned without error
         assert result is None
@@ -1513,8 +1513,8 @@ class TestGetMetricAggregate:
         )
         mock_config_class.get.return_value = MagicMock()
 
-        # When: looking up by SplunkAOMetrics enum (value == label "Correctness")
-        result = experiment.get_metric_aggregate(SplunkAOMetrics.correctness)
+        # When: looking up by SplunkAOEvaluators enum (value == label "Correctness")
+        result = experiment.get_metric_aggregate(SplunkAOEvaluators.correctness)
 
         # Then: the aggregate for the scorer UUID is returned
         assert result is not None

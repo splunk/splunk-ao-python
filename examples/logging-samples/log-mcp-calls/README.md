@@ -1,8 +1,8 @@
 # Log MCP calls as tool spans
 
-This is an example project demonstrating how to use Splunk AO to log MCP server calls as tool spans. This code is described in the [Log MCP Server Tool Calls how-to guide](https://docs.galileo.ai/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls) in the Splunk AO documentation.
+This is an example project demonstrating how to use Splunk AO to log MCP server calls as tool spans. This code is described in the [Log MCP Server Tool Calls how-to guide](https://agent-observability-docs.splunk.com/how-to-guides/basics/log-mcp-server-calls/log-mcp-server-calls) in the Splunk AO documentation.
 
-The MCP server used by default is the [Splunk AO MCP server](https://docs.galileo.ai/getting-started/mcp/setup-galileo-mcp), but you can use this code with any MCP server that supports a streamable HTTP connection by changing the `MCP_SERVER_URL` environment variable.
+The MCP server used by default is the [Splunk AO MCP server](https://agent-observability-docs.splunk.com/getting-started/mcp/setup-splunk-ao-mcp), but you can use this code with any MCP server that supports a streamable HTTP connection by changing the `MCP_SERVER_URL` environment variable.
 
 ## Getting Started
 

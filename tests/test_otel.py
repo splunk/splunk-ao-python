@@ -12,7 +12,7 @@ from splunk_ao.decorator import (
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _log_stream_context,
+    _agent_stream_context,
     _project_context,
     _session_id_context,
     splunk_ao_dataset_context,
@@ -192,10 +192,10 @@ class TestOTelContextIntegration:
     @pytest.fixture
     def reset_decorator_context(self):
         """Reset decorator context before each test."""
-        for ctx in [_project_context, _log_stream_context, _experiment_id_context, _session_id_context]:
+        for ctx in [_project_context, _agent_stream_context, _experiment_id_context, _session_id_context]:
             ctx.set(None)
         yield
-        for ctx in [_project_context, _log_stream_context, _experiment_id_context, _session_id_context]:
+        for ctx in [_project_context, _agent_stream_context, _experiment_id_context, _session_id_context]:
             ctx.set(None)
 
     @pytest.fixture
@@ -219,7 +219,7 @@ class TestOTelContextIntegration:
 
         # Set context variables
         _project_context.set("context-project")
-        _log_stream_context.set("context-logstream")
+        _agent_stream_context.set("context-logstream")
 
         with (
             patch("splunk_ao.otel.OTLPSpanExporter.__init__", return_value=None),
@@ -239,7 +239,7 @@ class TestOTelContextIntegration:
     def test_processor_captures_context_at_exporter_construction(self, mock_processor_deps, reset_decorator_context):
         """Test processor passes routing inputs to its immutable exporter."""
         _project_context.set("context-project")
-        _log_stream_context.set("context-logstream")
+        _agent_stream_context.set("context-logstream")
 
         SplunkAOSpanProcessor()
         mock_processor_deps["exporter"].assert_called_once()
@@ -247,7 +247,7 @@ class TestOTelContextIntegration:
     def test_processor_on_start_sets_content_not_routing_attributes(self, mock_processor_deps, reset_decorator_context):
         """Test on_start keeps session content and omits request routing."""
         _project_context.set("test-project")
-        _log_stream_context.set("test-logstream")
+        _agent_stream_context.set("test-logstream")
         _experiment_id_context.set("test-experiment")
         _session_id_context.set("test-session")
 
@@ -314,7 +314,7 @@ class TestSetToolSpanAttributes:
         assert "gen_ai.tool.call.id" not in attrs
 
 
-class TestStartGalileoSpan:
+class TestStartSplunkAOSpan:
     """Test suite for start_splunk_ao_span context manager."""
 
     @pytest.fixture(autouse=True)
@@ -381,7 +381,7 @@ class TestStartGalileoSpan:
         assert "gen_ai.tool.call.id" not in calls
 
     @pytest.mark.parametrize(
-        "galileo_span",
+        "splunk_ao_span",
         [
             LlmSpan(input="prompt", output="answer", model="gpt-4o"),
             ToolSpan(name="search", input="query", output="result"),
@@ -390,8 +390,8 @@ class TestStartGalileoSpan:
             AgentSpan(name="agent", input="question", output="answer"),
         ],
     )
-    def test_start_span_applies_canonical_builder_for_every_supported_type(self, galileo_span):
-        expected = build_span_attributes(galileo_span, session_id="session-id")
+    def test_start_span_applies_canonical_builder_for_every_supported_type(self, splunk_ao_span):
+        expected = build_span_attributes(splunk_ao_span, session_id="session-id")
         mock_otel_span = Mock()
         mock_tracer = Mock()
         mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
@@ -402,7 +402,7 @@ class TestStartGalileoSpan:
         token = _session_id_context.set("session-id")
 
         try:
-            with start_splunk_ao_span(galileo_span):
+            with start_splunk_ao_span(splunk_ao_span):
                 pass
         finally:
             _session_id_context.reset(token)
@@ -411,7 +411,7 @@ class TestStartGalileoSpan:
         assert {key: calls[key] for key in expected} == expected
 
     def test_start_span_applies_canonical_attributes_when_body_raises(self):
-        galileo_span = ToolSpan(name="search", input="query", output="result")
+        splunk_ao_span = ToolSpan(name="search", input="query", output="result")
         mock_otel_span = Mock()
         mock_tracer = Mock()
         mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=mock_otel_span)
@@ -420,7 +420,7 @@ class TestStartGalileoSpan:
         mock_provider.get_tracer.return_value = mock_tracer
         _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
 
-        with pytest.raises(RuntimeError, match="failure"), start_splunk_ao_span(galileo_span):
+        with pytest.raises(RuntimeError, match="failure"), start_splunk_ao_span(splunk_ao_span):
             raise RuntimeError("failure")
 
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}
@@ -430,7 +430,7 @@ class TestStartGalileoSpan:
     @patch("splunk_ao.otel.logger.warning")
     @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid partial span"))
     def test_start_span_finalization_does_not_mask_body_exception(self, _mock_build, mock_warning):
-        galileo_span = ToolSpan(name="search", input="query", output="result")
+        splunk_ao_span = ToolSpan(name="search", input="query", output="result")
         mock_tracer = Mock()
         mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
         mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
@@ -438,7 +438,7 @@ class TestStartGalileoSpan:
         mock_provider.get_tracer.return_value = mock_tracer
         _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
 
-        with pytest.raises(RuntimeError, match="user failure"), start_splunk_ao_span(galileo_span):
+        with pytest.raises(RuntimeError, match="user failure"), start_splunk_ao_span(splunk_ao_span):
             raise RuntimeError("user failure")
 
         mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
@@ -446,7 +446,7 @@ class TestStartGalileoSpan:
     @patch("splunk_ao.otel.logger.warning")
     @patch("splunk_ao.otel.build_span_attributes", side_effect=ValueError("invalid span"))
     def test_start_span_finalization_failure_does_not_fail_successful_body(self, _mock_build, mock_warning):
-        galileo_span = ToolSpan(name="search", input="query", output="result")
+        splunk_ao_span = ToolSpan(name="search", input="query", output="result")
         mock_tracer = Mock()
         mock_tracer.start_as_current_span.return_value.__enter__ = Mock(return_value=Mock())
         mock_tracer.start_as_current_span.return_value.__exit__ = Mock(return_value=False)
@@ -454,7 +454,7 @@ class TestStartGalileoSpan:
         mock_provider.get_tracer.return_value = mock_tracer
         _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
 
-        with start_splunk_ao_span(galileo_span):
+        with start_splunk_ao_span(splunk_ao_span):
             pass
 
         mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
@@ -462,7 +462,7 @@ class TestStartGalileoSpan:
     @patch("splunk_ao.otel.logger.warning")
     @patch("splunk_ao.otel.build_span_attributes", return_value={"gen_ai.operation.name": "execute_tool"})
     def test_start_span_contains_attribute_write_failure(self, _mock_build, mock_warning):
-        galileo_span = ToolSpan(name="search", input="query", output="result")
+        splunk_ao_span = ToolSpan(name="search", input="query", output="result")
         mock_otel_span = Mock()
         mock_otel_span.set_attribute.side_effect = ValueError("attribute rejected")
         mock_tracer = Mock()
@@ -472,19 +472,19 @@ class TestStartGalileoSpan:
         mock_provider.get_tracer.return_value = mock_tracer
         _TRACE_PROVIDER_CONTEXT_VAR.set(mock_provider)
 
-        with start_splunk_ao_span(galileo_span):
+        with start_splunk_ao_span(splunk_ao_span):
             pass
 
         mock_warning.assert_called_once_with("Failed to finalize Splunk AO span attributes", exc_info=True)
 
     @pytest.mark.parametrize(
-        "galileo_span",
+        "splunk_ao_span",
         [
             WorkflowSpan(name="workflow", input="input", output="output"),
             AgentSpan(name="agent", input="input", output="output"),
         ],
     )
-    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, galileo_span):
+    def test_start_splunk_ao_span_marks_eligible_root_without_parent(self, splunk_ao_span):
         """Eligible spans with no caller parent receive the standard root marker."""
         mock_otel_span = Mock()
         mock_tracer = Mock()
@@ -496,7 +496,7 @@ class TestStartGalileoSpan:
 
         with patch("splunk_ao.otel.trace") as mock_trace:
             mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
-            with start_splunk_ao_span(galileo_span):
+            with start_splunk_ao_span(splunk_ao_span):
                 pass
 
         calls = {
@@ -525,7 +525,7 @@ class TestStartGalileoSpan:
         assert "gen_ai.conversation_root" not in calls
 
     @pytest.mark.parametrize(
-        "galileo_span",
+        "splunk_ao_span",
         [
             ToolSpan(name="tool", input="input", output="output"),
             LlmSpan(
@@ -537,7 +537,7 @@ class TestStartGalileoSpan:
             RetrieverSpan(name="retriever", input="input", output=[]),
         ],
     )
-    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, galileo_span):
+    def test_start_splunk_ao_span_does_not_mark_ineligible_root(self, splunk_ao_span):
         """LLM, tool, and retriever spans are never conversation roots."""
         mock_otel_span = Mock()
         mock_tracer = Mock()
@@ -549,7 +549,7 @@ class TestStartGalileoSpan:
 
         with patch("splunk_ao.otel.trace") as mock_trace:
             mock_trace.get_current_span.return_value.get_span_context.return_value.is_valid = False
-            with start_splunk_ao_span(galileo_span):
+            with start_splunk_ao_span(splunk_ao_span):
                 pass
 
         calls = {args[0]: args[1] for args, _ in mock_otel_span.set_attribute.call_args_list}

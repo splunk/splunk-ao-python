@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 class Dataset(StateManagementMixin):
     """
-    Object-centric interface for Galileo datasets.
+    Object-centric interface for Splunk AO datasets.
 
-    This class provides an intuitive way to work with Galileo datasets,
+    This class provides an intuitive way to work with Splunk AO datasets,
     encapsulating dataset management operations and providing seamless
     integration with dataset content management.
 

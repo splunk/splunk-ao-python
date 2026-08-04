@@ -1,4 +1,4 @@
-"""Utilities for distributed tracing with Galileo."""
+"""Utilities for distributed tracing with Splunk AO."""
 
 from splunk_ao.decorator import splunk_ao_context
 

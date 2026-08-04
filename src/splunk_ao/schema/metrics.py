@@ -11,8 +11,8 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 
 
-class SplunkAOMetrics(StrEnum):
-    """Built-in Galileo metric scorers.
+class SplunkAOEvaluators(StrEnum):
+    """Built-in Splunk AO metric scorers.
 
     Values are human-readable UI labels used for scorer lookup via the API.
     Member names follow the convention: base name = LLM version, _luna suffix = SLM version.

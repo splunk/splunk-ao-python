@@ -10,6 +10,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 from splunk_ao.converter.attribute_mapping import normalize_attributes_for_export
+from splunk_ao.exporter.diagnostics import ExportHealth, get_export_health
 
 ROUTING_ATTRIBUTE_KEYS = frozenset(
     {
@@ -22,16 +23,16 @@ ROUTING_ATTRIBUTE_KEYS = frozenset(
 )
 
 _NORMALIZATION_ENV = "SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION"
-_FALSE_VALUES = frozenset({"0", "false", "no", "off"})
+_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
 
 def _normalization_enabled() -> bool:
     value = os.environ.get(_NORMALIZATION_ENV)
-    return value is None or value.strip().lower() not in _FALSE_VALUES
+    return value is not None and value.strip().lower() in _TRUE_VALUES
 
 
 def copy_span_for_export(
-    span: ReadableSpan, routing_resource: Resource | None = None, *, normalize_attributes: bool = True
+    span: ReadableSpan, routing_resource: Resource | None = None, *, normalize_attributes: bool = False
 ) -> ReadableSpan:
     """Return an immutable span copy with final attributes and routing."""
     source_attributes = {
@@ -44,7 +45,7 @@ def copy_span_for_export(
         {key: value for key, value in source_resource.attributes.items() if key not in ROUTING_ATTRIBUTE_KEYS},
         schema_url=source_resource.schema_url,
     )
-    resource = base_resource.merge(routing_resource) if routing_resource is not None else base_resource
+    resource = routing_resource.merge(base_resource) if routing_resource is not None else base_resource
 
     return ReadableSpan(
         name=span.name,
@@ -80,6 +81,11 @@ class NormalizingSpanExporter(SpanExporter):
     def delegate(self) -> SpanExporter:
         """Return the wrapped exporter for SDK composition and diagnostics."""
         return self._delegate
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the delegate's receiver-acknowledgement health snapshot."""
+        return get_export_health(self._delegate)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export normalized immutable copies of the supplied spans."""

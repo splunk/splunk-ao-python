@@ -1,4 +1,4 @@
-"""Galileo SDK exceptions."""
+"""Splunk AO SDK exceptions."""
 
 from typing import Any, overload
 
@@ -24,7 +24,7 @@ class SplunkAOLoggerException(Exception):
 
 
 class SplunkAOAPIError(Exception):
-    """Base class for Galileo API HTTP errors with actionable messages."""
+    """Base class for Splunk AO API HTTP errors with actionable messages."""
 
     def __init__(self, status_code: int, content: bytes, message: str):
         self.status_code = status_code
@@ -169,6 +169,6 @@ class ServerError(SplunkAOAPIError):
         super().__init__(
             status_code,
             content,
-            "Server error. The Galileo API encountered an internal error. "
+            "Server error. The Splunk AO API encountered an internal error. "
             "Please try again later or contact support if the issue persists.",
         )

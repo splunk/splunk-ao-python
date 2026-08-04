@@ -397,17 +397,88 @@ def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     ]
 
 
-def test_orchestration_does_not_label_arbitrary_state_as_messages() -> None:
-    span = WorkflowSpan(
-        name="state-machine",
-        input=json.dumps({"current_agent": "coordinator", "travellers": 2}),
-        output=json.dumps({"next_agent": "flight_specialist"}),
-    )
-
+@pytest.mark.parametrize(
+    "span",
+    [
+        WorkflowSpan(
+            name="state-machine",
+            input=json.dumps({"current_agent": "coordinator", "travellers": 2}),
+            output=json.dumps({"next_agent": "flight_specialist"}),
+        ),
+        AgentSpan(
+            name="state-agent",
+            agent_type=AgentType.planner,
+            input=json.dumps({"current_agent": "coordinator", "travellers": 2}),
+            output=json.dumps({"next_agent": "flight_specialist"}),
+        ),
+    ],
+)
+def test_orchestration_preserves_arbitrary_state_as_messages(span: WorkflowSpan | AgentSpan) -> None:
     attrs = build_span_attributes(span)
 
-    assert "gen_ai.input.messages" not in attrs
-    assert "gen_ai.output.messages" not in attrs
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        _text_message("user", '{"current_agent":"coordinator","travellers":2}')
+    ]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", '{"next_agent":"flight_specialist"}', finish_reason="unknown")
+    ]
+
+
+@pytest.mark.parametrize(
+    ("serialized", "expected_content"), [("false", "false"), ("0", "0"), ("{}", "{}"), ("[]", "[]")]
+)
+def test_orchestration_preserves_false_zero_and_empty_values(serialized: str, expected_content: str) -> None:
+    attrs = build_span_attributes(WorkflowSpan(name="workflow", input=serialized, output=serialized))
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", expected_content)]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", expected_content, finish_reason="unknown")
+    ]
+
+
+def test_orchestration_preserves_explicit_empty_message_history() -> None:
+    attrs = build_span_attributes(WorkflowSpan(name="workflow", input='{"messages":[]}', output='{"messages":[]}'))
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == []
+    assert json.loads(attrs["gen_ai.output.messages"]) == []
+
+
+def test_orchestration_preserves_empty_full_history_suffix() -> None:
+    history = '{"messages":[{"role":"user","content":"question"}]}'
+    attrs = build_span_attributes(AgentSpan(name="agent", input=history, output=history))
+
+    assert json.loads(attrs["gen_ai.output.messages"]) == []
+
+
+def test_orchestration_falls_back_for_malformed_message_container() -> None:
+    value = '{"messages":[{"content":"missing role"}],"state":"kept"}'
+    attrs = build_span_attributes(WorkflowSpan(name="workflow", input=value, output=value))
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", value)]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [_text_message("assistant", value, finish_reason="unknown")]
+
+
+def test_orchestration_preserves_typed_extension_part_without_inventing_fields() -> None:
+    parts = [
+        {"type": "audio", "url": "https://example.com/answer.wav", "format": "wav"},
+        {"type": "file", "file_id": "file-1"},
+    ]
+    serialized_parts = json.dumps(parts)
+    attrs = build_span_attributes(AgentSpan(name="agent", input=serialized_parts, output=serialized_parts))
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [{"role": "user", "parts": parts}]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": parts, "finish_reason": "unknown"}
+    ]
+
+
+def test_orchestration_falls_back_when_part_type_is_empty() -> None:
+    value = [{"type": "", "content": "not a valid typed part"}]
+    attrs = build_span_attributes(WorkflowSpan(name="workflow", input=json.dumps(value)))
+
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        _text_message("user", json.dumps(value, separators=(",", ":"), sort_keys=True))
+    ]
 
 
 def test_orchestration_keeps_non_json_strings_as_text_messages() -> None:
@@ -510,7 +581,7 @@ def test_normalizer_can_be_disabled_for_developer_comparison() -> None:
         "splunk_ao.system": "source-value",
     }
 
-    assert normalize_attributes_for_export(source, enabled=False) == source
+    assert normalize_attributes_for_export(source, enabled=False) == {**source, "splunk_ao.system": "splunk_ao_python"}
 
 
 def test_every_alias_uses_an_explicit_destination_namespace() -> None:
