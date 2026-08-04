@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.handlers.agent_control import setup_agent_control_bridge
 from splunk_ao.logger.control import ControlResult, ControlSpan
 from splunk_ao.logger.logger import SplunkAOLogger
@@ -357,10 +358,47 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     assert len(logger._sink.spans) == 1
     emitted = logger._sink.spans[0]
     assert emitted.parent == logger._otel_ids[workflow.id].span_context
-    assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
-    assert json.loads((emitted.attributes or {})["gen_ai.input.messages"]) == [
+    exported = copy_span_for_export(emitted)
+    exported_attrs = exported.attributes or {}
+    assert exported_attrs["galileo.span.kind"] == "control"
+    assert {
+        key: exported_attrs[key]
+        for key in (
+            "agent_control.control_id",
+            "agent_control.control_name",
+            "agent_control.agent_name",
+            "agent_control.check_stage",
+            "agent_control.applies_to",
+            "agent_control.evaluator_name",
+            "agent_control.selector_path",
+            "agent_control.action",
+            "agent_control.matched",
+            "agent_control.confidence",
+        )
+    } == {
+        "agent_control.control_id": 7,
+        "agent_control.control_name": "toxicity-guardrail",
+        "agent_control.agent_name": "assistant",
+        "agent_control.check_stage": "pre",
+        "agent_control.applies_to": "llm_call",
+        "agent_control.evaluator_name": "regex",
+        "agent_control.selector_path": "input",
+        "agent_control.action": "observe",
+        "agent_control.matched": True,
+        "agent_control.confidence": 0.91,
+    }
+    assert exported_attrs["gen_ai.operation.name"] == "control"
+    assert "splunk_ao.operation.name" not in exported_attrs
+    assert json.loads(exported_attrs["gen_ai.input.messages"]) == [
         {"parts": [{"content": "selected text", "type": "text"}], "role": "user"}
     ]
+    assert exported.context == emitted.context
+    assert exported.parent == logger._otel_ids[workflow.id].span_context
+    epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
+    elapsed = event.timestamp - epoch
+    expected_start_ns = ((elapsed.days * 86_400 + elapsed.seconds) * 1_000_000_000) + elapsed.microseconds * 1_000
+    assert exported.start_time == expected_start_ns
+    assert exported.end_time == exported.start_time + 12_500_000
 
     # When: the logger drains in batch mode
     logger.flush()
@@ -447,7 +485,7 @@ def test_agent_control_event_enqueues_immediately_in_distributed_mode(
     assert len(logger._sink.spans) == 1
     emitted = logger._sink.spans[0]
     assert emitted.parent == logger._otel_ids[workflow.id].span_context
-    assert (emitted.attributes or {})["splunk_ao.operation.name"] == "control"
+    assert (emitted.attributes or {})["gen_ai.operation.name"] == "control"
     assert not hasattr(logger, "_task_handler")
     mock_traces_client_instance.ingest_spans.assert_not_called()
 
@@ -472,6 +510,8 @@ def test_add_control_span_uses_model_default_name(
     assert isinstance(control_span, ControlSpan)
     assert control_span.name == ControlSpan.model_fields["name"].default
     assert workflow.spans == [control_span]
+    assert len(logger._sink.spans) == 1
+    assert "agent_control.control_name" not in (logger._sink.spans[0].attributes or {})
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
