@@ -32,7 +32,7 @@ load_dotenv()
 # Splunk AO imports
 from splunk_ao.datasets import create_dataset, get_dataset
 from splunk_ao.experiments import run_experiment
-from splunk_ao.schema.metrics import SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOEvaluators
 from splunk_ao import splunk_ao_context
 
 
@@ -239,11 +239,11 @@ def upload_experiment(
     # Use default metrics if none provided
     if metrics is None:
         metrics = [
-            SplunkAOMetrics.ground_truth_adherence,
-            SplunkAOMetrics.context_adherence,
-            SplunkAOMetrics.chunk_attribution_utilization,
-            SplunkAOMetrics.completeness,
-            SplunkAOMetrics.correctness,
+            SplunkAOEvaluators.ground_truth_adherence,
+            SplunkAOEvaluators.context_adherence,
+            SplunkAOEvaluators.chunk_attribution_utilization,
+            SplunkAOEvaluators.completeness,
+            SplunkAOEvaluators.correctness,
         ]
 
     # Run experiment with your data

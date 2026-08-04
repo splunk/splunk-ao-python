@@ -21,7 +21,7 @@ from splunk_ao.resources.models.log_records_available_columns_request import Log
 from splunk_ao.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
 from splunk_ao.resources.types import Unset
 from splunk_ao.schema.filters import FilterType
-from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOMetrics
+from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.search import RecordType, Search
 from splunk_ao.shared.base import StateManagementMixin, SyncState
 from splunk_ao.shared.exceptions import ValidationError
@@ -78,10 +78,10 @@ class AgentStream(StateManagementMixin):
         agent_stream = project.create_agent_stream(name="Production Logs")
 
         # Enable metrics on the log stream
-        from splunk_ao.schema.metrics import SplunkAOMetrics
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
         local_metrics = log_stream.enable_evaluators([
-            SplunkAOMetrics.correctness,
-            SplunkAOMetrics.completeness,
+            SplunkAOEvaluators.correctness,
+            SplunkAOEvaluators.completeness,
             "context_relevance"
         ])
 
@@ -441,7 +441,7 @@ class AgentStream(StateManagementMixin):
         return metric_names
 
     def set_metrics(
-        self, metrics: builtins.list[SplunkAOMetrics | Metric | LocalMetricConfig | str]
+        self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
         Set (replace) the metrics on this log stream.
@@ -451,7 +451,7 @@ class AgentStream(StateManagementMixin):
 
         Args:
             metrics: List of metrics to set. Supports:
-                - SplunkAOMetrics enum values (e.g., SplunkAOMetrics.correctness)
+                - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
                 - Metric objects (including from Metric.get(id="..."))
                 - LocalMetricConfig objects for custom scoring functions
                 - String names of built-in metrics

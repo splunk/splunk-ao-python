@@ -20,12 +20,12 @@ from splunk_ao.shared.exceptions import ConfigurationError, MissingConfiguration
 class O11yApiClient(ApiClient):
     """API client for Splunk Observability Cloud AO endpoints."""
 
-    sf_token: SecretStr
+    o11y_token: SecretStr
     path_prefix: str = "/ao/api"
 
     @property
     def auth_header(self) -> dict[str, str]:
-        return {"X-SF-Token": self.sf_token.get_secret_value()}
+        return {"X-SF-Token": self.o11y_token.get_secret_value()}
 
     def _prefixed(self, path: str) -> str:
         normalized_path = f"/{path.lstrip('/')}"
@@ -109,7 +109,7 @@ class SplunkAOConfig(GalileoConfig):
 
     @model_validator(mode="after")
     def set_jwt_token(self) -> "SplunkAOConfig":
-        """Skip standalone JWT exchange when O11y uses direct SF-token authentication."""
+        """Skip standalone JWT exchange when O11y uses direct token authentication."""
         if self._is_o11y_env():
             self.jwt_token = None
             self.refresh_token = None
@@ -123,7 +123,7 @@ class SplunkAOConfig(GalileoConfig):
         if self._is_o11y_env():
             o11y = O11yConfig.from_env()
             self.validated_api_client = O11yApiClient(
-                host=o11y.api_root, sf_token=o11y.crud_token, jwt_token=SecretStr(""), ssl_context=self.ssl_context
+                host=o11y.api_root, o11y_token=o11y.crud_token, jwt_token=SecretStr(""), ssl_context=self.ssl_context
             )
             return self
         super().set_validated_api_client()
@@ -133,7 +133,7 @@ class SplunkAOConfig(GalileoConfig):
         return isinstance(self.validated_api_client, O11yApiClient)
 
     def refresh_jwt_token(self) -> None:
-        """Skip JWT refresh when authenticating directly with an O11y SF token."""
+        """Skip JWT refresh when authenticating directly with an O11y token."""
         if self._uses_o11y_api_client():
             return
         super().refresh_jwt_token()
@@ -178,8 +178,8 @@ class SplunkAOConfig(GalileoConfig):
         message identifying what's missing.
 
         Auth methods supported by the underlying config model:
-          - SF tokens (o11y): SPLUNK_AO_REALM and at least one of
-            SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN env vars
+          - O11y tokens: SPLUNK_AO_REALM and at least one of
+            SPLUNK_AO_O11Y_TOKEN or SPLUNK_AO_O11Y_API_TOKEN env vars
           - API key (standalone): api_key kwarg or SPLUNK_AO_API_KEY env
           - Pre-exchanged JWT (standalone): jwt_token or SPLUNK_AO_JWT_TOKEN
           - SSO (paired): sso_id_token + sso_provider, both kwargs and env vars
@@ -197,13 +197,13 @@ class SplunkAOConfig(GalileoConfig):
             return os.environ.get(env_name)
 
         realm = os.environ.get("SPLUNK_AO_REALM")
-        sf_token = os.environ.get("SPLUNK_AO_SF_TOKEN")
-        sf_api_token = os.environ.get("SPLUNK_AO_SF_API_TOKEN")
-        if realm or sf_token or sf_api_token:
+        o11y_token = os.environ.get("SPLUNK_AO_O11Y_TOKEN")
+        o11y_api_token = os.environ.get("SPLUNK_AO_O11Y_API_TOKEN")
+        if realm or o11y_token or o11y_api_token:
             if not realm:
                 return "O11y authentication requires SPLUNK_AO_REALM to be set."
-            if not sf_token and not sf_api_token:
-                return "O11y authentication requires SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN to be set."
+            if not o11y_token and not o11y_api_token:
+                return "O11y authentication requires SPLUNK_AO_O11Y_TOKEN or SPLUNK_AO_O11Y_API_TOKEN to be set."
             return None
 
         # Standalone methods — either alone is sufficient.
@@ -250,7 +250,7 @@ class SplunkAOConfig(GalileoConfig):
         # Nothing configured anywhere.
         return (
             "No Splunk AO authentication detected. Set one of: SPLUNK_AO_REALM with "
-            "SPLUNK_AO_SF_TOKEN or SPLUNK_AO_SF_API_TOKEN; SPLUNK_AO_API_KEY; "
+            "SPLUNK_AO_O11Y_TOKEN or SPLUNK_AO_O11Y_API_TOKEN; SPLUNK_AO_API_KEY; "
             "SPLUNK_AO_SSO_ID_TOKEN with SPLUNK_AO_SSO_PROVIDER; "
             "or SPLUNK_AO_USERNAME with SPLUNK_AO_PASSWORD. "
             "Alternatively, pass the equivalent kwargs to SplunkAOConfig.get(). "

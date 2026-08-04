@@ -18,8 +18,8 @@ from splunk_ao.shared.exceptions import AmbiguousConfigurationError, MissingConf
 
 _CONFIG_ENV_VARS = (
     "SPLUNK_AO_REALM",
-    "SPLUNK_AO_SF_TOKEN",
-    "SPLUNK_AO_SF_API_TOKEN",
+    "SPLUNK_AO_O11Y_TOKEN",
+    "SPLUNK_AO_O11Y_API_TOKEN",
     "SPLUNK_AO_API_KEY",
     "SPLUNK_AO_API_URL",
     "SPLUNK_AO_CONSOLE_URL",
@@ -56,13 +56,13 @@ def config_env(**overrides: str) -> Iterator[None]:
 
 def _o11y_client(token: str = "tok") -> O11yApiClient:
     client = O11yApiClient(
-        host="https://app.lab0.observability.splunkcloud.com", sf_token=SecretStr(token), jwt_token=SecretStr("")
+        host="https://app.lab0.observability.splunkcloud.com", o11y_token=SecretStr(token), jwt_token=SecretStr("")
     )
     client.thread_local.client = None
     return client
 
 
-def test_o11y_api_client_uses_sf_token_header() -> None:
+def test_o11y_api_client_uses_o11y_token_header() -> None:
     assert _o11y_client("my-token").auth_header == {"X-SF-Token": "my-token"}
 
 
@@ -131,20 +131,20 @@ def test_o11y_api_client_prefixes_streaming_requests(monkeypatch: pytest.MonkeyP
     assert captured["path"] == "/ao/api/projects"
 
 
-@pytest.mark.parametrize("token_var", ["SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"])
+@pytest.mark.parametrize("token_var", ["SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"])
 def test_o11y_auth_guard_accepts_environment_tokens(token_var: str) -> None:
     with config_env(SPLUNK_AO_REALM="us1", **{token_var: "tok"}):
         assert SplunkAOConfig._check_auth_config({}) is None
 
 
 def test_o11y_auth_guard_requires_realm() -> None:
-    with config_env(SPLUNK_AO_SF_API_TOKEN="tok"):
+    with config_env(SPLUNK_AO_O11Y_API_TOKEN="tok"):
         assert "SPLUNK_AO_REALM" in (SplunkAOConfig._check_auth_config({}) or "")
 
 
 def test_o11y_get_with_api_token_but_no_realm_fails_clearly(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(SplunkAOConfig, "_instance", None)
-    with config_env(SPLUNK_AO_SF_API_TOKEN="tok"):
+    with config_env(SPLUNK_AO_O11Y_API_TOKEN="tok"):
         with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_REALM"):
             SplunkAOConfig.get()
 
@@ -152,29 +152,29 @@ def test_o11y_get_with_api_token_but_no_realm_fails_clearly(monkeypatch: pytest.
 def test_o11y_auth_guard_requires_at_least_one_token() -> None:
     with config_env(SPLUNK_AO_REALM="us1"):
         error = SplunkAOConfig._check_auth_config({}) or ""
-    assert "SPLUNK_AO_SF_TOKEN" in error
-    assert "SPLUNK_AO_SF_API_TOKEN" in error
+    assert "SPLUNK_AO_O11Y_TOKEN" in error
+    assert "SPLUNK_AO_O11Y_API_TOKEN" in error
 
 
 def test_o11y_auth_guard_does_not_accept_token_kwargs() -> None:
     with config_env():
-        assert SplunkAOConfig._check_auth_config({"sf_token": "tok"}) is not None
+        assert SplunkAOConfig._check_auth_config({"o11y_token": "tok"}) is not None
 
 
 def test_o11y_console_bridge_uses_realm_and_preserves_explicit_legacy_value() -> None:
-    with config_env(SPLUNK_AO_REALM="lab0", SPLUNK_AO_SF_TOKEN="tok"):
+    with config_env(SPLUNK_AO_REALM="lab0", SPLUNK_AO_O11Y_TOKEN="tok"):
         SplunkAOConfig._bridge_env_vars()
         assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.lab0.observability.splunkcloud.com/"
 
     with config_env(
-        SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok", GALILEO_CONSOLE_URL="https://explicit.example.com"
+        SPLUNK_AO_REALM="us1", SPLUNK_AO_O11Y_TOKEN="tok", GALILEO_CONSOLE_URL="https://explicit.example.com"
     ):
         SplunkAOConfig._bridge_env_vars()
         assert os.environ["GALILEO_CONSOLE_URL"] == "https://explicit.example.com"
 
 
 def test_o11y_console_bridge_rederives_after_reset() -> None:
-    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok"):
+    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_O11Y_TOKEN="tok"):
         SplunkAOConfig._bridge_env_vars()
         assert os.environ["GALILEO_CONSOLE_URL"] == "https://app.us1.observability.splunkcloud.com/"
 
@@ -197,9 +197,9 @@ def test_o11y_get_builds_realm_config_without_jwt_calls(
     async def async_fail(*args: object, **kwargs: object) -> None:
         fail()
 
-    values = {"SPLUNK_AO_REALM": "lab0", "SPLUNK_AO_SF_TOKEN": "ingest-token"}
+    values = {"SPLUNK_AO_REALM": "lab0", "SPLUNK_AO_O11Y_TOKEN": "ingest-token"}
     if api_token is not None:
-        values["SPLUNK_AO_SF_API_TOKEN"] = api_token
+        values["SPLUNK_AO_O11Y_API_TOKEN"] = api_token
     values["GALILEO_API_KEY"] = "stale-standalone-key"
     values["GALILEO_API_URL"] = "https://stale-api.example.com"
     values["GALILEO_JWT_TOKEN"] = "stale-jwt"
@@ -235,7 +235,7 @@ def test_o11y_get_supports_crud_only_api_token(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(ApiClient, "make_request", staticmethod(async_fail))
     monkeypatch.setattr(ApiClient, "request", fail)
 
-    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_API_TOKEN="api-token"):
+    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_O11Y_API_TOKEN="api-token"):
         cfg = SplunkAOConfig.get(ssl_context=False)
         client = cfg.api_client
 
@@ -246,7 +246,7 @@ def test_o11y_get_supports_crud_only_api_token(monkeypatch: pytest.MonkeyPatch) 
 
 def test_ambiguous_environment_fails_before_config_construction(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(SplunkAOConfig, "_instance", None)
-    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_SF_TOKEN="tok", SPLUNK_AO_API_KEY="key"):
+    with config_env(SPLUNK_AO_REALM="us1", SPLUNK_AO_O11Y_TOKEN="tok", SPLUNK_AO_API_KEY="key"):
         with pytest.raises(AmbiguousConfigurationError):
             SplunkAOConfig.get()
 

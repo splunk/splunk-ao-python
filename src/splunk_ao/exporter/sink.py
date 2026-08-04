@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter
 
+from splunk_ao.exporter.diagnostics import ExportHealth, get_export_health
+
 
 @dataclass
 class BatchConfig:
@@ -19,10 +21,18 @@ class BatchConfig:
 class SpanSink:
     """SDK-owned abstraction over a batch processor and tracer provider."""
 
-    def __init__(self, processor: BatchSpanProcessor, provider: TracerProvider) -> None:
+    def __init__(
+        self, processor: BatchSpanProcessor, provider: TracerProvider, exporter: SpanExporter | None = None
+    ) -> None:
         self._processor = processor
         self._provider = provider
+        self._exporter = exporter
         self._shutdown = False
+
+    @property
+    def export_health(self) -> ExportHealth:
+        """Return the current receiver-acknowledgement health snapshot."""
+        return get_export_health(self._exporter)
 
     def emit(self, span: ReadableSpan) -> None:
         """Enqueue a completed span without flushing the batch."""
@@ -60,4 +70,4 @@ def build_span_sink(exporter: SpanExporter, batch_config: BatchConfig | None = N
     processor = build_batch_processor(exporter, batch_config)
     provider = TracerProvider()
     provider.add_span_processor(processor)
-    return SpanSink(processor, provider)
+    return SpanSink(processor, provider, exporter)

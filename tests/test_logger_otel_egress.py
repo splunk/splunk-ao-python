@@ -56,11 +56,11 @@ def configure_o11y(monkeypatch: pytest.MonkeyPatch, *, ingest_token: bool = True
     for name in ("SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_API_URL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("SPLUNK_AO_REALM", "us1")
-    monkeypatch.setenv("SPLUNK_AO_SF_API_TOKEN", "api-token")
+    monkeypatch.setenv("SPLUNK_AO_O11Y_API_TOKEN", "api-token")
     if ingest_token:
-        monkeypatch.setenv("SPLUNK_AO_SF_TOKEN", "ingest-token")
+        monkeypatch.setenv("SPLUNK_AO_O11Y_TOKEN", "ingest-token")
     else:
-        monkeypatch.delenv("SPLUNK_AO_SF_TOKEN", raising=False)
+        monkeypatch.delenv("SPLUNK_AO_O11Y_TOKEN", raising=False)
 
 
 def test_complete_leaf_is_enqueued_before_flush(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
@@ -376,7 +376,7 @@ def test_o11y_no_routing_exports_but_explicit_session_fails(
 def test_o11y_crud_only_token_cannot_construct_telemetry_logger(monkeypatch: pytest.MonkeyPatch) -> None:
     configure_o11y(monkeypatch, ingest_token=False)
 
-    with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_SF_TOKEN"):
+    with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_O11Y_TOKEN"):
         SplunkAOLogger(project="project", agent_stream="stream")
 
 

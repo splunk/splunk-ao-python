@@ -172,7 +172,7 @@ From there you can configure the metrics you are interested in. Once metrics are
 
 This project also includes a unit test to run the chatbot with a set of defined prompts, evaluating the prompts for action advancement, action completion, tool selection quality, and tool errors, only passing the test if both metrics score an average of 100% (or 0% for tool errors) over all the entries in the dataset.
 
-This is run using the [Splunk AO experiments framework](https://agent-observability-docs.splunk.com/concepts/experiments/overview) - allowing you to run any code as an experiment against a fixed dataset of prompts. This mechanism allows you to run AI applications, from simple to complex, under test conditions with a defined set of inputs. You can then use the results of evaluations run against your app to help with model selection or prompt engineering, as well as validating your application as part of a CI/CD pipeline.
+This is run using the [Splunk AO experiments framework](https://agent-observability-docs.splunk.com/sdk-api/experiments/experiments) - allowing you to run any code as an experiment against a fixed dataset of prompts. This mechanism allows you to run AI applications, from simple to complex, under test conditions with a defined set of inputs. You can then use the results of evaluations run against your app to help with model selection or prompt engineering, as well as validating your application as part of a CI/CD pipeline.
 
 You can run the unit test by running the following command inside your virtual environment:
 

@@ -117,12 +117,12 @@ Edit `dataset.json` with your own evaluation data. The example uses space missio
 In `upload_existing_results.py`, modify the `metrics` parameter in `upload_experiment()`:
 
 ```python
-from splunk_ao.schema.metrics import SplunkAOMetrics
+from splunk_ao.schema.metrics import SplunkAOEvaluators
 
 custom_metrics = [
-    SplunkAOMetrics.ground_truth_adherence,
-    SplunkAOMetrics.context_adherence,
-    SplunkAOMetrics.correctness,
+    SplunkAOEvaluators.ground_truth_adherence,
+    SplunkAOEvaluators.context_adherence,
+    SplunkAOEvaluators.correctness,
     # Add any other Splunk AO metrics you want
 ]
 
@@ -172,5 +172,5 @@ After running the script, your Splunk AO project will contain:
 
 - [Splunk AO Documentation](https://agent-observability-docs.splunk.com/what-is-splunk-agent-observability)
 - [Splunk AO SDK Reference](https://agent-observability-docs.splunk.com/sdk-api/overview)
-- [Creating Custom Metrics](https://agent-observability-docs.splunk.com/concepts/metrics/custom-metrics/custom-metrics-ui-llm)
+- [Creating Custom Metrics](https://agent-observability-docs.splunk.com/concepts/evaluators/custom-evaluators/custom-evaluators-ui-llm)
 - [Understanding Experiments](https://agent-observability-docs.splunk.com/sdk-api/experiments/experiments)

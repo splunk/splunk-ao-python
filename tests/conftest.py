@@ -86,7 +86,8 @@ class _TestSpanSink:
         self.shutdown_calls += 1
 
 
-# Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
+# Note: The mock_request fixture is provided by galileo_core's pytest11 plugin
+# (galileo_core.testing.request_mocker); respx is a direct test dependency.
 
 
 @pytest.fixture
@@ -172,7 +173,7 @@ def set_validated_config(
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
     SplunkAOLoggerSingleton().reset_all()
-    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_SF_TOKEN", "SPLUNK_AO_SF_API_TOKEN"):
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
     monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")
