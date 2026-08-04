@@ -2,6 +2,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from test_support.config import fast_config_validation
 
 from splunk_ao.config import _BRIDGE, SplunkAOConfig
 from splunk_ao.shared.exceptions import ConfigurationError
@@ -114,19 +115,13 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("galileo_core.schemas.base_config.GalileoConfig.set_validated_api_client", new=lambda x: x)
-@patch("galileo_core.schemas.base_config.GalileoConfig.get_jwt_token")
-def test_default_console_url(mock_get_jwt_token) -> None:
-    """
-    Test that the default console_url is used when SPLUNK_AO_CONSOLE_URL is not set.
-    """
-    mock_get_jwt_token.return_value = ("mock_jwt_token", "mock_refresh_token")
-
-    # Unset the environment variable to ensure we test the default
+def test_default_console_url() -> None:
+    """Default console_url and api_url when SPLUNK_AO_CONSOLE_URL is not set."""
     with patch.dict("os.environ", {}, clear=True):
-        # Reset the global config object to force re-initialization
-        SplunkAOConfig.get().reset()
-        config = SplunkAOConfig.get(api_key="mock_api_key")
+        if SplunkAOConfig._instance is not None:
+            SplunkAOConfig._instance.reset()
+        with fast_config_validation():
+            config = SplunkAOConfig.get(api_key="mock_api_key", ssl_context=False)
 
         assert str(config.console_url) == "https://app.galileo.ai/"
         assert str(config.api_url) == "https://api.galileo.ai/"

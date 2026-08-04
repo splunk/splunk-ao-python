@@ -59,6 +59,7 @@ opentelemetry-api = "^1.38.0"
 opentelemetry-exporter-otlp-proto-http = "^1.38.0"
 filelock = ">=3.20.1"
 idna = ">=3.15,<4"
+requests = ">=2.33.0"
 uv = { version = ">=0.9.6", optional = true }
 
 [tool.poetry.group.test.dependencies]
