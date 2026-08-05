@@ -76,7 +76,7 @@ class AgentStream(LogStreamResponse):
             messages=[{"role": "user", "content": "Hello, world!"}]
         )
 
-    # Enable metrics on a log stream - RECOMMENDED APPROACH
+    # Enable evaluators on an agent stream - RECOMMENDED APPROACH
     from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOEvaluators
 
@@ -84,15 +84,15 @@ class AgentStream(LogStreamResponse):
     # export SPLUNK_AO_AGENT_STREAM="Production Logs"
     # export SPLUNK_AO_PROJECT="My AI Project"
 
-    # Clean and simple - just pass the metrics!
-    local_metrics = enable_evaluators([
+    # Clean and simple - just pass the evaluators!
+    local_evaluators = enable_evaluators([
         SplunkAOEvaluators.correctness,
         SplunkAOEvaluators.completeness,
         "context_relevance"
     ])
 
     # Alternative: Use explicit parameters
-    local_metrics = enable_evaluators(
+    local_evaluators = enable_evaluators(
         agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=["correctness", "completeness"]
@@ -126,68 +126,69 @@ class AgentStream(LogStreamResponse):
         self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
-        Enable metrics directly on this log stream instance.
+        Enable evaluators directly on this agent stream instance.
 
-        This is the most intuitive and clean way to enable metrics when you already have a
-        AgentStream object. The method leverages the log stream's existing project_id and id
+        This is the most intuitive and clean way to enable evaluators when you already have a
+        AgentStream object. The method leverages the agent stream's existing project_id and id
         attributes, eliminating the need for redundant parameter specification and reducing
         the potential for errors.
 
         This approach is ideal for object-oriented workflows where you're working with AgentStream
-        instances directly, and it provides the clearest semantic meaning: "enable these metrics
-        on this specific log stream."
+        instances directly, and it provides the clearest semantic meaning: "enable these evaluators
+        on this specific agent stream."
 
         Parameters
         ----------
         metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
-            List of metrics to enable on this log stream. Supports multiple input formats:
+            List of evaluators to enable on this agent stream. Parameter name retained for API
+            compatibility. Supports multiple input formats:
 
-            - **SplunkAOEvaluators enum values**: Built-in metrics like `SplunkAOEvaluators.correctness`
-            - **Metric objects**: Custom metrics with optional version specifications
-            - **LocalMetricConfig objects**: Client-side metrics with custom scoring functions
-            - **String names**: Built-in metric names like "correctness" or "toxicity"
+            - **SplunkAOEvaluators enum values**: Built-in evaluators like `SplunkAOEvaluators.correctness`
+            - **Metric objects**: Custom evaluators with optional version specifications
+            - **LocalMetricConfig objects**: Client-side evaluators with custom scoring functions
+            - **String names**: Built-in evaluator names like "correctness" or "toxicity"
 
         Returns
         -------
         builtins.list[LocalMetricConfig]
-            List of local metric configurations that must be computed client-side.
-            Server-side metrics are automatically registered with Splunk AO and don't
+            List of local evaluator configurations that must be computed client-side.
+            Server-side evaluators are automatically registered with Splunk AO and don't
             need to be returned since users don't interact with them.
 
         Raises
         ------
         ValueError
             - If this AgentStream instance lacks required `id` or `project_id` attributes
-            - If any specified metrics are unknown or unavailable
-            - If there are issues with metric configuration or registration
+            - If any specified evaluators are unknown or unavailable
+            - If there are issues with evaluator configuration or registration
         GalileoHTTPException
             If there are network or API errors when communicating with Splunk AO services
 
         Examples
         --------
-        Basic usage with built-in metrics:
+        Basic usage with built-in evaluators:
 
         ```python
         from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOEvaluators
 
-        # Get a log stream first
-        log_streams = AgentStreams()
-        agent_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
+        # Get an agent stream first
+        agent_streams = AgentStreams()
+        agent_stream = agent_streams.get(name="Production Logs", project_name="My AI Project")
 
-        # Enable metrics directly - clean and intuitive!
-        local_metrics = log_stream.enable_evaluators([
+        # Enable evaluators directly - clean and intuitive!
+        local_evaluators = agent_stream.enable_evaluators([
             SplunkAOEvaluators.correctness,
             SplunkAOEvaluators.completeness,
             "context_relevance",
             "toxicity"
         ])
 
-        logger.info(f"Server-side metrics enabled automatically")
-        logger.info(f"Need to process {len(local_metrics)} local metrics")
+        logger.info("Server-side evaluators enabled automatically")
+        logger.info(f"Need to process {len(local_evaluators)} local evaluators")
         ```
 
-        Advanced usage with custom metrics:
+        Advanced usage with custom evaluators:
 
         ```python
         from splunk_ao.schema.metrics import Metric, LocalMetricConfig
@@ -195,16 +196,16 @@ class AgentStream(LogStreamResponse):
         def custom_scorer(trace_or_span):
             return 0.75  # Your scoring logic
 
-        local_metrics = log_stream.enable_evaluators([
+        local_evaluators = agent_stream.enable_evaluators([
             SplunkAOEvaluators.correctness,
             "completeness",
             Metric(name="domain_relevance", version=3),
-            LocalMetricConfig(name="custom_metric", scorer_fn=custom_scorer)
+            LocalMetricConfig(name="custom_evaluator", scorer_fn=custom_scorer)
         ])
 
-        # Process local metrics if any
-        for local_metric in local_metrics:
-            logger.info(f"Need to process local metric: {local_metric.name}")
+        # Process local evaluators if any
+        for local_evaluator in local_evaluators:
+            logger.info(f"Need to process local evaluator: {local_evaluator.name}")
         ```
 
         Notes
@@ -217,11 +218,11 @@ class AgentStream(LogStreamResponse):
         **Recommended Usage:**
 
         - Use this method when you already have a AgentStream object
-        - More intuitive than specifying project/log stream names again
+        - More intuitive than specifying project/agent stream names again
         - Cleaner object-oriented design pattern
         """
         if not hasattr(self, "id") or not hasattr(self, "project_id"):
-            raise ValueError("Log stream must have id and project_id to enable metrics")
+            raise ValueError("Agent stream must have id and project_id to enable evaluators")
 
         _, local_metrics = create_metric_configs(self.project_id, self.id, metrics)
         return local_metrics
@@ -484,46 +485,46 @@ class AgentStreams:
         metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
     ) -> builtins.list[LocalMetricConfig]:
         """
-        Enable metrics for a log stream by configuring scorers.
+        Enable evaluators for an agent stream by configuring scorers.
 
         The project name can be provided via the 'project_name' parameter or the
         SPLUNK_AO_PROJECT environment variable.
 
-        The log stream name can be provided via the 'agent_stream_name' parameter or the
+        The agent stream name can be provided via the 'agent_stream_name' parameter or the
         SPLUNK_AO_AGENT_STREAM environment variable.
 
         Parameters
         ----------
         agent_stream_name : Optional[str], optional
-            The name of the log stream. Takes precedence over the SPLUNK_AO_AGENT_STREAM environment variable. Defaults to None.
+            The name of the agent stream. Takes precedence over the SPLUNK_AO_AGENT_STREAM environment variable. Defaults to None.
         project_name : Optional[str], optional
             The name of the project. Takes precedence over the SPLUNK_AO_PROJECT environment variable. Defaults to None.
         metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
-            List of metrics to enable. Can include:
+            List of evaluators to enable. Parameter name retained for API compatibility. Can include:
             - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
             - Metric objects with name and optional version
-            - LocalMetricConfig objects for custom local metrics
-            - String names of built-in metrics
+            - LocalMetricConfig objects for custom local evaluators
+            - String names of built-in evaluators
 
         Returns
         -------
         tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]
-            A tuple containing the configured scorer configs and local metric configs.
+            A tuple containing the configured scorer configs and local evaluator configs.
 
         Raises
         ------
         ValueError
-            If log stream or project cannot be found, or if metrics are unknown.
+            If agent stream or project cannot be found, or if evaluators are unknown.
 
         Examples
         --------
         ```python
-        # Enable built-in metrics with explicit parameters
+        # Enable built-in evaluators with explicit parameters
         from splunk_ao.agent_streams import AgentStreams
         from splunk_ao.schema.metrics import SplunkAOEvaluators
 
-        log_streams = AgentStreams()
-        scorer_configs, local_metrics = log_streams.enable_evaluators(
+        agent_streams = AgentStreams()
+        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
             agent_stream_name="Production Logs",
             project_name="My AI Project",
             metrics=[
@@ -533,26 +534,26 @@ class AgentStreams:
             ],
         )
 
-        # Enable metrics using environment variables
+        # Enable evaluators using environment variables
         # export SPLUNK_AO_AGENT_STREAM="Production Logs"
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_metrics = log_streams.enable_evaluators(
+        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
             metrics=["correctness", "completeness"]
         )
 
-        # Enable custom metrics with mixed parameters
+        # Enable custom evaluators with mixed parameters
         from splunk_ao.schema.metrics import Metric, LocalMetricConfig
 
         def custom_scorer(trace_or_span):
             return 0.85  # Custom scoring logic
 
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_metrics = log_streams.enable_evaluators(
-            agent_stream_name="Production Logs",  # Explicit log stream
+        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
+            agent_stream_name="Production Logs",  # Explicit agent stream
             # project_name from env var
             metrics=[
-                Metric(name="my_custom_metric", version=2),
-                LocalMetricConfig(name="local_scorer", scorer_fn=custom_scorer)
+                Metric(name="my_custom_evaluator", version=2),
+                LocalMetricConfig(name="local_evaluator", scorer_fn=custom_scorer)
             ]
         )
         ```
@@ -571,7 +572,7 @@ class AgentStreams:
             raise ValueError("agent_stream_name must be provided (or set SPLUNK_AO_AGENT_STREAM env var)")
         agent_stream = self.get(name=agent_stream_name, project_name=project_obj.name)
         if not agent_stream:
-            raise ValueError(f"Log stream '{agent_stream_name}' not found in project '{project_obj.name}'")
+            raise ValueError(f"Agent stream '{agent_stream_name}' not found in project '{project_obj.name}'")
 
         # Use the shared utility function directly
         _, local_metrics = create_metric_configs(project_obj.id, agent_stream.id, metrics)
@@ -689,14 +690,14 @@ def enable_evaluators(
     metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
 ) -> builtins.list[LocalMetricConfig]:
     """
-    Enable metrics for a log stream with flexible parameter and environment variable support.
+    Enable evaluators for an agent stream with flexible parameter and environment variable support.
 
     This unified function supports both explicit parameters and environment variable fallbacks,
     making it perfect for all use cases - from production CI/CD pipelines to development testing.
 
     **Flexible Usage Patterns:**
-    - **Environment-only**: Just pass metrics, names from env vars (production/CI)
-    - **Explicit parameters**: Specify project/log stream names directly (development)
+    - **Environment-only**: Just pass evaluators, names from env vars (production/CI)
+    - **Explicit parameters**: Specify project/agent stream names directly (development)
     - **Mixed approach**: Combine explicit params with environment fallbacks
 
     Environment Variables (Optional Fallbacks)
@@ -704,34 +705,35 @@ def enable_evaluators(
     SPLUNK_AO_PROJECT : str
         The name of the Splunk AO project (used when project_name not provided)
     SPLUNK_AO_AGENT_STREAM : str
-        The name of the log stream (used when agent_stream_name not provided)
+        The name of the agent stream (used when agent_stream_name not provided)
 
     Parameters
     ----------
     agent_stream_name : Optional[str], optional
-        The name of the log stream. Takes precedence over SPLUNK_AO_AGENT_STREAM environment variable.
+        The name of the agent stream. Takes precedence over SPLUNK_AO_AGENT_STREAM environment variable.
         If None, will use SPLUNK_AO_AGENT_STREAM env var. Defaults to None.
     project_name : Optional[str], optional
         The name of the project. Takes precedence over SPLUNK_AO_PROJECT environment variable.
         If None, will use SPLUNK_AO_PROJECT env var. Defaults to None.
     metrics : builtins.list[Union[SplunkAOEvaluators, Metric, LocalMetricConfig, str]]
-        List of metrics to enable on the log stream. Can include:
+        List of evaluators to enable on the agent stream. Parameter name retained for API
+        compatibility. Can include:
         - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
-        - Metric objects with name and optional version for custom metrics
+        - Metric objects with name and optional version for custom evaluators
         - LocalMetricConfig objects for client-side custom scoring functions
-        - String names of built-in metrics (e.g., "correctness", "toxicity")
+        - String names of built-in evaluators (e.g., "correctness", "toxicity")
 
     Returns
     -------
     builtins.list[LocalMetricConfig]
-        List of local metric configurations that must be computed client-side.
-        Server-side metrics are automatically registered with Splunk AO and don't
+        List of local evaluator configurations that must be computed client-side.
+        Server-side evaluators are automatically registered with Splunk AO and don't
         need to be returned since users don't interact with them.
 
     Raises
     ------
     ValueError
-        If log stream or project cannot be found, or if any specified metrics are unknown.
+        If agent stream or project cannot be found, or if any specified evaluators are unknown.
     errors.UnexpectedStatus
         If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
     httpx.TimeoutException
@@ -740,11 +742,11 @@ def enable_evaluators(
     Examples
     --------
     ```python
-    # Enable built-in metrics with explicit parameters
+    # Enable built-in evaluators with explicit parameters
     from splunk_ao.agent_streams import enable_evaluators
     from splunk_ao.schema.metrics import SplunkAOEvaluators
 
-    local_metrics = enable_evaluators(
+    local_evaluators = enable_evaluators(
         agent_stream_name="Production Logs",
         project_name="My AI Project",
         metrics=[
@@ -754,27 +756,27 @@ def enable_evaluators(
         ],
     )
 
-    # Enable metrics using environment variables only
+    # Enable evaluators using environment variables only
     # export SPLUNK_AO_AGENT_STREAM="Production Logs"
     # export SPLUNK_AO_PROJECT="My AI Project"
-    local_metrics = enable_evaluators(metrics=["correctness", "completeness"])
+    local_evaluators = enable_evaluators(metrics=["correctness", "completeness"])
 
-    # Enable custom and local metrics with environment variable fallbacks
+    # Enable custom and local evaluators with environment variable fallbacks
     from splunk_ao.schema.metrics import Metric, LocalMetricConfig
     from galileo_core.schemas.logging.step import StepType
 
     def response_length_scorer(trace_or_span):
-        '''Custom metric that scores based on response length'''
+        '''Custom evaluator that scores based on response length'''
         if hasattr(trace_or_span, "output") and trace_or_span.output:
             return min(len(trace_or_span.output) / 100.0, 1.0)  # Normalize 0-1
         return 0.0
 
-    local_metrics = enable_evaluators(
+    local_evaluators = enable_evaluators(
         agent_stream_name="Development Logs",
         metrics=[
             SplunkAOEvaluators.correctness,
             "toxicity",
-            Metric(name="my_custom_metric", version=2),
+            Metric(name="my_custom_evaluator", version=2),
             LocalMetricConfig(
                 name="response_length",
                 scorer_fn=response_length_scorer,
@@ -784,9 +786,9 @@ def enable_evaluators(
         ],
     )
 
-    # Process local metrics
-    for local_metric in local_metrics:
-        logger.info(f"Need to process local metric: {local_metric.name}")
+    # Process local evaluators
+    for local_evaluator in local_evaluators:
+        logger.info(f"Need to process local evaluator: {local_evaluator.name}")
     ```
     """
     return AgentStreams().enable_evaluators(agent_stream_name=agent_stream_name, project_name=project_name, metrics=metrics)
