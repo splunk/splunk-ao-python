@@ -7,7 +7,7 @@ description = "Happy Eyeballs for asyncio"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "aiohappyeyeballs-2.6.1-py3-none-any.whl", hash = "sha256:f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8"},
     {file = "aiohappyeyeballs-2.6.1.tar.gz", hash = "sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558"},
@@ -20,7 +20,7 @@ description = "Async http client/server framework (asyncio)"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "aiohttp-3.14.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:eb0495d778817619273c108784292be161a924b9f5ae5cbbc70a2caa6838250b"},
     {file = "aiohttp-3.14.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c3c200cf9757edd785051dc699c7ecbec22110dbfcb3fefc7a9f9695eda8ea7a"},
@@ -163,7 +163,7 @@ description = "aiosignal: a list of registered asynchronous callbacks"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "aiosignal-1.4.0-py3-none-any.whl", hash = "sha256:053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e"},
     {file = "aiosignal-1.4.0.tar.gz", hash = "sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7"},
@@ -1154,7 +1154,7 @@ description = "A list-like structure which implements collections.abc.MutableSeq
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "frozenlist-1.7.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cc4df77d638aa2ed703b878dd093725b72a824c3c546c076e8fdf276f78ee84a"},
     {file = "frozenlist-1.7.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:716a9973a2cc963160394f701964fe25012600f3d311f60c790400b00e568b61"},
@@ -2605,7 +2605,7 @@ description = "multidict implementation"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "multidict-6.6.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:b8aa6f0bd8125ddd04a6593437bad6a7e70f300ff4180a531654aa2ab3f6d58f"},
     {file = "multidict-6.6.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b9e5853bbd7264baca42ffc53391b490d65fe62849bf2c690fa3f6273dbcd0cb"},
@@ -3595,7 +3595,7 @@ description = "Accelerated property cache"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "propcache-0.3.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:22d9962a358aedbb7a2e36187ff273adeaab9743373a272976d2e348d08c7770"},
     {file = "propcache-0.3.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0d0fda578d1dc3f77b6b5a5dce3b9ad69a8250a891760a548df850a5e8da87f3"},
@@ -6225,7 +6225,7 @@ description = "Yet another URL library"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "yarl-1.20.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:6032e6da6abd41e4acda34d75a816012717000fa6839f37124a47fcefc49bec4"},
     {file = "yarl-1.20.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2c7b34d804b8cf9b214f05015c4fee2ebe7ed05cf581e7192c06555c71f4446a"},
@@ -6503,4 +6503,4 @@ openai = ["openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "f8c508092d872be7fc0926b4dbec229d20aee4317102d68719dae3a728a52fa8"
+content-hash = "0e1bf1cc820750404478e8e8414953f09384f6c0351f2467cc691278c8e06192"
