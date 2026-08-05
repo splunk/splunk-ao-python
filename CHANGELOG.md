@@ -25,6 +25,13 @@
 
 ### Changed
 
+- **Evaluator terminology alignment in docs and errors** (HYBIM-856): Updated
+  `SplunkAOEvaluators` docstrings, agent stream/evaluator API docstrings, and
+  user-visible error messages to use evaluator and agent stream vocabulary after
+  the HYBIM-949 rename. Enum values are documented as matching scorer labels via
+  the legacy `/scorers` API paths. The public `metrics=` parameter name is
+  unchanged for API compatibility. Renamed stale `test_galileo_metrics_*` and
+  `test_lookup_by_galileo_metrics_enum` test identifiers.
 - Completed spans are queued immediately in an OpenTelemetry
   `BatchSpanProcessor` and exported on its configured schedule.
 - `flush()` and `async_flush()` now drain completed spans without concluding an
