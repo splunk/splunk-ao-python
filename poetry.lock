@@ -5657,7 +5657,7 @@ description = "An extremely fast Python package and project manager, written in 
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"crewai\" or extra == \"all\""
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
 files = [
     {file = "uv-0.12.1-py3-none-linux_armv6l.whl", hash = "sha256:71f86410264c69a3e8acd18171897dd8ab1a13350cf40f718e4def5db2b724be"},
     {file = "uv-0.12.1-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:41b8fc2335f682312a1ca39a7b4abfd6af800992065c663582ca3e4d51cf9258"},
@@ -6562,4 +6562,4 @@ openai = ["openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "9eb8bdd73d88cbcf0a877d08589c36c2aeffcca91b31991a547dcd5e6bcbd5d5"
+content-hash = "d232c5568cecb53746bf13b7965027b8e27e94055a74039f9eefff1b37cdfea0"
