@@ -14,7 +14,9 @@ from galileo_core.schemas.shared.metric import MetricValueType
 class SplunkAOEvaluators(StrEnum):
     """Built-in Splunk AO evaluators.
 
-    Values are human-readable UI labels used for evaluator lookup via the API.
+    Values are human-readable UI labels, matched against scorer labels by the
+    API (endpoints still use the legacy ``/scorers`` paths — see
+    ``docs/domain-entity-rename.md``).
     Member names follow the convention: base name = LLM version, _luna suffix = SLM version.
     """
 
