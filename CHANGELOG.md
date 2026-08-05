@@ -23,12 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2026-07-31
 
-### Breaking Changes
+### Changed
 
-- **Config file renamed** (HYBIM-918): The on-disk credentials file written to
-  `~/.galileo/` has been renamed from `galileo-python-config.json` to
-  `splunk-ao-config.json`. Users with an existing saved config must either rename
-  the file manually or delete it and re-authenticate.
+- **Config file**: The SDK credentials file is `~/.galileo/splunk-ao-config.json`.
+  The directory `~/.galileo/` is inherited from `galileo-core` and unchanged.
+  Users migrating from `galileo-python` with an existing `~/.galileo/galileo-python-config.json`
+  must delete the old file and re-authenticate.
+- **`monitor_progress()` `job_id` parameter removed** (HYBIM-931): The deprecated
+  `job_id` keyword argument of `Experiment.monitor_progress()` has been fully removed.
+  Callers passing `job_id=` must remove that argument.
 
 ### Added
 

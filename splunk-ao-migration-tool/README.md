@@ -340,15 +340,13 @@ The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluat
 + scorer = SplunkAOEvaluators.completeness
 ```
 
-### 5.3 On-Disk Config File Renamed
+### 5.3 On-Disk Config File
 
-The SDK credentials file written to `~/.galileo/` has been renamed:
+`splunk-ao-python` writes credentials to `~/.galileo/splunk-ao-config.json`.
+The directory `~/.galileo/` is inherited from `galileo-core` and unchanged.
 
-| Old | New |
-|-----|-----|
-| `~/.galileo/galileo-python-config.json` | `~/.galileo/splunk-ao-config.json` |
-
-If you have saved credentials on disk, either rename the file manually or delete it and re-authenticate by running your code once.
+If you have an existing `~/.galileo/galileo-python-config.json` from `galileo-python`,
+delete it and re-authenticate — the SDK will create the new file automatically.
 
 ---
 
