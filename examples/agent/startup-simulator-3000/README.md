@@ -219,7 +219,7 @@ cat .env
 
 1. **Check the logs**: Look at the terminal output for error messages
 2. **Verify API keys**: Make sure all required API keys are set in `.env`
-3. **Check Python version**: Ensure you're using Python 3.8+
+3. **Check Python version**: Ensure you're using Python 3.10+
 4. **Reinstall dependencies**: `pip install -r requirements.txt --force-reinstall`
 
 ## 🎓 Learning Resources

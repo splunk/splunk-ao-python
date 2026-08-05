@@ -8,7 +8,7 @@ echo ========================================
 REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ Python is not installed or not in PATH. Please install Python 3.8+ first.
+    echo ❌ Python is not installed or not in PATH. Please install Python 3.10+ first.
     pause
     exit /b 1
 )
