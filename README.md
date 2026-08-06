@@ -38,17 +38,43 @@ Other available extras include `crewai`, `middleware`, and `all`.
 
 ### Setup
 
-Configure the environment for your Agent Observability deployment. Do not mix
-O11y Cloud and standalone deployment variables; the SDK detects the deployment
-from the variables that are present and rejects ambiguous configurations.
+Environment variables differ based on your Agent Observability deployment:
+1. On-premises, standalone, and custom deployments
+2. Splunk Observability (O11y) Cloud deployments
 
-#### O11y Cloud user
+> [!CAUTION]
+> Do not mix 1) on-premises and 2) o11y Cloud environment variables. The SDK detects the deployment from the environment variables that are present and rejects ambiguous configurations.
+
+#### On-Premises Agent Observability
 
 | Environment variable | Description |
 | --- | --- |
-| `SPLUNK_AO_REALM` | Splunk Observability Cloud realm (required) |
-| `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (required for telemetry) |
-| `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token used for CRUD operations (optional) |
+| `SPLUNK_AO_API_KEY` | Agent Observability API key (Required) |
+| `SPLUNK_AO_CONSOLE_URL` | Agent Observability Console URL (Required) |
+| `SPLUNK_AO_API_URL` | Custom API URL (Optional) |
+
+Set your Agent Observability API key and Console URL:
+
+```shell
+export SPLUNK_AO_API_KEY="your-agent-observability-api-key"
+export SPLUNK_AO_CONSOLE_URL="https://console.subdomain.yourcompany.com"
+```
+
+> [!TIP]
+> Logging your first trace to on-premises Agent Observability? [Visit this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-first-trace). 
+>
+> Learn how to find each environment variable in [this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-keys).
+
+#### Splunk Observability (O11y) Cloud
+
+> [!NOTE]  
+> As of August 2026, Agent Observability on Splunk Observability Cloud is not yet generally available.
+
+| Environment variable | Description |
+| --- | --- |
+| `SPLUNK_AO_REALM` | Splunk Observability Cloud realm (Required) |
+| `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (Required for telemetry) |
+| `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token used for CRUD operations (Optional) |
 
 For telemetry export, set your realm and O11y ingest token:
 
@@ -76,29 +102,6 @@ OTLP exporter without `SPLUNK_AO_O11Y_TOKEN` raises a configuration error.
 The SDK derives the console, API and OTLP ingest endpoints from the
 realm. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
 Cloud.
-
-#### Standalone Agent Observability user
-
-| Environment variable | Description |
-| --- | --- |
-| `SPLUNK_AO_API_KEY` | Agent Observability API key (required) |
-| `SPLUNK_AO_CONSOLE_URL` | Agent Observability console URL (required) |
-| `SPLUNK_AO_API_URL` | Explicit API URL when it cannot be derived from the console URL (optional) |
-
-Set your Agent Observability API key and console URL:
-
-```shell
-export SPLUNK_AO_API_KEY="your-agent-observability-api-key"
-export SPLUNK_AO_CONSOLE_URL="https://app.galileo.ai"
-```
-
-The SDK derives the API endpoint from the console URL. Set
-`SPLUNK_AO_API_URL` only when your deployment uses a separate API URL that
-cannot be derived from the console URL:
-
-```shell
-export SPLUNK_AO_API_URL="https://api.galileo.ai"
-```
 
 #### Routing
 
@@ -161,7 +164,7 @@ client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 def call_openai() -> str | None:
     chat_completion = client.chat.completions.create(
-        messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-4o"
+        messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-5.6-terra"
     )
     return chat_completion.choices[0].message.content
 
@@ -248,7 +251,7 @@ try:
     logger.add_llm_span(
         input="Say this is a test",
         output="Hello, this is a test",
-        model="gpt-4o",
+        model="gpt-5.6-terra",
         num_input_tokens=10,
         num_output_tokens=3,
         total_tokens=13,
@@ -312,7 +315,7 @@ from splunk_ao.openai import openai
 client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 stream = client.chat.completions.create(
-    messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-4o", stream=True,
+    messages=[{"role": "user", "content": "Say this is a test"}], model="gpt-5.6-terra", stream=True,
 )
 
 # This will create a single span trace with the OpenAI call
@@ -518,7 +521,7 @@ dataset = [
 
 def runner(input):
     return openai.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.6-terra",
         messages=[
             {"role": "user", "content": f"Say hello: {input['name']}"}
         ],
