@@ -2,6 +2,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from test_support.config import fast_config_validation
 
 from splunk_ao.config import _BRIDGE, SplunkAOConfig
 from splunk_ao.shared.exceptions import ConfigurationError
@@ -114,19 +115,13 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("galileo_core.schemas.base_config.GalileoConfig.set_validated_api_client", new=lambda x: x)
-@patch("galileo_core.schemas.base_config.GalileoConfig.get_jwt_token")
-def test_default_console_url(mock_get_jwt_token) -> None:
-    """
-    Test that the default console_url is used when SPLUNK_AO_CONSOLE_URL is not set.
-    """
-    mock_get_jwt_token.return_value = ("mock_jwt_token", "mock_refresh_token")
-
-    # Unset the environment variable to ensure we test the default
+def test_default_console_url() -> None:
+    """Default console_url and api_url when SPLUNK_AO_CONSOLE_URL is not set."""
     with patch.dict("os.environ", {}, clear=True):
-        # Reset the global config object to force re-initialization
-        SplunkAOConfig.get().reset()
-        config = SplunkAOConfig.get(api_key="mock_api_key")
+        if SplunkAOConfig._instance is not None:
+            SplunkAOConfig._instance.reset()
+        with fast_config_validation():
+            config = SplunkAOConfig.get(api_key="mock_api_key", ssl_context=False)
 
         assert str(config.console_url) == "https://app.galileo.ai/"
         assert str(config.api_url) == "https://api.galileo.ai/"
@@ -341,3 +336,20 @@ def test_reset_removes_all_bridgeable_galileo_vars() -> None:
                 f"reset() is expected to remove {galileo_key} "
                 f"(bridge owns all GALILEO_* keys; no SDK consumer sets them directly)"
             )
+
+
+def test_config_filename_default() -> None:
+    assert SplunkAOConfig.model_fields["config_filename"].default == "splunk-ao-config.json"
+
+
+def test_config_file_path_resolves_to_splunk_ao_config(tmp_path) -> None:
+    """Runtime config_file property resolves to splunk-ao-config.json under home_dir.
+
+    Complements test_config_filename_default by exercising the upstream
+    config_file property rather than just the declared field default.
+    model_construct skips network-calling validators while still applying
+    field defaults.
+    """
+    config = SplunkAOConfig.model_construct(home_dir=tmp_path)
+
+    assert config.config_file == tmp_path / "splunk-ao-config.json"

@@ -86,7 +86,8 @@ class _TestSpanSink:
         self.shutdown_calls += 1
 
 
-# Note: The mock_request fixture is automatically provided by galileo_core[testing] extras
+# Note: The mock_request fixture is provided by galileo_core's pytest11 plugin
+# (galileo_core.testing.request_mocker); respx is a direct test dependency.
 
 
 @pytest.fixture
