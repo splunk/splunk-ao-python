@@ -508,8 +508,9 @@ class AgentStreams:
 
         Returns
         -------
-        tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]
-            A tuple containing the configured scorer configs and local evaluator configs.
+        builtins.list[LocalMetricConfig]
+            Local evaluator configurations that must be computed client-side.
+            Server-side evaluators are automatically registered with Splunk AO.
 
         Raises
         ------
@@ -524,7 +525,7 @@ class AgentStreams:
         from splunk_ao.schema.metrics import SplunkAOEvaluators
 
         agent_streams = AgentStreams()
-        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
+        local_evaluators = agent_streams.enable_evaluators(
             agent_stream_name="Production Logs",
             project_name="My AI Project",
             metrics=[
@@ -537,7 +538,7 @@ class AgentStreams:
         # Enable evaluators using environment variables
         # export SPLUNK_AO_AGENT_STREAM="Production Logs"
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
+        local_evaluators = agent_streams.enable_evaluators(
             metrics=["correctness", "completeness"]
         )
 
@@ -548,7 +549,7 @@ class AgentStreams:
             return 0.85  # Custom scoring logic
 
         # export SPLUNK_AO_PROJECT="My AI Project"
-        scorer_configs, local_evaluators = agent_streams.enable_evaluators(
+        local_evaluators = agent_streams.enable_evaluators(
             agent_stream_name="Production Logs",  # Explicit agent stream
             # project_name from env var
             metrics=[
