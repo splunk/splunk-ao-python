@@ -20,7 +20,7 @@ import backoff
 from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
-from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
+from opentelemetry.trace import NonRecordingSpan, SpanContext, SpanKind, TraceFlags, TraceState
 from pydantic import PrivateAttr
 
 from galileo_core.helpers.execution import async_run
@@ -31,7 +31,6 @@ from galileo_core.schemas.logging.span import (
     LlmSpan,
     LlmSpanAllowedInputType,
     LlmSpanAllowedOutputType,
-    RetrieverSpan,
     Span,
     StepWithChildSpans,
     ToolSpan,
@@ -69,6 +68,7 @@ from splunk_ao.schema.logged import (
     LoggedAgentSpan,
     LoggedControlSpan,
     LoggedLlmSpan,
+    LoggedRetrieverSpan,
     LoggedTrace,
     LoggedWorkflowSpan,
     TextOrContentBlocks,
@@ -368,7 +368,9 @@ class SplunkAOLogger(TracesLogger):
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
             if self.experiment_id is None and self.agent_stream_name is None and self.agent_stream_id is None:
-                raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
+                raise SplunkAOLoggerException(
+                    "agent_stream or agent_stream_id is required to initialize SplunkAOLogger."
+                )
 
         if local_metrics:
             self.local_metrics = local_metrics
@@ -1705,7 +1707,8 @@ class SplunkAOLogger(TracesLogger):
         tags: list[str] | None = None,
         status_code: int | None = None,
         step_number: int | None = None,
-    ) -> RetrieverSpan:
+        data_source_id: str | None = None,
+    ) -> LoggedRetrieverSpan:
         """
         Add a new retriever span to the current parent.
 
@@ -1738,10 +1741,12 @@ class SplunkAOLogger(TracesLogger):
             Status code of the node execution.
         step_number: Optional[int]
             Step number of the span.
+        data_source_id: Optional[str]
+            Authoritative identifier of the retrieval data source used by the GenAI system.
 
         Returns
         -------
-        RetrieverSpan
+        LoggedRetrieverSpan
             The created span.
         """
         documents = convert_to_documents(output, "output")
@@ -1751,22 +1756,23 @@ class SplunkAOLogger(TracesLogger):
         if metadata:
             metadata = {k: SplunkAOLogger._convert_metadata_value(v) for k, v in metadata.items()}
 
-        kwargs = {
-            "input": input,
-            "documents": documents,
-            "redacted_input": redacted_input,
-            "redacted_documents": redacted_documents,
-            "name": name,
-            "duration_ns": duration_ns,
-            "created_at": created_at,
-            "user_metadata": metadata,
-            "tags": tags,
-            "status_code": status_code,
-            "step_number": step_number,
-            "id": uuid.uuid4(),
-        }
         parent = self.current_parent()
-        span = super().add_retriever_span(**kwargs)
+        span = LoggedRetrieverSpan(
+            input=input,
+            output=documents,
+            redacted_input=redacted_input,
+            redacted_output=redacted_documents,
+            name=name,
+            metrics=Metrics(duration_ns=duration_ns),
+            created_at=self._get_child_span_timestamp() if created_at is None else created_at,
+            user_metadata=metadata,
+            tags=tags,
+            status_code=status_code,
+            step_number=step_number,
+            data_source_id=data_source_id,
+            id=uuid.uuid4(),
+        )
+        self.add_child_span_to_parent(span)
         span._parent = parent
         self._record_otel_ids(span, parent_step=parent)
         self._mark_potentially_parentable(span)
@@ -1969,6 +1975,7 @@ class SplunkAOLogger(TracesLogger):
         agent_type: AgentType | None = None,
         step_number: int | None = None,
         status_code: int | None = None,
+        span_kind: SpanKind = SpanKind.INTERNAL,
     ) -> LoggedAgentSpan:
         """
         Add an agent type span to the current parent.
@@ -2010,6 +2017,9 @@ class SplunkAOLogger(TracesLogger):
             Step number of the span.
         status_code: Optional[int]
             Status code of the span execution (e.g., 200 for success, 500 for error).
+        span_kind: SpanKind
+            OTel operation kind. Only ``SpanKind.CLIENT`` is accepted as a remote-agent override;
+            all other values use ``SpanKind.INTERNAL``.
 
         Returns
         -------
@@ -2031,6 +2041,7 @@ class SplunkAOLogger(TracesLogger):
             tags=tags,
             metrics=Metrics(duration_ns=duration_ns),
             agent_type=agent_type,
+            span_kind=span_kind,
             id=uuid.uuid4(),
             step_number=step_number,
         )

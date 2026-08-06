@@ -55,6 +55,7 @@ from functools import wraps
 from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
+from opentelemetry.trace import SpanKind
 from typing_extensions import ParamSpec
 
 from galileo_core.schemas.logging.span import WorkflowSpan
@@ -276,6 +277,8 @@ class SplunkAODecorator:
         name: str | None = None,
         span_type: SPAN_TYPE | None = None,
         params: dict[str, str | Callable] | None = None,
+        data_source_id: str | None = None,
+        span_kind: SpanKind | None = None,
     ) -> Callable[[Callable[P, R]], Callable[P, R]]: ...
 
     def log(
@@ -286,6 +289,8 @@ class SplunkAODecorator:
         span_type: SPAN_TYPE | None = None,
         params: dict[str, str | Callable] | None = None,
         dataset_record: DatasetRecord | None = None,
+        data_source_id: str | None = None,
+        span_kind: SpanKind | None = None,
     ) -> Callable[[Callable[P, R]], Callable[P, R]]:
         """
         Main decorator function for logging function calls.
@@ -304,6 +309,10 @@ class SplunkAODecorator:
             Optional span type ("llm", "retriever", "tool", "workflow", "agent")
         params
             Optional parameter mapping for extracting specific values
+        data_source_id
+            Optional authoritative retrieval data-source ID for ``span_type="retriever"``.
+        span_kind
+            Optional OTel kind for ``span_type="agent"``. Only ``SpanKind.CLIENT`` marks a remote agent call.
         dataset_record
             Optional parameter for dataset values.  This is used by the local experiment module to set the dataset fields on the trace/spans and not generally provided for logging to log streams.
 
@@ -311,26 +320,55 @@ class SplunkAODecorator:
         -------
         A decorated function that logs its execution
         """
+        explicit_span_params = {
+            key: value
+            for key, value in {"data_source_id": data_source_id, "span_kind": span_kind}.items()
+            if value is not None
+        }
 
         def decorator(func: Callable[P, R]) -> Callable[P, R]:
             if inspect.isasyncgenfunction(func):
                 return cast(
                     Callable[P, R],
                     self._async_generator_log(
-                        func, name=name, span_type=span_type, params=params, dataset_record=dataset_record
+                        func,
+                        name=name,
+                        span_type=span_type,
+                        params=params,
+                        dataset_record=dataset_record,
+                        explicit_span_params=explicit_span_params,
                     ),
                 )
             if inspect.isgeneratorfunction(func):
                 return cast(
                     Callable[P, R],
                     self._sync_generator_log(
-                        func, name=name, span_type=span_type, params=params, dataset_record=dataset_record
+                        func,
+                        name=name,
+                        span_type=span_type,
+                        params=params,
+                        dataset_record=dataset_record,
+                        explicit_span_params=explicit_span_params,
                     ),
                 )
             wrapped = (
-                self._async_log(func, name=name, span_type=span_type, params=params, dataset_record=dataset_record)
+                self._async_log(
+                    func,
+                    name=name,
+                    span_type=span_type,
+                    params=params,
+                    dataset_record=dataset_record,
+                    explicit_span_params=explicit_span_params,
+                )
                 if asyncio.iscoroutinefunction(func)
-                else self._sync_log(func, name=name, span_type=span_type, params=params, dataset_record=dataset_record)
+                else self._sync_log(
+                    func,
+                    name=name,
+                    span_type=span_type,
+                    params=params,
+                    dataset_record=dataset_record,
+                    explicit_span_params=explicit_span_params,
+                )
             )
             return cast(Callable[P, R], wrapped)
 
@@ -348,6 +386,7 @@ class SplunkAODecorator:
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
         dataset_record: DatasetRecord | None = None,
+        explicit_span_params: dict[str, Any] | None = None,
     ) -> F:
         """
         Internal method to handle logging for async functions.
@@ -384,6 +423,7 @@ class SplunkAODecorator:
                 name=name or func.__name__,
                 span_type=span_type,
                 params=params,
+                explicit_span_params=explicit_span_params,
                 is_method=self._is_method(func),
                 func_args=args,
                 func_kwargs=kwargs,
@@ -415,6 +455,7 @@ class SplunkAODecorator:
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
         dataset_record: DatasetRecord | None = None,
+        explicit_span_params: dict[str, Any] | None = None,
     ) -> F:
         """
         Internal method to handle logging for synchronous functions.
@@ -442,6 +483,7 @@ class SplunkAODecorator:
                 name=name or func.__name__,
                 span_type=span_type,
                 params=params,
+                explicit_span_params=explicit_span_params,
                 is_method=self._is_method(func),
                 func_args=args,
                 func_kwargs=kwargs,
@@ -473,6 +515,7 @@ class SplunkAODecorator:
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
         dataset_record: DatasetRecord | None = None,
+        explicit_span_params: dict[str, Any] | None = None,
     ) -> F:
         @wraps(func)
         def generator_wrapper(*args: Any, **kwargs: Any) -> Generator:
@@ -481,6 +524,7 @@ class SplunkAODecorator:
                 name=name or func.__name__,
                 span_type=span_type,
                 params=params,
+                explicit_span_params=explicit_span_params,
                 is_method=self._is_method(func),
                 func_args=args,
                 func_kwargs=kwargs,
@@ -500,6 +544,7 @@ class SplunkAODecorator:
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
         dataset_record: DatasetRecord | None = None,
+        explicit_span_params: dict[str, Any] | None = None,
     ) -> F:
         @wraps(func)
         def async_generator_wrapper(*args: Any, **kwargs: Any) -> AsyncGenerator:
@@ -508,6 +553,7 @@ class SplunkAODecorator:
                 name=name or func.__name__,
                 span_type=span_type,
                 params=params,
+                explicit_span_params=explicit_span_params,
                 is_method=self._is_method(func),
                 func_args=args,
                 func_kwargs=kwargs,
@@ -543,6 +589,7 @@ class SplunkAODecorator:
         name: str,
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
+        explicit_span_params: dict[str, Any] | None = None,
         is_method: bool = False,
         func_args: tuple = (),
         func_kwargs: dict | None = None,
@@ -605,6 +652,8 @@ class SplunkAODecorator:
                 for param_name in span_param_names:
                     if param_name in input_ and param_name not in span_params:
                         span_params[param_name] = input_[param_name]
+
+            span_params.update(explicit_span_params or {})
 
             if "name" not in span_params:
                 span_params["name"] = name
@@ -685,10 +734,10 @@ class SplunkAODecorator:
         common_params = ["name", "input", "metadata", "tags"]
         span_params = {
             "llm": [*common_params, "model", "temperature", "tools"],
-            "retriever": common_params,
+            "retriever": [*common_params, "data_source_id"],
             "tool": [*common_params, "tool_call_id"],
             "workflow": common_params,
-            "agent": [*common_params, "agent_type"],
+            "agent": [*common_params, "agent_type", "span_kind"],
         }
         return span_params.get(span_type, common_params)
 
@@ -791,8 +840,9 @@ class SplunkAODecorator:
                 created_at = span_params.get("created_at", _get_timestamp())
                 if span_type == "agent":
                     agent_type = span_params.get("agent_type")
+                    span_kind = span_params.get("span_kind", SpanKind.INTERNAL)
                     span = client_instance.add_agent_span(
-                        input=input_, name=name, agent_type=agent_type, created_at=created_at
+                        input=input_, name=name, agent_type=agent_type, span_kind=span_kind, created_at=created_at
                     )
                 else:
                     span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)

@@ -20,14 +20,10 @@ _INSTRUMENTATION_SCOPE = InstrumentationScope(name="splunk_ao", version=get_pack
 _NAME_PARTS: dict[StepType, tuple[str, str]] = {
     StepType.llm: ("chat", "model"),
     StepType.tool: ("execute_tool", "name"),
-    StepType.retriever: ("retrieval", "name"),
+    StepType.retriever: ("retrieval", "data_source_id"),
     StepType.workflow: ("invoke_workflow", "name"),
     StepType.agent: ("invoke_agent", "name"),
     StepType.control: ("", "name"),
-}
-
-_KIND_BY_STEP_TYPE = {
-    step_type: SpanKind.CLIENT if step_type is StepType.llm else SpanKind.INTERNAL for step_type in _NAME_PARTS
 }
 
 
@@ -48,7 +44,19 @@ def _step_type(span: BaseStep) -> StepType:
 def _span_name(span: BaseStep, step_type: StepType) -> str:
     prefix, field_name = _NAME_PARTS[step_type]
     detail = getattr(span, field_name, None)
+    if step_type is StepType.retriever:
+        if detail is not None:
+            return f"{prefix} {detail}"
+        detail = getattr(span, "name", None)
     return " ".join(part for part in (prefix, str(detail).strip() if detail is not None else "") if part)
+
+
+def _span_kind(span: BaseStep, step_type: StepType) -> SpanKind:
+    if step_type in (StepType.llm, StepType.retriever):
+        return SpanKind.CLIENT
+    if step_type is StepType.agent and getattr(span, "span_kind", None) is SpanKind.CLIENT:
+        return SpanKind.CLIENT
+    return SpanKind.INTERNAL
 
 
 def _to_unix_ns(value: datetime) -> int:
@@ -98,7 +106,7 @@ class SpanConverter:
             attributes=build_span_attributes(span, session_id),
             events=(),
             links=(),
-            kind=_KIND_BY_STEP_TYPE[step_type],
+            kind=_span_kind(span, step_type),
             instrumentation_scope=_INSTRUMENTATION_SCOPE,
             status=_span_status(span),
             start_time=start_time_ns,

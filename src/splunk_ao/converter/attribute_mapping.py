@@ -423,6 +423,7 @@ def set_retriever_attributes(attrs: MutableMapping[str, AttributeValue], span: R
     attrs["gen_ai.retrieval.documents"] = _content_value(span.output)
     attrs["splunk_ao.retrieval.documents.count"] = len(span.output)
     attrs["db.operation"] = "search"
+    _set_if_present(attrs, "gen_ai.data_source.id", _field(span, "data_source_id"))
     requested_top_k = _field(span, "num_documents")
     _set_if_present(attrs, "gen_ai.retrieval.top_k", requested_top_k)
 

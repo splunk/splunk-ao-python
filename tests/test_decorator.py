@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 from uuid import UUID
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pydantic import BaseModel
 
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
@@ -11,6 +12,7 @@ from galileo_core.schemas.shared.multimodal import ContentModality
 from splunk_ao import Message, MessageRole, log, splunk_ao_context, start_session
 from splunk_ao.decorator import _session_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.logged import LoggedAgentSpan, LoggedRetrieverSpan
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -519,6 +521,54 @@ def test_decorator_retriever_span_str(
     assert isinstance(payload.traces[0].spans[0], RetrieverSpan)
     assert payload.traces[0].spans[0].input == '{"query": "input"}'
     assert payload.traces[0].spans[0].output == [Document(content="response1", metadata=None)]
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_decorator_retriever_accepts_explicit_data_source_id(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
+) -> None:
+    # Given: a retriever decorator with an authoritative data-source ID
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+
+    @log(span_type="retriever", data_source_id="knowledge-base")
+    def retriever_call(query: str) -> str:
+        return "result"
+
+    # When: the decorated retrieval runs
+    retriever_call(query="input")
+
+    # Then: the runtime-only ID reaches the path-1 retriever model
+    span = splunk_ao_context.get_logger_instance().traces[-1].spans[0]
+    assert type(span) is LoggedRetrieverSpan
+    assert span.data_source_id == "knowledge-base"
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_decorator_agent_accepts_explicit_client_kind(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
+) -> None:
+    # Given: an agent decorator explicitly representing a remote call
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+
+    @log(span_type="agent", span_kind=SpanKind.CLIENT)
+    def agent_call(query: str) -> str:
+        return "result"
+
+    # When: the decorated agent runs
+    agent_call(query="input")
+
+    # Then: the runtime-only client kind reaches the path-1 agent model
+    span = splunk_ao_context.get_logger_instance().traces[-1].spans[0]
+    assert type(span) is LoggedAgentSpan
+    assert span.span_kind is SpanKind.CLIENT
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
