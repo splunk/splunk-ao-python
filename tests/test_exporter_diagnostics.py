@@ -139,6 +139,8 @@ def test_positive_json_otlp_partial_success_returns_failure_without_backend_deta
         0.0,
         -3.0,
         3.5,
+        float(2**53),
+        1e30,
         float("nan"),
         float("inf"),
         float("-inf"),
@@ -158,6 +160,17 @@ def test_invalid_json_rejected_span_counts_are_ignored(value: object) -> None:
 
     # Then: the value is ignored without raising
     assert result is None
+
+
+def test_max_safe_json_float_rejected_span_count_is_accepted() -> None:
+    # Given: the largest integer-valued float that JSON can represent unambiguously
+    value = float(2**53 - 1)
+
+    # When: the acknowledgement count is parsed
+    result = _positive_json_integer(value)
+
+    # Then: the exact safe integer value is retained
+    assert result == 2**53 - 1
 
 
 @pytest.mark.parametrize(

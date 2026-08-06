@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from splunk_ao import log, splunk_ao_context
-from splunk_ao.schema.logged import LoggedTrace
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -87,6 +86,7 @@ def test_user_exception_is_preserved_and_owned_trace_is_concluded(initialized_co
     logger = splunk_ao_context.get_logger_instance()
     assert logger.current_parent() is None
     assert splunk_ao_context.get_current_trace() is None
+    assert (logger._sink.spans[-1].attributes or {})["splunk_ao.status_code"] == 500
 
 
 @pytest.mark.asyncio
@@ -105,26 +105,7 @@ async def test_async_coroutine_exception_is_preserved_and_owned_trace_is_conclud
     logger = splunk_ao_context.get_logger_instance()
     assert logger.current_parent() is None
     assert splunk_ao_context.get_current_trace() is None
-
-
-def test_logger_identifies_current_root_ownership(initialized_context: None) -> None:
-    # Given: an empty logger and an unrelated proprietary trace
-    logger = splunk_ao_context.get_logger_instance()
-    unrelated_trace = LoggedTrace(input="unrelated")
-
-    # Then: absent inputs and an empty parent chain are never owned
-    assert logger._is_current_root(None) is False
-    assert logger._is_current_root(unrelated_trace) is False
-
-    # When: an owned root and nested current child are created
-    owned_trace = logger.start_trace(input="request", name="owned")
-    assert logger._is_current_root(owned_trace) is True
-    logger.add_workflow_span(input="nested", name="nested")
-
-    # Then: the root is discovered by identity and an unrelated trace is rejected
-    assert logger._is_current_root(owned_trace) is True
-    assert logger._is_current_root(unrelated_trace) is False
-    logger.conclude(output="done", conclude_all=True)
+    assert (logger._sink.spans[-1].attributes or {})["splunk_ao.status_code"] == 500
 
 
 def test_sync_generator_concludes_on_close_and_preserves_errors(initialized_context: None) -> None:

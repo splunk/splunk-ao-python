@@ -415,24 +415,20 @@ class SplunkAOLogger(TracesLogger):
         super()._set_current_parent(parent)
         self._sync_otel_context(parent)
 
+    def _current_root(self) -> StepWithChildSpans | None:
+        """Return the root of the current proprietary parent chain."""
+        root = self.current_parent()
+        while root is not None and root._parent is not None:
+            root = root._parent
+        return root
+
     def _is_current_root(self, trace: Trace | None) -> bool:
         """Return whether trace owns the current proprietary parent chain."""
-        if trace is None:
-            return False
-
-        root = self.current_parent()
-        if root is None:
-            return False
-        while root._parent is not None:
-            root = root._parent
-        return root is trace
+        return trace is not None and self._current_root() is trace
 
     def reset_parent_tracking(self) -> None:
         """Clear proprietary and OTel tracking for the current request context."""
-        current_parent = self.current_parent()
-        root = current_parent
-        while root is not None and root._parent is not None:
-            root = root._parent
+        root = self._current_root()
 
         self._set_current_parent(None)
         if root is not None:

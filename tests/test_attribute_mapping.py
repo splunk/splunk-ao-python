@@ -416,6 +416,24 @@ def test_orchestration_preserves_explicit_empty_message_parts() -> None:
     ]
 
 
+def test_orchestration_treats_explicit_empty_parts_as_authoritative() -> None:
+    # Given: role-bearing messages with both explicit empty parts and legacy content
+    span = WorkflowSpan(
+        name="both-content-fields-workflow",
+        input='{"role":"user","parts":[],"content":"ignored input"}',
+        output='{"role":"assistant","parts":[],"content":"ignored output"}',
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: the explicit OTel parts field takes precedence over legacy content
+    assert json.loads(attrs["gen_ai.input.messages"]) == [{"role": "user", "parts": []}]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [], "finish_reason": "unknown"}
+    ]
+
+
 def test_orchestration_keeps_missing_parts_and_empty_content_distinct() -> None:
     # Given: role-bearing messages with no parts field and explicit empty content
     span = WorkflowSpan(

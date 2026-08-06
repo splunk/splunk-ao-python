@@ -757,9 +757,7 @@ class SplunkAODecorator:
         set_trace_context = False
         if not existing_trace:
             if current_parent is not None:
-                trace = current_parent
-                while trace._parent is not None:
-                    trace = trace._parent
+                trace = client_instance._current_root()
                 if not isinstance(trace, Trace):
                     raise RuntimeError("Active Splunk AO operation does not have a trace root")
             else:
