@@ -2,6 +2,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 from test_support.config import fast_config_validation
 
 from splunk_ao.config import _BRIDGE, SplunkAOConfig
@@ -152,6 +153,14 @@ def test_standalone_crud_preserves_explicit_api_url(monkeypatch: pytest.MonkeyPa
 
     # Then: the explicit URL remains authoritative
     assert str(config.api_url) == explicit_api_url
+
+
+def test_invalid_console_url_preserves_validation_error() -> None:
+    # Given: a console URL that fails its own field validation
+
+    # When/Then: model construction reports a validation error instead of leaking a KeyError
+    with pytest.raises(ValidationError, match="console_url"):
+        SplunkAOConfig(console_url="http://[bad", api_key="key")
 
 
 def test_no_auth_configured_raises_with_full_options_listed(monkeypatch) -> None:

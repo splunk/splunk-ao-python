@@ -219,22 +219,33 @@ def test_missing_standalone_config_names_both_required_variables() -> None:
 
 
 @pytest.mark.parametrize(
-    ("console_url", "expected"),
+    ("console_url", "api_url", "expected"),
     [
-        ("https://customer.example.com", "https://api.customer.example.com"),
-        ("https://api.customer.example.com", "https://api.customer.example.com"),
-        ("http://customer.example.com:8443", "http://api.customer.example.com:8443"),
-        ("http://localhost:3000", "http://localhost:8088"),
-        ("https://127.0.0.1:9090", "http://localhost:8088"),
-        ("https://customer-console.example.com", "https://api.customer-console.example.com"),
+        ("https://customer.example.com", None, "https://api.customer.example.com"),
+        ("customer.example.com", None, "https://api.customer.example.com"),
+        ("https://api.customer.example.com", None, "https://api.customer.example.com"),
+        ("http://customer.example.com:8443", None, "http://api.customer.example.com:8443"),
+        ("http://localhost:3000", None, "http://localhost:8088"),
+        ("https://127.0.0.1:9090", None, "http://localhost:8088"),
+        ("https://customer-console.example.com", None, "https://api.customer-console.example.com"),
+        ("https://customer.example.com", "https://backend.example.com/", "https://backend.example.com/"),
     ],
-    ids=["custom-host", "existing-api-prefix", "scheme-and-port", "localhost", "loopback", "console-substring"],
+    ids=[
+        "custom-host",
+        "custom-host-without-scheme",
+        "existing-api-prefix",
+        "scheme-and-port",
+        "localhost",
+        "loopback",
+        "console-substring",
+        "explicit-api-url",
+    ],
 )
-def test_resolve_standalone_api_url(console_url: str, expected: str) -> None:
+def test_resolve_standalone_api_url(console_url: str, api_url: str | None, expected: str) -> None:
     # Given: a standalone console URL requiring API-host resolution
 
     # When: the standalone API base URL is derived
-    resolved = resolve_standalone_api_url(console_url)
+    resolved = resolve_standalone_api_url(console_url, api_url)
 
     # Then: the expected standalone API base URL is returned
     assert resolved == expected

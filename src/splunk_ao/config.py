@@ -106,7 +106,11 @@ class SplunkAOConfig(GalileoConfig):
         if cls._is_o11y_env():
             return Url(O11yConfig.from_env().require_api_url())
 
-        console_url_value = str(info.data["console_url"])
+        console_url = info.data.get("console_url")
+        if console_url is None:
+            return super().set_api_url(api_url, info)
+
+        console_url_value = str(console_url)
         api_url_value = str(api_url) if api_url is not None else None
         resolved_api_url = resolve_standalone_api_url(console_url_value, api_url_value)
         return super().set_api_url(resolved_api_url, info)
