@@ -139,6 +139,7 @@ def test_agent_logger_allows_only_client_kind_override(
 
     # When: an agent is logged with the requested OTel kind
     otlp_logger.add_agent_span(input="question", name="agent", span_kind=requested_kind)
+    # Conclude the agent span, then the trace envelope.
     otlp_logger.conclude(output="answer")
     otlp_logger.conclude(output="answer")
 

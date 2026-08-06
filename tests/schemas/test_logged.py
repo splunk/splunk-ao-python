@@ -246,6 +246,7 @@ class TestJsonRoundtripNoCoercion:
                 )
             ],
         )
+        assert type(trace.spans[0]) is LoggedRetrieverSpan
 
         # When: JSON roundtrip
         raw = trace.model_dump(mode="json")

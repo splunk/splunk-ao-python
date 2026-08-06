@@ -86,15 +86,20 @@ class LoggedAgentSpan(AgentSpan):
 class LoggedRetrieverSpan(RetrieverSpan):
     """RetrieverSpan with SDK-local OTel data-source identity."""
 
-    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+    # LoggedTrace accepts existing core RetrieverSpan instances and widens them
+    # through discriminated-union validation.
+    model_config = ConfigDict(from_attributes=True)
 
     data_source_id: str | None = Field(default=None, exclude=True)
 
     @field_validator("data_source_id", mode="before")
     @classmethod
     def normalize_data_source_id(cls, value: object) -> object:
-        """Treat an empty data-source ID as absent without altering valid IDs."""
-        return None if value == "" else value
+        """Trim a data-source ID and treat a blank value as absent."""
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
 
 
 class LoggedLlmSpan(LlmSpan):

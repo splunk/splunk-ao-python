@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
-- Retriever spans exported over OTLP now use client operation semantics and
-  names derived only from an explicit data-source ID.
+- Retriever spans exported over OTLP now use client operation semantics and are
+  named `retrieval {data_source_id}` when an explicit data-source ID is supplied,
+  falling back to the captured display name and then to `retrieval`.
 
 ## [0.1.1] - 2026-08-03
 

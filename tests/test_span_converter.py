@@ -145,16 +145,29 @@ def test_retriever_display_name_is_used_only_as_span_name_fallback() -> None:
     assert "gen_ai.data_source.id" not in (result.attributes or {})
 
 
-def test_empty_retriever_data_source_id_is_treated_as_absent() -> None:
-    # Given: an explicitly empty data-source ID
-    span = LoggedRetrieverSpan(name="display-name", data_source_id="", input="query", output=[])
+@pytest.mark.parametrize("data_source_id", ["", "   ", "\t\n"])
+def test_blank_retriever_data_source_id_is_treated_as_absent(data_source_id: str) -> None:
+    # Given: an explicitly blank data-source ID
+    span = LoggedRetrieverSpan(name="display-name", data_source_id=data_source_id, input="query", output=[])
 
     # When: the proprietary retriever is converted
     result = convert(span)
 
-    # Then: the display name remains visible without emitting an empty semantic attribute
+    # Then: the display name remains visible without emitting a blank semantic attribute
     assert result.name == "retrieval display-name"
     assert "gen_ai.data_source.id" not in (result.attributes or {})
+
+
+def test_padded_retriever_data_source_id_is_normalized_consistently() -> None:
+    # Given: a data-source ID padded with accidental whitespace
+    span = LoggedRetrieverSpan(name="display-name", data_source_id="  knowledge base/v1  ", input="query", output=[])
+
+    # When: the proprietary retriever is converted
+    result = convert(span)
+
+    # Then: the normalized ID is used consistently in the name and attribute
+    assert result.name == "retrieval knowledge base/v1"
+    assert (result.attributes or {})["gen_ai.data_source.id"] == "knowledge base/v1"
 
 
 @pytest.mark.parametrize(
