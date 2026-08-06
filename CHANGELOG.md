@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
 
+### Changed
+
+- **Config file renamed** (HYBIM-918): The non-secret debug snapshot written to
+  `~/.galileo/` on logout/reset is now named `splunk-ao-config.json` (was
+  `galileo-python-config.json`). The old file can be deleted or ignored — it is
+  never read back and has no effect on authentication or config resolution.
+
 ## [0.1.1] - 2026-08-03
 
 ### Removed
