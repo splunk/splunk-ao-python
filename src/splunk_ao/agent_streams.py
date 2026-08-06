@@ -60,11 +60,11 @@ class AgentStream(LogStreamResponse):
     from splunk_ao.agent_streams import get_agent_stream
     agent_stream = get_agent_stream(name="Production Logs", project_name="My AI Project")
 
-    # List all log streams in a project
+    # List all agent streams in a project
     from splunk_ao.agent_streams import list_agent_streams
-    log_streams = list_agent_streams(project_name="My AI Project")
-    for stream in log_streams:
-        logger.info(f"Log Stream: {stream.name} (ID: {stream.id})")
+    agent_streams = list_agent_streams(project_name="My AI Project")
+    for stream in agent_streams:
+        logger.info(f"Agent Stream: {stream.name} (ID: {stream.id})")
 
     # Use a log stream with the context manager
     from splunk_ao.openai import openai

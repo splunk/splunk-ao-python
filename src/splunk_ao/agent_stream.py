@@ -170,7 +170,7 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             agent_stream = AgentStream(name="Production Logs", project_name="My AI Project").create()
-            assert log_stream.is_synced()
+            assert agent_stream.is_synced()
         """
         if not self.name:
             raise ValueError("Log stream name is not set. Cannot create log stream without a name.")
@@ -330,16 +330,16 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             # List by project name
-            log_streams = AgentStream.list(project_name="My AI Project")
+            agent_streams = AgentStream.list(project_name="My AI Project")
 
             # List by project ID
-            log_streams = AgentStream.list(project_id="project-123")
+            agent_streams = AgentStream.list(project_id="project-123")
 
             # List using SPLUNK_AO_PROJECT environment variable
-            log_streams = AgentStream.list()
+            agent_streams = AgentStream.list()
 
-            # Cap the number of returned log streams
-            log_streams = AgentStream.list(project_name="My AI Project", limit=3)
+            # Cap the number of returned agent streams
+            agent_streams = AgentStream.list(project_name="My AI Project", limit=3)
 
             # Fetch the next page
             page_2 = AgentStream.list(project_name="My AI Project", starting_token=100)
@@ -371,8 +371,8 @@ class AgentStream(StateManagementMixin):
 
         Examples
         --------
-            log_stream.refresh()
-            assert log_stream.is_synced()
+            agent_stream.refresh()
+            assert agent_stream.is_synced()
         """
         if self.id is None:
             raise ValueError("Log stream ID is not set. Cannot refresh a local-only log stream.")
@@ -530,14 +530,14 @@ class AgentStream(StateManagementMixin):
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Query with column-based filters and sort
-            results = log_stream.query(
+            results = agent_stream.query(
                 record_type=RecordType.SPAN,
                 filters=[
-                    log_stream.span_columns["input"].contains("largest"),
-                    log_stream.span_columns["metrics/completeness_gpt"].greater_than(0.8),
-                    log_stream.span_columns["created_at"].after("2024-01-01")
+                    agent_stream.span_columns["input"].contains("largest"),
+                    agent_stream.span_columns["metrics/completeness_gpt"].greater_than(0.8),
+                    agent_stream.span_columns["created_at"].after("2024-01-01")
                 ],
-                sort=log_stream.span_columns["created_at"].descending(),
+                sort=agent_stream.span_columns["created_at"].descending(),
                 limit=50
             )
 
@@ -626,12 +626,12 @@ class AgentStream(StateManagementMixin):
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get spans with filters and sorting
-            spans = log_stream.get_spans(
+            spans = agent_stream.get_spans(
                 filters=[
-                    log_stream.span_columns["input"].contains("world"),
-                    log_stream.span_columns["metrics/num_input_tokens"].greater_than(10)
+                    agent_stream.span_columns["input"].contains("world"),
+                    agent_stream.span_columns["metrics/num_input_tokens"].greater_than(10)
                 ],
-                sort=log_stream.span_columns["created_at"].descending(),
+                sort=agent_stream.span_columns["created_at"].descending(),
                 limit=50
             )
 
@@ -679,12 +679,12 @@ class AgentStream(StateManagementMixin):
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get traces with filters
-            traces = log_stream.get_traces(
+            traces = agent_stream.get_traces(
                 filters=[
-                    log_stream.trace_columns["input"].contains("largest"),
-                    log_stream.trace_columns["created_at"].after("2024-01-01")
+                    agent_stream.trace_columns["input"].contains("largest"),
+                    agent_stream.trace_columns["created_at"].after("2024-01-01")
                 ],
-                sort=log_stream.trace_columns["created_at"].descending(),
+                sort=agent_stream.trace_columns["created_at"].descending(),
                 limit=50
             )
 
@@ -728,12 +728,12 @@ class AgentStream(StateManagementMixin):
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Get sessions with filters
-            sessions = log_stream.get_sessions(
+            sessions = agent_stream.get_sessions(
                 filters=[
-                    log_stream.session_columns["model"].equals("gpt-4o-mini"),
-                    log_stream.session_columns["metrics/num_traces"].greater_than(5)
+                    agent_stream.session_columns["model"].equals("gpt-4o-mini"),
+                    agent_stream.session_columns["metrics/num_traces"].greater_than(5)
                 ],
-                sort=log_stream.session_columns["created_at"].descending(),
+                sort=agent_stream.session_columns["created_at"].descending(),
                 limit=50
             )
 
@@ -784,13 +784,13 @@ class AgentStream(StateManagementMixin):
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
 
             # Export records with filters
-            for record in log_stream.export_records(
+            for record in agent_stream.export_records(
                 record_type=RecordType.SPAN,
                 filters=[
-                    log_stream.span_columns["model"].one_of(["gpt-4", "gpt-3.5-turbo", "gpt-4o-mini"]),
-                    log_stream.span_columns["metrics/num_input_tokens"].greater_than(1)
+                    agent_stream.span_columns["model"].one_of(["gpt-4", "gpt-3.5-turbo", "gpt-4o-mini"]),
+                    agent_stream.span_columns["metrics/num_input_tokens"].greater_than(1)
                 ],
-                sort=log_stream.span_columns["created_at"].descending()
+                sort=agent_stream.span_columns["created_at"].descending()
             ):
                 print(record)
         """
@@ -836,7 +836,7 @@ class AgentStream(StateManagementMixin):
                 project_name="My AI Project"
             )
 
-            with log_stream.context():
+            with agent_stream.context():
                 # Your logging code here
                 response = openai_client.chat.completions.create(...)
         """
@@ -879,13 +879,13 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
-            columns = log_stream.span_columns
+            columns = agent_stream.span_columns
 
             # Access a specific column
             input_column = columns["input"]
 
             # Filter using columns
-            spans = log_stream.get_spans(
+            spans = agent_stream.get_spans(
                 filters=[columns["input"].contains("world")],
                 sort=columns["created_at"].descending()
             )
@@ -912,13 +912,13 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
-            columns = log_stream.session_columns
+            columns = agent_stream.session_columns
 
             # Access a specific column
             model_column = columns["model"]
 
             # Filter using columns
-            sessions = log_stream.get_sessions(
+            sessions = agent_stream.get_sessions(
                 filters=[columns["model"].equals("gpt-4o-mini")],
                 sort=columns["created_at"].descending()
             )
@@ -946,13 +946,13 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             agent_stream = AgentStream.get(name="Production Logs", project_name="My AI Project")
-            columns = log_stream.trace_columns
+            columns = agent_stream.trace_columns
 
             # Access a specific column
             input_column = columns["input"]
 
             # Filter using columns
-            traces = log_stream.get_traces(
+            traces = agent_stream.get_traces(
                 filters=[columns["input"].contains("largest")],
                 sort=columns["created_at"].descending()
             )
