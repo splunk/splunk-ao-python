@@ -18,7 +18,7 @@ class SplunkAOLoggerSingleton:
 
     This class ensures that only one instance exists across the application and
     provides a thread-safe way to retrieve or create SplunkAOLogger clients based on
-    the given 'project' and 'log_stream' parameters. If the parameters are not provided,
+    the given 'project' and 'agent_stream' parameters. If the parameters are not provided,
     the class attempts to read the values from the environment variables
     SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM. The loggers are stored in a dictionary
     using a tuple (project, agent_stream) as the key.

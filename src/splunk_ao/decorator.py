@@ -1220,7 +1220,7 @@ class SplunkAODecorator:
 
         Returns
         -------
-        SplunkAOLogger instance configured with the specified project and log stream
+        SplunkAOLogger instance configured with the specified project and agent stream
         """
         kwargs = {
             "project": project if project is not None else (None if project_id is not None else _project_context.get()),
@@ -1401,7 +1401,7 @@ class SplunkAODecorator:
         mode: str | None = None,
     ) -> None:
         """
-        Initialize the context with a project and log stream. Optionally, it can also be used
+        Initialize the context with a project and agent stream. Optionally, it can also be used
         to start a trace.
 
         This method resets the existing active context with a new context with
