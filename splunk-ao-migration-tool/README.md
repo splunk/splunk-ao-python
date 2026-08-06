@@ -436,7 +436,7 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 
 ## 9. Migration Checklist
 
-- [ ] Rename on-disk config file: `~/.galileo/galileo-python-config.json` → `~/.galileo/splunk-ao-config.json` (or delete it and re-authenticate)
+- [ ] Delete the old on-disk config file `~/.galileo/galileo-python-config.json` and re-authenticate (the SDK creates `~/.galileo/splunk-ao-config.json` automatically)
 - [ ] Update Python to **≥ 3.11**
 - [ ] Replace `galileo` with `splunk-ao` in `requirements.txt` / `pyproject.toml`
 - [ ] Add `grpcio>=1.80.0,<2.0.0` if using the `otel` extra (or use `splunk-ao[otel]`)

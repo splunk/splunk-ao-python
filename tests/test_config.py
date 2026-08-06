@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -82,7 +81,9 @@ def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key
     with patch.dict(os.environ, {splunk_key: value}, clear=False):
         os.environ.pop(galileo_key, None)
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ.get(galileo_key) == value, f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
+        assert os.environ.get(galileo_key) == value, (
+            f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
+        )
 
 
 @pytest.mark.parametrize("splunk_key,galileo_key", _CANONICAL_BRIDGE_PAIRS)
@@ -106,7 +107,9 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
     with patch.dict(os.environ, clean_env, clear=True):
         SplunkAOConfig._bridge_env_vars()
         for _, galileo_key in _ALL_BRIDGE_PAIRS:
-            assert galileo_key not in os.environ, f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
+            assert galileo_key not in os.environ, (
+                f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +271,8 @@ def test_reset_clears_bridged_galileo_env_vars() -> None:
 
         for galileo_key in galileo_keys:
             assert galileo_key not in os.environ, (
-                f"reset() must remove {galileo_key} from os.environ; found stale value '{os.environ.get(galileo_key)}'"
+                f"reset() must remove {galileo_key} from os.environ; "
+                f"found stale value '{os.environ.get(galileo_key)}'"
             )
 
 
@@ -302,7 +306,8 @@ def test_bridge_picks_up_new_credential_after_reset(monkeypatch) -> None:
     # Second bridge — must pick up the new key now that reset() cleared the old one.
     SplunkAOConfig._bridge_env_vars()
     assert os.environ.get("GALILEO_API_KEY") == "key-rotated", (
-        "After reset() + credential rotation, bridge must copy the new key; got stale value instead"
+        "After reset() + credential rotation, bridge must copy the new key; "
+        "got stale value instead"
     )
     # Cleanup: monkeypatch will restore SPLUNK_AO_API_KEY, but the bridge wrote
     # GALILEO_API_KEY directly to os.environ — remove it so it doesn't leak.
@@ -337,18 +342,14 @@ def test_config_filename_default() -> None:
     assert SplunkAOConfig.model_fields["config_filename"].default == "splunk-ao-config.json"
 
 
-def test_config_file_path_resolves_to_splunk_ao_config() -> None:
-    """An instantiated config resolves its on-disk path to splunk-ao-config.json.
+def test_config_file_path_resolves_to_splunk_ao_config(tmp_path) -> None:
+    """Runtime config_file property resolves to splunk-ao-config.json under home_dir.
 
-    Complements test_config_filename_default (which only checks the declared
-    field default) by exercising the runtime `config_file` property that
-    galileo-core actually reads from and writes to on disk. model_construct
-    applies field defaults while skipping the network-calling validators that a
-    full SplunkAOConfig(...) instantiation would trigger.
+    Complements test_config_filename_default by exercising the upstream
+    config_file property rather than just the declared field default.
+    model_construct skips network-calling validators while still applying
+    field defaults.
     """
-    home_dir = Path("/tmp/splunk-ao-config-test")
-    config = SplunkAOConfig.model_construct(home_dir=home_dir)
+    config = SplunkAOConfig.model_construct(home_dir=tmp_path)
 
-    assert config.config_filename == "splunk-ao-config.json"
-    assert config.config_file == home_dir / "splunk-ao-config.json"
-    assert config.config_file.name == "splunk-ao-config.json"
+    assert config.config_file == tmp_path / "splunk-ao-config.json"
