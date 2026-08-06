@@ -15,10 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Config file renamed** (HYBIM-918): The on-disk credentials file written to
-  `~/.galileo/` has been renamed from `galileo-python-config.json` to
-  `splunk-ao-config.json`. Users with an existing `~/.galileo/galileo-python-config.json`
-  must delete the old file and re-authenticate.
+- **Config file renamed** (HYBIM-918): The non-secret debug snapshot written to
+  `~/.galileo/` on logout/reset is now named `splunk-ao-config.json` (was
+  `galileo-python-config.json`). The old file can be deleted or ignored — it is
+  never read back and has no effect on authentication or config resolution.
 
 ## [0.1.1] - 2026-08-03
 

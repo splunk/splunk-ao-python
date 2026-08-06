@@ -342,11 +342,13 @@ The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluat
 
 ### 5.3 On-Disk Config File
 
-`splunk-ao-python` writes credentials to `~/.galileo/splunk-ao-config.json`.
-The directory `~/.galileo/` is inherited from `galileo-core` and unchanged.
+On logout or reset, `splunk-ao-python` writes a non-secret debug snapshot to
+`~/.galileo/splunk-ao-config.json`. The directory `~/.galileo/` is inherited
+from `galileo-core` and unchanged.
 
-If you have an existing `~/.galileo/galileo-python-config.json` from `galileo-python`,
-delete it and re-authenticate — the SDK will create the new file automatically.
+This file is never read back and has no effect on authentication or config
+resolution. If you have an existing `~/.galileo/galileo-python-config.json`
+from `galileo-python`, it can be deleted at leisure or simply ignored.
 
 ---
 
@@ -436,7 +438,6 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 
 ## 9. Migration Checklist
 
-- [ ] Delete the old on-disk config file `~/.galileo/galileo-python-config.json` and re-authenticate (the SDK creates `~/.galileo/splunk-ao-config.json` automatically)
 - [ ] Update Python to **≥ 3.11**
 - [ ] Replace `galileo` with `splunk-ao` in `requirements.txt` / `pyproject.toml`
 - [ ] Add `grpcio>=1.80.0,<2.0.0` if using the `otel` extra (or use `splunk-ao[otel]`)
