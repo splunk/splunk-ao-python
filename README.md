@@ -60,14 +60,19 @@ export SPLUNK_AO_API_KEY="your-agent-observability-api-key"
 export SPLUNK_AO_CONSOLE_URL="https://console.subdomain.yourcompany.com"
 ```
 
+For standalone custom domains, the SDK derives the API hostname by replacing a
+leading `console.` or `app.` label with `api.`, or by adding an `api.` prefix
+when neither label is present. Set `SPLUNK_AO_API_URL` explicitly when your API
+does not follow this convention.
+
 > [!TIP]
-> Logging your first trace to on-premises Agent Observability? [Visit this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-first-trace). 
+> Logging your first trace to on-premises Agent Observability? [Visit this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-first-trace).
 >
 > Learn how to find each environment variable in [this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-keys).
 
 #### Splunk Observability (O11y) Cloud
 
-> [!NOTE]  
+> [!NOTE]
 > As of August 2026, Agent Observability on Splunk Observability Cloud is not yet generally available.
 
 | Environment variable | Description |

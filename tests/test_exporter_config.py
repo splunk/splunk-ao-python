@@ -23,7 +23,7 @@ def test_standalone_exporter_endpoint() -> None:
     cfg = StandaloneConfig(api_key="key", console_url="https://ao.example.com")
     result = resolve_standalone_exporter_config(cfg, routing=make_routing(project_name="proj1"))
 
-    assert result.endpoint == cfg.otlp_endpoint == "https://ao.example.com/otel/v1/traces"
+    assert result.endpoint == cfg.otlp_endpoint == "https://api.ao.example.com/otel/v1/traces"
 
 
 def test_standalone_exporter_endpoint_uses_explicit_api_url() -> None:

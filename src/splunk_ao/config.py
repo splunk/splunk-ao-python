@@ -12,7 +12,7 @@ from galileo_core.constants.request_method import RequestMethod
 from galileo_core.helpers.api_client import ApiClient
 from galileo_core.schemas.base_config import GalileoConfig
 from splunk_ao.constants import DEFAULT_CONSOLE_URL
-from splunk_ao.deployment import DeploymentMode, O11yConfig
+from splunk_ao.deployment import DeploymentMode, O11yConfig, resolve_standalone_api_url
 from splunk_ao.deployment import resolve_deployment as _resolve_deployment
 from splunk_ao.shared.exceptions import ConfigurationError, MissingConfigurationError
 
@@ -105,7 +105,11 @@ class SplunkAOConfig(GalileoConfig):
         """Derive the O11y API URL from its realm and preserve standalone validation."""
         if cls._is_o11y_env():
             return Url(O11yConfig.from_env().require_api_url())
-        return super().set_api_url(api_url, info)
+
+        console_url_value = str(info.data["console_url"])
+        api_url_value = str(api_url) if api_url is not None else None
+        resolved_api_url = resolve_standalone_api_url(console_url_value, api_url_value)
+        return super().set_api_url(resolved_api_url, info)
 
     @model_validator(mode="after")
     def set_jwt_token(self) -> "SplunkAOConfig":
