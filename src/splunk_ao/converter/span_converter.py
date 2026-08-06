@@ -45,7 +45,9 @@ def _span_name(span: BaseStep, step_type: StepType) -> str:
     prefix, field_name = _NAME_PARTS[step_type]
     detail = getattr(span, field_name, None)
     if step_type is StepType.retriever:
-        return f"{prefix} {detail}" if detail is not None else prefix
+        if detail is not None:
+            return f"{prefix} {detail}"
+        detail = getattr(span, "name", None)
     return " ".join(part for part in (prefix, str(detail).strip() if detail is not None else "") if part)
 
 

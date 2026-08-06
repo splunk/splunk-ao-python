@@ -72,7 +72,7 @@ def supported_spans() -> list[tuple[BaseStep, str, SpanKind]]:
             RetrieverSpan(
                 name="knowledge-base", input="query", output=[Document(content="result")], created_at=CREATED_AT
             ),
-            "retrieval",
+            "retrieval knowledge-base",
             SpanKind.CLIENT,
         ),
         (
@@ -136,6 +136,15 @@ def test_retriever_name_and_attribute_use_explicit_data_source_id_byte_for_byte(
     assert (result.attributes or {})["gen_ai.data_source.id"] == "knowledge base/v1"
 
 
+def test_retriever_display_name_is_used_only_as_span_name_fallback() -> None:
+    span = LoggedRetrieverSpan(name="display-name", input="query", output=[])
+
+    result = convert(span)
+
+    assert result.name == "retrieval display-name"
+    assert "gen_ai.data_source.id" not in (result.attributes or {})
+
+
 def test_empty_retriever_data_source_id_is_treated_as_absent() -> None:
     # Given: an explicitly empty data-source ID
     span = LoggedRetrieverSpan(name="display-name", data_source_id="", input="query", output=[])
@@ -143,8 +152,8 @@ def test_empty_retriever_data_source_id_is_treated_as_absent() -> None:
     # When: the proprietary retriever is converted
     result = convert(span)
 
-    # Then: no trailing space or empty semantic attribute is emitted
-    assert result.name == "retrieval"
+    # Then: the display name remains visible without emitting an empty semantic attribute
+    assert result.name == "retrieval display-name"
     assert "gen_ai.data_source.id" not in (result.attributes or {})
 
 
