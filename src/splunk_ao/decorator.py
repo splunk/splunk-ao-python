@@ -1209,10 +1209,10 @@ class SplunkAODecorator:
             Optional project name to use
         project_id
             Optional project ID to use
-        log_stream
-            Optional log stream name to use
-        log_stream_id
-            Optional log stream ID to use
+        agent_stream
+            Optional agent stream name to use
+        agent_stream_id
+            Optional agent stream ID to use
         experiment_id
             Optional experiment ID to use
         mode
@@ -1309,16 +1309,16 @@ class SplunkAODecorator:
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Upload all captured traces under a project and log stream context to Splunk AO.
+        Upload all captured traces under a project and agent stream context to Splunk AO.
 
-        If no project or log stream is provided, then the currently initialized context is used.
+        If no project or agent stream is provided, then the currently initialized context is used.
 
         Parameters
         ----------
         project
             The project name. Defaults to None.
-        log_stream
-            The log stream name. Defaults to None.
+        agent_stream
+            The agent stream name. Defaults to None.
         experiment_id
             The experiment ID. Defaults to None.
         mode
@@ -1405,14 +1405,14 @@ class SplunkAODecorator:
         to start a trace.
 
         This method resets the existing active context with a new context with
-        the specified project and log stream.
+        the specified project and agent stream.
 
         Parameters
         ----------
         project
             The project name. Defaults to None.
-        log_stream
-            The log stream name. Defaults to None.
+        agent_stream
+            The agent stream name. Defaults to None.
         experiment_id
             The experiment id. Defaults to None.
         local_metrics

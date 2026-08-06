@@ -165,7 +165,7 @@ class SplunkAOLoggerSingleton:
         """
         Retrieve an existing SplunkAOLogger or create a new one if it does not exist.
 
-        This method first computes the key from the project and log_stream parameters,
+        This method first computes the key from the project and agent_stream parameters,
         checks if a logger exists in the cache, and if not, creates a new SplunkAOLogger.
         The creation and caching are done in a thread-safe manner.
 
@@ -173,8 +173,8 @@ class SplunkAOLoggerSingleton:
         ----------
         project (Optional[str], optional)
             The project name. Defaults to None.
-        log_stream (Optional[str], optional)
-            The log stream name. Defaults to None.
+        agent_stream (Optional[str], optional)
+            The agent stream name. Defaults to None.
         experiment_id (Optional[str], optional)
             The experiment ID. Defaults to None.
         local_metrics (Optional[list[LocalScorerConfig]], optional)
@@ -252,10 +252,10 @@ class SplunkAOLoggerSingleton:
             The project name. Defaults to None.
         project_id (Optional[str], optional)
             The project ID. Defaults to None.
-        log_stream (Optional[str], optional)
-            The log stream name. Defaults to None.
-        log_stream_id (Optional[str], optional)
-            The log stream ID. Defaults to None.
+        agent_stream (Optional[str], optional)
+            The agent stream name. Defaults to None.
+        agent_stream_id (Optional[str], optional)
+            The agent stream ID. Defaults to None.
         experiment_id (Optional[str], optional)
             The experiment ID. Defaults to None.
         mode (Optional[str], optional)
@@ -297,7 +297,7 @@ class SplunkAOLoggerSingleton:
         """
         Flush (upload and clear) a SplunkAOLogger instance.
 
-        If both project and log_stream are None, then all cached loggers are flushed
+        If both project and agent_stream are None, then all cached loggers are flushed
         and cleared. Otherwise, only the specific logger corresponding to the provided
         key (project, agent_stream) is flushed and removed.
 
@@ -307,10 +307,10 @@ class SplunkAOLoggerSingleton:
             The project name. Defaults to None.
         project_id (Optional[str], optional)
             The project ID. Defaults to None.
-        log_stream (Optional[str], optional)
-            The log stream name. Defaults to None.
-        log_stream_id (Optional[str], optional)
-            The log stream ID. Defaults to None.
+        agent_stream (Optional[str], optional)
+            The agent stream name. Defaults to None.
+        agent_stream_id (Optional[str], optional)
+            The agent stream ID. Defaults to None.
         experiment_id (Optional[str], optional)
             The experiment ID. Defaults to None.
         mode (Optional[str], optional)

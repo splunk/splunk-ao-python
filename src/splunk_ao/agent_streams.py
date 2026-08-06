@@ -176,7 +176,7 @@ class AgentStream(LogStreamResponse):
         agent_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
 
         # Enable metrics directly - clean and intuitive!
-        local_metrics = log_stream.enable_evaluators([
+        local_metrics = agent_stream.enable_evaluators([
             SplunkAOEvaluators.correctness,
             SplunkAOEvaluators.completeness,
             "context_relevance",
@@ -195,7 +195,7 @@ class AgentStream(LogStreamResponse):
         def custom_scorer(trace_or_span):
             return 0.75  # Your scoring logic
 
-        local_metrics = log_stream.enable_evaluators([
+        local_metrics = agent_stream.enable_evaluators([
             SplunkAOEvaluators.correctness,
             "completeness",
             Metric(name="domain_relevance", version=3),
