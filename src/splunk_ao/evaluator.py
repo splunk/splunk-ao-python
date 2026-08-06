@@ -69,16 +69,16 @@ class BuiltInEvaluators:
     """
 
     def __getattr__(self, name: str) -> SplunkAOEvaluators:
-        """Allow attribute-style access to built-in metrics."""
-        # Try to find the metric by name (enum names match UI-visible names)
-        for scorer in SplunkAOEvaluators:
-            if scorer.name == name:
-                return scorer
-        raise AttributeError(f"Built-in metric '{name}' not found. Available: {[s.name for s in SplunkAOEvaluators]}")
+        """Allow attribute-style access to built-in evaluators."""
+        # Try to find the evaluator by name (enum names match UI-visible names)
+        for evaluator in SplunkAOEvaluators:
+            if evaluator.name == name:
+                return evaluator
+        raise AttributeError(f"Built-in evaluator '{name}' not found. Available: {[e.name for e in SplunkAOEvaluators]}")
 
     def __dir__(self) -> list[str]:
-        """Return list of available metric names for autocomplete."""
-        return [scorer.name for scorer in SplunkAOEvaluators]
+        """Return list of available evaluator names for autocomplete."""
+        return [evaluator.name for evaluator in SplunkAOEvaluators]
 
 
 # Backwards-compatible alias

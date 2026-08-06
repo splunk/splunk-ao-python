@@ -171,7 +171,7 @@ class TestLogStreamMetrics:
         """Test AgentStream enable_evaluators raises error when IDs are missing."""
         agent_stream = AgentStream()  # Empty log stream without IDs
 
-        with pytest.raises(ValueError, match="Log stream must have id and project_id to enable metrics"):
+        with pytest.raises(ValueError, match="Agent stream must have id and project_id to enable evaluators"):
             agent_stream.enable_evaluators(["correctness"])
 
     @patch("splunk_ao.agent_streams.Projects")
@@ -294,7 +294,7 @@ class TestLogStreamMetrics:
                 project_name="Test Project", agent_stream_name="Nonexistent Stream", metrics=["correctness"]
             )
 
-        assert "Log stream 'Nonexistent Stream' not found" in str(exc_info.value)
+        assert "Agent stream 'Nonexistent Stream' not found" in str(exc_info.value)
 
     @patch.object(AgentStreams, "enable_evaluators")
     def test_enable_metrics_convenience_function_explicit(self, mock_enable_metrics) -> None:

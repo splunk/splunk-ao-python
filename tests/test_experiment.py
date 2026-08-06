@@ -1499,7 +1499,7 @@ class TestGetMetricAggregate:
 
     @patch("splunk_ao.experiment.experiments_available_columns_projects_project_id_experiments_available_columns_post")
     @patch("splunk_ao.experiment.SplunkAOConfig")
-    def test_lookup_by_galileo_metrics_enum(
+    def test_lookup_by_evaluators_enum(
         self,
         mock_config_class: MagicMock,
         mock_api: MagicMock,

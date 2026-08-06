@@ -77,17 +77,15 @@ class AgentStream(StateManagementMixin):
         project = Project.get(name="My AI Project")
         agent_stream = project.create_agent_stream(name="Production Logs")
 
-        # Enable metrics on the log stream
+        # Enable evaluators on the agent stream
         from splunk_ao.schema.metrics import SplunkAOEvaluators
-        # Enable metrics on the agent stream
-        from splunk_ao.schema.metrics import SplunkAOEvaluators
-        local_metrics = agent_stream.set_metrics([
+        local_evaluators = agent_stream.set_metrics([
             SplunkAOEvaluators.correctness,
             SplunkAOEvaluators.completeness,
             "context_relevance"
         ])
 
-        # Refresh log stream state from API
+        # Refresh agent stream state from API
         agent_stream.refresh()
     """
 
@@ -410,21 +408,21 @@ class AgentStream(StateManagementMixin):
 
     def get_metrics(self) -> builtins.list[str]:
         """
-        Get the list of metrics currently enabled on this log stream.
+        Get the list of evaluators currently enabled on this agent stream.
 
         Returns
         -------
-            list[str]: List of metric names currently enabled.
+            list[str]: List of evaluator names currently enabled.
 
         Raises
         ------
-            ValueError: If the log stream lacks required id or project_id attributes.
+            ValueError: If the agent stream lacks required id or project_id attributes.
 
         Examples
         --------
             agent_stream = AgentStream.get(name="Production Logs", project_name="My Project")
-            current_metrics = agent_stream.get_metrics()
-            print(f"Currently enabled: {current_metrics}")
+            current_evaluators = agent_stream.get_metrics()
+            print(f"Currently enabled: {current_evaluators}")
         """
         logger.info(f"AgentStream.get_metrics: id='{self.id}' - started")
         config = SplunkAOConfig.get()
@@ -446,26 +444,26 @@ class AgentStream(StateManagementMixin):
         self, metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str]
     ) -> builtins.list[LocalMetricConfig]:
         """
-        Set (replace) the metrics on this log stream.
+        Set (replace) the evaluators on this agent stream.
 
-        This replaces any existing metrics with the new list. Alias for enable_metrics
-        with clearer naming intent.
+        This replaces any existing evaluators with the new list. The ``metrics`` parameter
+        name is retained for API compatibility.
 
         Args:
-            metrics: List of metrics to set. Supports:
+            metrics: List of evaluators to set. Supports:
                 - SplunkAOEvaluators enum values (e.g., SplunkAOEvaluators.correctness)
                 - Metric objects (including from Metric.get(id="..."))
                 - LocalMetricConfig objects for custom scoring functions
-                - String names of built-in metrics
+                - String names of built-in evaluators
 
         Returns
         -------
-            List[LocalMetricConfig]: Local metric configurations that must be
+            List[LocalMetricConfig]: Local evaluator configurations that must be
                 computed client-side.
 
         Raises
         ------
-            ValueError: If any specified metrics are unknown.
+            ValueError: If any specified evaluators are unknown.
 
         Examples
         --------
@@ -485,7 +483,7 @@ class AgentStream(StateManagementMixin):
             agent_streams_svc = AgentStreams()
             agent_stream = agent_streams_svc.get(name=self.name, project_id=self.project_id)
             if agent_stream is None:
-                raise ValueError(f"Log stream '{self.name}' not found")
+                raise ValueError(f"Agent stream '{self.name}' not found")
             result = agent_stream.enable_evaluators(metrics)
             # Set state to synced after successful operation
             self._set_state(SyncState.SYNCED)
