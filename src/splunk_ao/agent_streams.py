@@ -173,7 +173,9 @@ class AgentStream(LogStreamResponse):
 
         # Get a log stream first
         log_streams = AgentStreams()
-        agent_stream = log_streams.get(name="Production Logs", project_name="My AI Project")
+        # Get an agent stream first
+        agent_streams = AgentStreams()
+        agent_stream = agent_streams.get(name="Production Logs", project_name="My AI Project")
 
         # Enable metrics directly - clean and intuitive!
         local_metrics = agent_stream.enable_evaluators([
