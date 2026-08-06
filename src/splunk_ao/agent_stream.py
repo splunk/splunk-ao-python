@@ -79,7 +79,9 @@ class AgentStream(StateManagementMixin):
 
         # Enable metrics on the log stream
         from splunk_ao.schema.metrics import SplunkAOEvaluators
-        local_metrics = agent_stream.enable_evaluators([
+        # Enable metrics on the agent stream
+        from splunk_ao.schema.metrics import SplunkAOEvaluators
+        local_metrics = agent_stream.set_metrics([
             SplunkAOEvaluators.correctness,
             SplunkAOEvaluators.completeness,
             "context_relevance"
