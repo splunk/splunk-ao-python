@@ -8,12 +8,12 @@ and other Splunk AO objects.
 from splunk_ao.evaluator import Evaluator
 from splunk_ao.schema.metrics import LocalMetricConfig, SplunkAOEvaluators
 
-# Unified metric type that accepts all valid metric specifications
+# Unified evaluator specification type that accepts all valid evaluator inputs
 MetricSpec = (
-    SplunkAOEvaluators  # Built-in scorer enum (e.g., SplunkAOEvaluators.correctness)
+    SplunkAOEvaluators  # Built-in evaluator enum (e.g., SplunkAOEvaluators.correctness)
     | Evaluator  # Custom or local evaluator object
-    | LocalMetricConfig  # Legacy local metric config
-    | str  # String name of built-in metric (e.g., "correctness")
+    | LocalMetricConfig  # Legacy local evaluator config
+    | str  # String name of built-in evaluator (e.g., "correctness")
 )
 
 __all__ = ["MetricSpec"]

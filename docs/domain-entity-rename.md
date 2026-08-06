@@ -46,7 +46,7 @@ streams = AgentStream.list(project_name="my-project")
 
 # Enable evaluators on the stream
 from splunk_ao.schema.metrics import SplunkAOEvaluators
-stream.enable_evaluators([SplunkAOEvaluators.correctness, SplunkAOEvaluators.completeness])
+stream.set_metrics([SplunkAOEvaluators.correctness, SplunkAOEvaluators.completeness])
 ```
 
 ```python
@@ -187,7 +187,8 @@ from splunk_ao.metrics     import …  →  from splunk_ao.evaluators    import 
 project.create_log_stream(…)   →  project.create_agent_stream(…)
 project.list_log_streams(…)    →  project.list_agent_streams(…)
 project.logstreams             →  project.agent_streams
-enable_metrics(…)              →  enable_evaluators(…)
+log_stream.enable_metrics(…)   →  agent_stream.set_metrics(…)
+enable_metrics(…)              →  enable_evaluators(…)   (AgentStreams service / module-level only)
 delete_metric(…)               →  delete_evaluator(…)
 get_metrics(…)                 →  get_evaluators(…)
 create_custom_llm_metric(…)    →  create_custom_llm_evaluator(…)
