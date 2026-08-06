@@ -903,12 +903,7 @@ class SplunkAODecorator:
         return result
 
     def _conclude_owned_trace(self, call_state: _CallState, output: Any, status_code: int | None) -> None:
-        current_parent = call_state.logger.current_parent()
-        root = current_parent
-        while root is not None and root._parent is not None:
-            root = root._parent
-
-        if root is not call_state.trace:
+        if not call_state.logger._is_current_root(call_state.trace):
             return
 
         try:

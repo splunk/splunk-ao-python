@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 import threading
 import time
@@ -247,6 +248,9 @@ def _positive_json_integer(value: object) -> int | None:
         return None
     if isinstance(value, int):
         return value if value > 0 else None
+    if isinstance(value, float) and math.isfinite(value) and value.is_integer():
+        parsed = int(value)
+        return parsed if parsed > 0 else None
     if isinstance(value, str) and value.isdecimal():
         parsed = int(value)
         return parsed if parsed > 0 else None

@@ -400,6 +400,36 @@ def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     ]
 
 
+def test_orchestration_preserves_explicit_empty_message_parts() -> None:
+    # Given: role-bearing input and output messages with explicitly empty parts
+    span = WorkflowSpan(
+        name="empty-parts-workflow", input='{"role":"user","parts":[]}', output='{"role":"assistant","parts":[]}'
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: empty parts remain empty instead of becoming a text part containing "[]"
+    assert json.loads(attrs["gen_ai.input.messages"]) == [{"role": "user", "parts": []}]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [], "finish_reason": "unknown"}
+    ]
+
+
+def test_orchestration_keeps_missing_parts_and_empty_content_distinct() -> None:
+    # Given: role-bearing messages with no parts field and explicit empty content
+    span = WorkflowSpan(
+        name="empty-content-workflow", input='{"role":"user","content":""}', output='{"role":"assistant","content":""}'
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: existing empty-content behavior remains a typed empty text part
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "")]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [_text_message("assistant", "", finish_reason="unknown")]
+
+
 @pytest.mark.parametrize(
     "span",
     [
@@ -558,11 +588,7 @@ def test_control_mapping_omits_unpopulated_optional_fields() -> None:
 
 
 def test_control_mapping_accepts_schema_compatible_control_span() -> None:
-    source = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=True),
-        control_id=42,
-    )
+    source = ControlSpan(name="guardrail", output=ControlResult(action="observe", matched=True), control_id=42)
     alternate = SimpleNamespace(
         **{field_name: getattr(source, field_name) for field_name in type(source).model_fields}, model_extra={}
     )
@@ -601,8 +627,7 @@ def test_control_mapping_tolerates_span_without_control_fields() -> None:
 
 def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     span = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable"),
+        name="guardrail", output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable")
     )
 
     attrs = build_span_attributes(span)
