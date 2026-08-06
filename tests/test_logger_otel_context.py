@@ -1,6 +1,8 @@
 import asyncio
 import atexit
-from collections.abc import Callable, Generator
+import inspect
+import uuid
+from collections.abc import Callable, Generator, ItemsView
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +10,32 @@ from opentelemetry import context, propagate, trace
 from opentelemetry.trace import SpanContext, TraceFlags
 
 from splunk_ao.logger import SplunkAOLogger
-from splunk_ao.logger.logger import _otel_context_state
+from splunk_ao.logger.logger import OtelIds, _otel_context_state
+
+
+class ItemsForbiddenIdentityMap(dict[uuid.UUID, OtelIds]):
+    """Identity map that fails if subtree cleanup attempts a full scan."""
+
+    def items(self) -> ItemsView[uuid.UUID, OtelIds]:
+        raise AssertionError("subtree cleanup must not scan unrelated OTel identities")
+
+
+class FailingChildSet(set[uuid.UUID]):
+    """Child set that simulates a partially failed structural insertion."""
+
+    def add(self, element: uuid.UUID) -> None:
+        raise RuntimeError("structural insertion failure")
+
+
+def assert_otel_indexes_consistent(logger: SplunkAOLogger) -> None:
+    """Assert that both structural indexes describe the same live edges."""
+    expected_children: dict[uuid.UUID, set[uuid.UUID]] = {}
+    for child_id, parent_id in logger._otel_parent_by_child.items():
+        assert child_id in logger._otel_ids
+        assert parent_id in logger._otel_ids
+        expected_children.setdefault(parent_id, set()).add(child_id)
+
+    assert logger._otel_children_by_parent == expected_children
 
 
 @pytest.fixture(autouse=True)
@@ -235,6 +262,204 @@ def test_deep_parent_chain_restores_each_open_context(make_logger: Callable[[], 
     assert logger._current_otel_span_id() == logger._otel_ids[root.id].span_context.span_id
     logger.conclude(output="trace-output")
     assert not trace.get_current_span().get_span_context().is_valid
+
+
+def test_context_reconciliation_detaches_in_lifo_order_and_verifies_previous_context(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Given: two managed contexts with their exact pre-attach contexts recorded.
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    logger.add_workflow_span(input="workflow")
+    state = _otel_context_state.get()
+    assert state is not None
+    expected = list(reversed(state.active_contexts))
+    actual_detach = context.detach
+    detached: list[uuid.UUID] = []
+    restored_exact_context: list[bool] = []
+
+    def recording_detach(token: object) -> None:
+        active = next(item for item in expected if item.token is token)
+        actual_detach(token)
+        detached.append(active.step_id)
+        restored_exact_context.append(context.get_current() is active.previous_context)
+
+    # When: the child concludes and the logger reconciles back to the root.
+    with monkeypatch.context() as patch:
+        patch.setattr(context, "detach", recording_detach)
+        logger.conclude(output="workflow-output")
+
+    # Then: public detach is LIFO, every reset is verified, and the root remains current.
+    assert detached == [active.step_id for active in expected]
+    assert restored_exact_context == [True, True]
+    assert trace.get_current_span().get_span_context() == logger._otel_ids[root.id].span_context
+    logger.conclude(output="trace-output")
+
+
+def test_context_reconciliation_recovers_when_public_detach_is_a_silent_noop(
+    make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Given: an open root and child, while the public detach API silently does nothing.
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    logger.add_workflow_span(input="workflow")
+    detach = Mock(return_value=None)
+
+    # When: the child concludes and both no-op detach calls must be detected.
+    with monkeypatch.context() as patch:
+        patch.setattr(context, "detach", detach)
+        logger.conclude(output="workflow-output")
+
+    # Then: the recorded base is restored before rebuilding the desired root context.
+    assert detach.call_count == 2
+    assert trace.get_current_span().get_span_context() == logger._otel_ids[root.id].span_context
+    state = _otel_context_state.get()
+    assert state is not None
+    assert [active.step_id for active in state.active_contexts if active.logger_id == id(logger)] == [root.id]
+    logger.conclude(output="trace-output")
+    assert not trace.get_current_span().get_span_context().is_valid
+
+
+def test_context_reconciliation_uses_no_contextvar_token_internals() -> None:
+    # Given/When: the context reconciliation implementation is inspected directly.
+    source = inspect.getsource(SplunkAOLogger._sync_otel_context_impl)
+
+    # Then: only the public OTel detach API is used.
+    assert "otel_context.detach(" in source
+    assert "token.var" not in source
+
+
+@pytest.mark.parametrize(("shape", "size"), [("deep", 1_500), ("wide", 1_000)])
+def test_identity_tree_cleanup_handles_deep_and_wide_subtrees_without_recursion(
+    make_logger: Callable[[], SplunkAOLogger], shape: str, size: int
+) -> None:
+    # Given: a structural identity index much deeper or wider than normal traces.
+    logger = make_logger()
+    root = Mock(id=uuid.uuid4())
+    assert logger._record_otel_ids(root) is not None
+    parent = root
+    for _ in range(size):
+        child = Mock(id=uuid.uuid4())
+        assert logger._record_otel_ids(child, parent_step=root if shape == "wide" else parent) is not None
+        parent = child
+    assert_otel_indexes_consistent(logger)
+
+    # When: the root identity subtree is discarded iteratively.
+    logger._discard_otel_identity_tree(root.id)
+
+    # Then: every node and edge is removed without recursive traversal.
+    assert logger._otel_ids == {}
+    assert logger._otel_children_by_parent == {}
+    assert logger._otel_parent_by_child == {}
+
+
+def test_partial_identity_cleanup_preserves_siblings_and_never_scans_unrelated_ids(
+    make_logger: Callable[[], SplunkAOLogger],
+) -> None:
+    # Given: a selected subtree, a sibling, and a completely unrelated request tree.
+    logger = make_logger()
+    root = Mock(id=uuid.uuid4())
+    selected = Mock(id=uuid.uuid4())
+    selected_child = Mock(id=uuid.uuid4())
+    sibling = Mock(id=uuid.uuid4())
+    unrelated_root = Mock(id=uuid.uuid4())
+    unrelated_child = Mock(id=uuid.uuid4())
+    for step, parent in (
+        (root, None),
+        (selected, root),
+        (selected_child, selected),
+        (sibling, root),
+        (unrelated_root, None),
+        (unrelated_child, unrelated_root),
+    ):
+        assert logger._record_otel_ids(step, parent_step=parent) is not None
+    logger._otel_ids = ItemsForbiddenIdentityMap(logger._otel_ids)
+
+    # When: only the selected subtree is discarded.
+    logger._discard_otel_identity_tree(selected.id)
+
+    # Then: cleanup follows indexed UUID edges and leaves unrelated identities untouched.
+    assert set(logger._otel_ids) == {root.id, sibling.id, unrelated_root.id, unrelated_child.id}
+    assert logger._otel_children_by_parent == {root.id: {sibling.id}, unrelated_root.id: {unrelated_child.id}}
+    assert_otel_indexes_consistent(logger)
+
+
+def test_partial_identity_insertion_rolls_back_and_does_not_interrupt_logging(
+    make_logger: Callable[[], SplunkAOLogger],
+) -> None:
+    # Given: a root whose structural child insertion fails after identity creation.
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    logger._otel_children_by_parent[root.id] = FailingChildSet()
+
+    # When: a proprietary child is created normally.
+    workflow = logger.add_workflow_span(input="workflow")
+
+    # Then: proprietary logging continues and all partial OTel index mutations are rolled back.
+    assert logger.current_parent() is workflow
+    assert workflow in root.spans
+    assert workflow.id not in logger._otel_ids
+    assert workflow.id not in logger._otel_parent_by_child
+    assert root.id not in logger._otel_children_by_parent
+    assert_otel_indexes_consistent(logger)
+    logger.conclude(output="workflow-output")
+    logger.conclude(output="trace-output")
+
+
+def test_completed_leaf_release_unlinks_identity_edge_before_parent_cleanup() -> None:
+    # Given: a normal OTLP logger with one active trace envelope.
+    sink = Mock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="agent-stream-id", _sink=sink)
+    root = logger.start_trace(input="q")
+
+    # When: a completed leaf is emitted immediately.
+    leaf = logger.add_llm_span(input="prompt", output="answer", model="model")
+
+    # Then: its identity and parent edge are removed in O(1), and parent cleanup empties all indexes.
+    assert leaf.id not in logger._otel_ids
+    assert leaf.id not in logger._otel_parent_by_child
+    assert root.id not in logger._otel_children_by_parent
+    assert_otel_indexes_consistent(logger)
+    logger.conclude(output="trace-output")
+    assert logger._otel_ids == {}
+    assert logger._otel_children_by_parent == {}
+    assert logger._otel_parent_by_child == {}
+    logger.terminate()
+
+
+def test_reset_flush_and_termination_clear_visible_context_and_structural_indexes(
+    make_logger: Callable[[], SplunkAOLogger],
+) -> None:
+    # Given: an open trace with a nested proprietary parent.
+    logger = make_logger()
+    logger.start_trace(input="reset")
+    logger.add_workflow_span(input="workflow")
+
+    # When/Then: reset removes that request subtree and its visible managed context.
+    logger.reset_parent_tracking()
+    assert not trace.get_current_span().get_span_context().is_valid
+    assert logger._otel_ids == {}
+    assert logger._otel_children_by_parent == {}
+    assert logger._otel_parent_by_child == {}
+
+    # When/Then: legacy-hook flush concludes and clears a new subtree as well.
+    logger.start_trace(input="flush")
+    logger.add_workflow_span(input="workflow")
+    logger.flush()
+    assert not trace.get_current_span().get_span_context().is_valid
+    assert logger._otel_ids == {}
+    assert logger._otel_children_by_parent == {}
+    assert logger._otel_parent_by_child == {}
+
+    # When/Then: termination clears unfinished identities without exporting them.
+    logger.start_trace(input="terminate")
+    logger.add_workflow_span(input="workflow")
+    logger.terminate()
+    assert not trace.get_current_span().get_span_context().is_valid
+    assert logger._otel_ids == {}
+    assert logger._otel_children_by_parent == {}
+    assert logger._otel_parent_by_child == {}
 
 
 def test_single_llm_trace_assigns_both_contexts_and_cleans_up(
