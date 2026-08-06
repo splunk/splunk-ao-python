@@ -27,6 +27,13 @@ class FailingChildSet(set[uuid.UUID]):
         raise RuntimeError("structural insertion failure")
 
 
+class FailingDiscardSet(set[uuid.UUID]):
+    """Child set that simulates a partially failed structural removal."""
+
+    def discard(self, element: uuid.UUID) -> None:
+        raise RuntimeError("structural removal failure")
+
+
 def assert_otel_indexes_consistent(logger: SplunkAOLogger) -> None:
     """Assert that both structural indexes describe the same live edges."""
     expected_children: dict[uuid.UUID, set[uuid.UUID]] = {}
@@ -403,6 +410,28 @@ def test_partial_identity_insertion_rolls_back_and_does_not_interrupt_logging(
     assert root.id not in logger._otel_children_by_parent
     assert_otel_indexes_consistent(logger)
     logger.conclude(output="workflow-output")
+    logger.conclude(output="trace-output")
+
+
+def test_partial_identity_removal_rebuilds_forward_index_and_does_not_interrupt_logging(
+    make_logger: Callable[[], SplunkAOLogger],
+) -> None:
+    # Given: a live parent/child edge whose forward child set fails during removal.
+    logger = make_logger()
+    root = logger.start_trace(input="q")
+    workflow = logger.add_workflow_span(input="workflow")
+    logger._otel_children_by_parent[root.id] = FailingDiscardSet({workflow.id})
+
+    # When: normal conclusion removes the child identity.
+    parent = logger.conclude(output="workflow-output")
+
+    # Then: logging continues and the stale forward edge is removed by reconstruction.
+    assert parent is root
+    assert logger.current_parent() is root
+    assert workflow.id not in logger._otel_ids
+    assert workflow.id not in logger._otel_parent_by_child
+    assert root.id not in logger._otel_children_by_parent
+    assert_otel_indexes_consistent(logger)
     logger.conclude(output="trace-output")
 
 

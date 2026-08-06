@@ -648,9 +648,19 @@ class SplunkAOLogger(TracesLogger):
             try:
                 siblings = self._otel_children_by_parent.get(parent_step_id)
                 if siblings is not None:
-                    siblings.discard(step_id)
-                    if not siblings:
-                        self._otel_children_by_parent.pop(parent_step_id, None)
+                    try:
+                        siblings.discard(step_id)
+                    except Exception as exc:
+                        first_error = first_error or exc
+                        remaining_siblings = set(siblings)
+                        remaining_siblings.discard(step_id)
+                        if remaining_siblings:
+                            self._otel_children_by_parent[parent_step_id] = remaining_siblings
+                        else:
+                            self._otel_children_by_parent.pop(parent_step_id, None)
+                    else:
+                        if not siblings:
+                            self._otel_children_by_parent.pop(parent_step_id, None)
             except Exception as exc:
                 first_error = first_error or exc
 
