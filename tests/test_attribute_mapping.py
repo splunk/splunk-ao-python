@@ -26,6 +26,7 @@ from splunk_ao.converter.attribute_mapping import (
 )
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
 from splunk_ao.schema import DataContentBlock, LoggedControlSpan, LoggedLlmSpan, LoggedMessage, TextContentBlock
+from splunk_ao.schema.logged import LoggedRetrieverSpan
 
 
 def _text_message(role: str, content: str, *, finish_reason: str | None = None) -> dict:
@@ -234,7 +235,18 @@ def test_retriever_mapping_uses_query_and_documents() -> None:
     assert json.loads(attrs["gen_ai.retrieval.documents"]) == [{"content": "doc", "metadata": {"source": "kb"}}]
     assert attrs["splunk_ao.retrieval.documents.count"] == 1
     assert attrs["db.operation"] == "search"
+    assert "gen_ai.data_source.id" not in attrs
     assert "gen_ai.output.messages" not in attrs
+
+
+def test_retriever_mapping_uses_only_explicit_data_source_id() -> None:
+    span = LoggedRetrieverSpan(
+        name="display-name", data_source_id="vector-db", input="what is RAG?", output=[Document(content="doc")]
+    )
+
+    attrs = build_span_attributes(span)
+
+    assert attrs["gen_ai.data_source.id"] == "vector-db"
 
 
 @pytest.mark.parametrize(
@@ -558,11 +570,7 @@ def test_control_mapping_omits_unpopulated_optional_fields() -> None:
 
 
 def test_control_mapping_accepts_schema_compatible_control_span() -> None:
-    source = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=True),
-        control_id=42,
-    )
+    source = ControlSpan(name="guardrail", output=ControlResult(action="observe", matched=True), control_id=42)
     alternate = SimpleNamespace(
         **{field_name: getattr(source, field_name) for field_name in type(source).model_fields}, model_extra={}
     )
@@ -601,8 +609,7 @@ def test_control_mapping_tolerates_span_without_control_fields() -> None:
 
 def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     span = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable"),
+        name="guardrail", output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable")
     )
 
     attrs = build_span_attributes(span)

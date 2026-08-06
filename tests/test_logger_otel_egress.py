@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.trace import SpanKind
 
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exceptions import SplunkAOLoggerException
@@ -106,6 +107,44 @@ def test_pending_leaf_emits_when_trace_envelope_is_released(
     assert operation_names(recording_sink.spans) == ["chat", leaf_operation]
     assert all(span.parent is None for span in recording_sink.spans)
     assert otlp_logger._otel_ids == {}
+
+
+def test_retriever_emits_client_semantics_from_explicit_data_source_id(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: an active trace and an explicit authoritative data-source ID
+    otlp_logger.start_trace(input="question")
+
+    # When: a retriever is added and the trace is concluded
+    otlp_logger.add_retriever_span(
+        input="query", output=["document"], name="display-name", data_source_id="knowledge-base"
+    )
+    otlp_logger.conclude(output="answer")
+
+    # Then: path 1 emits canonical retrieval name, kind, and identity
+    [span] = recording_sink.spans
+    assert span.name == "retrieval knowledge-base"
+    assert span.kind is SpanKind.CLIENT
+    assert (span.attributes or {})["gen_ai.data_source.id"] == "knowledge-base"
+
+
+@pytest.mark.parametrize(
+    ("requested_kind", "expected_kind"), [(SpanKind.CLIENT, SpanKind.CLIENT), (SpanKind.SERVER, SpanKind.INTERNAL)]
+)
+def test_agent_logger_allows_only_client_kind_override(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, requested_kind: SpanKind, expected_kind: SpanKind
+) -> None:
+    # Given: an active trace
+    otlp_logger.start_trace(input="question")
+
+    # When: an agent is logged with the requested OTel kind
+    otlp_logger.add_agent_span(input="question", name="agent", span_kind=requested_kind)
+    otlp_logger.conclude(output="answer")
+    otlp_logger.conclude(output="answer")
+
+    # Then: only CLIENT survives as a remote-agent classification
+    [span] = recording_sink.spans
+    assert span.kind is expected_kind
 
 
 def test_promoted_tool_emits_after_child_and_before_root(

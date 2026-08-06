@@ -9,7 +9,8 @@ from collections.abc import Sequence
 from json import dumps
 from typing import Annotated, Any
 
-from pydantic import Field
+from opentelemetry.trace import SpanKind
+from pydantic import ConfigDict, Field, field_validator
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import (
@@ -73,6 +74,21 @@ class LoggedAgentSpan(AgentSpan):
     redacted_output: IngestOutputType | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
     conversation_root: bool | None = Field(default=None)
+    span_kind: SpanKind = Field(default=SpanKind.INTERNAL, exclude=True)
+
+    @field_validator("span_kind", mode="before")
+    @classmethod
+    def normalize_span_kind(cls, value: object) -> SpanKind:
+        """Allow only the explicit remote-agent client classification."""
+        return SpanKind.CLIENT if value is SpanKind.CLIENT else SpanKind.INTERNAL
+
+
+class LoggedRetrieverSpan(RetrieverSpan):
+    """RetrieverSpan with SDK-local OTel data-source identity."""
+
+    model_config = ConfigDict(from_attributes=True, validate_assignment=True)
+
+    data_source_id: str | None = Field(default=None, exclude=True)
 
 
 class LoggedLlmSpan(LlmSpan):
@@ -128,15 +144,16 @@ class LoggedControlSpan(ControlSpan):
     redacted_input: str | None = Field(default=None, description=BaseStep.model_fields["redacted_input"].description)
 
 
-# RetrieverSpan and ToolSpan use plain string/document I/O and don't need multimodal widening.
+# ToolSpan uses plain string I/O and doesn't need multimodal widening.
 # LoggedControlSpan narrows ControlSpan's Any input to str for the same reason.
 LoggedSpan = Annotated[
-    LoggedAgentSpan | LoggedWorkflowSpan | LoggedLlmSpan | RetrieverSpan | ToolSpan | LoggedControlSpan,
+    LoggedAgentSpan | LoggedWorkflowSpan | LoggedLlmSpan | LoggedRetrieverSpan | ToolSpan | LoggedControlSpan,
     Field(discriminator="type"),
 ]
 
 LoggedTrace.model_rebuild()
 LoggedWorkflowSpan.model_rebuild()
 LoggedAgentSpan.model_rebuild()
+LoggedRetrieverSpan.model_rebuild()
 LoggedLlmSpan.model_rebuild()
 LoggedControlSpan.model_rebuild()

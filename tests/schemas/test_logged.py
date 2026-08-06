@@ -1,6 +1,7 @@
 """Tests for SDK-local ingestion models (Logged variants and content blocks)."""
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pydantic import ValidationError
 
 from galileo_core.schemas.logging.llm import MessageRole
@@ -9,7 +10,14 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
-from splunk_ao.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedLlmSpan, LoggedTrace, LoggedWorkflowSpan
+from splunk_ao.schema.logged import (
+    LoggedAgentSpan,
+    LoggedControlSpan,
+    LoggedLlmSpan,
+    LoggedRetrieverSpan,
+    LoggedTrace,
+    LoggedWorkflowSpan,
+)
 from splunk_ao.schema.message import LoggedMessage
 from splunk_ao.schema.trace import TracesIngestRequest
 
@@ -244,7 +252,7 @@ class TestJsonRoundtripNoCoercion:
         restored = LoggedTrace.model_validate(raw)
 
         # Then: RetrieverSpan and its Document output are preserved
-        assert type(restored.spans[0]) is RetrieverSpan
+        assert type(restored.spans[0]) is LoggedRetrieverSpan
         assert restored.spans[0].output[0].content == "retrieved doc"
 
     def test_tool_span_roundtrip(self) -> None:
@@ -332,7 +340,7 @@ class TestJsonRoundtripNoCoercion:
         assert llm.input[0].content[1].base64 == "audio_b64"
 
         retriever = wf.spans[1]
-        assert type(retriever) is RetrieverSpan
+        assert type(retriever) is LoggedRetrieverSpan
         assert retriever.output[0].content == "ctx doc"
 
         tool = wf.spans[2]
@@ -341,6 +349,7 @@ class TestJsonRoundtripNoCoercion:
 
     def test_logged_trace_roundtrip_with_control_span(self) -> None:
         from splunk_ao.logger.control import ControlSpan
+
         # Given: a native Core ControlSpan payload
         control_payload = ControlSpan(input="selected text").model_dump(mode="python")
         trace = LoggedTrace(input="query", spans=[control_payload])
@@ -354,6 +363,7 @@ class TestJsonRoundtripNoCoercion:
     @pytest.mark.parametrize("field_name", ["id", "session_id", "trace_id", "parent_id"])
     def test_control_span_rejects_non_uuidish_id_fields(self, field_name: str) -> None:
         from splunk_ao.logger.control import ControlSpan
+
         # When/Then: non-UUID-ish ID fields are rejected by the native Core schema
         with pytest.raises(ValidationError):
             ControlSpan(input="selected text", **{field_name: 123})
@@ -419,6 +429,24 @@ class TestLoggedAndCoreParity:
         assert isinstance(LoggedWorkflowSpan(input="x"), WorkflowSpan)
         assert isinstance(LoggedAgentSpan(input="x"), AgentSpan)
         assert isinstance(LoggedLlmSpan(input="x"), LlmSpan)
+        assert isinstance(LoggedRetrieverSpan(input="x"), RetrieverSpan)
+
+    def test_otel_runtime_hints_are_excluded_from_legacy_ingestion_payload(self) -> None:
+        # Given: path-1 spans carrying the new SDK-local OTel hints
+        trace = LoggedTrace(
+            input="input",
+            spans=[
+                LoggedAgentSpan(input="input", span_kind=SpanKind.CLIENT),
+                LoggedRetrieverSpan(input="query", data_source_id="knowledge-base"),
+            ],
+        )
+
+        # When: the deprecated proprietary ingestion request is serialized
+        spans = TracesIngestRequest(traces=[trace]).model_dump(mode="json")["traces"][0]["spans"]
+
+        # Then: neither runtime-only hint expands that wire contract
+        assert "span_kind" not in spans[0]
+        assert "data_source_id" not in spans[1]
 
 
 class TestLoggedTraceTypeRestrictions:

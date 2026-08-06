@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Retriever logging accepts an explicit `data_source_id`, and agent logging
+  accepts `span_kind=SpanKind.CLIENT` for calls to remote agent services.
+
 ### Fixed
 
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
+- Retriever spans exported over OTLP now use client operation semantics and
+  names derived only from an explicit data-source ID.
 
 ## [0.1.1] - 2026-08-03
 

@@ -15,7 +15,7 @@ from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter import SpanConverter, span_converter
 from splunk_ao.converter.attribute_mapping import build_span_attributes
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
-from splunk_ao.schema.logged import LoggedControlSpan
+from splunk_ao.schema.logged import LoggedAgentSpan, LoggedControlSpan, LoggedRetrieverSpan
 from splunk_ao.utils.headers_data import get_package_version
 
 TRACE_ID = 0x1234567890ABCDEF1234567890ABCDEF
@@ -72,8 +72,8 @@ def supported_spans() -> list[tuple[BaseStep, str, SpanKind]]:
             RetrieverSpan(
                 name="knowledge-base", input="query", output=[Document(content="result")], created_at=CREATED_AT
             ),
-            "retrieval knowledge-base",
-            SpanKind.INTERNAL,
+            "retrieval",
+            SpanKind.CLIENT,
         ),
         (
             WorkflowSpan(name="research", input="question", output="answer", created_at=CREATED_AT),
@@ -122,6 +122,33 @@ def test_supported_span_types_use_canonical_names_and_kinds(
 )
 def test_missing_optional_name_parts_do_not_leave_whitespace(span: BaseStep, expected_name: str) -> None:
     assert convert(span).name == expected_name
+
+
+def test_retriever_name_and_attribute_use_explicit_data_source_id_byte_for_byte() -> None:
+    span = LoggedRetrieverSpan(
+        name="display-name", data_source_id="knowledge base/v1", input="query", output=[Document(content="result")]
+    )
+
+    result = convert(span)
+
+    assert result.name == "retrieval knowledge base/v1"
+    assert result.kind is SpanKind.CLIENT
+    assert (result.attributes or {})["gen_ai.data_source.id"] == "knowledge base/v1"
+
+
+@pytest.mark.parametrize(
+    ("requested_kind", "expected_kind"),
+    [
+        (SpanKind.INTERNAL, SpanKind.INTERNAL),
+        (SpanKind.CLIENT, SpanKind.CLIENT),
+        (SpanKind.SERVER, SpanKind.INTERNAL),
+        ("CLIENT", SpanKind.INTERNAL),
+    ],
+)
+def test_agent_kind_allows_only_explicit_client_override(requested_kind: object, expected_kind: SpanKind) -> None:
+    span = LoggedAgentSpan(name="agent", span_kind=requested_kind)
+
+    assert convert(span).kind is expected_kind
 
 
 @pytest.mark.parametrize(
