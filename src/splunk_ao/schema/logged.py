@@ -90,6 +90,12 @@ class LoggedRetrieverSpan(RetrieverSpan):
 
     data_source_id: str | None = Field(default=None, exclude=True)
 
+    @field_validator("data_source_id", mode="before")
+    @classmethod
+    def normalize_data_source_id(cls, value: object) -> object:
+        """Treat an empty data-source ID as absent without altering valid IDs."""
+        return None if value == "" else value
+
 
 class LoggedLlmSpan(LlmSpan):
     """LlmSpan for ingestion using LoggedMessage (supports IngestContentBlocks, not ContentParts)."""

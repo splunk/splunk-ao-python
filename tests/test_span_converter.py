@@ -136,6 +136,18 @@ def test_retriever_name_and_attribute_use_explicit_data_source_id_byte_for_byte(
     assert (result.attributes or {})["gen_ai.data_source.id"] == "knowledge base/v1"
 
 
+def test_empty_retriever_data_source_id_is_treated_as_absent() -> None:
+    # Given: an explicitly empty data-source ID
+    span = LoggedRetrieverSpan(name="display-name", data_source_id="", input="query", output=[])
+
+    # When: the proprietary retriever is converted
+    result = convert(span)
+
+    # Then: no trailing space or empty semantic attribute is emitted
+    assert result.name == "retrieval"
+    assert "gen_ai.data_source.id" not in (result.attributes or {})
+
+
 @pytest.mark.parametrize(
     ("requested_kind", "expected_kind"),
     [
