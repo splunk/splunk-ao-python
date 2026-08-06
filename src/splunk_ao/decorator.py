@@ -212,8 +212,8 @@ class SplunkAODecorator:
         ----------
         project
             The project name to use for this context
-        agent_stream: The log stream name to use for this context
-            The log stream name to use for this context
+        agent_stream
+            The agent stream name to use for this context
         experiment_id
             The experiment ID to use for this context
         mode

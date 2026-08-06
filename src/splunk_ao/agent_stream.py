@@ -330,16 +330,16 @@ class AgentStream(StateManagementMixin):
         Examples
         --------
             # List by project name
-            log_streams = AgentStream.list(project_name="My AI Project")
+            agent_streams = AgentStream.list(project_name="My AI Project")
 
             # List by project ID
-            log_streams = AgentStream.list(project_id="project-123")
+            agent_streams = AgentStream.list(project_id="project-123")
 
             # List using SPLUNK_AO_PROJECT environment variable
-            log_streams = AgentStream.list()
+            agent_streams = AgentStream.list()
 
-            # Cap the number of returned log streams
-            log_streams = AgentStream.list(project_name="My AI Project", limit=3)
+            # Cap the number of returned agent streams
+            agent_streams = AgentStream.list(project_name="My AI Project", limit=3)
 
             # Fetch the next page
             page_2 = AgentStream.list(project_name="My AI Project", starting_token=100)
