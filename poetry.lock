@@ -6519,4 +6519,4 @@ openai = ["mcp", "openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "54902ab9adfb17437ed32e49e03ec273195bdf62435e0bdaf0a907e6924632aa"
+content-hash = "06bff0982dad5c67cebbac6bdbaa4393b4f642214985b6550b61e7547adfa9fd"
