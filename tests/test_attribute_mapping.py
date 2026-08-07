@@ -108,7 +108,8 @@ def test_llm_messages_preserve_tool_calls_and_tool_responses() -> None:
     ]
 
 
-def test_llm_content_parts_preserve_available_nonstandard_fields() -> None:
+def test_llm_content_parts_follow_otel_multimodal_schema_and_preserve_extensions() -> None:
+    # Given: stored file content and ingest-side blob/URI content with optional extension fields.
     file_id = uuid4()
     stored_file_span = LlmSpan(
         input=[Message(role=MessageRole.user, content=[FileContentPart(file_id=file_id)])], output="answer"
@@ -129,26 +130,73 @@ def test_llm_content_parts_preserve_available_nonstandard_fields() -> None:
                 ],
             )
         ],
-        output="answer",
+        output=LoggedMessage(
+            role=MessageRole.assistant,
+            content=[
+                DataContentBlock(
+                    modality="image",
+                    mime_type="image/png",
+                    url="https://example.com/photo.png",
+                    index=4,
+                    metadata={"source": "external"},
+                )
+            ],
+        ),
     )
 
+    # When: the proprietary content is converted to OTel GenAI message attributes.
     stored_parts = json.loads(build_span_attributes(stored_file_span)["gen_ai.input.messages"])[0]["parts"]
-    ingest_parts = json.loads(build_span_attributes(ingest_span)["gen_ai.input.messages"])[0]["parts"]
+    ingest_attrs = build_span_attributes(ingest_span)
+    ingest_parts = json.loads(ingest_attrs["gen_ai.input.messages"])[0]["parts"]
+    output_parts = json.loads(ingest_attrs["gen_ai.output.messages"])[0]["parts"]
 
+    # Then: file parts remain files, while Galileo data parts use the OTel blob/URI schemas.
     assert stored_parts == [{"type": "file", "file_id": str(file_id)}]
     assert ingest_parts == [
         {"type": "text", "content": "inspect this", "index": 2, "metadata": {"language": "en"}},
         {
-            "type": "data",
+            "type": "blob",
             "modality": "document",
             "mime_type": "application/pdf",
-            "base64": "ZG9jdW1lbnQ=",
+            "content": "ZG9jdW1lbnQ=",
             "index": 3,
             "metadata": {"source": "upload"},
         },
     ]
+    assert output_parts == [
+        {
+            "type": "uri",
+            "modality": "image",
+            "mime_type": "image/png",
+            "uri": "https://example.com/photo.png",
+            "index": 4,
+            "metadata": {"source": "external"},
+        }
+    ]
     assert "modality" not in stored_parts[0]
     assert "content" not in stored_parts[0]
+
+
+def test_native_otel_content_parts_pass_through_unchanged() -> None:
+    # Given: serialized messages that already use the OTel text, URI, blob, and file part schemas.
+    native_parts = [
+        {"type": "text", "content": "Inspect these attachments"},
+        {"type": "uri", "modality": "image", "uri": "https://example.com/photo.png", "mime_type": "image/png"},
+        {"type": "blob", "modality": "audio", "content": "YXVkaW8=", "mime_type": "audio/wav"},
+        {"type": "file", "modality": "document", "file_id": "file-1", "mime_type": "application/pdf"},
+    ]
+    span = WorkflowSpan(
+        name="multimodal-workflow",
+        input=json.dumps({"messages": [{"role": "user", "content": native_parts}]}),
+        output=json.dumps({"messages": [{"role": "assistant", "content": native_parts}]}),
+    )
+
+    # When: the messages pass through the shared proprietary-to-OTel conversion boundary.
+    attrs = build_span_attributes(span)
+
+    # Then: regular text and every already-valid OTel multimodal part remain unchanged.
+    assert json.loads(attrs["gen_ai.input.messages"])[0]["parts"] == native_parts
+    assert json.loads(attrs["gen_ai.output.messages"])[0]["parts"] == native_parts
 
 
 def test_llm_tool_definitions_flatten_openai_functions_and_preserve_flat_definitions() -> None:
@@ -268,6 +316,7 @@ def test_orchestration_mapping(span, operation_key: str, operation: str, name_ke
 
 
 def test_orchestration_extracts_serialized_langgraph_messages_with_multimodal_parts() -> None:
+    # Given: serialized framework messages containing standard, extension, file, and Galileo data parts.
     file_id = uuid4()
     span = WorkflowSpan(
         name="travel-planner",
@@ -303,8 +352,10 @@ def test_orchestration_extracts_serialized_langgraph_messages_with_multimodal_pa
         ),
     )
 
+    # When: handler state is converted at the shared attribute boundary.
     attrs = build_span_attributes(span)
 
+    # Then: recognized message containers and every available multimodal field are preserved.
     assert json.loads(attrs["gen_ai.input.messages"]) == [
         {
             "role": "user",
@@ -320,7 +371,7 @@ def test_orchestration_extracts_serialized_langgraph_messages_with_multimodal_pa
             "role": "assistant",
             "parts": [
                 {"type": "text", "content": "Here is the plan"},
-                {"type": "data", "modality": "audio", "base64": "YXVkaW8="},
+                {"type": "blob", "modality": "audio", "content": "YXVkaW8="},
             ],
             "finish_reason": "unknown",
         }
@@ -558,11 +609,7 @@ def test_control_mapping_omits_unpopulated_optional_fields() -> None:
 
 
 def test_control_mapping_accepts_schema_compatible_control_span() -> None:
-    source = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=True),
-        control_id=42,
-    )
+    source = ControlSpan(name="guardrail", output=ControlResult(action="observe", matched=True), control_id=42)
     alternate = SimpleNamespace(
         **{field_name: getattr(source, field_name) for field_name in type(source).model_fields}, model_extra={}
     )
@@ -601,8 +648,7 @@ def test_control_mapping_tolerates_span_without_control_fields() -> None:
 
 def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     span = ControlSpan(
-        name="guardrail",
-        output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable"),
+        name="guardrail", output=ControlResult(action="observe", matched=False, error_message="evaluator unavailable")
     )
 
     attrs = build_span_attributes(span)
