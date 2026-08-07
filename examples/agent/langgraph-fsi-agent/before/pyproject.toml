@@ -5,6 +5,7 @@ description = "A demo langgraph Financial Services agent with Splunk AO evaluati
 license = "MIT"
 requires-python = "<3.14,>=3.11"
 dependencies = [
+  "aiohttp>=3.14.1,<4",
   "chainlit~=2.5.5",
   "grandalf>=0.8",
   "langchain-community>=0.3.24",
