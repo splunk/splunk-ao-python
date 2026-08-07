@@ -100,7 +100,8 @@ pytest-timeout = "^2.4.0"
 testpaths = ["tests"]
 pythonpath = ["./src/"]
 # Note: Some env vars are also set in conftest.py for pytest-xdist compatibility
-# on Python 3.14+. This section remains for documentation and pytest-xdist compatibility.
+# on Python 3.14+. This section remains for documentation; conftest.py is the
+# authoritative source for pytest-xdist workers.
 env = [
     "SPLUNK_AO_CONSOLE_URL=http://fake.test:8088",
     "SPLUNK_AO_API_KEY=api-1234567890",
