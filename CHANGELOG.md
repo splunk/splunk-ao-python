@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Galileo multimodal URL and base64 data blocks now export as OpenTelemetry
+  GenAI `uri` and `blob` message parts for both input and output messages while
+  preserving modality, MIME type, and supported extension fields.
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
