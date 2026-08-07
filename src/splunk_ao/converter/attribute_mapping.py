@@ -137,6 +137,13 @@ def _content_part(value: Any) -> dict[str, Any] | None:
         return None
     if part_type == "text" and "content" not in part and "text" in part:
         part["content"] = part.pop("text")
+    elif part_type == "data":
+        if "url" in part and "base64" not in part:
+            part["type"] = "uri"
+            part["uri"] = part.pop("url")
+        elif "base64" in part and "url" not in part:
+            part["type"] = "blob"
+            part["content"] = part.pop("base64")
     return part
 
 
