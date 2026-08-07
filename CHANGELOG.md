@@ -9,9 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Galileo multimodal URL and base64 data blocks now export as OpenTelemetry
+  GenAI `uri` and `blob` message parts for both input and output messages while
+  preserving modality, MIME type, and supported extension fields.
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
+
+### Changed
+
+- **Config file renamed** (HYBIM-918): The non-secret debug snapshot written to
+  `~/.galileo/` on logout/reset is now named `splunk-ao-config.json` (was
+  `galileo-python-config.json`). The old file can be deleted or ignored — it is
+  never read back and has no effect on authentication or config resolution.
+- **Evaluator terminology alignment in docs and errors**: Updated
+  `SplunkAOEvaluators` docstrings, agent stream/evaluator API docstrings, and
+  user-visible error messages to use evaluator and agent stream vocabulary following
+  the `SplunkAOMetrics` → `SplunkAOEvaluators` rename. Enum values are documented
+  as matching scorer labels via the legacy `/scorers` API paths. The public
+  `metrics=` parameter name is unchanged for API compatibility. Renamed stale
+  `test_galileo_metrics_*` and `test_lookup_by_galileo_metrics_enum` test identifiers.
 
 ## [0.1.1] - 2026-08-03
 

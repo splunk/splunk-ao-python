@@ -15,14 +15,14 @@ def test_metric_custom_no_version() -> None:
     assert metric.version is None
 
 
-def test_galileo_metrics_values_are_nonempty_strings() -> None:
+def test_evaluators_values_are_nonempty_strings() -> None:
     """All SplunkAOEvaluators values are non-empty human-readable strings."""
     for member in SplunkAOEvaluators:
         assert isinstance(member.value, str), f"{member.name} value is not a string"
         assert len(member.value.strip()) > 0, f"{member.name} has an empty value"
 
 
-def test_galileo_metrics_is_str_compatible() -> None:
+def test_evaluators_is_str_compatible() -> None:
     """SplunkAOEvaluators members are str-compatible (usable as plain strings)."""
     member = SplunkAOEvaluators.correctness
     assert isinstance(member, str)
@@ -30,7 +30,7 @@ def test_galileo_metrics_is_str_compatible() -> None:
     assert member.value == "Correctness"
 
 
-def test_galileo_metrics_naming_convention() -> None:
+def test_evaluators_naming_convention() -> None:
     """Base names map to LLM versions, _luna suffix maps to SLM versions."""
     # LLM versions (base names) should NOT have "(SLM)" in the label
     assert "(SLM)" not in SplunkAOEvaluators.input_pii.value
