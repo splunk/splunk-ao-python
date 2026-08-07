@@ -85,7 +85,7 @@ class AgentStream(LogStreamResponse):
     # export SPLUNK_AO_PROJECT="My AI Project"
 
     # Clean and simple - just pass the evaluators!
-    local_evaluators = enable_evaluators([
+    local_evaluators = enable_evaluators(metrics=[
         SplunkAOEvaluators.correctness,
         SplunkAOEvaluators.completeness,
         "context_relevance"
