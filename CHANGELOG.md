@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-07
+
 ### Fixed
 
 - Galileo multimodal URL and base64 data blocks now export as OpenTelemetry
   GenAI `uri` and `blob` message parts for both input and output messages while
   preserving modality, MIME type, and supported extension fields.
+
+## [0.2.0] - 2026-08-06
+
+### Fixed
+
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
@@ -79,5 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.2.1]: https://pypi.org/project/splunk-ao/0.2.1/
+[0.2.0]: https://pypi.org/project/splunk-ao/0.2.0/
 [0.1.1]: https://pypi.org/project/splunk-ao/0.1.1/
 [0.1.0]: https://pypi.org/project/splunk-ao/0.1.0/
