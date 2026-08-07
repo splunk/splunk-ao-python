@@ -127,14 +127,6 @@ def _text_part(value: Any) -> dict[str, Any]:
     return {"type": "text", "content": content}
 
 
-def _is_content_part(value: Any) -> bool:
-    part = _mapping_view(value)
-    if part is None:
-        return False
-    part_type = part.get("type")
-    return isinstance(part_type, str) and bool(part_type.strip())
-
-
 def _content_part(value: Any) -> dict[str, Any] | None:
     part = _mapping_value(value)
     if part is None:
@@ -146,18 +138,10 @@ def _content_part(value: Any) -> dict[str, Any] | None:
     if part_type == "text" and "content" not in part and "text" in part:
         part["content"] = part.pop("text")
     elif part_type == "data":
-        has_url = "url" in part
-        has_base64 = "base64" in part
-        if has_url == has_base64:
-            return None
-        if has_url:
-            if "uri" in part:
-                return None
+        if "url" in part and "base64" not in part:
             part["type"] = "uri"
             part["uri"] = part.pop("url")
-        else:
-            if "content" in part:
-                return None
+        elif "base64" in part and "url" not in part:
             part["type"] = "blob"
             part["content"] = part.pop("base64")
     return part
@@ -265,7 +249,7 @@ def _is_message_sequence(value: Any, *, allow_empty: bool = False) -> bool:
 
 
 def _is_content_part_sequence(value: Any) -> bool:
-    return bool(value) and all(_is_content_part(item) for item in value)
+    return bool(value) and all(_content_part(item) is not None for item in value)
 
 
 def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[str, Any]] | None, bool]:
