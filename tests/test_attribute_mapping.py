@@ -199,6 +199,34 @@ def test_native_otel_content_parts_pass_through_unchanged() -> None:
     assert json.loads(attrs["gen_ai.output.messages"])[0]["parts"] == native_parts
 
 
+@pytest.mark.parametrize(
+    "raw_part",
+    [
+        {"type": "data", "url": "https://example.com/photo.png", "base64": "aW1hZ2U="},
+        {"type": "data", "modality": "image"},
+        {"type": "data", "url": "https://example.com/photo.png", "uri": "https://example.com/existing.png"},
+        {"type": "data", "base64": "aW1hZ2U=", "content": "existing-content"},
+    ],
+    ids=("both-sources", "neither-source", "url-uri-collision", "base64-content-collision"),
+)
+def test_malformed_legacy_data_parts_preserve_raw_value_in_text_fallback(raw_part: dict[str, str]) -> None:
+    # Given: a raw legacy data part whose source is ambiguous or collides with its OTel target field.
+    span = WorkflowSpan(
+        name="multimodal-workflow", input=json.dumps({"messages": [{"role": "user", "content": raw_part}]})
+    )
+
+    # When: the raw handler state passes through the canonical message converter.
+    messages = json.loads(build_span_attributes(span)["gen_ai.input.messages"])
+
+    # Then: conversion does not choose a source or overwrite a target, and the original part survives as text.
+    assert messages == [
+        {
+            "role": "user",
+            "parts": [{"type": "text", "content": json.dumps(raw_part, separators=(",", ":"), sort_keys=True)}],
+        }
+    ]
+
+
 def test_llm_tool_definitions_flatten_openai_functions_and_preserve_flat_definitions() -> None:
     span = LlmSpan(
         input="prompt",
