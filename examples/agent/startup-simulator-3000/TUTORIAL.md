@@ -28,7 +28,7 @@ This tutorial is designed for developers who want to learn how to build producti
 First, make sure you have the prerequisites installed:
 
 ```bash
-# Check Python version (should be 3.10+)
+# Check Python version (should be 3.11+)
 python --version
 
 # Create and activate virtual environment
@@ -431,7 +431,7 @@ gunicorn -w 4 -b 0.0.0.0:2021 app:app
 
 3. **Docker Deployment**
 ```dockerfile
-FROM python:3.10-slim
+FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
