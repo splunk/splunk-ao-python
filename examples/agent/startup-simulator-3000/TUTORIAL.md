@@ -28,7 +28,7 @@ This tutorial is designed for developers who want to learn how to build producti
 First, make sure you have the prerequisites installed:
 
 ```bash
-# Check Python version (should be 3.8+)
+# Check Python version (should be 3.10+)
 python --version
 
 # Create and activate virtual environment

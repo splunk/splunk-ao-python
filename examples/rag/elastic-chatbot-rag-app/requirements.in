@@ -1,3 +1,6 @@
+# security floor (VULN-88817 — python-dotenv symlink overwrite)
+python-dotenv>=1.2.2
+
 # core dependencies
 elasticsearch
 langchain

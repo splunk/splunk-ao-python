@@ -16,7 +16,7 @@ def test_python_version() -> bool:
     print("🐍 Testing Python version...")
     py_version = sys.version_info
     if py_version.major < 3 or (py_version.major == 3 and py_version.minor < 8):
-        print(f"❌ Python {py_version.major}.{py_version.minor} is too old. Need Python 3.8+")
+        print(f"❌ Python {py_version.major}.{py_version.minor} is too old. Need Python 3.10+")
         return False
     print(f"✅ Python {py_version.major}.{py_version.minor}.{py_version.micro} is compatible")
     return True

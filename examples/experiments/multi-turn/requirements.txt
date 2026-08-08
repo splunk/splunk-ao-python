@@ -1,2 +1,2 @@
 splunk-ao
-python-dotenv
+python-dotenv>=1.2.2
