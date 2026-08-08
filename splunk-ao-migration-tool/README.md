@@ -340,6 +340,16 @@ The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluat
 + scorer = SplunkAOEvaluators.completeness
 ```
 
+### 5.3 On-Disk Config File
+
+On logout or reset, `splunk-ao-python` writes a non-secret debug snapshot to
+`~/.galileo/splunk-ao-config.json`. The directory `~/.galileo/` is inherited
+from `galileo-core` and unchanged.
+
+This file is never read back and has no effect on authentication or config
+resolution. If you have an existing `~/.galileo/galileo-python-config.json`
+from `galileo-python`, it can be deleted at leisure or simply ignored.
+
 ---
 
 ## 6. HTTP Tracing Headers
@@ -422,7 +432,6 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - Optional extra names (`[langchain]`, `[openai]`, `[otel]`, `[all]`, etc.)
 - `TracingMiddleware` class name
 - `OPENAI_API_KEY` environment variable
-- On-disk config file name: `galileo-python-config.json`
 - Default console/API URLs (`https://app.galileo.ai/`, `https://api.galileo.ai/`)
 
 ---

@@ -98,12 +98,12 @@ def create_metric_configs(
     metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
 ) -> tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]:
     """
-    Process metrics and create scorer configurations for experiments or log streams.
+    Process evaluators and create scorer configurations for experiments or agent streams.
 
-    This unified function categorizes metrics into server-side and client-side types,
-    validates they exist, and registers server-side metrics with Splunk AO.
+    This unified function categorizes evaluators into server-side and client-side types,
+    validates they exist, and registers server-side evaluators with Splunk AO.
 
-    Metrics can be specified as:
+    Evaluators can be specified as:
     - SplunkAOEvaluators enum values (human-readable labels like "Correctness")
     - Metric objects with name and optional version
     - UUID strings (scorer IDs for direct lookup)
@@ -115,22 +115,22 @@ def create_metric_configs(
     project_id : str
         The ID of the project
     run_id : Optional[str]
-        The ID of the run (can be experiment ID or log stream ID).
+        The ID of the run (can be experiment ID or agent stream ID).
         When None, scorer registration is skipped (trigger=True flow).
     metrics : list
-        List of metrics to configure
+        List of evaluators to configure. Parameter name retained for API compatibility.
 
     Returns
     -------
     tuple[list[ScorerConfig], list[LocalMetricConfig]]
         A tuple containing:
-        - List of ScorerConfig objects for server-side metrics configured in Splunk AO
-        - List of LocalMetricConfig objects for client-side metrics to process locally
+        - List of ScorerConfig objects for server-side evaluators configured in Splunk AO
+        - List of LocalMetricConfig objects for client-side evaluators to process locally
 
     Raises
     ------
     ValueError
-        If any specified metrics are unknown or don't exist in Splunk AO
+        If any specified evaluators are unknown or don't exist in Splunk AO
     """
     local_metric_configs: list[LocalMetricConfig] = []
     scorer_ids: list[str] = []

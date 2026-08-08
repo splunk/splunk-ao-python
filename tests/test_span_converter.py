@@ -14,7 +14,8 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter import SpanConverter, span_converter
 from splunk_ao.converter.attribute_mapping import build_span_attributes
-from splunk_ao.logger.control import ControlResult, ControlSpan
+from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
+from splunk_ao.schema.logged import LoggedControlSpan
 from splunk_ao.utils.headers_data import get_package_version
 
 TRACE_ID = 0x1234567890ABCDEF1234567890ABCDEF
@@ -162,6 +163,47 @@ def test_converter_leaves_final_export_normalization_to_the_sink() -> None:
     assert "splunk_ao.input.messages" not in attributes
     assert "splunk_ao.output.messages" not in attributes
     assert "splunk_ao.system" not in attributes
+
+
+def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attributes() -> None:
+    parent_context = make_context(span_id=PARENT_SPAN_ID)
+    span = LoggedControlSpan(
+        name="PII Guard",
+        input="selected text",
+        redacted_input="[REDACTED]",
+        output=ControlResult(action="deny", matched=False, confidence=0.81, error_message="blocked"),
+        redacted_output=ControlResult(action="deny", matched=False, error_message="blocked"),
+        created_at=CREATED_AT,
+        metrics=Metrics(duration_ns=25_000_000),
+        status_code=500,
+        tags=["agent_control", "control"],
+        user_metadata={"source": "agent-control-sdk"},
+        control_id=42,
+        agent_name="planner",
+        check_stage=ControlCheckStage.pre,
+        applies_to=ControlAppliesTo.llm_call,
+        evaluator_name="pii-check",
+        selector_path="$.input",
+    )
+
+    result = convert(span, parent_span_context=parent_context, session_id="control-session")
+    attrs = result.attributes or {}
+
+    assert result.name == "PII Guard"
+    assert result.context == make_context()
+    assert result.parent is parent_context
+    assert result.start_time == 1_735_689_600_000_000_000
+    assert result.end_time == result.start_time + 25_000_000
+    assert result.status.status_code is StatusCode.ERROR
+    assert attrs["galileo.span.kind"] == "control"
+    assert attrs["agent_control.control_id"] == 42
+    assert attrs["agent_control.action"] == "deny"
+    assert attrs["agent_control.matched"] is False
+    assert attrs["agent_control.error_message"] == "blocked"
+    assert attrs["gen_ai.conversation.id"] == "control-session"
+    assert attrs["splunk_ao.redacted_input"] == "[REDACTED]"
+    assert attrs["splunk_ao.status_code"] == 500
+    assert attrs["error.type"] == "500"
 
 
 def test_resource_routing_is_preserved_without_becoming_a_span_attribute() -> None:

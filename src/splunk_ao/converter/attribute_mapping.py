@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, MutableMapping, Sequence
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.step import BaseStep, StepType
+from splunk_ao.logger.control import ControlSpan
 
 SPLUNK_AO_SYSTEM = "splunk_ao.system"
 SPLUNK_AO_SYSTEM_VALUE = "splunk_ao_python"
@@ -69,6 +70,7 @@ _OPERATION_BY_STEP_TYPE = {
     StepType.tool: "execute_tool",
     StepType.workflow: "invoke_workflow",
     StepType.agent: "invoke_agent",
+    StepType.control: "control",
 }
 
 
@@ -135,6 +137,13 @@ def _content_part(value: Any) -> dict[str, Any] | None:
         return None
     if part_type == "text" and "content" not in part and "text" in part:
         part["content"] = part.pop("text")
+    elif part_type == "data":
+        if "url" in part and "base64" not in part:
+            part["type"] = "uri"
+            part["uri"] = part.pop("url")
+        elif "base64" in part and "url" not in part:
+            part["type"] = "blob"
+            part["content"] = part.pop("base64")
     return part
 
 
@@ -463,6 +472,31 @@ def _set_generic_content(attrs: MutableMapping[str, AttributeValue], span: BaseS
         attrs["gen_ai.output.messages"] = _output_messages(span.output)
 
 
+def set_control_attributes(attrs: MutableMapping[str, AttributeValue], span: ControlSpan) -> None:
+    """Map control identity, context, result, and content fields."""
+    attrs["galileo.span.kind"] = "control"
+    _set_operation(attrs, StepType.control)
+    _set_if_present(attrs, "agent_control.control_id", _field(span, "control_id"))
+    control_name = _field(span, "name")
+    if control_name:
+        attrs["agent_control.control_name"] = control_name
+
+    for field_name in ("agent_name", "check_stage", "applies_to", "evaluator_name", "selector_path"):
+        value = _field(span, field_name)
+        if isinstance(value, Enum):
+            value = value.value
+        _set_if_present(attrs, f"agent_control.{field_name}", value)
+
+    if span.output is not None:
+        for field_name in ("action", "matched", "confidence", "error_message"):
+            value = _field(span.output, field_name)
+            if isinstance(value, Enum):
+                value = value.value
+            _set_if_present(attrs, f"agent_control.{field_name}", value)
+
+    _set_generic_content(attrs, span)
+
+
 def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict[str, AttributeValue]:
     """Build preliminary attributes for one proprietary Splunk AO span."""
     attrs: dict[str, AttributeValue] = {}
@@ -479,9 +513,8 @@ def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict
         set_agent_attributes(attrs, span)
     elif isinstance(span, WorkflowSpan):
         set_workflow_attributes(attrs, span)
-    elif getattr(span.type, "value", span.type) == "control":
-        attrs["splunk_ao.operation.name"] = "control"
-        _set_generic_content(attrs, span)
+    elif isinstance(span, ControlSpan) or getattr(span.type, "value", span.type) == "control":
+        set_control_attributes(attrs, cast(ControlSpan, span))
     elif span.type == StepType.trace:
         _set_generic_content(attrs, span)
     else:

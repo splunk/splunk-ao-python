@@ -1,12 +1,44 @@
 # Changelog
 
-## Unreleased
+All notable changes to this project will be documented in this file.
 
-### Breaking Changes
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- **`monitor_progress()` `job_id` parameter removed** (HYBIM-931): The deprecated
-  `job_id` keyword argument of `Experiment.monitor_progress()` has been fully removed.
-  Callers passing `job_id=` must remove that argument.
+## [Unreleased]
+
+### Fixed
+
+- Galileo multimodal URL and base64 data blocks now export as OpenTelemetry
+  GenAI `uri` and `blob` message parts for both input and output messages while
+  preserving modality, MIME type, and supported extension fields.
+- Agent Control spans exported over OTLP now include the control discriminator
+  and complete `agent_control.*` field set required for backend classification
+  and Controls-card rendering.
+
+### Changed
+
+- **Config file renamed** (HYBIM-918): The non-secret debug snapshot written to
+  `~/.galileo/` on logout/reset is now named `splunk-ao-config.json` (was
+  `galileo-python-config.json`). The old file can be deleted or ignored — it is
+  never read back and has no effect on authentication or config resolution.
+- **Evaluator terminology alignment in docs and errors**: Updated
+  `SplunkAOEvaluators` docstrings, agent stream/evaluator API docstrings, and
+  user-visible error messages to use evaluator and agent stream vocabulary following
+  the `SplunkAOMetrics` → `SplunkAOEvaluators` rename. Enum values are documented
+  as matching scorer labels via the legacy `/scorers` API paths. The public
+  `metrics=` parameter name is unchanged for API compatibility. Renamed stale
+  `test_galileo_metrics_*` and `test_lookup_by_galileo_metrics_enum` test identifiers.
+
+## [0.1.1] - 2026-08-03
+
+### Removed
+
+- **Breaking:** `monitor_progress()` `job_id` parameter removed (HYBIM-931).
+  The deprecated `job_id` keyword argument of `Experiment.monitor_progress()`
+  has been fully removed. Callers passing `job_id=` must remove that argument.
+
+## [0.1.0] - 2026-07-31
 
 ### Added
 
@@ -46,3 +78,6 @@
 - Exporters expose bounded, read-only receiver-acknowledgement health. Health is
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
+
+[0.1.1]: https://pypi.org/project/splunk-ao/0.1.1/
+[0.1.0]: https://pypi.org/project/splunk-ao/0.1.0/

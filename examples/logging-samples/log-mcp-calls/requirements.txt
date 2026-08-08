@@ -1,4 +1,4 @@
 anthropic
 splunk-ao
-mcp
+mcp>=1.27.2,<2
 python-dotenv
