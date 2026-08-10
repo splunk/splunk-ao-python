@@ -16,6 +16,19 @@ workflows and `ARCHITECTURE.md` before changing telemetry, configuration, lifecy
   to proceed. When execution is requested, show the exact workflow, ref, inputs, and command and wait for approval.
 - Never expose credentials, tokens, `.env` contents, customer payloads, or private/internal planning material.
 
+## Subagents
+
+- Use subagents only for concrete, bounded, independent work where parallelism materially improves speed or quality.
+  Prefer read-heavy exploration, review, triage, and independent package analysis.
+- Do not delegate trivial, tightly coupled, or sequential work. Avoid concurrent edits to the same files.
+- The main agent owns scope, architectural decisions, integration, and final review. It must read task-defining
+  instructions itself rather than outsourcing its understanding.
+- Give each subagent an explicit scope, relevant paths, constraints, and expected output. Require a concise,
+  evidence-backed handoff.
+- Subagents inherit every permission boundary in this guide. Delegation must never bypass approval for project commands,
+  GitHub workflows, staging, commits, releases, or publishing.
+- When subagents edit files, assign non-overlapping ownership and review the combined diff before completion.
+
 ## Commands (Reference Only—Ask Before Running)
 
 Root SDK (`splunk-ao`, Poetry 2.4.1):
