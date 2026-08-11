@@ -61,7 +61,7 @@ Edit `.env` with your credentials. Note for `ELEVENLABS_*` variables you can [si
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - Microphone and headphones (to avoid audio feedback)
 
 ## Learn More

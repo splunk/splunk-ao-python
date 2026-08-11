@@ -8,7 +8,7 @@ dependencies = [
     "aiohttp>=3.14.1,<4",
     "crewai[tools]>=0.203.1,<1.0.0",
     "splunk-ao",
-    "python-dotenv",
+    "python-dotenv>=1.2.2",
 ]
 
 # Project-level runtime dependencies used by the Crew (added so users can

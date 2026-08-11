@@ -2,9 +2,9 @@
 name = "elevenlabs-chatbot"
 version = "0.1.0"
 description = "ElevenLabs Voice Chatbot with Splunk AO logging and tracing"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
-    "python-dotenv>=1.0.0",
+    "python-dotenv>=1.2.2",
     "elevenlabs>=1.0.0",
     "splunk-ao",
     "pyaudio>=0.2.14",

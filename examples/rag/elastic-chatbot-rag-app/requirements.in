@@ -1,4 +1,5 @@
-# security floors (VULN-88795 / CVE-2026-54275 — aiohttp SNI bypass)
+# security floors (VULN-88817 — python-dotenv symlink overwrite; VULN-88795 — aiohttp SNI bypass)
+python-dotenv>=1.2.2
 aiohttp>=3.14.1,<4
 
 # core dependencies
