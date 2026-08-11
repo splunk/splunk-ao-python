@@ -10,7 +10,7 @@ This is a terminal-based Retrieval-Augmented Generation (RAG) demo that uses the
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.11+
 - OpenAI API key
 - Splunk AO API key (optional, for observability)
 

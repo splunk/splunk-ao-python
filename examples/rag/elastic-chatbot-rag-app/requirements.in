@@ -1,3 +1,6 @@
+# security floors (VULN-88795 / CVE-2026-54275 — aiohttp SNI bypass)
+aiohttp>=3.14.1,<4
+
 # core dependencies
 elasticsearch
 langchain

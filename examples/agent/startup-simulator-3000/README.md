@@ -46,7 +46,7 @@ run immediately!
 
 Make sure you have:
 
-- **Python 3.10+** installed on your system
+- **Python 3.11+** installed on your system
 - **Git** (optional, for cloning)
 - **A code editor** (VS Code, PyCharm, etc.)
 
@@ -219,7 +219,7 @@ cat .env
 
 1. **Check the logs**: Look at the terminal output for error messages
 2. **Verify API keys**: Make sure all required API keys are set in `.env`
-3. **Check Python version**: Ensure you're using Python 3.8+
+3. **Check Python version**: Ensure you're using Python 3.11+
 4. **Reinstall dependencies**: `pip install -r requirements.txt --force-reinstall`
 
 ## 🎓 Learning Resources
@@ -280,7 +280,7 @@ If you run into issues:
 1. Check the troubleshooting section above
 2. Look at the terminal logs for error messages
 3. Verify your API keys are correct
-4. Make sure you're using Python 3.10+
+4. Make sure you're using Python 3.11+
 
 ---
 
