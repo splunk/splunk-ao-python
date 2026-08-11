@@ -49,7 +49,7 @@ pydantic-core==2.41.5
     # via pydantic
 pydantic-partial==0.10.1
     # via galileo-core
-pydantic-settings==2.12.0
+pydantic-settings==2.14.2
     # via galileo-core
 pyjwt==2.13.0
     # via
