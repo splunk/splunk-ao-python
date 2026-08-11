@@ -61,7 +61,7 @@ opentelemetry-exporter-otlp-proto-http = "^1.38.0"
 filelock = ">=3.20.1"
 idna = ">=3.15,<4"
 python-dotenv = ">=1.2.2"
-cryptography = { version = ">=50.0.0", optional = true, python = ">=3.11,<3.14" }
+cryptography = { version = ">=50.0.0", optional = true }
 requests = ">=2.33.0"
 uv = { version = ">=0.9.6", optional = true, python = ">=3.11,<3.14" }
 mcp = { version = ">=1.27.2,<2", optional = true }
