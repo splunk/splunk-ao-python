@@ -3983,7 +3983,7 @@ files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
-markers = {main = "(extra == \"openai\" or extra == \"all\" or extra == \"crewai\") and implementation_name != \"PyPy\" and platform_python_implementation != \"PyPy\" or (extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and platform_python_implementation == \"PyPy\" or (extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and (extra == \"openai\" or extra == \"all\" or extra == \"crewai\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
+markers = {main = "(python_version <= \"3.13\" or extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"crewai\") and (platform_python_implementation != \"PyPy\" or extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\" or extra == \"crewai\" or extra == \"openai\") and (platform_python_implementation == \"PyPy\" or python_version <= \"3.13\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\") and (platform_python_implementation == \"PyPy\" or extra == \"crewai\" or extra == \"all\" or extra == \"openai\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
 
 [[package]]
 name = "pydantic"
@@ -6514,9 +6514,9 @@ all = ["aiohttp", "crewai", "cryptography", "langchain", "langchain-core", "lang
 crewai = ["aiohttp", "crewai", "cryptography", "litellm", "mcp", "pdfminer-six", "uv"]
 langchain = ["langchain", "langchain-core", "langsmith"]
 middleware = ["starlette"]
-openai = ["mcp", "openai", "openai-agents", "packaging"]
+openai = ["cryptography", "mcp", "openai", "openai-agents", "packaging"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "1bb611e381c7146409bed26fba0f5b70830753e476818d7b77c0ad8831e3bbfc"
+content-hash = "5472c5c6216450621d5aae8e3dbdb21a3a071c4c2e3fb383f3552b4dc365d63c"
