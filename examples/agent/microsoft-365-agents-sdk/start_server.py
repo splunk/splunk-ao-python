@@ -3,6 +3,12 @@ aiohttp server entry point for the Microsoft 365 Agents SDK example.
 
 Starts the agent on http://localhost:3978/api/messages.
 Test locally with: npx @microsoft/m365agentsplayground
+
+APP_MODE=auto        → app_auto.py        (auto-instrumented, local collector)
+APP_MODE=manual      → app_manual.py      (manual InferenceScope, local collector)
+APP_MODE=auto_lab0   → app_auto_lab0.py   (SplunkAOSpanProcessor, auto-instrumented, lab0/staging)
+APP_MODE=manual_lab0 → app_manual_lab0.py (SplunkAOLogger, manual instrumentation, lab0/staging)
+APP_MODE=<unset>     → app.py (default)
 """
 
 import os
@@ -10,9 +16,20 @@ import os
 from aiohttp.web import Application, Request, Response, run_app
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=False)
 
-from app import ADAPTER, AGENT_APP
+_mode = os.environ.get("APP_MODE", "").lower()
+if _mode == "auto":
+    from app_auto import ADAPTER, AGENT_APP
+elif _mode == "manual":
+    from app_manual import ADAPTER, AGENT_APP
+elif _mode == "auto_lab0":
+    from app_auto_lab0 import ADAPTER, AGENT_APP
+elif _mode == "manual_lab0":
+    from app_manual_lab0 import ADAPTER, AGENT_APP
+else:
+    from app import ADAPTER, AGENT_APP
+
 from microsoft_agents.hosting.aiohttp import start_agent_process
 
 
