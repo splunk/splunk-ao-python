@@ -27,32 +27,37 @@ documentation; generated API references are produced by `scripts/create_docs.py`
 | Generated transport | `resources/` | OpenAPI models and HTTP calls; generated as one unit |
 | Instrumentation | `logger/`, `decorator.py`, `handlers/`, `openai/` | Capture application operations and content |
 | Native OTel | `otel.py` | Span creation and processor registration for OTel users |
-| Conversion | `attribute_mapping.py`, `span_converter.py` | Internal completed steps to OTel `ReadableSpan` data |
+| Conversion | `converter/attribute_mapping.py`, `converter/span_converter.py` | Internal completed steps to OTel `ReadableSpan` data |
 | Export | `exporter/` | Routing, immutable normalization, OTLP transport, diagnostics |
 | Configuration | `config.py`, `configuration.py`, `deployment.py` | Deployment detection, compatibility bridge, endpoint/auth selection |
 
-Object resources use lifecycle states through `StateManagementMixin` (local, synced, modified, failed, deleted). Keep
-object behavior and procedural helpers consistent. The generated transport is an implementation detail; public callers
-should normally enter through the SDK APIs.
+Object resources use lifecycle states through `StateManagementMixin` (`SyncState.LOCAL_ONLY`, `SyncState.SYNCED`,
+`SyncState.DIRTY`, `SyncState.FAILED_SYNC`, and `SyncState.DELETED`). Keep object behavior and procedural helpers
+consistent. The generated transport is an implementation detail; public callers should normally enter through the SDK
+APIs.
 
 ## Telemetry Data Flow
 
-There are three supported ingress paths. They converge at export but have different ownership and conversion rules.
+There are three supported ingress paths. They have different export wiring, ownership, and conversion rules.
 
 ```text
-Path 1: decorator / logger / handlers / OpenAI / ADK
+Path 1 (default OTLP): decorator / logger / handlers / OpenAI / ADK
         -> internal LoggedTrace + completed steps
         -> SpanConverter
         -> OTel ReadableSpan copies
+        -> SDK-owned SpanSink
+        -> NormalizingSpanExporter -> deployment-aware OTLP exporter -> backend
+
+        The compatibility ingestion_hook captures Path 1 output before OTLP export.
 
 Path 2: start_splunk_ao_span()
-        -> SDK-created OTel spans
+        -> SDK-created OTel spans on the provider in context, or the global provider
+        -> processors/exporters configured on that provider
 
 Path 3: external OTel/OpenInference + A2A
         -> caller TracerProvider
         -> add_splunk_ao_span_processor(provider)
-
-All paths -> NormalizingSpanExporter -> deployment-aware OTLP exporter -> backend
+        -> NormalizingSpanExporter -> deployment-aware OTLP exporter -> backend
 ```
 
 ### Path 1: internal step model
@@ -68,8 +73,9 @@ Agent Control kinds that they affect.
 ### Path 2: SDK-native OTel
 
 `start_splunk_ao_span()` creates spans through SDK OTel support and applies SDK semantic attributes at completion. It is
-useful when a caller wants explicit OTel spans without the internal step model. Do not mutate an ended span; downstream
-normalization receives an immutable copy.
+useful when a caller wants explicit OTel spans without the internal step model. It does not configure export: the
+provider's registered processors/exporters control where spans go. When a Splunk AO processor is registered, export
+normalizes an immutable copy; never mutate an ended span.
 
 ### Path 3: caller-owned OTel
 
@@ -204,7 +210,7 @@ sufficient if the change crosses a package or telemetry-path boundary.
 |---|---|---|
 | Auth, realm, endpoints | `deployment.py`, config facades, `exporter/o11y.py`, `exporter/standalone.py` | both modes; invalid/mixed env; no secret logging |
 | Routing/context | context APIs, config, exporter builder, Resource transform | precedence; name/ID; header/Resource agreement |
-| Span attributes/content | schemas, `attribute_mapping.py`, converter, span transform | Path 1 plus any affected native/external path |
+| Span attributes/content | schemas, `converter/attribute_mapping.py`, converter, span transform | Path 1 plus any affected native/external path |
 | IDs or propagation | `tracing.py`, logger context, middleware, A2A metadata | local/nested/distributed parentage; malformed input |
 | Flush/termination | logger, sink, processors/exporters | active work, completed work, failures, repeated cleanup |
 | Object/service API | singular and plural modules, exports, generated transport | state transitions; sync/async; public import tests |

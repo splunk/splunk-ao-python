@@ -10,11 +10,11 @@
 
 </div>
 
-[pypi-badge]: https://img.shields.io/pypi/v/splunk-ao.svg
+[pypi-badge]: https://img.shields.io/pypi/v/splunk-ao.svg?style=for-the-badge
 [pypi-url]: https://pypi.org/project/splunk-ao/
-[python-badge]: https://img.shields.io/pypi/pyversions/splunk-ao.svg
+[python-badge]: https://img.shields.io/pypi/pyversions/splunk-ao.svg?style=for-the-badge
 [python-url]: https://www.python.org/downloads/
-[license-badge]: https://img.shields.io/pypi/l/splunk-ao.svg
+[license-badge]: https://img.shields.io/pypi/l/splunk-ao.svg?style=for-the-badge
 [license-url]: https://github.com/splunk/splunk-ao-python/blob/main/LICENSE
 
 ## Getting Started
@@ -61,13 +61,13 @@ export SPLUNK_AO_CONSOLE_URL="https://console.subdomain.yourcompany.com"
 ```
 
 > [!TIP]
-> Logging your first trace to on-premises Agent Observability? [Visit this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-first-trace). 
+> Logging your first trace to on-premises Agent Observability? [Visit this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-first-trace).
 >
 > Learn how to find each environment variable in [this guide](https://agent-observability-docs.splunk.com/sdk-redirect/on-prem-keys).
 
 #### Splunk Observability (O11y) Cloud
 
-> [!NOTE]  
+> [!NOTE]
 > As of August 2026, Agent Observability on Splunk Observability Cloud is not yet generally available.
 
 | Environment variable | Description |
@@ -601,4 +601,5 @@ with splunk_ao_context(
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines and
+[ARCHITECTURE.md](ARCHITECTURE.md) for repository structure, telemetry paths, and component ownership.

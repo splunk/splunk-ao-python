@@ -39,8 +39,8 @@ poetry run pytest tests/test_deployment.py -n 0       # targeted, deterministic
 poetry run pytest                                     # full unit suite
 poetry run invoke test                                # full suite with terminal coverage
 poetry run invoke type-check                          # configured mypy run
-poetry run ruff check --no-fix src tests              # non-mutating lint
-poetry run ruff format --check src tests              # non-mutating format check
+poetry run ruff check --no-fix src tests              # lint without source rewrites
+poetry run ruff format --check src tests              # format check without source rewrites
 poetry build
 ```
 
@@ -53,7 +53,7 @@ cd splunk-ao-a2a
 uv sync --dev
 uv run pytest
 uv run mypy src/
-uv run ruff check src tests
+uv run ruff check --no-fix src tests                  # lint without source rewrites
 uv build
 ```
 
@@ -64,7 +64,7 @@ cd splunk-ao-adk
 uv sync --dev
 uv run pytest
 uv run mypy src/
-uv run ruff check src tests
+uv run ruff check --no-fix src tests                  # lint without source rewrites
 uv build
 ```
 
@@ -98,8 +98,9 @@ not the main API documentation contract.
 | `splunk-ao-migration-tool/` | Migration documentation and examples, not a buildable package |
 | `src/splunk_ao/resources/` | OpenAPI-generated transport client; never hand-edit |
 
-The three buildable packages have independent versions, lockfiles, CI, and release workflows. Validate every package a
-change touches. CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
+The three buildable packages have independent versions, CI, and release workflows. Only the root `poetry.lock` is
+tracked; A2A/ADK `uv.lock` files are ignored and may be created locally by uv. Validate every package a change touches.
+CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
 ## Architecture and Public Surfaces
 
@@ -117,7 +118,7 @@ change touches. CI supports Python 3.11–3.14; root CI also spans Linux, macOS,
 
 | Deployment | Required authentication |
 |---|---|
-| O11y Cloud | `SPLUNK_AO_REALM` plus `SPLUNK_AO_O11Y_TOKEN`; that token may serve CRUD when permitted, or use a dedicated `SPLUNK_AO_O11Y_API_TOKEN` |
+| O11y Cloud | `SPLUNK_AO_REALM` plus at least one token: `SPLUNK_AO_O11Y_TOKEN` for telemetry and, when permitted, CRUD; and/or `SPLUNK_AO_O11Y_API_TOKEN` for CRUD-only or dedicated CRUD authentication |
 | Standalone | `SPLUNK_AO_API_KEY` plus `SPLUNK_AO_CONSOLE_URL`; `SPLUNK_AO_API_URL` is optional |
 
 - Detection lives in `deployment.py::resolve_deployment()`. Never mix O11y and standalone variable sets.
@@ -170,7 +171,9 @@ def test_flush_does_not_end_active_trace(mock_request) -> None:
 - Reuse `tests/conftest.py` fixtures such as `mock_request`, `mock_healthcheck`, and `mock_login_api_key`. Mock all network.
 - Reset global OTel context, providers/processors, SDK configuration, loggers, and background resources after tests.
 - Exercise success, exceptions, cancellation/early generator close, and cleanup for lifecycle-sensitive instrumentation.
-- CrewAI is optional and excluded on Python 3.14. Preserve lazy imports and test both installed/unavailable behavior.
+- CrewAI is optional and excluded on Python 3.14. Follow `tests/test_crewai_handler.py`: patch
+  `_crewai_imports_resolved`, `CREWAI_AVAILABLE`, and `LITE_LLM_AVAILABLE`; mock logger-layer `AgentStreams`, `Projects`,
+  and `Traces`; inject a mock or hook-backed `SplunkAOLogger`; test both installed and unavailable behavior.
 - Dataset version numbers are API-facing and 1-based.
 
 ## Change Workflow and Git
@@ -179,15 +182,17 @@ def test_flush_does_not_end_active_trace(mock_request) -> None:
 2. Identify ownership: public wrapper, integration, converter, exporter, generated client, or external dependency.
 3. Preserve compatibility unless the task explicitly authorizes a breaking change. Update exports, docstrings, README usage,
    tests, and `CHANGELOG.md` when public behavior changes.
-4. Ask before running the exact validation commands. Report what ran, what did not run, and why.
-5. Review `git diff` for secrets, unrelated rewrites, generated churn, and platform-specific assumptions.
+4. When changing package layout, authentication variables, telemetry paths, or lifecycle invariants documented here,
+   update `AGENTS.md` and `ARCHITECTURE.md` in the same change.
+5. Ask before running the exact validation commands. Report what ran, what did not run, and why.
+6. Review `git diff` for secrets, unrelated rewrites, generated churn, and platform-specific assumptions.
 
 Use conventional commit subjects (`type(scope): description`) only when a commit is explicitly requested. Do not edit
 versions, release workflows, or lockfiles as incidental cleanup.
 
 ## Hard Boundaries
 
-- Do not hand-edit `src/splunk_ao/resources/`, generated reference docs, or generated lock content.
+- Do not hand-edit `src/splunk_ao/resources/` or generated reference docs.
 - Do not change release/publish configuration, dependency pins, or public compatibility aliases without task scope.
 - Do not silently add network calls, global state, import-time side effects, unbounded queues, or non-daemon threads.
 - Do not make tests depend on real credentials, live services, ordering, timing luck, or another test's state.
