@@ -1,0 +1,17 @@
+[project]
+name = "microsoft-365-agents-sdk-example"
+version = "0.1.0"
+description = "Microsoft 365 Agents SDK example with Splunk AO OTel instrumentation"
+requires-python = ">=3.11"
+dependencies = [
+    "splunk-ao[otel]",
+    "microsoft-agents-hosting-aiohttp>=1.1.0",
+    "microsoft-agents-authentication-msal>=1.1.0",
+    "openai>=1.0.0",
+    "opentelemetry-instrumentation-openai-v2>=2.1b0",
+    "azure-identity>=1.19.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.uv.sources]
+splunk-ao = { path = "../../..", editable = true }
