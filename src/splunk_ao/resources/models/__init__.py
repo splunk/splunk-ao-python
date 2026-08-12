@@ -529,6 +529,28 @@ from .extended_llm_span_record_files_type_0 import ExtendedLlmSpanRecordFilesTyp
 from .extended_llm_span_record_metric_info_type_0 import ExtendedLlmSpanRecordMetricInfoType0
 from .extended_llm_span_record_tools_type_0_item import ExtendedLlmSpanRecordToolsType0Item
 from .extended_llm_span_record_user_metadata import ExtendedLlmSpanRecordUserMetadata
+from .extended_read_session_record_with_children import ExtendedReadSessionRecordWithChildren
+from .extended_read_session_record_with_children_annotation_aggregates import (
+    ExtendedReadSessionRecordWithChildrenAnnotationAggregates,
+)
+from .extended_read_session_record_with_children_annotation_agreement import (
+    ExtendedReadSessionRecordWithChildrenAnnotationAgreement,
+)
+from .extended_read_session_record_with_children_annotations import ExtendedReadSessionRecordWithChildrenAnnotations
+from .extended_read_session_record_with_children_annotations_additional_property import (
+    ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty,
+)
+from .extended_read_session_record_with_children_dataset_metadata import (
+    ExtendedReadSessionRecordWithChildrenDatasetMetadata,
+)
+from .extended_read_session_record_with_children_feedback_rating_info import (
+    ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo,
+)
+from .extended_read_session_record_with_children_files_type_0 import ExtendedReadSessionRecordWithChildrenFilesType0
+from .extended_read_session_record_with_children_metric_info_type_0 import (
+    ExtendedReadSessionRecordWithChildrenMetricInfoType0,
+)
+from .extended_read_session_record_with_children_user_metadata import ExtendedReadSessionRecordWithChildrenUserMetadata
 from .extended_retriever_span_record import ExtendedRetrieverSpanRecord
 from .extended_retriever_span_record_annotation_aggregates import ExtendedRetrieverSpanRecordAnnotationAggregates
 from .extended_retriever_span_record_annotation_agreement import ExtendedRetrieverSpanRecordAnnotationAgreement
@@ -575,24 +597,6 @@ from .extended_session_record_feedback_rating_info import ExtendedSessionRecordF
 from .extended_session_record_files_type_0 import ExtendedSessionRecordFilesType0
 from .extended_session_record_metric_info_type_0 import ExtendedSessionRecordMetricInfoType0
 from .extended_session_record_user_metadata import ExtendedSessionRecordUserMetadata
-from .extended_session_record_with_children import ExtendedSessionRecordWithChildren
-from .extended_session_record_with_children_annotation_aggregates import (
-    ExtendedSessionRecordWithChildrenAnnotationAggregates,
-)
-from .extended_session_record_with_children_annotation_agreement import (
-    ExtendedSessionRecordWithChildrenAnnotationAgreement,
-)
-from .extended_session_record_with_children_annotations import ExtendedSessionRecordWithChildrenAnnotations
-from .extended_session_record_with_children_annotations_additional_property import (
-    ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty,
-)
-from .extended_session_record_with_children_dataset_metadata import ExtendedSessionRecordWithChildrenDatasetMetadata
-from .extended_session_record_with_children_feedback_rating_info import (
-    ExtendedSessionRecordWithChildrenFeedbackRatingInfo,
-)
-from .extended_session_record_with_children_files_type_0 import ExtendedSessionRecordWithChildrenFilesType0
-from .extended_session_record_with_children_metric_info_type_0 import ExtendedSessionRecordWithChildrenMetricInfoType0
-from .extended_session_record_with_children_user_metadata import ExtendedSessionRecordWithChildrenUserMetadata
 from .extended_tool_span_record import ExtendedToolSpanRecord
 from .extended_tool_span_record_annotation_aggregates import ExtendedToolSpanRecordAnnotationAggregates
 from .extended_tool_span_record_annotation_agreement import ExtendedToolSpanRecordAnnotationAgreement
@@ -917,6 +921,7 @@ from .modality_filter import ModalityFilter
 from .modality_filter_operator import ModalityFilterOperator
 from .model import Model
 from .model_cost_by import ModelCostBy
+from .model_lifecycle_state import ModelLifecycleState
 from .model_properties import ModelProperties
 from .model_type import ModelType
 from .multi_modal_model_integration_config import MultiModalModelIntegrationConfig
@@ -1181,12 +1186,12 @@ from .run_tag_db import RunTagDB
 from .run_updated_at_filter import RunUpdatedAtFilter
 from .run_updated_at_filter_operator import RunUpdatedAtFilterOperator
 from .run_updated_at_sort import RunUpdatedAtSort
+from .runtime_scorer_config import RuntimeScorerConfig
 from .score_aggregate import ScoreAggregate
 from .score_bucket import ScoreBucket
 from .score_constraints import ScoreConstraints
 from .score_rating import ScoreRating
 from .scorer_action import ScorerAction
-from .scorer_config import ScorerConfig
 from .scorer_created_at_filter import ScorerCreatedAtFilter
 from .scorer_created_at_filter_operator import ScorerCreatedAtFilterOperator
 from .scorer_creator_filter import ScorerCreatorFilter
@@ -1199,6 +1204,9 @@ from .scorer_exclude_slm_scorers_filter import ScorerExcludeSlmScorersFilter
 from .scorer_health_scores_response import ScorerHealthScoresResponse
 from .scorer_id_filter import ScorerIDFilter
 from .scorer_id_filter_operator import ScorerIDFilterOperator
+from .scorer_invocation_config import ScorerInvocationConfig
+from .scorer_invocation_config_required_inputs_item import ScorerInvocationConfigRequiredInputsItem
+from .scorer_invocation_payload_format import ScorerInvocationPayloadFormat
 from .scorer_is_global_filter import ScorerIsGlobalFilter
 from .scorer_is_global_filter_operator import ScorerIsGlobalFilterOperator
 from .scorer_label_filter import ScorerLabelFilter
@@ -1761,6 +1769,16 @@ __all__ = (
     "ExtendedLlmSpanRecordMetricInfoType0",
     "ExtendedLlmSpanRecordToolsType0Item",
     "ExtendedLlmSpanRecordUserMetadata",
+    "ExtendedReadSessionRecordWithChildren",
+    "ExtendedReadSessionRecordWithChildrenAnnotationAggregates",
+    "ExtendedReadSessionRecordWithChildrenAnnotationAgreement",
+    "ExtendedReadSessionRecordWithChildrenAnnotations",
+    "ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty",
+    "ExtendedReadSessionRecordWithChildrenDatasetMetadata",
+    "ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo",
+    "ExtendedReadSessionRecordWithChildrenFilesType0",
+    "ExtendedReadSessionRecordWithChildrenMetricInfoType0",
+    "ExtendedReadSessionRecordWithChildrenUserMetadata",
     "ExtendedRetrieverSpanRecord",
     "ExtendedRetrieverSpanRecordAnnotationAggregates",
     "ExtendedRetrieverSpanRecordAnnotationAgreement",
@@ -1791,16 +1809,6 @@ __all__ = (
     "ExtendedSessionRecordFilesType0",
     "ExtendedSessionRecordMetricInfoType0",
     "ExtendedSessionRecordUserMetadata",
-    "ExtendedSessionRecordWithChildren",
-    "ExtendedSessionRecordWithChildrenAnnotationAggregates",
-    "ExtendedSessionRecordWithChildrenAnnotationAgreement",
-    "ExtendedSessionRecordWithChildrenAnnotations",
-    "ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty",
-    "ExtendedSessionRecordWithChildrenDatasetMetadata",
-    "ExtendedSessionRecordWithChildrenFeedbackRatingInfo",
-    "ExtendedSessionRecordWithChildrenFilesType0",
-    "ExtendedSessionRecordWithChildrenMetricInfoType0",
-    "ExtendedSessionRecordWithChildrenUserMetadata",
     "ExtendedToolSpanRecord",
     "ExtendedToolSpanRecordAnnotationAggregates",
     "ExtendedToolSpanRecordAnnotationAgreement",
@@ -2083,6 +2091,7 @@ __all__ = (
     "ModalityFilterOperator",
     "Model",
     "ModelCostBy",
+    "ModelLifecycleState",
     "ModelProperties",
     "ModelType",
     "MultimodalCapability",
@@ -2306,6 +2315,7 @@ __all__ = (
     "RunScorerSettingsResponse",
     "RunTagCreateRequest",
     "RunTagDB",
+    "RuntimeScorerConfig",
     "RunUpdatedAtFilter",
     "RunUpdatedAtFilterOperator",
     "RunUpdatedAtSort",
@@ -2314,7 +2324,6 @@ __all__ = (
     "ScoreConstraints",
     "ScorerAction",
     "ScoreRating",
-    "ScorerConfig",
     "ScorerCreatedAtFilter",
     "ScorerCreatedAtFilterOperator",
     "ScorerCreatorFilter",
@@ -2327,6 +2336,9 @@ __all__ = (
     "ScorerHealthScoresResponse",
     "ScorerIDFilter",
     "ScorerIDFilterOperator",
+    "ScorerInvocationConfig",
+    "ScorerInvocationConfigRequiredInputsItem",
+    "ScorerInvocationPayloadFormat",
     "ScorerIsGlobalFilter",
     "ScorerIsGlobalFilterOperator",
     "ScorerLabelFilter",

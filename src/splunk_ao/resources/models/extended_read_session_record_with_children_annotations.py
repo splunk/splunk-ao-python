@@ -7,19 +7,19 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.extended_session_record_with_children_annotations_additional_property import (
-        ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty,
+    from ..models.extended_read_session_record_with_children_annotations_additional_property import (
+        ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty,
     )
 
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenAnnotations")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenAnnotations")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenAnnotations:
+class ExtendedReadSessionRecordWithChildrenAnnotations:
     """Annotations keyed by template ID and annotator ID"""
 
-    additional_properties: dict[str, ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty] = _attrs_field(
+    additional_properties: dict[str, ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty] = _attrs_field(
         init=False, factory=dict
     )
 
@@ -33,30 +33,32 @@ class ExtendedSessionRecordWithChildrenAnnotations:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.extended_session_record_with_children_annotations_additional_property import (
-            ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty,
+        from ..models.extended_read_session_record_with_children_annotations_additional_property import (
+            ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty,
         )
 
         d = dict(src_dict)
-        extended_session_record_with_children_annotations = cls()
+        extended_read_session_record_with_children_annotations = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty.from_dict(prop_dict)
+            additional_property = ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty.from_dict(
+                prop_dict
+            )
 
             additional_properties[prop_name] = additional_property
 
-        extended_session_record_with_children_annotations.additional_properties = additional_properties
-        return extended_session_record_with_children_annotations
+        extended_read_session_record_with_children_annotations.additional_properties = additional_properties
+        return extended_read_session_record_with_children_annotations
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty:
+    def __getitem__(self, key: str) -> ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: ExtendedSessionRecordWithChildrenAnnotationsAdditionalProperty) -> None:
+    def __setitem__(self, key: str, value: ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

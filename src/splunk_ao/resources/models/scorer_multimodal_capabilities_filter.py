@@ -20,6 +20,9 @@ class ScorerMultimodalCapabilitiesFilter:
     (e.g. ``{"name": "multimodal_capabilities", "operator": "contains", "value": "vision"}``).
     Use ``one_of`` to match scorers whose capabilities include ANY of the given
     values (e.g. ``{"name": "multimodal_capabilities", "operator": "one_of", "value": ["vision", "audio"]}``).
+    ``text`` is a filter-only value supplied in the ``one_of`` list
+    (e.g. ``{"operator": "one_of", "value": ["text"]}``) that matches scorers
+    with no multimodal capabilities.
 
         Attributes:
             operator (ScorerMultimodalCapabilitiesFilterOperator):

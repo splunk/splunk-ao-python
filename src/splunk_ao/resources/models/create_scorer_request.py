@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
     from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
     from ..models.scorer_defaults import ScorerDefaults
+    from ..models.scorer_invocation_config import ScorerInvocationConfig
 
 
 T = TypeVar("T", bound="CreateScorerRequest")
@@ -36,6 +37,7 @@ class CreateScorerRequest:
         description (None | str | Unset):  Default: ''.
         tags (list[str] | Unset):
         defaults (None | ScorerDefaults | Unset):
+        invocation (None | ScorerInvocationConfig | Unset):
         deprecated (bool | None | Unset):
         model_type (ModelType | None | Unset):
         ground_truth (bool | None | Unset):
@@ -61,6 +63,7 @@ class CreateScorerRequest:
     description: None | str | Unset = ""
     tags: list[str] | Unset = UNSET
     defaults: None | ScorerDefaults | Unset = UNSET
+    invocation: None | ScorerInvocationConfig | Unset = UNSET
     deprecated: bool | None | Unset = UNSET
     model_type: ModelType | None | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
@@ -91,6 +94,7 @@ class CreateScorerRequest:
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
 
         name = self.name
 
@@ -125,6 +129,14 @@ class CreateScorerRequest:
             defaults = self.defaults.to_dict()
         else:
             defaults = self.defaults
+
+        invocation: dict[str, Any] | None | Unset
+        if isinstance(self.invocation, Unset):
+            invocation = UNSET
+        elif isinstance(self.invocation, ScorerInvocationConfig):
+            invocation = self.invocation.to_dict()
+        else:
+            invocation = self.invocation
 
         deprecated: bool | None | Unset
         if isinstance(self.deprecated, Unset):
@@ -258,6 +270,8 @@ class CreateScorerRequest:
             field_dict["tags"] = tags
         if defaults is not UNSET:
             field_dict["defaults"] = defaults
+        if invocation is not UNSET:
+            field_dict["invocation"] = invocation
         if deprecated is not UNSET:
             field_dict["deprecated"] = deprecated
         if model_type is not UNSET:
@@ -298,6 +312,7 @@ class CreateScorerRequest:
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
 
         d = dict(src_dict)
         name = d.pop("name")
@@ -349,6 +364,23 @@ class CreateScorerRequest:
             return cast(None | ScorerDefaults | Unset, data)
 
         defaults = _parse_defaults(d.pop("defaults", UNSET))
+
+        def _parse_invocation(data: object) -> None | ScorerInvocationConfig | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                invocation_type_0 = ScorerInvocationConfig.from_dict(data)
+
+                return invocation_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerInvocationConfig | Unset, data)
+
+        invocation = _parse_invocation(d.pop("invocation", UNSET))
 
         def _parse_deprecated(data: object) -> bool | None | Unset:
             if data is None:
@@ -604,6 +636,7 @@ class CreateScorerRequest:
             description=description,
             tags=tags,
             defaults=defaults,
+            invocation=invocation,
             deprecated=deprecated,
             model_type=model_type,
             ground_truth=ground_truth,

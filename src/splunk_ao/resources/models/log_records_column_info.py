@@ -17,7 +17,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.metric_threshold import MetricThreshold
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
 
 
 T = TypeVar("T", bound="LogRecordsColumnInfo")
@@ -46,7 +46,8 @@ class LogRecordsColumnInfo:
             'average').
         metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
             column IDs, this holds the legacy metric_name string for dual-key ClickHouse query fallback.
-        scorer_config (None | ScorerConfig | Unset): For metric columns only: Scorer config that produced the metric.
+        scorer_config (None | RuntimeScorerConfig | Unset): For metric columns only: Scorer config that produced the
+            metric.
         scorer_id (None | str | Unset): For metric columns only: Scorer id that produced the metric. This is deprecated
             and will be removed in future versions.
         insight_type (InsightType | None | Unset): Insight type.
@@ -72,7 +73,7 @@ class LogRecordsColumnInfo:
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
-    scorer_config: None | ScorerConfig | Unset = UNSET
+    scorer_config: None | RuntimeScorerConfig | Unset = UNSET
     scorer_id: None | str | Unset = UNSET
     insight_type: InsightType | None | Unset = UNSET
     filter_type: LogRecordsFilterType | None | Unset = UNSET
@@ -82,7 +83,7 @@ class LogRecordsColumnInfo:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.metric_threshold import MetricThreshold
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
 
         id = self.id
 
@@ -161,7 +162,7 @@ class LogRecordsColumnInfo:
         scorer_config: dict[str, Any] | None | Unset
         if isinstance(self.scorer_config, Unset):
             scorer_config = UNSET
-        elif isinstance(self.scorer_config, ScorerConfig):
+        elif isinstance(self.scorer_config, RuntimeScorerConfig):
             scorer_config = self.scorer_config.to_dict()
         else:
             scorer_config = self.scorer_config
@@ -251,7 +252,7 @@ class LogRecordsColumnInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.metric_threshold import MetricThreshold
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -371,7 +372,7 @@ class LogRecordsColumnInfo:
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
-        def _parse_scorer_config(data: object) -> None | ScorerConfig | Unset:
+        def _parse_scorer_config(data: object) -> None | RuntimeScorerConfig | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -379,12 +380,12 @@ class LogRecordsColumnInfo:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                scorer_config_type_0 = ScorerConfig.from_dict(data)
+                scorer_config_type_0 = RuntimeScorerConfig.from_dict(data)
 
                 return scorer_config_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerConfig | Unset, data)
+            return cast(None | RuntimeScorerConfig | Unset, data)
 
         scorer_config = _parse_scorer_config(d.pop("scorer_config", UNSET))
 
