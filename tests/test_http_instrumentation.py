@@ -29,8 +29,13 @@ from starlette.routing import Route
 from starlette.testclient import TestClient
 from yarl import URL
 
-from splunk_ao import instrument_distributed_tracing
-from splunk_ao.http_instrumentation import _client_provider_ids, _instrumented_apps, _load_instrumentors
+from splunk_ao import configure_distributed_tracing, instrument_distributed_tracing
+from splunk_ao.http_instrumentation import (
+    _client_provider_ids,
+    _configured_providers,
+    _instrumented_apps,
+    _load_instrumentors,
+)
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.session_context import GEN_AI_CONVERSATION_ID, SplunkAOSessionPropagator, _session_id_context
 
@@ -114,11 +119,13 @@ def reset_instrumentation_state() -> Generator[None, None, None]:
     previous_propagator = propagate.get_global_textmap()
     session_token = _session_id_context.set(None)
     _client_provider_ids.clear()
+    _configured_providers.clear()
     _instrumented_apps.clear()
     try:
         yield
     finally:
         _client_provider_ids.clear()
+        _configured_providers.clear()
         _instrumented_apps.clear()
         propagate.set_global_textmap(previous_propagator)
         _session_id_context.reset(session_token)
@@ -152,6 +159,78 @@ def test_missing_extra_fails_before_instrumentation_or_propagator_change() -> No
     assert _client_provider_ids == {}
     assert _instrumented_apps == set()
     assert propagate.get_global_textmap() is previous_propagator
+
+
+def test_configure_distributed_tracing_creates_and_returns_provider(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    provider = TracerProvider()
+    processor = MagicMock()
+    app = FastAPI()
+
+    with (
+        patch("splunk_ao.http_instrumentation.SDKTracerProvider", return_value=provider),
+        patch("splunk_ao.http_instrumentation.add_splunk_ao_span_processor", return_value=processor) as add_processor,
+        patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types),
+    ):
+        configured_provider = configure_distributed_tracing(app=app)
+
+    assert configured_provider is provider
+    add_processor.assert_called_once_with(provider)
+    assert recorders["fastapi"].app_calls == [(app, {"tracer_provider": provider})]
+    assert recorders["requests"].instrument_calls == [{"tracer_provider": provider}]
+
+
+def test_configure_distributed_tracing_registers_processor_once_per_provider(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    provider = TracerProvider()
+    processor = MagicMock()
+
+    with (
+        patch("splunk_ao.http_instrumentation.add_splunk_ao_span_processor", return_value=processor) as add_processor,
+        patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types),
+    ):
+        first_result = configure_distributed_tracing(tracer_provider=provider)
+        second_result = configure_distributed_tracing(tracer_provider=provider)
+
+    assert first_result is provider
+    assert second_result is provider
+    add_processor.assert_called_once_with(provider)
+    assert recorders["requests"].instrument_calls == [{"tracer_provider": provider}]
+
+
+def test_configure_distributed_tracing_missing_extra_does_not_register_processor() -> None:
+    provider = TracerProvider()
+
+    with (
+        patch("splunk_ao.http_instrumentation._load_instrumentors", side_effect=ImportError("install the extra")),
+        patch("splunk_ao.http_instrumentation.add_splunk_ao_span_processor") as add_processor,
+        pytest.raises(ImportError, match="install the extra"),
+    ):
+        configure_distributed_tracing(tracer_provider=provider)
+
+    add_processor.assert_not_called()
+    assert provider not in _configured_providers
+
+
+def test_configure_distributed_tracing_invalid_app_does_not_register_processor(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, _ = instrumentors
+    provider = TracerProvider()
+
+    with (
+        patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types),
+        patch("splunk_ao.http_instrumentation.add_splunk_ao_span_processor") as add_processor,
+        pytest.raises(TypeError, match="FastAPI or Starlette"),
+    ):
+        configure_distributed_tracing(tracer_provider=provider, app=object())
+
+    add_processor.assert_not_called()
+    assert provider not in _configured_providers
 
 
 def test_distributed_tracing_extra_loads_every_supported_upstream_instrumentor() -> None:

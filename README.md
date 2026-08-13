@@ -370,26 +370,28 @@ elsewhere owns a separate provider and should be terminated separately.
 
 The `distributed-tracing` extra provides a supported one-time setup for
 upstream OpenTelemetry FastAPI/Starlette, Requests, HTTPX sync/async, and
-aiohttp-client instrumentation:
+aiohttp-client instrumentation. The high-level helper creates an application-owned
+provider, registers Splunk AO export, and configures those transports together:
 
 ```python
 from fastapi import FastAPI
-from opentelemetry.sdk.trace import TracerProvider
-
-from splunk_ao import instrument_distributed_tracing
-from splunk_ao.otel import add_splunk_ao_span_processor
-
-provider = TracerProvider()
-add_splunk_ao_span_processor(provider)
+from splunk_ao import configure_distributed_tracing
 
 app = FastAPI()
-instrument_distributed_tracing(tracer_provider=provider, app=app)
+provider = configure_distributed_tracing(app=app)
 ```
 
-The application owns `provider` and calls `provider.shutdown()` during process
-teardown. The helper never replaces the process-global provider. Configure
-other OpenTelemetry/OpenInference agent or model instrumentations with the
-same provider when they should join the trace.
+The application owns the returned `provider` and calls `provider.shutdown()`
+during process teardown. The helper never replaces the process-global provider.
+Pass an existing OpenTelemetry SDK `TracerProvider` through the
+`tracer_provider` argument when other OpenTelemetry/OpenInference agent or model
+instrumentations should use that same provider and join the trace.
+
+For advanced composition, `add_splunk_ao_span_processor()` remains the
+export-only API and `instrument_distributed_tracing()` remains the supported
+transport-only API. Do not also directly instrument a client or application
+component that is owned by the high-level helper; each component should have one
+instrumentation owner.
 
 After this startup call, supported inbound requests extract W3C context and
 supported outbound clients inject it automatically. Application code does not

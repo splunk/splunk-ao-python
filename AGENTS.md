@@ -134,6 +134,9 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 - Handler/decorator/OpenAI/ADK telemetry uses the internal logged-step path and converts completed steps to immutable
   OTel spans. The internal trace envelope is never exported as a span.
 - `start_splunk_ao_span()` is SDK-native OTel. `add_splunk_ao_span_processor()` and A2A instrument caller-owned OTel.
+  `configure_distributed_tracing()` is the combined automatic HTTP setup: it creates or accepts an application-owned
+  provider, registers Splunk AO export once per provider, configures supported upstream instrumentors, and returns the
+  provider for application shutdown. `instrument_distributed_tracing()` remains transport-only.
 - Never replace the process-global tracer provider. Register processors on the provided provider; respect ownership.
 - Treat ended `ReadableSpan` objects as immutable. Normalize by copying at export, never by mutating private fields.
 - Completed spans enqueue immediately. `flush()` drains completed work without ending active work; `terminate()` drains,

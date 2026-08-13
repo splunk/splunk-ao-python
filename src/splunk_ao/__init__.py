@@ -58,7 +58,7 @@ from splunk_ao.exceptions import (
 )
 from splunk_ao.experiment import Experiment
 from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
-from splunk_ao.http_instrumentation import instrument_distributed_tracing
+from splunk_ao.http_instrumentation import configure_distributed_tracing, instrument_distributed_tracing
 from splunk_ao.integration import Integration
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
@@ -161,6 +161,7 @@ __all__ = [
     "ValidationError",
     "WorkflowSpan",
     "add_records_to_annotation_queue",
+    "configure_distributed_tracing",
     "create_annotation_queue",
     "create_annotation_queue_field",
     "create_api_key",

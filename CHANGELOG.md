@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added the `distributed-tracing` extra and
-  `instrument_distributed_tracing()` startup helper for supported upstream
-  FastAPI/Starlette, Requests, HTTPX, and aiohttp-client instrumentation.
+- Added the `distributed-tracing` extra and high-level
+  `configure_distributed_tracing()` setup for Splunk AO export plus supported
+  upstream FastAPI/Starlette, Requests, HTTPX, and aiohttp-client instrumentation.
+  The lower-level `instrument_distributed_tracing()` transport helper remains
+  available for applications that configure their provider separately.
 - Explicit SDK sessions now propagate across supported services as standard
   W3C `gen_ai.conversation.id` baggage. SDK routing, authentication, and
   application identity are not propagated.

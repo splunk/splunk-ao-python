@@ -89,10 +89,16 @@ provider and calls `shutdown()`; SDK-owned logger/export resources use their own
 ### Distributed context and HTTP transports
 
 Supported automatic propagation reuses upstream OpenTelemetry instrumentors rather than custom SDK HTTP wrappers.
-`instrument_distributed_tracing()` configures FastAPI/Starlette inbound instrumentation and Requests, HTTPX sync/async,
-and aiohttp-client outbound instrumentation with a caller-owned provider. It never sets or replaces the global tracer
-provider. Manual `get_tracing_headers()` and `TracingMiddleware` remain fallbacks for unsupported transports; supported
-automatic instrumentation does not require either one on individual requests.
+`configure_distributed_tracing()` creates or accepts an OpenTelemetry SDK provider, registers Splunk AO export, and
+configures FastAPI/Starlette inbound instrumentation plus Requests, HTTPX sync/async, and aiohttp-client outbound
+instrumentation. It returns the application-owned provider for shutdown and never sets or replaces the global tracer
+provider. `instrument_distributed_tracing()` remains the transport-only entry point for applications that manage
+processor registration separately. Manual `get_tracing_headers()` and `TracingMiddleware` remain fallbacks for
+unsupported transports; supported automatic instrumentation does not require either one on individual requests.
+
+High-level setup is idempotent per provider for Splunk AO processor registration. Each process-wide client instrumentor
+and each server application must still have one instrumentation owner; do not combine the helper with direct upstream
+instrumentation of the same component.
 
 An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
 may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
