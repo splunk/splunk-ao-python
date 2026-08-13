@@ -5,21 +5,33 @@ from dataclasses import dataclass
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import aiohttp
+import httpx
 import pytest
 import requests
+from aiohttp import TraceRequestExceptionParams, TraceRequestStartParams
 from fastapi import FastAPI
+from multidict import CIMultiDict
 from opentelemetry import baggage, context, propagate, trace
 from opentelemetry.context import Context
+from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.starlette import StarletteInstrumentor
 from opentelemetry.propagators import textmap
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
 from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 from starlette.testclient import TestClient
+from yarl import URL
 
 from splunk_ao import instrument_distributed_tracing
 from splunk_ao.http_instrumentation import _client_provider_ids, _instrumented_apps, _load_instrumentors
+from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.session_context import GEN_AI_CONVERSATION_ID, SplunkAOSessionPropagator, _session_id_context
 
 
@@ -69,6 +81,20 @@ class RecordingInstrumentor:
 
     def instrument_app(self, app: Any, **kwargs: Any) -> None:
         self.app_calls.append((app, kwargs))
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        return True
+
+    def shutdown(self) -> None:
+        return None
 
 
 def instrumentor_type(recorder: RecordingInstrumentor) -> type:
@@ -322,4 +348,209 @@ def test_real_fastapi_instrumentor_extracts_trace_and_conversation_without_sdk_m
         assert observed == {"trace_id": expected_trace_id, "conversation_id": "conversation-inbound"}
     finally:
         FastAPIInstrumentor.uninstrument_app(app)
+        provider.shutdown()
+
+
+def test_automatic_requests_to_fastapi_continues_active_path1_context_without_manual_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_headers: dict[str, str] = {}
+    observed: dict[str, Any] = {}
+
+    def capture_send(session: requests.Session, request: requests.PreparedRequest, **kwargs: Any) -> requests.Response:
+        del session, kwargs
+        captured_headers.update(request.headers)
+        response = requests.Response()
+        response.status_code = 200
+        response.request = request
+        response.url = request.url
+        return response
+
+    monkeypatch.setattr(requests.Session, "send", capture_send)
+    provider = TracerProvider()
+    app = FastAPI()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=RecordingSink())
+
+    @app.get("/downstream")
+    def downstream() -> dict[str, bool]:
+        observed["trace_id"] = trace.get_current_span().get_span_context().trace_id
+        observed["conversation_id"] = baggage.get_baggage(GEN_AI_CONVERSATION_ID)
+        return {"ok": True}
+
+    try:
+        instrument_distributed_tracing(
+            tracer_provider=provider, app=app, instrument_httpx=False, instrument_aiohttp_client=False
+        )
+        logger.set_session("conversation-cross-service")
+        logger.start_trace(input="request")
+        path1_operation = logger.add_workflow_span(input="agent work", name="agent")
+        path1_context = logger._otel_ids[path1_operation.id].span_context
+
+        response = requests.get("https://example.test/downstream", timeout=1)
+        downstream_token = context.attach(Context())
+        try:
+            with TestClient(app) as client:
+                downstream_response = client.get(
+                    "/downstream",
+                    headers={"traceparent": captured_headers["traceparent"], "baggage": captured_headers["baggage"]},
+                )
+        finally:
+            context.detach(downstream_token)
+
+        assert response.status_code == 200
+        assert downstream_response.json() == {"ok": True}
+        assert captured_headers["traceparent"].split("-")[1] == format(path1_context.trace_id, "032x")
+        assert captured_headers["baggage"] == "gen_ai.conversation.id=conversation-cross-service"
+        assert observed == {"trace_id": path1_context.trace_id, "conversation_id": "conversation-cross-service"}
+    finally:
+        logger.clear_session()
+        if logger.current_parent() is not None:
+            logger.conclude(output="done", conclude_all=True)
+        logger.terminate()
+        RequestsInstrumentor().uninstrument()
+        FastAPIInstrumentor.uninstrument_app(app)
+        provider.shutdown()
+
+
+def test_real_httpx_sync_instrumentation_injects_active_path1_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_headers: dict[str, str] = {}
+
+    def capture_sync(transport: httpx.HTTPTransport, request: httpx.Request) -> httpx.Response:
+        del transport
+        captured_headers.update(request.headers)
+        return httpx.Response(200, request=request)
+
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", capture_sync)
+    provider = TracerProvider()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=RecordingSink())
+    try:
+        instrument_distributed_tracing(
+            tracer_provider=provider, instrument_requests=False, instrument_aiohttp_client=False
+        )
+        logger.set_session("conversation-httpx")
+        logger.start_trace(input="request")
+        operation = logger.add_workflow_span(input="agent work", name="agent")
+        operation_context = logger._otel_ids[operation.id].span_context
+
+        with httpx.Client() as client:
+            assert client.get("https://example.test/sync").status_code == 200
+
+        assert captured_headers["traceparent"].split("-")[1] == format(operation_context.trace_id, "032x")
+        assert captured_headers["baggage"] == "gen_ai.conversation.id=conversation-httpx"
+    finally:
+        logger.clear_session()
+        if logger.current_parent() is not None:
+            logger.conclude(output="done", conclude_all=True)
+        logger.terminate()
+        HTTPXClientInstrumentor().uninstrument()
+        provider.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_real_httpx_async_instrumentation_injects_active_path1_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_headers: dict[str, str] = {}
+
+    async def capture_async(transport: httpx.AsyncHTTPTransport, request: httpx.Request) -> httpx.Response:
+        del transport
+        captured_headers.update(request.headers)
+        return httpx.Response(200, request=request)
+
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", capture_async)
+    provider = TracerProvider()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=RecordingSink())
+    try:
+        instrument_distributed_tracing(
+            tracer_provider=provider, instrument_requests=False, instrument_aiohttp_client=False
+        )
+        logger.set_session("conversation-httpx")
+        logger.start_trace(input="request")
+        operation = logger.add_workflow_span(input="agent work", name="agent")
+        operation_context = logger._otel_ids[operation.id].span_context
+
+        async with httpx.AsyncClient() as client:
+            assert (await client.get("https://example.test/async")).status_code == 200
+
+        assert captured_headers["traceparent"].split("-")[1] == format(operation_context.trace_id, "032x")
+        assert captured_headers["baggage"] == "gen_ai.conversation.id=conversation-httpx"
+    finally:
+        logger.clear_session()
+        if logger.current_parent() is not None:
+            logger.conclude(output="done", conclude_all=True)
+        logger.terminate()
+        HTTPXClientInstrumentor().uninstrument()
+        provider.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_real_aiohttp_instrumentation_installs_hook_that_injects_active_path1_context() -> None:
+    provider = TracerProvider()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=RecordingSink())
+    try:
+        instrument_distributed_tracing(tracer_provider=provider, instrument_requests=False, instrument_httpx=False)
+        logger.set_session("conversation-aiohttp")
+        logger.start_trace(input="request")
+        operation = logger.add_workflow_span(input="agent work", name="agent")
+        operation_context = logger._otel_ids[operation.id].span_context
+
+        async with aiohttp.ClientSession() as session:
+            trace_config = next(
+                config
+                for config in session._trace_configs
+                if getattr(config, "_is_instrumented_by_opentelemetry", False)
+            )
+            trace_context = trace_config.trace_config_ctx()
+            headers: CIMultiDict[str] = CIMultiDict()
+            url = URL("https://example.test/aiohttp")
+            start_params = TraceRequestStartParams("GET", url, headers)
+            for callback in trace_config.on_request_start:
+                await callback(session, trace_context, start_params)
+
+            assert headers["traceparent"].split("-")[1] == format(operation_context.trace_id, "032x")
+            assert headers["baggage"] == "gen_ai.conversation.id=conversation-aiohttp"
+
+            exception_params = TraceRequestExceptionParams("GET", url, headers, RuntimeError("synthetic stop"))
+            for callback in trace_config.on_request_exception:
+                await callback(session, trace_context, exception_params)
+    finally:
+        logger.clear_session()
+        if logger.current_parent() is not None:
+            logger.conclude(output="done", conclude_all=True)
+        logger.terminate()
+        AioHttpClientInstrumentor().uninstrument()
+        provider.shutdown()
+
+
+def test_real_starlette_instrumentor_extracts_remote_context_without_sdk_middleware() -> None:
+    expected_trace_id = 0x4BF92F3577B34DA6A3CE929D0E0E4736
+    observed: dict[str, Any] = {}
+    provider = TracerProvider()
+
+    async def automatic_context(request: Request) -> JSONResponse:
+        del request
+        observed["trace_id"] = trace.get_current_span().get_span_context().trace_id
+        observed["conversation_id"] = baggage.get_baggage(GEN_AI_CONVERSATION_ID)
+        return JSONResponse({"ok": True})
+
+    app = Starlette(routes=[Route("/automatic-context", automatic_context)])
+    try:
+        instrument_distributed_tracing(
+            tracer_provider=provider,
+            app=app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+        with TestClient(app) as client:
+            response = client.get(
+                "/automatic-context",
+                headers={
+                    "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+                    "baggage": "gen_ai.conversation.id=conversation-starlette",
+                },
+            )
+
+        assert response.json() == {"ok": True}
+        assert observed == {"trace_id": expected_trace_id, "conversation_id": "conversation-starlette"}
+    finally:
+        StarletteInstrumentor.uninstrument_app(app)
         provider.shutdown()

@@ -5,11 +5,13 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry.sdk.trace import ReadableSpan
 
 # Skip all tests in this module on Python 3.14+ (crewai doesn't support it yet)
 pytestmark = pytest.mark.skipif(sys.version_info >= (3, 14), reason="crewai does not support Python 3.14+")
 
 from splunk_ao.handlers.crewai.handler import CrewAIEventListener  # noqa: E402
+from splunk_ao.logger.logger import SplunkAOLogger  # noqa: E402
 from splunk_ao.schema.handlers import NodeType  # noqa: E402
 from tests.testutils.setup import (  # noqa: E402
     setup_mock_logstreams_client,
@@ -74,6 +76,65 @@ class MockOutput:
 
     def __init__(self, raw="Test output"):
         self.raw = raw
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def test_crewai_adapter_enqueues_task_at_callback_end_without_flush() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    crew_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+    crew = MockCrew(crew_id=crew_id)
+    agent = MockAgent(crew=crew)
+    task = MockTask(task_id=task_id, description="Research market trends", agent=agent)
+    try:
+        with (
+            patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
+            patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
+            patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
+        ):
+            callback = CrewAIEventListener(splunk_ao_logger=logger, start_new_trace=True, flush_on_crew_completed=False)
+
+        callback._handle_crew_kickoff_started(
+            MockSource(id=crew_id), MockEvent(crew_name="Test Crew", inputs={"question": "market trends"})
+        )
+        callback._handle_task_started(MockSource(id=task_id), MockEvent(task=task))
+
+        callback._handle_task_completed(MockSource(id=task_id), MockEvent(output=MockOutput("Done")))
+
+        assert len(sink.spans) == 1
+        assert sink.spans[0].name == "invoke_workflow Research market trends"
+        assert str(crew_id) in callback._handler._active_steps
+        assert sink.force_flush_calls == 0
+
+        callback._handle_crew_kickoff_completed(
+            MockSource(id=crew_id), MockEvent(output=MockOutput("Crew completed successfully"))
+        )
+
+        child, root = sink.spans
+        assert child.parent == root.context
+        assert [span.name for span in sink.spans] == [
+            "invoke_workflow Research market trends",
+            "invoke_workflow Test Crew",
+        ]
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
 
 
 @pytest.fixture

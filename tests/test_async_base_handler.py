@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from collections.abc import Generator
 from unittest.mock import Mock, patch
@@ -8,6 +9,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
 from splunk_ao.logger.logger import SplunkAOLogger
+from splunk_ao.session_context import set_session_context
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -55,6 +57,72 @@ async def test_async_child_enqueues_when_its_callback_ends() -> None:
             "invoke_workflow",
         ]
         assert sink.spans[0].parent == sink.spans[1].context
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_async_handlers_keep_parent_and_session_context_isolated() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    first_started = asyncio.Event()
+    second_started = asyncio.Event()
+
+    async def run_handler(label: str, own_started: asyncio.Event, other_started: asyncio.Event) -> None:
+        set_session_context(label)
+        handler = SplunkAOAsyncBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+        root_id = uuid.uuid4()
+        child_id = uuid.uuid4()
+        try:
+            await handler.async_start_node(
+                node_type="chain", parent_run_id=None, run_id=root_id, name=f"{label}-root", input="request"
+            )
+            own_started.set()
+            await other_started.wait()
+            await handler.async_start_node(
+                node_type="llm",
+                parent_run_id=root_id,
+                run_id=child_id,
+                name=f"{label}-child",
+                input="prompt",
+                model="model",
+            )
+            await asyncio.sleep(0)
+            await handler.async_end_node(child_id, output="answer", model="model")
+            await handler.async_end_node(root_id, output="done")
+        finally:
+            set_session_context(None)
+
+    try:
+        await asyncio.gather(
+            run_handler("conversation-a", first_started, second_started),
+            run_handler("conversation-b", second_started, first_started),
+        )
+
+        assert len(sink.spans) == 4
+        for label in ("conversation-a", "conversation-b"):
+            request_spans = [
+                span for span in sink.spans if (span.attributes or {}).get("gen_ai.conversation.id") == label
+            ]
+            root = next(
+                span
+                for span in request_spans
+                if (span.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+            )
+            child = next(
+                span for span in request_spans if (span.attributes or {}).get("gen_ai.operation.name") == "chat"
+            )
+            assert child.parent == root.context
+            assert child.context.trace_id == root.context.trace_id
+            assert (child.attributes or {}).get("gen_ai.conversation.id") == label
+            assert (root.attributes or {}).get("gen_ai.conversation.id") == label
+        root_trace_ids = {
+            span.context.trace_id
+            for span in sink.spans
+            if (span.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+        }
+        assert len(root_trace_ids) == 2
         assert sink.force_flush_calls == 0
     finally:
         logger.terminate()

@@ -534,6 +534,49 @@ def test_caller_owned_otel_and_path1_logger_interoperate_bidirectionally() -> No
     assert by_name["otel-downstream"].parent == operation_context
 
 
+def test_explicit_conversation_session_is_applied_across_paths_1_2_and_3() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+    provider = SDKTracerProvider()
+    provider.add_span_processor(processor)
+    provider_token = _TRACE_PROVIDER_CONTEXT_VAR.set(provider)
+    tracer = provider.get_tracer("caller-owned")
+    sink = MagicMock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    try:
+        logger.set_session("conversation-all-paths")
+        logger.start_trace(input="request")
+        path1_operation = logger.add_workflow_span(input="path 1", name="path-1")
+
+        with start_splunk_ao_span(WorkflowSpan(input="path 2", name="path-2")):
+            pass
+        with tracer.start_as_current_span("path-3"):
+            pass
+
+        logger.conclude(output="done")
+        logger.conclude(output="complete")
+
+        [path1_span] = [call.args[0] for call in sink.emit.call_args_list]
+        assert path1_span.name == "invoke_workflow path-1"
+        assert path1_span.attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert "splunk_ao.session.id" not in path1_span.attributes
+
+        recording_processor = processor.processor
+        assert isinstance(recording_processor, RecordingSpanProcessor)
+        started = {span.name: span for span, _ in recording_processor.started}
+        assert started["path-2"].attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert started["path-3"].attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert "splunk_ao.session.id" not in started["path-2"].attributes
+        assert "splunk_ao.session.id" not in started["path-3"].attributes
+        assert path1_operation.id not in logger._otel_ids
+    finally:
+        logger.clear_session()
+        logger.terminate()
+        _TRACE_PROVIDER_CONTEXT_VAR.reset(provider_token)
+        provider.shutdown()
+
+
 def test_sdk_native_and_caller_owned_spans_keep_topology_and_queue_without_flush() -> None:
     exporter = RecordingExporter()
     processor = SplunkAOSpanProcessor(_exporter=exporter)

@@ -1,9 +1,14 @@
+import json
 import uuid
 from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry import context as otel_context
+from opentelemetry import propagate
+from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.trace.status import StatusCode
 
 from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
@@ -92,6 +97,126 @@ def test_incremental_handler_root_is_active_beneath_caller_owned_operation() -> 
     finally:
         logger.conclude(output="caller done")
         logger.conclude(output="trace done")
+        logger.terminate()
+
+
+BASELINE_HANDLER_TOPOLOGY = {
+    "invoke_workflow handler-root": ("invoke_workflow", None),
+    "execute_tool search": ("execute_tool", "invoke_workflow handler-root"),
+    "chat model": ("chat", "execute_tool search"),
+}
+
+
+def _handler_topology(carrier: dict[str, str] | None = None) -> dict[str, tuple[str | None, str | None]]:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    tool_id = uuid.uuid4()
+    llm_id = uuid.uuid4()
+    token = otel_context.attach(propagate.extract(carrier) if carrier is not None else Context())
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="handler-root", input="request")
+        handler.start_node(node_type="tool", parent_run_id=root_id, run_id=tool_id, name="search", input="query")
+        handler.start_node(
+            node_type="llm", parent_run_id=tool_id, run_id=llm_id, name="model-call", input="prompt", model="model"
+        )
+        handler.end_node(llm_id, output="answer", model="model")
+        handler.end_node(tool_id, output="result")
+        handler.end_node(root_id, output="done")
+
+        names_by_context = {(span.context.trace_id, span.context.span_id): span.name for span in sink.spans}
+        return {
+            span.name: (
+                (span.attributes or {}).get("gen_ai.operation.name"),
+                names_by_context.get((span.parent.trace_id, span.parent.span_id)) if span.parent is not None else None,
+            )
+            for span in sink.spans
+        }
+    finally:
+        logger.terminate()
+        otel_context.detach(token)
+
+
+def test_distributed_and_non_distributed_handlers_preserve_baseline_local_topology() -> None:
+    remote_carrier = {
+        "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+        "tracestate": "vendor=value",
+    }
+
+    assert _handler_topology() == BASELINE_HANDLER_TOPOLOGY
+    assert _handler_topology(remote_carrier) == BASELINE_HANDLER_TOPOLOGY
+
+
+def test_leaf_only_handler_root_is_active_exportable_and_enqueued_without_flush() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    try:
+        handler.start_node(
+            node_type="llm", parent_run_id=None, run_id=root_id, name="leaf-root", input="prompt", model="model"
+        )
+        active_span_id = get_tracing_headers()["traceparent"].split("-")[2]
+
+        handler.end_node(root_id, output="answer", model="model")
+
+        [span] = sink.spans
+        assert span.name == "chat model"
+        assert (span.attributes or {}).get("gen_ai.operation.name") == "chat"
+        assert format(span.context.span_id, "016x") == active_span_id
+        assert span.parent is None
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+def test_unsampled_remote_parent_suppresses_incremental_handler_export() -> None:
+    remote_context = propagate.extract({"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"})
+    token = otel_context.attach(remote_context)
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request")
+        handler.start_node(
+            node_type="llm", parent_run_id=root_id, run_id=child_id, name="child", input="prompt", model="model"
+        )
+        handler.end_node(child_id, output="answer", model="model")
+        handler.end_node(root_id, output="done")
+
+        assert sink.spans == []
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+        otel_context.detach(token)
+
+
+def test_handler_error_span_enqueues_with_error_status_before_root_end() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request")
+        handler.start_node(
+            node_type="tool", parent_run_id=root_id, run_id=child_id, name="failing-tool", input="arguments"
+        )
+
+        handler.end_node(child_id, error="tool failed")
+
+        [span] = sink.spans
+        assert span.name == "execute_tool failing-tool"
+        assert span.status.status_code is StatusCode.ERROR
+        assert json.loads(str((span.attributes or {}).get("gen_ai.tool.call.result"))) == {"value": "tool failed"}
+        assert str(root_id) in handler._active_steps
+        assert sink.force_flush_calls == 0
+
+        handler.end_node(root_id, output="failed", status_code=500)
+    finally:
         logger.terminate()
 
 
