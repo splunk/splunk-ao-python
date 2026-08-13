@@ -2,6 +2,7 @@
 # We need to ignore syntax errors until https://github.com/python/mypy/issues/17535 is resolved.
 import os
 from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any, ClassVar, Optional
 
 from httpx import Response
@@ -17,7 +18,33 @@ from splunk_ao.deployment import resolve_deployment as _resolve_deployment
 from splunk_ao.shared.exceptions import ConfigurationError, MissingConfigurationError
 
 
-class O11yApiClient(ApiClient):
+@contextmanager
+def _suppress_control_plane_http() -> Iterator[None]:
+    """Suppress optional OTel HTTP instrumentation around SDK-owned requests."""
+    try:
+        from opentelemetry.instrumentation.utils import suppress_http_instrumentation  # noqa: PLC0415
+    except ImportError:
+        yield
+        return
+
+    with suppress_http_instrumentation():
+        yield
+
+
+class _ControlPlaneApiClient(ApiClient):
+    """Keep SDK-owned HTTP requests out of application telemetry."""
+
+    async def arequest(self, method: RequestMethod, path: str, *args: Any, **kwargs: Any) -> Any:
+        with _suppress_control_plane_http():
+            return await super().arequest(method, path, *args, **kwargs)
+
+    @contextmanager
+    def stream_request(self, method: RequestMethod, path: str, *args: Any, **kwargs: Any) -> Iterator[Response]:
+        with _suppress_control_plane_http(), super().stream_request(method, path, *args, **kwargs) as response:
+            yield response
+
+
+class O11yApiClient(_ControlPlaneApiClient):
     """API client for Splunk Observability Cloud AO endpoints."""
 
     o11y_token: SecretStr
@@ -41,8 +68,10 @@ class O11yApiClient(ApiClient):
     async def arequest(self, method: RequestMethod, path: str, *args: Any, **kwargs: Any) -> Any:
         return await super().arequest(method, self._prefixed(path), *args, **kwargs)
 
+    @contextmanager
     def stream_request(self, method: RequestMethod, path: str, *args: Any, **kwargs: Any) -> Iterator[Response]:
-        return super().stream_request(method, self._prefixed(path), *args, **kwargs)
+        with super().stream_request(method, self._prefixed(path), *args, **kwargs) as response:
+            yield response
 
 
 # Mapping of SPLUNK_AO_* → GALILEO_* env var pairs used by the bridge.
@@ -105,7 +134,8 @@ class SplunkAOConfig(GalileoConfig):
         """Derive the O11y API URL from its realm and preserve standalone validation."""
         if cls._is_o11y_env():
             return Url(O11yConfig.from_env().require_api_url())
-        return super().set_api_url(api_url, info)
+        with _suppress_control_plane_http():
+            return super().set_api_url(api_url, info)
 
     @model_validator(mode="after")
     def set_jwt_token(self) -> "SplunkAOConfig":
@@ -114,7 +144,8 @@ class SplunkAOConfig(GalileoConfig):
             self.jwt_token = None
             self.refresh_token = None
             return self
-        super().set_jwt_token()
+        with _suppress_control_plane_http():
+            super().set_jwt_token()
         return self
 
     @model_validator(mode="after")
@@ -126,7 +157,17 @@ class SplunkAOConfig(GalileoConfig):
                 host=o11y.api_root, o11y_token=o11y.crud_token, jwt_token=SecretStr(""), ssl_context=self.ssl_context
             )
             return self
-        super().set_validated_api_client()
+        with _suppress_control_plane_http():
+            super().set_validated_api_client()
+        assert self.validated_api_client is not None
+        client = self.validated_api_client
+        self.validated_api_client = _ControlPlaneApiClient(
+            host=client.host,
+            jwt_token=client.jwt_token,
+            raise_on_unexpected_status=client.raise_on_unexpected_status,
+            ssl_context=client.ssl_context,
+            thread_local=client.thread_local,
+        )
         return self
 
     def _uses_o11y_api_client(self) -> bool:
@@ -136,7 +177,8 @@ class SplunkAOConfig(GalileoConfig):
         """Skip JWT refresh when authenticating directly with an O11y token."""
         if self._uses_o11y_api_client():
             return
-        super().refresh_jwt_token()
+        with _suppress_control_plane_http():
+            super().refresh_jwt_token()
 
     @classmethod
     def get(cls, **kwargs: Any) -> "SplunkAOConfig":

@@ -399,6 +399,11 @@ call `get_tracing_headers()` for each request and does not install
 `TracingMiddleware`. Those APIs remain supported for transports and frameworks
 outside the automatic support matrix.
 
+SDK-owned authentication, health-check, Project, Agent Stream, and other
+control-plane HTTP requests are scoped out of automatic client instrumentation.
+They therefore do not appear as application traces, while HTTP requests made by
+the application remain instrumented normally.
+
 An explicit SDK session propagates as the standard
 `gen_ai.conversation.id` W3C baggage member. Project, Agent Stream,
 experiment, deployment, authentication, model, workflow, and agent identity

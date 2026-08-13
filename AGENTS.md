@@ -138,6 +138,9 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
   provider, registers Splunk AO export once per provider, configures supported upstream instrumentors, and returns the
   provider for application shutdown. `instrument_distributed_tracing()` remains transport-only.
 - Never replace the process-global tracer provider. Register processors on the provided provider; respect ownership.
+- Keep SDK-owned authentication, validation, CRUD, routing-resolution, and other control-plane HTTP calls out of
+  application traces with scoped OTel HTTP suppression. Never use broad backend URL exclusions that can suppress user
+  traffic, and always restore instrumentation immediately after the SDK request.
 - Treat ended `ReadableSpan` objects as immutable. Normalize by copying at export, never by mutating private fields.
 - Completed spans enqueue immediately. `flush()` drains completed work without ending active work; `terminate()` drains,
   shuts down SDK-owned resources, and discards unfinished state. Caller-owned providers use `shutdown()`.

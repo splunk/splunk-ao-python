@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `extract_tracing_context()` helpers for standard W3C `traceparent` and
   `tracestate` propagation. `TracingMiddleware` now extracts and scopes that
   OpenTelemetry context for Starlette/FastAPI requests.
+- SDK-owned authentication, validation, and CRUD HTTP requests are suppressed
+  from automatic application HTTP instrumentation, preventing control-plane
+  calls from appearing as unrelated application traces.
 
 ### Changed
 

@@ -100,6 +100,11 @@ High-level setup is idempotent per provider for Splunk AO processor registration
 and each server application must still have one instrumentation owner; do not combine the helper with direct upstream
 instrumentation of the same component.
 
+SDK-owned authentication, health-check, CRUD, routing-resolution, token-refresh, and streaming control-plane requests
+execute inside OTel HTTP-instrumentation suppression. This boundary is scoped to the SDK request and must restore the
+caller's context afterward; application traffic to the same host must remain instrumentable. Apply suppression at the
+shared configuration/API-client boundary, never by excluding deployment URLs globally.
+
 An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
 may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
 baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
