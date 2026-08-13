@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the `distributed-tracing` extra and
+  `instrument_distributed_tracing()` startup helper for supported upstream
+  FastAPI/Starlette, Requests, HTTPX, and aiohttp-client instrumentation.
+- Explicit SDK sessions now propagate across supported services as standard
+  W3C `gen_ai.conversation.id` baggage. SDK routing, authentication, and
+  application identity are not propagated.
 - Added module-level `get_tracing_headers()` and
   `extract_tracing_context()` helpers for standard W3C `traceparent` and
   `tracestate` propagation. `TracingMiddleware` now extracts and scopes that
@@ -22,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Callback handlers keep a live real root during framework execution so
   outbound W3C context uses the same identity and visible hierarchy that is
   exported at commit.
+- Normal LangChain, CrewAI, Google ADK, and OpenAI Agents callbacks now enqueue
+  each completed operation into the existing `BatchSpanProcessor` at that
+  operation's end callback. The deprecated `ingestion_hook` retains its
+  whole-tree compatibility behavior.
+- Default logger-owned batching now honors standard OpenTelemetry
+  `OTEL_BSP_*` configuration, matching caller-owned OTel paths. Explicit
+  internal `BatchConfig` values remain authoritative when supplied.
 
 ### Removed
 

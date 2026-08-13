@@ -3,11 +3,61 @@ from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry.sdk.trace import ReadableSpan
 
 from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
 from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+@pytest.mark.asyncio
+async def test_async_child_enqueues_when_its_callback_ends() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOAsyncBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        await handler.async_start_node(
+            node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request"
+        )
+        await handler.async_start_node(
+            node_type="llm", parent_run_id=root_id, run_id=child_id, name="child", input="prompt", model="model"
+        )
+
+        await handler.async_end_node(child_id, output="answer", model="model")
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["chat"]
+        assert str(root_id) in handler._active_steps
+        assert sink.force_flush_calls == 0
+
+        await handler.async_end_node(root_id, output="done")
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "chat",
+            "invoke_workflow",
+        ]
+        assert sink.spans[0].parent == sink.spans[1].context
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
 
 
 class TestSplunkAOAsyncBaseHandlerCallback:

@@ -9,6 +9,7 @@ from agents.tracing import ResponseSpanData, get_current_span, get_trace_provide
 from galileo_core.schemas.logging.span import LlmMetrics, LlmSpan
 from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao import SplunkAOLogger, splunk_ao_context
+from splunk_ao.handlers.span_lifecycle import HandlerSpanState, build_handler_step, finalize_handler_step
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.openai_agents import (
@@ -61,6 +62,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
         self._owned_trace: Any = None
         self._owned_root: Any = None
         self._owned_root_node_id: str | None = None
+        self._caller_parent: Any = None
+        self._active_steps: dict[str, HandlerSpanState] = {}
 
     def on_trace_start(self, trace: Trace) -> None:
         """Called when an OpenAI Agent trace starts."""
@@ -75,7 +78,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
             },
         )
         self._nodes[trace.trace_id] = node
-        if self._splunk_ao_logger.current_parent() is None:
+        self._caller_parent = self._splunk_ao_logger.current_parent()
+        if self._caller_parent is None:
             try:
                 self._owned_trace = self._splunk_ao_logger.start_trace(
                     input="Agent Workflow",
@@ -103,6 +107,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
             self._conclude_current_trace_on_failure()
             _logger.warning("Failed to commit OpenAI Agents telemetry", exc_info=True)
         finally:
+            for state in self._active_steps.values():
+                self._splunk_ao_logger._restore_handler_step_context(state.activation)
+                self._splunk_ao_logger._release_otel_context(state.step)
             self._nodes = {}
             self._last_output = None
             self._last_status_code = None
@@ -110,6 +117,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
             self._owned_trace = None
             self._owned_root = None
             self._owned_root_node_id = None
+            self._caller_parent = None
+            self._active_steps = {}
 
     def _commit_trace(self, trace: Trace) -> None:
         if not self._nodes:
@@ -119,6 +128,20 @@ class SplunkAOTracingProcessor(TracingProcessor):
         root_node = self._nodes.get(trace.trace_id)
         if root_node is None:
             _logger.warning(f"Root node {trace.trace_id} not found")
+            return
+
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            if self._active_steps:
+                _logger.warning(
+                    "OpenAI Agents trace %s ended with %d unfinished callback spans",
+                    trace.trace_id,
+                    len(self._active_steps),
+                )
+            if self._owned_trace is not None:
+                self._owned_trace.input = self._first_input or "Agent Workflow"
+                self._owned_trace.metrics.duration_ns = root_node.span_params.get("duration_ns")
+                if self._splunk_ao_logger.current_parent() is self._owned_trace:
+                    self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
             return
 
         live_root_node = self._nodes.get(self._owned_root_node_id) if self._owned_root_node_id else None
@@ -309,6 +332,56 @@ class SplunkAOTracingProcessor(TracingProcessor):
         if metadata is not None:
             self._owned_root.user_metadata = convert_to_string_dict(metadata)
 
+    def _start_incremental_span(self, node: Node) -> None:
+        """Create and activate one real OpenAI Agents callback span."""
+        node_id = str(node.run_id)
+        if node_id == self._owned_root_node_id and self._owned_root is not None:
+            self._active_steps[node_id] = HandlerSpanState(step=self._owned_root, activation=None)
+            return
+
+        if str(node.parent_run_id) in self._active_steps:
+            parent = self._active_steps[str(node.parent_run_id)].step
+        else:
+            parent = self._owned_trace or self._caller_parent
+        if parent is None:
+            raise RuntimeError(f"No active parent is available for OpenAI Agents span {node_id}")
+
+        step = build_handler_step(node, openai_agents=True)
+        self._splunk_ao_logger._register_handler_step(step, parent)
+        activation = self._splunk_ao_logger._activate_handler_step(step)
+        self._active_steps[node_id] = HandlerSpanState(step=step, activation=activation)
+
+    def _finish_incremental_span(self, node: Node) -> None:
+        """Finalize and enqueue an OpenAI Agents span at callback completion."""
+        node_id = str(node.run_id)
+        state = self._active_steps.get(node_id)
+        if state is None:
+            _logger.warning("Unable to complete OpenAI Agents span %s: no active state", node_id)
+            return
+        try:
+            if node.node_type in ("agent", "chain", "workflow") and not node.span_params.get("output"):
+                last_child = self._nodes.get(node.children[-1]) if node.children else None
+                if last_child is not None:
+                    node.span_params["output"] = last_child.span_params.get("output", "")
+            final = finalize_handler_step(node, state, openai_agents=True)
+            final = self._splunk_ao_logger._replace_handler_step(state.step, final)
+            state.step = final
+            if node_id == self._owned_root_node_id:
+                self._owned_root = final
+
+            self._splunk_ao_logger._restore_handler_step_context(state.activation)
+            state.activation = None
+            if self._splunk_ao_logger.current_parent() is final:
+                self._splunk_ao_logger._set_current_parent(final._parent)
+            self._splunk_ao_logger._complete_handler_step(final)
+            self._active_steps.pop(node_id, None)
+            self._last_output = node.span_params.get("output")
+            self._last_status_code = node.span_params.get("status_code", 200)
+        except Exception:
+            self._splunk_ao_logger._restore_handler_step_context(state.activation)
+            state.activation = None
+            _logger.warning("Failed to complete OpenAI Agents span %s", node_id, exc_info=True)
+
     def on_span_start(self, span: Span[Any]) -> None:
         """Called when an OpenAI Agent span starts."""
         span_id = span.span_id
@@ -395,6 +468,12 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 self._owned_root = None
                 self._owned_root_node_id = None
                 _logger.warning("Failed to start OpenAI Agents root telemetry", exc_info=True)
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            try:
+                self._start_incremental_span(node)
+            except Exception:
+                self._conclude_current_trace_on_failure()
+                _logger.warning("Failed to start OpenAI Agents span telemetry for %s", span_id, exc_info=True)
 
     def on_span_end(self, span: Span[Any]) -> None:
         """Called when an OpenAI Agent span ends."""
@@ -479,6 +558,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
 
         # Update the node's parameters
         node.span_params.update(end_params)
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            self._finish_incremental_span(node)
 
     def shutdown(self) -> None:
         """Called when the application stops. Flushes any remaining logs."""

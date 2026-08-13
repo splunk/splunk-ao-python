@@ -58,6 +58,7 @@ from splunk_ao.exceptions import (
 )
 from splunk_ao.experiment import Experiment
 from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
+from splunk_ao.http_instrumentation import instrument_distributed_tracing
 from splunk_ao.integration import Integration
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
@@ -172,6 +173,7 @@ __all__ = [
     "get_annotation_queue",
     "get_annotation_queue_records",
     "get_tracing_headers",
+    "instrument_distributed_tracing",
     "is_dependency_available",
     "list_annotation_queue_fields",
     "list_annotation_queue_users",

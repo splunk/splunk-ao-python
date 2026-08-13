@@ -3,12 +3,96 @@ from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry.sdk.trace import ReadableSpan
 
 from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.logged import LoggedAgentSpan
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def operation_names(spans: list[ReadableSpan]) -> list[str | None]:
+    return [(span.attributes or {}).get("gen_ai.operation.name") for span in spans]
+
+
+def test_normal_otel_child_enqueues_at_callback_end_without_flush() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request")
+        root_step = handler._active_steps[str(root_id)].step
+        handler.start_node(
+            node_type="llm", parent_run_id=root_id, run_id=child_id, name="child", input="prompt", model="model"
+        )
+
+        handler.end_node(child_id, output="answer", model="model")
+
+        assert operation_names(sink.spans) == ["chat"]
+        assert str(root_id) in handler._active_steps
+        assert logger.current_parent() is root_step
+        assert sink.force_flush_calls == 0
+
+        handler.end_node(root_id, output="done")
+
+        assert operation_names(sink.spans) == ["chat", "invoke_workflow"]
+        child_span, root_span = sink.spans
+        assert child_span.parent == root_span.context
+        assert root_span.parent is None
+        assert [child.name for child in root_step.spans] == ["child"]
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+def test_incremental_handler_root_is_active_beneath_caller_owned_operation() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    logger.start_trace(input="caller trace")
+    caller = logger.add_workflow_span(input="caller operation", name="caller")
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, start_new_trace=False, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="handler", input="request")
+        handler_root = handler._active_steps[str(root_id)].step
+        handler_context = logger._otel_ids[handler_root.id].span_context
+        headers = get_tracing_headers()
+        handler.start_node(
+            node_type="llm", parent_run_id=root_id, run_id=child_id, name="child", input="prompt", model="model"
+        )
+        handler.end_node(child_id, output="answer", model="model")
+        handler.end_node(root_id, output="done")
+
+        assert headers["traceparent"].split("-")[2] == format(handler_context.span_id, "016x")
+        assert logger.current_parent() is caller
+        child_span, handler_span = sink.spans
+        assert child_span.parent == handler_span.context
+        assert handler_span.parent == logger._otel_ids[caller.id].span_context
+        assert [step.name for step in caller.spans] == ["handler"]
+    finally:
+        logger.conclude(output="caller done")
+        logger.conclude(output="trace done")
+        logger.terminate()
 
 
 class TestSplunkAOBaseHandler:

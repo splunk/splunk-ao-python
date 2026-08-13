@@ -75,6 +75,7 @@ from splunk_ao.schema.trace import (
     SessionCreateRequest,
     TracesIngestRequest,
 )
+from splunk_ao.session_context import get_effective_session_id, set_session_context
 from splunk_ao.traces import Traces
 from splunk_ao.utils.decorators import async_warn_catch_exception, nop_async, nop_sync, warn_catch_exception
 from splunk_ao.utils.env_helpers import _get_mode_or_default
@@ -106,6 +107,7 @@ class OtelIds:
     span_context: SpanContext
     parent_span_context: SpanContext | None
     exportable: bool
+    session_id: str | None
 
 
 @dataclass(frozen=True)
@@ -117,6 +119,15 @@ class ActiveOtelContext:
     span_context: SpanContext
     exportable: bool
     token: Token
+
+
+@dataclass(frozen=True)
+class HandlerStepContext:
+    """OTel activation owned by one framework callback operation."""
+
+    prior_context: otel_context.Context
+    token: Token
+    span_context: SpanContext
 
 
 @dataclass(frozen=True)
@@ -408,6 +419,7 @@ class SplunkAOLogger(TracesLogger):
                 span_context=self._assign_otel_context(otel_trace_id, trace_flags, trace_state),
                 parent_span_context=parent_span_context,
                 exportable=not isinstance(step, Trace),
+                session_id=get_effective_session_id(self.session_id),
             )
             self._otel_ids[step.id] = ids
             return ids
@@ -571,7 +583,7 @@ class SplunkAOLogger(TracesLogger):
                     span=finished_step,
                     span_context=ids.span_context,
                     parent_span_context=self._export_parent_context(finished_step, ids),
-                    session_id=self.session_id,
+                    session_id=ids.session_id,
                     resource=self._resource,
                 )
             )
@@ -617,6 +629,66 @@ class SplunkAOLogger(TracesLogger):
         """Defer a tool or retriever until its parentability is unambiguous."""
         if not self._ingestion_hook and span.id in self._otel_ids:
             self._pending_otel_steps.add(span.id)
+
+    def _register_handler_step(self, step: BaseStep, parent: StepWithChildSpans) -> None:
+        """Register a callback-owned step under an explicit proprietary parent."""
+        step._parent = parent
+        step.dataset_input = parent.dataset_input
+        step.dataset_output = parent.dataset_output
+        step.dataset_metadata = parent.dataset_metadata
+        parent.add_child_span(step)
+        if isinstance(step, LoggedWorkflowSpan | LoggedAgentSpan) and isinstance(parent, LoggedTrace):
+            step.conversation_root = True
+        self._record_otel_ids(step, parent_step=parent)
+
+    def _activate_handler_step(self, step: BaseStep) -> HandlerStepContext | None:
+        """Make a callback-owned stable identity current for transport propagation."""
+        ids = self._otel_ids.get(step.id)
+        if ids is None:
+            return None
+        prior_context = otel_context.get_current()
+        active_context = otel_trace.set_span_in_context(NonRecordingSpan(ids.span_context), prior_context)
+        return HandlerStepContext(
+            prior_context=prior_context, token=otel_context.attach(active_context), span_context=ids.span_context
+        )
+
+    def _restore_handler_step_context(self, activation: HandlerStepContext | None) -> None:
+        """Restore context owned by one callback without disturbing caller state."""
+        if activation is None:
+            return
+        try:
+            otel_context.detach(activation.token)
+        except (RuntimeError, ValueError):
+            current = otel_trace.get_current_span().get_span_context()
+            if current == activation.span_context:
+                otel_context.attach(activation.prior_context)
+            self._logger.warning("Failed to detach handler OTel context; restored the prior context when safe.")
+
+    def _replace_handler_step(self, provisional: BaseStep, final: BaseStep) -> BaseStep:
+        """Replace a provisional callback model while preserving identity and topology."""
+        parent = provisional._parent
+        final._parent = parent
+        final.dataset_input = provisional.dataset_input
+        final.dataset_output = provisional.dataset_output
+        final.dataset_metadata = provisional.dataset_metadata
+        if isinstance(provisional, LoggedWorkflowSpan | LoggedAgentSpan) and isinstance(
+            final, LoggedWorkflowSpan | LoggedAgentSpan
+        ):
+            final.conversation_root = provisional.conversation_root
+        if isinstance(provisional, StepWithChildSpans) and isinstance(final, StepWithChildSpans):
+            final.spans = provisional.spans
+            final._last_child_created_at = provisional._last_child_created_at
+            for child in final.spans:
+                child._parent = final
+        if parent is not None:
+            parent.spans = [final if child is provisional else child for child in parent.spans]
+        if self.current_parent() is provisional and isinstance(final, StepWithChildSpans):
+            self._set_current_parent(final)
+        return final
+
+    def _complete_handler_step(self, step: BaseStep) -> None:
+        """Enqueue one completed handler operation through the shared completion seam."""
+        self._complete_step(step)
 
     def _current_span_id(self) -> uuid.UUID:
         """Return the current proprietary parent ID for internal lifecycle tests."""
@@ -2027,7 +2099,7 @@ class SplunkAOLogger(TracesLogger):
     ) -> str:
         self._session_external_id = external_id
         if self._ingestion_hook:
-            self.session_id = str(uuid.uuid4())
+            self._set_active_session_id(str(uuid.uuid4()))
             self._logger.info("Session started: session_id=%s, external_id=%s", self.session_id, external_id)
             return self.session_id
 
@@ -2052,7 +2124,7 @@ class SplunkAOLogger(TracesLogger):
                 if sessions and len(sessions["records"]) > 0:
                     session_id = sessions["records"][0]["id"]
                     self._logger.info(f"Session {session_id} with external ID {external_id} already exists; using it.")
-                    self.session_id = session_id
+                    self._set_active_session_id(session_id)
                     return session_id
             except Exception:
                 self._logger.error("Failed to search for session with external ID %s", external_id, exc_info=True)
@@ -2066,8 +2138,13 @@ class SplunkAOLogger(TracesLogger):
         )
 
         self._logger.info("Session started with ID: %s", session["id"])
-        self.session_id = str(session["id"])
+        self._set_active_session_id(str(session["id"]))
         return self.session_id
+
+    def _set_active_session_id(self, session_id: str | None) -> None:
+        """Update compatibility and request-local session state together."""
+        self.session_id = session_id
+        set_session_context(session_id)
 
     @nop_async
     async def async_start_session(
@@ -2140,11 +2217,15 @@ class SplunkAOLogger(TracesLogger):
         str
             The ID of the session (existing or newly created).
         """
-        return async_run(
+        session_id = async_run(
             self._start_or_get_session_async(
                 name=name, previous_session_id=previous_session_id, external_id=external_id, metadata=metadata
             )
         )
+        # ``async_run`` may execute in another context; publish the resolved ID
+        # into the synchronous caller's request-local context as well.
+        self._set_active_session_id(session_id)
+        return session_id
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -2162,14 +2243,14 @@ class SplunkAOLogger(TracesLogger):
             None
         """
         self._logger.info("Setting the current session to %s", session_id)
-        self.session_id = session_id
+        self._set_active_session_id(session_id)
         self._logger.info("Current session set to %s", session_id)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
     def clear_session(self) -> None:
         self._logger.info("Clearing the current session from the logger...")
-        self.session_id = None
+        self._set_active_session_id(None)
         self._logger.info("Current session cleared.")
 
     @nop_async

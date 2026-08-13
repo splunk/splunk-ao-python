@@ -32,6 +32,7 @@ Install the optional integration dependencies used by your application:
 ```shell
 pip install "splunk-ao[openai]"
 pip install "splunk-ao[langchain]" langchain-openai
+pip install "splunk-ao[distributed-tracing]"
 ```
 
 Other available extras include `crewai`, `middleware`, and `all`.
@@ -347,7 +348,8 @@ tracer_provider.shutdown()
 `add_splunk_ao_span_processor()` reads the same deployment and routing
 configuration described in [Setup](#setup). It registers a
 `SplunkAOSpanProcessor`, which uses a standard OpenTelemetry
-`BatchSpanProcessor`.
+`BatchSpanProcessor`. Default logger-owned and caller-owned processors honor
+the standard `OTEL_BSP_*` batch processor environment variables.
 
 If your application needs another processor or exporter, register it through
 the standard OpenTelemetry extension points. For example, to send the same
@@ -363,6 +365,42 @@ tracer_provider.add_span_processor(BatchSpanProcessor(custom_exporter))
 The application owns a `TracerProvider` that it constructs, so it must call
 `tracer_provider.shutdown()` during teardown. A `SplunkAOLogger` created
 elsewhere owns a separate provider and should be terminated separately.
+
+##### Automatic HTTP distributed tracing
+
+The `distributed-tracing` extra provides a supported one-time setup for
+upstream OpenTelemetry FastAPI/Starlette, Requests, HTTPX sync/async, and
+aiohttp-client instrumentation:
+
+```python
+from fastapi import FastAPI
+from opentelemetry.sdk.trace import TracerProvider
+
+from splunk_ao import instrument_distributed_tracing
+from splunk_ao.otel import add_splunk_ao_span_processor
+
+provider = TracerProvider()
+add_splunk_ao_span_processor(provider)
+
+app = FastAPI()
+instrument_distributed_tracing(tracer_provider=provider, app=app)
+```
+
+The application owns `provider` and calls `provider.shutdown()` during process
+teardown. The helper never replaces the process-global provider. Configure
+other OpenTelemetry/OpenInference agent or model instrumentations with the
+same provider when they should join the trace.
+
+After this startup call, supported inbound requests extract W3C context and
+supported outbound clients inject it automatically. Application code does not
+call `get_tracing_headers()` for each request and does not install
+`TracingMiddleware`. Those APIs remain supported for transports and frameworks
+outside the automatic support matrix.
+
+An explicit SDK session propagates as the standard
+`gen_ai.conversation.id` W3C baggage member. Project, Agent Stream,
+experiment, deployment, authentication, model, workflow, and agent identity
+remain local and are never added to baggage by the SDK.
 
 #### Export diagnostics
 
@@ -415,6 +453,19 @@ Handlers conclude traces that they own when their framework run ends. They do
 not close a trace that was started by the caller. In short-lived jobs, ensure
 the owning logger or provider is terminated or shut down after framework work
 finishes.
+
+For normal OTLP export, LangChain, CrewAI, Google ADK, and OpenAI Agents
+handlers enqueue each operation into the existing `BatchSpanProcessor` when
+that operation's end callback runs. A child can therefore enter a scheduled
+or size-based export batch while its parent remains active. This is immediate
+enqueue, not one network request per span, and no per-trace `flush()` is
+required. The deprecated `ingestion_hook` compatibility path still constructs
+one mutable whole-tree payload at trace completion.
+
+`start_new_trace` controls ownership, not whether distributed tracing works.
+Keep its default `True` for a standalone handler. Set it to `False` only when
+the handler is intentionally placed beneath caller-owned active logger state;
+the handler emits its own subtree and does not conclude the caller.
 
 #### Datasets
 

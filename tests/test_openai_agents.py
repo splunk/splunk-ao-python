@@ -16,6 +16,7 @@ from agents import (
     set_trace_processors,
 )
 from agents.tracing import ResponseSpanData
+from opentelemetry.sdk.trace import ReadableSpan
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
@@ -26,6 +27,81 @@ from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def test_openai_agents_children_enqueue_before_trace_end() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    root = Node(
+        node_type="workflow",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "name": "agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "status_code": 200,
+        },
+    )
+    child = Node(
+        node_type="llm",
+        run_id="child-span-id",
+        parent_run_id="root-span-id",
+        span_params={
+            "input": "prompt",
+            "name": "model call",
+            "start_time_iso": "2025-01-01T00:00:01+00:00",
+            "model": "model",
+            "status_code": 200,
+        },
+    )
+    try:
+        processor.on_trace_start(trace)
+        processor._nodes[str(root.run_id)] = root
+        processor._nodes[trace.trace_id].children.append(str(root.run_id))
+        processor._start_owned_root(root)
+        processor._start_incremental_span(root)
+        processor._nodes[str(child.run_id)] = child
+        root.children.append(str(child.run_id))
+        processor._start_incremental_span(child)
+
+        child.span_params.update(output="answer", duration_ns=10)
+        processor._finish_incremental_span(child)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["chat"]
+        assert str(root.run_id) in processor._active_steps
+        assert sink.force_flush_calls == 0
+
+        root.span_params.update(output="answer", duration_ns=20)
+        processor._finish_incremental_span(root)
+        processor.on_trace_end(trace)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "chat",
+            "invoke_workflow",
+        ]
+        assert sink.spans[0].parent == sink.spans[1].context
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
 
 
 class HomeworkOutput(BaseModel):

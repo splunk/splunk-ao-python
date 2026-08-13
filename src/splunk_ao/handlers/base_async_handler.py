@@ -44,6 +44,12 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             _logger.warning("Unable to add nodes to trace: Root node does not exist")
             return
 
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            self._finish_incremental_node(root_node)
+            if self._flush_on_chain_end:
+                await self._splunk_ao_logger.async_flush()
+            return
+
         try:
             if self._owned_root is not None:
                 self._update_owned_root(root_node)
@@ -86,11 +92,7 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             self._conclude_owned_state_on_failure()
             _logger.warning("Failed to commit async handler telemetry", exc_info=True)
         finally:
-            self._nodes.clear()
-            self._root_node = None
-            self._owned_trace = None
-            self._owned_root = None
-            self._owned_parent = None
+            self._reset_handler_state()
 
     async def async_end_node(self, run_id: UUID, **kwargs: Any) -> None:
         """
@@ -114,6 +116,13 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
 
         # Update node parameters
         node.span_params.update(**kwargs)
+
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            is_root = self._root_node is node
+            self._finish_incremental_node(node)
+            if is_root and self._flush_on_chain_end:
+                await self._splunk_ao_logger.async_flush()
+            return
 
         # Check if this is the root node and commit if so
         root = self._root_node

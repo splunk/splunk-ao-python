@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from splunk_ao import splunk_ao_context
+from splunk_ao.handlers.span_lifecycle import HandlerSpanState, build_handler_step, finalize_handler_step
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import INTEGRATION, NODE_TYPE, Node
 from splunk_ao.schema.logged import LoggedAgentSpan, LoggedWorkflowSpan
@@ -62,6 +63,7 @@ class SplunkAOBaseHandler:
         self._owned_trace: Any = None
         self._owned_root: Any = None
         self._owned_parent: Any = None
+        self._active_steps: dict[str, HandlerSpanState] = {}
 
     def commit(self) -> None:
         """Commit the nodes to the trace using the Splunk AO Logger. Optionally flush the trace."""
@@ -77,6 +79,12 @@ class SplunkAOBaseHandler:
         root_node = self._nodes.get(str(root.run_id))
         if root_node is None:
             _logger.warning("Unable to add nodes to trace: Root node does not exist")
+            return
+
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            self._finish_incremental_node(root_node)
+            if self._flush_on_chain_end:
+                self._splunk_ao_logger.flush()
             return
 
         try:
@@ -127,11 +135,82 @@ class SplunkAOBaseHandler:
             self._conclude_owned_state_on_failure()
             _logger.warning("Failed to commit handler telemetry", exc_info=True)
         finally:
-            self._nodes.clear()
-            self._root_node = None
-            self._owned_trace = None
-            self._owned_root = None
-            self._owned_parent = None
+            self._reset_handler_state()
+
+    def _reset_handler_state(self) -> None:
+        """Release one completed callback tree without touching caller-owned state."""
+        self._nodes.clear()
+        self._active_steps.clear()
+        self._root_node = None
+        self._owned_trace = None
+        self._owned_root = None
+        self._owned_parent = None
+
+    def _start_incremental_step(self, node: Node) -> None:
+        """Create and activate one real callback span for normal OTLP egress."""
+        node_id = str(node.run_id)
+        if node is self._root_node and self._owned_root is not None:
+            self._active_steps[node_id] = HandlerSpanState(step=self._owned_root, activation=None)
+            return
+
+        if node.parent_run_id is not None:
+            parent_state = self._active_steps.get(str(node.parent_run_id))
+            parent = parent_state.step if parent_state is not None else None
+        else:
+            parent = self._owned_parent or self._owned_trace
+        if parent is None:
+            raise RuntimeError(f"No active parent is available for handler node {node_id}")
+
+        step = build_handler_step(node)
+        self._splunk_ao_logger._register_handler_step(step, parent)
+        activation = self._splunk_ao_logger._activate_handler_step(step)
+        self._active_steps[node_id] = HandlerSpanState(step=step, activation=activation)
+
+    def _finish_incremental_node(self, node: Node) -> None:
+        """Finalize and enqueue one callback span when that callback ends."""
+        node_id = str(node.run_id)
+        state = self._active_steps.get(node_id)
+        if state is None:
+            _logger.warning("Unable to complete handler node %s: no active span state", node_id)
+            if node is self._root_node:
+                self._reset_handler_state()
+            return
+
+        is_root = node is self._root_node
+        try:
+            if is_root:
+                node.span_params["output"] = self._root_output(node)
+                if state.step is self._owned_root:
+                    node.span_params["input"] = serialize_to_str(node.span_params.get("input", ""))
+            final = finalize_handler_step(node, state)
+            final = self._splunk_ao_logger._replace_handler_step(state.step, final)
+            state.step = final
+            if state.step is self._owned_root or node_id == str(getattr(self._root_node, "run_id", "")):
+                self._owned_root = final if self._owned_root is not None else self._owned_root
+
+            self._splunk_ao_logger._restore_handler_step_context(state.activation)
+            state.activation = None
+            if self._splunk_ao_logger.current_parent() is final:
+                self._splunk_ao_logger._set_current_parent(final._parent)
+            self._splunk_ao_logger._complete_handler_step(final)
+            self._active_steps.pop(node_id, None)
+
+            if is_root:
+                root_output = node.span_params.get("output", "")
+                if self._owned_trace is not None:
+                    self._conclude_owned_trace(
+                        self._owned_trace,
+                        output=SplunkAOLogger._coerce_output(root_output),
+                        status_code=node.span_params.get("status_code"),
+                    )
+        except Exception:
+            self._splunk_ao_logger._restore_handler_step_context(state.activation)
+            state.activation = None
+            self._conclude_owned_state_on_failure()
+            _logger.warning("Failed to complete handler telemetry for node %s", node_id, exc_info=True)
+        finally:
+            if is_root:
+                self._reset_handler_state()
 
     def _start_owned_root(self, root_node: Node) -> None:
         """Open the handler-owned envelope and real root at callback start."""
@@ -139,9 +218,9 @@ class SplunkAOBaseHandler:
             return
 
         if not self._start_new_trace:
-            # Caller-owned mode deliberately leaves the caller's real
-            # operation current for outbound W3C propagation. The buffered
-            # handler root is reconstructed beneath it at commit.
+            # Caller-owned mode preserves the caller's proprietary cursor.
+            # The incremental handler root is explicitly parented beneath it
+            # and becomes the active OTel operation during its callback.
             self._owned_parent = self._splunk_ao_logger.current_parent()
             return
 
@@ -157,8 +236,8 @@ class SplunkAOBaseHandler:
             return
         self._owned_parent = parent
 
-        # A leaf root is still logged at commit. There is no open Path 1 leaf
-        # identity to keep active without changing its completion semantics.
+        # The legacy ingestion-hook path logs a leaf root at commit. Normal
+        # OTLP egress creates and activates it through _start_incremental_step.
         if root_node.node_type not in ("agent", "chain", "workflow"):
             return
 
@@ -462,6 +541,9 @@ class SplunkAOBaseHandler:
         # chain to an agent immediately before this callback reached us.
         if self._root_node is not None:
             self._sync_owned_root_kind(self._root_node)
+            root_state = self._active_steps.get(str(self._root_node.run_id))
+            if root_state is not None and self._owned_root is not None:
+                root_state.step = self._owned_root
 
         # Add to parent's children if parent exists
         if parent_run_id:
@@ -470,6 +552,13 @@ class SplunkAOBaseHandler:
                 parent.children.append(node_id)
             else:
                 _logger.debug(f"Parent node {parent_node_id} not found for {node_id}")
+
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            try:
+                self._start_incremental_step(node)
+            except Exception:
+                self._conclude_owned_state_on_failure()
+                _logger.warning("Failed to start handler span telemetry for node %s", node_id, exc_info=True)
 
         return node
 
@@ -495,6 +584,13 @@ class SplunkAOBaseHandler:
 
         # Update node parameters
         node.span_params.update(**kwargs)
+
+        if not getattr(self._splunk_ao_logger, "_ingestion_hook", None):
+            is_root = self._root_node is node
+            self._finish_incremental_node(node)
+            if is_root and self._flush_on_chain_end:
+                self._splunk_ao_logger.flush()
+            return
 
         # Check if this is the root node and commit if so
         root = self._root_node

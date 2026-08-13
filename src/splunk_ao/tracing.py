@@ -2,11 +2,11 @@
 
 from collections.abc import Mapping, MutableMapping
 
-from opentelemetry import propagate
 from opentelemetry.context import Context
 
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.logger.logger import _has_active_exportable_span_context
+from splunk_ao.session_context import extract_session_context, inject_session_context
 
 
 def get_tracing_headers(carrier: MutableMapping[str, str] | None = None) -> MutableMapping[str, str]:
@@ -34,11 +34,11 @@ def get_tracing_headers(carrier: MutableMapping[str, str] | None = None) -> Muta
 
     if carrier is None:
         carrier = {}
-    propagate.inject(carrier)
+    inject_session_context(carrier)
     return carrier
 
 
 def extract_tracing_context(carrier: Mapping[str, str]) -> Context:
     """Extract W3C trace context from an incoming text-map carrier."""
     normalized = {str(key).lower(): value for key, value in carrier.items()}
-    return propagate.extract(normalized)
+    return extract_session_context(normalized)

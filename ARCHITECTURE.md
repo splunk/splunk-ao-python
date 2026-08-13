@@ -86,10 +86,29 @@ client/server wrapping and message-context propagation.
 The SDK may add processors, but it must never silently replace the global tracer provider. The application owns the
 provider and calls `shutdown()`; SDK-owned logger/export resources use their own termination path.
 
+### Distributed context and HTTP transports
+
+Supported automatic propagation reuses upstream OpenTelemetry instrumentors rather than custom SDK HTTP wrappers.
+`instrument_distributed_tracing()` configures FastAPI/Starlette inbound instrumentation and Requests, HTTPX sync/async,
+and aiohttp-client outbound instrumentation with a caller-owned provider. It never sets or replaces the global tracer
+provider. Manual `get_tracing_headers()` and `TracingMiddleware` remain fallbacks for unsupported transports; supported
+automatic instrumentation does not require either one on individual requests.
+
+An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
+may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
+baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
+endpoint, model, workflow, or agent identity in baggage.
+
 ## Span Lifecycle and Export Ownership
 
 `SpanSink` owns the SDK's private provider and `BatchSpanProcessor` for internal telemetry. A completed operation is
 enqueued immediately, allowing scheduled export without an explicit flush.
+Without an explicit internal `BatchConfig`, both SDK-owned and caller-owned processors defer to standard OTel
+`OTEL_BSP_*` environment configuration.
+
+Framework handlers register a stable operation identity at each start callback and enqueue that operation at its
+matching end callback, so a child can enter `BatchSpanProcessor` while its parent remains active. The deprecated
+`ingestion_hook` is the compatibility exception and retains whole-tree payload construction at trace completion.
 
 - `flush()` / `async_flush()` drain completed work and do not end an active trace.
 - `terminate()` drains completed work, shuts down SDK-owned telemetry resources, and releases unfinished state.
@@ -156,6 +175,9 @@ receiver failures, and expose bounded acknowledgement health. Do not log secrets
 
 These handlers adapt framework events into the internal Path 1 model. Keep optional dependencies lazy and imports free
 of surprising side effects. CrewAI is excluded on Python 3.14; code and tests must support the unavailable path.
+With `start_new_trace=True`, a handler owns and concludes its local envelope and root while still inheriting an active
+W3C parent. With `start_new_trace=False`, it attaches below caller-owned active state, emits only its subtree, and leaves
+the caller open.
 
 ### OpenAI wrapper
 

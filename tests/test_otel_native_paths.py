@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
-from opentelemetry import trace
+from opentelemetry import baggage, context, trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import Event, ReadableSpan
 from opentelemetry.sdk.trace import TracerProvider as SDKTracerProvider
@@ -362,6 +362,20 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
     assert not ROUTING_KEYS.intersection(calls)
     assert calls["gen_ai.conversation.id"] == "session-id"
     assert calls["splunk_ao.dataset.input"] == "question"
+    processor.shutdown()
+
+
+def test_processor_reads_inbound_standard_conversation_baggage() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+    parent_context = baggage.set_baggage("gen_ai.conversation.id", "inbound-conversation", context.Context())
+    span = MagicMock()
+
+    processor.on_start(span, parent_context=parent_context)
+
+    calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
+    assert calls["gen_ai.conversation.id"] == "inbound-conversation"
+    assert "splunk_ao.session.id" not in calls
     processor.shutdown()
 
 
