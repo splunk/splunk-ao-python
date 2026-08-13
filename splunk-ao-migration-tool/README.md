@@ -17,7 +17,7 @@ The migration touches four areas:
 | **Class / symbol names** | `Galileo*` prefix → `SplunkAO*` |
 | **Environment variables** | `GALILEO_*` → `SPLUNK_AO_*` |
 
-Additionally there are a handful of **removed features** (Protect, `GalileoScorers`) and a **Python version floor bump** (3.10 → 3.11).
+Additionally there are a handful of **removed features** (Protect, `GalileoScorers`), a **Python version floor bump** (3.10 → 3.11), and **domain entity renames**: "Metrics" → "Evaluators" and "Log Streams" → "Agent Streams".
 
 ---
 
@@ -141,7 +141,7 @@ All sub-module paths follow the same rename pattern:
 |-----|-----|
 | `from galileo.decorator import …` | `from splunk_ao.decorator import …` |
 | `from galileo.logger import …` | `from splunk_ao.logger import …` |
-| `from galileo.metric import …` | `from splunk_ao.metric import …` |
+| `from galileo.metric import …` | `from splunk_ao.evaluator import …` |
 | `from galileo.schema.metrics import …` | `from splunk_ao.schema.metrics import …` |
 | `from galileo.shared.exceptions import …` | `from splunk_ao.shared.exceptions import …` |
 | `from galileo.exceptions import …` | `from splunk_ao.exceptions import …` |
@@ -193,15 +193,63 @@ All sub-module paths follow the same rename pattern:
 
 ### 3.3 Metric Classes
 
+> **Domain rename:** "Metrics" → "Evaluators". All classes, types, and enums containing "Metric" are renamed to use "Evaluator".
+
 | Old | New |
 |-----|-----|
-| `GalileoMetric` | `SplunkAOMetric` |
+| `GalileoMetric` | `SplunkAOEvaluator` |
 | `GalileoMetrics` | `SplunkAOEvaluators` |
 | `GalileoScorers` | **Removed** (see §5.2) |
+| `Metric` | `Evaluator` |
+| `LlmMetric` | `LlmEvaluator` |
+| `LocalMetric` | `LocalEvaluator` |
+| `CodeMetric` | `CodeEvaluator` |
+| `BuiltInMetrics` | `BuiltInEvaluators` |
+| `Metrics` | `Evaluators` |
+| `MetricSpec` | `EvaluatorSpec` |
+| `LocalMetricConfig` | `LocalEvaluatorConfig` |
 
 ```diff
 - from galileo import GalileoMetric, GalileoMetrics
-+ from splunk_ao import SplunkAOMetric, SplunkAOEvaluators
++ from splunk_ao import SplunkAOEvaluator, SplunkAOEvaluators
+
+- from splunk_ao.metric import Metric, LlmMetric, LocalMetric, CodeMetric
++ from splunk_ao.evaluator import Evaluator, LlmEvaluator, LocalEvaluator, CodeEvaluator
+```
+
+### 3.3a Log Stream / Agent Stream Classes
+
+> **Domain rename:** "Log Streams" → "Agent Streams". All classes and methods containing "LogStream" or "log_stream" are renamed to use "AgentStream" / "agent_stream".
+
+**Class renames:**
+
+| Old | New |
+|-----|-----|
+| `LogStream` | `AgentStream` |
+| `LogStreams` | `AgentStreams` |
+
+**Method and property renames:**
+
+| Class | Old method / property | New method / property |
+|-------|-----------------------|-----------------------|
+| `AgentStream` (was `LogStream`) | `enable_metrics()` | `enable_evaluators()` |
+| `AgentStream` (was `LogStream`) | `get_metrics()` | `get_evaluators()` |
+| `Project` | `create_log_stream()` | `create_agent_stream()` |
+| `Project` | `list_log_streams()` | `list_agent_streams()` |
+| `Project` | `.logstreams` | `.agent_streams` |
+
+```diff
+- from splunk_ao.log_stream import LogStream
++ from splunk_ao.agent_stream import AgentStream
+
+- project.create_log_stream("prod")
++ project.create_agent_stream("prod")
+
+- streams = project.list_log_streams()
++ streams = project.list_agent_streams()
+
+- project.logstreams
++ project.agent_streams
 ```
 
 ### 3.4 Handlers & Middleware
@@ -449,9 +497,15 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - [ ] Rename `GalileoAPIError` → `SplunkAOAPIError`
 - [ ] Rename `GalileoLoggerException` → `SplunkAOLoggerException`
 - [ ] Rename `GalileoFutureError` → `SplunkAOFutureError`
-- [ ] Rename `GalileoMetric` → `SplunkAOMetric`
+- [ ] Rename `GalileoMetric` → `SplunkAOEvaluator`
 - [ ] Rename `GalileoMetrics` → `SplunkAOEvaluators`
 - [ ] Replace `GalileoScorers` with `SplunkAOEvaluators`
+- [ ] Rename domain evaluator classes: `Metric` → `Evaluator`, `LlmMetric` → `LlmEvaluator`, `LocalMetric` → `LocalEvaluator`, `CodeMetric` → `CodeEvaluator`
+- [ ] Rename `BuiltInMetrics` → `BuiltInEvaluators`, `MetricSpec` → `EvaluatorSpec`, `LocalMetricConfig` → `LocalEvaluatorConfig`
+- [ ] Update evaluator module imports: `splunk_ao.metric` → `splunk_ao.evaluator`
+- [ ] Rename `LogStream` → `AgentStream`, `LogStreams` → `AgentStreams`
+- [ ] Update `Project` method calls: `create_log_stream()` → `create_agent_stream()`, `list_log_streams()` → `list_agent_streams()`, `.logstreams` → `.agent_streams`
+- [ ] Rename `AgentStream` methods: `enable_metrics()` → `enable_evaluators()`, `get_metrics()` → `get_evaluators()`
 - [ ] Rename `GalileoAgentControlBridge` → `SplunkAOAgentControlBridge`
 - [ ] Rename all `GALILEO_*` environment variables to `SPLUNK_AO_*`
 - [ ] Update `.env`, `.env.example`, CI/CD secrets, and deployment configs
