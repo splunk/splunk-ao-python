@@ -21,7 +21,9 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
     _nodes : dict[UUID, Node]
         A dictionary of nodes, where the key is the run_id and the value is the node.
     _start_new_trace : bool
-        Whether to start a new trace when a chain starts. Set this to `False` to continue using the current trace.
+        Whether the handler owns and concludes a local trace lifecycle. An
+        active W3C parent is still inherited when this is ``True``. Set it to
+        ``False`` only when attaching to caller-owned active logger state.
     _flush_on_chain_end : bool
         Whether to flush the trace when a chain ends.
     """
@@ -42,34 +44,53 @@ class SplunkAOAsyncBaseHandler(SplunkAOBaseHandler):
             _logger.warning("Unable to add nodes to trace: Root node does not exist")
             return
 
-        owned_trace = None
         try:
-            if self._start_new_trace:
-                owned_trace = self._splunk_ao_logger.start_trace(
-                    input=serialize_to_str(root_node.span_params.get("input", "")),
-                    name=root_node.span_params.get("name"),
-                    metadata=root_node.span_params.get("metadata"),
+            if self._owned_root is not None:
+                self._update_owned_root(root_node)
+                self._log_node_children(root_node)
+                root_output = self._root_output(root_node)
+                self._splunk_ao_logger.conclude(
+                    output=serialize_to_str(root_output),
+                    duration_ns=root_node.span_params.get("duration_ns"),
+                    status_code=root_node.span_params.get("status_code"),
                 )
+                if self._owned_trace is not None:
+                    self._conclude_owned_trace(
+                        self._owned_trace,
+                        output=serialize_to_str(root_output),
+                        status_code=root_node.span_params.get("status_code"),
+                    )
+            elif self._start_new_trace:
+                if self._owned_trace is None:
+                    self._start_owned_root(root_node)
+                if self._owned_trace is None:
+                    return
 
-            self.log_node_tree(root_node)
-            root_output = root_node.span_params.get("output", "")
-
-            if self._start_new_trace:
+                self.log_node_tree(root_node)
+                root_output = self._root_output(root_node)
                 self._conclude_owned_trace(
-                    owned_trace,
+                    self._owned_trace,
                     output=serialize_to_str(root_output),
                     status_code=root_node.span_params.get("status_code"),
                 )
+            elif self._has_reusable_caller_root():
+                # Preserve the pre-DTA visible tree while leaving the live
+                # caller operation current and caller-owned.
+                self.log_node_tree(root_node)
+            else:
+                _logger.warning("Unable to commit async handler telemetry: no caller-owned active operation")
 
             if self._flush_on_chain_end:
                 await self._splunk_ao_logger.async_flush()
         except Exception:
-            if owned_trace is not None:
-                self._conclude_owned_trace(owned_trace, output="", status_code=500)
+            self._conclude_owned_state_on_failure()
             _logger.warning("Failed to commit async handler telemetry", exc_info=True)
         finally:
             self._nodes.clear()
             self._root_node = None
+            self._owned_trace = None
+            self._owned_root = None
+            self._owned_parent = None
 
     async def async_end_node(self, run_id: UUID, **kwargs: Any) -> None:
         """

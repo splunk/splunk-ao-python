@@ -1,7 +1,6 @@
 import asyncio
 import atexit
 import contextlib
-import copy
 import inspect
 import json
 import logging
@@ -13,10 +12,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, TypeVar, Union
 
-if TYPE_CHECKING:
-    from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge
-
-import backoff
 from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
@@ -32,16 +27,14 @@ from galileo_core.schemas.logging.span import (
     LlmSpanAllowedInputType,
     LlmSpanAllowedOutputType,
     RetrieverSpan,
-    Span,
     StepWithChildSpans,
     ToolSpan,
 )
-from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
+from galileo_core.schemas.logging.step import BaseStep, Metrics
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.traces_logger import TracesLogger
 from splunk_ao.agent_streams import AgentStreams
 from splunk_ao.constants import LoggerModeType
-from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
 from splunk_ao.converter import SpanConverter
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig, resolve_deployment
 from splunk_ao.exceptions import SplunkAOLoggerException
@@ -56,7 +49,6 @@ from splunk_ao.exporter import (
 )
 from splunk_ao.exporter.diagnostics import get_export_health
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
-from splunk_ao.logger.task_handler import ThreadPoolTaskHandler
 from splunk_ao.projects import Projects
 from splunk_ao.schema.content_blocks import (
     DataContentBlock,
@@ -81,42 +73,28 @@ from splunk_ao.schema.trace import (
     LogRecordsSearchRequest,
     RetrieverSpanAllowedOutputType,
     SessionCreateRequest,
-    SpansIngestRequest,
-    SpanUpdateRequest,
     TracesIngestRequest,
-    TraceUpdateRequest,
 )
 from splunk_ao.traces import Traces
-from splunk_ao.utils.decorators import (
-    async_warn_catch_exception,
-    nop_async,
-    nop_sync,
-    retry_on_transient_http_error,
-    warn_catch_exception,
-)
+from splunk_ao.utils.decorators import async_warn_catch_exception, nop_async, nop_sync, warn_catch_exception
 from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.metrics import populate_local_metrics
 from splunk_ao.utils.retrievers import convert_to_documents
 from splunk_ao.utils.serialization import serialize_to_str
 
+if TYPE_CHECKING:
+    from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge
+
 # Type alias for metadata values that can be auto-converted to strings
 MetadataValue = str | bool | int | float | None
 StepT = TypeVar("StepT", bound=BaseStep)
 
-STREAMING_MAX_RETRIES = 5
-STREAMING_MAX_TIME_SECONDS = 70  # Maximum time to spend retrying a single request
-DISTRIBUTED_FLUSH_TIMEOUT_SECONDS = 90  # Timeout for waiting on background trace/span update tasks during flush()
-# Default upper bound for shutdown wait in terminate(). Independent from
-# DISTRIBUTED_FLUSH_TIMEOUT_SECONDS (which guards live flushes); kept aligned
-# at 90s so explicit terminate() calls behave like flush() by default.
 DEFAULT_TERMINATE_TIMEOUT_SECONDS = 90
 # Absolute threshold above which a slow SplunkAOLogger.terminate() shutdown is
 # logged as a warning. Fast-path shutdowns are sub-millisecond; >1s always
 # indicates a real anomaly (busy-poll, stuck task, in-flight HTTP retry) and
 # should be visible in CI logs regardless of the configured timeout.
 _SLOW_SHUTDOWN_WARN_THRESHOLD_SECONDS = 1.0
-STUB_TRACE_NAME = "stub_trace"  # Name for stub traces created from distributed tracing headers
-
 _logger = logging.getLogger("splunk_ao.logger")
 _otel_id_generator = RandomIdGenerator()
 
@@ -127,6 +105,7 @@ class OtelIds:
 
     span_context: SpanContext
     parent_span_context: SpanContext | None
+    exportable: bool
 
 
 @dataclass(frozen=True)
@@ -136,6 +115,7 @@ class ActiveOtelContext:
     logger_id: int
     step_id: uuid.UUID
     span_context: SpanContext
+    exportable: bool
     token: Token
 
 
@@ -148,6 +128,22 @@ class OtelContextState:
 
 
 _otel_context_state: ContextVar[OtelContextState | None] = ContextVar("_otel_context_state", default=None)
+
+
+def _has_active_exportable_span_context() -> bool:
+    """Return whether the current OTel context can be propagated as a wire parent."""
+    current = otel_trace.get_current_span().get_span_context()
+    if not current.is_valid:
+        return False
+
+    state = _otel_context_state.get()
+    if state is None or not state.active_contexts:
+        return True
+
+    active = state.active_contexts[-1]
+    if active.span_context != current:
+        return True
+    return active.exportable
 
 
 class SplunkAOLogger(TracesLogger):
@@ -218,16 +214,12 @@ class SplunkAOLogger(TracesLogger):
     agent_stream_id: str | None = None
     experiment_id: str | None = None
     session_id: str | None = None
-    trace_id: str | None = None
-    span_id: str | None = None
     local_metrics: list[LocalMetricConfig] | None = None
     mode: LoggerModeType | None = None
     _session_external_id: str | None = None
 
     _logger = logging.getLogger("splunk_ao.logger")
     _traces_client: Union["Traces", None] = None
-    _task_handler: ThreadPoolTaskHandler
-    _trace_completion_submitted: bool
     _otel_ids: dict[uuid.UUID, OtelIds] = PrivateAttr(default_factory=dict)
     _pending_otel_steps: set[uuid.UUID] = PrivateAttr(default_factory=set)
 
@@ -238,8 +230,6 @@ class SplunkAOLogger(TracesLogger):
         agent_stream: str | None = None,
         agent_stream_id: str | None = None,
         experiment_id: str | None = None,
-        trace_id: str | None = None,
-        span_id: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
         mode: str | None = None,
         ingestion_hook: Callable[[TracesIngestRequest], None] | None = None,
@@ -261,25 +251,12 @@ class SplunkAOLogger(TracesLogger):
             Agent stream ID.
         experiment_id: Optional[str]
             Experiment ID. Used by the experiment runner.
-        trace_id: Optional[str]
-            Trace ID for distributed tracing. This can only be used in "distributed" mode.
-
-            When provided, creates a local stub trace without fetching from the backend.
-            This allows downstream services to continue a distributed trace without waiting
-            for backend ingestion.
-        span_id: Optional[str]
-            Parent span ID for distributed tracing. This can only be used in "distributed" mode.
-
-            When provided, creates a local stub span without fetching from the backend.
-            This allows downstream services to continue a distributed trace without waiting
-            for backend ingestion.
         local_metrics: Optional[list[LocalMetricConfig]]
             Local metrics
         mode: Optional[str]
             Logger mode: "batch" or "distributed". Defaults to SPLUNK_AO_MODE env var, or "batch" if not set.
-            Both modes enqueue completed spans for scheduled OTLP batch export, and
-            flush() only drains the export queue. "distributed" additionally enables
-            the legacy trace_id/span_id continuation parameters.
+            Both accepted values enqueue completed spans for the same scheduled OTLP
+            batch export. The value is retained temporarily for ingestion-hook compatibility.
         ingestion_hook: Optional[Callable[[TracesIngestRequest], None]]
                 A callable that intercepts trace data before ingestion.
                 This hook is called when the logger is flushed and can be a
@@ -290,7 +267,6 @@ class SplunkAOLogger(TracesLogger):
         super().__init__()
         mode = _get_mode_or_default(mode)
         self.mode: LoggerModeType = mode
-        self._task_counter = 0
         self._terminated = False
         self._traces_client = None
         self._pending_otel_steps = set()
@@ -312,31 +288,6 @@ class SplunkAOLogger(TracesLogger):
             atexit.register(self.terminate)
             self._auto_enable_agent_control_if_available()
             return
-
-        if trace_id or span_id:
-            if self.mode != "distributed":
-                raise SplunkAOLoggerException("trace_id or span_id can only be used in distributed mode")
-            if span_id and not trace_id:
-                raise SplunkAOLoggerException(
-                    "trace_id is required when span_id is provided. "
-                    "In distributed tracing, both trace_id and span_id must be propagated together."
-                )
-
-            # Validate UUIDs to prevent crashes from malformed input
-            if trace_id:
-                try:
-                    uuid.UUID(trace_id)
-                except (ValueError, AttributeError, TypeError) as e:
-                    raise SplunkAOLoggerException(f"Invalid trace_id: '{trace_id}' is not a valid UUID. Error: {e}")
-
-            if span_id:
-                try:
-                    uuid.UUID(span_id)
-                except (ValueError, AttributeError, TypeError) as e:
-                    raise SplunkAOLoggerException(f"Invalid span_id: '{span_id}' is not a valid UUID. Error: {e}")
-
-            self.trace_id = trace_id
-            self.span_id = span_id
 
         if (agent_stream or agent_stream_id) and experiment_id:
             raise SplunkAOLoggerException("User cannot specify both an agent stream and an experiment.")
@@ -368,7 +319,9 @@ class SplunkAOLogger(TracesLogger):
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
             if self.experiment_id is None and self.agent_stream_name is None and self.agent_stream_id is None:
-                raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
+                raise SplunkAOLoggerException(
+                    "agent_stream or agent_stream_id is required to initialize SplunkAOLogger."
+                )
 
         if local_metrics:
             self.local_metrics = local_metrics
@@ -392,12 +345,6 @@ class SplunkAOLogger(TracesLogger):
             self._sink = build_span_sink(build_o11y_exporter(O11yConfig.from_env(), routing))
         else:
             self._sink = build_span_sink(build_standalone_exporter(StandaloneConfig.from_env(), routing))
-
-        # If continuing an existing distributed trace, create local stubs instead of
-        # fetching from the backend to avoid race conditions with eventual consistency.
-        # Note: trace_id/span_id can ONLY be provided in distributed mode for distributed tracing
-        if self.trace_id:
-            self._init_distributed_trace_stubs()
 
         # cleans up when the python interpreter closes
         atexit.register(self.terminate)
@@ -424,13 +371,13 @@ class SplunkAOLogger(TracesLogger):
         if root is not None:
             self._discard_otel_subtree(root)
 
-    def _assign_otel_context(self, otel_trace_id: int, trace_state: TraceState) -> SpanContext:
-        """Create a sampled local SpanContext without changing the active context."""
+    def _assign_otel_context(self, otel_trace_id: int, trace_flags: TraceFlags, trace_state: TraceState) -> SpanContext:
+        """Create a local SpanContext without changing the active context."""
         return SpanContext(
             trace_id=otel_trace_id,
             span_id=_otel_id_generator.generate_span_id(),
             is_remote=False,
-            trace_flags=TraceFlags(TraceFlags.SAMPLED),
+            trace_flags=trace_flags,
             trace_state=trace_state,
         )
 
@@ -450,14 +397,17 @@ class SplunkAOLogger(TracesLogger):
 
             if parent_span_context is None:
                 otel_trace_id = _otel_id_generator.generate_trace_id()
+                trace_flags = TraceFlags(TraceFlags.SAMPLED)
                 trace_state = TraceState()
             else:
                 otel_trace_id = parent_span_context.trace_id
+                trace_flags = parent_span_context.trace_flags
                 trace_state = parent_span_context.trace_state
 
             ids = OtelIds(
-                span_context=self._assign_otel_context(otel_trace_id, trace_state),
+                span_context=self._assign_otel_context(otel_trace_id, trace_flags, trace_state),
                 parent_span_context=parent_span_context,
+                exportable=not isinstance(step, Trace),
             )
             self._otel_ids[step.id] = ids
             return ids
@@ -516,10 +466,14 @@ class SplunkAOLogger(TracesLogger):
         base_context = state.base_context if state is not None else otel_context.get_current()
         remaining_contexts = tuple(active for active in active_contexts if active.logger_id != logger_id)
         desired_contexts = tuple(
-            (logger_id, step_id, self._otel_ids[step_id].span_context) for step_id in desired_step_ids
+            (logger_id, step_id, self._otel_ids[step_id].span_context, self._otel_ids[step_id].exportable)
+            for step_id in desired_step_ids
         )
         contexts_to_restore = (
-            tuple((active.logger_id, active.step_id, active.span_context) for active in remaining_contexts)
+            tuple(
+                (active.logger_id, active.step_id, active.span_context, active.exportable)
+                for active in remaining_contexts
+            )
             + desired_contexts
         )
 
@@ -536,11 +490,15 @@ class SplunkAOLogger(TracesLogger):
             otel_context.attach(base_context)
 
         rebuilt_contexts: list[ActiveOtelContext] = []
-        for owner_id, step_id, span_context in contexts_to_restore:
+        for owner_id, step_id, span_context, exportable in contexts_to_restore:
             ctx = otel_trace.set_span_in_context(NonRecordingSpan(span_context))
             rebuilt_contexts.append(
                 ActiveOtelContext(
-                    logger_id=owner_id, step_id=step_id, span_context=span_context, token=otel_context.attach(ctx)
+                    logger_id=owner_id,
+                    step_id=step_id,
+                    span_context=span_context,
+                    exportable=exportable,
+                    token=otel_context.attach(ctx),
                 )
             )
 
@@ -603,6 +561,9 @@ class SplunkAOLogger(TracesLogger):
 
         try:
             if isinstance(finished_step, Trace):
+                return
+
+            if not bool(ids.span_context.trace_flags & TraceFlags.SAMPLED):
                 return
 
             self._sink.emit(
@@ -745,49 +706,6 @@ class SplunkAOLogger(TracesLogger):
             self._init_agent_stream()
         self._traces_client = self._create_traces_client()
         return self._traces_client
-
-    def _init_distributed_trace_stubs(self) -> None:
-        """
-        Initialize local stub objects for distributed tracing. To only be used in distributed mode.
-
-        When a downstream service receives trace_id/span_id via headers, we create
-        local stub objects instead of fetching from the backend. This avoids race
-        conditions as the parent trace/span may not have been ingested yet when the downstream service starts.
-
-        The stubs are placeholders that allow:
-        1. Adding new spans to the distributed trace
-        2. Proper parent-child relationships via _parent pointers
-        3. Correct trace_id in ingestion requests
-
-        Note: trace_id and span_id are already validated as UUIDs in __init__
-        """
-        stub_trace = LoggedTrace(
-            input="",
-            name=STUB_TRACE_NAME,
-            created_at=datetime.now(),
-            id=uuid.UUID(self.trace_id),
-            metrics=Metrics(duration_ns=0),
-        )
-        self.traces.append(stub_trace)
-
-        # Set trace as current parent using parent pointers
-        stub_trace._parent = None  # Root trace has no parent
-        self._record_otel_ids(stub_trace)
-        self._set_current_parent(stub_trace)
-
-        if self.span_id:
-            # If span_id is provided, also add the span (it's the immediate parent)
-            stub_span = LoggedWorkflowSpan(
-                input="",
-                name="stub_parent_span",
-                created_at=datetime.now(),
-                id=uuid.UUID(self.span_id),
-                metrics=Metrics(duration_ns=0),
-            )
-            # Set parent pointer and update current parent
-            stub_span._parent = stub_trace
-            self._record_otel_ids(stub_span, parent_step=stub_trace)
-            self._set_current_parent(stub_span)
 
     def add_trace(
         self,
@@ -970,236 +888,12 @@ class SplunkAOLogger(TracesLogger):
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
-    def _ingest_trace_streaming(self, trace: Trace, is_complete: bool = False) -> None:
-        traces_ingest_request = TracesIngestRequest(
-            traces=[copy.deepcopy(trace)], session_id=self.session_id, is_complete=is_complete, reliable=True
-        )
-
-        task_id = f"trace-ingest-{trace.id}"
-
-        @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_tries=self._max_retries,
-            max_time=self._max_time,
-            base=2,
-            logger=None,
-            on_backoff=lambda details: (
-                self._task_handler.increment_retry(task_id),
-                self._logger.info(f"Retry #{self._task_handler.get_retry_count(task_id)} for task {task_id}"),
-            ),
-            on_giveup=lambda details: self._logger.error(
-                f"Task {task_id} failed after {details['tries']} attempts: {details.get('exception')}", exc_info=False
-            ),
-        )
-        @retry_on_transient_http_error
-        async def ingest_traces_with_backoff(request: Any) -> None:
-            return await self._traces_client.ingest_traces(request)
-
-        self._task_handler.submit_task(
-            task_id, lambda: ingest_traces_with_backoff(traces_ingest_request), dependent_on_prev=False
-        )
-        self._logger.info("ingested trace %s.", trace.id)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def _ingest_span_streaming(self, span: Span) -> None:
-        parent_step: StepWithChildSpans | None = (
-            self.current_parent()
-            if span.type
-            not in [
-                StepType.trace,
-                StepType.workflow,
-                StepType.agent,
-            ]  # TODO: change this to StepWithChildSpans once we fix tool and retriever spans in `core
-            else self.previous_parent()
-        )
-        if parent_step is None:
-            raise ValueError("A trace needs to be created in order to add a span.")
-
-        # Use IDs from the current trace and parent step
-        trace_id = self.traces[0].id
-        parent_id = parent_step.id
-        spans_ingest_request = SpansIngestRequest(
-            spans=[copy.deepcopy(span)], trace_id=trace_id, parent_id=parent_id, reliable=True
-        )
-
-        task_id = f"span-ingest-{span.id}"
-
-        @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_tries=self._max_retries,
-            max_time=self._max_time,
-            base=2,
-            logger=None,
-            on_backoff=lambda details: (
-                self._task_handler.increment_retry(task_id),
-                self._logger.info(f"Retry #{self._task_handler.get_retry_count(task_id)} for task {task_id}"),
-            ),
-            on_giveup=lambda details: self._logger.error(
-                f"Task {task_id} failed after {details['tries']} attempts: {details.get('exception')}", exc_info=False
-            ),
-        )
-        @retry_on_transient_http_error
-        async def ingest_spans_with_backoff(request: Any) -> None:
-            return await self._traces_client.ingest_spans(request)
-
-        self._task_handler.submit_task(
-            task_id, lambda: ingest_spans_with_backoff(spans_ingest_request), dependent_on_prev=False
-        )
-        self._logger.info("ingested span %s.", span.id)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def _update_trace_streaming(self, trace: Trace, is_complete: bool = False) -> None:
-        output: str | None = None
-        if trace.output is not None:
-            output = trace.output if isinstance(trace.output, str) else serialize_to_str(trace.output)
-        trace_update_request = TraceUpdateRequest(
-            trace_id=trace.id,
-            log_stream_id=self.agent_stream_id,
-            experiment_id=self.experiment_id,
-            output=output,
-            status_code=trace.status_code,
-            tags=trace.tags,
-            is_complete=is_complete,
-            duration_ns=trace.metrics.duration_ns,
-            reliable=True,
-        )
-
-        # Use counter to make each update task unique (same trace can be updated multiple times)
-        self._task_counter += 1
-        task_id = f"trace-update-{trace.id}-{self._task_counter}"
-
-        # Find the most recent trace update task for this specific trace (if any)
-        # This ensures trace updates for the same trace happen in order
-        prev_trace_update_task = None
-        for existing_task_id in reversed(list(self._task_handler._tasks.keys())):
-            if existing_task_id.startswith(f"trace-update-{trace.id}-"):
-                prev_trace_update_task = existing_task_id
-                break
-
-        @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_tries=self._max_retries,
-            max_time=self._max_time,
-            base=2,
-            logger=None,
-            on_backoff=lambda details: (
-                self._task_handler.increment_retry(task_id),
-                self._logger.info(f"Retry #{self._task_handler.get_retry_count(task_id)} for trace update {task_id}"),
-            ),
-            on_giveup=lambda details: (
-                self._logger.error(
-                    f"Task {task_id} failed after {details['tries']} attempts: {details.get('exception')}",
-                    exc_info=False,
-                ),
-            ),
-        )
-        @retry_on_transient_http_error
-        async def update_trace_with_backoff(request: Any) -> None:
-            return await self._traces_client.update_trace(request)
-
-        # Submit with dependency on the previous trace update for this trace
-        if prev_trace_update_task:
-            self._task_handler.submit_task_with_parent(
-                task_id, lambda: update_trace_with_backoff(trace_update_request), parent_task_id=prev_trace_update_task
-            )
-        else:
-            self._task_handler.submit_task(
-                task_id, lambda: update_trace_with_backoff(trace_update_request), dependent_on_prev=True
-            )
-
-        # Mark that we've submitted the trace completion update to prevent duplicates
-        if is_complete:
-            self._trace_completion_submitted = True
-
-        self._logger.info("updated trace %s.", trace.id)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def _update_span_streaming(self, span: Span) -> None:
-        span_update_request = SpanUpdateRequest(
-            span_id=span.id,
-            log_stream_id=self.agent_stream_id,
-            experiment_id=self.experiment_id,
-            output=span.output,
-            status_code=span.status_code,
-            tags=span.tags,
-            duration_ns=span.metrics.duration_ns,
-            reliable=True,
-        )
-
-        # Use counter to make each update task unique (same span can be updated multiple times)
-        self._task_counter += 1
-        task_id = f"span-update-{span.id}-{self._task_counter}"
-
-        # Find the most recent update/ingest task for this specific span
-        # This ensures span updates happen in order
-        parent_task_id = None
-        for existing_task_id in reversed(list(self._task_handler._tasks.keys())):
-            if existing_task_id.startswith(f"span-update-{span.id}-") or existing_task_id == f"span-ingest-{span.id}":
-                parent_task_id = existing_task_id
-                break
-
-        # If no previous task found, depend on the span ingest
-        if not parent_task_id:
-            parent_task_id = f"span-ingest-{span.id}"
-
-        @backoff.on_exception(
-            backoff.expo,
-            Exception,
-            max_tries=self._max_retries,
-            max_time=self._max_time,
-            base=2,
-            logger=None,
-            on_backoff=lambda details: (
-                self._task_handler.increment_retry(task_id),
-                self._logger.info(
-                    f"Retry #{self._task_handler.get_retry_count(task_id)} for task {task_id}, waiting {details['wait']:.1f}s"
-                ),
-            ),
-            on_giveup=lambda details: self._logger.error(
-                f"Task {task_id} failed after {details['tries']} attempts: {details.get('exception')}", exc_info=False
-            ),
-        )
-        @retry_on_transient_http_error
-        async def update_span_with_backoff(request: Any) -> None:
-            return await self._traces_client.update_span(request)
-
-        self._task_handler.submit_task_with_parent(
-            task_id, lambda: update_span_with_backoff(span_update_request), parent_task_id=parent_task_id
-        )
-        self._logger.info("updated span %s.", span.id)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def _ingest_step_streaming(self, step: StepWithChildSpans, is_complete: bool = False) -> None:
-        if isinstance(step, LoggedTrace):
-            self._ingest_trace_streaming(step, is_complete=is_complete)
-        else:
-            self._ingest_span_streaming(step)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
-    def _update_step_streaming(self, step: StepWithChildSpans, is_complete: bool = False) -> None:
-        if isinstance(step, LoggedTrace):
-            self._update_trace_streaming(step, is_complete=is_complete)
-        else:
-            self._update_span_streaming(step)
-
-    @nop_sync
-    @warn_catch_exception(exceptions=(Exception,))
     def previous_parent(self) -> StepWithChildSpans | None:
         return self._parent_stack[-2] if len(self._parent_stack) > 1 else None
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
     def has_active_trace(self) -> bool:
-        if self.mode == "distributed" and (self.trace_id or self.span_id):
-            return True
         current_parent = self.current_parent()
         # Each logger has its own per-instance ContextVar for parent tracking.
         # The traces check is a sanity check to ensure consistency.
@@ -1221,71 +915,6 @@ class SplunkAOLogger(TracesLogger):
         bridge = getattr(self, "_agent_control_bridge", None)
         if bridge is not None:
             bridge.unregister()
-
-    def get_tracing_headers(self) -> dict[str, str]:
-        """
-        Get tracing headers for distributed tracing.
-        Returns headers that can be passed to downstream services to continue the distributed trace.
-
-        Returns
-        -------
-        dict[str, str]
-            Dictionary with the following headers:
-            - Splunk-AO-Trace-ID: The root trace ID
-            - Splunk-AO-Parent-ID: The ID of the current parent (trace or span) that downstream
-              spans should attach to
-
-        Raises
-        ------
-        SplunkAOLoggerException
-            If not in distributed mode or if no trace has been started.
-
-        Examples
-        --------
-        ```python
-        logger = SplunkAOLogger(mode="distributed")
-        logger.start_trace(input="question")
-        headers = logger.get_tracing_headers()
-        # headers = {
-        #     "Splunk-AO-Trace-ID": "...",
-        #     "Splunk-AO-Parent-ID": "...",  # trace ID as parent
-        # }
-
-        logger.add_workflow_span(input="workflow", name="orchestrator")
-        headers = logger.get_tracing_headers()
-        # headers = {
-        #     "Splunk-AO-Trace-ID": "...",
-        #     "Splunk-AO-Parent-ID": "...",  # workflow span ID as parent
-        # }
-
-        # Pass headers to HTTP request
-        response = httpx.post(url, headers=headers)
-        ```
-
-        Note: Project and log_stream are configured per service (via env vars or logger initialization),
-        not propagated via headers, following standard distributed tracing patterns.
-        """
-        if self.mode != "distributed":
-            raise SplunkAOLoggerException(
-                "get_tracing_headers is only supported in distributed mode for distributed tracing."
-            )
-
-        if len(self.traces) == 0:
-            raise SplunkAOLoggerException("Start trace before getting tracing headers.")
-
-        headers: dict[str, str] = {}
-
-        root_trace = self.traces[-1]
-        headers[TRACE_ID_HEADER] = str(root_trace.id)
-
-        current_parent = self.current_parent()
-
-        if not current_parent:
-            raise SplunkAOLoggerException("No parent trace or span found.")
-
-        headers[PARENT_ID_HEADER] = str(current_parent.id)
-
-        return headers
 
     @nop_sync
     @warn_catch_exception()
@@ -2263,72 +1892,6 @@ class SplunkAOLogger(TracesLogger):
         if not await asyncio.to_thread(self._sink.force_flush):
             raise RuntimeError("force_flush timed out; some spans may not have been exported")
 
-    @async_warn_catch_exception(exceptions=(Exception,))
-    async def _wait_for_all_tasks_async(self, timeout_seconds: int) -> None:
-        """Wait for all background tasks to complete (async polling).
-
-        Parameters
-        ----------
-        timeout_seconds: int
-            Maximum time to wait for tasks to complete
-        """
-        start_wait = time.time()
-        while not self._task_handler.all_tasks_completed():
-            if time.time() - start_wait > timeout_seconds:
-                raise TimeoutError(
-                    f"Flush timeout reached after {timeout_seconds}s. "
-                    "Some trace/span update requests may still be in progress."
-                )
-            await asyncio.sleep(0.1)
-
-    @warn_catch_exception(exceptions=(Exception,))
-    def _wait_for_all_tasks_sync(self, timeout_seconds: int) -> None:
-        """Wait for all background tasks to complete (synchronous polling).
-
-        Parameters
-        ----------
-        timeout_seconds: int
-            Maximum time to wait for tasks to complete
-        """
-        start_wait = time.time()
-        while not self._task_handler.all_tasks_completed():
-            if time.time() - start_wait > timeout_seconds:
-                self._logger.warning(
-                    f"Terminate timeout reached after {timeout_seconds}s. "
-                    "Some trace/span update requests may still be in progress."
-                )
-                break
-            time.sleep(0.1)
-
-    @warn_catch_exception(exceptions=(Exception,))
-    def _wait_for_pending_span_ingests(self, timeout_seconds: int) -> None:
-        """Wait for all pending span ingest tasks to complete.
-
-        Note: Uses time.sleep() for polling even though callers may have @nop_sync.
-        This briefly blocks but is acceptable since we're just polling task status.
-
-        Parameters
-        ----------
-        timeout_seconds: int
-            Maximum time to wait for span ingests to complete
-        """
-        pending_span_tasks = [
-            task_id
-            for task_id in self._task_handler._tasks
-            if task_id.startswith("span-ingest-") and self._task_handler.get_status(task_id) in ["pending", "running"]
-        ]
-
-        if pending_span_tasks:
-            start_wait = time.time()
-            while pending_span_tasks and (time.time() - start_wait) < timeout_seconds:
-                pending_span_tasks = [
-                    task_id
-                    for task_id in pending_span_tasks
-                    if self._task_handler.get_status(task_id) in ["pending", "running"]
-                ]
-                if pending_span_tasks:
-                    time.sleep(0.1)
-
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
     def _auto_conclude_trace(self) -> None:
@@ -2343,39 +1906,13 @@ class SplunkAOLogger(TracesLogger):
         # Use the last trace in self.traces (should be the only active trace)
         trace = self.traces[-1]
 
-        # Don't auto-conclude stub traces - they're owned by the upstream service
-        # Downstream services that receive distributed tracing headers create stubs
-        # but should not mark them as complete
-        if trace.name == STUB_TRACE_NAME:
-            return
-
         # If there are unconcluded items in the stack, conclude them
         if self._parent_stack:
             self._logger.info("Concluding unconcluded spans before flush...")
             # Get output from last child span if trace has no explicit output
             output, redacted_output = SplunkAOLogger._get_last_output(trace)
             # conclude() with conclude_all=True will conclude all unconcluded items in _parent_stack
-            # This will mark the trace as complete in distributed mode
             self.conclude(output=output, redacted_output=redacted_output, conclude_all=True)
-        elif self.mode == "distributed":
-            if not self._trace_completion_submitted:
-                # Wait for all span ingests to complete before marking trace complete
-                self._wait_for_pending_span_ingests(timeout_seconds=DISTRIBUTED_FLUSH_TIMEOUT_SECONDS)
-                self._update_trace_streaming(trace, is_complete=True)
-
-    async def _flush_distributed(self) -> list[LoggedTrace]:
-        """Legacy proprietary distributed flush path, unused by OTLP egress."""
-        self._auto_conclude_trace()
-
-        # Wait for all pending trace/span update requests to complete
-        self._logger.info("Waiting for all distributed tracing tasks to complete...")
-        await self._wait_for_all_tasks_async(timeout_seconds=DISTRIBUTED_FLUSH_TIMEOUT_SECONDS)
-        self._logger.info("All distributed tracing requests are complete.")
-
-        self.traces = []
-        self._set_current_parent(None)
-
-        return []
 
     async def _flush_batch(self) -> list[LoggedTrace]:
         """Flush in batch mode: conclude unconcluded traces and send all traces to backend."""

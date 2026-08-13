@@ -3,12 +3,11 @@ from collections.abc import Generator
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry import context as otel_context
 
 from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
-from splunk_ao import Message, MessageRole, log, splunk_ao_context
-from splunk_ao.constants.tracing import PARENT_ID_HEADER, TRACE_ID_HEADER
-from splunk_ao.decorator import _parent_id_context, _trace_id_context
+from splunk_ao import Message, MessageRole, extract_tracing_context, log, splunk_ao_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
 from splunk_ao.tracing import get_tracing_headers
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -49,33 +48,40 @@ def test_decorator_get_tracing_headers(reset_context: None, distributed_clients:
 
     @log(span_type="workflow")
     def orchestrator(query: str) -> dict:
-        trace = splunk_ao_context.get_current_trace()
-        return {"result": query, "headers": get_tracing_headers(), "trace_id": str(trace.id)}
+        return {"result": query, "headers": get_tracing_headers()}
 
     result = orchestrator("test input")
 
     headers = result["headers"]
-    assert headers[TRACE_ID_HEADER] == result["trace_id"]
-    assert PARENT_ID_HEADER in headers
+    assert "traceparent" in headers
+    assert not any(header.lower().startswith("splunk-ao-") for header in headers)
+    traceparent = headers["traceparent"].split("-")
+    [span] = logger._sink.spans
+    assert int(traceparent[1], 16) == span.context.trace_id
+    assert int(traceparent[2], 16) == span.context.span_id
     assert logger.current_parent() is None
 
 
 def test_decorator_respects_incoming_distributed_context(reset_context: None, distributed_clients: Mock) -> None:
-    trace_id = "12345678-1234-4678-9abc-123456789abc"
-    parent_id = "87654321-4321-4876-9cba-987654321cba"
-    _trace_id_context.set(trace_id)
-    _parent_id_context.set(parent_id)
+    trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+    parent_id = "00f067aa0ba902b7"
     logger = init_logger()
 
     @log(span_type="workflow")
     def downstream_service(query: str) -> str:
         return f"processed: {query}"
 
-    assert downstream_service("test input") == "processed: test input"
+    token = otel_context.attach(extract_tracing_context({"traceparent": f"00-{trace_id}-{parent_id}-01"}))
+    try:
+        assert downstream_service("test input") == "processed: test input"
+    finally:
+        otel_context.detach(token)
+
     assert logger.mode == "distributed"
-    assert str(logger.traces[0].id) == trace_id
-    assert logger.traces[0].name == "stub_trace"
-    assert (logger._sink.spans[-1].attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
+    exported = logger._sink.spans[-1]
+    assert exported.context.trace_id == int(trace_id, 16)
+    assert exported.parent.span_id == int(parent_id, 16)
+    assert (exported.attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
 
 
 def test_completed_workflow_is_enqueued_and_flush_does_not_change_ownership(

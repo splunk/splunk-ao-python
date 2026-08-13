@@ -80,7 +80,7 @@ from splunk_ao.shared.exceptions import (
     SplunkAOFutureError,
     ValidationError,
 )
-from splunk_ao.tracing import get_tracing_headers
+from splunk_ao.tracing import extract_tracing_context, get_tracing_headers
 from splunk_ao.types import MetricSpec
 from splunk_ao.utils.log_config import enable_console_logging
 
@@ -167,6 +167,7 @@ __all__ = [
     "delete_annotation_queue_field",
     "delete_api_key",
     "enable_console_logging",
+    "extract_tracing_context",
     "get_agent_control_target",
     "get_annotation_queue",
     "get_annotation_queue_records",

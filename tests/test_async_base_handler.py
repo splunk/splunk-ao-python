@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
 from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
@@ -30,6 +31,7 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         yield handler
         # Clean up after each test
         handler._root_node = None
+        splunk_ao_logger.terminate()
 
     @pytest.mark.asyncio
     async def test_initialization(self, splunk_ao_logger: SplunkAOLogger) -> None:
@@ -83,6 +85,24 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         assert handler._root_node.run_id == parent_id
 
     @pytest.mark.asyncio
+    async def test_live_root_is_reused_by_async_commit(
+        self, handler: SplunkAOAsyncBaseHandler, splunk_ao_logger: SplunkAOLogger
+    ) -> None:
+        run_id = uuid.uuid4()
+        await handler.async_start_node(
+            node_type="chain", parent_run_id=None, run_id=run_id, name="Root", input="request"
+        )
+        live_root = handler._owned_root
+        live_context = splunk_ao_logger._otel_ids[live_root.id].span_context
+
+        headers = get_tracing_headers()
+        await handler.async_end_node(run_id, output="done")
+
+        assert headers["traceparent"].split("-")[2] == format(live_context.span_id, "016x")
+        assert splunk_ao_logger.traces[0].spans[0] is live_root
+        assert splunk_ao_logger.current_parent() is None
+
+    @pytest.mark.asyncio
     async def test_end_node(self, handler: SplunkAOAsyncBaseHandler, splunk_ao_logger: SplunkAOLogger) -> None:
         """Test ending a node and updating its parameters"""
         # Create a node
@@ -109,9 +129,42 @@ class TestSplunkAOAsyncBaseHandlerCallback:
         run_id = uuid.uuid4()
         await handler.async_start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
 
-        with patch.object(handler, "log_node_tree", side_effect=RuntimeError("conversion failed")):
+        with patch.object(handler, "_log_node_children", side_effect=RuntimeError("conversion failed")):
             await handler.async_end_node(run_id, output="result")
 
         assert splunk_ao_logger.current_parent() is None
         assert handler._nodes == {}
         assert handler._root_node is None
+
+    @pytest.mark.asyncio
+    async def test_start_new_trace_false_preserves_handler_root_and_caller(
+        self, splunk_ao_logger: SplunkAOLogger
+    ) -> None:
+        splunk_ao_logger.start_trace(input="request", name="caller")
+        caller_operation = splunk_ao_logger.add_workflow_span(input="outer", name="outer")
+        handler = SplunkAOAsyncBaseHandler(
+            splunk_ao_logger=splunk_ao_logger, start_new_trace=False, flush_on_chain_end=False
+        )
+        root_id = uuid.uuid4()
+        child_id = uuid.uuid4()
+        await handler.async_start_node(
+            node_type="chain", parent_run_id=None, run_id=root_id, name="handler-root", input="work"
+        )
+        await handler.async_start_node(
+            node_type="llm",
+            parent_run_id=root_id,
+            run_id=child_id,
+            name="handler-child",
+            input="prompt",
+            output="answer",
+            model="model",
+        )
+
+        await handler.async_end_node(root_id, output="done")
+
+        assert splunk_ao_logger.current_parent() is caller_operation
+        [handler_root] = caller_operation.spans
+        assert handler_root.name == "handler-root"
+        assert [child.name for child in handler_root.spans] == ["handler-child"]
+        splunk_ao_logger.conclude(output="outer done")
+        splunk_ao_logger.conclude(output="done")

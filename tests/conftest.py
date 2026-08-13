@@ -66,7 +66,6 @@ from splunk_ao.decorator import _mode_context
 from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
 from splunk_ao.resources.models.messages_list_item import MessagesListItem
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
-from tests.testutils.setup import setup_thread_pool_request_capture
 
 
 class _TestSpanSink:
@@ -378,29 +377,6 @@ def dataset_content_150_rows():
         for i in range(150)
     ]
     return DatasetContent(rows=rows)
-
-
-@pytest.fixture
-def thread_pool_capture():
-    """
-    Pytest fixture that provides a function to capture thread pool requests from distributed tracing methods.
-
-    Usage:
-        def test_distributed_method(thread_pool_capture):
-            logger = SplunkAOLogger(project="test", agent_stream="test", mode="distributed")
-            capture = thread_pool_capture(logger)
-
-            logger._ingest_trace_streaming(trace)
-
-            capture.mock_pool.assert_called_once()
-            request = capture.get_latest_request()
-            assert isinstance(request, TracesIngestRequest)
-    """
-
-    def _capture_factory(logger):
-        return setup_thread_pool_request_capture(logger)
-
-    return _capture_factory
 
 
 @pytest.fixture

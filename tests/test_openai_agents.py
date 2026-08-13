@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
+from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.openai_agents import SplunkAOTracingProcessor
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import Node
@@ -182,18 +183,13 @@ def test_commit_failure_concludes_handler_owned_trace(
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
     trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
     processor.on_trace_start(trace)
-    owned_traces = []
+    owned_trace = processor._owned_trace
 
-    def fail_after_starting_trace(*args, **kwargs):
-        processor._owned_trace = logger.add_trace(input="input", name="Trace")
-        owned_traces.append(processor._owned_trace)
-        raise RuntimeError("conversion failed")
-
-    with patch.object(processor, "_log_node_tree", side_effect=fail_after_starting_trace):
+    with patch.object(processor, "_commit_trace", side_effect=RuntimeError("conversion failed")):
         processor.on_trace_end(trace)
 
     assert logger.current_parent() is None
-    assert owned_traces[0].status_code == 500
+    assert owned_trace.status_code == 500
     assert processor._nodes == {}
     assert processor._owned_trace is None
 
@@ -220,6 +216,47 @@ def test_commit_failure_preserves_caller_owned_trace(
     assert processor._nodes == {}
     assert processor._owned_trace is None
     logger.conclude(output="done")
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_openai_agents_live_root_is_used_for_outbound_context_and_commit(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    node = Node(
+        node_type="agent",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "output": "answer",
+            "name": "Agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "duration_ns": 10,
+            "status_code": 200,
+        },
+    )
+    processor._nodes[str(node.run_id)] = node
+    processor._nodes[trace.trace_id].children.append(str(node.run_id))
+    processor._start_owned_root(node)
+    live_root = processor._owned_root
+    live_context = logger._otel_ids[live_root.id].span_context
+
+    headers = get_tracing_headers()
+    processor.on_trace_end(trace)
+
+    assert headers["traceparent"].split("-")[2] == format(live_context.span_id, "016x")
+    assert logger.traces[0].spans == [live_root]
+    assert logger.current_parent() is None
+    logger.terminate()
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:

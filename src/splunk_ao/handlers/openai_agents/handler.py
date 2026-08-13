@@ -59,6 +59,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
         self._last_status_code: int | None = None
         self._first_input: Any = None
         self._owned_trace: Any = None
+        self._owned_root: Any = None
+        self._owned_root_node_id: str | None = None
 
     def on_trace_start(self, trace: Trace) -> None:
         """Called when an OpenAI Agent trace starts."""
@@ -73,6 +75,16 @@ class SplunkAOTracingProcessor(TracingProcessor):
             },
         )
         self._nodes[trace.trace_id] = node
+        if self._splunk_ao_logger.current_parent() is None:
+            try:
+                self._owned_trace = self._splunk_ao_logger.start_trace(
+                    input="Agent Workflow",
+                    name="Trace",
+                    created_at=datetime.fromisoformat(node.span_params["start_time_iso"]),
+                )
+            except Exception:
+                self._owned_trace = None
+                _logger.warning("Failed to start OpenAI Agents trace telemetry", exc_info=True)
 
     def on_trace_end(self, trace: Trace) -> None:
         """Called when an OpenAI Agent trace ends."""
@@ -96,6 +108,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
             self._last_status_code = None
             self._first_input = None
             self._owned_trace = None
+            self._owned_root = None
+            self._owned_root_node_id = None
 
     def _commit_trace(self, trace: Trace) -> None:
         if not self._nodes:
@@ -103,11 +117,34 @@ class SplunkAOTracingProcessor(TracingProcessor):
             return
 
         root_node = self._nodes.get(trace.trace_id)
-        if root_node:
-            self._log_node_tree(root_node, first_node=True)
-        else:
+        if root_node is None:
             _logger.warning(f"Root node {trace.trace_id} not found")
-        self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
+            return
+
+        live_root_node = self._nodes.get(self._owned_root_node_id) if self._owned_root_node_id else None
+        if self._owned_trace is not None and self._owned_root is not None and live_root_node is not None:
+            self._owned_trace.input = self._first_input or "Agent Workflow"
+            self._owned_trace.metrics.duration_ns = root_node.span_params.get("duration_ns")
+            self._update_owned_root(live_root_node)
+            self._log_node_tree(live_root_node, reuse_current=True)
+            for child_id in root_node.children:
+                if child_id == self._owned_root_node_id:
+                    continue
+                child = self._nodes.get(child_id)
+                if child is not None:
+                    self._log_node_tree(child)
+            self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
+            return
+
+        # A caller-owned operation remains current; log framework operations
+        # beneath it without ever concluding the caller's parent.
+        for child_id in root_node.children:
+            child = self._nodes.get(child_id)
+            if child is not None:
+                self._log_node_tree(child)
+
+        if self._owned_trace is not None:
+            self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
 
     def _conclude_current_trace_on_failure(self) -> None:
         if self._owned_trace is None:
@@ -123,7 +160,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         if root is self._owned_trace:
             self._splunk_ao_logger.conclude(output="", status_code=500, conclude_all=True)
 
-    def _log_node_tree(self, node: Node, first_node: bool = False) -> None:
+    def _log_node_tree(self, node: Node, reuse_current: bool = False) -> None:
         """
         Log a node and its children recursively.
 
@@ -131,8 +168,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
         ----------
         node : Node
             The node to log.
-        first_node : bool
-            Whether this is the root trace node.
+        reuse_current : bool
+            Whether this node is the live root already created at span start.
         """
         is_workflow_span = False
         input = node.span_params.get("input", "")
@@ -145,26 +182,18 @@ class SplunkAOTracingProcessor(TracingProcessor):
         # Convert metadata to a dict[str, str]
         if metadata is not None:
             metadata = convert_to_string_dict(metadata)
-        if first_node:
-            self._owned_trace = self._splunk_ao_logger.add_trace(
-                input=self._first_input or "Agent Workflow",
-                output=self._last_output,
-                duration_ns=node.span_params.get("duration_ns"),
-                created_at=start_time_iso,
-                name="Trace",
-                tags=tags,
-            )
         # Log the current node based on its type
-        elif node.node_type in ("agent", "chain", "workflow"):
-            self._splunk_ao_logger.add_workflow_span(
-                input=input or node.node_type.capitalize() + " Step",
-                output=output,
-                name=name,
-                metadata=metadata,
-                tags=tags,
-                created_at=start_time_iso,
-                duration_ns=node.span_params.get("duration_ns"),
-            )
+        if node.node_type in ("agent", "chain", "workflow"):
+            if not reuse_current:
+                self._splunk_ao_logger.add_workflow_span(
+                    input=input or node.node_type.capitalize() + " Step",
+                    output=output,
+                    name=name,
+                    metadata=metadata,
+                    tags=tags,
+                    created_at=start_time_iso,
+                    duration_ns=node.span_params.get("duration_ns"),
+                )
             is_workflow_span = True
         elif node.node_type in ("llm", "chat"):
             tools = node.span_params.get("tools")
@@ -239,9 +268,46 @@ class SplunkAOTracingProcessor(TracingProcessor):
             if error:
                 output = error
                 status_code = 500
-            self._splunk_ao_logger.conclude(output=serialize_to_str(output), status_code=status_code)
+            self._splunk_ao_logger.conclude(
+                output=serialize_to_str(output),
+                duration_ns=node.span_params.get("duration_ns"),
+                status_code=status_code,
+            )
             self._last_status_code = status_code
             self._last_output = output
+
+    def _start_owned_root(self, node: Node) -> None:
+        """Create the first top-level real operation while framework work is active."""
+        if self._owned_trace is None or self._owned_root is not None:
+            return
+        if node.node_type not in ("agent", "chain", "workflow"):
+            return
+
+        metadata = node.span_params.get("metadata")
+        if metadata is not None:
+            metadata = convert_to_string_dict(metadata)
+        self._owned_root = self._splunk_ao_logger.add_workflow_span(
+            input=node.span_params.get("input") or node.node_type.capitalize() + " Step",
+            name=node.span_params.get("name"),
+            metadata=metadata,
+            tags=node.span_params.get("tags"),
+            created_at=datetime.fromisoformat(node.span_params["start_time_iso"]),
+        )
+        if self._owned_root is not None:
+            self._owned_root_node_id = str(node.run_id)
+
+    def _update_owned_root(self, node: Node) -> None:
+        """Apply final OpenAI callback data to the already-live root."""
+        if self._owned_root is None:
+            return
+        self._owned_root.input = node.span_params.get("input") or node.node_type.capitalize() + " Step"
+        if node.span_params.get("name") is not None:
+            self._owned_root.name = node.span_params["name"]
+        if node.span_params.get("tags") is not None:
+            self._owned_root.tags = node.span_params["tags"]
+        metadata = node.span_params.get("metadata")
+        if metadata is not None:
+            self._owned_root.user_metadata = convert_to_string_dict(metadata)
 
     def on_span_start(self, span: Span[Any]) -> None:
         """Called when an OpenAI Agent span starts."""
@@ -320,6 +386,15 @@ class SplunkAOTracingProcessor(TracingProcessor):
             _logger.warning(f"Parent node {parent_id} not found for span {span_id} in trace {trace_id}")
             return
         parent_node.children.append(span_id)
+        if parent_id == trace_id:
+            try:
+                self._start_owned_root(node)
+            except Exception:
+                self._conclude_current_trace_on_failure()
+                self._owned_trace = None
+                self._owned_root = None
+                self._owned_root_node_id = None
+                _logger.warning("Failed to start OpenAI Agents root telemetry", exc_info=True)
 
     def on_span_end(self, span: Span[Any]) -> None:
         """Called when an OpenAI Agent span ends."""

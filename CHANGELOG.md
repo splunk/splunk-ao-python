@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added module-level `get_tracing_headers()` and
+  `extract_tracing_context()` helpers for standard W3C `traceparent` and
+  `tracestate` propagation. `TracingMiddleware` now extracts and scopes that
+  OpenTelemetry context for Starlette/FastAPI requests.
+
+### Changed
+
+- The temporarily retained `mode="batch"` and `mode="distributed"` values now
+  use identical scheduled OTLP batch export and W3C propagation. Concluding an
+  operation ends and queues it; a per-operation `flush()` is not required.
+- Callback handlers keep a live real root during framework execution so
+  outbound W3C context uses the same identity and visible hierarchy that is
+  exported at commit.
+
+### Removed
+
+- **Breaking:** Removed `trace_id=` and `span_id=` from `SplunkAOLogger`, the
+  logger-level proprietary `get_tracing_headers()` method, and custom
+  `Splunk-AO-Trace-ID` / `Splunk-AO-Parent-ID` continuation. Use the new
+  module-level W3C helpers instead.
+- Removed the obsolete distributed-only REST streaming worker and task queue;
+  normal telemetry in both retained modes uses the existing
+  `BatchSpanProcessor` path.
+
 ## [0.2.1] - 2026-08-07
 
 ### Fixed

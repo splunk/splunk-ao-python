@@ -106,29 +106,24 @@ def test_completed_leaf_siblings_share_parent_and_do_not_become_active(
     logger.conclude(output="done")
 
 
-def test_otel_identity_failure_does_not_interrupt_span_creation_or_legacy_streaming(
+def test_otel_identity_failure_does_not_interrupt_span_creation(
     make_logger: Callable[[], SplunkAOLogger], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     logger = make_logger()
     root = logger.start_trace(input="q")
-    ingest_step = Mock()
     warning = Mock()
 
     def fail_assignment(*args, **kwargs) -> SpanContext:
         raise RuntimeError("identity failure")
 
-    logger.mode = "distributed"
     with monkeypatch.context() as patch:
         patch.setattr(SplunkAOLogger, "_assign_otel_context", fail_assignment)
-        patch.setattr(SplunkAOLogger, "_ingest_step_streaming", ingest_step)
         patch.setattr(logger._logger, "warning", warning)
         span = logger.add_llm_span(input="prompt", output="answer", model="model")
-    logger.mode = "batch"
 
     assert span is not None
     assert span in root.spans
     assert span.id not in logger._otel_ids
-    ingest_step.assert_not_called()
     assert "Failed to assign OTel identity" in warning.call_args.args[0]
 
     logger.conclude(output="done")
@@ -139,22 +134,17 @@ def test_otel_sync_failure_does_not_interrupt_parentable_span_creation(
 ) -> None:
     logger = make_logger()
     root = logger.start_trace(input="q")
-    ingest_step = Mock()
     warning = Mock()
 
-    logger.mode = "distributed"
     with monkeypatch.context() as patch:
         patch.setattr(SplunkAOLogger, "_sync_otel_context_impl", Mock(side_effect=RuntimeError("sync failure")))
-        patch.setattr(SplunkAOLogger, "_ingest_step_streaming", ingest_step)
         patch.setattr(logger._logger, "warning", warning)
         workflow = logger.add_workflow_span(input="workflow")
-    logger.mode = "batch"
 
     assert workflow is not None
     assert workflow in root.spans
     assert logger.current_parent() is workflow
     assert workflow.id in logger._otel_ids
-    ingest_step.assert_not_called()
     assert "Failed to synchronize OTel context" in warning.call_args.args[0]
 
     logger._sync_otel_context(workflow)
@@ -168,22 +158,17 @@ def test_otel_sync_and_release_failures_do_not_interrupt_hook_conclusion(
     logger = make_logger()
     root = logger.start_trace(input="q")
     workflow = logger.add_workflow_span(input="workflow")
-    update_step = Mock()
     warning = Mock()
 
-    logger.mode = "distributed"
     with monkeypatch.context() as patch:
         patch.setattr(SplunkAOLogger, "_sync_otel_context_impl", Mock(side_effect=RuntimeError("sync failure")))
         patch.setattr(SplunkAOLogger, "_discard_otel_subtree", Mock(side_effect=RuntimeError("release failure")))
-        patch.setattr(SplunkAOLogger, "_update_step_streaming", update_step)
         patch.setattr(logger._logger, "warning", warning)
         parent = logger.conclude(output="workflow-output")
-    logger.mode = "batch"
 
     assert parent is root
     assert logger.current_parent() is root
     assert workflow.output == "workflow-output"
-    update_step.assert_not_called()
     warning_messages = [call.args[0] for call in warning.call_args_list]
     assert any("Failed to synchronize OTel context" in message for message in warning_messages)
     assert any("Failed to release OTel context" in message for message in warning_messages)
@@ -287,7 +272,7 @@ def test_start_trace_inherits_remote_parent_and_preserves_tracestate(make_logger
         context.detach(token)
 
 
-def test_trace_flags_are_always_sampled_with_unsampled_remote_parent(make_logger: Callable[[], SplunkAOLogger]) -> None:
+def test_trace_flags_preserve_unsampled_remote_parent(make_logger: Callable[[], SplunkAOLogger]) -> None:
     remote_context = propagate.extract({"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"})
     token = context.attach(remote_context)
     try:
@@ -295,8 +280,8 @@ def test_trace_flags_are_always_sampled_with_unsampled_remote_parent(make_logger
         root = logger.start_trace(input="q")
         child = logger.add_llm_span(input="prompt", output="answer", model="model")
 
-        assert logger._otel_ids[root.id].span_context.trace_flags == TraceFlags(TraceFlags.SAMPLED)
-        assert logger._otel_ids[child.id].span_context.trace_flags == TraceFlags(TraceFlags.SAMPLED)
+        assert logger._otel_ids[root.id].span_context.trace_flags == TraceFlags(TraceFlags.DEFAULT)
+        assert logger._otel_ids[child.id].span_context.trace_flags == TraceFlags(TraceFlags.DEFAULT)
         logger.conclude(output="a")
     finally:
         context.detach(token)
