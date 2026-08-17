@@ -418,6 +418,90 @@ def test_orchestration_output_omits_repeated_input_history() -> None:
     ]
 
 
+def test_orchestration_full_history_with_tool_call_keeps_last_message() -> None:
+    # LangGraph accumulated state: user → tool-call AI (empty content) → tool response → final AI
+    # The first post-dedup message has empty content; the UI would show "—" without the fix.
+    user = {"role": "user", "content": "What is the dosage of Lisinopril?"}
+    ai_toolcall = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc1", "function": {"name": "rag_search", "arguments": '{"query":"Lisinopril dosage"}'}}]}
+    tool_resp = {"role": "tool", "content": "Lisinopril: 10mg daily", "tool_call_id": "tc1"}
+    ai_final = {"role": "assistant", "content": "Common dosage is 10mg once daily."}
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, ai_toolcall, tool_resp, ai_final]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["role"] == "assistant"
+    assert output_messages[0]["parts"][0]["content"] == "Common dosage is 10mg once daily."
+
+
+def test_orchestration_full_history_multi_turn_keeps_last_message() -> None:
+    # Multi-turn: output contains the full conversation history after multiple exchanges.
+    # Only the last message should be kept regardless of role.
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "What is Lisinopril?"}
+    ai2 = {"role": "assistant", "content": "Lisinopril is a blood pressure medication."}
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user1]}),
+        output=json.dumps({"messages": [user1, ai1, user2, ai2]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is a blood pressure medication."
+
+
+def test_orchestration_full_history_multiple_tool_rounds_keeps_last_message() -> None:
+    # Two tool call rounds before the final answer — last message is still the only output.
+    user = {"role": "user", "content": "Compare Lisinopril and Amlodipine"}
+    tc1_ai = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}]}
+    tc1_resp = {"role": "tool", "content": "Lisinopril: ACE inhibitor", "tool_call_id": "tc1"}
+    tc2_ai = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc2", "function": {"name": "search", "arguments": '{"query":"Amlodipine"}'}}]}
+    tc2_resp = {"role": "tool", "content": "Amlodipine: calcium channel blocker", "tool_call_id": "tc2"}
+    ai_final = {"role": "assistant", "content": "Lisinopril is an ACE inhibitor; Amlodipine is a calcium channel blocker."}
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, tc1_ai, tc1_resp, tc2_ai, tc2_resp, ai_final]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert "Amlodipine" in output_messages[0]["parts"][0]["content"]
+
+
+def test_orchestration_non_full_history_output_not_reduced() -> None:
+    # Plain string output (full_history=False) — the last-message reduction must NOT fire.
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input="What is Lisinopril?",
+        output="Lisinopril is a blood pressure medication.",
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is a blood pressure medication."
+
+
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     span = WorkflowSpan(
         name="tool-workflow",
