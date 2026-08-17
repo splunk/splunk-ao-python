@@ -15,7 +15,9 @@ a customer takes to use it.
    - [1.4 Semgrep (Structural Search & Replace)](#14-semgrep-structural-search--replace)
    - [1.5 Rope (Semantic Refactoring)](#15-rope-semantic-refactoring)
    - [1.6 Tokenize-Based](#16-tokenize-based)
-   - [1.7 IDE Plugin — Shell-out](#17-ide-plugin--shell-out)
+   - [1.7 lib2to3 / Fixer Framework](#17-lib2to3--fixer-framework)
+   - [1.8 ast.unparse (stdlib, no dependencies)](#18-astunparse-stdlib-no-dependencies)
+   - [1.9 IDE Plugin — Shell-out](#19-ide-plugin--shell-out)
 2. [IDE Plugin — Native TypeScript](#2-ide-plugin--native-typescript)
 3. [Pre-commit Hook](#3-pre-commit-hook)
 4. [Choosing the Right Tool](#4-choosing-the-right-tool)
@@ -658,9 +660,28 @@ git diff
 > Python syntax errors and are therefore rejected by libcst. For all valid Python
 > files, the AST tool (`migrate_ast.py`) is the better choice.
 
+### 1.7 lib2to3 / Fixer Framework
+
+Python's own migration tool from the stdlib — you write `BaseFix` subclasses using
+a pattern language. The reason it's worth mentioning: it requires **zero pip install**
+(stdlib-only). For environments where adding `libcst` as a dependency is blocked, a
+lib2to3-based tool would work out of the box. The downside is it's more verbose to
+write and is **deprecated in Python 3.13+**.
+
 ---
 
-### 1.7 IDE Plugin — Shell-out
+### 1.8 ast.unparse (stdlib, no dependencies)
+
+`ast.parse()` + `ast.NodeTransformer` + `ast.unparse()` — all stdlib, available from
+Python 3.9+. The critical limitation is that `ast.unparse()` **discards all comments
+and reformats everything**. This makes it unsuitable as a primary tool for user code
+migration (users would lose their comments). But it's a viable option for generating
+**test fixtures** or transforming **machine-generated code** where formatting doesn't
+matter.
+
+---
+
+### 1.9 IDE Plugin — Shell-out
 
 #### What it is
 
@@ -1004,6 +1025,8 @@ pre-commit autoupdate
 | Team uses VS Code, wants to reuse `migrate.py` | **Shell-out extension** (single source of truth for rules) |
 | Prevent galileo from re-entering after migration | **Pre-commit hook** (ongoing enforcement) |
 | CI/CD pipeline check | **Pre-commit hook**, `python migrate.py --dry-run`, or `semgrep --config semgrep-rules/` |
+| `libcst` dependency is blocked by environment policy | **lib2to3 fixer** — stdlib-only, no pip install (avoid on Python 3.13+) |
+| Migrating machine-generated code where comments don't exist | **ast.unparse** — stdlib-only, discards comments but sufficient for generated files |
 
 ### Typical sequence for a complete migration
 
