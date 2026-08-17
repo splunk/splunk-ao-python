@@ -447,6 +447,10 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
         return
     if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
+    # Full history includes all messages in the run, not just the final response.
+    # Keep only the last message — it is always the agent's final output.
+    if full_history and len(output_messages) > 1:
+        output_messages = [output_messages[-1]]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 
