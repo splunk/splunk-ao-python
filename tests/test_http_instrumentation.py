@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import gc
 from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Any
 from unittest.mock import MagicMock, patch
+from weakref import ref
 
 import aiohttp
 import httpx
@@ -31,7 +33,7 @@ from yarl import URL
 
 from splunk_ao import configure_distributed_tracing, instrument_distributed_tracing
 from splunk_ao.http_instrumentation import (
-    _client_provider_ids,
+    _client_providers,
     _configured_providers,
     _instrumented_apps,
     _load_instrumentors,
@@ -118,13 +120,13 @@ def instrumentor_type(recorder: RecordingInstrumentor) -> type:
 def reset_instrumentation_state() -> Generator[None, None, None]:
     previous_propagator = propagate.get_global_textmap()
     session_token = _session_id_context.set(None)
-    _client_provider_ids.clear()
+    _client_providers.clear()
     _configured_providers.clear()
     _instrumented_apps.clear()
     try:
         yield
     finally:
-        _client_provider_ids.clear()
+        _client_providers.clear()
         _configured_providers.clear()
         _instrumented_apps.clear()
         propagate.set_global_textmap(previous_propagator)
@@ -156,8 +158,8 @@ def test_missing_extra_fails_before_instrumentation_or_propagator_change() -> No
     ):
         instrument_distributed_tracing(tracer_provider=FakeTracerProvider())
 
-    assert _client_provider_ids == {}
-    assert _instrumented_apps == set()
+    assert not _client_providers
+    assert not _instrumented_apps
     assert propagate.get_global_textmap() is previous_propagator
 
 
@@ -180,6 +182,7 @@ def test_configure_distributed_tracing_creates_and_returns_provider(
     add_processor.assert_called_once_with(provider)
     assert recorders["fastapi"].app_calls == [(app, {"tracer_provider": provider})]
     assert recorders["requests"].instrument_calls == [{"tracer_provider": provider}]
+    assert _client_providers["requests"] is provider
 
 
 def test_configure_distributed_tracing_registers_processor_once_per_provider(
@@ -233,6 +236,39 @@ def test_configure_distributed_tracing_invalid_app_does_not_register_processor(
     assert provider not in _configured_providers
 
 
+def test_configure_distributed_tracing_app_conflict_does_not_register_second_processor(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    app = FastAPI()
+    first_provider = TracerProvider()
+    second_provider = TracerProvider()
+
+    with (
+        patch("splunk_ao.http_instrumentation.add_splunk_ao_span_processor") as add_processor,
+        patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types),
+    ):
+        configure_distributed_tracing(
+            tracer_provider=first_provider,
+            app=app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+        with pytest.raises(RuntimeError, match="app is already instrumented"):
+            configure_distributed_tracing(
+                tracer_provider=second_provider,
+                app=app,
+                instrument_requests=False,
+                instrument_httpx=False,
+                instrument_aiohttp_client=False,
+            )
+
+    add_processor.assert_called_once_with(first_provider)
+    assert recorders["fastapi"].app_calls == [(app, {"tracer_provider": first_provider})]
+    assert second_provider not in _configured_providers
+
+
 def test_distributed_tracing_extra_loads_every_supported_upstream_instrumentor() -> None:
     assert set(_load_instrumentors()) == {"fastapi", "starlette", "requests", "httpx", "aiohttp-client"}
 
@@ -255,6 +291,92 @@ def test_instruments_matching_app_and_every_enabled_client_once(
     assert recorders["httpx"].instrument_calls == [{"tracer_provider": provider}]
     assert recorders["aiohttp_client"].instrument_calls == [{"tracer_provider": provider}]
     assert isinstance(propagate.get_global_textmap(), SplunkAOSessionPropagator)
+
+
+def test_instrumented_app_ownership_is_released_when_app_is_collected(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    provider = FakeTracerProvider()
+    app = FastAPI()
+    app_reference = ref(app)
+
+    with patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types):
+        instrument_distributed_tracing(
+            tracer_provider=provider,
+            app=app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+
+    assert len(_instrumented_apps) == 1
+    recorders["fastapi"].app_calls.clear()
+    del app
+    gc.collect()
+
+    assert app_reference() is None
+    assert not _instrumented_apps
+
+
+def test_new_app_is_instrumented_after_previous_app_is_collected(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    provider = FakeTracerProvider()
+    first_app = FastAPI()
+
+    with patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types):
+        instrument_distributed_tracing(
+            tracer_provider=provider,
+            app=first_app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+        recorders["fastapi"].app_calls.clear()
+        del first_app
+        gc.collect()
+
+        second_app = FastAPI()
+        instrument_distributed_tracing(
+            tracer_provider=provider,
+            app=second_app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+
+    assert recorders["fastapi"].app_calls == [(second_app, {"tracer_provider": provider})]
+    assert _instrumented_apps[second_app] == (provider, "fastapi")
+
+
+def test_app_provider_conflict_fails_without_reinstrumenting_app(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    app = FastAPI()
+    first_provider = FakeTracerProvider()
+    second_provider = FakeTracerProvider()
+
+    with patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types):
+        instrument_distributed_tracing(
+            tracer_provider=first_provider,
+            app=app,
+            instrument_requests=False,
+            instrument_httpx=False,
+            instrument_aiohttp_client=False,
+        )
+        with pytest.raises(RuntimeError, match="app is already instrumented"):
+            instrument_distributed_tracing(
+                tracer_provider=second_provider,
+                app=app,
+                instrument_requests=False,
+                instrument_httpx=False,
+                instrument_aiohttp_client=False,
+            )
+
+    assert recorders["fastapi"].app_calls == [(app, {"tracer_provider": first_provider})]
 
 
 def test_disabled_clients_are_not_instrumented(

@@ -2231,7 +2231,11 @@ class SplunkAOLogger(TracesLogger):
     @warn_catch_exception(exceptions=(Exception,))
     def set_session(self, session_id: str) -> None:
         """
-        Set the session ID for the logger.
+        Set the explicit session for this logger and execution context.
+
+        The execution-context selection is ambient and applies to subsequently
+        started telemetry from other logger instances in the same thread or
+        async context. Use separate execution contexts for independent sessions.
 
         Parameters
         ----------
@@ -2249,6 +2253,7 @@ class SplunkAOLogger(TracesLogger):
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
     def clear_session(self) -> None:
+        """Clear this logger's session and the current execution-context selection."""
         self._logger.info("Clearing the current session from the logger...")
         self._set_active_session_id(None)
         self._logger.info("Current session cleared.")

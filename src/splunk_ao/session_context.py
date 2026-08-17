@@ -1,4 +1,4 @@
-"""Request-local session context and W3C baggage propagation."""
+"""Execution-context-local session selection and W3C baggage propagation."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _session_id_context: ContextVar[str | None] = ContextVar("session_id_context", d
 
 
 def set_session_context(session_id: str | None) -> None:
-    """Set the request-local explicit session selection."""
+    """Set the explicit session selection for the current execution context."""
     _session_id_context.set(session_id)
 
 
@@ -28,7 +28,7 @@ def _baggage_session_id(context: Context | None = None) -> str | None:
 
 
 def get_effective_session_id(logger_session_id: str | None = None, context: Context | None = None) -> str | None:
-    """Resolve the request-local, inbound, or compatibility session ID."""
+    """Resolve the execution-local, inbound, or compatibility session ID."""
     local_session_id = _session_id_context.get(None)
     if local_session_id:
         return local_session_id

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, cast
-from weakref import WeakSet
+from weakref import WeakKeyDictionary, WeakSet
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider as SDKTracerProvider
@@ -17,8 +17,10 @@ _INSTALL_MESSAGE = (
 )
 
 
-_client_provider_ids: dict[str, int] = {}
-_instrumented_apps: set[tuple[int, int, str]] = set()
+# Supported client instrumentors are process-wide. Retain their bounded owner
+# objects so garbage collection cannot silently transfer installed wrappers.
+_client_providers: dict[str, TracerProvider] = {}
+_instrumented_apps: WeakKeyDictionary[Any, tuple[TracerProvider, str]] = WeakKeyDictionary()
 _configured_providers: WeakSet[SDKTracerProvider] = WeakSet()
 
 
@@ -41,11 +43,11 @@ def _load_instrumentors() -> dict[str, type]:
     }
 
 
-def _validate_client_ownership(names: tuple[str, ...], provider_id: int) -> None:
+def _validate_client_ownership(names: tuple[str, ...], tracer_provider: TracerProvider) -> None:
     """Reject provider conflicts before any instrumentation is changed."""
     for name in names:
-        configured_provider_id = _client_provider_ids.get(name)
-        if configured_provider_id is not None and configured_provider_id != provider_id:
+        configured_provider = _client_providers.get(name)
+        if configured_provider is not None and configured_provider is not tracer_provider:
             raise RuntimeError(
                 f"{name} is already instrumented through Splunk AO with another tracer provider; "
                 "configure each process-wide client instrumentor through one owner"
@@ -68,14 +70,25 @@ def _resolve_app_framework(app: Any) -> str:
     return framework
 
 
-def _instrument_app(app: Any, instrumentors: dict[str, Any], tracer_provider: TracerProvider) -> None:
+def _validate_app_ownership(app: Any, tracer_provider: TracerProvider) -> str:
+    """Resolve the framework and reject ownership conflicts without mutation."""
     framework = _resolve_app_framework(app)
+    configured_owner = _instrumented_apps.get(app)
+    if configured_owner is not None:
+        configured_provider, configured_framework = configured_owner
+        if configured_provider is not tracer_provider or configured_framework != framework:
+            raise RuntimeError(
+                f"{framework} app is already instrumented through Splunk AO with another tracer provider"
+            )
+    return framework
 
-    key = (id(app), id(tracer_provider), framework)
-    if key in _instrumented_apps:
+
+def _instrument_app(app: Any, instrumentors: dict[str, Any], tracer_provider: TracerProvider) -> None:
+    framework = _validate_app_ownership(app, tracer_provider)
+    if app in _instrumented_apps:
         return
     instrumentors[framework].instrument_app(app, tracer_provider=tracer_provider)
-    _instrumented_apps.add(key)
+    _instrumented_apps[app] = (tracer_provider, framework)
 
 
 def _instrument_supported_transports(
@@ -89,17 +102,16 @@ def _instrument_supported_transports(
 ) -> None:
     clients = {"requests": instrument_requests, "httpx": instrument_httpx, "aiohttp-client": instrument_aiohttp_client}
     enabled_clients = tuple(name for name, enabled in clients.items() if enabled)
-    provider_id = id(tracer_provider)
-    _validate_client_ownership(enabled_clients, provider_id)
+    _validate_client_ownership(enabled_clients, tracer_provider)
 
     if app is not None:
         _instrument_app(app, instrumentors, tracer_provider)
 
     for name in enabled_clients:
-        if _client_provider_ids.get(name) == provider_id:
+        if _client_providers.get(name) is tracer_provider:
             continue
         instrumentors[name]().instrument(tracer_provider=tracer_provider)
-        _client_provider_ids[name] = provider_id
+        _client_providers[name] = tracer_provider
 
     install_session_propagator()
 
@@ -188,9 +200,9 @@ def configure_distributed_tracing(
     resolved_provider = tracer_provider or SDKTracerProvider()
     clients = {"requests": instrument_requests, "httpx": instrument_httpx, "aiohttp-client": instrument_aiohttp_client}
     enabled_clients = tuple(name for name, enabled in clients.items() if enabled)
-    _validate_client_ownership(enabled_clients, id(resolved_provider))
+    _validate_client_ownership(enabled_clients, resolved_provider)
     if app is not None:
-        _resolve_app_framework(app)
+        _validate_app_ownership(app, resolved_provider)
 
     if resolved_provider not in _configured_providers:
         add_splunk_ao_span_processor(resolved_provider)

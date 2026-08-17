@@ -15,8 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The lower-level `instrument_distributed_tracing()` transport helper remains
   available for applications that configure their provider separately.
 - Explicit SDK sessions now propagate across supported services as standard
-  W3C `gen_ai.conversation.id` baggage. SDK routing, authentication, and
-  application identity are not propagated.
+  W3C `gen_ai.conversation.id` baggage. Session selection is ambient within the
+  current thread or async execution context and is shared by logger instances
+  in that context. SDK routing, authentication, and application identity are
+  not propagated.
 - Added module-level `get_tracing_headers()` and
   `extract_tracing_context()` helpers for standard W3C `traceparent` and
   `tracestate` propagation. `TracingMiddleware` now extracts and scopes that

@@ -137,6 +137,9 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
   `configure_distributed_tracing()` is the combined automatic HTTP setup: it creates or accepts an application-owned
   provider, registers Splunk AO export once per provider, configures supported upstream instrumentors, and returns the
   provider for application shutdown. `instrument_distributed_tracing()` remains transport-only.
+- Track automatic server-app ownership through weak application references and process-wide client ownership through
+  actual provider identity. Never use raw `id()` values as persistent ownership keys or transfer installed client
+  instrumentation merely because its owner is garbage-collected.
 - Never replace the process-global tracer provider. Register processors on the provided provider; respect ownership.
 - Keep SDK-owned authentication, validation, CRUD, routing-resolution, and other control-plane HTTP calls out of
   application traces with scoped OTel HTTP suppression. Never use broad backend URL exclusions that can suppress user
@@ -148,6 +151,8 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
   code; sanitize and rate-limit diagnostics.
 - Preserve standard `gen_ai.*` attributes. New SDK-owned attributes use `splunk_ao.*`; do not introduce new proprietary
   `galileo.*` wire attributes.
+- Explicit session selection is ambient within the current thread or async execution context and is shared by logger
+  instances in that context. Independent simultaneous sessions require separate execution contexts.
 - Changes to propagation, IDs, parents, content schemas, or routing need coverage across every affected telemetry path.
 
 ## Code Style

@@ -136,6 +136,30 @@ def test_get_tracing_headers_injects_only_standard_conversation_baggage() -> Non
         logger.terminate()
 
 
+def test_explicit_session_selection_is_shared_across_loggers_in_execution_context() -> None:
+    first_logger, first_sink = make_logger()
+    second_logger, _ = make_logger()
+    try:
+        first_logger.set_session("conversation-first")
+        second_logger.set_session("conversation-current")
+
+        first_logger.start_trace(input="request")
+        first_logger.add_workflow_span(input="work", name="operation")
+        headers = get_tracing_headers()
+        first_logger.conclude(output="work")
+        first_logger.conclude(output="done")
+
+        [operation] = first_sink.spans
+        extracted = extract_tracing_context(headers)
+        assert first_logger.session_id == "conversation-first"
+        assert operation.attributes[GEN_AI_CONVERSATION_ID] == "conversation-current"
+        assert baggage.get_baggage(GEN_AI_CONVERSATION_ID, context=extracted) == "conversation-current"
+    finally:
+        second_logger.clear_session()
+        first_logger.terminate()
+        second_logger.terminate()
+
+
 def test_extract_tracing_context_restores_conversation_baggage() -> None:
     extracted = extract_tracing_context(
         {

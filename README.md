@@ -409,6 +409,11 @@ An explicit SDK session propagates as the standard
 experiment, deployment, authentication, model, workflow, and agent identity
 remain local and are never added to baggage by the SDK.
 
+Explicit session selection is ambient within the current thread or async
+execution context. Setting a session through any logger in that context selects
+the conversation for subsequently started telemetry and outbound propagation
+from that context. Use separate execution contexts for independent sessions.
+
 #### Export diagnostics
 
 The SDK does not change your application's global logging configuration.

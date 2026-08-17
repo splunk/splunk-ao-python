@@ -13,8 +13,7 @@ Splunk AO logger and trace lifecycle::
             logger.start_trace(input=str(data), name="request")
             logger.add_workflow_span(input=str(data), name="process")
             result = await process(data)
-            logger.conclude(output=str(result))
-            logger.conclude(output=str(result))
+            logger.conclude(output=str(result), conclude_all=True)
             return {"result": result}
         finally:
             logger.terminate()

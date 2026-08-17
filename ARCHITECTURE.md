@@ -110,6 +110,10 @@ may derive the local compatibility attribute `splunk_ao.session.id`, but that at
 baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
 endpoint, model, workflow, or agent identity in baggage.
 
+Explicit session selection is ambient within the current thread or async execution context and is shared by logger
+instances in that context. The most recent explicit selection applies to subsequently started telemetry and outbound
+propagation. Independent simultaneous sessions require separate execution contexts.
+
 ## Span Lifecycle and Export Ownership
 
 `SpanSink` owns the SDK's private provider and `BatchSpanProcessor` for internal telemetry. A completed operation is
