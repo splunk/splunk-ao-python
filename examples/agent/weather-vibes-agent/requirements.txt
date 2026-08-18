@@ -1,7 +1,7 @@
 # Core dependencies
 fastapi
 uvicorn
-python-dotenv
+python-dotenv>=1.2.2
 jinja2
 pydantic
 rich>=13.0.0

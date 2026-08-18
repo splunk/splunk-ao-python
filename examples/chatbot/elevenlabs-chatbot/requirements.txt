@@ -1,4 +1,4 @@
-python-dotenv>=1.0.0
+python-dotenv>=1.2.2
 elevenlabs>=1.0.0
 splunk-ao
 pyaudio>=0.2.14
