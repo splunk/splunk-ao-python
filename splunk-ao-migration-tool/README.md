@@ -207,7 +207,7 @@ All sub-module paths follow the same rename pattern:
 | `LlmMetric` | `LlmEvaluator` |
 | `LocalMetric` | `LocalEvaluator` |
 | `CodeMetric` | `CodeEvaluator` |
-| `BuiltInMetrics` | `BuiltInEvaluators` |
+| `BuiltInMetrics` | `BuiltInEvaluators` — `from splunk_ao.evaluator import BuiltInEvaluators` (not re-exported at top level; typically accessed via `Evaluator.metrics`) |
 | `Metrics` | `Evaluators` |
 | `MetricSpec` | `MetricSpec` — **not renamed** (still `from splunk_ao import MetricSpec`) |
 | `LocalMetricConfig` | `LocalMetricConfig` — **not renamed** (still `from splunk_ao.schema.metrics import LocalMetricConfig`) |
@@ -519,7 +519,7 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - [ ] Rename `GalileoMetrics` → `SplunkAOEvaluators`
 - [ ] Replace `GalileoScorers` with `SplunkAOEvaluators`
 - [ ] Rename domain evaluator classes: `Metric` → `Evaluator` (OO class only, **not** `splunk_ao.schema.metrics.Metric`), `LlmMetric` → `LlmEvaluator`, `LocalMetric` → `LocalEvaluator`, `CodeMetric` → `CodeEvaluator`
-- [ ] Rename `BuiltInMetrics` → `BuiltInEvaluators` (note: `MetricSpec` and `LocalMetricConfig` are **not** renamed)
+- [ ] Rename `BuiltInMetrics` → `BuiltInEvaluators` (`from splunk_ao.evaluator import BuiltInEvaluators`; not re-exported at top level — note: `MetricSpec` and `LocalMetricConfig` are **not** renamed)
 - [ ] Update evaluator module imports: `splunk_ao.metric` → `splunk_ao.evaluator`
 - [ ] Rename `LogStream` → `AgentStream`, `LogStreams` → `AgentStreams`
 - [ ] Update `Project` method calls: `create_log_stream()` → `create_agent_stream()`, `list_log_streams()` → `list_agent_streams()`, `.logstreams` → `.agent_streams`
