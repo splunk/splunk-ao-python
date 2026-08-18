@@ -451,12 +451,7 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     if output_messages is None:
         return
     if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
-        output_messages = output_messages[len(input_messages) :]
-
-        terminal_start = len(output_messages)
-        while terminal_start > 0 and output_messages[terminal_start - 1].get("role") == "assistant":
-            terminal_start -= 1
-        output_messages = output_messages[terminal_start:]
+        output_messages = output_messages[len(input_messages) :][-1:]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 

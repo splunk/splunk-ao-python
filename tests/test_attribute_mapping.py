@@ -419,10 +419,9 @@ def test_orchestration_output_omits_repeated_input_history() -> None:
 
 
 @pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
-def test_orchestration_full_history_preserves_all_terminal_assistant_messages(
+def test_orchestration_full_history_keeps_last_terminal_message(
     span_type: type[WorkflowSpan] | type[AgentSpan],
 ) -> None:
-    # Given: a full-history result with two terminal assistant outputs after the exact input history.
     user = {"role": "user", "content": "Give me two alternatives"}
     first = {"role": "assistant", "content": "First alternative"}
     second = {"role": "assistant", "content": "Second alternative"}
@@ -434,13 +433,10 @@ def test_orchestration_full_history_preserves_all_terminal_assistant_messages(
     if span_type is AgentSpan:
         span_kwargs["agent_type"] = AgentType.planner
 
-    # When: the orchestration content is converted.
     attrs = build_span_attributes(span_type(**span_kwargs))
 
-    # Then: the repeated input prefix is removed without reducing the terminal outputs to one message.
     assert json.loads(attrs["gen_ai.output.messages"]) == [
-        _text_message("assistant", "First alternative", finish_reason="unknown"),
-        _text_message("assistant", "Second alternative", finish_reason="unknown"),
+        _text_message("assistant", "Second alternative", finish_reason="unknown")
     ]
 
 
@@ -638,6 +634,55 @@ def test_orchestration_message_container_without_input_prefix_match_not_reduced(
     assert len(output_messages) == 2
     assert output_messages[0]["parts"][0]["response"] == "Lisinopril: 10 mg daily"
     assert output_messages[1]["parts"][0]["response"] == "Amlodipine: 5 mg daily"
+
+
+def test_orchestration_full_history_ends_on_tool_message_keeps_last() -> None:
+    # return_direct=True tool: run ends on a tool response, no final assistant message.
+    # The dedup gate fires (prefix matches) but the last message is a tool, not assistant.
+    # Must return the tool message rather than an empty list.
+    user = {"role": "user", "content": "Get patient P001"}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "get_patient", "arguments": '{"id":"P001"}'}}],
+    }
+    tool_resp = {"role": "tool", "content": "George Rivera, Lisinopril 10mg", "tool_call_id": "tc1"}
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user, ai_toolcall]}),
+        output=json.dumps({"messages": [user, ai_toolcall, tool_resp]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["parts"][0]["response"] == "George Rivera, Lisinopril 10mg"
+
+
+def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() -> None:
+    # interrupt_before=["tools"]: run ends on a tool-call AIMessage with empty content.
+    # The last message is assistant role but content="" — must not return empty list.
+    user = {"role": "user", "content": "Search for Lisinopril"}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}],
+    }
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, ai_toolcall]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["role"] == "assistant"
+    assert output_messages[0]["finish_reason"] == "tool_call"
 
 
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
