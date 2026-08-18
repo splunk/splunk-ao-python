@@ -1,6 +1,6 @@
 import json
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -418,11 +418,134 @@ def test_orchestration_output_omits_repeated_input_history() -> None:
     ]
 
 
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_full_history_preserves_all_terminal_assistant_messages(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: a full-history result with two terminal assistant outputs after the exact input history.
+    user = {"role": "user", "content": "Give me two alternatives"}
+    first = {"role": "assistant", "content": "First alternative"}
+    second = {"role": "assistant", "content": "Second alternative"}
+    span_kwargs: dict[str, Any] = {
+        "name": "planner",
+        "input": json.dumps({"messages": [user]}),
+        "output": json.dumps({"messages": [user, first, second]}),
+    }
+    if span_type is AgentSpan:
+        span_kwargs["agent_type"] = AgentType.planner
+
+    # When: the orchestration content is converted.
+    attrs = build_span_attributes(span_type(**span_kwargs))
+
+    # Then: the repeated input prefix is removed without reducing the terminal outputs to one message.
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "First alternative", finish_reason="unknown"),
+        _text_message("assistant", "Second alternative", finish_reason="unknown"),
+    ]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_full_history_removes_confirmed_input_prefix(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: the input is the complete history immediately before the final assistant response.
+    user = {"role": "user", "content": "What is the dosage?"}
+    tool_call = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+    }
+    tool_response = {"role": "tool", "content": "10 mg daily", "tool_call_id": "call-1"}
+    final = {"role": "assistant", "content": "The common dosage is 10 mg daily."}
+    input_history = [user, tool_call, tool_response]
+    span_kwargs: dict[str, Any] = {
+        "name": "healthcare",
+        "input": json.dumps({"messages": input_history}),
+        "output": json.dumps({"messages": [*input_history, final]}),
+    }
+    if span_type is AgentSpan:
+        span_kwargs["agent_type"] = AgentType.default
+
+    # When: the orchestration content is converted.
+    attrs = build_span_attributes(span_type(**span_kwargs))
+
+    # Then: only the newly produced terminal response is exported as output.
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "The common dosage is 10 mg daily.", finish_reason="unknown")
+    ]
+
+
+def test_orchestration_infers_tool_call_finish_reason_when_absent() -> None:
+    # Given: a workflow emits an assistant tool call without a source finish reason.
+    output = {
+        "update": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+                }
+            ]
+        }
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: the standard tool-call finish reason is inferred from the output part.
+    output_message = json.loads(attrs["gen_ai.output.messages"])[0]
+    assert output_message["finish_reason"] == "tool_call"
+    assert output_message["parts"][0]["type"] == "tool_call"
+
+
+def test_orchestration_tool_response_uses_unknown_finish_reason() -> None:
+    # Given: a workflow emits a tool response, which has no model-generation finish reason.
+    output = {
+        "update": {"messages": [{"role": "tool", "content": {"dosage": "10 mg daily"}, "tool_call_id": "call-1"}]}
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: its valid tool response structure is preserved without inventing a model finish reason.
+    output_message = json.loads(attrs["gen_ai.output.messages"])[0]
+    assert output_message["finish_reason"] == "unknown"
+    assert output_message["parts"] == [
+        {"type": "tool_call_response", "id": "call-1", "response": {"dosage": "10 mg daily"}}
+    ]
+
+
+def test_orchestration_preserves_explicit_finish_reason_for_tool_call() -> None:
+    # Given: the source supplies its own finish reason for a message containing a tool call.
+    output = {
+        "update": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "finish_reason": "provider_tool_calls",
+                    "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+                }
+            ]
+        }
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: inference does not overwrite source telemetry.
+    assert json.loads(attrs["gen_ai.output.messages"])[0]["finish_reason"] == "provider_tool_calls"
+
+
 def test_orchestration_full_history_with_tool_call_keeps_last_message() -> None:
     # LangGraph accumulated state: user → tool-call AI (empty content) → tool response → final AI
     # The first post-dedup message has empty content; the UI would show "—" without the fix.
     user = {"role": "user", "content": "What is the dosage of Lisinopril?"}
-    ai_toolcall = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc1", "function": {"name": "rag_search", "arguments": '{"query":"Lisinopril dosage"}'}}]}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "rag_search", "arguments": '{"query":"Lisinopril dosage"}'}}],
+    }
     tool_resp = {"role": "tool", "content": "Lisinopril: 10mg daily", "tool_call_id": "tc1"}
     ai_final = {"role": "assistant", "content": "Common dosage is 10mg once daily."}
 
@@ -466,11 +589,22 @@ def test_orchestration_full_history_multi_turn_keeps_last_message() -> None:
 def test_orchestration_full_history_multiple_tool_rounds_keeps_last_message() -> None:
     # Two tool call rounds before the final answer — last message is still the only output.
     user = {"role": "user", "content": "Compare Lisinopril and Amlodipine"}
-    tc1_ai = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}]}
+    tc1_ai = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}],
+    }
     tc1_resp = {"role": "tool", "content": "Lisinopril: ACE inhibitor", "tool_call_id": "tc1"}
-    tc2_ai = {"role": "assistant", "content": "", "tool_calls": [{"id": "tc2", "function": {"name": "search", "arguments": '{"query":"Amlodipine"}'}}]}
+    tc2_ai = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc2", "function": {"name": "search", "arguments": '{"query":"Amlodipine"}'}}],
+    }
     tc2_resp = {"role": "tool", "content": "Amlodipine: calcium channel blocker", "tool_call_id": "tc2"}
-    ai_final = {"role": "assistant", "content": "Lisinopril is an ACE inhibitor; Amlodipine is a calcium channel blocker."}
+    ai_final = {
+        "role": "assistant",
+        "content": "Lisinopril is an ACE inhibitor; Amlodipine is a calcium channel blocker.",
+    }
 
     span = AgentSpan(
         name="Agent",

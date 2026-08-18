@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Agent and workflow output conversion now removes only confirmed repeated input
+  history, preserves multiple terminal assistant messages, and reports the
+  standard `tool_call` finish reason when an output requests a tool and no
+  source finish reason is available.
+
 ## [0.2.1] - 2026-08-07
 
 ### Fixed

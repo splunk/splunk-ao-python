@@ -268,7 +268,12 @@ def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[st
 def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
     for message in messages:
         source_finish_reason = message.get("finish_reason")
-        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+        inferred_finish_reason = (
+            "tool_call"
+            if any(part.get("type") == "tool_call" for part in message.get("parts", []) if isinstance(part, Mapping))
+            else "unknown"
+        )
+        message["finish_reason"] = finish_reason or source_finish_reason or inferred_finish_reason
     return messages
 
 
@@ -445,12 +450,13 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     output_messages, full_history = _orchestration_messages(span.output, "assistant")
     if output_messages is None:
         return
-    if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
+    if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
-    # Full history includes all messages in the run, not just the final response.
-    # Keep only the last message — it is always the agent's final output.
-    if full_history and len(output_messages) > 1:
-        output_messages = [output_messages[-1]]
+
+        terminal_start = len(output_messages)
+        while terminal_start > 0 and output_messages[terminal_start - 1].get("role") == "assistant":
+            terminal_start -= 1
+        output_messages = output_messages[terminal_start:]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 
