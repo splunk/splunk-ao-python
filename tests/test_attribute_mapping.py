@@ -620,20 +620,24 @@ def test_orchestration_full_history_multiple_tool_rounds_keeps_last_message() ->
     assert "Amlodipine" in output_messages[0]["parts"][0]["content"]
 
 
-def test_orchestration_non_full_history_output_not_reduced() -> None:
-    # Plain string output (full_history=False) — the last-message reduction must NOT fire.
-    span = AgentSpan(
-        name="Agent",
-        agent_type=AgentType.default,
-        input="What is Lisinopril?",
-        output="Lisinopril is a blood pressure medication.",
+def test_orchestration_message_container_without_input_prefix_match_not_reduced() -> None:
+    # A WorkflowSpan (e.g. ToolNode) returning multiple messages whose output does NOT
+    # prefix-match the input state — dedup gate never fires, so all messages must survive.
+    # This is the parallel-tool-call shape: two ToolMessages from a single ToolNode invocation.
+    tool_msg_1 = {"role": "tool", "content": "Lisinopril: 10 mg daily", "tool_call_id": "tc1"}
+    tool_msg_2 = {"role": "tool", "content": "Amlodipine: 5 mg daily", "tool_call_id": "tc2"}
+    span = WorkflowSpan(
+        name="tools",
+        input=json.dumps({"messages": [{"role": "user", "content": "Compare dosages"}]}),
+        output=json.dumps({"messages": [tool_msg_1, tool_msg_2]}),
     )
 
     attrs = build_span_attributes(span)
 
     output_messages = json.loads(attrs["gen_ai.output.messages"])
-    assert len(output_messages) == 1
-    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is a blood pressure medication."
+    assert len(output_messages) == 2
+    assert output_messages[0]["parts"][0]["response"] == "Lisinopril: 10 mg daily"
+    assert output_messages[1]["parts"][0]["response"] == "Amlodipine: 5 mg daily"
 
 
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
