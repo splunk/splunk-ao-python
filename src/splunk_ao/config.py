@@ -3,7 +3,7 @@
 import os
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional
 
 from httpx import Response
 from pydantic import Field, SecretStr, ValidationInfo, field_validator, model_validator
@@ -86,12 +86,15 @@ class SplunkAOConfig(GalileoConfig):
 
     @field_validator("home_dir", mode="before")
     @classmethod
-    def set_home_dir(cls, value: Union[str, Path]) -> Path:
+    def set_home_dir(cls, value: str | Path) -> Path:
         value = Path(value)
         if not value.exists():
-            value.mkdir(parents=True, exist_ok=True)
+            try:
+                value.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                raise ValueError(f"Could not create home directory {value}: {e}") from e
         if not value.is_dir():
-            raise ValueError(f"`SPLUNK_AO_HOME_DIR` {value} is not a directory.")
+            raise ValueError(f"Home directory {value} is not a directory.")
         return value
 
     def reset(self) -> None:

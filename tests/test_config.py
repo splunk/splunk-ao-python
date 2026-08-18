@@ -28,31 +28,11 @@ def _clear_auth_env(monkeypatch) -> None:
 # _bridge_env_vars tests
 # ---------------------------------------------------------------------------
 
-# Every (SPLUNK_AO_*, GALILEO_*) pair defined in _bridge_env_vars.
-# Deprecated aliases (SPLUNK_AO_LOG_STREAM, SPLUNK_AO_LOG_STREAM_ID) share a
-# GALILEO_* target with their primary key so they are listed separately and
+# Deprecated aliases share a GALILEO_* target with their primary key and are
 # excluded from the parametrized 1:1 propagation tests.
-_ALL_BRIDGE_PAIRS = [
-    ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
-    ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
-    ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
-    ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
-    ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
-    ("SPLUNK_AO_AGENT_STREAM", "GALILEO_LOG_STREAM"),
-    ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),  # deprecated alias
-    ("SPLUNK_AO_AGENT_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
-    ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),  # deprecated alias
-    ("SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN"),
-    ("SPLUNK_AO_SSO_ID_TOKEN", "GALILEO_SSO_ID_TOKEN"),
-    ("SPLUNK_AO_SSO_PROVIDER", "GALILEO_SSO_PROVIDER"),
-    ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
-    ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
-    ("SPLUNK_AO_MODE", "GALILEO_MODE"),
-]
+_DEPRECATED_BRIDGE_KEYS = {"SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID"}
 
-_CANONICAL_BRIDGE_PAIRS = [
-    p for p in _ALL_BRIDGE_PAIRS if p[0] not in ("SPLUNK_AO_LOG_STREAM", "SPLUNK_AO_LOG_STREAM_ID")
-]
+_CANONICAL_BRIDGE_PAIRS = [p for p in _BRIDGE if p[0] not in _DEPRECATED_BRIDGE_KEYS]
 
 # Safe test values per key — URL keys must be valid URLs to avoid leaking
 # an invalid GALILEO_* URL into the shared os.environ and breaking other tests.
@@ -101,12 +81,12 @@ def test_bridge_env_vars_does_not_overwrite_existing_galileo_value(splunk_key, g
 def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
     """When a SPLUNK_AO_* key is absent, the corresponding GALILEO_* key must
     not be set (no spurious entries introduced by the bridge)."""
-    all_bridge_keys = {k for pair in _ALL_BRIDGE_PAIRS for k in pair}
+    all_bridge_keys = {k for pair in _BRIDGE for k in pair}
     # Build an env that has no bridge-related keys at all.
     clean_env = {k: v for k, v in os.environ.items() if k not in all_bridge_keys}
     with patch.dict(os.environ, clean_env, clear=True):
         SplunkAOConfig._bridge_env_vars()
-        for _, galileo_key in _ALL_BRIDGE_PAIRS:
+        for _, galileo_key in _BRIDGE:
             assert galileo_key not in os.environ, (
                 f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
             )
