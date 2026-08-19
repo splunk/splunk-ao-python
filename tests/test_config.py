@@ -2,9 +2,11 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 from test_support.config import fast_config_validation
 
 from splunk_ao.config import _BRIDGE, SplunkAOConfig
+from splunk_ao.deployment import StandaloneConfig
 from splunk_ao.shared.exceptions import ConfigurationError
 
 # Auth env vars cleared in tests that exercise the missing-auth guard.
@@ -81,9 +83,7 @@ def test_bridge_env_vars_propagates_splunk_ao_to_galileo(splunk_key, galileo_key
     with patch.dict(os.environ, {splunk_key: value}, clear=False):
         os.environ.pop(galileo_key, None)
         SplunkAOConfig._bridge_env_vars()
-        assert os.environ.get(galileo_key) == value, (
-            f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
-        )
+        assert os.environ.get(galileo_key) == value, f"Expected {galileo_key}={value!r} after bridging {splunk_key}"
 
 
 @pytest.mark.parametrize("splunk_key,galileo_key", _CANONICAL_BRIDGE_PAIRS)
@@ -107,9 +107,7 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
     with patch.dict(os.environ, clean_env, clear=True):
         SplunkAOConfig._bridge_env_vars()
         for _, galileo_key in _ALL_BRIDGE_PAIRS:
-            assert galileo_key not in os.environ, (
-                f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
-            )
+            assert galileo_key not in os.environ, f"{galileo_key} must not be set when its SPLUNK_AO_* source is absent"
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +123,44 @@ def test_default_console_url() -> None:
 
         assert str(config.console_url) == "https://app.galileo.ai/"
         assert str(config.api_url) == "https://api.galileo.ai/"
+
+
+def test_standalone_crud_and_otlp_share_custom_api_url_derivation(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: a standalone custom console host without an explicit API URL
+    console_url = "https://customer.example.com"
+    monkeypatch.setattr(SplunkAOConfig, "_instance", None)
+
+    # When: CRUD configuration and OTLP configuration resolve their endpoints
+    with patch.dict(os.environ, {}, clear=True), fast_config_validation():
+        config = SplunkAOConfig.get(console_url=console_url, api_key="key", ssl_context=False)
+    otlp_endpoint = StandaloneConfig(api_key="key", console_url=console_url).otlp_endpoint
+
+    # Then: both consumers use the same derived standalone API base URL
+    assert str(config.api_url) == "https://api.customer.example.com/"
+    assert otlp_endpoint == f"{str(config.api_url).rstrip('/')}/otel/v1/traces"
+
+
+def test_standalone_crud_preserves_explicit_api_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: a standalone deployment with an explicit API URL
+    monkeypatch.setattr(SplunkAOConfig, "_instance", None)
+    explicit_api_url = "https://backend.example.com/custom/"
+
+    # When: CRUD configuration resolves its API URL with health checks mocked
+    with patch.dict(os.environ, {}, clear=True), fast_config_validation():
+        config = SplunkAOConfig.get(
+            console_url="https://customer.example.com", api_url=explicit_api_url, api_key="key", ssl_context=False
+        )
+
+    # Then: the explicit URL remains authoritative
+    assert str(config.api_url) == explicit_api_url
+
+
+def test_invalid_console_url_preserves_validation_error() -> None:
+    # Given: a console URL that fails its own field validation
+
+    # When/Then: model construction reports a validation error instead of leaking a KeyError
+    with pytest.raises(ValidationError, match="console_url"):
+        SplunkAOConfig(console_url="http://[bad", api_key="key")
 
 
 def test_no_auth_configured_raises_with_full_options_listed(monkeypatch) -> None:
@@ -271,8 +307,7 @@ def test_reset_clears_bridged_galileo_env_vars() -> None:
 
         for galileo_key in galileo_keys:
             assert galileo_key not in os.environ, (
-                f"reset() must remove {galileo_key} from os.environ; "
-                f"found stale value '{os.environ.get(galileo_key)}'"
+                f"reset() must remove {galileo_key} from os.environ; found stale value '{os.environ.get(galileo_key)}'"
             )
 
 
@@ -306,8 +341,7 @@ def test_bridge_picks_up_new_credential_after_reset(monkeypatch) -> None:
     # Second bridge — must pick up the new key now that reset() cleared the old one.
     SplunkAOConfig._bridge_env_vars()
     assert os.environ.get("GALILEO_API_KEY") == "key-rotated", (
-        "After reset() + credential rotation, bridge must copy the new key; "
-        "got stale value instead"
+        "After reset() + credential rotation, bridge must copy the new key; got stale value instead"
     )
     # Cleanup: monkeypatch will restore SPLUNK_AO_API_KEY, but the bridge wrote
     # GALILEO_API_KEY directly to os.environ — remove it so it doesn't leak.

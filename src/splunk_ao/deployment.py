@@ -46,6 +46,25 @@ def resolve_deployment() -> DeploymentMode:
     )
 
 
+def resolve_standalone_api_url(console_url: str, api_url: str | None = None) -> str:
+    """Return the explicit or console-derived standalone API base URL."""
+    if api_url:
+        return api_url
+
+    if "localhost" in console_url or "127.0.0.1" in console_url:
+        return "http://localhost:8088"
+
+    base_url = console_url.rstrip("/")
+    if "://" not in base_url:
+        base_url = f"https://{base_url}"
+    base_url = base_url.replace("://console.", "://api.", 1).replace("://app.", "://api.", 1)
+    scheme, host = base_url.split("://", 1)
+    if not host.startswith("api."):
+        host = f"api.{host}"
+
+    return f"{scheme}://{host}"
+
+
 @dataclass
 class O11yConfig:
     """Configuration for a Splunk Observability Cloud deployment."""
@@ -150,5 +169,5 @@ class StandaloneConfig:
     @property
     def otlp_endpoint(self) -> str:
         """Return the explicit or console-derived OTLP trace endpoint."""
-        base = self.api_url or self.console_url.replace("://console.", "://api.", 1).replace("://app.", "://api.", 1)
+        base = resolve_standalone_api_url(self.console_url, self.api_url)
         return f"{base.rstrip('/')}/otel/v1/traces"

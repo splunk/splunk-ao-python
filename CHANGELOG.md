@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Standalone custom console domains now derive a consistent `api.` hostname
+  for both CRUD operations and OTLP trace export unless `SPLUNK_AO_API_URL` is
+  set explicitly.
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
