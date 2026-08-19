@@ -235,14 +235,15 @@ All sub-module paths follow the same rename pattern:
 
 | Class | Old method / property | New method / property |
 |-------|-----------------------|-----------------------|
-| `AgentStream` (was `LogStream`) | `enable_metrics()` | `set_metrics()` |
+| `AgentStream` (`from splunk_ao import AgentStream`) | `set_metrics()` / `get_metrics()` | **unchanged** |
+| `AgentStream` returned by `get_agent_stream()` / `create_agent_stream()` | `enable_metrics()` | `enable_evaluators()` |
 | `AgentStreams` service / `splunk_ao.agent_streams` module-level helper | `enable_metrics()` | `enable_evaluators()` |
 | `splunk_ao.evaluators` module-level helper (was `galileo.metrics`) | `get_metrics()` | `get_evaluators()` |
 | `Project` | `create_log_stream()` | `create_agent_stream()` |
 | `Project` | `list_log_streams()` | `list_agent_streams()` |
 | `Project` | `.logstreams` | `.agent_streams` |
 
-> `AgentStream.get_metrics()` is **unchanged** — it still returns the names of the evaluators enabled on the stream.
+> `AgentStream.set_metrics()` and `AgentStream.get_metrics()` are **unchanged** — they still set and return the names of the evaluators enabled on the stream.
 
 ```diff
 - from galileo.log_stream import LogStream
@@ -520,10 +521,10 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - [ ] Replace `GalileoScorers` with `SplunkAOEvaluators`
 - [ ] Rename domain evaluator classes: `Metric` → `Evaluator` (OO class only, **not** `splunk_ao.schema.metrics.Metric`), `LlmMetric` → `LlmEvaluator`, `LocalMetric` → `LocalEvaluator`, `CodeMetric` → `CodeEvaluator`
 - [ ] Rename `BuiltInMetrics` → `BuiltInEvaluators` (`from splunk_ao.evaluator import BuiltInEvaluators`; not re-exported at top level — note: `MetricSpec` and `LocalMetricConfig` are **not** renamed)
-- [ ] Update evaluator module imports: `splunk_ao.metric` → `splunk_ao.evaluator`
+- [ ] Update evaluator module imports: `galileo.metric` → `splunk_ao.evaluator`
 - [ ] Rename `LogStream` → `AgentStream`, `LogStreams` → `AgentStreams`
 - [ ] Update `Project` method calls: `create_log_stream()` → `create_agent_stream()`, `list_log_streams()` → `list_agent_streams()`, `.logstreams` → `.agent_streams`
-- [ ] Replace `log_stream.enable_metrics()` with `agent_stream.set_metrics()` (use `enable_evaluators()` only on the `AgentStreams` service / module-level helper); `AgentStream.get_metrics()` is unchanged
+- [ ] `AgentStream.set_metrics()` and `AgentStream.get_metrics()` are **unchanged**; replace `enable_metrics()` with `enable_evaluators()` on the `AgentStream` returned by `get_agent_stream()`/`create_agent_stream()`, on the `AgentStreams` service, and on the module-level helper
 - [ ] Rename module-level helpers: `get_metrics()` → `get_evaluators()`, `delete_metric()` → `delete_evaluator()`, `create_custom_llm_metric()` → `create_custom_llm_evaluator()`, `get_log_stream()`/`list_log_streams()`/`create_log_stream()` → `get_agent_stream()`/`list_agent_streams()`/`create_agent_stream()`
 - [ ] Rename `GalileoAgentControlBridge` → `SplunkAOAgentControlBridge`
 - [ ] Rename all `GALILEO_*` environment variables to `SPLUNK_AO_*`
