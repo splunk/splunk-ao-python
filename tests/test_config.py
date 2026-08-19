@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -333,3 +334,26 @@ def test_config_file_path_resolves_to_splunk_ao_config(tmp_path) -> None:
     config = SplunkAOConfig.model_construct(home_dir=tmp_path)
 
     assert config.config_file == tmp_path / "splunk-ao-config.json"
+
+
+def test_home_dir_default_is_dot_splunk() -> None:
+    assert SplunkAOConfig.model_fields["home_dir"].default == Path.home() / ".splunk"
+
+
+def test_set_home_dir_creates_missing_directory(tmp_path) -> None:
+    # Given: a nested path that does not yet exist
+    target = tmp_path / "nested" / ".splunk"
+    # When: it is passed as home_dir
+    result = SplunkAOConfig.set_home_dir(target)
+    # Then: the directory is created and the resolved path is returned
+    assert result == target
+    assert target.is_dir()
+
+
+def test_set_home_dir_rejects_non_directory(tmp_path) -> None:
+    # Given: an existing file (not a directory)
+    a_file = tmp_path / "not-a-dir"
+    a_file.touch()
+    # When/Then: passing it as home_dir raises ValueError
+    with pytest.raises(ValueError):
+        SplunkAOConfig.set_home_dir(a_file)

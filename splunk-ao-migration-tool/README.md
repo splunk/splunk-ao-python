@@ -280,9 +280,9 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_DEFAULT_SCORER_MODEL` | `SPLUNK_AO_DEFAULT_SCORER_MODEL` |
 | `GALILEO_DEFAULT_SCORER_JUDGES` | `SPLUNK_AO_DEFAULT_SCORER_JUDGES` |
 | `GALILEO_CODE_VALIDATION_*` (4 vars) | `SPLUNK_AO_CODE_VALIDATION_*` |
-| `GALILEO_HOME_DIR` | `SPLUNK_AO_HOME_DIR` |
+| `GALILEO_HOME_DIR` ¹ | `SPLUNK_AO_HOME_DIR` |
 
-¹ `GALILEO_API_URL` was not a user-facing env var in `galileo-python` — it was an implicit Pydantic settings field on `galileo-core`'s `GalileoConfig`. `SPLUNK_AO_API_URL` is its effective rename and is explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
+¹ These variables were not user-facing env vars in `galileo-python` — they were implicit Pydantic settings fields on `galileo-core`'s `GalileoConfig`. Their `SPLUNK_AO_*` counterparts are effective renames, explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
 
 ² `SPLUNK_AO_LOG_STREAM` and `SPLUNK_AO_LOG_STREAM_ID` remain as deprecated aliases for `SPLUNK_AO_AGENT_STREAM` and `SPLUNK_AO_AGENT_STREAM_ID`.
 

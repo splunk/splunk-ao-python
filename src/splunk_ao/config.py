@@ -73,7 +73,7 @@ class SplunkAOConfig(GalileoConfig):
     """Configure authentication and endpoints for standalone and O11y deployments."""
 
     home_dir: Path = Field(
-        default=Path.home() / ".splunk",
+        default_factory=lambda: Path.home() / ".splunk",
         validate_default=True,
         description="Home directory for Splunk AO.",
         exclude=True,
