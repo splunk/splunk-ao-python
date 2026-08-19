@@ -93,6 +93,32 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
             )
 
 
+_EXPECTED_BRIDGE_PAIRS = {
+    ("SPLUNK_AO_API_KEY", "GALILEO_API_KEY"),
+    ("SPLUNK_AO_API_URL", "GALILEO_API_URL"),
+    ("SPLUNK_AO_CONSOLE_URL", "GALILEO_CONSOLE_URL"),
+    ("SPLUNK_AO_PROJECT", "GALILEO_PROJECT"),
+    ("SPLUNK_AO_PROJECT_ID", "GALILEO_PROJECT_ID"),
+    ("SPLUNK_AO_AGENT_STREAM", "GALILEO_LOG_STREAM"),
+    ("SPLUNK_AO_LOG_STREAM", "GALILEO_LOG_STREAM"),  # deprecated alias
+    ("SPLUNK_AO_AGENT_STREAM_ID", "GALILEO_LOG_STREAM_ID"),
+    ("SPLUNK_AO_LOG_STREAM_ID", "GALILEO_LOG_STREAM_ID"),  # deprecated alias
+    ("SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN"),
+    ("SPLUNK_AO_SSO_ID_TOKEN", "GALILEO_SSO_ID_TOKEN"),
+    ("SPLUNK_AO_SSO_PROVIDER", "GALILEO_SSO_PROVIDER"),
+    ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
+    ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
+    ("SPLUNK_AO_MODE", "GALILEO_MODE"),
+    ("SPLUNK_AO_HOME_DIR", "GALILEO_HOME_DIR"),
+}
+
+
+def test_bridge_pairs_match_expected_set() -> None:
+    """Independent statement of the bridge contract: a pair added or removed in
+    config.py must be reflected here deliberately, not absorbed silently."""
+    assert set(_BRIDGE) == _EXPECTED_BRIDGE_PAIRS
+
+
 # ---------------------------------------------------------------------------
 
 
