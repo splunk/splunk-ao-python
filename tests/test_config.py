@@ -337,7 +337,7 @@ def test_config_file_path_resolves_to_splunk_ao_config(tmp_path) -> None:
 
 
 def test_home_dir_default_is_dot_splunk() -> None:
-    assert SplunkAOConfig.model_fields["home_dir"].default == Path.home() / ".splunk"
+    assert SplunkAOConfig.model_fields["home_dir"].default_factory() == Path.home() / ".splunk"
 
 
 def test_set_home_dir_creates_missing_directory(tmp_path) -> None:
