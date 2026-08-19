@@ -445,6 +445,11 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     output_messages, full_history = _orchestration_messages(span.output, "assistant")
     if output_messages is None:
         return
+    # Reduction is intentionally tied to a confirmed prefix match: we only trim when the
+    # output starts with an exact copy of the input, which is the LangGraph stateless
+    # (no checkpointer) full-history shape. With a checkpointer the input is the new turn
+    # only while the output carries the whole persisted thread, so the prefix never matches
+    # and no reduction fires — known limitation, tracked separately.
     if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :][-1:]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
