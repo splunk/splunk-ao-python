@@ -98,7 +98,9 @@ def test_bridge_env_vars_skips_absent_splunk_ao_keys() -> None:
 
 def test_default_console_url() -> None:
     """Default console_url and api_url when SPLUNK_AO_CONSOLE_URL is not set."""
-    with patch.dict("os.environ", {}, clear=True):
+    all_bridge_keys = {k for pair in _BRIDGE for k in pair}
+    clean_env = {k: v for k, v in os.environ.items() if k not in all_bridge_keys}
+    with patch.dict("os.environ", clean_env, clear=True):
         if SplunkAOConfig._instance is not None:
             SplunkAOConfig._instance.reset()
         with fast_config_validation():
