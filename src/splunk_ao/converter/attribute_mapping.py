@@ -268,12 +268,7 @@ def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[st
 def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
     for message in messages:
         source_finish_reason = message.get("finish_reason")
-        inferred_finish_reason = (
-            "tool_call"
-            if any(part.get("type") == "tool_call" for part in message.get("parts", []) if isinstance(part, Mapping))
-            else "unknown"
-        )
-        message["finish_reason"] = finish_reason or source_finish_reason or inferred_finish_reason
+        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
     return messages
 
 

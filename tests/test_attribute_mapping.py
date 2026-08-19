@@ -471,7 +471,7 @@ def test_orchestration_full_history_removes_confirmed_input_prefix(
     ]
 
 
-def test_orchestration_infers_tool_call_finish_reason_when_absent() -> None:
+def test_orchestration_tool_call_assistant_message_finish_reason_unknown() -> None:
     # Given: a workflow emits an assistant tool call without a source finish reason.
     output = {
         "update": {
@@ -488,9 +488,9 @@ def test_orchestration_infers_tool_call_finish_reason_when_absent() -> None:
     # When: the workflow output is converted.
     attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
 
-    # Then: the standard tool-call finish reason is inferred from the output part.
+    # Then: finish_reason defaults to "unknown" — no inference from parts.
     output_message = json.loads(attrs["gen_ai.output.messages"])[0]
-    assert output_message["finish_reason"] == "tool_call"
+    assert output_message["finish_reason"] == "unknown"
     assert output_message["parts"][0]["type"] == "tool_call"
 
 
@@ -682,7 +682,24 @@ def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() ->
     output_messages = json.loads(attrs["gen_ai.output.messages"])
     assert len(output_messages) == 1
     assert output_messages[0]["role"] == "assistant"
-    assert output_messages[0]["finish_reason"] == "tool_call"
+    assert output_messages[0]["finish_reason"] == "unknown"
+
+
+def test_orchestration_full_history_workflow_span_trim() -> None:
+    # WorkflowSpan (non-root LangGraph node) that carries full state: the trim
+    # must fire the same way it does for AgentSpan when the prefix matches.
+    user = {"role": "user", "content": "What is Lisinopril?"}
+    assistant = {"role": "assistant", "content": "Lisinopril is an ACE inhibitor."}
+    span = WorkflowSpan(
+        name="summarise", input=json.dumps({"messages": [user]}), output=json.dumps({"messages": [user, assistant]})
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["role"] == "assistant"
+    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is an ACE inhibitor."
 
 
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:

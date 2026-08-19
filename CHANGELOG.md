@@ -12,9 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent and workflow output conversion now removes confirmed repeated input
   history and keeps only the last message as the terminal output; intermediate
   tool-call and tool-response messages are no longer included in
-  `gen_ai.output.messages` for full-history spans. The `tool_call` finish reason
-  is inferred when an output requests a tool and no source finish reason is
-  available.
+  `gen_ai.output.messages` for full-history spans.
 
 ## [0.2.1] - 2026-08-07
 
