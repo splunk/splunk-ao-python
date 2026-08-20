@@ -463,7 +463,15 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
         output_messages = output_messages[len(input_messages) :]
         history_stripped = True
     if history_stripped:
-        output_messages = output_messages[-1:]
+        # Prefer the last non-user message: the terminal message may legitimately be a tool
+        # response (return_direct) or a tool-call AIMessage, but a trailing user turn is an
+        # input, not this span's output.
+        terminal = next(
+            (index for index in reversed(range(len(output_messages))) if output_messages[index].get("role") != "user"),
+            None,
+        )
+        if terminal is not None:
+            output_messages = output_messages[terminal : terminal + 1]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 
