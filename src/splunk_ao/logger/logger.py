@@ -208,7 +208,6 @@ class SplunkAOLogger(TracesLogger):
         duration_ns=1000
     )
     logger.conclude(output="I am!", duration_ns=2000)
-    logger.flush()
     ```
     """
 

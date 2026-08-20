@@ -55,9 +55,6 @@ for i in range(len(prompt_input_data)):
 
     logger.conclude(output="This is another trace conclude", duration_ns=1000)
 
-    # Flush the traces to splunk_ao
-    logger.flush()
-
 
 # Show link to Splunk AO log stream
 config = SplunkAOConfig.get()

@@ -19,8 +19,6 @@ user_input = "Who's a good bot SSN?"
 redacted_input = user_input.replace(sensitive_info, "***")
 trace = logger.start_trace(input=user_input, redacted_input=redacted_input)
 
-logger.flush()  # send the trace to Splunk AO
-
 # Example of how to create "redacted_input", matching email as sensitive info
 # ---------------------------------------------------------------------------
 
@@ -36,8 +34,6 @@ if sensitive_info:
     trace = logger.start_trace(input=user_input, redacted_input=redacted_input)
 else:
     trace = logger.start_trace(input=user_input)
-
-logger.flush()  # send the trace to Splunk AO
 
 # It's also possible to use a service such as https://www.private-ai.com/ to create the redacted_input
 
