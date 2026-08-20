@@ -451,14 +451,13 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     output_messages, full_history = _orchestration_messages(span.output, "assistant")
     if output_messages is None:
         return
-    # Reduction is intentionally tied to a confirmed prefix match: we only trim when the
-    # output starts with an exact copy of the input, which is the LangGraph stateless
-    # (no checkpointer) full-history shape. With a checkpointer the input is the new turn
-    # only while the output carries the whole persisted thread, so the prefix never matches
-    # and no reduction fires — known limitation, tracked separately.
-    # The [-1:] trim is gated on history_stripped so that parallel tool-call outputs (e.g.
-    # a ToolNode with multiple simultaneous calls) are never collapsed to one message when
-    # the output is not a full-history echo of the input.
+    # The trim is gated on a confirmed prefix match so that it only fires when the output
+    # is genuinely accumulated input history. Without this gate, any span whose output is a
+    # top-level {"messages": [...]} container would be reduced to a single message — a
+    # LangGraph ToolNode emitting one ToolMessage per parallel tool call would lose all but
+    # the last. Consequence: with a checkpointer the input is only the new turn while the
+    # output carries the whole persisted thread, so the prefix never matches and no
+    # reduction fires. That case remains unhandled.
     history_stripped = False
     if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]

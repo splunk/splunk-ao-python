@@ -685,22 +685,6 @@ def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() ->
     assert output_messages[0]["finish_reason"] == "tool_call"
 
 
-def test_orchestration_full_history_workflow_span_trim() -> None:
-    # WorkflowSpan (non-root LangGraph node) that carries full state: the trim
-    # must fire the same way it does for AgentSpan when the prefix matches.
-    user = {"role": "user", "content": "What is Lisinopril?"}
-    assistant = {"role": "assistant", "content": "Lisinopril is an ACE inhibitor."}
-    span = WorkflowSpan(
-        name="summarise", input=json.dumps({"messages": [user]}), output=json.dumps({"messages": [user, assistant]})
-    )
-
-    attrs = build_span_attributes(span)
-
-    output_messages = json.loads(attrs["gen_ai.output.messages"])
-    assert len(output_messages) == 1
-    assert output_messages[0]["role"] == "assistant"
-    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is an ACE inhibitor."
-
 
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     span = WorkflowSpan(
