@@ -458,11 +458,8 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     # the last. Consequence: with a checkpointer the input is only the new turn while the
     # output carries the whole persisted thread, so the prefix never matches and no
     # reduction fires. That case remains unhandled.
-    history_stripped = False
     if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
-        history_stripped = True
-    if history_stripped:
         # Prefer the last non-user message: the terminal message may legitimately be a tool
         # response (return_direct) or a tool-call AIMessage, but a trailing user turn is an
         # input, not this span's output.

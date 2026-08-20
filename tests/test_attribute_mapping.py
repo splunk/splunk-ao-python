@@ -685,7 +685,6 @@ def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() ->
     assert output_messages[0]["finish_reason"] == "tool_call"
 
 
-
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     span = WorkflowSpan(
         name="tool-workflow",
