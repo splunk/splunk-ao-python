@@ -268,7 +268,13 @@ def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[st
 def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
     for message in messages:
         source_finish_reason = message.get("finish_reason")
-        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+        # Infer "tool_call" when the message has tool_call parts but no explicit finish reason.
+        inferred_finish_reason = (
+            "tool_call"
+            if any(part.get("type") == "tool_call" for part in message.get("parts", []) if isinstance(part, Mapping))
+            else "unknown"
+        )
+        message["finish_reason"] = finish_reason or source_finish_reason or inferred_finish_reason
     return messages
 
 
@@ -450,8 +456,15 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     # (no checkpointer) full-history shape. With a checkpointer the input is the new turn
     # only while the output carries the whole persisted thread, so the prefix never matches
     # and no reduction fires — known limitation, tracked separately.
+    # The [-1:] trim is gated on history_stripped so that parallel tool-call outputs (e.g.
+    # a ToolNode with multiple simultaneous calls) are never collapsed to one message when
+    # the output is not a full-history echo of the input.
+    history_stripped = False
     if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
-        output_messages = output_messages[len(input_messages) :][-1:]
+        output_messages = output_messages[len(input_messages) :]
+        history_stripped = True
+    if history_stripped:
+        output_messages = output_messages[-1:]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 

@@ -488,9 +488,9 @@ def test_orchestration_tool_call_assistant_message_finish_reason_unknown() -> No
     # When: the workflow output is converted.
     attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
 
-    # Then: finish_reason defaults to "unknown" — no inference from parts.
+    # Then: finish_reason is inferred as "tool_call" from the parts.
     output_message = json.loads(attrs["gen_ai.output.messages"])[0]
-    assert output_message["finish_reason"] == "unknown"
+    assert output_message["finish_reason"] == "tool_call"
     assert output_message["parts"][0]["type"] == "tool_call"
 
 
@@ -682,7 +682,7 @@ def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() ->
     output_messages = json.loads(attrs["gen_ai.output.messages"])
     assert len(output_messages) == 1
     assert output_messages[0]["role"] == "assistant"
-    assert output_messages[0]["finish_reason"] == "unknown"
+    assert output_messages[0]["finish_reason"] == "tool_call"
 
 
 def test_orchestration_full_history_workflow_span_trim() -> None:
