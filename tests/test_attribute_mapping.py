@@ -471,7 +471,7 @@ def test_orchestration_full_history_removes_confirmed_input_prefix(
     ]
 
 
-def test_orchestration_tool_call_assistant_message_finish_reason_unknown() -> None:
+def test_orchestration_tool_call_assistant_message_infers_tool_call_finish_reason() -> None:
     # Given: a workflow emits an assistant tool call without a source finish reason.
     output = {
         "update": {
