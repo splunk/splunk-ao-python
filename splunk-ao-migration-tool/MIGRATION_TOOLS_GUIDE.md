@@ -35,22 +35,34 @@ a customer takes to use it.
 A command-line tool that reads each file as plain text and applies ordered
 regular-expression substitutions line by line. It is the simplest and broadest
 tool: it works on every file type the migration touches — Python source files,
-dependency files, environment variable files, and TOML configuration.
+documentation files, dependency files, environment variable files, and TOML
+configuration. After rewriting file contents it also renames any directories
+and files whose names contain `galileo`.
 
 The rules are ordered deliberately (longest-match first, most-specific first)
 to avoid partial substitutions. For example, `galileo.metric` is matched before
 the shorter `galileo` so that `from galileo.metric import X` is rewritten to
 `from splunk_ao.evaluator import X` rather than `from splunk_ao.metric import X`.
 
+Doc files (`.md`, `.rst`) are processed in three dedicated passes:
+1. **URL pass** — rewrites known Galileo documentation URLs to their Splunk AO equivalents; all other URLs are left intact.
+2. **Prose pass** — applies the same symbol, import, env-var, and brand-name rules as Python files, with one exception: `logstream=` (no underscore) is excluded to avoid corrupting `TRACELOOP_HEADERS` string values.
+3. **Placeholder fix pass** — corrects `your-splunk_ao-*` (underscore form produced by the import rule) back to the correct hyphenated `your-splunk-ao-*` form.
+
+Warning rules fire on patterns that cannot be safely auto-fixed (e.g. Protect feature usage, `galileo_core` imports, dynamic env-var construction). They appear in the migration report but never modify the file.
+
 #### How it works
 
 ```
-migrate.py
+migrate.py  (also installed as the `splunk-ao-migrate` console script)
   │
   ├─ reads file as plain text
+  ├─ selects rule set by file type (python / doc / dep / env)
   ├─ runs each Rule (pattern → replacement) line by line
+  │     doc files: three passes (URL → prose → placeholder fix)
   ├─ collects Match objects (line number, original, replacement)
-  └─ optionally writes result back atomically (temp file + os.replace)
+  ├─ optionally writes result back atomically (temp file + os.replace)
+  └─ renames directories / files whose names contain "galileo" (deepest-first)
 
 splunk_ao_migrate/
   rules.py        ← all substitution rules as Rule dataclass instances
@@ -83,12 +95,14 @@ undesirable, use the AST-based tool instead.
 
 | Pro | Detail |
 |-----|--------|
-| Works on all file types | `.py`, `requirements*.txt`, `pyproject.toml`, `.env*` |
+| Works on all file types | `.py`, `.md`, `.rst`, `requirements*.txt`, `pyproject.toml`, `.env*` |
 | Zero dependencies | Uses Python stdlib only — no `pip install` required |
 | Fast | Linear scan, compiles each pattern once |
 | Easy to extend | Add a new `Rule(...)` line to `rules.py` |
 | Idempotent | Running on already-migrated code produces zero changes |
 | Dry-run mode | `--dry-run` shows changes without writing |
+| Renames paths | Directories and files containing `galileo` in their names are automatically renamed after content is rewritten |
+| Warning rules | Patterns that cannot be auto-fixed (Protect usage, `galileo_core` imports, dynamic env-vars) are flagged in the report without modifying files |
 
 #### Cons
 
@@ -104,8 +118,8 @@ undesirable, use the AST-based tool instead.
 | File | Contains |
 |------|----------|
 | `migrate.py` | CLI entry point; argument parsing, file collection, per-file orchestration, diff printer |
-| `splunk_ao_migrate/rules.py` | All Rule objects: import rewrites, symbol renames, kwarg renames, env-var strings, HTTP headers, warning patterns |
-| `splunk_ao_migrate/transformer.py` | `transform(content, rules, warning_rules)` → `TransformResult`; compiles patterns, applies substitutions |
+| `splunk_ao_migrate/rules.py` | All Rule objects grouped into `PYTHON_RULES`, `DOC_PROSE_RULES`, `DOC_URL_RULES`, `DOC_PLACEHOLDER_RULES`, `DEP_RULES`, `ENV_FILE_RULES`, and `WARNING_RULES`; `galileo_core` is protected from renaming via a negative lookahead |
+| `splunk_ao_migrate/transformer.py` | `transform(content, rules, warning_rules)` → `TransformResult`; compiles patterns, applies substitutions; `transform_doc` runs the three-pass doc pipeline |
 | `splunk_ao_migrate/reporter.py` | `Reporter` class; collects `FileResult` objects, prints summary report with next steps |
 | `splunk_ao_migrate/__init__.py` | Package marker |
 
@@ -116,29 +130,37 @@ undesirable, use the AST-based tool instead.
 git clone https://github.com/splunk/splunk-ao-python.git
 cd splunk-ao-python/splunk-ao-migration-tool
 
-# 2. Preview what will change (no files written)
-python migrate.py --dry-run /path/to/customer/app
+# 2. Install (registers the splunk-ao-migrate console script)
+pip install ./splunk_ao_migrate
+# Or without installing, run directly:
+#   python splunk_ao_migrate/migrate.py --dry-run /path/to/customer/app
 
-# 3. Apply migration
-python migrate.py /path/to/customer/app
+# 3. Preview what will change (no files written)
+splunk-ao-migrate --dry-run /path/to/customer/app
 
-# 4. Review the diff
+# 4. Apply migration (rewrites file contents and renames galileo* dirs/files)
+splunk-ao-migrate /path/to/customer/app
+
+# 5. Review the diff
 cd /path/to/customer/app
 git diff
 
-# 5. Run tests and commit if everything looks good
+# 6. Run tests and commit if everything looks good
 ```
 
 For individual file types:
 ```bash
 # Python source only
-python migrate.py src/
+splunk-ao-migrate src/
 
 # Dependency files only
-python migrate.py requirements.txt pyproject.toml
+splunk-ao-migrate requirements.txt pyproject.toml
 
 # Env file only
-python migrate.py .env
+splunk-ao-migrate .env
+
+# Doc files only
+splunk-ao-migrate docs/
 ```
 
 ---
