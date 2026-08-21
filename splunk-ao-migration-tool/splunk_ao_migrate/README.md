@@ -172,8 +172,7 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
 ## Limitations
 
 - Rules are applied to raw text, so occurrences in comments and docstrings are also
-  rewritten. If you need comments and docstrings left untouched, use the AST-based tool
-  (`splunk_ao_migrate_ast`) instead.
+  rewritten.
 - URLs are not rewritten in Python, dependency, and environment files. In doc files
   (`.md`, `.rst`), only the known Galileo documentation URLs listed above are rewritten;
   all other external links are preserved as-is.
@@ -186,6 +185,4 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
 
 ## See also
 
-- `splunk_ao_migrate_ast/` — AST-based tool (preserves comments and docstrings)
-- `agent_migrate/` — AI agent tool (LLM-driven interactive migration)
 - `splunk-ao-migration-tool/README.md` — complete migration guide
