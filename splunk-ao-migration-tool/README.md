@@ -195,13 +195,13 @@ All sub-module paths follow the same rename pattern:
 
 | Old | New |
 |-----|-----|
-| `GalileoMetric` | `SplunkAOMetric` |
+| `GalileoMetric` | `SplunkAOEvaluator` |
 | `GalileoMetrics` | `SplunkAOEvaluators` |
 | `GalileoScorers` | **Removed** (see §5.2) |
 
 ```diff
 - from galileo import GalileoMetric, GalileoMetrics
-+ from splunk_ao import SplunkAOMetric, SplunkAOEvaluators
++ from splunk_ao import SplunkAOEvaluator, SplunkAOEvaluators
 ```
 
 ### 3.4 Handlers & Middleware
@@ -447,7 +447,7 @@ The following are **unchanged** between galileo and splunk-ao and require no mig
 - [ ] Rename `GalileoAPIError` → `SplunkAOAPIError`
 - [ ] Rename `GalileoLoggerException` → `SplunkAOLoggerException`
 - [ ] Rename `GalileoFutureError` → `SplunkAOFutureError`
-- [ ] Rename `GalileoMetric` → `SplunkAOMetric`
+- [ ] Rename `GalileoMetric` → `SplunkAOEvaluator`
 - [ ] Rename `GalileoMetrics` → `SplunkAOEvaluators`
 - [ ] Replace `GalileoScorers` with `SplunkAOEvaluators`
 - [ ] Rename `GalileoAgentControlBridge` → `SplunkAOAgentControlBridge`
