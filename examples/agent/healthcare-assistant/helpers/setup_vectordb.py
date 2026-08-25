@@ -17,9 +17,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from config import DOCS_DIR, DOMAIN, load_config
+from config import DOCS_DIR, DOMAIN, create_embeddings, load_config
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 from setup_env import setup_environment
 from helpers.pgvector_utils import create_pgvector_store, get_collection_name
 from helpers.sql_utils import load_domain_relational_csvs
@@ -48,13 +47,13 @@ def setup_vectordb(environment: str) -> bool:
         print(f"❌ Docs directory not found: {docs_dir}")
         return False
 
-    if not os.environ.get("OPENAI_API_KEY"):
+    if not os.environ.get("AZURE_OPENAI_ENDPOINT") and not os.environ.get("OPENAI_API_KEY"):
         os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
     if not os.environ.get("POSTGRES_PASSWORD"):
         os.environ["POSTGRES_PASSWORD"] = getpass.getpass("Enter PostgreSQL password: ")
 
-    embeddings = OpenAIEmbeddings(model=embedding_model)
+    embeddings = create_embeddings(model=embedding_model)
     collection_name = get_collection_name(DOMAIN, environment)
     print(f"Creating PostgreSQL/pgvector collection: {collection_name}")
     vector_store, collection_name = create_pgvector_store(

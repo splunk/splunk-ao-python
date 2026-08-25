@@ -17,16 +17,6 @@ from setup_env import setup_environment
 
 load_dotenv()
 
-# Inject api-version for Azure APIM — openai 3.x non-Azure client doesn't append it.
-import openai as _openai_module
-_orig_async_init = _openai_module.AsyncOpenAI.__init__
-def _patched_async_init(self, *args, **kwargs):
-    dq = dict(kwargs.pop("default_query", None) or {})
-    dq.setdefault("api-version", os.getenv("OPENAI_API_VERSION", "2024-12-01-preview"))
-    kwargs["default_query"] = dq
-    _orig_async_init(self, *args, **kwargs)
-_openai_module.AsyncOpenAI.__init__ = _patched_async_init
-
 if not os.getenv("_ENV_LOADED"):
     setup_environment()
     os.environ["_ENV_LOADED"] = "true"

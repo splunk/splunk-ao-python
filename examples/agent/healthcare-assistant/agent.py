@@ -1,20 +1,18 @@
 """LangGraph agent for the healthcare assistant."""
 import asyncio
 import inspect
-import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, List, Dict, Optional, TypedDict
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.tools import StructuredTool
-from langchain_openai import ChatOpenAI
 from langgraph.graph import START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
-from config import TOOLS_DIR, load_config, load_system_prompt
+from config import load_config, load_system_prompt, create_chat_llm
 from rag import create_rag_tool
 from tools import logic as tools_logic
 
@@ -54,29 +52,12 @@ class HealthcareAgent:
         self.langgraph_config = {"configurable": {"thread_id": self.session_id}}
 
     def load_tools(self) -> None:
-        tool_schema_path = TOOLS_DIR / "schema.json"
-        with tool_schema_path.open(encoding="utf-8") as f:
-            tool_schema = json.load(f)
-
         self.tools = []
         for tool_func in tools_logic.TOOLS:
-            tool_schema_dict = next(
-                (schema for schema in tool_schema if schema.get("name") == tool_func.__name__),
-                None,
-            )
-            tool_kwargs = {
-                "name": tool_func.__name__,
-                "description": (
-                    tool_schema_dict.get("description")
-                    if tool_schema_dict
-                    else tool_func.__doc__ or f"Tool: {tool_func.__name__}"
-                ),
-                "args_schema": tool_schema_dict.get("parameters") if tool_schema_dict else None,
-            }
             if inspect.iscoroutinefunction(tool_func):
-                langchain_tool = StructuredTool.from_function(coroutine=tool_func, **tool_kwargs)
+                langchain_tool = StructuredTool.from_function(coroutine=tool_func)
             else:
-                langchain_tool = StructuredTool.from_function(func=tool_func, **tool_kwargs)
+                langchain_tool = StructuredTool.from_function(func=tool_func)
             self.tools.append(langchain_tool)
 
         rag_config = self.config.get("rag", {})
@@ -105,7 +86,7 @@ class HealthcareAgent:
         )
         temperature = model_config.get("temperature", 0.1)
 
-        llm_with_tools = ChatOpenAI(
+        llm_with_tools = create_chat_llm(
             model=effective_model,
             temperature=temperature,
             name="Healthcare Assistant",
@@ -142,7 +123,10 @@ class HealthcareAgent:
             project=os.getenv("SPLUNK_AO_PROJECT"),
             agent_stream=os.getenv("SPLUNK_AO_AGENT_STREAM"),
         ):
-            splunk_ao_context.start_session(external_id=self.session_id)
+            try:
+                splunk_ao_context.start_session(external_id=self.session_id)
+            except Exception as e:
+                print(f"[WARN] Session CRUD failed (non-fatal): {e}")
 
             # One callback per request keeps each user turn in its own trace.
             callback = SplunkAOAsyncCallback()
