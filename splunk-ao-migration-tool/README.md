@@ -347,8 +347,9 @@ All `GALILEO_*` environment variables are renamed to `SPLUNK_AO_*`. This is a **
 | `GALILEO_DEFAULT_SCORER_MODEL` | `SPLUNK_AO_DEFAULT_SCORER_MODEL` |
 | `GALILEO_DEFAULT_SCORER_JUDGES` | `SPLUNK_AO_DEFAULT_SCORER_JUDGES` |
 | `GALILEO_CODE_VALIDATION_*` (4 vars) | `SPLUNK_AO_CODE_VALIDATION_*` |
+| `GALILEO_HOME_DIR` ¹ | `SPLUNK_AO_HOME_DIR` |
 
-¹ `GALILEO_API_URL` was not a user-facing env var in `galileo-python` — it was an implicit Pydantic settings field on `galileo-core`'s `GalileoConfig`. `SPLUNK_AO_API_URL` is its effective rename and is explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
+¹ These variables were not user-facing env vars in `galileo-python` — they were implicit Pydantic settings fields on `galileo-core`'s `GalileoConfig`. Their `SPLUNK_AO_*` counterparts are effective renames, explicitly bridged in `SplunkAOConfig._bridge_env_vars()`.
 
 ² `SPLUNK_AO_LOG_STREAM` and `SPLUNK_AO_LOG_STREAM_ID` remain as deprecated aliases for `SPLUNK_AO_AGENT_STREAM` and `SPLUNK_AO_AGENT_STREAM_ID`.
 
@@ -407,15 +408,18 @@ The `GalileoScorers` enum has been removed entirely. Migrate to `SplunkAOEvaluat
 + scorer = SplunkAOEvaluators.completeness
 ```
 
-### 5.3 On-Disk Config File
+### 5.3 On-Disk Config File and Directory
 
 On logout or reset, `splunk-ao-python` writes a non-secret debug snapshot to
-`~/.galileo/splunk-ao-config.json`. The directory `~/.galileo/` is inherited
-from `galileo-core` and unchanged.
+`~/.splunk/splunk-ao-config.json`. Both the directory (`~/.splunk/`, was
+`~/.galileo/`) and the filename (`splunk-ao-config.json`, was
+`galileo-python-config.json`) have changed.
 
 This file is never read back and has no effect on authentication or config
 resolution. If you have an existing `~/.galileo/galileo-python-config.json`
 from `galileo-python`, it can be deleted at leisure or simply ignored.
+
+The directory can be overridden via `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
 
 ---
 
