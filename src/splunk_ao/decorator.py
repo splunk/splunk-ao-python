@@ -1309,9 +1309,9 @@ class SplunkAODecorator:
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Upload all captured traces under a project and agent stream context to Splunk AO.
+        Drain completed spans for the given project and agent stream context; does not conclude open spans.
 
-        If no project or agent stream is provided, then the currently initialized context is used.
+        Falls back to the currently initialized context when no project or agent stream is provided.
 
         Parameters
         ----------
@@ -1349,9 +1349,7 @@ class SplunkAODecorator:
 
     def flush_all(self) -> None:
         """
-        Upload all captured traces under all contexts to Splunk AO.
-
-        This method flushes all traces regardless of project or log stream.
+        Drain completed spans across all contexts; does not conclude open spans.
         """
         SplunkAOLoggerSingleton().flush_all()
 

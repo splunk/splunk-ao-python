@@ -295,11 +295,10 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None = None,
     ) -> None:
         """
-        Flush (upload and clear) a SplunkAOLogger instance.
+        Drain completed spans for a SplunkAOLogger instance; does not conclude open spans.
 
-        If both project and agent_stream are None, then all cached loggers are flushed
-        and cleared. Otherwise, only the specific logger corresponding to the provided
-        key (project, agent_stream) is flushed and removed.
+        If both project and agent_stream are None all cached loggers are drained,
+        otherwise only the logger for the given (project, agent_stream) key is drained.
 
         Parameters
         ----------
@@ -331,7 +330,7 @@ class SplunkAOLoggerSingleton:
                 self._splunk_ao_loggers[key].flush()
 
     def flush_all(self) -> None:
-        """Flush (upload and clear) all SplunkAOLogger instances."""
+        """Drain completed spans for all SplunkAOLogger instances; does not conclude open spans."""
         with self._lock:
             # Terminate and clear all logger instances.
             for logger in self._splunk_ao_loggers.values():
