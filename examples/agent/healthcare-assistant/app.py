@@ -1,12 +1,25 @@
 """Healthcare assistant Streamlit app."""
+import importlib.util
 import os
+import sys
 import uuid
 
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, HumanMessage
 
-from agent import HealthcareAgent
+
+def _load_instrumented_agent():
+    spec = importlib.util.spec_from_file_location(
+        "agent_with_instrumentation",
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-with-instrumentation.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["agent_with_instrumentation"] = mod
+    spec.loader.exec_module(mod)
+    return mod.HealthcareAgent
+
+
 from config import load_config
 from helpers.hallucination_helpers import (
     add_hallucination_interaction_to_chat,
@@ -15,7 +28,8 @@ from helpers.hallucination_helpers import (
 from rag import get_rag_system
 from setup_env import setup_environment
 
-load_dotenv()
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_APP_DIR, ".env"))
 
 if not os.getenv("_ENV_LOADED"):
     setup_environment()
@@ -177,6 +191,7 @@ def main():
         st.session_state.rag_initialized = True
 
     if "agent" not in st.session_state:
+        HealthcareAgent = _load_instrumented_agent()
         st.session_state.agent = HealthcareAgent(
             session_id=st.session_state.session_id,
             model_override=selected_model,

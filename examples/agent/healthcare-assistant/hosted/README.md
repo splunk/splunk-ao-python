@@ -40,8 +40,8 @@ All runtime config is in the `healthcare-assistant-instrumented-config` ConfigMa
 | Variable | Default | Description |
 |---|---|---|
 | `SPLUNK_AO_PROJECT` | `demo-healthcare` | Splunk AO project name |
-| `SPLUNK_AO_AGENT_STREAM` | `assistant` | Agent stream name |
-| `OTEL_SERVICE_NAME` | `healthcare-assistant-instrumented` | OTel service name |
+| `SPLUNK_AO_AGENT_STREAM` | `hosted` | Agent stream name |
+| `OTEL_SERVICE_NAME` | `healthcare-assistant-hosted` | OTel service name |
 | `AZURE_CHAT_DEPLOYMENT` | `gpt-4.1-mini` | Azure OpenAI chat deployment |
 | `AZURE_EMBEDDING_DEPLOYMENT` | `text-embedding-3-large` | Azure OpenAI embedding deployment |
 | `QUERY_DELAY_SECONDS` | `3` | Delay between queries |
@@ -55,7 +55,7 @@ Build context is the repo root. The SDK is installed from `src/` (local source, 
 docker buildx build \
   --platform linux/amd64 \
   -f examples/agent/healthcare-assistant/hosted/Dockerfile \
-  -t ertserendavga918/healthcare-assistant-agent-loadgen:v0.0.1 \
+  -t ertserendavga918/healthcare-assistant-agent-loadgen:v0.0.2 \
   --push \
   .
 ```
@@ -79,8 +79,9 @@ kubectl logs -n healthcare-assistant -l job-name=healthcare-assistant-instrument
 
 ## Validate
 
-Check Splunk Observability Cloud → Agent Observability → project `demo-healthcare` → agent stream `assistant`.
+Check Splunk Observability Cloud → Agent Observability → project `demo-healthcare` → agent stream `hosted`.
 
 Each run produces:
-- 2 traces with `invoke_agent Agent` root span (real LLM + tool calls)
-- 1 trace with hallucinated answer for the Lisinopril question
+- 1 trace for **"What is the dosage and common side effects of Lisinopril?"** — RAG retrieval via `search_medicine_qa`
+- 1 trace for **"Can you look up information for patient P001?"** — text-to-SQL via `get_patient_info`
+- 1 hallucination trace for the Lisinopril question with answer `"Common dosage is 100mg daily. Common side effects are rashes, itching, and swelling."`

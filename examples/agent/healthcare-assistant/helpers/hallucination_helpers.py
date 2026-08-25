@@ -47,7 +47,10 @@ def log_hallucination(
         else:
             logger.info("Creating new Splunk AO session for hallucination demo")
             splunk_ao_logger = SplunkAOLogger(project=project_name, agent_stream=agent_stream)
-            splunk_ao_logger.set_session(external_session_id or str(uuid.uuid4()))
+            try:
+                splunk_ao_logger.start_session(external_id=external_session_id or str(uuid.uuid4()))
+            except Exception as e:
+                logger.warning("Session CRUD failed (non-fatal): %s", e)
 
         splunk_ao_logger.start_trace(
             input=question,

@@ -2,7 +2,6 @@
 import os
 from typing import Optional, Tuple
 
-from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
 from sqlalchemy import create_engine, text
 
@@ -36,7 +35,7 @@ def collection_exists(domain_name: str, environment: Optional[str] = None) -> bo
 
 
 def create_pgvector_store(
-    embeddings: OpenAIEmbeddings,
+    embeddings,
     domain_name: str,
     environment: Optional[str] = None,
     *,
@@ -69,5 +68,6 @@ def get_pgvector_store(
             f"Run: python helpers/setup_vectordb.py {env}"
         )
 
-    embeddings = OpenAIEmbeddings(model=embedding_model)
+    from config import create_embeddings
+    embeddings = create_embeddings(model=embedding_model)
     return create_pgvector_store(embeddings, domain_name, env)
