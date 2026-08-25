@@ -63,9 +63,6 @@ logger.add_llm_span(
 
 # Conclude the trace
 logger.conclude(output=response.choices[0].message.content.strip())
-
-# Flush the traces to Splunk AO
-logger.flush()
 ```
 
 This approach gives you more control over what gets logged and when, allowing you to:

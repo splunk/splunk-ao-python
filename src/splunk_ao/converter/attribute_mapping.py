@@ -268,7 +268,13 @@ def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[st
 def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
     for message in messages:
         source_finish_reason = message.get("finish_reason")
-        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+        # Infer "tool_call" when the message has tool_call parts but no explicit finish reason.
+        inferred_finish_reason = (
+            "tool_call"
+            if any(part.get("type") == "tool_call" for part in message.get("parts", []) if isinstance(part, Mapping))
+            else "unknown"
+        )
+        message["finish_reason"] = finish_reason or source_finish_reason or inferred_finish_reason
     return messages
 
 
@@ -445,8 +451,24 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     output_messages, full_history = _orchestration_messages(span.output, "assistant")
     if output_messages is None:
         return
-    if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
+    # The trim is gated on a confirmed prefix match so that it only fires when the output
+    # is genuinely accumulated input history. Without this gate, any span whose output is a
+    # top-level {"messages": [...]} container would be reduced to a single message — a
+    # LangGraph ToolNode emitting one ToolMessage per parallel tool call would lose all but
+    # the last. Consequence: with a checkpointer the input is only the new turn while the
+    # output carries the whole persisted thread, so the prefix never matches and no
+    # reduction fires. That case remains unhandled.
+    if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
+        # Prefer the last non-user message: the terminal message may legitimately be a tool
+        # response (return_direct) or a tool-call AIMessage, but a trailing user turn is an
+        # input, not this span's output.
+        terminal = next(
+            (index for index in reversed(range(len(output_messages))) if output_messages[index].get("role") != "user"),
+            None,
+        )
+        if terminal is not None:
+            output_messages = output_messages[terminal : terminal + 1]
     attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
 
 

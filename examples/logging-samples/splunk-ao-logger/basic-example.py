@@ -29,9 +29,6 @@ logger.add_llm_span(
 # Conclude the trace with the final output
 logger.conclude(output="Hello, this is a test", duration_ns=1000)
 
-# Flush the trace to Splunk AO
-logger.flush()
-
 
 # Show link to Splunk AO log stream
 config = SplunkAOConfig.get()
