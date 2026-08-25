@@ -6,15 +6,16 @@ referenced code and tests; code remains authoritative.
 
 ## Repository Topology
 
-The repository contains three independently built and released packages:
+The repository contains four independently built and released packages:
 
 | Package | Source | Purpose | Tooling |
 |---|---|---|---|
 | `splunk-ao` | `src/splunk_ao/` | Core API, logging, integrations, CRUD, OTLP export | Poetry |
 | `splunk-ao-a2a` | `splunk-ao-a2a/src/splunk_ao_a2a/` | A2A client/server native OTel instrumentation | uv/Hatch |
 | `splunk-ao-adk` | `splunk-ao-adk/src/splunk_ao_adk/` | Google ADK handler/plugin integration | uv/Hatch |
+| `splunk-ao-migrate` | `splunk-ao-migration-tool/splunk_ao_migrate/src/splunk_ao_migrate/` | galileo → splunk-ao migration CLI | uv/Hatch |
 
-`splunk-ao-migration-tool/` currently contains migration documentation and examples. `docs/` contains repository
+`splunk-ao-migration-tool/` is a uv workspace; `splunk_ao_migrate/pyproject.toml` defines the `splunk-ao-migrate` package. `docs/` contains repository
 documentation; generated API references are produced by `scripts/create_docs.py`.
 
 ## Core SDK Layers

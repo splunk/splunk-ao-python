@@ -34,7 +34,12 @@ class Reporter:
     def add(self, result: FileResult) -> None:
         self._results.append(result)
 
-    def print_report(self, dry_run: bool = False) -> None:
+    @property
+    def has_warnings(self) -> bool:
+        return any(r.warnings for r in self._results)
+
+    def print_report(self, dry_run: bool = False) -> bool:
+        """Print the migration report and return True if any warnings were emitted."""
         changed = [r for r in self._results if r.changed]
         skipped = [r for r in self._results if r.skipped]
         warnings_all = [r for r in self._results if r.warnings]
@@ -42,12 +47,13 @@ class Reporter:
         total_scanned = len(self._results)
 
         action = "Would change" if dry_run else "Changed"
+        changed_label = "Files would change:" if dry_run else "Files changed:    "
 
         print()
         print("splunk-ao-migrate — Migration Report")
         print("=" * 45)
         print(f"Files scanned:    {total_scanned}")
-        print(f"Files {'would change' if dry_run else 'changed'}:{' ' * (4 if dry_run else 9)}{len(changed)}")
+        print(f"{changed_label} {len(changed)}")
         print(f"Files skipped:    {len(skipped)}")
         print(f"Substitutions:    {total_subs}")
 
@@ -72,15 +78,17 @@ class Reporter:
         print("Next steps:")
         if dry_run:
             print("  1. Re-run without --dry-run to apply changes")
-            print("  2. See the full migration guide: splunk-ao-migration-tool/splunk_ao_migrate/README.md")
+            print("  2. See the full migration guide: splunk-ao-migration-tool/README.md")
         else:
             print("  1. Review the diff:  git diff")
             print('  2. Install splunk-ao:')
             print('       pip install "splunk-ao @ git+https://github.com/splunk/splunk-ao-python.git"')
             print("  3. Upgrade Python to >= 3.11 if not already done")
             print("     Also ensure requires-python = \">=3.11\" in pyproject.toml (auto-updated by this tool)")
-            print("  4. See the full migration guide: splunk-ao-migration-tool/splunk_ao_migrate/README.md")
+            print("  4. See the full migration guide: splunk-ao-migration-tool/README.md")
         print()
+
+        return bool(warnings_all)
 
 
 def _rel(path: str) -> str:

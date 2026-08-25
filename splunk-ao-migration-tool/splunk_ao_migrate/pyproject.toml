@@ -19,5 +19,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-# Include only the splunk_ao_migrate package, not the broader tool directory
-packages = ["splunk_ao_migrate"]
+packages = ["src/splunk_ao_migrate"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
