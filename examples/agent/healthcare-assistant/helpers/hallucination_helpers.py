@@ -6,7 +6,6 @@ Examples are defined in config.yaml under `demo_hallucinations`.
 """
 import logging
 import os
-import uuid
 from typing import Any, List, Optional, Union
 
 from splunk_ao import SplunkAOLogger
@@ -47,10 +46,6 @@ def log_hallucination(
         else:
             logger.info("Creating new Splunk AO session for hallucination demo")
             splunk_ao_logger = SplunkAOLogger(project=project_name, agent_stream=agent_stream)
-            try:
-                splunk_ao_logger.start_session(external_id=external_session_id or str(uuid.uuid4()))
-            except Exception as e:
-                logger.warning("Session CRUD failed (non-fatal): %s", e)
 
         splunk_ao_logger.start_trace(
             input=question,
@@ -107,8 +102,6 @@ Question: {question}"""
             duration_ns=int(2.5e8),
             status_code=200,
         )
-
-        splunk_ao_logger.flush()
 
         logger.info("Successfully logged hallucination to project: %s", project_name)
         return True

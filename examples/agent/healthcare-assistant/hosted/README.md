@@ -53,9 +53,9 @@ Build context is the repo root. The SDK is installed from `src/` (local source, 
 ```bash
 # from repo root
 docker buildx build \
-  --platform linux/amd64 \
+  --platform linux/amd64,linux/arm64 \
   -f examples/agent/healthcare-assistant/hosted/Dockerfile \
-  -t ertserendavga918/healthcare-assistant-agent-loadgen:v0.0.2 \
+  -t <your-registry>/healthcare-assistant-agent-loadgen:latest \
   --push \
   .
 ```
@@ -79,7 +79,7 @@ kubectl logs -n healthcare-assistant -l job-name=healthcare-assistant-instrument
 
 ## Validate
 
-Check Splunk Observability Cloud → Agent Observability → project `demo-healthcare` → agent stream `hosted`.
+Check Splunk Observability Cloud → Agent Observability → your project → your agent stream.
 
 Each run produces:
 - 1 trace for **"What is the dosage and common side effects of Lisinopril?"** — RAG retrieval via `search_medicine_qa`

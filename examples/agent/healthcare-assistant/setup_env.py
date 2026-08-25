@@ -2,8 +2,6 @@
 import os
 
 REQUIRED_ENV_VARS = [
-    "OPENAI_API_KEY",
-    "OPENAI_BASE_URL",
     "POSTGRES_HOST",
     "POSTGRES_PORT",
     "POSTGRES_USER",

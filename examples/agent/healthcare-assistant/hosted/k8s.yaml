@@ -4,10 +4,10 @@ metadata:
   name: healthcare-assistant-instrumented-config
   namespace: healthcare-assistant
 data:
-  SPLUNK_AO_PROJECT: "demo-healthcare"
-  SPLUNK_AO_AGENT_STREAM: "hosted"
-  OTEL_SERVICE_NAME: "healthcare-assistant-hosted"
-  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment.name=agent-observability"
+  SPLUNK_AO_PROJECT: "your-project-name"
+  SPLUNK_AO_AGENT_STREAM: "your-agent-stream"
+  OTEL_SERVICE_NAME: "healthcare-assistant"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment.name=your-environment"
   AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
   AZURE_CHAT_DEPLOYMENT: "gpt-4.1-mini"
   AZURE_EMBEDDING_DEPLOYMENT: "text-embedding-3-large"
@@ -32,7 +32,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: demo-session
-              image: ertserendavga918/healthcare-assistant-agent-loadgen:v0.0.2
+              image: <your-registry>/healthcare-assistant-agent-loadgen:latest
               imagePullPolicy: Always
               command: ["python", "hosted/run_demo_session.py"]
               envFrom:
