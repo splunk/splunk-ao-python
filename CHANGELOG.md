@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
 
+### Fixed
+
+- Agent and workflow output conversion now removes confirmed repeated input
+  history and keeps only the last message as the terminal output; intermediate
+  tool-call and tool-response messages are no longer included in
+  `gen_ai.output.messages` for full-history spans. The trim is now gated on the
+  prefix-match dedup check so parallel tool-call outputs (e.g. a ToolNode with
+  multiple simultaneous calls) are never collapsed to one message when the output
+  does not echo the input.
+- `gen_ai.output.messages` assistant entries whose parts contain a `tool_call`
+  but carry no explicit `finish_reason` now receive `"tool_call"` instead of
+  `"unknown"`. Explicit source finish reasons and tool-response messages are
+  unaffected.
+
 ## [0.2.1] - 2026-08-07
 
 ### Fixed
