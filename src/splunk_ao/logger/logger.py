@@ -657,12 +657,14 @@ class SplunkAOLogger(TracesLogger):
         if activation is None:
             return
         try:
-            otel_context.detach(activation.token)
+            activation.token.var.reset(activation.token)
         except (RuntimeError, ValueError):
             current = otel_trace.get_current_span().get_span_context()
             if current == activation.span_context:
                 otel_context.attach(activation.prior_context)
-            self._logger.warning("Failed to detach handler OTel context; restored the prior context when safe.")
+            self._logger.debug(
+                "Handler OTel context was created in another execution context; restored the prior context when safe."
+            )
 
     def _replace_handler_step(self, provisional: BaseStep, final: BaseStep) -> BaseStep:
         """Replace a provisional callback model while preserving identity and topology."""
