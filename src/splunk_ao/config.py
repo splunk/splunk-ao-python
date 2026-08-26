@@ -159,7 +159,9 @@ class SplunkAOConfig(GalileoConfig):
             return self
         with _suppress_control_plane_http():
             super().set_validated_api_client()
-        assert self.validated_api_client is not None
+        client = self.validated_api_client
+        if client is None:
+            raise ConfigurationError("Validated API client was not initialized.")
         client = self.validated_api_client
         self.validated_api_client = _ControlPlaneApiClient(
             host=client.host,
