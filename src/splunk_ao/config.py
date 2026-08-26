@@ -3,10 +3,11 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, ClassVar, Optional
 
 from httpx import Response
-from pydantic import SecretStr, ValidationInfo, field_validator, model_validator
+from pydantic import Field, SecretStr, ValidationInfo, field_validator, model_validator
 from pydantic_core import Url
 
 from galileo_core.constants.request_method import RequestMethod
@@ -93,17 +94,37 @@ _BRIDGE: list[tuple[str, str]] = [
     ("SPLUNK_AO_USERNAME", "GALILEO_USERNAME"),
     ("SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD"),
     ("SPLUNK_AO_MODE", "GALILEO_MODE"),
+    ("SPLUNK_AO_HOME_DIR", "GALILEO_HOME_DIR"),
 ]
 
 
 class SplunkAOConfig(GalileoConfig):
     """Configure authentication and endpoints for standalone and O11y deployments."""
 
+    home_dir: Path = Field(
+        default_factory=lambda: Path.home() / ".splunk",
+        validate_default=True,
+        description="Home directory for Splunk AO.",
+        exclude=True,
+    )
     # Config file for this project.
     config_filename: str = "splunk-ao-config.json"
     console_url: Url = DEFAULT_CONSOLE_URL
 
     _instance: ClassVar[Optional["SplunkAOConfig"]] = None
+
+    @field_validator("home_dir", mode="before")
+    @classmethod
+    def set_home_dir(cls, value: str | Path) -> Path:
+        value = Path(value)
+        if not value.exists():
+            try:
+                value.mkdir(parents=True, exist_ok=True)
+            except OSError as e:
+                raise ValueError(f"Could not create home directory {value}: {e}") from e
+        if not value.is_dir():
+            raise ValueError(f"Home directory {value} is not a directory.")
+        return value
 
     def reset(self) -> None:
         # Remove any GALILEO_* keys the bridge injected into os.environ so that
@@ -162,7 +183,6 @@ class SplunkAOConfig(GalileoConfig):
         client = self.validated_api_client
         if client is None:
             raise ConfigurationError("Validated API client was not initialized.")
-        client = self.validated_api_client
         self.validated_api_client = _ControlPlaneApiClient(
             host=client.host,
             jwt_token=client.jwt_token,
