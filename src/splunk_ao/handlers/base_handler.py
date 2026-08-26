@@ -185,8 +185,8 @@ class SplunkAOBaseHandler:
             final = finalize_handler_step(node, state)
             final = self._splunk_ao_logger._replace_handler_step(state.step, final)
             state.step = final
-            if state.step is self._owned_root or node_id == str(getattr(self._root_node, "run_id", "")):
-                self._owned_root = final if self._owned_root is not None else self._owned_root
+            if self._owned_root is not None and (state.step is self._owned_root or is_root):
+                self._owned_root = final
 
             self._splunk_ao_logger._restore_handler_step_context(state.activation)
             state.activation = None
