@@ -99,23 +99,7 @@ def build_handler_step(
         return LoggedLlmSpan(
             **common,
             input=input_value,
-            output=output,
-            metrics=LlmMetrics.model_validate(
-                {
-                    "duration_ns": duration_ns,
-                    "num_input_tokens": params.get("num_input_tokens"),
-                    "num_output_tokens": params.get("num_output_tokens"),
-                    "num_total_tokens": params.get("num_total_tokens", params.get("total_tokens")),
-                    "time_to_first_token_ns": params.get("time_to_first_token_ns"),
-                    "num_reasoning_tokens": params.get("num_reasoning_tokens"),
-                    "num_cached_input_tokens": params.get("num_cached_input_tokens"),
-                }
-            ),
-            tools=params.get("tools"),
-            events=params.get("events"),
-            model=params.get("model"),
-            temperature=params.get("temperature"),
-        )
+            output=output if output is not None else "",
     if node.node_type == "retriever":
         retriever_common = {**common, "status_code": None}
         return RetrieverSpan(
