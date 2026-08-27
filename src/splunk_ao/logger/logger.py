@@ -136,6 +136,7 @@ class ActiveOtelContext:
     logger_id: int
     step_id: uuid.UUID
     span_context: SpanContext
+    previous_context: otel_context.Context
     token: Token
 
 
@@ -228,6 +229,8 @@ class SplunkAOLogger(TracesLogger):
     _task_handler: ThreadPoolTaskHandler
     _trace_completion_submitted: bool
     _otel_ids: dict[uuid.UUID, OtelIds] = PrivateAttr(default_factory=dict)
+    _otel_children_by_parent: dict[uuid.UUID, set[uuid.UUID]] = PrivateAttr(default_factory=dict)
+    _otel_parent_by_child: dict[uuid.UUID, uuid.UUID] = PrivateAttr(default_factory=dict)
     _pending_otel_steps: set[uuid.UUID] = PrivateAttr(default_factory=set)
 
     def __init__(
@@ -367,7 +370,9 @@ class SplunkAOLogger(TracesLogger):
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
             if self.experiment_id is None and self.agent_stream_name is None and self.agent_stream_id is None:
-                raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
+                raise SplunkAOLoggerException(
+                    "agent_stream or agent_stream_id is required to initialize SplunkAOLogger."
+                )
 
         if local_metrics:
             self.local_metrics = local_metrics
@@ -437,11 +442,16 @@ class SplunkAOLogger(TracesLogger):
         self, step: BaseStep, parent_step: BaseStep | None = None, parent_span_context: SpanContext | None = None
     ) -> OtelIds | None:
         """Assign stable OTel identity without disrupting proprietary logging."""
+        existing_ids = self._otel_ids.get(step.id)
+        if existing_ids is not None:
+            return existing_ids
+
+        parent_step_id = parent_step.id if parent_step is not None else None
         try:
             if parent_step is not None:
                 parent_ids = self._otel_ids.get(parent_step.id)
                 if parent_ids is None:
-                    raise RuntimeError(f"Missing OTel context for parent step {parent_step.id}.")
+                    raise RuntimeError(f"Missing OTel context for parent step {parent_step_id}.")
                 parent_span_context = parent_ids.span_context
             elif parent_span_context is None:
                 active_context = otel_trace.get_current_span().get_span_context()
@@ -458,13 +468,42 @@ class SplunkAOLogger(TracesLogger):
                 span_context=self._assign_otel_context(otel_trace_id, trace_state),
                 parent_span_context=parent_span_context,
             )
-            self._otel_ids[step.id] = ids
+            self._insert_otel_identity(step.id, ids, parent_step_id)
             return ids
         except Exception:
+            self._rollback_otel_identity_insert(step.id, parent_step_id)
             self._logger.warning(
                 "Failed to assign OTel identity for step %s; continuing proprietary logging.", step.id, exc_info=True
             )
             return None
+
+    def _insert_otel_identity(self, step_id: uuid.UUID, ids: OtelIds, parent_step_id: uuid.UUID | None) -> None:
+        """Record one identity and its explicit proprietary parent edge."""
+        self._otel_ids[step_id] = ids
+        if parent_step_id is None:
+            return
+
+        self._otel_parent_by_child[step_id] = parent_step_id
+        self._otel_children_by_parent.setdefault(parent_step_id, set()).add(step_id)
+
+    def _rollback_otel_identity_insert(self, step_id: uuid.UUID, parent_step_id: uuid.UUID | None) -> None:
+        """Best-effort rollback for a partially inserted OTel identity."""
+        with contextlib.suppress(Exception):
+            self._otel_ids.pop(step_id, None)
+
+        recorded_parent_id = parent_step_id
+        with contextlib.suppress(Exception):
+            recorded_parent_id = self._otel_parent_by_child.pop(step_id, parent_step_id)
+
+        if recorded_parent_id is None:
+            return
+
+        with contextlib.suppress(Exception):
+            children = self._otel_children_by_parent.get(recorded_parent_id)
+            if children is not None:
+                children.discard(step_id)
+                if not children:
+                    self._otel_children_by_parent.pop(recorded_parent_id, None)
 
     def _open_otel_step_ids(self, current_parent: StepWithChildSpans | None) -> tuple[uuid.UUID, ...]:
         """Return the root-to-current proprietary chain that has OTel identities."""
@@ -524,11 +563,11 @@ class SplunkAOLogger(TracesLogger):
 
         detach_failed = False
         for active in reversed(active_contexts):
-            try:
-                active.token.var.reset(active.token)
-            except (RuntimeError, ValueError):
-                # ContextVar tokens cannot be reset from a copied execution
-                # context. Restore the recorded base before rebuilding below.
+            otel_context.detach(active.token)
+            if otel_context.get_current() is not active.previous_context:
+                # Public detach catches its own errors. Verify the exact
+                # previously active Context so copied-context failures and
+                # swallowed no-ops can still trigger deterministic recovery.
                 detach_failed = True
 
         if detach_failed:
@@ -536,10 +575,15 @@ class SplunkAOLogger(TracesLogger):
 
         rebuilt_contexts: list[ActiveOtelContext] = []
         for owner_id, step_id, span_context in contexts_to_restore:
-            ctx = otel_trace.set_span_in_context(NonRecordingSpan(span_context))
+            previous_context = otel_context.get_current()
+            ctx = otel_trace.set_span_in_context(NonRecordingSpan(span_context), previous_context)
             rebuilt_contexts.append(
                 ActiveOtelContext(
-                    logger_id=owner_id, step_id=step_id, span_context=span_context, token=otel_context.attach(ctx)
+                    logger_id=owner_id,
+                    step_id=step_id,
+                    span_context=span_context,
+                    previous_context=previous_context,
+                    token=otel_context.attach(ctx),
                 )
             )
 
@@ -555,18 +599,83 @@ class SplunkAOLogger(TracesLogger):
         self._discard_otel_identity_tree(step.id)
 
     def _discard_otel_identity_tree(self, step_id: uuid.UUID) -> None:
-        """Remove one identity and all identities parented to it."""
-        ids = self._otel_ids.pop(step_id, None)
-        if ids is None:
-            return
+        """Iteratively remove one identity and its indexed descendants."""
+        worklist = [step_id]
+        visited: set[uuid.UUID] = set()
+        first_error: Exception | None = None
 
-        child_ids = tuple(
-            child_id
-            for child_id, child_ids in self._otel_ids.items()
-            if child_ids.parent_span_context == ids.span_context
-        )
-        for child_id in child_ids:
-            self._discard_otel_identity_tree(child_id)
+        while worklist:
+            current_step_id = worklist.pop()
+            if current_step_id in visited:
+                continue
+            visited.add(current_step_id)
+
+            child_ids: tuple[uuid.UUID, ...] = ()
+            try:
+                child_ids = tuple(self._otel_children_by_parent.get(current_step_id, ()))
+                self._otel_children_by_parent.pop(current_step_id, None)
+            except Exception as exc:
+                first_error = first_error or exc
+            worklist.extend(child_ids)
+
+            for child_id in child_ids:
+                try:
+                    self._otel_parent_by_child.pop(child_id, None)
+                except Exception as exc:
+                    first_error = first_error or exc
+
+            try:
+                self._remove_otel_identity(current_step_id)
+            except Exception as exc:
+                first_error = first_error or exc
+
+        if first_error is not None:
+            raise first_error
+
+    def _remove_otel_identity(self, step_id: uuid.UUID) -> None:
+        """Remove one identity and unlink it from its proprietary parent."""
+        first_error: Exception | None = None
+        parent_step_id: uuid.UUID | None = None
+
+        try:
+            parent_step_id = self._otel_parent_by_child.get(step_id)
+            self._otel_parent_by_child.pop(step_id, None)
+        except Exception as exc:
+            first_error = exc
+
+        if parent_step_id is not None:
+            try:
+                siblings = self._otel_children_by_parent.get(parent_step_id)
+                if siblings is not None:
+                    try:
+                        siblings.discard(step_id)
+                    except Exception as exc:
+                        first_error = first_error or exc
+                        remaining_siblings = set(siblings)
+                        remaining_siblings.discard(step_id)
+                        if remaining_siblings:
+                            self._otel_children_by_parent[parent_step_id] = remaining_siblings
+                        else:
+                            self._otel_children_by_parent.pop(parent_step_id, None)
+                    else:
+                        if not siblings:
+                            self._otel_children_by_parent.pop(parent_step_id, None)
+            except Exception as exc:
+                first_error = first_error or exc
+
+        try:
+            self._otel_ids.pop(step_id, None)
+        except Exception as exc:
+            first_error = first_error or exc
+
+        if first_error is not None:
+            raise first_error
+
+    def _clear_otel_identities(self) -> None:
+        """Clear stable identities and both structural indexes."""
+        self._otel_ids.clear()
+        self._otel_children_by_parent.clear()
+        self._otel_parent_by_child.clear()
 
     def _release_otel_context(self, finished_step: BaseStep) -> None:
         """Release OTel bookkeeping without disrupting proprietary completion."""
@@ -617,7 +726,14 @@ class SplunkAOLogger(TracesLogger):
             self._logger.warning("Failed to emit completed step %s.", finished_step.id, exc_info=True)
         finally:
             self._pending_otel_steps.discard(finished_step.id)
-            self._otel_ids.pop(finished_step.id, None)
+            try:
+                self._remove_otel_identity(finished_step.id)
+            except Exception:
+                self._logger.warning(
+                    "Failed to release OTel identity for completed step %s; continuing proprietary logging.",
+                    finished_step.id,
+                    exc_info=True,
+                )
 
     def _emit_pending_descendants(self, finished_step: BaseStep) -> None:
         """Emit pending descendants in post-order before their enclosing parent."""
@@ -2456,7 +2572,7 @@ class SplunkAOLogger(TracesLogger):
                         self._logger.warning("SplunkAOLogger.terminate: sink shutdown failed: %s", exc)
         finally:
             self._set_current_parent(None)
-            self._otel_ids.clear()
+            self._clear_otel_identities()
             self._pending_otel_steps.clear()
             self.traces = []
 

@@ -146,9 +146,8 @@ def _clear_otel_test_context() -> None:
 
     detach_failed = False
     for active in reversed(state.active_contexts):
-        try:
-            active.token.var.reset(active.token)
-        except (RuntimeError, ValueError):
+        otel_context.detach(active.token)
+        if otel_context.get_current() is not active.previous_context:
             detach_failed = True
 
     if detach_failed:
