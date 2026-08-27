@@ -25,7 +25,7 @@ Additionally there are a handful of **removed features** (Protect, `GalileoScore
 
 ### 1.1 Package Availability
 
-> **`splunk-ao` is not yet published to PyPI.**  
+> **`splunk-ao` is not yet published to PyPI.**
 > Use one of the two installation methods below until a public release is available.
 
 **Option A — Install directly from GitHub (recommended for most users)**
@@ -81,7 +81,7 @@ splunk-ao = { path = "../splunk-ao-python", develop = true }
 
 ### 1.2 Optional Extra Groups
 
-The extras keys are unchanged (`langchain`, `openai`, `crewai`, `middleware`, `otel`, `all`).  
+The extras keys are unchanged (`langchain`, `openai`, `crewai`, `middleware`, `otel`, `all`).
 One new dependency was added to the `otel` and `all` extras:
 
 | Extra | Change |
