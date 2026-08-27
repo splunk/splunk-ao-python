@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0]
+
 ### Breaking Changes
 
 - Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
@@ -104,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/
 [0.2.1]: https://pypi.org/project/splunk-ao/0.2.1/
 [0.2.0]: https://pypi.org/project/splunk-ao/0.2.0/
 [0.1.1]: https://pypi.org/project/splunk-ao/0.1.1/
