@@ -367,7 +367,9 @@ class SplunkAOLogger(TracesLogger):
                     "User must provide project_name or project_id to SplunkAOLogger, or set it as an environment variable."
                 )
             if self.experiment_id is None and self.agent_stream_name is None and self.agent_stream_id is None:
-                raise SplunkAOLoggerException("agent_stream or agent_stream_id is required to initialize SplunkAOLogger.")
+                raise SplunkAOLoggerException(
+                    "agent_stream or agent_stream_id is required to initialize SplunkAOLogger."
+                )
 
         if local_metrics:
             self.local_metrics = local_metrics
@@ -412,12 +414,20 @@ class SplunkAOLogger(TracesLogger):
         super()._set_current_parent(parent)
         self._sync_otel_context(parent)
 
-    def reset_parent_tracking(self) -> None:
-        """Clear proprietary and OTel tracking for the current request context."""
-        current_parent = self.current_parent()
-        root = current_parent
+    def _current_root(self) -> StepWithChildSpans | None:
+        """Return the root of the current proprietary parent chain."""
+        root = self.current_parent()
         while root is not None and root._parent is not None:
             root = root._parent
+        return root
+
+    def _is_current_root(self, trace: Trace | None) -> bool:
+        """Return whether trace owns the current proprietary parent chain."""
+        return trace is not None and self._current_root() is trace
+
+    def reset_parent_tracking(self) -> None:
+        """Clear proprietary and OTel tracking for the current request context."""
+        root = self._current_root()
 
         self._set_current_parent(None)
         if root is not None:

@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agent Control spans exported over OTLP now include the control discriminator
   and complete `agent_control.*` field set required for backend classification
   and Controls-card rendering.
+- Explicitly empty message parts are preserved in OTLP telemetry instead of
+  being serialized as the text `"[]"`.
+- OTLP partial-success acknowledgements recognize positive integral JSON-number
+  rejection counts such as `3.0`.
 
 ### Changed
 

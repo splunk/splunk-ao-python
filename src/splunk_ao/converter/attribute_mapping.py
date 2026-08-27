@@ -179,7 +179,10 @@ def _mapped_message(source: dict[str, Any], default_role: str) -> dict[str, Any]
     tool_call_id = source.pop("tool_call_id", None)
     tool_calls = source.pop("tool_calls", None)
 
-    if source_parts is not None:
+    # An explicitly supplied parts field is authoritative over legacy content.
+    if isinstance(source_parts, list) and not source_parts:
+        parts = []
+    elif source_parts is not None:
         parts = _content_parts(source_parts)
     elif role == "tool":
         response = {"type": "tool_call_response", "response": _parse_json_value(content)}

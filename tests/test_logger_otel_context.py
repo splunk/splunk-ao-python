@@ -9,6 +9,7 @@ from opentelemetry.trace import SpanContext, TraceFlags
 
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import _otel_context_state
+from splunk_ao.schema.logged import LoggedTrace
 
 
 @pytest.fixture(autouse=True)
@@ -54,6 +55,29 @@ def test_start_trace_assigns_and_activates_fresh_context(make_logger: Callable[[
     logger.conclude(output="a")
     assert not trace.get_current_span().get_span_context().is_valid
     assert logger._otel_ids == {}
+
+
+def test_logger_identifies_current_root_ownership(make_logger: Callable[[], SplunkAOLogger]) -> None:
+    # Given: an empty logger and an unrelated proprietary trace
+    logger = make_logger()
+    unrelated_trace = LoggedTrace(input="unrelated")
+
+    # Then: absent inputs and an empty parent chain are never owned
+    assert logger._current_root() is None
+    assert logger._is_current_root(None) is False
+    assert logger._is_current_root(unrelated_trace) is False
+
+    # When: an owned root and nested current child are created
+    owned_trace = logger.start_trace(input="request", name="owned")
+    assert logger._current_root() is owned_trace
+    assert logger._is_current_root(owned_trace) is True
+    logger.add_workflow_span(input="nested", name="nested")
+
+    # Then: the root is discovered by identity and an unrelated trace is rejected
+    assert logger._current_root() is owned_trace
+    assert logger._is_current_root(owned_trace) is True
+    assert logger._is_current_root(unrelated_trace) is False
+    logger.conclude(output="done", conclude_all=True)
 
 
 def test_every_path1_step_gets_stable_ids_and_actual_parent(make_logger: Callable[[], SplunkAOLogger]) -> None:

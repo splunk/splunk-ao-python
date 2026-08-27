@@ -245,11 +245,8 @@ class SplunkAOAgentControlBridge:
         if current_parent is None or current_parent.id is None:
             return None
 
-        root_parent = current_parent
-        while getattr(root_parent, "_parent", None) is not None:
-            root_parent = root_parent._parent
-
-        if getattr(root_parent, "id", None) is None:
+        root_parent = self._splunk_ao_logger._current_root()
+        if root_parent is None or root_parent.id is None:
             return None
 
         return _ActiveContext(trace_id=str(root_parent.id), span_id=str(current_parent.id))

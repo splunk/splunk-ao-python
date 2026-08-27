@@ -718,6 +718,54 @@ def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     ]
 
 
+def test_orchestration_preserves_explicit_empty_message_parts() -> None:
+    # Given: role-bearing input and output messages with explicitly empty parts
+    span = WorkflowSpan(
+        name="empty-parts-workflow", input='{"role":"user","parts":[]}', output='{"role":"assistant","parts":[]}'
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: empty parts remain empty instead of becoming a text part containing "[]"
+    assert json.loads(attrs["gen_ai.input.messages"]) == [{"role": "user", "parts": []}]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [], "finish_reason": "unknown"}
+    ]
+
+
+def test_orchestration_treats_explicit_empty_parts_as_authoritative() -> None:
+    # Given: role-bearing messages with both explicit empty parts and legacy content
+    span = WorkflowSpan(
+        name="both-content-fields-workflow",
+        input='{"role":"user","parts":[],"content":"ignored input"}',
+        output='{"role":"assistant","parts":[],"content":"ignored output"}',
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: the explicit OTel parts field takes precedence over legacy content
+    assert json.loads(attrs["gen_ai.input.messages"]) == [{"role": "user", "parts": []}]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        {"role": "assistant", "parts": [], "finish_reason": "unknown"}
+    ]
+
+
+def test_orchestration_keeps_missing_parts_and_empty_content_distinct() -> None:
+    # Given: role-bearing messages with no parts field and explicit empty content
+    span = WorkflowSpan(
+        name="empty-content-workflow", input='{"role":"user","content":""}', output='{"role":"assistant","content":""}'
+    )
+
+    # When: the messages are mapped to canonical OTel attributes
+    attrs = build_span_attributes(span)
+
+    # Then: existing empty-content behavior remains a typed empty text part
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "")]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [_text_message("assistant", "", finish_reason="unknown")]
+
+
 @pytest.mark.parametrize(
     "span",
     [

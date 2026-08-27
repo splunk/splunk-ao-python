@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 import threading
 import time
@@ -28,6 +29,7 @@ ExportFailureCategory = Literal["rejected"]
 _MAX_RESPONSE_BYTES = 64 * 1024
 _MAX_MESSAGE_LENGTH = 512
 _MAX_REJECTION_KEYS = 8
+_MAX_SAFE_JSON_INTEGER = 2**53 - 1
 _DEFAULT_LOG_INTERVAL_SECONDS = 60.0
 _SAFE_KEY = re.compile(r"[^a-zA-Z0-9_.-]+")
 _PROTOBUF_CONTENT_TYPES = frozenset(
@@ -247,6 +249,14 @@ def _positive_json_integer(value: object) -> int | None:
         return None
     if isinstance(value, int):
         return value if value > 0 else None
+    if (
+        isinstance(value, float)
+        and math.isfinite(value)
+        and value.is_integer()
+        and abs(value) <= _MAX_SAFE_JSON_INTEGER
+    ):
+        parsed = int(value)
+        return parsed if parsed > 0 else None
     if isinstance(value, str) and value.isdecimal():
         parsed = int(value)
         return parsed if parsed > 0 else None

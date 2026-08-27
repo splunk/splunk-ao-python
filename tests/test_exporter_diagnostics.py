@@ -21,6 +21,7 @@ from splunk_ao.exporter.diagnostics import (
     DiagnosticOTLPSpanExporter,
     ExportHealth,
     _ExportHealthTracker,
+    _positive_json_integer,
     _RejectionDetail,
 )
 from splunk_ao.exporter.sink import BatchConfig, build_span_sink
@@ -108,17 +109,68 @@ def test_positive_otlp_partial_success_returns_failure_without_retry() -> None:
     assert exporter._attempt_local.response is None
 
 
-@pytest.mark.parametrize("rejected_spans", [3, "3"])
-def test_positive_json_otlp_partial_success_returns_failure_without_backend_detail(rejected_spans: int | str) -> None:
+@pytest.mark.parametrize("rejected_spans", [3, "3", 3.0])
+def test_positive_json_otlp_partial_success_returns_failure_without_backend_detail(
+    rejected_spans: int | float | str,
+) -> None:
+    # Given: a successful OTLP JSON response with an unambiguous positive rejection count
     body = json.dumps(
         {"partialSuccess": {"rejectedSpans": rejected_spans, "errorMessage": "do not retain this backend detail"}}
     ).encode()
     exporter = diagnostic_exporter(FakeSession(response(body=body)))
 
-    assert exporter.export(()) == SpanExportResult.FAILURE
+    # When: the response is classified
+    result = exporter.export(())
+
+    # Then: each supported JSON representation produces the same bounded count without backend detail
+    assert result == SpanExportResult.FAILURE
     assert exporter.export_health.last_failure is not None
     assert "Rejected spans: 3" in exporter.export_health.last_failure.message
     assert "backend detail" not in exporter.export_health.last_failure.message
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        True,
+        False,
+        0,
+        -1,
+        0.0,
+        -3.0,
+        3.5,
+        float(2**53),
+        1e30,
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        "",
+        "+3",
+        "-3",
+        "3.0",
+        "3e0",
+        {},
+        [],
+    ],
+)
+def test_invalid_json_rejected_span_counts_are_ignored(value: object) -> None:
+    # Given: a value that does not unambiguously represent a positive integer
+    # When: the acknowledgement count is parsed
+    result = _positive_json_integer(value)
+
+    # Then: the value is ignored without raising
+    assert result is None
+
+
+def test_max_safe_json_float_rejected_span_count_is_accepted() -> None:
+    # Given: the largest integer-valued float that JSON can represent unambiguously
+    value = float(2**53 - 1)
+
+    # When: the acknowledgement count is parsed
+    result = _positive_json_integer(value)
+
+    # Then: the exact safe integer value is retained
+    assert result == 2**53 - 1
 
 
 @pytest.mark.parametrize(

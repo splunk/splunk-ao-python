@@ -105,12 +105,7 @@ class SplunkAOBaseHandler:
             self._root_node = None
 
     def _conclude_owned_trace(self, trace: Any, output: Any, status_code: int | None) -> None:
-        current_parent = self._splunk_ao_logger.current_parent()
-        root = current_parent
-        while root is not None and root._parent is not None:
-            root = root._parent
-
-        if root is trace:
+        if self._splunk_ao_logger._is_current_root(trace):
             self._splunk_ao_logger.conclude(output=output, status_code=status_code, conclude_all=True)
 
     def log_node_tree(self, node: Node) -> None:

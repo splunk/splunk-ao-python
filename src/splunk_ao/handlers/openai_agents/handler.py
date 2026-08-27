@@ -110,17 +110,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         self._splunk_ao_logger.conclude(output=self._last_output, status_code=self._last_status_code)
 
     def _conclude_current_trace_on_failure(self) -> None:
-        if self._owned_trace is None:
-            return
-
-        current_parent = self._splunk_ao_logger.current_parent()
-        if current_parent is None:
-            return
-
-        root = current_parent
-        while root._parent is not None:
-            root = root._parent
-        if root is self._owned_trace:
+        if self._splunk_ao_logger._is_current_root(self._owned_trace):
             self._splunk_ao_logger.conclude(output="", status_code=500, conclude_all=True)
 
     def _log_node_tree(self, node: Node, first_node: bool = False) -> None:
