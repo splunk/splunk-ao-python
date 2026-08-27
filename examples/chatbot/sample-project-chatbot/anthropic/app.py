@@ -11,7 +11,7 @@ All interactions are logged to Splunk AO. The structure is:
     as a workflow span
 - The call to the LLM is logged manually as an LLM span.
 - After the response is received, the trace is concluded with the response
-    and flushed to ensure it is sent to Splunk AO.
+    and flushed so it is exported immediately.
 
 To run this, you will need to have the following environment variables set:
 - `SPLUNK_AO_API_KEY`: Your Splunk AO API key.

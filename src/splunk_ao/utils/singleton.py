@@ -20,8 +20,12 @@ class SplunkAOLoggerSingleton:
     provides a thread-safe way to retrieve or create SplunkAOLogger clients based on
     the given 'project' and 'agent_stream' parameters. If the parameters are not provided,
     the class attempts to read the values from the environment variables
-    SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM. The loggers are stored in a dictionary
-    using a tuple (project, agent_stream) as the key.
+    SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM, falling back to the standalone defaults.
+
+    Loggers are cached under a tuple key built from the calling thread's name, the logger
+    mode, the deployment, and the resolved project and agent stream (or experiment)
+    identity, plus the distributed trace and span IDs when present. Because the thread name
+    is part of the key, instances are never shared across threads.
     """
 
     _instance = None  # Class-level attribute to hold the singleton instance.
@@ -244,7 +248,14 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None = None,
     ) -> None:
         """
-        Reset (terminate and remove) one or all SplunkAOLogger instances.
+        Reset (terminate and remove) the SplunkAOLogger instances matching the given key.
+
+        Matching is by key prefix, so a logger's per-trace and hook-backed variants are
+        included. With no arguments this covers the current thread's loggers at the default
+        mode and resolved routing, not every cached instance; use ``reset_all()`` for that.
+
+        Terminating drains completed spans before shutting the exporter down. Spans still
+        open at that point are discarded rather than exported.
 
         Parameters
         ----------

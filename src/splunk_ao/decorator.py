@@ -1364,9 +1364,14 @@ class SplunkAODecorator:
 
     def reset(self) -> None:
         """
-        Reset the entire context, which also deletes all traces that haven't been flushed.
+        Reset the entire context and terminate the loggers for the current context.
 
-        This method clears all context variables and resets the logger singleton.
+        Terminating drains completed spans before shutting the exporter down, so work that
+        has already concluded is still exported. Spans left open at that point are discarded
+        rather than exported.
+
+        This method clears all context variables and stacks, and evicts the terminated
+        loggers from the singleton cache.
         """
         SplunkAOLoggerSingleton().reset(
             project=_project_context.get(),
