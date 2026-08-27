@@ -350,6 +350,17 @@ This file is never read back and has no effect on authentication or config
 resolution. If you have an existing `~/.galileo/galileo-python-config.json`
 from `galileo-python`, it can be deleted at leisure or simply ignored.
 
+### 5.4 `flush()` No Longer Required
+
+In `galileo`, `logger.flush()` uploaded the accumulated traces and was required
+before the process exited. In `splunk-ao`, `conclude()` enqueues the span with the
+batch processor and an `atexit` hook exports at interpreter exit, so an explicit
+call is no longer needed.
+
+`flush()` still exists and still exports — call it to push spans out immediately
+rather than waiting for the batch timer. For deterministic shutdown, call
+`terminate()`, which drains and then shuts down the exporter.
+
 ---
 
 ## 6. HTTP Tracing Headers
@@ -413,11 +424,12 @@ with splunk_ao_context(project="my-project", agent_stream="production"):
     result = call_llm("Hello")
 
 # Direct logger approach
-# project/log_stream are constructor args, not start_session args
+# project/agent_stream are constructor args, not start_session args
 logger = SplunkAOLogger(project="my-project", agent_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg
+# no explicit flush() required — see 5.4
 ```
 
 ---
