@@ -123,6 +123,12 @@ def migrate_file(path: Path, dry_run: bool, protect_in_scope: bool = False) -> F
             result.skip_reason = "rewritten content does not compile — skipped; review manually"
             return result
     elif kind in ("dep", "toml"):
+        # When Protect is in scope, skip dep/toml files entirely so the galileo
+        # dependency is preserved — Protect is not available in splunk-ao.
+        if protect_in_scope:
+            result.skipped = True
+            result.skip_reason = "Protect feature in scope — galileo dependency must be kept; review manually"
+            return result
         # Do not pass WARNING_RULES here: in dep/toml files every "galileo" string
         # literal is the package name (already auto-renamed), never a non-SDK reference.
         # The Protect pre-scan warning is emitted at the CLI level, not per-file.

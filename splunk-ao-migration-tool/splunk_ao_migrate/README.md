@@ -26,6 +26,8 @@ pip install ./splunk_ao_migrate
 uv pip install ./splunk_ao_migrate
 ```
 
+> Run from `splunk-ao-migration-tool/` (the workspace root).
+
 No external dependencies — uses Python stdlib only.
 
 ## Usage
@@ -43,26 +45,28 @@ splunk-ao-migrate --dry-run src/
 # Suppress the summary report
 splunk-ao-migrate --no-report src/
 
-# Run directly without installing
-python splunk_ao_migrate/migrate.py --dry-run src/
+# Run directly without installing (from the workspace root)
+python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
 
-# Run as a module
+# Run as a module (after uv sync)
 python -m splunk_ao_migrate.migrate --dry-run src/
 
-# Run with uv
-uv run python splunk_ao_migrate/migrate.py --dry-run src/
+# Run with uv (from the workspace root)
+uv run python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
 ```
 
 ## Package layout
 
 ```
-splunk_ao_migrate/
-  migrate.py      ← CLI entry point (also registered as splunk-ao-migrate console script)
-  rules.py        ← all substitution rules (imports, symbols, kwargs, env-vars, headers)
-  transformer.py  ← applies rules to source text, returns TransformResult
-  reporter.py     ← formats and prints the migration summary report
-  pyproject.toml  ← package metadata and entry point declaration
-  README.md       ← this file
+splunk_ao_migrate/          ← package root (uv workspace member)
+  pyproject.toml            ← package metadata and entry point declaration
+  README.md                 ← this file
+  src/
+    splunk_ao_migrate/      ← Python package (src layout)
+      migrate.py            ← CLI entry point (splunk-ao-migrate console script)
+      rules.py              ← all substitution rules (imports, symbols, kwargs, env-vars, headers)
+      transformer.py        ← applies rules to source text, returns TransformResult
+      reporter.py           ← formats and prints the migration summary report
 ```
 
 ## What gets migrated
@@ -81,13 +85,13 @@ splunk_ao_migrate/
 - **Not renamed**: `get_metrics()` and `set_metrics()` on `AgentStream` — these remain as live method names; only the module-level `get_evaluators()` function is the new API
 - Keyword argument and parameter renames: `log_stream=` → `agent_stream=`, `log_stream_name=` → `agent_stream_name=`, `logstream=` → `agentstream=`; also catches typed parameter declarations like `log_stream: str | None = None` → `agent_stream: str | None = None`
 - Config file renames: `galileo-python-config.json` → `splunk-ao-config.json`, `galileo-config.json` → `splunk-ao-config.json`
-- `GALILEO_*` env-var string literals → `SPLUNK_AO_*` (including `GALILEO_API_ENDPOINT`, `GALILEO_API_KEY`, `GALILEO_CONSOLE_URL`, `GALILEO_HOME_DIR`, etc.)
+- `GALILEO_*` env-var string literals → `SPLUNK_AO_*` (e.g. `GALILEO_API_KEY`, `GALILEO_API_ENDPOINT`, `GALILEO_CONSOLE_URL`, `GALILEO_HOME_DIR`)
 - `X-Galileo-Trace-ID` / `X-Galileo-Parent-ID` HTTP headers
 - `GalileoSpanProcessor` → `SplunkAOSpanProcessor`, `add_galileo_span_processor` → `add_splunk_ao_span_processor`
 - `GalileoObserver` → `SplunkAOObserver`
 - `galileo_*` prefixed identifiers (e.g. `galileo_session_id`) → `splunk_ao_*`
 - `_galileo_` mid-identifier and attribute patterns (e.g. `func._galileo_is_retriever`, `self._handler._galileo_logger`) → `_splunk_ao_*`; the rule fires after `.`, spaces, and quotes, not just within word characters
-- `GALILEO_OBSERVE_KEY` constant name → `SPLUNK_AO_OBSERVE_KEY` (the string wire value `"galileo_observe"` is intentionally left unchanged for A2A metadata compatibility)
+- `GALILEO_OBSERVE_KEY` constant name → `SPLUNK_AO_OBSERVE_KEY`; the string wire value `"galileo_observe"` → `"splunk_ao_observe"` (used as the A2A metadata key in `splunk-ao-a2a`)
 - `galileo-a2a` package name in string literals and pip installs → `splunk-ao-a2a` (hyphenated; handled before the generic `galileo` rule to avoid producing the wrong underscore form)
 - `Galileo.ai` brand name in prose → `Splunk AO`
 - `Galileo` brand name in comments/docstrings → `Splunk AO`
@@ -105,7 +109,10 @@ Doc files are processed in three passes:
    - `/getting-started/logging` → `/concepts/logging/overview`
    - `/concepts/experiments/overview` → `/sdk-api/experiments/experiments`
 2. **Prose pass**: all the same symbol, import, env-var, and brand-name substitutions as Python files, with one exception — `logstream=` (no underscore) is **not** rewritten in docs to avoid corrupting env-var string values like `TRACELOOP_HEADERS="..., logstream=default, ..."`. `log_stream=` and `log_stream_name=` are still rewritten.
-3. **Placeholder fix pass**: corrects `your-splunk_ao-*` (underscore, produced by the import rule) back to `your-splunk-ao-*` (hyphenated, correct prose form). Also corrects bare `splunk_ao` in prose position (not followed by `_` or `.`) to the brand name `Splunk AO`.
+3. **Placeholder fix pass**: three corrections applied after the prose pass:
+   - `your-splunk_ao-*` → `your-splunk-ao-*` (hyphenated placeholder form)
+   - `splunk_ao-*` → `splunk-ao-*` (hyphenated package/dir names in prose, e.g. `splunk_ao-adk` → `splunk-ao-adk`)
+   - bare `splunk_ao` in prose position (not followed by `_`, `.`, `-`, or `/`) → `Splunk AO` (brand name)
 
 All other URLs (`https?://...`) are **not rewritten** — external links remain intact.
 
@@ -123,7 +130,7 @@ All other URLs (`https?://...`) are **not rewritten** — external links remain 
 
 ### Environment files
 
-- All `GALILEO_*` keys → `SPLUNK_AO_*` (e.g. `GALILEO_API_ENDPOINT`, `GALILEO_API_KEY`, `GALILEO_CONSOLE_URL`, `GALILEO_PROJECT`, etc.)
+- All `GALILEO_*` keys → `SPLUNK_AO_*` (e.g. `GALILEO_API_KEY`, `GALILEO_API_ENDPOINT`, `GALILEO_CONSOLE_URL`, `GALILEO_PROJECT`, etc.)
 - `GALILEO_LOGSTREAM` / `GALILEO_LOG_STREAM` → `SPLUNK_AO_AGENT_STREAM`
 - HTTP header strings: `Galileo-API-Key` → `Splunk-AO-API-Key`, `X-Galileo-Trace-ID` → `Splunk-AO-Trace-ID`
 - `galileo` as a word in placeholder values (e.g. `your-galileo-key` → `your-splunk-ao-key`)
@@ -150,15 +157,12 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
   as a dependency; Protect is not available in `splunk-ao`
 - **`galileo_core` imports** — `galileo_core` is a low-level external dependency used
   internally by `splunk-ao`. It is **not** renamed to `splunk_ao_core` (no such package
-  exists). When this warning fires, review any `galileo_core` types used in your code
-  (e.g. `Metrics` from `galileo_core.schemas.logging.step`) — they are internal types
-  and should not be renamed to the `splunk-ao` public API equivalents
+  exists). When this warning fires, all `Metric`/`Evaluator` renames are suppressed for
+  the entire file (including call sites) so internal types like `Metrics` from
+  `galileo_core.schemas.logging.step` are not incorrectly renamed. Review the file to
+  confirm the suppressed renames are correct.
 - **Dynamic env-var construction** (`f"GALILEO_{key}"`) — cannot be auto-rewritten;
   update manually
-- **`GALILEO_OBSERVE_KEY`** — OTel interop constant name in `splunk-ao-a2a`; the tool
-  renames the Python constant to `SPLUNK_AO_OBSERVE_KEY` but flags it so you can verify
-  the wire-level string value `"galileo_observe"` is intentionally preserved for
-  cross-agent A2A metadata compatibility
 - **Lowercase `galileo` in string literals** — may refer to the astronomer or other
   non-SDK usage (e.g. `"what moons did galileo discover"`); verify whether it should
   be renamed or left as-is
@@ -176,12 +180,12 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
 - URLs are not rewritten in Python, dependency, and environment files. In doc files
   (`.md`, `.rst`), only the known Galileo documentation URLs listed above are rewritten;
   all other external links are preserved as-is.
-- **`galileo_core` interop code**: files that import from `galileo_core` and use its
-  internal types (e.g. `Metrics`, `_ADK_ROLE_TO_GALILEO`, `_map_adk_role_to_galileo`)
-  may have some internal variable/function names over-fired. The `galileo_core` warning
-  identifies these files for manual review. This only affects code that directly wraps or
-  bridges `galileo_core` internals (e.g. `splunk-ao-adk` source itself) — typical user
-  application code is not affected.
+- **`galileo_core` interop code**: when a file imports from `galileo_core`, all
+  `Metric`/`Evaluator` renames (`Metrics`, `LlmMetric`, etc.) are suppressed for that
+  entire file — including call sites on lines that do not contain `galileo_core` —
+  because those names are `galileo_core` internals that must not be renamed. Other
+  identifiers in the same file (e.g. `_ADK_ROLE_TO_GALILEO`, `_map_adk_role_to_galileo`)
+  are still renamed. Review the output of files that trigger the `galileo_core` warning.
 
 ## See also
 

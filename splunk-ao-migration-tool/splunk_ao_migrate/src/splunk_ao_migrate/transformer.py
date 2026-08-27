@@ -72,12 +72,17 @@ def _is_docstring_line(line: str) -> bool:
     return stripped.startswith(('"""', "'''", '"', "'"))
 
 # Rules whose replacements are Metric/Evaluator variants should not fire on
-# lines that reference galileo_core — those types are internal and must not
-# be renamed.  This set matches the .replacement values of those rules.
+# any line in a file that imports from galileo_core — those types are internal
+# and must not be renamed.  The suppression is file-scoped (not line-scoped)
+# because call sites like `metrics=Metrics(...)` appear on lines that do not
+# themselves contain 'galileo_core', yet the name was imported from it.
+# This set matches the .replacement values of those rules.
 _GALILEO_CORE_SKIP_REPLACEMENTS = frozenset({
     "Evaluators", "Evaluator", "BuiltInEvaluators",
     "LocalEvaluator", "CodeEvaluator", "LlmEvaluator",
 })
+
+_GALILEO_CORE_IMPORT_RE = re.compile(r"\bgalileo_core\b")
 
 # Lines importing Protect symbols must not be renamed — Protect must stay
 # imported from 'galileo', not 'splunk_ao'.
@@ -190,17 +195,27 @@ def transform(
     names may appear freely anywhere on the line.
 
     Special behaviour: rules whose replacement is a bare Metric/Evaluator
-    variant (e.g. "Evaluators", "Evaluator") are suppressed on any line that
-    contains 'galileo_core' — those types are galileo_core internals and must
-    not be renamed.
+    variant (e.g. "Evaluators", "Evaluator") are suppressed for the entire
+    file if the file imports from galileo_core — those types are galileo_core
+    internals and must not be renamed.  The check is file-scoped (not
+    line-scoped) because call sites like ``metrics=Metrics(...)`` appear on
+    lines that do not themselves contain 'galileo_core'.
     """
     result = TransformResult(content=content)
     lines = content.splitlines(keepends=True)
+
+    # File-level flag: suppress Metric→Evaluator renames across the whole file
+    # if any line imports from galileo_core.
+    file_has_galileo_core = _GALILEO_CORE_IMPORT_RE.search(content) is not None
 
     for rule in rules:
         # Warning-only rules in a rule list are skipped during substitution;
         # they are collected separately via the warning_rules parameter.
         if rule.is_warning:
+            continue
+        # Suppress Metric→Evaluator rules for the entire file when galileo_core
+        # is imported — those types are internal and must not be renamed.
+        if file_has_galileo_core and rule.replacement in _GALILEO_CORE_SKIP_REPLACEMENTS:
             continue
         compiled = _compile(rule)
         new_lines: list[str] = []
@@ -208,10 +223,6 @@ def transform(
             # Never rewrite lines that import Protect symbols — those must remain
             # as `from galileo import invoke_protect …`.
             if _PROTECT_LINE_RE.search(line) and "galileo" in line:
-                new_lines.append(line)
-                continue
-            # Suppress Metric→Evaluator rules on galileo_core lines.
-            if rule.replacement in _GALILEO_CORE_SKIP_REPLACEMENTS and "galileo_core" in line:
                 new_lines.append(line)
                 continue
             new_line, n = _sub_outside_urls(

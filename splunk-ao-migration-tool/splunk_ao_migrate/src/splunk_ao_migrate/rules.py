@@ -196,11 +196,15 @@ SYMBOL_RULES: list[Rule] = [
     Rule(r"\blist_log_streams\b", "list_agent_streams", "list_log_streams → list_agent_streams"),
     Rule(r"\bget_log_stream\b", "get_agent_stream", "get_log_stream → get_agent_stream"),
     Rule(r"\.logstreams\b", ".agent_streams", ".logstreams → .agent_streams"),
-    # --- Parameter / variable name: log_stream (bare identifier, not as a kwarg) ---
-    # Catches parameter declarations like `log_stream: str | None = None` and local
-    # variables like `effective_log_stream = ...` which the KWARG_RULES miss because
-    # the pattern `log_stream\s*=` requires `=` immediately after and skips `:` type annotations.
-    # log_streams (plural) is already covered by list_log_streams above; this handles singular.
+    # --- Parameter / variable names: log_stream and log_stream_name ---
+    # Catches both kwarg usage (log_stream=, log_stream_name=) and typed parameter
+    # declarations like `log_stream: str | None = None` or `log_stream_name: str = None`.
+    # log_stream_name must come before log_stream to avoid a partial match
+    # (log_stream_name contains log_stream as a prefix but \blog_stream\b won't fire
+    # inside log_stream_name because _ is a word char, so the two rules are independent;
+    # ordering here is for clarity and future-proofing).
+    # log_streams (plural) is already covered by list_log_streams above.
+    Rule(r"\blog_stream_name\b", "agent_stream_name", "log_stream_name identifier → agent_stream_name"),
     Rule(r"\blog_stream\b", "agent_stream", "log_stream identifier → agent_stream"),
     # --- Methods / functions: Metrics → Evaluators ---
     Rule(r"\benable_metrics\b", "enable_evaluators", "enable_metrics → enable_evaluators"),
@@ -245,19 +249,16 @@ SYMBOL_RULES: list[Rule] = [
 # ---------------------------------------------------------------------------
 # 3. Keyword argument renames
 # ---------------------------------------------------------------------------
+# NOTE: log_stream= and log_stream_name= are NOT listed here.  The \blog_stream\b
+# rule in SYMBOL_RULES (above) already rewrites both forms — the bare identifier
+# is renamed first, making any "\blog_stream\s*=" rule unreachable (it would never
+# match because 'log_stream' has already become 'agent_stream' by the time KWARG_RULES
+# fires).  The \blog_stream\b rule also catches typed parameter declarations like
+# `log_stream: str | None = None` which a kwarg-only pattern would miss.
 KWARG_RULES: list[Rule] = [
-    # log_stream_name= must come before log_stream= to avoid a partial match
-    Rule(
-        pattern=r"\blog_stream_name\s*=",
-        replacement="agent_stream_name=",
-        description="log_stream_name= kwarg → agent_stream_name=",
-    ),
-    Rule(
-        pattern=r"\blog_stream\s*=",
-        replacement="agent_stream=",
-        description="log_stream= kwarg → agent_stream=",
-    ),
     # logstream= (no underscore) variant used in some SDK versions.
+    # There is no corresponding \blogstream\b rule in SYMBOL_RULES, so this
+    # rule is the only way to catch the no-underscore form.
     # NOTE: applied only to Python files (PYTHON_RULES), not doc files (DOC_PROSE_RULES),
     # to avoid rewriting logstream= inside string values like TRACELOOP_HEADERS="...".
     Rule(
@@ -331,6 +332,7 @@ ENV_VAR_RULES: list[Rule] = [
     ),
     Rule("GALILEO_JWT_TOKEN", "SPLUNK_AO_JWT_TOKEN", "GALILEO_JWT_TOKEN → SPLUNK_AO_JWT_TOKEN"),
     Rule("GALILEO_API_KEY", "SPLUNK_AO_API_KEY", "GALILEO_API_KEY → SPLUNK_AO_API_KEY"),
+    Rule("GALILEO_API_ENDPOINT", "SPLUNK_AO_API_ENDPOINT", "GALILEO_API_ENDPOINT → SPLUNK_AO_API_ENDPOINT"),
     Rule("GALILEO_API_URL", "SPLUNK_AO_API_URL", "GALILEO_API_URL → SPLUNK_AO_API_URL"),
     Rule("GALILEO_USERNAME", "SPLUNK_AO_USERNAME", "GALILEO_USERNAME → SPLUNK_AO_USERNAME"),
     Rule("GALILEO_PASSWORD", "SPLUNK_AO_PASSWORD", "GALILEO_PASSWORD → SPLUNK_AO_PASSWORD"),
@@ -423,6 +425,15 @@ DOC_PLACEHOLDER_RULES: list[Rule] = [
         replacement="your-splunk-ao-",
         description="your-splunk_ao-* placeholder → your-splunk-ao-* (hyphenated form in prose)",
     ),
+    # Hyphenated package/dir names produced by IMPORT_RULES in doc files:
+    # galileo-adk → splunk_ao-adk, galileo-python → splunk_ao-python etc.
+    # Correct the underscore to a hyphen so the canonical hyphenated package
+    # name is used in prose.  Must come before the bare splunk_ao prose rule.
+    Rule(
+        pattern=r"\bsplunk_ao-",
+        replacement="splunk-ao-",
+        description="splunk_ao- hyphenated prefix → splunk-ao- (package name in prose)",
+    ),
     # Package-manager install operands: pip/uv/poetry install galileo → splunk-ao.
     # These must produce the hyphenated package name, not the prose brand name.
     # Must come before the splunk_ao prose rule so it fires on the post-import-rule form.
@@ -446,9 +457,11 @@ DOC_PLACEHOLDER_RULES: list[Rule] = [
     #   (?<!import ) — skip bare import statements (import splunk_ao)
     #   (?![_\w]) — skip when followed by identifier chars (splunk_ao_context etc.)
     #   (?!\.) — skip when followed by a dot (splunk_ao.handlers module paths)
-    #   (?<!Splunk AO) — idempotency: already-rewritten form must not fire again
+    #   (?!-) — skip when followed by a hyphen (splunk_ao-adk, splunk_ao-python package
+    #            names produced by IMPORT_RULES; handled by the splunk_ao- rule above)
+    #   (?!/) — skip when followed by a slash (src/splunk_ao/ path tokens in prose)
     Rule(
-        pattern=r"(?<![_\w`])(?<!from )(?<!import )splunk_ao(?![_\w.])",
+        pattern=r"(?<![_\w`])(?<!from )(?<!import )splunk_ao(?![_\w./-])",
         replacement="Splunk AO",
         description="splunk_ao in prose position → Splunk AO (brand name, not a Python identifier)",
     ),
@@ -546,19 +559,19 @@ PYTHON_RULES: list[Rule] = (
     + BRAND_RULES
 )
 
-# Kwarg rules that are safe to apply in doc files (code-fence examples).
-# log_stream_name= and log_stream= only appear as Python kwargs — never as
-# bare string-value keys — so they can be rewritten in docs without risk.
-# logstream= (no underscore) is excluded because it appears inside env-var
-# string values like TRACELOOP_HEADERS="..., logstream=default, ..." and
-# would be incorrectly rewritten there.
-_DOC_KWARG_RULES: list[Rule] = [r for r in KWARG_RULES if "log_stream" in r.pattern]
+# KWARG_RULES contains only logstream= (no underscore), which must NOT be
+# applied in doc files because it appears inside string values like
+# TRACELOOP_HEADERS="..., logstream=default, ...".  log_stream= and
+# log_stream_name= are handled by the \blog_stream\b SYMBOL_RULE and need
+# no separate kwarg rule in either Python or doc mode.
+# _DOC_KWARG_RULES is therefore empty — KWARG_RULES is never applied to docs.
+_DOC_KWARG_RULES: list[Rule] = []
 
 # Rules for doc file prose pass (same as PYTHON_RULES but without logstream=,
 # plus BRAND_RULES which are safe in prose).
 # logstream= must not run on .md/.rst files because it appears inside string
 # values (e.g. TRACELOOP_HEADERS="..., logstream=default") and would be
-# incorrectly rewritten as a Python kwarg. log_stream= is safe — see above.
+# incorrectly rewritten as a Python kwarg.
 DOC_PROSE_RULES: list[Rule] = (
     IMPORT_RULES
     + SYMBOL_RULES

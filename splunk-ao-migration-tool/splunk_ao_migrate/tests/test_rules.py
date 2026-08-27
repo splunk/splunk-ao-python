@@ -28,7 +28,7 @@ from splunk_ao_migrate.rules import (
     WARNING_RULES,
 )
 from splunk_ao_migrate.transformer import transform, transform_urls
-from splunk_ao_migrate.migrate import collect_path_renames
+from splunk_ao_migrate.migrate import collect_path_renames, migrate_file
 
 
 # ---------------------------------------------------------------------------
@@ -204,13 +204,18 @@ class TestSymbolRules:
         src = "from galileo_core.schemas.metrics import Metrics\n"
         assert any("galileo_core" in w for w in py_warnings(src))
 
-    def test_standalone_metric_on_different_line_still_renamed(self):
-        # The suppression is per-line: a Metric reference on a line without galileo_core is renamed
-        src = "from galileo_core.schemas.metrics import Metrics\nresult: Metrics = ...\n"
+    def test_galileo_core_suppression_is_file_scoped(self):
+        # The suppression is FILE-scoped: any Metric/Evaluator rename is suppressed
+        # across the entire file if the file imports from galileo_core, even on
+        # lines that do not themselves contain 'galileo_core'.
+        # This prevents `metrics=Metrics(...)` call sites (different lines from the
+        # import) from being incorrectly renamed to `metrics=Evaluators(...)`.
+        src = "from galileo_core.schemas.logging.step import Metrics\nmetrics=Metrics(duration_ns=0)\n"
         result = py(src)
         lines = result.splitlines()
-        assert "Metrics" in lines[0]       # galileo_core line preserved
-        assert "Evaluators" in lines[1]    # standalone line renamed
+        assert "Metrics" in lines[0]     # import line: galileo_core kept, Metrics not renamed
+        assert "Metrics" in lines[1]     # call site: Metrics NOT renamed (file-scoped suppression)
+        assert "Evaluators" not in result
 
     def test_galileo_observe_key_constant_renamed(self):
         assert "SPLUNK_AO_OBSERVE_KEY" in py("key = GALILEO_OBSERVE_KEY\n")
@@ -227,6 +232,18 @@ class TestSymbolRules:
     def test_log_stream_bare_identifier(self):
         assert "agent_stream" in py("log_stream: str = None\n")
 
+    def test_log_stream_name_identifier(self):
+        # log_stream_name is caught by the \blog_stream_name\b SYMBOL_RULE (not a kwarg rule)
+        assert "agent_stream_name=" in py("foo(log_stream_name=x)\n")
+
+    def test_log_stream_name_typed_param(self):
+        # \blog_stream_name\b catches typed parameter declarations too
+        assert "agent_stream_name: str" in py("def fn(log_stream_name: str = ''):\n")
+
+    def test_log_stream_kwarg_via_symbol_rule(self):
+        # log_stream= is caught by the \blog_stream\b SYMBOL_RULE (not a kwarg rule)
+        assert "agent_stream=" in py("foo(log_stream=x)\n")
+
     def test_logstreams_attribute(self):
         assert ".agent_streams" in py("p.logstreams\n")
 
@@ -236,13 +253,8 @@ class TestSymbolRules:
 # ---------------------------------------------------------------------------
 
 class TestKwargRules:
-    def test_log_stream_name_kwarg(self):
-        assert "agent_stream_name=" in py("foo(log_stream_name=x)\n")
-
-    def test_log_stream_kwarg(self):
-        assert "agent_stream=" in py("foo(log_stream=x)\n")
-
     def test_logstream_kwarg_in_python(self):
+        # logstream= (no underscore) has no SYMBOL_RULE counterpart — caught by KWARG_RULES
         assert "agentstream=" in py("foo(logstream=x)\n")
 
 
@@ -253,6 +265,7 @@ class TestKwargRules:
 class TestEnvVarRules:
     @pytest.mark.parametrize("old,new", [
         ("GALILEO_API_KEY", "SPLUNK_AO_API_KEY"),
+        ("GALILEO_API_ENDPOINT", "SPLUNK_AO_API_ENDPOINT"),
         ("GALILEO_PROJECT", "SPLUNK_AO_PROJECT"),
         ("GALILEO_LOG_STREAM", "SPLUNK_AO_AGENT_STREAM"),
         ("GALILEO_LOGSTREAM", "SPLUNK_AO_AGENT_STREAM"),
@@ -404,6 +417,26 @@ class TestDocPipeline:
         assert "your-splunk-ao-api-key" in result
         assert "your-splunk_ao-api-key" not in result
 
+    def test_hyphenated_package_name_in_prose_not_mangled(self):
+        # galileo-adk → splunk_ao-adk (by IMPORT_RULES) → splunk-ao-adk (by placeholder rule)
+        # Must NOT become "Splunk AO-adk"
+        result = doc("Contributing to galileo-adk\n")
+        assert "splunk-ao-adk" in result
+        assert "Splunk AO-adk" not in result
+        assert "splunk_ao-adk" not in result
+
+    def test_hyphenated_package_python_in_prose(self):
+        # galileo-python → splunk-ao-python in prose
+        result = doc("part of the galileo-python monorepo\n")
+        assert "splunk-ao-python" in result
+        assert "Splunk AO-python" not in result
+
+    def test_path_token_not_renamed_to_brand(self):
+        # src/galileo/ → src/splunk_ao/ — path token must keep underscore form, not become prose
+        result = doc("├── src/galileo/        ← Main SDK\n")
+        assert "src/splunk_ao/" in result
+        assert "src/Splunk AO/" not in result
+
 
 # ---------------------------------------------------------------------------
 # 9. Dep/toml rules
@@ -546,7 +579,62 @@ class TestCollectPathRenames:
 
 
 # ---------------------------------------------------------------------------
-# 13. Python output always compiles
+# 13. migrate_file — protect_in_scope skips dep/toml files
+# ---------------------------------------------------------------------------
+
+class TestMigrateFileProtect:
+    def test_dep_file_skipped_when_protect_in_scope(self, tmp_path):
+        # Given: a requirements.txt that would normally be migrated
+        # When: migrate_file called with protect_in_scope=True
+        # Then: file is skipped and galileo dependency is preserved
+        req = tmp_path / "requirements.txt"
+        req.write_text("galileo>=1.32\n")
+
+        result = migrate_file(req, dry_run=False, protect_in_scope=True)
+
+        assert result.skipped
+        assert "Protect" in result.skip_reason
+        assert req.read_text() == "galileo>=1.32\n"  # file untouched
+
+    def test_toml_file_skipped_when_protect_in_scope(self, tmp_path):
+        # Given: a pyproject.toml with galileo dependency
+        # When: migrate_file called with protect_in_scope=True
+        # Then: file is skipped and content unchanged
+        toml = tmp_path / "pyproject.toml"
+        toml.write_text('dependencies = ["galileo>=1.32"]\n')
+
+        result = migrate_file(toml, dry_run=False, protect_in_scope=True)
+
+        assert result.skipped
+        assert toml.read_text() == 'dependencies = ["galileo>=1.32"]\n'
+
+    def test_dep_file_migrated_when_protect_not_in_scope(self, tmp_path):
+        # Given: a requirements.txt with galileo dependency
+        # When: migrate_file called with protect_in_scope=False (default)
+        # Then: galileo is renamed to splunk-ao
+        req = tmp_path / "requirements.txt"
+        req.write_text("galileo>=1.32\n")
+
+        result = migrate_file(req, dry_run=False, protect_in_scope=False)
+
+        assert not result.skipped
+        assert req.read_text() == "splunk-ao>=1.32\n"
+
+    def test_python_file_not_affected_by_protect_in_scope(self, tmp_path):
+        # Given: a Python file with galileo import
+        # When: migrate_file called with protect_in_scope=True
+        # Then: Python file is still migrated normally (protect only gates dep/toml)
+        py_file = tmp_path / "main.py"
+        py_file.write_text("from galileo import galileo_context\n")
+
+        result = migrate_file(py_file, dry_run=False, protect_in_scope=True)
+
+        assert not result.skipped
+        assert "splunk_ao_context" in py_file.read_text()
+
+
+# ---------------------------------------------------------------------------
+# 14. Python output always compiles
 # ---------------------------------------------------------------------------
 
 class TestPythonOutputCompiles:
