@@ -2,7 +2,7 @@ import os
 import uuid
 from unittest.mock import MagicMock, Mock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 import vcr
@@ -334,7 +334,7 @@ async def test_pre_built_tools_multiple_types(
     mock_response_data = _create_mock_response_with_tools(tool_calls)
 
     with respx.mock(base_url="https://api.openai.com") as respx_mock:
-        respx_mock.post("/v1/responses").mock(return_value=httpx.Response(200, json=mock_response_data))
+        respx_mock.post("/v1/responses").mock(return_value=httpx2.Response(200, json=mock_response_data))
         agent = Agent(
             name="Assistant",
             instructions="You are a helpful assistant.",
