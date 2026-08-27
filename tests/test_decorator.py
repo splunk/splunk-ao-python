@@ -11,6 +11,7 @@ from galileo_core.schemas.shared.multimodal import ContentModality
 from splunk_ao import Message, MessageRole, log, splunk_ao_context, start_session
 from splunk_ao.decorator import _session_id_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -1503,6 +1504,25 @@ def test_session_id_nested_context_stacking(
 
     # Cleared after all contexts exit
     assert splunk_ao_context.get_logger_instance().session_id is None
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_context_exit_does_not_construct_logger_for_restored_outer_context(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, reset_context
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    singleton = SplunkAOLoggerSingleton()
+
+    with patch.object(singleton, "get", wraps=singleton.get) as get_logger:
+        with splunk_ao_context(project="inner-project", agent_stream="inner-stream"):
+            pass
+
+    get_logger.assert_called_once()
+    assert len(singleton.get_all_loggers()) == 1
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")

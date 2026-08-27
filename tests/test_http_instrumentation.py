@@ -82,12 +82,22 @@ class CustomPropagator(textmap.TextMapPropagator):
 class RecordingInstrumentor:
     instrument_calls: list[dict[str, Any]]
     app_calls: list[tuple[Any, dict[str, Any]]]
+    uninstrument_calls: int = 0
+    uninstrument_app_calls: list[Any] | None = None
 
     def instrument(self, **kwargs: Any) -> None:
         self.instrument_calls.append(kwargs)
 
     def instrument_app(self, app: Any, **kwargs: Any) -> None:
         self.app_calls.append((app, kwargs))
+
+    def uninstrument(self) -> None:
+        self.uninstrument_calls += 1
+
+    def uninstrument_app(self, app: Any) -> None:
+        if self.uninstrument_app_calls is None:
+            self.uninstrument_app_calls = []
+        self.uninstrument_app_calls.append(app)
 
 
 class RecordingSink:
@@ -112,6 +122,10 @@ def instrumentor_type(recorder: RecordingInstrumentor) -> type:
         @classmethod
         def instrument_app(cls, app: Any, **kwargs: Any) -> None:
             recorder.instrument_app(app, **kwargs)
+
+        @classmethod
+        def uninstrument_app(cls, app: Any) -> None:
+            recorder.uninstrument_app(app)
 
     return Instrumentor
 
@@ -273,6 +287,17 @@ def test_distributed_tracing_extra_loads_every_supported_upstream_instrumentor()
     assert set(_load_instrumentors()) == {"fastapi", "starlette", "requests", "httpx", "aiohttp-client"}
 
 
+def test_load_instrumentors_imports_only_requested_components() -> None:
+    requests_instrumentor = object()
+    with patch("splunk_ao.http_instrumentation.import_module") as import_module:
+        import_module.return_value.RequestsInstrumentor = requests_instrumentor
+
+        resolved = _load_instrumentors(("requests",))
+
+    assert resolved == {"requests": requests_instrumentor}
+    import_module.assert_called_once_with("opentelemetry.instrumentation.requests")
+
+
 @pytest.mark.parametrize(("app", "expected"), [(FastAPI(), "fastapi"), (Starlette(), "starlette")])
 def test_instruments_matching_app_and_every_enabled_client_once(
     app: Any, expected: str, instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]]
@@ -409,6 +434,26 @@ def test_provider_conflict_fails_before_partial_instrumentation(
 
     assert recorders["fastapi"].app_calls == []
     assert all(len(recorders[name].instrument_calls) == 1 for name in ("requests", "httpx", "aiohttp_client"))
+
+
+def test_client_instrumentation_failure_rolls_back_components_installed_by_call(
+    instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
+) -> None:
+    types, recorders = instrumentors
+    provider = FakeTracerProvider()
+    app = FastAPI()
+
+    with (
+        patch("splunk_ao.http_instrumentation._load_instrumentors", return_value=types),
+        patch.object(recorders["httpx"], "instrument", side_effect=RuntimeError("httpx failed")),
+        pytest.raises(RuntimeError, match="httpx failed"),
+    ):
+        instrument_distributed_tracing(tracer_provider=provider, app=app, instrument_aiohttp_client=False)
+
+    assert recorders["requests"].uninstrument_calls == 1
+    assert recorders["fastapi"].uninstrument_app_calls == [app]
+    assert not _client_providers
+    assert not _instrumented_apps
 
 
 def test_uses_current_provider_without_replacing_it(

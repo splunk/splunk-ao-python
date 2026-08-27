@@ -215,6 +215,22 @@ class SplunkAOLoggerSingleton:
                 self._splunk_ao_loggers[key] = logger
             return logger
 
+    def get_existing(
+        self,
+        *,
+        project: str | None = None,
+        project_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
+        experiment_id: str | None = None,
+        mode: str | None = None,
+    ) -> SplunkAOLogger | None:
+        """Return a cached standard logger without constructing one."""
+        key = SplunkAOLoggerSingleton._get_key(
+            project, project_id, agent_stream, agent_stream_id, _get_mode_or_default(mode), experiment_id
+        )
+        return self._splunk_ao_loggers.get(key)
+
     def reset(
         self,
         project: str | None = None,

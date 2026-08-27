@@ -123,12 +123,17 @@ def test_middleware_ignores_proprietary_headers(app_factory) -> None:
     assert exported.parent is None
 
 
-def test_middleware_detaches_context_on_exception(app_factory) -> None:
-    make_app, _, _ = app_factory
+@pytest.mark.asyncio
+async def test_middleware_detaches_context_on_exception() -> None:
+    middleware = TracingMiddleware(Mock())
+    request = Mock(headers={"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"})
+
+    async def fail_in_same_task(_: Any) -> Any:
+        assert trace.get_current_span().get_span_context().trace_id == 0x4BF92F3577B34DA6A3CE929D0E0E4736
+        raise RuntimeError("request failed")
+
     with pytest.raises(RuntimeError, match="request failed"):
-        TestClient(make_app(fail=True)).get(
-            "/test", headers={"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"}
-        )
+        await middleware.dispatch(request, fail_in_same_task)
 
     assert not trace.get_current_span().get_span_context().is_valid
 

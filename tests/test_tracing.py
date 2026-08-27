@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Generator, Iterator, Mapping
 
 import pytest
 from opentelemetry import baggage, context, trace
@@ -24,6 +24,28 @@ class RecordingSink:
 
     def shutdown(self) -> None:
         return None
+
+
+class RepeatedHeaders(Mapping[str, str]):
+    """Minimal multi-value carrier used to verify the OTel Getter contract."""
+
+    def __init__(self, values: list[tuple[str, str]]) -> None:
+        self._values = values
+
+    def __getitem__(self, key: str) -> str:
+        values = self.getlist(key)
+        if not values:
+            raise KeyError(key)
+        return values[-1]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(dict(self._values))
+
+    def __len__(self) -> int:
+        return len(dict(self._values))
+
+    def getlist(self, key: str) -> list[str]:
+        return [value for candidate, value in self._values if candidate.lower() == key.lower()]
 
 
 @pytest.fixture(autouse=True)
@@ -172,6 +194,21 @@ def test_extract_tracing_context_restores_conversation_baggage() -> None:
     assert baggage.get_baggage("unrelated", context=extracted) == "value"
 
 
+def test_extract_tracing_context_preserves_repeated_baggage_headers() -> None:
+    extracted = extract_tracing_context(
+        RepeatedHeaders(
+            [
+                ("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"),
+                ("baggage", "gen_ai.conversation.id=conversation-456"),
+                ("baggage", "unrelated=value"),
+            ]
+        )
+    )
+
+    assert baggage.get_baggage(GEN_AI_CONVERSATION_ID, context=extracted) == "conversation-456"
+    assert baggage.get_baggage("unrelated", context=extracted) == "value"
+
+
 @pytest.mark.parametrize("header", ["gen_ai.conversation.id=", "gen_ai.conversation.id"])
 def test_extract_tracing_context_ignores_malformed_or_empty_conversation_baggage(header: str) -> None:
     extracted = extract_tracing_context(
@@ -218,6 +255,33 @@ def test_inbound_conversation_overrides_compatibility_logger_field_for_path1() -
 
         [operation] = sink.spans
         assert operation.attributes[GEN_AI_CONVERSATION_ID] == "inbound-session"
+    finally:
+        logger.terminate()
+        context.detach(token)
+
+
+def test_clear_session_masks_inbound_conversation_for_later_spans_and_propagation() -> None:
+    remote = extract_tracing_context(
+        {
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+            "baggage": "gen_ai.conversation.id=inbound-session,unrelated=value",
+        }
+    )
+    token = context.attach(remote)
+    logger, sink = make_logger()
+    try:
+        logger.clear_session()
+        logger.start_trace(input="request")
+        logger.add_workflow_span(input="work", name="operation")
+        headers = get_tracing_headers()
+        logger.conclude(output="work")
+        logger.conclude(output="done")
+
+        [operation] = sink.spans
+        assert GEN_AI_CONVERSATION_ID not in (operation.attributes or {})
+        extracted = extract_tracing_context(headers)
+        assert baggage.get_baggage(GEN_AI_CONVERSATION_ID, context=extracted) is None
+        assert baggage.get_baggage("unrelated", context=extracted) == "value"
     finally:
         logger.terminate()
         context.detach(token)

@@ -11,9 +11,12 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace.status import StatusCode
 
 from splunk_ao import get_tracing_headers
+from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.handlers.span_lifecycle import build_handler_step
 from splunk_ao.logger.logger import SplunkAOLogger
-from splunk_ao.schema.logged import LoggedAgentSpan
+from splunk_ao.schema.handlers import Node
+from splunk_ao.schema.logged import LoggedAgentSpan, LoggedLlmSpan
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -35,6 +38,31 @@ class RecordingSink:
 
 def operation_names(spans: list[ReadableSpan]) -> list[str | None]:
     return [(span.attributes or {}).get("gen_ai.operation.name") for span in spans]
+
+
+def test_handler_step_uses_current_time_for_malformed_framework_timestamp() -> None:
+    node = Node(
+        node_type="tool",
+        run_id=uuid.uuid4(),
+        span_params={"input": "arguments", "name": "tool", "start_time_iso": "not-an-iso-timestamp"},
+    )
+
+    step = build_handler_step(node)
+
+    assert step.created_at.tzinfo is not None
+
+
+def test_handler_step_normalizes_missing_llm_output() -> None:
+    node = Node(
+        node_type="llm",
+        run_id=uuid.uuid4(),
+        span_params={"input": "prompt", "output": None, "name": "model", "model": "test-model"},
+    )
+
+    step = build_handler_step(node)
+
+    assert isinstance(step, LoggedLlmSpan)
+    assert step.output.content == ""
 
 
 def test_normal_otel_child_enqueues_at_callback_end_without_flush() -> None:
@@ -220,6 +248,74 @@ def test_handler_error_span_enqueues_with_error_status_before_root_end() -> None
         logger.terminate()
 
 
+def test_failed_child_conversion_does_not_abort_remaining_handler_trace() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    failed_child_id = uuid.uuid4()
+    good_child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request")
+        root_step = handler._active_steps[str(root_id)].step
+        root_span_id = logger._otel_ids[root_step.id].span_context.span_id
+        handler.start_node(
+            node_type="llm",
+            parent_run_id=root_id,
+            run_id=failed_child_id,
+            name="bad child",
+            input="prompt",
+            model="model",
+        )
+
+        with patch("splunk_ao.handlers.base_handler.finalize_handler_step", side_effect=ValueError("bad child")):
+            handler.end_node(failed_child_id, output="invalid")
+
+        assert str(failed_child_id) not in handler._active_steps
+        assert str(root_id) in handler._active_steps
+        assert get_tracing_headers()["traceparent"].split("-")[2] == format(root_span_id, "016x")
+
+        handler.start_node(
+            node_type="llm",
+            parent_run_id=root_id,
+            run_id=good_child_id,
+            name="good child",
+            input="prompt",
+            model="model",
+        )
+        handler.end_node(good_child_id, output="answer")
+        handler.end_node(root_id, output="done")
+
+        assert operation_names(sink.spans) == ["chat", "invoke_workflow"]
+        assert all(span.status.status_code is not StatusCode.ERROR for span in sink.spans)
+    finally:
+        logger.terminate()
+
+
+def test_root_completion_releases_unfinished_child_activation_and_identity() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        handler.start_node(node_type="chain", parent_run_id=None, run_id=root_id, name="root", input="request")
+        handler.start_node(
+            node_type="llm", parent_run_id=root_id, run_id=child_id, name="unfinished", input="prompt", model="model"
+        )
+        unfinished = handler._active_steps[str(child_id)].step
+
+        handler.end_node(root_id, output="done")
+
+        assert handler._active_steps == {}
+        assert unfinished.id not in logger._otel_ids
+        assert operation_names(sink.spans) == ["invoke_workflow"]
+        with pytest.raises(SplunkAOLoggerException, match="active exportable operation"):
+            get_tracing_headers()
+    finally:
+        logger.terminate()
+
+
 class TestSplunkAOBaseHandler:
     @pytest.fixture
     @patch("splunk_ao.logger.logger.AgentStreams")
@@ -348,47 +444,35 @@ class TestSplunkAOBaseHandler:
 
     def test_commit_calls_flush(self) -> None:
         """Test that commit() calls flush() when flush_on_chain_end=True."""
-        # Given: a mock logger
-        mock_logger = Mock(spec=SplunkAOLogger)
-        mock_logger.start_trace = Mock()
-        mock_logger.conclude = Mock()
-        mock_logger.current_parent = Mock(return_value=None)
-        mock_logger.add_workflow_span = Mock()
-        mock_logger._set_current_parent = Mock()
-        handler = SplunkAOBaseHandler(splunk_ao_logger=mock_logger, flush_on_chain_end=True)
-
-        # Setup a simple trace to commit
+        sink = RecordingSink()
+        logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+        handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=True)
         run_id = uuid.uuid4()
-        handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
+        try:
+            handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
 
-        # When: ending the node (which triggers commit)
-        handler.end_node(run_id, output="result")
+            handler.end_node(run_id, output="result")
 
-        # Then: flush is called
-        mock_logger.flush.assert_called_once()
+            assert operation_names(sink.spans) == ["invoke_workflow"]
+            assert sink.force_flush_calls == 1
+        finally:
+            logger.terminate()
 
     def test_commit_no_flush_when_disabled(self) -> None:
         """Test that commit() doesn't call flush or terminate when flush_on_chain_end=False."""
-        # Given: a mock logger with flush disabled
-        mock_logger = Mock(spec=SplunkAOLogger)
-        mock_logger.mode = "batch"
-        mock_logger.start_trace = Mock()
-        mock_logger.conclude = Mock()
-        mock_logger.current_parent = Mock(return_value=None)
-        mock_logger.add_workflow_span = Mock()
-        mock_logger._set_current_parent = Mock()
-        handler = SplunkAOBaseHandler(splunk_ao_logger=mock_logger, flush_on_chain_end=False)
-
-        # Setup a simple trace to commit
+        sink = RecordingSink()
+        logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+        handler = SplunkAOBaseHandler(splunk_ao_logger=logger, flush_on_chain_end=False)
         run_id = uuid.uuid4()
-        handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
+        try:
+            handler.start_node(node_type="chain", parent_run_id=None, run_id=run_id, name="Test", input="test")
 
-        # When: ending the node (which triggers commit)
-        handler.end_node(run_id, output="result")
+            handler.end_node(run_id, output="result")
 
-        # Then: neither flush nor terminate is called
-        mock_logger.flush.assert_not_called()
-        mock_logger.terminate.assert_not_called()
+            assert operation_names(sink.spans) == ["invoke_workflow"]
+            assert sink.force_flush_calls == 0
+        finally:
+            logger.terminate()
 
     def test_commit_failure_concludes_only_handler_owned_trace(
         self, handler: SplunkAOBaseHandler, splunk_ao_logger: SplunkAOLogger

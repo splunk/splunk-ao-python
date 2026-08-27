@@ -393,6 +393,14 @@ transport-only API. Do not also directly instrument a client or application
 component that is owned by the high-level helper; each component should have one
 instrumentation owner.
 
+Both automatic setup helpers wrap the process-global OpenTelemetry text-map
+propagator so an explicit Splunk AO session can travel as W3C baggage. If the
+application uses a custom propagator (for example, a composite that also supports
+B3), install it before calling the Splunk AO helper. Replacing the global
+propagator afterward removes the session adapter; call the helper again after
+that replacement if session propagation is still required. This does not replace
+the process-global tracer provider.
+
 After this startup call, supported inbound requests extract W3C context and
 supported outbound clients inject it automatically. Application code does not
 call `get_tracing_headers()` for each request and does not install
@@ -412,7 +420,14 @@ remain local and are never added to baggage by the SDK.
 Explicit session selection is ambient within the current thread or async
 execution context. Setting a session through any logger in that context selects
 the conversation for subsequently started telemetry and outbound propagation
-from that context. Use separate execution contexts for independent sessions.
+from that context. `clear_session()` explicitly masks an inbound conversation
+for later telemetry and outbound propagation in the same execution context. Use
+separate execution contexts for independent sessions.
+
+Incoming W3C sampling decisions are honored. If an inbound `traceparent` has
+the sampled flag unset (`sampled=0`), its Splunk AO descendants retain the trace
+identity for propagation but are not exported. Configure upstream head sampling
+accordingly when Agent Observability telemetry must be retained for every request.
 
 #### Export diagnostics
 

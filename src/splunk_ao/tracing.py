@@ -1,12 +1,37 @@
 """W3C distributed-tracing utilities for Splunk AO."""
 
 from collections.abc import Mapping, MutableMapping
+from typing import Any
 
 from opentelemetry.context import Context
+from opentelemetry.propagators import textmap
 
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.logger.logger import _has_active_exportable_span_context
 from splunk_ao.session_context import extract_session_context, inject_session_context
+
+
+class _CaseInsensitiveGetter(textmap.Getter[Mapping[str, str]]):
+    """Read all case-insensitive carrier values without collapsing duplicates."""
+
+    def get(self, carrier: Mapping[str, str], key: str) -> list[str] | None:
+        getlist = getattr(carrier, "getlist", None)
+        if callable(getlist):
+            values = getlist(key)
+            normalized = [str(value) for value in values]
+            if key.lower() == "baggage" and len(normalized) > 1:
+                return [",".join(normalized)]
+            return normalized or None
+        values = [str(value) for candidate, value in carrier.items() if str(candidate).lower() == key.lower()]
+        if key.lower() == "baggage" and len(values) > 1:
+            return [",".join(values)]
+        return values or None
+
+    def keys(self, carrier: Mapping[str, str]) -> list[str]:
+        return [str(key) for key in carrier]
+
+
+_case_insensitive_getter: textmap.Getter[Any] = _CaseInsensitiveGetter()
 
 
 def get_tracing_headers(carrier: MutableMapping[str, str] | None = None) -> MutableMapping[str, str]:
@@ -40,5 +65,4 @@ def get_tracing_headers(carrier: MutableMapping[str, str] | None = None) -> Muta
 
 def extract_tracing_context(carrier: Mapping[str, str]) -> Context:
     """Extract W3C trace context from an incoming text-map carrier."""
-    normalized = {str(key).lower(): value for key, value in carrier.items()}
-    return extract_session_context(normalized)
+    return extract_session_context(carrier, getter=_case_insensitive_getter)

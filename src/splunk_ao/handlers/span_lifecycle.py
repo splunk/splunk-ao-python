@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from galileo_core.schemas.logging.agent import AgentType
@@ -14,6 +15,9 @@ from splunk_ao.schema.handlers import Node
 from splunk_ao.schema.logged import LoggedAgentSpan, LoggedLlmSpan, LoggedWorkflowSpan
 from splunk_ao.utils.retrievers import convert_to_documents
 from splunk_ao.utils.serialization import convert_to_string_dict, serialize_to_str
+
+if TYPE_CHECKING:
+    from splunk_ao.logger import SplunkAOLogger
 
 
 @dataclass
@@ -30,8 +34,32 @@ def _created_at(node: Node) -> datetime:
         return created_at
     start_time_iso = node.span_params.get("start_time_iso")
     if isinstance(start_time_iso, str) and start_time_iso:
-        return datetime.fromisoformat(start_time_iso)
+        try:
+            return datetime.fromisoformat(start_time_iso)
+        except ValueError:
+            pass
     return datetime.now(tz=UTC)
+
+
+def discard_handler_step(logger: SplunkAOLogger, active_steps: dict[str, HandlerSpanState], node_id: str) -> None:
+    """Discard one failed callback step without disturbing its siblings or owner."""
+    state = active_steps.pop(node_id, None)
+    if state is None:
+        return
+    logger._restore_handler_step_context(state.activation)
+    state.activation = None
+    parent = state.step._parent
+    if logger.current_parent() is state.step:
+        logger._set_current_parent(parent)
+    if isinstance(parent, StepWithChildSpans):
+        parent.spans = [child for child in parent.spans if child is not state.step]
+    logger._release_otel_context(state.step)
+
+
+def release_handler_steps(logger: SplunkAOLogger, active_steps: dict[str, HandlerSpanState]) -> None:
+    """Release unfinished callback activations and identities in stack order."""
+    for node_id in reversed(tuple(active_steps)):
+        discard_handler_step(logger, active_steps, node_id)
 
 
 def _metadata(node: Node) -> dict[str, str] | None:

@@ -75,7 +75,7 @@ from splunk_ao.schema.trace import (
     SessionCreateRequest,
     TracesIngestRequest,
 )
-from splunk_ao.session_context import get_effective_session_id, set_session_context
+from splunk_ao.session_context import clear_session_context, get_effective_session_id, set_session_context
 from splunk_ao.traces import Traces
 from splunk_ao.utils.decorators import async_warn_catch_exception, nop_async, nop_sync, warn_catch_exception
 from splunk_ao.utils.env_helpers import _get_mode_or_default
@@ -2145,7 +2145,10 @@ class SplunkAOLogger(TracesLogger):
     def _set_active_session_id(self, session_id: str | None) -> None:
         """Update compatibility and request-local session state together."""
         self.session_id = session_id
-        set_session_context(session_id)
+        if session_id is None:
+            clear_session_context()
+        else:
+            set_session_context(session_id)
 
     @nop_async
     async def async_start_session(

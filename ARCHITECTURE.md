@@ -100,6 +100,10 @@ High-level setup is idempotent per provider for Splunk AO processor registration
 and each server application must still have one instrumentation owner; do not combine the helper with direct upstream
 instrumentation of the same component.
 
+Automatic setup wraps the current process-global text-map propagator with a session-aware delegate. Applications must
+install custom global propagators before invoking the helper. Replacing the global propagator afterward removes the
+session adapter until setup is invoked again. This propagator mutation is independent of tracer-provider ownership.
+
 SDK-owned authentication, health-check, CRUD, routing-resolution, token-refresh, and streaming control-plane requests
 execute inside OTel HTTP-instrumentation suppression. This boundary is scoped to the SDK request and must restore the
 caller's context afterward; application traffic to the same host must remain instrumentable. Apply suppression at the
@@ -112,7 +116,11 @@ endpoint, model, workflow, or agent identity in baggage.
 
 Explicit session selection is ambient within the current thread or async execution context and is shared by logger
 instances in that context. The most recent explicit selection applies to subsequently started telemetry and outbound
-propagation. Independent simultaneous sessions require separate execution contexts.
+propagation. An explicit clear masks inbound conversation baggage for the rest of that execution context. Independent
+simultaneous sessions require separate execution contexts.
+
+Remote W3C sampling is authoritative. Descendants of a valid remote parent with `sampled=0` retain its IDs for
+continuation but do not enter the Splunk AO exporter.
 
 ## Span Lifecycle and Export Ownership
 

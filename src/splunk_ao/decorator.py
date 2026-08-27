@@ -65,7 +65,14 @@ from splunk_ao.schema.content_blocks import is_content_block_list
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.metrics import LocalMetricConfig
 from splunk_ao.schema.trace import SPAN_TYPE
-from splunk_ao.session_context import _session_id_context, set_session_context
+from splunk_ao.session_context import (
+    SessionSelection,
+    _session_id_context,  # noqa: F401  # retained as a private compatibility re-export
+    explicit_session_id,
+    get_session_selection,
+    restore_session_selection,
+    set_session_context,
+)
 from splunk_ao.shared.exceptions import ConfigurationError
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.env_helpers import _get_mode_or_default
@@ -104,7 +111,7 @@ _project_stack: ContextVar[list[str | None] | None] = ContextVar("project_stack"
 _agent_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
 _trace_stack: ContextVar[list[Trace | None] | None] = ContextVar("trace_stack", default=None)
 _experiment_id_stack: ContextVar[list[str | None] | None] = ContextVar("experiment_id_stack", default=None)
-_session_id_stack: ContextVar[list[str | None] | None] = ContextVar("session_id_stack", default=None)
+_session_id_stack: ContextVar[list[SessionSelection] | None] = ContextVar("session_id_stack", default=None)
 _mode_stack: ContextVar[list[LoggerModeType] | None] = ContextVar("mode_stack", default=None)
 _span_stack_stack: ContextVar[list[list[WorkflowSpan]] | None] = ContextVar("span_stack_stack", default=None)
 
@@ -173,7 +180,7 @@ class SplunkAODecorator:
             experiment_id=_experiment_id_context.get(),
         ).flush()
 
-        _session_id_context.set(None)
+        set_session_context(None)
 
         # Pop values from the stacks and restore the previous context
         _project_context.set(_get_or_init_list(_project_stack).pop())
@@ -182,15 +189,22 @@ class SplunkAODecorator:
         _trace_context.set(_get_or_init_list(_trace_stack).pop())
         _mode_context.set(_get_or_init_list(_mode_stack).pop())
         _span_stack_context.set(_get_or_init_list(_span_stack_stack).pop())
-        restored_session_id = _get_or_init_list(_session_id_stack).pop()
-        _session_id_context.set(restored_session_id)
-        restored_logger = self.get_logger_instance(
-            project=_project_context.get(),
-            agent_stream=_agent_stream_context.get(),
-            experiment_id=_experiment_id_context.get(),
-        )
-        if isinstance(restored_logger, SplunkAOLogger):
-            restored_logger._set_active_session_id(restored_session_id)
+        restored_selection = _get_or_init_list(_session_id_stack).pop()
+        restore_session_selection(restored_selection)
+        has_explicit_session, restored_session_id = explicit_session_id(restored_selection)
+        if has_explicit_session:
+            try:
+                restored_logger = SplunkAOLoggerSingleton().get_existing(
+                    project=_project_context.get(),
+                    agent_stream=_agent_stream_context.get(),
+                    experiment_id=_experiment_id_context.get(),
+                    mode=_mode_context.get(),
+                )
+            except Exception:
+                _logger.debug("Could not resolve a cached logger while restoring session context", exc_info=True)
+            else:
+                if restored_logger is not None:
+                    restored_logger._set_active_session_id(restored_session_id)
 
     def __call__(
         self,
@@ -235,7 +249,7 @@ class SplunkAODecorator:
         _get_or_init_list(_trace_stack).append(_trace_context.get())
         _get_or_init_list(_mode_stack).append(_mode_context.get())
         _get_or_init_list(_span_stack_stack).append(_get_or_init_list(_span_stack_context).copy())
-        _get_or_init_list(_session_id_stack).append(_session_id_context.get())
+        _get_or_init_list(_session_id_stack).append(get_session_selection())
 
         # Reset trace context values
         _span_stack_context.set([])
@@ -246,7 +260,7 @@ class SplunkAODecorator:
         _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
-        _session_id_context.set(None)
+        set_session_context(None)
 
         # Override with explicitly provided values
         if project is not None:
@@ -258,7 +272,6 @@ class SplunkAODecorator:
         if mode is not None:
             _mode_context.set(_get_mode_or_default(mode))
         if session_id is not None:
-            _session_id_context.set(session_id)
             self.set_session(session_id)
 
         return self
@@ -1341,7 +1354,7 @@ class SplunkAODecorator:
         _mode_context.set(_get_mode_or_default(None))
         _span_stack_context.set([])
         _trace_context.set(None)
-        _session_id_context.set(None)
+        set_session_context(None)
         # Clear all stacks
         _get_or_init_list(_project_stack).clear()
         _get_or_init_list(_agent_stream_stack).clear()
@@ -1402,7 +1415,7 @@ class SplunkAODecorator:
         _mode_context.set(_get_mode_or_default(mode))
         _span_stack_context.set([])
         _trace_context.set(None)
-        _session_id_context.set(None)
+        set_session_context(None)
 
     def start_session(
         self,
@@ -1430,17 +1443,13 @@ class SplunkAODecorator:
         str
             The id of the newly created session.
         """
-        session_id = self.get_logger_instance().start_session(
+        return self.get_logger_instance().start_session(
             name=name, previous_session_id=previous_session_id, external_id=external_id, metadata=metadata
         )
-
-        _session_id_context.set(session_id)
-        return session_id
 
     def clear_session(self) -> None:
         """Clear the session in the active context logger instance."""
         self.get_logger_instance().clear_session()
-        set_session_context(None)
 
     def set_session(self, session_id: str) -> None:
         """
@@ -1452,7 +1461,6 @@ class SplunkAODecorator:
             The id of the session to set.
         """
         self.get_logger_instance().set_session(session_id)
-        set_session_context(session_id)
 
 
 splunk_ao_context = SplunkAODecorator()

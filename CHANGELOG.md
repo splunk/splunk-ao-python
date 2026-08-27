@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each completed operation into the existing `BatchSpanProcessor` at that
   operation's end callback. The deprecated `ingestion_hook` retains its
   whole-tree compatibility behavior.
+- Incoming W3C sampling decisions are honored. A remote parent with its sampled
+  flag unset continues to propagate its trace identity, but its Splunk AO
+  descendants are not exported.
 - Default logger-owned batching now honors standard OpenTelemetry
   `OTEL_BSP_*` configuration, matching caller-owned OTel paths. Explicit
   internal `BatchConfig` values remain authoritative when supplied.
@@ -60,6 +63,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Automatic HTTP setup now imports only the requested optional instrumentors
+  and rolls back components installed by the current call when later setup
+  fails, avoiding partial ownership state.
+- Explicit `clear_session()` now masks an inbound
+  `gen_ai.conversation.id` for subsequent local spans and outbound propagation
+  in the same execution context.
+- Handler cleanup now releases unfinished OTel activations in nesting order,
+  isolates malformed child telemetry from the remaining handler trace, and
+  keeps async LangChain callback activation in the application's execution
+  context.
+- OpenAI Agents processor state is isolated per framework trace, including
+  concurrent traces, and its public lifecycle path now has regression coverage.
 - Agent and workflow output conversion now removes confirmed repeated input
   history and keeps only the last message as the terminal output; intermediate
   tool-call and tool-response messages are no longer included in

@@ -6,7 +6,13 @@ from typing import Any
 from uuid import UUID
 
 from splunk_ao import splunk_ao_context
-from splunk_ao.handlers.span_lifecycle import HandlerSpanState, build_handler_step, finalize_handler_step
+from splunk_ao.handlers.span_lifecycle import (
+    HandlerSpanState,
+    build_handler_step,
+    discard_handler_step,
+    finalize_handler_step,
+    release_handler_steps,
+)
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import INTEGRATION, NODE_TYPE, Node
 from splunk_ao.schema.logged import LoggedAgentSpan, LoggedWorkflowSpan
@@ -139,8 +145,8 @@ class SplunkAOBaseHandler:
 
     def _reset_handler_state(self) -> None:
         """Release one completed callback tree without touching caller-owned state."""
+        release_handler_steps(self._splunk_ao_logger, self._active_steps)
         self._nodes.clear()
-        self._active_steps.clear()
         self._root_node = None
         self._owned_trace = None
         self._owned_root = None
@@ -162,9 +168,14 @@ class SplunkAOBaseHandler:
             raise RuntimeError(f"No active parent is available for handler node {node_id}")
 
         step = build_handler_step(node)
-        self._splunk_ao_logger._register_handler_step(step, parent)
-        activation = self._splunk_ao_logger._activate_handler_step(step)
-        self._active_steps[node_id] = HandlerSpanState(step=step, activation=activation)
+        state = HandlerSpanState(step=step, activation=None)
+        self._active_steps[node_id] = state
+        try:
+            self._splunk_ao_logger._register_handler_step(step, parent)
+            state.activation = self._splunk_ao_logger._activate_handler_step(step)
+        except Exception:
+            discard_handler_step(self._splunk_ao_logger, self._active_steps, node_id)
+            raise
 
     def _finish_incremental_node(self, node: Node) -> None:
         """Finalize and enqueue one callback span when that callback ends."""
@@ -179,13 +190,16 @@ class SplunkAOBaseHandler:
         is_root = node is self._root_node
         try:
             if is_root:
+                for active_node_id in reversed(tuple(self._active_steps)):
+                    if active_node_id != node_id:
+                        discard_handler_step(self._splunk_ao_logger, self._active_steps, active_node_id)
                 node.span_params["output"] = self._root_output(node)
                 if state.step is self._owned_root:
                     node.span_params["input"] = serialize_to_str(node.span_params.get("input", ""))
             final = finalize_handler_step(node, state)
             final = self._splunk_ao_logger._replace_handler_step(state.step, final)
             state.step = final
-            if self._owned_root is not None and (state.step is self._owned_root or is_root):
+            if self._owned_root is not None and is_root:
                 self._owned_root = final
 
             self._splunk_ao_logger._restore_handler_step_context(state.activation)
@@ -204,9 +218,9 @@ class SplunkAOBaseHandler:
                         status_code=node.span_params.get("status_code"),
                     )
         except Exception:
-            self._splunk_ao_logger._restore_handler_step_context(state.activation)
-            state.activation = None
-            self._conclude_owned_state_on_failure()
+            discard_handler_step(self._splunk_ao_logger, self._active_steps, node_id)
+            if is_root:
+                self._conclude_owned_state_on_failure()
             _logger.warning("Failed to complete handler telemetry for node %s", node_id, exc_info=True)
         finally:
             if is_root:
@@ -557,7 +571,12 @@ class SplunkAOBaseHandler:
             try:
                 self._start_incremental_step(node)
             except Exception:
-                self._conclude_owned_state_on_failure()
+                discard_handler_step(self._splunk_ao_logger, self._active_steps, node_id)
+                if node is self._root_node:
+                    self._conclude_owned_state_on_failure()
+                    self._owned_trace = None
+                    self._owned_root = None
+                    self._owned_parent = None
                 _logger.warning("Failed to start handler span telemetry for node %s", node_id, exc_info=True)
 
         return node

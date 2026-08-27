@@ -152,7 +152,12 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 - Preserve standard `gen_ai.*` attributes. New SDK-owned attributes use `splunk_ao.*`; do not introduce new proprietary
   `galileo.*` wire attributes.
 - Explicit session selection is ambient within the current thread or async execution context and is shared by logger
-  instances in that context. Independent simultaneous sessions require separate execution contexts.
+  instances in that context. An explicit clear masks inbound baggage in that context. Independent simultaneous sessions
+  require separate execution contexts.
+- Automatic HTTP setup wraps the current process-global propagator after application propagator configuration; replacing
+  it later removes the session wrapper. Remote W3C sampling flags are authoritative for SDK telemetry export.
+- Process-wide integration processors must key mutable lifecycle state by framework trace identity and release
+  unfinished callback activations in reverse nesting order.
 - Changes to propagation, IDs, parents, content schemas, or routing need coverage across every affected telemetry path.
 
 ## Code Style
