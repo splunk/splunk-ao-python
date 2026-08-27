@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import httpx2
 import pytest
-import respx
 import vcr
 from agents import (
     Agent,
@@ -12,10 +11,13 @@ from agents import (
     GuardrailFunctionOutput,
     InputGuardrail,
     InputGuardrailTripwireTriggered,
+    OpenAIProvider,
+    RunConfig,
     Runner,
     set_trace_processors,
 )
 from agents.tracing import ResponseSpanData
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
@@ -333,16 +335,22 @@ async def test_pre_built_tools_multiple_types(
 
     mock_response_data = _create_mock_response_with_tools(tool_calls)
 
-    with respx.mock(base_url="https://api.openai.com") as respx_mock:
-        respx_mock.post("/v1/responses").mock(return_value=httpx2.Response(200, json=mock_response_data))
-        agent = Agent(
-            name="Assistant",
-            instructions="You are a helpful assistant.",
-            tools=[CodeInterpreterTool(tool_config={"type": "code_interpreter", "container": {"type": "auto"}})],
-        )
+    def mock_handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=mock_response_data)
 
-        result = await Runner.run(agent, "Test multiple tools.")
-        assert result
+    mock_openai = AsyncOpenAI(
+        api_key="sk-test",
+        http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(mock_handler)),
+    )
+    provider = OpenAIProvider(openai_client=mock_openai)
+    agent = Agent(
+        name="Assistant",
+        instructions="You are a helpful assistant.",
+        tools=[CodeInterpreterTool(tool_config={"type": "code_interpreter", "container": {"type": "auto"}})],
+    )
+
+    result = await Runner.run(agent, "Test multiple tools.", run_config=RunConfig(model_provider=provider))
+    assert result
 
     traces = splunk_ao_logger.traces
     assert len(traces) == 1
