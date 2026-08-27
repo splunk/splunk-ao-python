@@ -7,13 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0]
-
-### Breaking Changes
-
-- Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now
-  `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
-
 ### Added
 
 - Added the `distributed-tracing` extra and high-level
@@ -77,6 +70,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   context.
 - OpenAI Agents processor state is isolated per framework trace, including
   concurrent traces, and its public lifecycle path now has regression coverage.
+
+## [0.3.0]
+
+### Breaking Changes
+
+- Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now
+  `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
+
+### Fixed
+
 - Agent and workflow output conversion now removes confirmed repeated input
   history and keeps only the last message as the terminal output; intermediate
   tool-call and tool-response messages are no longer included in
