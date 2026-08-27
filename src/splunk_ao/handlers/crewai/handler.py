@@ -1,7 +1,6 @@
 import hashlib
 import json
 import logging
-from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -15,19 +14,16 @@ from splunk_ao.utils.serialization import serialize_to_str
 _logger = logging.getLogger(__name__)
 
 # Lazy import state — crewai wraps sys.stdout/sys.stderr at import time, which
-# causes pytest-xdist worker hangs.  All crewai/litellm imports are deferred to
+# causes pytest-xdist worker hangs.  All crewai imports are deferred to
 # _resolve_crewai_imports(), called once from CrewAIEventListener.__init__.
 CREWAI_AVAILABLE = False
 CREWAI_EVENTS_MODULE_AVAILABLE = False
-LITE_LLM_AVAILABLE = False
-litellm = None
 _crewai_imports_resolved = False
 
 
 def _resolve_crewai_imports() -> None:
-    """Import crewai and litellm on first use, populating module-level globals."""
-    global CREWAI_AVAILABLE, CREWAI_EVENTS_MODULE_AVAILABLE
-    global LITE_LLM_AVAILABLE, litellm, _crewai_imports_resolved
+    """Import crewai on first use, populating module-level globals."""
+    global CREWAI_AVAILABLE, CREWAI_EVENTS_MODULE_AVAILABLE, _crewai_imports_resolved
 
     if _crewai_imports_resolved:
         return
@@ -42,15 +38,6 @@ def _resolve_crewai_imports() -> None:
         CREWAI_AVAILABLE = True
     except ImportError:
         _logger.warning("CrewAI not available, using stubs")
-
-    try:
-        import litellm as _litellm
-
-        litellm = _litellm
-        LITE_LLM_AVAILABLE = True
-    except ImportError:
-        _logger.warning("LiteLLM not available, using stubs")
-        litellm = None
 
 
 class CrewAIEventListener:
@@ -91,11 +78,6 @@ class CrewAIEventListener:
                 self.setup_listeners(crewai_event_bus)
             except ImportError:
                 _logger.warning("Could not import crewai event bus, skipping listener setup")
-
-        if LITE_LLM_AVAILABLE and litellm is not None:
-            if not litellm.success_callback:
-                litellm.success_callback = []
-            litellm.success_callback.append(self.lite_llm_usage_callback)
 
     def setup_listeners(self, crewai_event_bus: Any) -> None:
         """Setup event listeners for CrewAI events."""
@@ -345,12 +327,7 @@ class CrewAIEventListener:
             task_id = getattr(getattr(event, "task", None), "id", "")
             return self._hash_to_uuid(f"{event_agent.id}_{task_id}")
 
-        # 7. dict messages — lite_llm callback
-        if isinstance(event, dict) and "messages" in event:
-            messages = json.dumps(event["messages"])
-            return self._hash_to_uuid(messages)
-
-        # 8. Generic fallback
+        # 7. Generic fallback
         return self._hash_to_uuid(
             f"{getattr(event, 'crew_name', '')}_{getattr(event, 'agent', '')}_{getattr(event, 'task', '')}"
         )
@@ -770,21 +747,3 @@ class CrewAIEventListener:
 
         self._handler.end_node(run_id=run_id, output=f"Memory retrieval failed: {metadata['error']}", metadata=metadata)
 
-    def lite_llm_usage_callback(
-        self,
-        kwargs: dict,  # kwargs to completion
-        completion_response: Any,  # response from completion
-        start_time: datetime,
-        end_time: datetime,
-    ) -> None:
-        node_id = self._generate_run_id(kwargs, kwargs)
-
-        node = self._handler.get_node(node_id)
-        if not node:
-            _logger.debug(f"No node exists for run_id {node_id}")
-            return
-        usage = completion_response.model_extra["usage"]
-        node.span_params["usage"] = usage.model_dump() if hasattr(usage, "model_dump") else usage
-        node.span_params["num_input_tokens"] = getattr(usage, "prompt_tokens", 0)
-        node.span_params["num_output_tokens"] = getattr(usage, "completion_tokens", 0)
-        node.span_params["total_tokens"] = getattr(usage, "total_tokens", 0)

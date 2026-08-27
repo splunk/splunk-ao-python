@@ -28,9 +28,9 @@ packages = [
 [project.optional-dependencies]
 langchain = ["langchain-core", "langchain", "langsmith (>=0.8.0)"]
 openai = ["openai (>=3.0.0,<4.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.21.0,<1.0.0)", "cryptography (>=50.0.0)", "mcp (>=1.27.2,<2)"]
-crewai = ["crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'", "uv (>=0.9.6); python_version < '3.14'", "aiohttp (>=3.14.1,<4); python_version < '3.14'", "cryptography (>=50.0.0)", "mcp (>=1.27.2,<2)", "pdfminer-six (>=20251107)"]
+crewai = ["crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "uv (>=0.9.6); python_version < '3.14'", "aiohttp (>=3.14.1,<4); python_version < '3.14'", "cryptography (>=50.0.0)", "mcp (>=1.27.2,<2)", "pdfminer-six (>=20251107)"]
 middleware = ["starlette"]
-all = ["langchain-core", "langchain", "langsmith (>=0.8.0)", "openai (>=3.0.0,<4.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.21.0,<1.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "litellm (>=1.83.14,<2.0.0); python_version < '3.14'", "uv (>=0.9.6); python_version < '3.14'", "aiohttp (>=3.14.1,<4); python_version < '3.14'", "cryptography (>=50.0.0)", "mcp (>=1.27.2,<2)", "pdfminer-six (>=20251107)"]
+all = ["langchain-core", "langchain", "langsmith (>=0.8.0)", "openai (>=3.0.0,<4.0.0)", "packaging (>=24.2,<25.0)", "openai-agents (>=0.21.0,<1.0.0)", "crewai (>=0.152.0,<2.0.0); python_version < '3.14'", "starlette", "uv (>=0.9.6); python_version < '3.14'", "aiohttp (>=3.14.1,<4); python_version < '3.14'", "cryptography (>=50.0.0)", "mcp (>=1.27.2,<2)", "pdfminer-six (>=20251107)"]
 
 
 
@@ -47,12 +47,10 @@ langchain = { version = ">=1.3.9,<2.0.0", optional = true }
 langsmith = { version = ">=0.8.0", optional = true }
 openai = { version = ">=3.0.0,<4.0.0", optional = true }
 openai-agents = { version = ">=0.21.0,<1.0.0", optional = true }
-litellm = { version = ">=1.83.14,<2.0.0", optional = true, python = ">=3.11,<3.14" }
 galileo-core = "^4.4.0"
 httpx = ">=0.27.0,<0.29.0"
 starlette = { version = ">=1.3.1", optional = true }
 backoff = "^2.2.1"
-crewai = { version = ">=0.152.0,<2.0.0", optional = true, python = ">=3.11,<3.14" }
 tqdm = { version = ">=4.0.0" }
 typing-extensions = { version = ">=4.5.0" }
 opentelemetry-sdk = "^1.38.0"
