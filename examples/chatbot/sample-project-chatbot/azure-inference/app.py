@@ -182,8 +182,8 @@ def main() -> None:
         # Call the chat_with_llm function to get a response from the LLM
         response = chat_with_llm(user_input)
 
-        # Conclude and flush the logger after each interaction
-        # so that a new trace is started each time
+        # conclude() ends the trace so the next interaction starts a new one;
+        # flush() exports it immediately instead of waiting for the batch timer
         logger.conclude(output=response)
         logger.flush()
 

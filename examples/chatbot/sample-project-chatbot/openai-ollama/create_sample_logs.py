@@ -44,8 +44,8 @@ for row in dataset_content:
     # Print the response from the LLM
     print(f"LLM Response: {response}")
 
-    # Conclude and flush the logger after each interaction
-    # so that a new trace is started each time
+    # conclude() ends the trace so the next interaction starts a new one;
+    # flush() exports it immediately instead of waiting for the batch timer
     logger.conclude(output=response)
     logger.flush()
 
