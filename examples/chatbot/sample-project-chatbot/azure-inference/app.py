@@ -26,16 +26,15 @@ Set the following environment variables for your LLM:
 
 """
 
-from datetime import datetime
 import os
+from datetime import datetime
 
 from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import SystemMessage, UserMessage, AssistantMessage
+from azure.ai.inference.models import AssistantMessage, SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
-
 from dotenv import load_dotenv
 
-from splunk_ao import splunk_ao_context, log
+from splunk_ao import log, splunk_ao_context
 
 # Load the environment variables from the .env file
 # This will override any existing environment variables with the same name
