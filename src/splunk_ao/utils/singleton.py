@@ -295,10 +295,18 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None = None,
     ) -> None:
         """
-        Drain completed spans for a SplunkAOLogger instance; does not conclude open spans.
+        Drain completed spans for the matching cached SplunkAOLogger instances.
 
-        If both project and agent_stream are None all cached loggers are drained,
-        otherwise only the logger for the given (project, agent_stream) key is drained.
+        With no arguments, drains the loggers registered for the current thread whose mode and
+        resolved project/agent stream match the active defaults — not every cached logger.
+        Passing a project or agent stream narrows this to the loggers matching that key.
+
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and the loggers remain cached. Use
+        ``reset()`` or ``reset_all()`` to terminate and evict them; otherwise each logger
+        terminates via its ``atexit`` hook at interpreter exit.
 
         Parameters
         ----------
@@ -330,9 +338,17 @@ class SplunkAOLoggerSingleton:
                 self._splunk_ao_loggers[key].flush()
 
     def flush_all(self) -> None:
-        """Drain completed spans for all SplunkAOLogger instances; does not conclude open spans."""
+        """
+        Drain completed spans for every cached SplunkAOLogger instance.
+
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and the loggers remain cached. Use
+        ``reset_all()`` to terminate and evict them; otherwise each logger terminates via its
+        ``atexit`` hook at interpreter exit.
+        """
         with self._lock:
-            # Terminate and clear all logger instances.
             for logger in self._splunk_ao_loggers.values():
                 logger.flush()
 

@@ -1309,9 +1309,12 @@ class SplunkAODecorator:
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Drain completed spans for the given project and agent stream context; does not conclude open spans.
+        Drain completed spans for the resolved project and agent stream context; does not conclude open spans.
 
         Falls back to the currently initialized context when no project or agent stream is provided.
+
+        Draining is not a shutdown: exporters stay open and the logger stays cached. Use
+        ``reset()`` to terminate the current context's loggers and clear the context.
 
         Parameters
         ----------
@@ -1349,7 +1352,13 @@ class SplunkAODecorator:
 
     def flush_all(self) -> None:
         """
-        Drain completed spans across all contexts; does not conclude open spans.
+        Drain completed spans for every logger across all contexts.
+
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and every cached logger is retained.
+        Loggers terminate via their ``atexit`` hooks at interpreter exit.
         """
         SplunkAOLoggerSingleton().flush_all()
 
