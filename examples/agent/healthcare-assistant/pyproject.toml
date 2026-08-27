@@ -1,0 +1,35 @@
+[project]
+name = "healthcare-assistant"
+version = "0.1.0"
+description = "Healthcare assistant demo app — uses local splunk-ao source for debugging"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+    "streamlit",
+    "openai",
+    "python-dotenv",
+    "langchain",
+    "langchain-core",
+    "langchain-openai",
+    "langgraph",
+    "langchain-postgres",
+    "psycopg[binary]",
+    "langchain-text-splitters",
+    "langchain-community",
+    "langchain-classic",
+    "pyyaml",
+    "toml",
+    "pandas",
+    "splunk-ao",
+]
+
+[tool.uv]
+# Use local splunk-ao source instead of PyPI
+[tool.uv.sources]
+splunk-ao = { path = "../../..", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
