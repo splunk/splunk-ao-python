@@ -3,6 +3,8 @@ name: Publish Docs
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 15 * * 1"
   # When a Package Release workflow exists, add it here:
   # workflow_run:
   #   workflows: ["Package Release"]
