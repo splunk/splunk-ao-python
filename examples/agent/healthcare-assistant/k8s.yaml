@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: healthcare-assistant
-          image: ghcr.io/splunk/healthcare-assistant:app-with-instrumentation
+          image: ghcr.io/splunk/healthcare-assistant-sao:0.3.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8501
