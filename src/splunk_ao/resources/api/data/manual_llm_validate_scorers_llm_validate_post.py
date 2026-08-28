@@ -72,6 +72,15 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(*, client: ApiClient) -> Response[GeneratedScorerValidationResponse]:
     """Manual Llm Validate
 
+     Validate an LLM scorer manually, with query/response passed inline (no file uploads).
+
+    Args:
+        request: Raw request; body is parsed into a GeneratedScorerValidationRequest.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -90,6 +99,15 @@ def sync_detailed(*, client: ApiClient) -> Response[GeneratedScorerValidationRes
 def sync(*, client: ApiClient) -> Optional[GeneratedScorerValidationResponse]:
     """Manual Llm Validate
 
+     Validate an LLM scorer manually, with query/response passed inline (no file uploads).
+
+    Args:
+        request: Raw request; body is parsed into a GeneratedScorerValidationRequest.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -103,6 +121,15 @@ def sync(*, client: ApiClient) -> Optional[GeneratedScorerValidationResponse]:
 
 async def asyncio_detailed(*, client: ApiClient) -> Response[GeneratedScorerValidationResponse]:
     """Manual Llm Validate
+
+     Validate an LLM scorer manually, with query/response passed inline (no file uploads).
+
+    Args:
+        request: Raw request; body is parsed into a GeneratedScorerValidationRequest.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -121,6 +148,15 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[GeneratedScorerVali
 
 async def asyncio(*, client: ApiClient) -> Optional[GeneratedScorerValidationResponse]:
     """Manual Llm Validate
+
+     Validate an LLM scorer manually, with query/response passed inline (no file uploads).
+
+    Args:
+        request: Raw request; body is parsed into a GeneratedScorerValidationRequest.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.input_type_enum import InputTypeEnum
-from ..models.output_type_enum import OutputTypeEnum
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -32,14 +30,8 @@ class BaseScorerVersionDB:
         finetuned_scorer (BaseFinetunedScorerDB | None | Unset):
         model_name (None | str | Unset):
         num_judges (int | None | Unset):
-        scoreable_node_types (list[str] | None | Unset): List of node types that can be scored by this scorer. Defaults
-            to llm/chat.
         cot_enabled (bool | None | Unset): Whether to enable chain of thought for this scorer. Defaults to False for llm
             scorers.
-        output_type (None | OutputTypeEnum | Unset): What type of output to use for model-based scorers
-            (sessions_normalized, trace_io_only, etc.).
-        input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
-            (sessions_normalized, trace_io_only, etc.).
     """
 
     id: str
@@ -50,10 +42,7 @@ class BaseScorerVersionDB:
     finetuned_scorer: BaseFinetunedScorerDB | None | Unset = UNSET
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
-    scoreable_node_types: list[str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -103,36 +92,11 @@ class BaseScorerVersionDB:
         else:
             num_judges = self.num_judges
 
-        scoreable_node_types: list[str] | None | Unset
-        if isinstance(self.scoreable_node_types, Unset):
-            scoreable_node_types = UNSET
-        elif isinstance(self.scoreable_node_types, list):
-            scoreable_node_types = self.scoreable_node_types
-
-        else:
-            scoreable_node_types = self.scoreable_node_types
-
         cot_enabled: bool | None | Unset
         if isinstance(self.cot_enabled, Unset):
             cot_enabled = UNSET
         else:
             cot_enabled = self.cot_enabled
-
-        output_type: None | str | Unset
-        if isinstance(self.output_type, Unset):
-            output_type = UNSET
-        elif isinstance(self.output_type, OutputTypeEnum):
-            output_type = self.output_type.value
-        else:
-            output_type = self.output_type
-
-        input_type: None | str | Unset
-        if isinstance(self.input_type, Unset):
-            input_type = UNSET
-        elif isinstance(self.input_type, InputTypeEnum):
-            input_type = self.input_type.value
-        else:
-            input_type = self.input_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -147,14 +111,8 @@ class BaseScorerVersionDB:
             field_dict["model_name"] = model_name
         if num_judges is not UNSET:
             field_dict["num_judges"] = num_judges
-        if scoreable_node_types is not UNSET:
-            field_dict["scoreable_node_types"] = scoreable_node_types
         if cot_enabled is not UNSET:
             field_dict["cot_enabled"] = cot_enabled
-        if output_type is not UNSET:
-            field_dict["output_type"] = output_type
-        if input_type is not UNSET:
-            field_dict["input_type"] = input_type
 
         return field_dict
 
@@ -240,23 +198,6 @@ class BaseScorerVersionDB:
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[str] | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, list):
-                    raise TypeError()
-                scoreable_node_types_type_0 = cast(list[str], data)
-
-                return scoreable_node_types_type_0
-            except:  # noqa: E722
-                pass
-            return cast(list[str] | None | Unset, data)
-
-        scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
-
         def _parse_cot_enabled(data: object) -> bool | None | Unset:
             if data is None:
                 return data
@@ -265,40 +206,6 @@ class BaseScorerVersionDB:
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
-
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                output_type_type_0 = OutputTypeEnum(data)
-
-                return output_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(None | OutputTypeEnum | Unset, data)
-
-        output_type = _parse_output_type(d.pop("output_type", UNSET))
-
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                input_type_type_0 = InputTypeEnum(data)
-
-                return input_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(InputTypeEnum | None | Unset, data)
-
-        input_type = _parse_input_type(d.pop("input_type", UNSET))
 
         base_scorer_version_db = cls(
             id=id,
@@ -309,10 +216,7 @@ class BaseScorerVersionDB:
             finetuned_scorer=finetuned_scorer,
             model_name=model_name,
             num_judges=num_judges,
-            scoreable_node_types=scoreable_node_types,
             cot_enabled=cot_enabled,
-            output_type=output_type,
-            input_type=input_type,
         )
 
         base_scorer_version_db.additional_properties = d

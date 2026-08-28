@@ -17,11 +17,11 @@ if TYPE_CHECKING:
     from ..models.metric_success import MetricSuccess
 
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenMetricInfoType0")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenMetricInfoType0")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenMetricInfoType0:
+class ExtendedReadSessionRecordWithChildrenMetricInfoType0:
     """ """
 
     additional_properties: dict[
@@ -78,7 +78,7 @@ class ExtendedSessionRecordWithChildrenMetricInfoType0:
         from ..models.metric_success import MetricSuccess
 
         d = dict(src_dict)
-        extended_session_record_with_children_metric_info_type_0 = cls()
+        extended_read_session_record_with_children_metric_info_type_0 = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
@@ -161,8 +161,8 @@ class ExtendedSessionRecordWithChildrenMetricInfoType0:
 
             additional_properties[prop_name] = additional_property
 
-        extended_session_record_with_children_metric_info_type_0.additional_properties = additional_properties
-        return extended_session_record_with_children_metric_info_type_0
+        extended_read_session_record_with_children_metric_info_type_0.additional_properties = additional_properties
+        return extended_read_session_record_with_children_metric_info_type_0
 
     @property
     def additional_keys(self) -> list[str]:
