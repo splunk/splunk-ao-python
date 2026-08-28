@@ -3,24 +3,28 @@ import os
 # Load environment variables from the .env file
 from dotenv import load_dotenv
 from strands import Agent, tool
+from strands.models.openai import OpenAIModel
 from strands.telemetry import StrandsTelemetry
 from strands_tools import calculator, current_time
 
 load_dotenv(override=True)
 
-# Export the Splunk AO OTel API endpoint for OTel
-os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = os.environ.get(
-    "SPLUNK_AO_API_ENDPOINT", "https://api.galileo.ai/otel/v1/traces"
+# Derive OTLP endpoint from realm (O11y Cloud) or fall back to explicit endpoint
+realm = os.environ.get("SPLUNK_AO_REALM")
+if realm:
+    endpoint = f"https://ingest.{realm}.observability.splunkcloud.com/v2/trace/otlp"
+else:
+    endpoint = os.environ["SPLUNK_AO_API_ENDPOINT"]
+os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = endpoint
+
+# O11y Cloud auth via ingest token
+os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"X-SF-Token={os.environ['SPLUNK_AO_O11Y_TOKEN']}"
+
+# Routing keys go into resource attributes (not OTLP headers) for O11y Cloud
+os.environ["OTEL_RESOURCE_ATTRIBUTES"] = (
+    f"splunk_ao.project.name={os.environ['SPLUNK_AO_PROJECT']},"
+    f"splunk_ao.logstream.name={os.environ['SPLUNK_AO_AGENT_STREAM']}"
 )
-
-# Export the Splunk AO OTel headers pointing to the correct API key, project, and log stream
-headers = {
-    "Splunk-AO-API-Key": os.environ["SPLUNK_AO_API_KEY"],
-    "project": os.environ["SPLUNK_AO_PROJECT"],
-    "logstream": os.environ["SPLUNK_AO_AGENT_STREAM"],
-}
-
-os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = ",".join([f"{k}={v}" for k, v in headers.items()])
 
 # Setup telemetry for the Strands agent using Splunk AO as the OTel backend
 strands_telemetry = StrandsTelemetry()
@@ -59,7 +63,8 @@ def letter_counter(word: str, letter: str) -> int:
 
 # Create an agent with tools from the community-driven strands-tools package
 # as well as our custom letter_counter tool
-agent = Agent(tools=[calculator, current_time, letter_counter])
+model = OpenAIModel(model_id="gpt-4o-mini")
+agent = Agent(model=model, tools=[calculator, current_time, letter_counter])
 
 # Ask the agent a question that uses the available tools
 message = """
@@ -70,3 +75,7 @@ I have 4 requests:
 3. Tell me how many letter R's are in the word "strawberry" 🍓
 """
 agent(message)
+
+# Flush spans before exit so BatchSpanProcessor delivers them
+from opentelemetry import trace as trace_api
+trace_api.get_tracer_provider().force_flush()
