@@ -82,8 +82,9 @@ class O11yConfig:
 
     @property
     def otlp_endpoint(self) -> str:
-        """Return the realm-derived OTLP trace ingest endpoint."""
-        return f"https://ingest.{self.realm}.observability.splunkcloud.com/v2/trace/otlp"
+        """Return the OTLP trace ingest endpoint, with optional override via SPLUNK_AO_OTLP_ENDPOINT."""
+        return os.environ.get("SPLUNK_AO_OTLP_ENDPOINT") or \
+            f"https://ingest.{self.realm}.observability.splunkcloud.com/v2/trace/otlp"
 
     @property
     def crud_token(self) -> SecretStr:

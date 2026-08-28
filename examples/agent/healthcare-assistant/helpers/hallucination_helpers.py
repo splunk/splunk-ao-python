@@ -47,6 +47,9 @@ def log_hallucination(
             logger.info("Creating new Splunk AO session for hallucination demo")
             splunk_ao_logger = SplunkAOLogger(project=project_name, agent_stream=agent_stream)
 
+        if external_session_id:
+            splunk_ao_logger.set_session(external_session_id)
+
         splunk_ao_logger.start_trace(
             input=question,
             name="Hallucination Demo",

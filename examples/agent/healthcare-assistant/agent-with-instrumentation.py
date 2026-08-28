@@ -128,7 +128,8 @@ class HealthcareAgent:
     async def _process_query_async(self, messages: List[Dict[str, str]]) -> str:
         if not self.tools:
             self.load_tools()
-        self.graph = self._build_graph()
+        if self.graph is None:
+            self.graph = self._build_graph()
 
         langchain_messages: List[BaseMessage] = []
         for msg in messages:
@@ -144,7 +145,7 @@ class HealthcareAgent:
             splunk_ao_context.set_session(self.session_id)
 
             # One callback per request keeps each user turn in its own trace.
-            callback = SplunkAOAsyncCallback()
+            callback = SplunkAOAsyncCallback(flush_on_chain_end=True)
             run_config = {**self.langgraph_config, "callbacks": [callback]}
 
             result = await self.graph.ainvoke(
