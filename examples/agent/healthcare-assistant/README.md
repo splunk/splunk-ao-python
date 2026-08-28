@@ -29,7 +29,9 @@ A healthcare-domain Streamlit chat app built with **LangGraph**, **PostgreSQL/pg
 
 ### Splunk AO authentication
 
-This example targets **Splunk Observability (O11y) Cloud**. Two tokens are involved:
+The `.env.example` file includes environment variables for use with **Splunk Observability (O11y) Cloud** or with **On-Premises Splunk Agent Observability**.
+
+O11y Cloud tokens:
 
 | Variable | Required | Purpose |
 |---|---|---|
@@ -37,7 +39,10 @@ This example targets **Splunk Observability (O11y) Cloud**. Two tokens are invol
 | `SPLUNK_AO_O11Y_TOKEN` | ✅ | Ingest token — exports telemetry via OTLP |
 | `SPLUNK_AO_O11Y_API_TOKEN` | optional | Dedicated CRUD token — enables evaluators (Correctness, Context Adherence) |
 
-`SPLUNK_AO_O11Y_TOKEN` is used for both telemetry ingest and CRUD when no API token is set. Set `SPLUNK_AO_O11Y_API_TOKEN` separately if your ingest token is read-only. See the [SDK authentication docs](https://github.com/splunk/splunk-ao-python#splunk-observability-o11y-cloud) for full details.
+`SPLUNK_AO_O11Y_TOKEN` is used for both telemetry ingest and CRUD when no API token is set. Set `SPLUNK_AO_O11Y_API_TOKEN` separately if your ingest token is read-only. For more information, see [this SDK doc section](https://github.com/splunk/splunk-ao-python#splunk-observability-o11y-cloud).
+
+More information about on-premises environment variables are in [this SDK doc section](https://github.com/splunk/splunk-ao-python#on-premises-agent-observability).
+
 
 ## Setup
 
