@@ -78,10 +78,10 @@ splunk_ao_migrate/          ← package root (uv workspace member)
 - `GalileoLogger` → `SplunkAOLogger` (and all other `Galileo*` class renames)
 - `GalileoMetric` / `GalileoMetrics` / `GalileoScorers` → `SplunkAOEvaluator` / `SplunkAOEvaluators`
 - `SplunkAOMetric` → `SplunkAOEvaluator`, `SplunkAOMetrics` → `SplunkAOEvaluators`
-- Domain renames: `Metric` → `Evaluator`, `LlmMetric` → `LlmEvaluator`, `LocalMetric` → `LocalEvaluator`, etc.
+- Domain renames: `Metric` → `Evaluator`, `LlmMetric` → `LlmEvaluator`, `LocalMetric` → `LocalEvaluator`, `CodeMetric` → `CodeEvaluator`, `BuiltInMetrics` → `BuiltInEvaluators`, `Metrics` → `Evaluators`
 - **Not renamed**: `MetricSpec` and `LocalMetricConfig` — these remain as live names in `splunk-ao` (the rename proposal `EvaluatorSpec` / `LocalEvaluatorConfig` was not implemented)
 - `LogStream` → `AgentStream`, `.logstreams` → `.agent_streams`
-- Method renames: `get_log_stream` → `get_agent_stream`, `create_log_stream` → `create_agent_stream`, `list_log_streams` → `list_agent_streams`, `delete_metric` → `delete_evaluator`, `create_custom_llm_metric` → `create_custom_llm_evaluator`
+- Method renames: `get_log_stream` → `get_agent_stream`, `create_log_stream` → `create_agent_stream`, `list_log_streams` → `list_agent_streams`, `delete_metric` → `delete_evaluator`, `create_custom_llm_metric` → `create_custom_llm_evaluator`, `enable_metrics` → `enable_evaluators`
 - **Not renamed**: `get_metrics()` and `set_metrics()` on `AgentStream` — these remain as live method names; only the module-level `get_evaluators()` function is the new API
 - Keyword argument and parameter renames: `log_stream=` → `agent_stream=`, `log_stream_name=` → `agent_stream_name=`, `logstream=` → `agentstream=`; also catches typed parameter declarations like `log_stream: str | None = None` → `agent_stream: str | None = None`
 - Config file renames: `galileo-python-config.json` → `splunk-ao-config.json`, `galileo-config.json` → `splunk-ao-config.json`
@@ -101,7 +101,8 @@ splunk_ao_migrate/          ← package root (uv workspace member)
 
 Doc files are processed in three passes:
 
-1. **URL pass**: known Galileo documentation URLs are rewritten to their Splunk AO equivalents:
+1. **URL pass**: known Galileo URLs are rewritten (applied to all file types, not just docs):
+   - `https://api.galileo.ai/otel/traces` → `https://api.galileo.ai/otel/v1/traces` (OTel endpoint path)
    - `https://docs.galileo.ai/` → `https://agent-observability-docs.splunk.com/`
    - `.../add-galileo-to-crewai/add-galileo-to-crewai` → `.../add-splunk-ao-to-crewai/add-splunk-ao-to-crewai`
    - `-galileo.md` filename references → `-splunk-ao.md`
@@ -179,9 +180,10 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
 
 - Rules are applied to raw text, so occurrences in comments and docstrings are also
   rewritten.
-- URLs are not rewritten in Python, dependency, and environment files. In doc files
-  (`.md`, `.rst`), only the known Galileo documentation URLs listed above are rewritten;
-  all other external links are preserved as-is.
+- The OTel endpoint URL (`https://api.galileo.ai/otel/traces` → `.../otel/v1/traces`) is
+  rewritten in all file types. All other URLs are not rewritten in Python, dependency, and
+  environment files. In doc files (`.md`, `.rst`), only the known Galileo documentation URLs
+  listed above are rewritten; all other external links are preserved as-is.
 - **`galileo_core` interop code**: when a file imports from `galileo_core`, all
   `Metric`/`Evaluator` renames (`Metrics`, `LlmMetric`, etc.) are suppressed for that
   entire file — including call sites on lines that do not contain `galileo_core` —
