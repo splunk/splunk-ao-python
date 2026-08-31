@@ -99,7 +99,6 @@ def crewai_callback(mock_splunk_ao_logger):
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
         patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
-        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
     ):
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
@@ -113,7 +112,6 @@ def test_initialization_with_crewai_available(mock_splunk_ao_logger) -> None:
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
         patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", True),
-        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", True),
     ):
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
@@ -131,7 +129,6 @@ def test_initialization_with_crewai_unavailable(mock_splunk_ao_logger) -> None:
     with (
         patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
         patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
-        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
     ):
         from splunk_ao.handlers.crewai.handler import CrewAIEventListener
 
@@ -691,55 +688,6 @@ def test_update_crew_input(crewai_callback: CrewAIEventListener) -> None:
 
         # Verify input was updated with task descriptions
         assert "Research market trends" in mock_root_node.span_params["input"]
-
-
-def test_lite_llm_usage_callback(crewai_callback: CrewAIEventListener) -> None:
-    """Test LiteLLM usage callback."""
-    node_id = uuid.uuid4()
-
-    # Mock node
-    mock_node = Mock()
-    mock_node.span_params = {}
-
-    # Mock completion response with usage
-    mock_usage = Mock()
-    mock_usage.model_dump.return_value = {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}
-    mock_usage.prompt_tokens = 100
-    mock_usage.completion_tokens = 50
-    mock_usage.total_tokens = 150
-
-    mock_response = Mock()
-    mock_response.model_extra = {"usage": mock_usage}
-
-    kwargs = {"messages": [{"role": "user", "content": "test"}]}
-
-    with (
-        patch.object(crewai_callback._handler, "get_node", return_value=mock_node),
-        patch.object(crewai_callback, "_generate_run_id", return_value=node_id),
-    ):
-        crewai_callback.lite_llm_usage_callback(
-            kwargs=kwargs, completion_response=mock_response, start_time=datetime.now(), end_time=datetime.now()
-        )
-
-        # Verify usage was recorded
-        assert mock_node.span_params["num_input_tokens"] == 100
-        assert mock_node.span_params["num_output_tokens"] == 50
-        assert mock_node.span_params["total_tokens"] == 150
-
-
-def test_lite_llm_usage_callback_no_node(crewai_callback) -> None:
-    """Test LiteLLM usage callback when node doesn't exist."""
-    kwargs = {"messages": [{"role": "user", "content": "test"}]}
-    mock_response = Mock()
-
-    with (
-        patch.object(crewai_callback._handler, "get_node", return_value=None),
-        patch.object(crewai_callback, "_generate_run_id", return_value=uuid.uuid4()),
-    ):
-        # Should not raise an exception
-        crewai_callback.lite_llm_usage_callback(
-            kwargs=kwargs, completion_response=mock_response, start_time=datetime.now(), end_time=datetime.now()
-        )
 
 
 # Memory event tests (for CrewAI >= 0.177.0)
