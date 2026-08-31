@@ -1,0 +1,13 @@
+# Workspace root — not a buildable package itself.
+# Run `uv sync --dev` here to get both packages and their dev deps.
+# Run `uv run pytest` here to execute all tests across the workspace.
+
+[tool.uv.workspace]
+members = [
+    "splunk_ao_migrate",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "splunk_ao_migrate/tests",
+]

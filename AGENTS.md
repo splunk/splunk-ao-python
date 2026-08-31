@@ -95,10 +95,10 @@ not the main API documentation contract.
 | `tests/` | pytest 9, xdist, respx, socket blocking, timeout and coverage plugins |
 | `splunk-ao-a2a/` | Independently released native-OTel A2A instrumentation; uv/Hatch |
 | `splunk-ao-adk/` | Independently released Google ADK handler integration; uv/Hatch |
-| `splunk-ao-migration-tool/` | Migration documentation and examples, not a buildable package |
+| `splunk-ao-migration-tool/` | uv workspace; `splunk-ao-migrate` CLI built from `splunk_ao_migrate/pyproject.toml` |
 | `src/splunk_ao/resources/` | OpenAPI-generated transport client; never hand-edit |
 
-The three buildable packages have independent versions, CI, and release workflows. Only the root `poetry.lock` is
+The four buildable packages have independent versions, CI, and release workflows. Only the root `poetry.lock` is
 tracked; A2A/ADK `uv.lock` files are ignored and may be created locally by uv. Validate every package a change touches.
 CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
