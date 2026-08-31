@@ -21,62 +21,78 @@ Additionally there are a handful of **removed features** (Protect, `GalileoScore
 
 ---
 
+## Automated Migration Tool
+
+Most of the changes above can be applied automatically using the `splunk-ao-migrate` CLI.
+
+### Installation
+
+From the `splunk-ao-migration-tool/` directory:
+
+```bash
+uv pip install ./splunk_ao_migrate
+```
+
+### Usage
+
+After installing, invoke the tool with `uv run` so the workspace virtual environment is used automatically (no manual activation needed):
+
+```bash
+# Rewrite an entire directory in place
+uv run splunk-ao-migrate src/
+
+# Rewrite a single file
+uv run splunk-ao-migrate my_agent.py
+
+# Preview changes without writing (dry run)
+uv run splunk-ao-migrate --dry-run src/
+
+# Suppress the summary report
+uv run splunk-ao-migrate --no-report src/
+```
+
+Alternatively, activate the virtual environment first and then call the command directly:
+
+```bash
+source .venv/bin/activate
+splunk-ao-migrate --dry-run src/
+```
+
+### Run without installing
+
+```bash
+# With uv (from the splunk-ao-migration-tool/ directory)
+uv run python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
+
+# As a module (after uv sync)
+uv run python -m splunk_ao_migrate.migrate --dry-run src/
+```
+
+After running the tool, review the printed warnings and work through the [migration checklist](#9-migration-checklist) for any steps that require manual action.
+
+---
+
 ## 1. Dependency Changes
 
 ### 1.1 Package Availability
 
-> **`splunk-ao` is not yet published to PyPI.**  
-> Use one of the two installation methods below until a public release is available.
+`splunk-ao` is available on PyPI. Replace the `galileo` dependency with:
 
-**Option A — Install directly from GitHub (recommended for most users)**
-
-```bash
-pip install "splunk-ao @ git+https://github.com/splunk/splunk-ao-python.git"
-```
-
-With extras:
-
-```bash
-pip install "splunk-ao[langchain] @ git+https://github.com/splunk/splunk-ao-python.git"
-pip install "splunk-ao[otel] @ git+https://github.com/splunk/splunk-ao-python.git"
+```diff
+- galileo>=2.3.0
++ splunk-ao>=0.1.0
 ```
 
 In `requirements.txt`:
 
 ```text
-splunk-ao @ git+https://github.com/splunk/splunk-ao-python.git
+splunk-ao>=0.1.0
 ```
 
-In `pyproject.toml` (poetry):
+In `pyproject.toml` (Poetry):
 
 ```toml
-splunk-ao = { git = "https://github.com/splunk/splunk-ao-python.git" }
-```
-
-**Option B — Local install from a cloned repo (recommended for development / contribution)**
-
-```bash
-git clone https://github.com/splunk/splunk-ao-python.git
-pip install -e ./splunk-ao-python
-```
-
-In `requirements-dev.txt`:
-
-```text
--e ../splunk-ao-python          # adjust the relative path to where you cloned it
-```
-
-Or with Poetry:
-
-```toml
-splunk-ao = { path = "../splunk-ao-python", develop = true }
-```
-
-**Once `splunk-ao` is published to PyPI**, both install forms above can be replaced with the standard version pin:
-
-```diff
-- galileo>=2.3.0
-+ splunk-ao>=0.1.0
+splunk-ao = ">=0.1.0"
 ```
 
 ### 1.2 Optional Extra Groups

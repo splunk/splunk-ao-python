@@ -18,41 +18,47 @@ directories or files whose names contain `galileo`:
 
 ## Installation
 
-```bash
-# Install from the package directory
-pip install ./splunk_ao_migrate
+From the `splunk-ao-migration-tool/` directory (the workspace root):
 
-# Or with uv
+```bash
 uv pip install ./splunk_ao_migrate
 ```
-
-> Run from `splunk-ao-migration-tool/` (the workspace root).
 
 No external dependencies — uses Python stdlib only.
 
 ## Usage
 
+After installing, invoke the tool with `uv run` so the workspace virtual environment is used automatically (no manual activation needed):
+
 ```bash
 # Rewrite an entire directory in place
-splunk-ao-migrate src/
+uv run splunk-ao-migrate src/
 
 # Rewrite a single file
-splunk-ao-migrate my_agent.py
+uv run splunk-ao-migrate my_agent.py
 
 # Preview changes without writing (dry run)
-splunk-ao-migrate --dry-run src/
+uv run splunk-ao-migrate --dry-run src/
 
 # Suppress the summary report
-splunk-ao-migrate --no-report src/
+uv run splunk-ao-migrate --no-report src/
+```
 
-# Run directly without installing (from the workspace root)
-python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
+Alternatively, activate the virtual environment first:
+
+```bash
+source .venv/bin/activate
+splunk-ao-migrate --dry-run src/
+```
+
+### Run without installing
+
+```bash
+# Run directly (from the workspace root)
+uv run python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
 
 # Run as a module (after uv sync)
-python -m splunk_ao_migrate.migrate --dry-run src/
-
-# Run with uv (from the workspace root)
-uv run python splunk_ao_migrate/src/splunk_ao_migrate/migrate.py --dry-run src/
+uv run python -m splunk_ao_migrate.migrate --dry-run src/
 ```
 
 ## Package layout
