@@ -78,14 +78,14 @@ class Reporter:
         print("Next steps:")
         if dry_run:
             print("  1. Re-run without --dry-run to apply changes")
-            print("  2. See the full migration guide: splunk-ao-migration-tool/README.md")
+            print("  2. What gets migrated and warnings reference: splunk_ao_migrate/README.md")
         else:
             print("  1. Review the diff:  git diff")
             print('  2. Install splunk-ao:')
             print('       pip install "splunk-ao @ git+https://github.com/splunk/splunk-ao-python.git"')
             print("  3. Upgrade Python to >= 3.11 if not already done")
             print("     Also ensure requires-python = \">=3.11\" in pyproject.toml (auto-updated by this tool)")
-            print("  4. See the full migration guide: splunk-ao-migration-tool/README.md")
+            print("  4. What gets migrated and warnings reference: splunk_ao_migrate/README.md")
         print()
 
         return bool(warnings_all)

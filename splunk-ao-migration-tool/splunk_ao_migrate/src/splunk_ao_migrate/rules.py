@@ -43,6 +43,20 @@ PROTECT_SYMBOLS_PATTERN = (
     r"|\bresume_protect_stage\b|\bupdate_protect_stage\b"
 )
 
+# ---------------------------------------------------------------------------
+# 0. URL rules — applied via transform_urls() (bypasses the URL guard)
+# ---------------------------------------------------------------------------
+# These rules rewrite URL strings whose patterns ARE URLs and would therefore
+# be suppressed by the URL guard in transform().  They are applied as a
+# separate transform_urls() pass for every file type.
+URL_RULES: list[Rule] = [
+    Rule(
+        pattern=r"https://api\.galileo\.ai/otel/traces\b",
+        replacement="https://api.galileo.ai/otel/v1/traces",
+        description="api.galileo.ai/otel/traces → api.galileo.ai/otel/v1/traces",
+    ),
+]
+
 IMPORT_RULES: list[Rule] = [
     # Config-file renames must come before the generic galileo rule whose
     # lookahead would otherwise rewrite "galileo-python-config.json" to
@@ -533,11 +547,11 @@ WARNING_RULES: list[Rule] = [
         is_warning=True,
     ),
     Rule(
-        pattern=r'(["\'])(?:(?!\1).)*\bgalileo\b(?:(?!\1).)*\1',
+        pattern=r'(["\'])(?:(?!\1).)*\bgalileo\b(?!\.ai\b)(?:(?!\1).)*\1',
         replacement="",
         description=(
-            "Lowercase 'galileo' inside a string literal — may refer to the astronomer "
-            "or other non-SDK usage; verify whether it should be renamed or left as-is"
+            "Lowercase 'galileo' inside a string literal — may be a hostname, URL, or other non-SDK usage; "
+            "verify whether it should be renamed or left as-is"
         ),
         is_warning=True,
     ),
@@ -601,6 +615,16 @@ ENV_FILE_RULES: list[Rule] = ENV_VAR_RULES + HEADER_RULES + _ENV_VALUE_RULES + B
 
 # Rules for requirements*.txt / pyproject.toml
 DEP_RULES: list[Rule] = [
+    # galileo[otel] → splunk-ao  (the [otel] extra does not exist in splunk-ao; drop it)
+    # The galileo-specific version constraint is also dropped because the version numbers
+    # are galileo release numbers and have no meaning for splunk-ao.
+    # Matches optional version specifier(s) after the extra, e.g. >=1.46.2 or >=1.32.1,<2.0.0.
+    # Must come before the bare galileo rule so the bracket is consumed here, not left behind.
+    Rule(
+        r"\bgalileo\[otel\](?:[><=!~^,][^\s;\"'\]]*)*",
+        "splunk-ao",
+        "galileo[otel] → splunk-ao (otel extra and galileo-specific version constraint removed)",
+    ),
     Rule(r"\bgalileo-adk\b", "splunk-ao-adk", "galileo-adk → splunk-ao-adk"),
     Rule(r"\bgalileo-a2a\b", "splunk-ao-a2a", "galileo-a2a → splunk-ao-a2a"),
     # galileo_a2a Python package/module identifier → splunk_ao_a2a
@@ -625,7 +649,13 @@ DEP_RULES: list[Rule] = [
     # Exclusions:
     #   (?<![a-z\-@])  — skip email addresses (team@galileo.ai) and hyphen-prefixed names
     #   (?![-a-z_.])   — skip galileo-adk, galileo_a2a, galileo.ai etc.
-    Rule(r"(?<![a-z\-@])galileo(?![-a-z_.])", "splunk-ao", "galileo → splunk-ao (package name)"),
+    # Version constraint is stripped: galileo-specific version numbers (e.g. >=1.20.0,<2.0.0)
+    # have no meaning for splunk-ao and can cause resolution failures.
+    Rule(
+        r"(?<![a-z\-@])galileo(?![-a-z_.])(?:\s*\((?:[><=!~^,][^\s;\"'\)]*)*\)|(?:[><=!~^,][^\s;\"'\]]*)*)",
+        "splunk-ao",
+        "galileo → splunk-ao (package name, galileo-specific version constraint removed)",
+    ),
     # GALILEO_* env-var strings inside pyproject.toml pytest env = [...] blocks
     # (same substitutions as ENV_VAR_RULES but applied in the TOML context)
 ] + ENV_VAR_RULES + [

@@ -85,6 +85,7 @@ splunk_ao_migrate/          ← package root (uv workspace member)
 - **Not renamed**: `get_metrics()` and `set_metrics()` on `AgentStream` — these remain as live method names; only the module-level `get_evaluators()` function is the new API
 - Keyword argument and parameter renames: `log_stream=` → `agent_stream=`, `log_stream_name=` → `agent_stream_name=`, `logstream=` → `agentstream=`; also catches typed parameter declarations like `log_stream: str | None = None` → `agent_stream: str | None = None`
 - Config file renames: `galileo-python-config.json` → `splunk-ao-config.json`, `galileo-config.json` → `splunk-ao-config.json`
+- OTel endpoint path: `https://api.galileo.ai/otel/traces` → `https://api.galileo.ai/otel/v1/traces`
 - `GALILEO_*` env-var string literals → `SPLUNK_AO_*` (e.g. `GALILEO_API_KEY`, `GALILEO_API_ENDPOINT`, `GALILEO_CONSOLE_URL`, `GALILEO_HOME_DIR`)
 - `X-Galileo-Trace-ID` / `X-Galileo-Parent-ID` HTTP headers
 - `GalileoSpanProcessor` → `SplunkAOSpanProcessor`, `add_galileo_span_processor` → `add_splunk_ao_span_processor`
@@ -118,7 +119,8 @@ All other URLs (`https?://...`) are **not rewritten** — external links remain 
 
 ### Dependency files
 
-- `galileo` → `splunk-ao`
+- `galileo` → `splunk-ao` (galileo-specific version constraint also removed — version numbers are galileo release numbers and have no meaning for `splunk-ao`)
+- `galileo[otel]` → `splunk-ao` (the `otel` extras group does not exist in `splunk-ao`; the extra and the galileo-specific version constraint are both dropped)
 - `galileo-adk` → `splunk-ao-adk`
 - `galileo-a2a` → `splunk-ao-a2a`
 - `galileo_a2a` → `splunk_ao_a2a` (Python package identifier in paths and config)
@@ -163,9 +165,9 @@ so `splunk-ao-migrate galileo-a2a/` will rename the directory itself to `splunk-
   confirm the suppressed renames are correct.
 - **Dynamic env-var construction** (`f"GALILEO_{key}"`) — cannot be auto-rewritten;
   update manually
-- **Lowercase `galileo` in string literals** — may refer to the astronomer or other
-  non-SDK usage (e.g. `"what moons did galileo discover"`); verify whether it should
-  be renamed or left as-is
+- **Lowercase `galileo` in string literals** — may be a hostname, URL, or other non-SDK
+  usage (e.g. `"https://api.galileo.ai/..."`, `"what moons did galileo discover"`); verify
+  whether it should be renamed or left as-is
 
 ## Manual steps after migration
 

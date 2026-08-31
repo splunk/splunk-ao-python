@@ -25,6 +25,7 @@ from splunk_ao_migrate.rules import (
     DOC_URL_RULES,
     ENV_FILE_RULES,
     PYTHON_RULES,
+    URL_RULES,
     WARNING_RULES,
 )
 from splunk_ao_migrate.transformer import transform, transform_urls
@@ -36,26 +37,29 @@ from splunk_ao_migrate.migrate import collect_path_renames, migrate_file
 # ---------------------------------------------------------------------------
 
 def py(src: str) -> str:
-    """Apply PYTHON_RULES + WARNING_RULES to src and return the rewritten content."""
-    return transform(src, PYTHON_RULES, WARNING_RULES, python_mode=True).content
+    """Apply URL_RULES then PYTHON_RULES + WARNING_RULES to src and return the rewritten content."""
+    url_tr = transform_urls(src, URL_RULES)
+    return transform(url_tr.content, PYTHON_RULES, WARNING_RULES, python_mode=True).content
 
 
 def py_warnings(src: str) -> list[str]:
     """Return the warning descriptions produced for src."""
-    return [w.rule_description for w in transform(src, PYTHON_RULES, WARNING_RULES, python_mode=True).warnings]
+    url_tr = transform_urls(src, URL_RULES)
+    return [w.rule_description for w in transform(url_tr.content, PYTHON_RULES, WARNING_RULES, python_mode=True).warnings]
 
 
 def doc(src: str) -> str:
     """Apply the three-pass doc pipeline to src and return rewritten content."""
-    url_tr = transform_urls(src, DOC_URL_RULES)
+    url_tr = transform_urls(src, URL_RULES + DOC_URL_RULES)
     prose_tr = transform(url_tr.content, DOC_PROSE_RULES, WARNING_RULES)
     ph_tr = transform_urls(prose_tr.content, DOC_PLACEHOLDER_RULES)
     return ph_tr.content
 
 
 def dep(src: str) -> str:
-    """Apply DEP_RULES to src and return rewritten content."""
-    return transform(src, DEP_RULES).content
+    """Apply URL_RULES then DEP_RULES to src and return rewritten content."""
+    url_tr = transform_urls(src, URL_RULES)
+    return transform(url_tr.content, DEP_RULES).content
 
 
 def dep_warnings(src: str) -> list[str]:
@@ -119,6 +123,16 @@ class TestImportRules:
     def test_config_file_rename_galileo_config(self):
         result = py('path = "galileo-config.json"\n')
         assert "splunk-ao-config.json" in result
+
+    def test_otel_traces_endpoint_path_updated(self):
+        # api.galileo.ai/otel/traces → api.galileo.ai/otel/v1/traces
+        result = py('url = "https://api.galileo.ai/otel/traces"\n')
+        assert "https://api.galileo.ai/otel/v1/traces" in result
+
+    def test_otel_v1_traces_endpoint_unchanged(self):
+        # already correct path must not be double-rewritten
+        result = py('url = "https://api.galileo.ai/otel/v1/traces"\n')
+        assert result == 'url = "https://api.galileo.ai/otel/v1/traces"\n'
 
     def test_domain_name_not_renamed(self):
         # galileo.ai as a domain (in a URL) must not be renamed
@@ -446,6 +460,48 @@ class TestDepRules:
     def test_galileo_package_renamed(self):
         assert "splunk-ao" in dep('dependencies = ["galileo>=1.32"]\n')
 
+    def test_galileo_version_constraint_stripped(self):
+        # galileo-specific version numbers have no meaning for splunk-ao
+        result = dep('dependencies = ["galileo>=1.20.0,<2.0.0"]\n')
+        assert '"splunk-ao"' in result
+        assert "1.20.0" not in result
+        assert "<2.0.0" not in result
+
+    def test_galileo_poetry_parenthesised_version_stripped(self):
+        # Poetry uses parenthesised form: galileo (>=1.20.0,<2.0.0)
+        result = dep('dependencies = ["galileo (>=1.20.0,<2.0.0)"]\n')
+        assert '"splunk-ao"' in result
+        assert "1.20.0" not in result
+        assert "<2.0.0" not in result
+
+    def test_galileo_exact_version_stripped(self):
+        result = dep("galileo==1.32.1\n")
+        assert result.strip() == "splunk-ao"
+
+    def test_galileo_version_stripped_requirements_txt(self):
+        result = dep("galileo>=1.46.2\n")
+        assert result.strip() == "splunk-ao"
+
+    def test_galileo_otel_extra_and_version_stripped(self):
+        # galileo[otel] → splunk-ao: the [otel] extra does not exist in splunk-ao,
+        # and the galileo-specific version constraint is meaningless for splunk-ao.
+        result = dep('dependencies = ["galileo[otel]>=1.32.1"]\n')
+        assert '"splunk-ao"' in result
+        assert "[otel]" not in result
+        assert "1.32.1" not in result
+
+    def test_galileo_otel_range_constraint_stripped(self):
+        # Both bounds of a version range are dropped
+        result = dep('dependencies = ["galileo[otel]>=1.32.1,<2.0.0"]\n')
+        assert '"splunk-ao"' in result
+        assert "1.32.1" not in result
+        assert "<2.0.0" not in result
+
+    def test_galileo_otel_in_requirements_txt(self):
+        # Plain requirements.txt line: version stripped too
+        result = dep("galileo[otel]>=1.46.2\n")
+        assert result.strip() == "splunk-ao"
+
     def test_galileo_adk_dep_renamed(self):
         assert "splunk-ao-adk" in dep('dependencies = ["galileo-adk>=1.0"]\n')
 
@@ -470,9 +526,9 @@ class TestDepRules:
     def test_no_spurious_string_literal_warning(self):
         # Given: galileo as a dep string in pyproject.toml
         # When: dep rules applied (no WARNING_RULES on this branch)
-        # Then: no "astronomer" warning emitted
+        # Then: no string-literal warning emitted
         warnings = dep_warnings('dependencies = ["galileo>=1.32"]\n')
-        assert not any("astronomer" in w for w in warnings)
+        assert not any("non-SDK usage" in w for w in warnings)
 
     def test_uv_sources_key_renamed(self):
         result = dep("galileo = {git = ...}\n")
@@ -512,7 +568,7 @@ class TestWarningRules:
 
     def test_lowercase_galileo_string_literal_emits_warning(self):
         src = 'question = "what moons did galileo discover"\n'
-        assert any("astronomer" in w for w in py_warnings(src))
+        assert any("non-SDK usage" in w for w in py_warnings(src))
 
     def test_dynamic_env_var_emits_warning(self):
         src = 'key = "GALILEO_" + suffix\n'
@@ -618,7 +674,7 @@ class TestMigrateFileProtect:
         result = migrate_file(req, dry_run=False, protect_in_scope=False)
 
         assert not result.skipped
-        assert req.read_text() == "splunk-ao>=1.32\n"
+        assert req.read_text() == "splunk-ao\n"
 
     def test_python_file_not_affected_by_protect_in_scope(self, tmp_path):
         # Given: a Python file with galileo import

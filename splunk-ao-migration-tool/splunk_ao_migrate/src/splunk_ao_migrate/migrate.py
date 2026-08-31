@@ -15,7 +15,7 @@ Once installed via pip:
   splunk-ao-migrate src/
   splunk-ao-migrate --dry-run src/
 
-See splunk-ao-migration-tool/README.md for the complete migration guide.
+See splunk_ao_migrate/README.md for the complete migration guide.
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ from splunk_ao_migrate.rules import (
     ENV_FILE_RULES,
     PROTECT_SYMBOLS_PATTERN,
     PYTHON_RULES,
+    URL_RULES,
     WARNING_RULES,
 )
 from splunk_ao_migrate.transformer import transform, transform_urls
@@ -96,9 +97,10 @@ def migrate_file(path: Path, dry_run: bool, protect_in_scope: bool = False) -> F
         return result
 
     if kind == "doc":
-        # Pass 1: rewrite full URLs (docs.galileo.ai → agent-observability-docs.splunk.com).
+        # Pass 1: rewrite full URLs (docs.galileo.ai → agent-observability-docs.splunk.com,
+        # api.galileo.ai/otel/traces → api.galileo.ai/otel/v1/traces, etc.).
         # transform_urls bypasses the URL guard so URL-pattern rules actually match.
-        url_tr = transform_urls(content, DOC_URL_RULES)
+        url_tr = transform_urls(content, URL_RULES + DOC_URL_RULES)
         # Pass 2: apply prose rules (brand names, symbols, env vars …) on the
         # already-URL-rewritten content, with the URL guard re-enabled.
         # DOC_PROSE_RULES excludes KWARG_RULES to avoid rewriting kwarg-style
@@ -113,8 +115,10 @@ def migrate_file(path: Path, dry_run: bool, protect_in_scope: bool = False) -> F
         result.warnings = transform(content, [], WARNING_RULES).warnings
         tr_content = placeholder_tr.content
     elif kind == "python":
-        tr = transform(content, PYTHON_RULES, WARNING_RULES, python_mode=True)
-        result.matches = tr.matches
+        # Pass 1: rewrite URL strings that would be suppressed by the URL guard.
+        url_tr = transform_urls(content, URL_RULES)
+        tr = transform(url_tr.content, PYTHON_RULES, WARNING_RULES, python_mode=True)
+        result.matches = url_tr.matches + tr.matches
         result.warnings = tr.warnings
         tr_content = tr.content
         # Validate that rewritten Python still compiles; skip write if broken.
@@ -132,13 +136,15 @@ def migrate_file(path: Path, dry_run: bool, protect_in_scope: bool = False) -> F
         # Do not pass WARNING_RULES here: in dep/toml files every "galileo" string
         # literal is the package name (already auto-renamed), never a non-SDK reference.
         # The Protect pre-scan warning is emitted at the CLI level, not per-file.
-        tr = transform(content, DEP_RULES)
-        result.matches = tr.matches
+        url_tr = transform_urls(content, URL_RULES)
+        tr = transform(url_tr.content, DEP_RULES)
+        result.matches = url_tr.matches + tr.matches
         result.warnings = []
         tr_content = tr.content
     else:  # env
-        tr = transform(content, ENV_FILE_RULES)
-        result.matches = tr.matches
+        url_tr = transform_urls(content, URL_RULES)
+        tr = transform(url_tr.content, ENV_FILE_RULES)
+        result.matches = url_tr.matches + tr.matches
         result.warnings = []
         tr_content = tr.content
 
