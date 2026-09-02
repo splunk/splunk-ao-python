@@ -87,10 +87,52 @@ client/server wrapping and message-context propagation.
 The SDK may add processors, but it must never silently replace the global tracer provider. The application owns the
 provider and calls `shutdown()`; SDK-owned logger/export resources use their own termination path.
 
+### Distributed context and HTTP transports
+
+Supported automatic propagation reuses upstream OpenTelemetry instrumentors rather than custom SDK HTTP wrappers.
+`configure_distributed_tracing()` creates or accepts an OpenTelemetry SDK provider, registers Splunk AO export, and
+configures FastAPI/Starlette inbound instrumentation plus Requests, HTTPX sync/async, and aiohttp-client outbound
+instrumentation. It returns the application-owned provider for shutdown and never sets or replaces the global tracer
+provider. `instrument_distributed_tracing()` remains the transport-only entry point for applications that manage
+processor registration separately. Manual `get_tracing_headers()` and `TracingMiddleware` remain fallbacks for
+unsupported transports; supported automatic instrumentation does not require either one on individual requests.
+
+High-level setup is idempotent per provider for Splunk AO processor registration. Each process-wide client instrumentor
+and each server application must still have one instrumentation owner; do not combine the helper with direct upstream
+instrumentation of the same component.
+
+Automatic setup wraps the current process-global text-map propagator with a session-aware delegate. Applications must
+install custom global propagators before invoking the helper. Replacing the global propagator afterward removes the
+session adapter until setup is invoked again. This propagator mutation is independent of tracer-provider ownership.
+
+SDK-owned authentication, health-check, CRUD, routing-resolution, token-refresh, and streaming control-plane requests
+execute inside OTel HTTP-instrumentation suppression. This boundary is scoped to the SDK request and must restore the
+caller's context afterward; application traffic to the same host must remain instrumentable. Apply suppression at the
+shared configuration/API-client boundary, never by excluding deployment URLs globally.
+
+An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
+may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
+baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
+endpoint, model, workflow, or agent identity in baggage.
+
+Explicit session selection is ambient within the current thread or async execution context and is shared by logger
+instances in that context. The most recent explicit selection applies to subsequently started telemetry and outbound
+propagation. An explicit clear masks inbound conversation baggage for the rest of that execution context. Independent
+simultaneous sessions require separate execution contexts.
+
+Remote W3C sampling is authoritative. Descendants of a valid remote parent with `sampled=0` retain its IDs for
+continuation but do not enter the Splunk AO exporter.
+
 ## Span Lifecycle and Export Ownership
 
 `SpanSink` owns the SDK's private provider and `BatchSpanProcessor` for internal telemetry. A completed operation is
 enqueued immediately, allowing scheduled export without an explicit flush.
+Without an explicit internal `BatchConfig`, both SDK-owned and caller-owned processors defer to standard OTel
+`OTEL_BSP_*` environment configuration.
+
+Framework handlers register a stable operation identity at each start callback and enqueue that operation at its
+matching end callback, so a child can enter `BatchSpanProcessor` while its parent remains active. The deprecated
+`ingestion_hook` is the compatibility exception and retains whole-tree payload construction at trace completion.
 
 - `flush()` / `async_flush()` drain completed work and do not end an active trace.
 - `terminate()` drains completed work, shuts down SDK-owned telemetry resources, and releases unfinished state.
@@ -157,6 +199,9 @@ receiver failures, and expose bounded acknowledgement health. Do not log secrets
 
 These handlers adapt framework events into the internal Path 1 model. Keep optional dependencies lazy and imports free
 of surprising side effects. CrewAI is excluded on Python 3.14; code and tests must support the unavailable path.
+With `start_new_trace=True`, a handler owns and concludes its local envelope and root while still inheriting an active
+W3C parent. With `start_new_trace=False`, it attaches below caller-owned active state, emits only its subtree, and leaves
+the caller open.
 
 ### OpenAI wrapper
 

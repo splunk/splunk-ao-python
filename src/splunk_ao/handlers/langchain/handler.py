@@ -41,6 +41,8 @@ class SplunkAOCallback(BaseCallbackHandler):
         The handler for managing the trace.
     """
 
+    run_inline = True
+
     def __init__(
         self,
         splunk_ao_logger: SplunkAOLogger | None = None,

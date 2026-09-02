@@ -7,13 +7,14 @@ from urllib.parse import urljoin
 from uuid import uuid4
 
 import pytest
+from opentelemetry.instrumentation.utils import is_http_instrumentation_enabled
 from pydantic import SecretStr
 
 from galileo_core.constants.request_method import RequestMethod
 from galileo_core.constants.routes import Routes
 from galileo_core.helpers.api_client import ApiClient
 from galileo_core.schemas.base_config import GalileoConfig
-from splunk_ao.config import O11yApiClient, SplunkAOConfig
+from splunk_ao.config import O11yApiClient, SplunkAOConfig, _ControlPlaneApiClient
 from splunk_ao.shared.exceptions import AmbiguousConfigurationError, MissingConfigurationError
 
 _CONFIG_ENV_VARS = (
@@ -85,7 +86,12 @@ def test_o11y_api_client_sync_request_preserves_prefix_and_header(monkeypatch: p
     async def fake_make_request(
         request_method: RequestMethod, base_url: str, endpoint: str, headers: dict[str, str], **kwargs: object
     ) -> dict:
-        captured.update(method=request_method, url=urljoin(base_url, endpoint), headers=headers)
+        captured.update(
+            method=request_method,
+            url=urljoin(base_url, endpoint),
+            headers=headers,
+            instrumentation_enabled=is_http_instrumentation_enabled(),
+        )
         return {}
 
     monkeypatch.setattr(ApiClient, "make_request", staticmethod(fake_make_request))
@@ -95,7 +101,9 @@ def test_o11y_api_client_sync_request_preserves_prefix_and_header(monkeypatch: p
         "method": RequestMethod.GET,
         "url": "https://app.lab0.observability.splunkcloud.com/ao/api/projects",
         "headers": {"accept": "application/json", "Content-Type": "application/json", "X-SF-Token": "tok"},
+        "instrumentation_enabled": False,
     }
+    assert is_http_instrumentation_enabled()
 
 
 @pytest.mark.asyncio
@@ -116,12 +124,13 @@ async def test_o11y_api_client_async_request_preserves_existing_prefix(monkeypat
 
 
 def test_o11y_api_client_prefixes_streaming_requests(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, str] = {}
+    captured: dict[str, object] = {}
 
     def fake_stream_request(
         self: ApiClient, method: RequestMethod, path: str, *args: object, **kwargs: object
     ) -> contextlib.AbstractContextManager[str]:
         captured["path"] = path
+        captured["instrumentation_enabled"] = is_http_instrumentation_enabled()
         return nullcontext(path)
 
     monkeypatch.setattr(ApiClient, "stream_request", fake_stream_request)
@@ -129,6 +138,8 @@ def test_o11y_api_client_prefixes_streaming_requests(monkeypatch: pytest.MonkeyP
         pass
 
     assert captured["path"] == "/ao/api/projects"
+    assert captured["instrumentation_enabled"] is False
+    assert is_http_instrumentation_enabled()
 
 
 @pytest.mark.parametrize("token_var", ["SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"])
@@ -253,17 +264,21 @@ def test_ambiguous_environment_fails_before_config_construction(monkeypatch: pyt
 
 def test_standalone_constructor_flow_still_uses_parent_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[object] = []
+    instrumentation_states: list[bool] = []
 
     async def fake_make_request(request_method: RequestMethod, base_url: str, endpoint: str, **kwargs: object) -> dict:
         calls.append(endpoint)
+        instrumentation_states.append(is_http_instrumentation_enabled())
         return {"status": "ok"}
 
     def fake_get_jwt_token(*args: object, **kwargs: object) -> tuple[SecretStr, None]:
         calls.append("jwt")
+        instrumentation_states.append(is_http_instrumentation_enabled())
         return SecretStr("jwt-token"), None
 
     def fake_request(self: ApiClient, method: RequestMethod, path: str, **kwargs: object) -> dict[str, str]:
         calls.append(path)
+        instrumentation_states.append(is_http_instrumentation_enabled())
         return {"id": str(uuid4()), "email": "user@example.com", "role": "user"}
 
     monkeypatch.setattr(SplunkAOConfig, "_instance", None)
@@ -275,6 +290,10 @@ def test_standalone_constructor_flow_still_uses_parent_validation(monkeypatch: p
         cfg = SplunkAOConfig.get(console_url="https://app.galileo.ai", api_key="key")
 
     assert not isinstance(cfg.validated_api_client, O11yApiClient)
+    assert isinstance(cfg.validated_api_client, _ControlPlaneApiClient)
     assert Routes.healthcheck in calls
     assert "jwt" in calls
     assert Routes.current_user in calls
+    assert instrumentation_states
+    assert not any(instrumentation_states)
+    assert is_http_instrumentation_enabled()

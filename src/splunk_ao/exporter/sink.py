@@ -54,14 +54,16 @@ class SpanSink:
 
 
 def build_batch_processor(exporter: SpanExporter, config: BatchConfig | None = None) -> BatchSpanProcessor:
-    """Build a BatchSpanProcessor with explicit SDK defaults."""
-    batch_config = config or BatchConfig()
+    """Build a BatchSpanProcessor with OTel defaults or explicit SDK configuration."""
+    if config is None:
+        return BatchSpanProcessor(exporter)
+
     return BatchSpanProcessor(
         exporter,
-        max_queue_size=batch_config.max_queue_size,
-        schedule_delay_millis=batch_config.schedule_delay_millis,
-        export_timeout_millis=batch_config.export_timeout_millis,
-        max_export_batch_size=batch_config.max_export_batch_size,
+        max_queue_size=config.max_queue_size,
+        schedule_delay_millis=config.schedule_delay_millis,
+        export_timeout_millis=config.export_timeout_millis,
+        max_export_batch_size=config.max_export_batch_size,
     )
 
 

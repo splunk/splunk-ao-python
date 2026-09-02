@@ -61,11 +61,18 @@ from galileo_core.schemas.logging.span import WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.logger import SplunkAOLogger
-from splunk_ao.logger.logger import STUB_TRACE_NAME
 from splunk_ao.schema.content_blocks import is_content_block_list
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.metrics import LocalMetricConfig
 from splunk_ao.schema.trace import SPAN_TYPE
+from splunk_ao.session_context import (
+    SessionSelection,
+    _session_id_context,  # noqa: F401  # retained as a private compatibility re-export
+    explicit_session_id,
+    get_session_selection,
+    restore_session_selection,
+    set_session_context,
+)
 from splunk_ao.shared.exceptions import ConfigurationError
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.env_helpers import _get_mode_or_default
@@ -92,12 +99,6 @@ _trace_context: ContextVar[Trace | None] = ContextVar("trace_context", default=N
 _experiment_id_context: ContextVar[str | None] = ContextVar("experiment_id_context", default=None)
 _span_stack_context: ContextVar[list[WorkflowSpan] | None] = ContextVar("span_stack_context", default=None)
 _mode_context: ContextVar[LoggerModeType | None] = ContextVar("mode_context", default=None)
-_session_id_context: ContextVar[str | None] = ContextVar("session_id_context", default=None)
-
-# Distributed tracing context variables (for middleware)
-_trace_id_context: ContextVar[str | None] = ContextVar("trace_id_context", default=None)
-_parent_id_context: ContextVar[str | None] = ContextVar("parent_id_context", default=None)
-
 # Context variables for dataset fields (ground truth/reference output)
 # These allow setting ground truth data that will be attached to all spans
 # created within the context, enabling scorers that require reference output.
@@ -110,7 +111,7 @@ _project_stack: ContextVar[list[str | None] | None] = ContextVar("project_stack"
 _agent_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_stream_stack", default=None)
 _trace_stack: ContextVar[list[Trace | None] | None] = ContextVar("trace_stack", default=None)
 _experiment_id_stack: ContextVar[list[str | None] | None] = ContextVar("experiment_id_stack", default=None)
-_session_id_stack: ContextVar[list[str | None] | None] = ContextVar("session_id_stack", default=None)
+_session_id_stack: ContextVar[list[SessionSelection] | None] = ContextVar("session_id_stack", default=None)
 _mode_stack: ContextVar[list[LoggerModeType] | None] = ContextVar("mode_stack", default=None)
 _span_stack_stack: ContextVar[list[list[WorkflowSpan]] | None] = ContextVar("span_stack_stack", default=None)
 
@@ -179,7 +180,7 @@ class SplunkAODecorator:
             experiment_id=_experiment_id_context.get(),
         ).flush()
 
-        _session_id_context.set(None)
+        set_session_context(None)
 
         # Pop values from the stacks and restore the previous context
         _project_context.set(_get_or_init_list(_project_stack).pop())
@@ -188,7 +189,22 @@ class SplunkAODecorator:
         _trace_context.set(_get_or_init_list(_trace_stack).pop())
         _mode_context.set(_get_or_init_list(_mode_stack).pop())
         _span_stack_context.set(_get_or_init_list(_span_stack_stack).pop())
-        _session_id_context.set(_get_or_init_list(_session_id_stack).pop())
+        restored_selection = _get_or_init_list(_session_id_stack).pop()
+        restore_session_selection(restored_selection)
+        has_explicit_session, restored_session_id = explicit_session_id(restored_selection)
+        if has_explicit_session:
+            try:
+                restored_logger = SplunkAOLoggerSingleton().get_existing(
+                    project=_project_context.get(),
+                    agent_stream=_agent_stream_context.get(),
+                    experiment_id=_experiment_id_context.get(),
+                    mode=_mode_context.get(),
+                )
+            except Exception:
+                _logger.debug("Could not resolve a cached logger while restoring session context", exc_info=True)
+            else:
+                if restored_logger is not None:
+                    restored_logger._set_active_session_id(restored_session_id)
 
     def __call__(
         self,
@@ -233,7 +249,7 @@ class SplunkAODecorator:
         _get_or_init_list(_trace_stack).append(_trace_context.get())
         _get_or_init_list(_mode_stack).append(_mode_context.get())
         _get_or_init_list(_span_stack_stack).append(_get_or_init_list(_span_stack_context).copy())
-        _get_or_init_list(_session_id_stack).append(_session_id_context.get())
+        _get_or_init_list(_session_id_stack).append(get_session_selection())
 
         # Reset trace context values
         _span_stack_context.set([])
@@ -244,7 +260,7 @@ class SplunkAODecorator:
         _agent_stream_context.set(None)
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
-        _session_id_context.set(None)
+        set_session_context(None)
 
         # Override with explicitly provided values
         if project is not None:
@@ -256,7 +272,6 @@ class SplunkAODecorator:
         if mode is not None:
             _mode_context.set(_get_mode_or_default(mode))
         if session_id is not None:
-            _session_id_context.set(session_id)
             self.set_session(session_id)
 
         return self
@@ -1024,34 +1039,6 @@ class SplunkAODecorator:
                 status_code = span_params.get("status_code")
                 logger.conclude(output=output, duration_ns=span_params["duration_ns"], status_code=status_code)
 
-                # In distributed mode, update parent trace output after concluding a top-level workflow
-                # This ensures the trace shows the latest workflow's output (last workflow wins)
-                # Skip stub traces (created from distributed tracing headers - they're managed by the client)
-                if logger.mode == "distributed" and not stack:
-                    current_parent = logger.current_parent()
-                    if current_parent is not None and isinstance(current_parent, Trace):
-                        is_stub_trace = current_parent.name == STUB_TRACE_NAME
-
-                        if not is_stub_trace:
-                            # _coerce_output preserves str and List[ContentBlock],
-                            # serializes everything else (Message, List[Document], etc.) to JSON string.
-                            if output is not None:
-                                current_parent.output = SplunkAOLogger._coerce_output(output)
-                            if redacted_output is not None:
-                                current_parent.redacted_output = SplunkAOLogger._coerce_output(redacted_output)
-
-                            # Update trace duration
-                            # Note: In distributed mode, trace.created_at may be set by the server
-                            # Using max() to ensure parent is never shorter than its children.
-                            if current_parent.created_at:
-                                elapsed_ns = convert_time_delta_to_ns(_get_timestamp() - current_parent.created_at)
-                                workflow_ns = span_params.get("duration_ns", 0)
-                                prev_ns = current_parent.metrics.duration_ns or 0
-                                current_parent.metrics.duration_ns = max(elapsed_ns, workflow_ns, prev_ns)
-
-                            if status_code is not None:
-                                current_parent.status_code = status_code
-
             else:
                 # Non-concludable spans (llm, tool, retriever) are  added to the parent
                 span_methods = {"llm": "add_llm_span", "tool": "add_tool_span", "retriever": "add_retriever_span"}
@@ -1234,12 +1221,6 @@ class SplunkAODecorator:
             "experiment_id": experiment_id or _experiment_id_context.get(),
             "mode": _get_mode_or_default(mode) if mode is not None else _mode_context.get(),
         }
-        trace_id_from_context = _trace_id_context.get()
-        span_id_from_context = _parent_id_context.get()
-        if trace_id_from_context:
-            kwargs["trace_id"] = trace_id_from_context
-        if span_id_from_context:
-            kwargs["span_id"] = span_id_from_context
         if ingestion_hook is not None:
             kwargs["ingestion_hook"] = ingestion_hook
 
@@ -1373,11 +1354,7 @@ class SplunkAODecorator:
         _mode_context.set(_get_mode_or_default(None))
         _span_stack_context.set([])
         _trace_context.set(None)
-        _session_id_context.set(None)
-        # Reset distributed tracing context
-        _trace_id_context.set(None)
-        _parent_id_context.set(None)
-
+        set_session_context(None)
         # Clear all stacks
         _get_or_init_list(_project_stack).clear()
         _get_or_init_list(_agent_stream_stack).clear()
@@ -1438,7 +1415,7 @@ class SplunkAODecorator:
         _mode_context.set(_get_mode_or_default(mode))
         _span_stack_context.set([])
         _trace_context.set(None)
-        _session_id_context.set(None)
+        set_session_context(None)
 
     def start_session(
         self,
@@ -1466,12 +1443,9 @@ class SplunkAODecorator:
         str
             The id of the newly created session.
         """
-        session_id = self.get_logger_instance().start_session(
+        return self.get_logger_instance().start_session(
             name=name, previous_session_id=previous_session_id, external_id=external_id, metadata=metadata
         )
-
-        _session_id_context.set(session_id)
-        return session_id
 
     def clear_session(self) -> None:
         """Clear the session in the active context logger instance."""

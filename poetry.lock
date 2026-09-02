@@ -7,7 +7,7 @@ description = "Happy Eyeballs for asyncio"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "aiohappyeyeballs-2.6.1-py3-none-any.whl", hash = "sha256:f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8"},
     {file = "aiohappyeyeballs-2.6.1.tar.gz", hash = "sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558"},
@@ -20,7 +20,7 @@ description = "Async http client/server framework (asyncio)"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "aiohttp-3.14.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:eb0495d778817619273c108784292be161a924b9f5ae5cbbc70a2caa6838250b"},
     {file = "aiohttp-3.14.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c3c200cf9757edd785051dc699c7ecbec22110dbfcb3fefc7a9f9695eda8ea7a"},
@@ -163,7 +163,7 @@ description = "aiosignal: a list of registered asynchronous callbacks"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "aiosignal-1.4.0-py3-none-any.whl", hash = "sha256:053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e"},
     {file = "aiosignal-1.4.0.tar.gz", hash = "sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7"},
@@ -245,6 +245,23 @@ files = [
 
 [package.extras]
 test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
+
+[[package]]
+name = "asgiref"
+version = "3.12.1"
+description = "ASGI specs, helper code, and adapters"
+optional = true
+python-versions = ">=3.10"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "asgiref-3.12.1-py3-none-any.whl", hash = "sha256:fe386d1c2bff7259ea95929266d12a8cf9a8b5a1c2598402967d8792e7a7c094"},
+    {file = "asgiref-3.12.1.tar.gz", hash = "sha256:59dcb51c272ad209d59bed5708a64a333083e86017d7fcdd67498eeab7784340"},
+]
+
+[package.extras]
+mypy = ["mypy (>=1.14.0)"]
+tests = ["pytest", "pytest-asyncio"]
 
 [[package]]
 name = "attrs"
@@ -682,7 +699,7 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-markers = {main = "(platform_system == \"Windows\" or python_version <= \"3.13\") and (extra == \"crewai\" or extra == \"all\" or platform_system == \"Windows\") and (os_name == \"nt\" or platform_system == \"Windows\" or sys_platform == \"win32\")", dev = "platform_system == \"Windows\" or sys_platform == \"win32\"", test = "sys_platform == \"win32\""}
+markers = {main = "(python_version <= \"3.13\" or platform_system == \"Windows\") and (extra == \"crewai\" or extra == \"all\" or platform_system == \"Windows\") and (os_name == \"nt\" or platform_system == \"Windows\" or sys_platform == \"win32\")", dev = "platform_system == \"Windows\" or sys_platform == \"win32\"", test = "sys_platform == \"win32\""}
 
 [[package]]
 name = "coloredlogs"
@@ -948,7 +965,7 @@ files = [
     {file = "distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"},
     {file = "distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed"},
 ]
-markers = {main = "extra == \"openai\" or extra == \"all\" or extra == \"langchain\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\" or extra == \"langchain\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\" or extra == \"langchain\") or extra == \"openai\" or extra == \"all\" or extra == \"langchain\""}
 
 [[package]]
 name = "docstring-parser"
@@ -1154,7 +1171,7 @@ description = "A list-like structure which implements collections.abc.MutableSeq
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "frozenlist-1.7.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cc4df77d638aa2ed703b878dd093725b72a824c3c546c076e8fdf276f78ee84a"},
     {file = "frozenlist-1.7.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:716a9973a2cc963160394f701964fe25012600f3d311f60c790400b00e568b61"},
@@ -1918,7 +1935,7 @@ files = [
     {file = "jiter-0.10.0-cp39-cp39-win_amd64.whl", hash = "sha256:1b28302349dc65703a9e4ead16f163b1c339efffbe1049c30a44b001a2a4fff9"},
     {file = "jiter-0.10.0.tar.gz", hash = "sha256:07a7142c38aacc85194391108dc91b5b57093c978a9932bd86a36862759d9500"},
 ]
-markers = {main = "extra == \"openai\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\") or extra == \"openai\" or extra == \"all\""}
 
 [[package]]
 name = "json-repair"
@@ -2614,7 +2631,7 @@ description = "multidict implementation"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "multidict-6.6.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:b8aa6f0bd8125ddd04a6593437bad6a7e70f300ff4180a531654aa2ab3f6d58f"},
     {file = "multidict-6.6.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b9e5853bbd7264baca42ffc53391b490d65fe62849bf2c690fa3f6273dbcd0cb"},
@@ -2944,7 +2961,7 @@ files = [
     {file = "openai-2.32.0-py3-none-any.whl", hash = "sha256:4dcc9badeb4bf54ad0d187453742f290226d30150890b7890711bda4f32f192f"},
     {file = "openai-2.32.0.tar.gz", hash = "sha256:c54b27a9e4cb8d51f0dd94972ffd1a04437efeb259a9e60d8922b8bd26fe55e0"},
 ]
-markers = {main = "extra == \"openai\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"openai\") or extra == \"openai\" or extra == \"all\""}
 
 [package.dependencies]
 anyio = ">=3.5.0,<5"
@@ -3124,6 +3141,162 @@ requests = ">=2.7,<3.0"
 typing-extensions = ">=4.5.0"
 
 [[package]]
+name = "opentelemetry-instrumentation"
+version = "0.59b0"
+description = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation-0.59b0-py3-none-any.whl", hash = "sha256:44082cc8fe56b0186e87ee8f7c17c327c4c2ce93bdbe86496e600985d74368ee"},
+    {file = "opentelemetry_instrumentation-0.59b0.tar.gz", hash = "sha256:6010f0faaacdaf7c4dff8aac84e226d23437b331dcda7e70367f6d73a7db1adc"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.4,<2.0"
+opentelemetry-semantic-conventions = "0.59b0"
+packaging = ">=18.0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[[package]]
+name = "opentelemetry-instrumentation-aiohttp-client"
+version = "0.59b0"
+description = "OpenTelemetry aiohttp client instrumentation"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_aiohttp_client-0.59b0-py3-none-any.whl", hash = "sha256:8e7f234d2b6b385d5b1757ba7f13baa71c45ec020e1a08ba7f7649da7958470a"},
+    {file = "opentelemetry_instrumentation_aiohttp_client-0.59b0.tar.gz", hash = "sha256:665ee520f2fb5f44d6d600918eb7bbd2c29b355e0d0deda49991db857adee51f"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[package.extras]
+instruments = ["aiohttp (>=3.0,<4.0)"]
+
+[[package]]
+name = "opentelemetry-instrumentation-asgi"
+version = "0.59b0"
+description = "ASGI instrumentation for OpenTelemetry"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_asgi-0.59b0-py3-none-any.whl", hash = "sha256:ba9703e09d2c33c52fa798171f344c8123488fcd45017887981df088452d3c53"},
+    {file = "opentelemetry_instrumentation_asgi-0.59b0.tar.gz", hash = "sha256:2509d6fe9fd829399ce3536e3a00426c7e3aa359fc1ed9ceee1628b56da40e7a"},
+]
+
+[package.dependencies]
+asgiref = ">=3.0,<4.0"
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+
+[package.extras]
+instruments = ["asgiref (>=3.0,<4.0)"]
+
+[[package]]
+name = "opentelemetry-instrumentation-fastapi"
+version = "0.59b0"
+description = "OpenTelemetry FastAPI Instrumentation"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_fastapi-0.59b0-py3-none-any.whl", hash = "sha256:0d8d00ff7d25cca40a4b2356d1d40a8f001e0668f60c102f5aa6bb721d660c4f"},
+    {file = "opentelemetry_instrumentation_fastapi-0.59b0.tar.gz", hash = "sha256:e8fe620cfcca96a7d634003df1bc36a42369dedcdd6893e13fb5903aeeb89b2b"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-instrumentation-asgi = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+
+[package.extras]
+instruments = ["fastapi (>=0.92,<1.0)"]
+
+[[package]]
+name = "opentelemetry-instrumentation-httpx"
+version = "0.59b0"
+description = "OpenTelemetry HTTPX Instrumentation"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_httpx-0.59b0-py3-none-any.whl", hash = "sha256:7dc9f66aef4ca3904d877f459a70c78eafd06131dc64d713b9b1b5a7d0a48f05"},
+    {file = "opentelemetry_instrumentation_httpx-0.59b0.tar.gz", hash = "sha256:a1cb9b89d9f05a82701cc9ab9cfa3db54fd76932489449778b350bc1b9f0e872"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[package.extras]
+instruments = ["httpx (>=0.18.0)"]
+
+[[package]]
+name = "opentelemetry-instrumentation-requests"
+version = "0.59b0"
+description = "OpenTelemetry requests instrumentation"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_requests-0.59b0-py3-none-any.whl", hash = "sha256:d43121532877e31a46c48649279cec2504ee1e0ceb3c87b80fe5ccd7eafc14c1"},
+    {file = "opentelemetry_instrumentation_requests-0.59b0.tar.gz", hash = "sha256:9af2ffe3317f03074d7f865919139e89170b6763a0251b68c25e8e64e04b3400"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+
+[package.extras]
+instruments = ["requests (>=2.0,<3.0)"]
+
+[[package]]
+name = "opentelemetry-instrumentation-starlette"
+version = "0.59b0"
+description = "OpenTelemetry Starlette Instrumentation"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_instrumentation_starlette-0.59b0-py3-none-any.whl", hash = "sha256:a833b97d297e4b2aaf58041612663dbabb8380e3993c76a4e32b3e351470f321"},
+    {file = "opentelemetry_instrumentation_starlette-0.59b0.tar.gz", hash = "sha256:3f033fd92d6a8e4122ebcb3d83afc5c64d6be7930e9094876eb02b8afbd08ba5"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.59b0"
+opentelemetry-instrumentation-asgi = "0.59b0"
+opentelemetry-semantic-conventions = "0.59b0"
+opentelemetry-util-http = "0.59b0"
+
+[package.extras]
+instruments = ["starlette (>=0.13)"]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.38.0"
 description = "OpenTelemetry Python Proto"
@@ -3170,6 +3343,19 @@ files = [
 [package.dependencies]
 opentelemetry-api = "1.38.0"
 typing-extensions = ">=4.5.0"
+
+[[package]]
+name = "opentelemetry-util-http"
+version = "0.59b0"
+description = "Web util for OpenTelemetry"
+optional = true
+python-versions = ">=3.9"
+groups = ["main"]
+markers = "extra == \"distributed-tracing\" or extra == \"all\""
+files = [
+    {file = "opentelemetry_util_http-0.59b0-py3-none-any.whl", hash = "sha256:6d036a07563bce87bf521839c0671b507a02a0d39d7ea61b88efa14c6e25355d"},
+    {file = "opentelemetry_util_http-0.59b0.tar.gz", hash = "sha256:ae66ee91be31938d832f3b4bc4eb8a911f6eddd38969c4a871b1230db2a0a560"},
+]
 
 [[package]]
 name = "orjson"
@@ -3254,7 +3440,7 @@ files = [
     {file = "orjson-3.11.9-cp314-cp314-win_arm64.whl", hash = "sha256:eebdbdeef0094e4f5aefa20dcd4eb2368ab5e7a3b4edea27f1e7b2892e009cf9"},
     {file = "orjson-3.11.9.tar.gz", hash = "sha256:4fef17e1f8722c11587a6ef18e35902450221da0028e65dbaaa543619e68e48f"},
 ]
-markers = {main = "extra == \"langchain\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"langchain\" or extra == \"all\" or extra == \"crewai\")", test = "platform_python_implementation != \"PyPy\""}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\") or extra == \"langchain\" or extra == \"all\"", test = "platform_python_implementation != \"PyPy\""}
 
 [[package]]
 name = "ormsgpack"
@@ -3339,7 +3525,7 @@ files = [
     {file = "packaging-24.2-py3-none-any.whl", hash = "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"},
     {file = "packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"},
 ]
-markers = {main = "extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\" or extra == \"openai\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\" or extra == \"openai\" or extra == \"distributed-tracing\") or extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"distributed-tracing\""}
 
 [[package]]
 name = "pathspec"
@@ -3602,7 +3788,7 @@ description = "Accelerated property cache"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "propcache-0.3.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:22d9962a358aedbb7a2e36187ff273adeaab9743373a272976d2e348d08c7770"},
     {file = "propcache-0.3.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0d0fda578d1dc3f77b6b5a5dce3b9ad69a8250a891760a548df850a5e8da87f3"},
@@ -3983,7 +4169,7 @@ files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
 ]
-markers = {main = "(python_version <= \"3.13\" or extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"crewai\") and (platform_python_implementation != \"PyPy\" or extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\" or extra == \"crewai\" or extra == \"openai\") and (platform_python_implementation == \"PyPy\" or python_version <= \"3.13\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\") and (platform_python_implementation == \"PyPy\" or extra == \"crewai\" or extra == \"all\" or extra == \"openai\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
+markers = {main = "(python_version <= \"3.13\" or extra == \"langchain\" or extra == \"all\" or extra == \"openai\" or extra == \"crewai\") and (platform_python_implementation != \"PyPy\" or extra == \"langchain\" or extra == \"all\") and implementation_name != \"PyPy\" and (extra == \"langchain\" or extra == \"all\" or extra == \"crewai\" or extra == \"openai\") and (platform_python_implementation == \"PyPy\" or extra == \"openai\" or extra == \"all\" or extra == \"crewai\")", test = "platform_python_implementation == \"PyPy\" and implementation_name != \"PyPy\""}
 
 [[package]]
 name = "pydantic"
@@ -4575,7 +4761,7 @@ files = [
     {file = "PyYAML-6.0.2-cp39-cp39-win_amd64.whl", hash = "sha256:39693e1f8320ae4f43943590b49779ffb98acb81f788220ea932a6b6c51004d8"},
     {file = "pyyaml-6.0.2.tar.gz", hash = "sha256:d584d9ec91ad65861cc08d42e834324ef890a082e591037abe114850ff7bbc3e"},
 ]
-markers = {main = "extra == \"langchain\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\") or extra == \"langchain\" or extra == \"all\""}
 
 [[package]]
 name = "referencing"
@@ -5199,7 +5385,7 @@ files = [
     {file = "tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138"},
     {file = "tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb"},
 ]
-markers = {main = "extra == \"langchain\" or extra == \"all\" or python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\")"}
+markers = {main = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"langchain\") or extra == \"langchain\" or extra == \"all\""}
 
 [package.extras]
 doc = ["reno", "sphinx"]
@@ -6241,7 +6427,7 @@ description = "Yet another URL library"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\")"
+markers = "python_version <= \"3.13\" and (extra == \"crewai\" or extra == \"all\" or extra == \"distributed-tracing\") or python_version < \"3.14\" and (extra == \"distributed-tracing\" or extra == \"all\" or extra == \"crewai\") or extra == \"distributed-tracing\" or extra == \"all\""
 files = [
     {file = "yarl-1.20.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:6032e6da6abd41e4acda34d75a816012717000fa6839f37124a47fcefc49bec4"},
     {file = "yarl-1.20.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2c7b34d804b8cf9b214f05015c4fee2ebe7ed05cf581e7192c06555c71f4446a"},
@@ -6510,8 +6696,9 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["aiohttp", "crewai", "cryptography", "langchain", "langchain-core", "langsmith", "litellm", "mcp", "openai", "openai-agents", "packaging", "pdfminer-six", "starlette", "uv"]
+all = ["aiohttp", "crewai", "cryptography", "langchain", "langchain-core", "langsmith", "litellm", "mcp", "openai", "openai-agents", "opentelemetry-instrumentation-aiohttp-client", "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx", "opentelemetry-instrumentation-requests", "opentelemetry-instrumentation-starlette", "packaging", "pdfminer-six", "starlette", "uv"]
 crewai = ["aiohttp", "crewai", "cryptography", "litellm", "mcp", "pdfminer-six", "uv"]
+distributed-tracing = ["aiohttp", "opentelemetry-instrumentation-aiohttp-client", "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx", "opentelemetry-instrumentation-requests", "opentelemetry-instrumentation-starlette"]
 langchain = ["langchain", "langchain-core", "langsmith"]
 middleware = ["starlette"]
 openai = ["cryptography", "mcp", "openai", "openai-agents", "packaging"]
@@ -6519,4 +6706,4 @@ openai = ["cryptography", "mcp", "openai", "openai-agents", "packaging"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11,<3.15"
-content-hash = "5472c5c6216450621d5aae8e3dbdb21a3a071c4c2e3fb383f3552b4dc365d63c"
+content-hash = "8219ff5a4bc2c3be82d45473a92cb251482d8b3b5c02ca3a41ef68432f52deb1"

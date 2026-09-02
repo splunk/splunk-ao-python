@@ -1,17 +1,20 @@
 import time
 import uuid
 from collections.abc import Generator
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
 from langchain_core.agents import AgentFinish
+from langchain_core.callbacks.manager import AsyncCallbackManager
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from opentelemetry.sdk.trace import ReadableSpan
 
 from galileo_core.schemas.shared.document import Document as GalileoDocument
-from splunk_ao import Message, MessageRole, splunk_ao_context
+from splunk_ao import Message, MessageRole, get_tracing_headers, splunk_ao_context
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.handlers.langchain import SplunkAOAsyncCallback, SplunkAOCallback
 from splunk_ao.handlers.langchain.utils import parse_llm_result, update_root_to_agent
@@ -20,6 +23,76 @@ from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 from splunk_ao.utils.uuid_utils import uuid7_to_uuid4
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = SplunkAOCallback(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    child_id = uuid.uuid4()
+    try:
+        callback.on_chain_start(serialized={"name": "root"}, inputs={"query": "question"}, run_id=root_id)
+        callback.on_tool_start(serialized={"name": "search"}, input_str="query", run_id=child_id, parent_run_id=root_id)
+
+        callback.on_tool_end(output="result", run_id=child_id, parent_run_id=root_id)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["execute_tool"]
+        assert str(root_id) in callback._handler._active_steps
+        assert sink.force_flush_calls == 0
+
+        callback.on_chain_end(outputs={"answer": "done"}, run_id=root_id)
+
+        child, root = sink.spans
+        assert child.parent == root.context
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "execute_tool",
+            "invoke_workflow",
+        ]
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback], ids=["sync", "async"])
+async def test_async_langchain_dispatch_keeps_handler_root_active_for_application(callback_type: Any) -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = callback_type(splunk_ao_logger=logger, flush_on_chain_end=False)
+    manager = AsyncCallbackManager(handlers=[callback])
+    root_id = uuid.uuid4()
+    try:
+        run_manager = await manager.on_chain_start(
+            serialized={"name": "root"}, inputs={"query": "question"}, run_id=root_id
+        )
+        root_step = callback._handler._active_steps[str(root_id)].step
+        root_context = logger._otel_ids[root_step.id].span_context
+
+        headers = get_tracing_headers()
+
+        assert callback.run_inline is True
+        assert headers["traceparent"].split("-")[2] == format(root_context.span_id, "016x")
+        await run_manager.on_chain_end({"answer": "done"})
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["invoke_workflow"]
+    finally:
+        logger.terminate()
 
 
 class TestSplunkAOCallback:

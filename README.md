@@ -32,6 +32,7 @@ Install the optional integration dependencies used by your application:
 ```shell
 pip install "splunk-ao[openai]"
 pip install "splunk-ao[langchain]" langchain-openai
+pip install "splunk-ao[distributed-tracing]"
 ```
 
 Other available extras include `crewai`, `middleware`, and `all`.
@@ -347,7 +348,8 @@ tracer_provider.shutdown()
 `add_splunk_ao_span_processor()` reads the same deployment and routing
 configuration described in [Setup](#setup). It registers a
 `SplunkAOSpanProcessor`, which uses a standard OpenTelemetry
-`BatchSpanProcessor`.
+`BatchSpanProcessor`. Default logger-owned and caller-owned processors honor
+the standard `OTEL_BSP_*` batch processor environment variables.
 
 If your application needs another processor or exporter, register it through
 the standard OpenTelemetry extension points. For example, to send the same
@@ -363,6 +365,69 @@ tracer_provider.add_span_processor(BatchSpanProcessor(custom_exporter))
 The application owns a `TracerProvider` that it constructs, so it must call
 `tracer_provider.shutdown()` during teardown. A `SplunkAOLogger` created
 elsewhere owns a separate provider and should be terminated separately.
+
+##### Automatic HTTP distributed tracing
+
+The `distributed-tracing` extra provides a supported one-time setup for
+upstream OpenTelemetry FastAPI/Starlette, Requests, HTTPX sync/async, and
+aiohttp-client instrumentation. The high-level helper creates an application-owned
+provider, registers Splunk AO export, and configures those transports together:
+
+```python
+from fastapi import FastAPI
+from splunk_ao import configure_distributed_tracing
+
+app = FastAPI()
+provider = configure_distributed_tracing(app=app)
+```
+
+The application owns the returned `provider` and calls `provider.shutdown()`
+during process teardown. The helper never replaces the process-global provider.
+Pass an existing OpenTelemetry SDK `TracerProvider` through the
+`tracer_provider` argument when other OpenTelemetry/OpenInference agent or model
+instrumentations should use that same provider and join the trace.
+
+For advanced composition, `add_splunk_ao_span_processor()` remains the
+export-only API and `instrument_distributed_tracing()` remains the supported
+transport-only API. Do not also directly instrument a client or application
+component that is owned by the high-level helper; each component should have one
+instrumentation owner.
+
+Both automatic setup helpers wrap the process-global OpenTelemetry text-map
+propagator so an explicit Splunk AO session can travel as W3C baggage. If the
+application uses a custom propagator (for example, a composite that also supports
+B3), install it before calling the Splunk AO helper. Replacing the global
+propagator afterward removes the session adapter; call the helper again after
+that replacement if session propagation is still required. This does not replace
+the process-global tracer provider.
+
+After this startup call, supported inbound requests extract W3C context and
+supported outbound clients inject it automatically. Application code does not
+call `get_tracing_headers()` for each request and does not install
+`TracingMiddleware`. Those APIs remain supported for transports and frameworks
+outside the automatic support matrix.
+
+SDK-owned authentication, health-check, Project, Agent Stream, and other
+control-plane HTTP requests are scoped out of automatic client instrumentation.
+They therefore do not appear as application traces, while HTTP requests made by
+the application remain instrumented normally.
+
+An explicit SDK session propagates as the standard
+`gen_ai.conversation.id` W3C baggage member. Project, Agent Stream,
+experiment, deployment, authentication, model, workflow, and agent identity
+remain local and are never added to baggage by the SDK.
+
+Explicit session selection is ambient within the current thread or async
+execution context. Setting a session through any logger in that context selects
+the conversation for subsequently started telemetry and outbound propagation
+from that context. `clear_session()` explicitly masks an inbound conversation
+for later telemetry and outbound propagation in the same execution context. Use
+separate execution contexts for independent sessions.
+
+Incoming W3C sampling decisions are honored. If an inbound `traceparent` has
+the sampled flag unset (`sampled=0`), its Splunk AO descendants retain the trace
+identity for propagation but are not exported. Configure upstream head sampling
+accordingly when Agent Observability telemetry must be retained for every request.
 
 #### Export diagnostics
 
@@ -415,6 +480,19 @@ Handlers conclude traces that they own when their framework run ends. They do
 not close a trace that was started by the caller. In short-lived jobs, ensure
 the owning logger or provider is terminated or shut down after framework work
 finishes.
+
+For normal OTLP export, LangChain, CrewAI, Google ADK, and OpenAI Agents
+handlers enqueue each operation into the existing `BatchSpanProcessor` when
+that operation's end callback runs. A child can therefore enter a scheduled
+or size-based export batch while its parent remains active. This is immediate
+enqueue, not one network request per span, and no per-trace `flush()` is
+required. The deprecated `ingestion_hook` compatibility path still constructs
+one mutable whole-tree payload at trace completion.
+
+`start_new_trace` controls ownership, not whether distributed tracing works.
+Keep its default `True` for a standalone handler. Set it to `False` only when
+the handler is intentionally placed beneath caller-owned active logger state;
+the handler emits its own subtree and does not conclude the caller.
 
 #### Datasets
 

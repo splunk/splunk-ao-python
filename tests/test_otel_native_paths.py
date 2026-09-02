@@ -3,14 +3,17 @@ from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
-from opentelemetry import trace
+from opentelemetry import baggage, context, trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import Event, ReadableSpan
-from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+from opentelemetry.sdk.trace import TracerProvider as SDKTracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter, SpanExportResult
 from opentelemetry.sdk.util.instrumentation import InstrumentationScope
 from opentelemetry.trace import Link, SpanContext, SpanKind, TraceFlags
 from opentelemetry.trace.status import Status, StatusCode
 
+from galileo_core.schemas.logging.span import WorkflowSpan
+from splunk_ao import get_tracing_headers
 from splunk_ao.decorator import (
     _agent_stream_context,
     _dataset_input_context,
@@ -21,11 +24,13 @@ from splunk_ao.decorator import (
     _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.otel import (
     _TRACE_PROVIDER_CONTEXT_VAR,
     SplunkAOOTLPExporter,
     SplunkAOSpanProcessor,
     add_splunk_ao_span_processor,
+    start_splunk_ao_span,
 )
 from splunk_ao.shared.exceptions import MissingConfigurationError
 
@@ -360,6 +365,20 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
     processor.shutdown()
 
 
+def test_processor_reads_inbound_standard_conversation_baggage() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+    parent_context = baggage.set_baggage("gen_ai.conversation.id", "inbound-conversation", context.Context())
+    span = MagicMock()
+
+    processor.on_start(span, parent_context=parent_context)
+
+    calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
+    assert calls["gen_ai.conversation.id"] == "inbound-conversation"
+    assert "splunk_ao.session.id" not in calls
+    processor.shutdown()
+
+
 def test_processor_forwards_complete_routing_to_immutable_exporter() -> None:
     exporter = RecordingExporter()
     exporter_factory = MagicMock()
@@ -451,3 +470,140 @@ def test_processor_construction_does_not_replace_global_provider() -> None:
 
     assert trace.get_tracer_provider() is global_before
     processor.shutdown()
+
+
+def test_sdk_native_otel_span_injects_w3c_context() -> None:
+    provider = SDKTracerProvider()
+    _TRACE_PROVIDER_CONTEXT_VAR.set(provider)
+    try:
+        with start_splunk_ao_span(WorkflowSpan(input="request", name="operation")) as span:
+            headers = get_tracing_headers()
+
+        parts = headers["traceparent"].split("-")
+        assert int(parts[1], 16) == span.get_span_context().trace_id
+        assert int(parts[2], 16) == span.get_span_context().span_id
+    finally:
+        provider.shutdown()
+
+
+def test_caller_owned_otel_span_injects_w3c_context() -> None:
+    provider = SDKTracerProvider()
+    tracer = provider.get_tracer("caller-owned")
+    try:
+        with tracer.start_as_current_span("operation") as span:
+            headers = get_tracing_headers()
+
+        parts = headers["traceparent"].split("-")
+        assert int(parts[1], 16) == span.get_span_context().trace_id
+        assert int(parts[2], 16) == span.get_span_context().span_id
+    finally:
+        provider.shutdown()
+
+
+def test_caller_owned_otel_and_path1_logger_interoperate_bidirectionally() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(_exporter=exporter)
+    provider = SDKTracerProvider()
+    provider.add_span_processor(processor)
+    tracer = provider.get_tracer("caller-owned")
+    sink = MagicMock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    try:
+        with tracer.start_as_current_span("otel-upstream") as upstream:
+            logger.start_trace(input="request")
+            operation = logger.add_workflow_span(input="agent work", name="path1-operation")
+            operation_context = logger._otel_ids[operation.id].span_context
+
+            with tracer.start_as_current_span("otel-downstream") as downstream:
+                headers = get_tracing_headers()
+
+            logger.conclude(output="done")
+            logger.conclude(output="complete")
+
+        [path1_span] = [call.args[0] for call in sink.emit.call_args_list]
+        assert path1_span.parent == upstream.get_span_context()
+        assert path1_span.context == operation_context
+        assert downstream.parent == operation_context
+        assert headers["traceparent"].split("-")[2] == format(downstream.get_span_context().span_id, "016x")
+    finally:
+        logger.terminate()
+        provider.shutdown()
+
+    by_name = {span.name: span for span in exporter.spans}
+    assert by_name["otel-downstream"].parent == operation_context
+
+
+def test_explicit_conversation_session_is_applied_across_paths_1_2_and_3() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+    provider = SDKTracerProvider()
+    provider.add_span_processor(processor)
+    provider_token = _TRACE_PROVIDER_CONTEXT_VAR.set(provider)
+    tracer = provider.get_tracer("caller-owned")
+    sink = MagicMock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    try:
+        logger.set_session("conversation-all-paths")
+        logger.start_trace(input="request")
+        path1_operation = logger.add_workflow_span(input="path 1", name="path-1")
+
+        with start_splunk_ao_span(WorkflowSpan(input="path 2", name="path-2")):
+            pass
+        with tracer.start_as_current_span("path-3"):
+            pass
+
+        logger.conclude(output="done")
+        logger.conclude(output="complete")
+
+        [path1_span] = [call.args[0] for call in sink.emit.call_args_list]
+        assert path1_span.name == "invoke_workflow path-1"
+        assert path1_span.attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert "splunk_ao.session.id" not in path1_span.attributes
+
+        recording_processor = processor.processor
+        assert isinstance(recording_processor, RecordingSpanProcessor)
+        started = {span.name: span for span, _ in recording_processor.started}
+        assert started["path-2"].attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert started["path-3"].attributes["gen_ai.conversation.id"] == "conversation-all-paths"
+        assert "splunk_ao.session.id" not in started["path-2"].attributes
+        assert "splunk_ao.session.id" not in started["path-3"].attributes
+        assert path1_operation.id not in logger._otel_ids
+    finally:
+        logger.clear_session()
+        logger.terminate()
+        _TRACE_PROVIDER_CONTEXT_VAR.reset(provider_token)
+        provider.shutdown()
+
+
+def test_sdk_native_and_caller_owned_spans_keep_topology_and_queue_without_flush() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(_exporter=exporter)
+    provider = SDKTracerProvider()
+    provider.add_span_processor(processor)
+    provider_token = _TRACE_PROVIDER_CONTEXT_VAR.set(provider)
+    tracer = provider.get_tracer("caller-owned")
+    try:
+        assert isinstance(processor.processor, BatchSpanProcessor)
+        with (
+            patch.object(processor, "on_end", wraps=processor.on_end) as on_end,
+            patch.object(processor.processor, "force_flush", wraps=processor.processor.force_flush) as force_flush,
+        ):
+            operation = WorkflowSpan(input="request", name="sdk-operation")
+            with start_splunk_ao_span(operation) as sdk_span:
+                with tracer.start_as_current_span("caller-child") as caller_span:
+                    pass
+
+            assert on_end.call_count == 2
+            force_flush.assert_not_called()
+            assert caller_span.parent is not None
+            assert caller_span.parent.span_id == sdk_span.get_span_context().span_id
+            assert caller_span.get_span_context().trace_id == sdk_span.get_span_context().trace_id
+    finally:
+        _TRACE_PROVIDER_CONTEXT_VAR.reset(provider_token)
+        provider.shutdown()
+
+    by_name = {span.name: span for span in exporter.spans}
+    assert set(by_name) == {"sdk-operation", "caller-child"}
+    assert by_name["caller-child"].parent == by_name["sdk-operation"].context

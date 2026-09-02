@@ -25,7 +25,7 @@ Additionally there are a handful of **removed features** (Protect, `GalileoScore
 
 ### 1.1 Package Availability
 
-> **`splunk-ao` is not yet published to PyPI.**  
+> **`splunk-ao` is not yet published to PyPI.**
 > Use one of the two installation methods below until a public release is available.
 
 **Option A — Install directly from GitHub (recommended for most users)**
@@ -81,7 +81,7 @@ splunk-ao = { path = "../splunk-ao-python", develop = true }
 
 ### 1.2 Optional Extra Groups
 
-The extras keys are unchanged (`langchain`, `openai`, `crewai`, `middleware`, `otel`, `all`).  
+The extras keys are unchanged (`langchain`, `openai`, `crewai`, `middleware`, `otel`, `all`).
 One new dependency was added to the `otel` and `all` extras:
 
 | Extra | Change |
@@ -425,14 +425,24 @@ The directory can be overridden via `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HO
 
 ## 6. HTTP Tracing Headers
 
-If your services use distributed tracing and propagate Galileo headers between services, update the header names:
+Distributed tracing now uses standard W3C Trace Context instead of renamed
+Galileo/Splunk AO trace headers. Remove code that constructs or reads
+`X-Galileo-Trace-ID`, `X-Galileo-Parent-ID`, `Splunk-AO-Trace-ID`, or
+`Splunk-AO-Parent-ID`.
 
-| Old | New |
-|-----|-----|
-| `X-Galileo-Trace-ID` | `Splunk-AO-Trace-ID` |
-| `X-Galileo-Parent-ID` | `Splunk-AO-Parent-ID` |
+For explicit propagation, use the module-level helper and pass its output to
+the downstream request:
 
-The `get_tracing_headers()` function return value now uses the new header names.
+```python
+from splunk_ao import get_tracing_headers
+
+response = client.post(url, headers=get_tracing_headers())
+```
+
+The returned carrier uses W3C `traceparent` and, when applicable, `tracestate`
+and baggage. An explicit SDK session is propagated as
+`gen_ai.conversation.id` baggage. Applications using supported automatic HTTP
+instrumentation do not need to call this helper for each request.
 
 ---
 

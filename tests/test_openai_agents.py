@@ -1,7 +1,10 @@
+import asyncio
 import os
 import uuid
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
+import agents.tracing as agents_tracing
 import httpx
 import pytest
 import respx
@@ -15,16 +18,171 @@ from agents import (
     Runner,
     set_trace_processors,
 )
-from agents.tracing import ResponseSpanData
+from agents.tracing import ResponseSpanData, agent_span, generation_span
+from opentelemetry.sdk.trace import ReadableSpan
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
+from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.openai_agents import SplunkAOTracingProcessor
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def _trace_state(processor: SplunkAOTracingProcessor, trace_id: str) -> Any:
+    return processor._trace_states[trace_id]
+
+
+def test_openai_agents_children_enqueue_before_trace_end() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    root = Node(
+        node_type="workflow",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "name": "agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "status_code": 200,
+        },
+    )
+    child = Node(
+        node_type="llm",
+        run_id="child-span-id",
+        parent_run_id="root-span-id",
+        span_params={
+            "input": "prompt",
+            "name": "model call",
+            "start_time_iso": "2025-01-01T00:00:01+00:00",
+            "model": "model",
+            "status_code": 200,
+        },
+    )
+    try:
+        processor.on_trace_start(trace)
+        state = _trace_state(processor, trace.trace_id)
+        state.nodes[str(root.run_id)] = root
+        state.nodes[trace.trace_id].children.append(str(root.run_id))
+        processor._start_owned_root(root, state)
+        processor._start_incremental_span(root, state)
+        state.nodes[str(child.run_id)] = child
+        root.children.append(str(child.run_id))
+        processor._start_incremental_span(child, state)
+
+        child.span_params.update(output="answer", duration_ns=10)
+        processor._finish_incremental_span(child, state)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["chat"]
+        assert str(root.run_id) in state.active_steps
+        assert sink.force_flush_calls == 0
+
+        root.span_params.update(output="answer", duration_ns=20)
+        processor._finish_incremental_span(root, state)
+        processor.on_trace_end(trace)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "chat",
+            "invoke_workflow",
+        ]
+        assert sink.spans[0].parent == sink.spans[1].context
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_public") as openai_trace:
+            with agent_span("Research agent", span_id="span_root", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[{"role": "user", "content": "question"}],
+                    output=[{"role": "assistant", "content": "answer"}],
+                    model="test-model",
+                    span_id="span_child",
+                    parent=root_span,
+                ):
+                    pass
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "chat",
+            "invoke_workflow",
+        ]
+        assert sink.spans[0].parent == sink.spans[1].context
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+async def test_openai_agents_concurrent_public_traces_keep_state_isolated() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    first_started = asyncio.Event()
+    second_started = asyncio.Event()
+
+    async def run_trace(label: str, own_started: asyncio.Event, other_started: asyncio.Event) -> None:
+        with agents_tracing.trace(f"{label} trace", trace_id=f"trace_{label}") as openai_trace:
+            with agent_span(f"{label} agent", span_id=f"span_{label}_root", parent=openai_trace) as root_span:
+                own_started.set()
+                await other_started.wait()
+                with generation_span(
+                    input=[{"role": "user", "content": label}],
+                    output=[{"role": "assistant", "content": f"{label} answer"}],
+                    model="test-model",
+                    span_id=f"span_{label}_child",
+                    parent=root_span,
+                ):
+                    pass
+
+    set_trace_processors([processor])
+    try:
+        await asyncio.gather(
+            run_trace("first", first_started, second_started), run_trace("second", second_started, first_started)
+        )
+
+        roots = [
+            span for span in sink.spans if (span.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+        ]
+        children = [span for span in sink.spans if (span.attributes or {}).get("gen_ai.operation.name") == "chat"]
+        assert len(roots) == len(children) == 2
+        child_parents = {
+            (child.parent.trace_id, child.parent.span_id) for child in children if child.parent is not None
+        }
+        root_contexts = {(root.context.trace_id, root.context.span_id) for root in roots}
+        assert child_parents == root_contexts
+        assert len({root.context.trace_id for root in roots}) == 2
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
 
 
 class HomeworkOutput(BaseModel):
@@ -151,6 +309,9 @@ def test_processor_marks_direct_trace_child_agent(
     logger = SplunkAOLogger(project="test", agent_stream="test")
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
     logger.start_trace(input="input")
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    state = _trace_state(processor, trace.trace_id)
 
     processor._log_node_tree(
         Node(
@@ -162,7 +323,8 @@ def test_processor_marks_direct_trace_child_agent(
                 "name": "Agent step",
                 "start_time_iso": "2025-01-01T00:00:00+00:00",
             },
-        )
+        ),
+        state,
     )
     assert logger.traces[0].spans[0].conversation_root is True
 
@@ -182,20 +344,15 @@ def test_commit_failure_concludes_handler_owned_trace(
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
     trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
     processor.on_trace_start(trace)
-    owned_traces = []
+    state = _trace_state(processor, trace.trace_id)
+    owned_trace = state.owned_trace
 
-    def fail_after_starting_trace(*args, **kwargs):
-        processor._owned_trace = logger.add_trace(input="input", name="Trace")
-        owned_traces.append(processor._owned_trace)
-        raise RuntimeError("conversion failed")
-
-    with patch.object(processor, "_log_node_tree", side_effect=fail_after_starting_trace):
+    with patch.object(processor, "_commit_trace", side_effect=RuntimeError("conversion failed")):
         processor.on_trace_end(trace)
 
     assert logger.current_parent() is None
-    assert owned_traces[0].status_code == 500
-    assert processor._nodes == {}
-    assert processor._owned_trace is None
+    assert owned_trace.status_code == 500
+    assert processor._trace_states == {}
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -217,9 +374,50 @@ def test_commit_failure_preserves_caller_owned_trace(
         processor.on_trace_end(trace)
 
     assert logger.current_parent() is caller_trace
-    assert processor._nodes == {}
-    assert processor._owned_trace is None
+    assert processor._trace_states == {}
     logger.conclude(output="done")
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_openai_agents_live_root_is_used_for_outbound_context_and_commit(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    state = _trace_state(processor, trace.trace_id)
+    node = Node(
+        node_type="agent",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "output": "answer",
+            "name": "Agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "duration_ns": 10,
+            "status_code": 200,
+        },
+    )
+    state.nodes[str(node.run_id)] = node
+    state.nodes[trace.trace_id].children.append(str(node.run_id))
+    processor._start_owned_root(node, state)
+    live_root = state.owned_root
+    live_context = logger._otel_ids[live_root.id].span_context
+
+    headers = get_tracing_headers()
+    processor.on_trace_end(trace)
+
+    assert headers["traceparent"].split("-")[2] == format(live_context.span_id, "016x")
+    assert logger.traces[0].spans == [live_root]
+    assert logger.current_parent() is None
+    logger.terminate()
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:

@@ -4,8 +4,59 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
+from opentelemetry.sdk.trace import ReadableSpan
 
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao_adk.span_manager import INTEGRATION_TAG, SpanManager
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def test_adk_span_manager_enqueues_llm_at_callback_end_without_flush(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "test-api-key")
+    monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "https://console.test")
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    handler = SplunkAOBaseHandler(splunk_ao_logger=logger, integration="google_adk", flush_on_chain_end=False)
+    manager = SpanManager(handler)
+    root_id = uuid4()
+    llm_id = uuid4()
+    try:
+        manager.start_run(root_id, "question", agent_name="researcher")
+        manager.start_llm(llm_id, root_id, "prompt", model="model")
+
+        manager.end_llm(llm_id, "answer", num_input_tokens=2, num_output_tokens=1, total_tokens=3)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["chat"]
+        assert str(root_id) in handler._active_steps
+        assert sink.force_flush_calls == 0
+
+        manager.end_run(root_id, "done")
+
+        child, root = sink.spans
+        assert child.parent == root.context
+        assert [span.name for span in sink.spans] == [
+            "chat model",
+            "invoke_workflow invocation [researcher]",
+        ]
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
 
 
 class TestSpanManagerRunSpans:

@@ -76,6 +76,23 @@ def test_complete_leaf_is_enqueued_before_flush(otlp_logger: SplunkAOLogger, rec
     assert recording_sink.force_flush_calls == 0
 
 
+def test_path1_session_is_captured_when_stable_span_identity_is_assigned(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    otlp_logger.set_session("conversation-at-start")
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_workflow_span(input="work", name="workflow")
+
+    otlp_logger.set_session("conversation-changed-later")
+    otlp_logger.conclude(output="done")
+    otlp_logger.conclude(output="trace done")
+
+    [workflow_span] = recording_sink.spans
+    assert workflow_span.attributes["gen_ai.conversation.id"] == "conversation-at-start"
+    assert "splunk_ao.session.id" not in workflow_span.attributes
+    otlp_logger.clear_session()
+
+
 def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
     otlp_logger.add_single_llm_span_trace(input="question", output="answer", model="gpt-5")
 

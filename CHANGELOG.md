@@ -7,11 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the `distributed-tracing` extra and high-level
+  `configure_distributed_tracing()` setup for Splunk AO export plus supported
+  upstream FastAPI/Starlette, Requests, HTTPX, and aiohttp-client instrumentation.
+  The lower-level `instrument_distributed_tracing()` transport helper remains
+  available for applications that configure their provider separately.
+- Explicit SDK sessions now propagate across supported services as standard
+  W3C `gen_ai.conversation.id` baggage. Session selection is ambient within the
+  current thread or async execution context and is shared by logger instances
+  in that context. SDK routing, authentication, and application identity are
+  not propagated.
+- Added module-level `get_tracing_headers()` and
+  `extract_tracing_context()` helpers for standard W3C `traceparent` and
+  `tracestate` propagation. `TracingMiddleware` now extracts and scopes that
+  OpenTelemetry context for Starlette/FastAPI requests.
+- SDK-owned authentication, validation, and CRUD HTTP requests are suppressed
+  from automatic application HTTP instrumentation, preventing control-plane
+  calls from appearing as unrelated application traces.
+
+### Changed
+
+- The temporarily retained `mode="batch"` and `mode="distributed"` values now
+  use identical scheduled OTLP batch export and W3C propagation. Concluding an
+  operation ends and queues it; a per-operation `flush()` is not required.
+- Callback handlers keep a live real root during framework execution so
+  outbound W3C context uses the same identity and visible hierarchy that is
+  exported at commit.
+- Normal LangChain, CrewAI, Google ADK, and OpenAI Agents callbacks now enqueue
+  each completed operation into the existing `BatchSpanProcessor` at that
+  operation's end callback. The deprecated `ingestion_hook` retains its
+  whole-tree compatibility behavior.
+- Incoming W3C sampling decisions are honored. A remote parent with its sampled
+  flag unset continues to propagate its trace identity, but its Splunk AO
+  descendants are not exported.
+- Default logger-owned batching now honors standard OpenTelemetry
+  `OTEL_BSP_*` configuration, matching caller-owned OTel paths. Explicit
+  internal `BatchConfig` values remain authoritative when supplied.
+
+### Removed
+
+- **Breaking:** Removed `trace_id=` and `span_id=` from `SplunkAOLogger`, the
+  logger-level proprietary `get_tracing_headers()` method, and custom
+  `Splunk-AO-Trace-ID` / `Splunk-AO-Parent-ID` continuation. Use the new
+  module-level W3C helpers instead.
+- Removed the obsolete distributed-only REST streaming worker and task queue;
+  normal telemetry in both retained modes uses the existing
+  `BatchSpanProcessor` path.
+
+### Fixed
+
+- Automatic HTTP setup now imports only the requested optional instrumentors
+  and rolls back components installed by the current call when later setup
+  fails, avoiding partial ownership state.
+- Explicit `clear_session()` now masks an inbound
+  `gen_ai.conversation.id` for subsequent local spans and outbound propagation
+  in the same execution context.
+- Handler cleanup now releases unfinished OTel activations in nesting order,
+  isolates malformed child telemetry from the remaining handler trace, and
+  keeps async LangChain callback activation in the application's execution
+  context.
+- OpenAI Agents processor state is isolated per framework trace, including
+  concurrent traces, and its public lifecycle path now has regression coverage.
+
 ## [0.3.0]
 
 ### Breaking Changes
 
-- Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
+- Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now
+  `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
 
 ### Fixed
 
