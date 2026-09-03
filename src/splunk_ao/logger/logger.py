@@ -1919,7 +1919,18 @@ class SplunkAOLogger(TracesLogger):
     @nop_sync
     def flush(self, on_error: Callable[[Exception], None] | None = None) -> None:
         """
-        Drain completed spans waiting in the batch processor.
+        Drain telemetry that is ready to export.
+
+        Behavior depends on the egress path:
+
+        - OTLP export (default): drains completed spans waiting in the batch processor.
+          Open spans are left alone; unconcluded steps are not converted or emitted.
+        - Ingestion hook: concludes any open spans on the active trace, computes local
+          metrics if configured, hands the accumulated traces to the hook, and clears
+          them. Distributed stub traces are left unconcluded.
+
+        Neither path shuts down owned resources; call ``terminate()`` during application
+        teardown.
 
         Parameters
         ----------
@@ -1928,9 +1939,6 @@ class SplunkAOLogger(TracesLogger):
             is passed to the callback instead of being logged as a warning. The
             callback itself is protected: if it raises, the exception is logged as a warning.
             Defaults to None (swallow and log warning).
-
-        Unconcluded steps are not converted or emitted. This method does not
-        shut down the processor; call ``terminate()`` during application teardown.
         """
         try:
             if self._ingestion_hook:
@@ -1957,7 +1965,12 @@ class SplunkAOLogger(TracesLogger):
     @nop_async
     @async_warn_catch_exception(exceptions=(Exception,))
     async def async_flush(self) -> None:
-        """Drain completed spans without blocking the caller's event loop."""
+        """
+        Drain telemetry that is ready to export without blocking the caller's event loop.
+
+        Path-dependent behavior matches ``flush()``, including concluding open spans and
+        clearing accumulated traces when an ingestion hook is configured.
+        """
         if self._ingestion_hook:
             await self._flush_batch()
             return
