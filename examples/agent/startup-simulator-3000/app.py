@@ -135,7 +135,7 @@ def generate_startup():
 
     except Exception as e:
         print(f"Error generating startup: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An internal error occurred. Please try again."}), 500
 
 
 async def run_agent(industry: str, audience: str, random_word: str, mode: str = "silly") -> str:
