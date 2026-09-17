@@ -277,7 +277,7 @@ def configure_distributed_tracing(
     Notes
     -----
     Repeated calls with the same provider do not attach another Splunk AO span
-    processor. Use :func:`instrument_distributed_tracing` instead when export
+    processor. Use `instrument_distributed_tracing()` instead when export
     has already been configured separately on the provider. This function also
     wraps the current process-global text-map propagator for session baggage.
     Install a custom global propagator first; replacing it afterward removes
