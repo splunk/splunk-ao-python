@@ -1,0 +1,34 @@
+name: AI Contribution Report
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Count AI-attributed commits
+        run: |
+          total=$(git log --oneline | wc -l | tr -d ' ')
+          cursor=$(git log --format="%B" | grep -i "co-author.*cursor" | wc -l | tr -d ' ')
+          claude=$(git log --format="%B" | grep -i "co-authored.*claude" | wc -l | tr -d ' ')
+          copilot=$(git log --format="%B" | grep -i "co-author.*copilot" | wc -l | tr -d ' ')
+          ai=$((cursor + claude + copilot))
+          human=$((total - ai))
+
+          echo "## AI Contribution Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tool | Commits | Share |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|---------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cursor | $cursor | $(( cursor * 100 / total ))% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Claude | $claude | $(( claude * 100 / total ))% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Copilot | $copilot | $(( copilot * 100 / total ))% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **AI total** | **$ai** | **$(( ai * 100 / total ))%** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Human | $human | $(( human * 100 / total ))% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Total** | **$total** | 100% |" >> "$GITHUB_STEP_SUMMARY"
