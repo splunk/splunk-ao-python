@@ -1,18 +1,20 @@
 import json
-
-from splunk_ao import log, splunk_ao_context
-
-from splunk_ao.openai import OpenAI
+import os
+from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
+from splunk_ao import log, splunk_ao_context
+from splunk_ao.openai import OpenAI
+
 # Load environment variables from .env file
-load_dotenv(override=True)
+load_dotenv(Path(__file__).with_name(".env"))
 
 
 # A mock RAG retriever function
 @log(span_type="retriever")
-def retrieve_horoscope_data(sign):
+def retrieve_horoscope_data(sign: str) -> list[str]:
     """
     Mock function to simulate retrieving horoscope data for a given sign.
     This is decorated with logging for tracing a retriever span.
@@ -26,16 +28,13 @@ def retrieve_horoscope_data(sign):
             "Next Tuesday you will find a four-leaf clover.",
             "Next Tuesday you will have a great conversation with a stranger.",
         ],
-        "Gemini": [
-            "Next Tuesday you will learn to juggle.",
-            "Next Tuesday you will discover a new favorite book.",
-        ],
+        "Gemini": ["Next Tuesday you will learn to juggle.", "Next Tuesday you will discover a new favorite book."],
     }
     return horoscopes.get(sign, ["No horoscope available."])
 
 
 @log(span_type="tool")
-def get_horoscope(sign):
+def get_horoscope(sign: str) -> str:
     """
     Tool function to get a horoscope for a given astrological sign.
     """
@@ -52,15 +51,12 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "sign": {
-                        "type": "string",
-                        "description": "An astrological sign like Taurus or Aquarius",
-                    },
+                    "sign": {"type": "string", "description": "An astrological sign like Taurus or Aquarius"}
                 },
                 "required": ["sign"],
             },
         },
-    },
+    }
 ]
 
 # Map tool names to their implementations
@@ -71,14 +67,12 @@ available_tools = {"get_horoscope": get_horoscope}
 client = OpenAI()
 
 
-def call_llm(messages):
+def call_llm(messages: list[dict[str, Any]]) -> Any:
     """
     Call the LLM with the provided messages and tools.
     """
     return client.chat.completions.create(
-        model="gpt-5.1",
-        tools=tools,
-        messages=messages,
+        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"), tools=tools, messages=messages
     )
 
 
@@ -115,10 +109,7 @@ def get_users_horoscope(sign: str) -> str:
                     {
                         "id": call.id,
                         "type": "function",
-                        "function": {
-                            "name": call.function.name,
-                            "arguments": call.function.arguments,
-                        },
+                        "function": {"name": call.function.name, "arguments": call.function.arguments},
                     }
                     for call in completion_tool_calls
                 ],
@@ -135,36 +126,30 @@ def get_users_horoscope(sign: str) -> str:
 
             # Add the tool result to the message history
             message_history.append(
-                {
-                    "role": "tool",
-                    "content": tool_result,
-                    "tool_call_id": call.id,
-                    "name": call.function.name,
-                }
+                {"role": "tool", "content": tool_result, "tool_call_id": call.id, "name": call.function.name}
             )
 
         # Now we call the model again, with the tool results included
         response = call_llm(message_history)
 
     # Return the final response from the model
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
-def main():
+def main() -> None:
     """
     Get the user's horoscope
     """
     # Start a session and trace
     splunk_ao_logger = splunk_ao_context.get_logger_instance()
-    splunk_ao_logger.start_session("RAG with Tools Example")
-    splunk_ao_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
+    splunk_ao_logger.start_session(name="RAG with Tools Example")
     splunk_ao_logger.start_trace(input="What is my horoscope? I am Aquarius.", name="Calling LLM with Tool")
 
     response = get_users_horoscope("Aquarius")
 
-    # Conclude the trace and flush
+    # Conclude the trace, drain completed telemetry, and shut down the exporter.
     splunk_ao_logger.conclude(response)
-    splunk_ao_logger.flush()
+    splunk_ao_logger.terminate()
 
     print(response)
 

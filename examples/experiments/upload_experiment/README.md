@@ -18,7 +18,7 @@ This is particularly useful when:
 
 ## What This Example Does
 
-**The Problem:** Splunk AO v2 experiments typically run your prompts live, but sometimes you already have the results and just want to upload them.
+**The problem:** Sometimes you already have generated outputs and want to upload them instead of invoking a model again.
 
 **The Solution:** This example takes your pre-existing evaluation data (questions, contexts, LLM responses, ground truth) and uploads it to Splunk AO as a completed experiment with full tracing.
 
@@ -27,7 +27,11 @@ This is particularly useful when:
 1. Your JSON file contains complete evaluation records (question, context chunks array, LLM answer, ground truth)
 2. A Splunk AO dataset is created with inputs and expected outputs
 3. An experiment "replays" your results, reconstructing execution traces with proper chunk attribution
-4. Splunk AO computes metrics and provides full visualization
+4. Splunk AO computes the configured platform evaluators and provides visualization
+
+Mechanically, this is a runner-function experiment. The local replay function returns stored outputs and reconstructs
+retriever and LLM spans; the `SplunkAOEvaluators` are then computed in the Splunk AO platform. It does not use
+`LocalMetricConfig`.
 
 ## Data Format
 
@@ -74,20 +78,10 @@ Copy `.env.example` to `.env` and add your Splunk AO credentials:
 cp .env.example .env
 ```
 
-Edit `.env`:
-
-```
-SPLUNK_AO_API_KEY=your_api_key_here
-SPLUNK_AO_CONSOLE_URL=https://app.galileo.ai
-SPLUNK_AO_PROJECT=your_project_name
-```
-
-**Getting your Splunk AO credentials:**
-
-1. Log in to [Splunk AO Console](https://app.galileo.ai)
-2. Navigate to Settings → API Keys
-3. Create a new API key or copy an existing one
-4. Create or select a project for your experiments
+Choose either the Standalone or O11y block in `.env`; do not mix them. O11y requires `SPLUNK_AO_REALM` and
+`SPLUNK_AO_O11Y_TOKEN` because replay emits telemetry. Set `SPLUNK_AO_O11Y_API_TOKEN` as well when CRUD operations use
+a dedicated token. Standalone requires `SPLUNK_AO_API_KEY` and `SPLUNK_AO_CONSOLE_URL`. Both modes require
+`SPLUNK_AO_PROJECT`.
 
 ### 3. Prepare Your Data
 
@@ -151,7 +145,7 @@ After running the script, your Splunk AO project will contain:
 ### "Missing environment variables"
 
 - Make sure you've created a `.env` file with your Splunk AO credentials
-- Verify all three required variables are set: `SPLUNK_AO_API_KEY`, `SPLUNK_AO_CONSOLE_URL`, `SPLUNK_AO_PROJECT`
+- Verify the required variables for exactly one deployment mode are set, along with `SPLUNK_AO_PROJECT`
 
 ### "Question not found in evaluation data"
 

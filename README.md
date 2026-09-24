@@ -559,22 +559,35 @@ datasets = list_datasets()
 
 #### Experiments
 
+Experiments are dataset-driven batch evaluations. There are two execution paths:
+
+- A prompt-template experiment is started by the SDK and executed by Splunk AO.
+- A runner-function experiment executes your Python function locally and sends its telemetry to Splunk AO.
+
+Platform evaluators (`SplunkAOEvaluators`, `Metric`, or metric names) run in Splunk AO after the data is ingested.
+`LocalMetricConfig` is instead a client-side scoring option for runner-function experiments; it is not a third
+execution engine. The current OTLP path does not preserve local metric results in the experiment UI. See the
+[focused examples](examples/experiments/experiment-paths/README.md) for all three use cases and configuration for
+Standalone and O11y Cloud.
+
 Run an experiment with a prompt template:
 
 ```python
 from splunk_ao import Message, MessageRole
 from splunk_ao.datasets import get_dataset
 from splunk_ao.experiments import run_experiment
-from splunk_ao.prompts import create_prompt
+from splunk_ao.prompts import create_prompt, get_prompt
 
-prompt = create_prompt(
-    name="my-prompt",
-    project_name="new-project",
-    template=[
-        Message(role=MessageRole.system, content="you are a helpful assistant"),
-        Message(role=MessageRole.user, content="why is sky blue?")
-    ]
-)
+prompt = get_prompt(name="my-prompt")
+if prompt is None:
+    prompt = create_prompt(
+        name="my-prompt",
+        project_name="new-project",
+        template=[
+            Message(role=MessageRole.system, content="You are a helpful assistant."),
+            Message(role=MessageRole.user, content="{{input}}"),
+        ],
+    )
 
 results = run_experiment(
     "my-experiment",
@@ -588,29 +601,32 @@ results = run_experiment(
 Run an experiment with a runner function with local dataset:
 
 ```python
-import openai
+from splunk_ao import SplunkAOEvaluators
 from splunk_ao.experiments import run_experiment
+from splunk_ao.openai import OpenAI
 
+client = OpenAI()
 
 dataset = [
-    {"name": "Lola"},
-    {"name": "Jo"},
+    {"input": "Say hello to Lola", "output": "Hello, Lola!"},
+    {"input": "Say hello to Jo", "output": "Hello, Jo!"},
 ]
 
-def runner(input):
-    return openai.chat.completions.create(
-        model="gpt-5.6-terra",
+def runner(input: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[
-            {"role": "user", "content": f"Say hello: {input['name']}"}
+            {"role": "user", "content": input},
         ],
-    ).choices[0].message.content
+    )
+    return response.choices[0].message.content or ""
 
 run_experiment(
     "test experiment runner",
     project="awesome-new-project",
     dataset=dataset,
     function=runner,
-    metrics=['output_tone'],
+    metrics=[SplunkAOEvaluators.correctness],
 )
 ```
 

@@ -1,14 +1,15 @@
-# Multi-Turn Experiment Example
+# Multi-turn experiment example
 
-The example in this folder demonstrates how to use [create_experiment](https://agent-observability-docs.splunk.com/sdk-api/python/reference/experiments#create_experiment) to compute a session-level metric for a multi-turn conversation. 
+This example uses the `splunk-ao` SDK to create an experiment, upload a manually logged multi-turn session, register a
+Splunk AO session evaluator, and poll until its platform-computed result is available. It is a manual logging workflow,
+not a `run_experiment` prompt-template or runner-function example.
 
 ## Setup Instructions
 
-### 1. Create and Activate Virtual Environment
+### 1. Create and activate a virtual environment
 
 ```bash
-# Navigate to the example folder
-cd python/experiments/multi-turn
+cd examples/experiments/multi-turn
 
 # Create virtual environment
 python -m venv venv
@@ -17,7 +18,7 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-### 2. Install Dependencies
+### 2. Install dependencies
 
 Run
 
@@ -25,25 +26,22 @@ Run
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
+### 3. Configure environment variables
 
-Your `.env` should look like this. Feel free to follow the `.env.example` and enter your credentials
+Copy `.env.example` to `.env`, choose either the Standalone or O11y block, and enter your credentials. Do not mix the
+two deployment modes.
 
-```bash
-
-# Required: Your Splunk AO API key
-SPLUNK_AO_API_KEY="your-splunk-ao-api-key"
-
-# Required: Splunk AO project name
-SPLUNK_AO_PROJECT="your-splunk-ao-project"
-
-# Provide the console url below if you are not using app.galileo.ai
-# SPLUNK_AO_CONSOLE_URL="your-splunk-ao-console-url"
+```shell
+cp .env.example .env
 ```
 
-### 4. Add Integration in Splunk AO Console
+O11y requires `SPLUNK_AO_REALM` and `SPLUNK_AO_O11Y_TOKEN` because this example emits telemetry. Set
+`SPLUNK_AO_O11Y_API_TOKEN` as well when CRUD operations use a dedicated token. Standalone requires
+`SPLUNK_AO_API_KEY` and `SPLUNK_AO_CONSOLE_URL`.
 
-The session-level metric in this example uses an LLM. 
+### 4. Configure an LLM integration
+
+The session-level metric in this example uses an LLM.
 
 Make sure that you've configured a valid LLM integration in the Splunk AO console.
 
@@ -57,7 +55,8 @@ Run the basic example:
 python basic-example.py
 ```
 
-The `METRIC_NAME` variable in this script cites a session-level metric.
+The `METRIC_NAME` variable selects a session-level evaluator. These evaluators run in Splunk AO after the session is
+ingested; they are not `LocalMetricConfig` callables.
 
 Pre-defined session-level metrics include:
 
@@ -71,7 +70,7 @@ Pre-defined session-level metrics include:
 
 Related documentation: [Metrics Comparison](https://agent-observability-docs.splunk.com/concepts/evaluators/evaluator-comparison)
 
-Optionally, you can define your own custom session-level metric in the Splunk AO Console UI, and then add the custom metric name. 
+Optionally, you can define your own custom session-level metric in the Splunk AO Console UI, and then add the custom metric name.
 
 ![Example custom session-level boolean metric](screenshot-custom-session-level-boolean-metric.png)
 
@@ -81,7 +80,6 @@ Visit the "Sessions" tab of the Experiment in the Splunk AO Console to confirm t
 
 ![Troubleshooting auth error](screenshot-session-level-metric-auth-error.png)
 
-If you see an auth error, go to the metric details and make sure that a [valid integration](https://agent-observability-docs.splunk.com/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration) has been configured. 
+If you see an auth error, go to the metric details and make sure that a [valid integration](https://agent-observability-docs.splunk.com/getting-started/evaluate-and-improve/evaluate-and-improve#configure-an-llm-integration) has been configured.
 
 ![Metric details](screenshot-session-level-metric-details.png)
-

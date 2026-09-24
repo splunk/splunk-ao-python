@@ -21,22 +21,23 @@ Data Flow:
 - Result: Complete evaluation with metrics and detailed traces
 """
 
-import os
 import json
-from typing import Dict, Any, Optional
+import os
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Splunk AO imports
+from splunk_ao import SplunkAOEvaluators, splunk_ao_context
 from splunk_ao.datasets import create_dataset, get_dataset
 from splunk_ao.experiments import run_experiment
-from splunk_ao.schema.metrics import SplunkAOEvaluators
-from splunk_ao import splunk_ao_context
+
+# Load environment variables from .env file.
+load_dotenv(Path(__file__).with_name(".env"))
 
 
-def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
+def load_evaluation_data(json_path: str | Path) -> dict[str, dict[str, Any]]:
     """
     Load your existing evaluation results from JSON.
 
@@ -60,7 +61,7 @@ def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
     Returns:
         Dict mapping questions to their full evaluation records
     """
-    with open(json_path, "r") as f:
+    with open(json_path, encoding="utf-8") as f:
         data = json.load(f)
 
     # Create lookup dict keyed by question
@@ -75,12 +76,16 @@ def load_evaluation_data(json_path: str) -> Dict[str, Dict[str, Any]]:
         elif not isinstance(context, list):
             context = [str(context)] if context else []
 
-        lookup[question] = {"context": context, "llm_answer": record.get("llm_answer", ""), "model": record.get("model", "gpt-4o")}  # Allow model override
+        lookup[question] = {
+            "context": context,
+            "llm_answer": record.get("llm_answer", ""),
+            "model": record.get("model", "gpt-4o"),
+        }
 
     return lookup
 
 
-def create_or_get_dataset(dataset_name: str, evaluation_data: list) -> Any:
+def create_or_get_dataset(dataset_name: str, evaluation_data: list[dict[str, str]], project_name: str) -> Any:
     """
     Find existing dataset by name or create a new one.
 
@@ -89,28 +94,24 @@ def create_or_get_dataset(dataset_name: str, evaluation_data: list) -> Any:
     Args:
         dataset_name: Name of the dataset to find or create
         evaluation_data: Data to upload if creating a new dataset
+        project_name: Project to associate with the dataset
 
     Returns:
         Dataset object from Splunk AO
     """
-    try:
-        dataset = get_dataset(name=dataset_name)
-        if dataset is not None:
-            print(f"✓ Found existing dataset: '{dataset_name}'")
-            return dataset
-    except Exception as e:
-        # Dataset doesn't exist or error occurred
-        if "not found" not in str(e).lower() and "does not exist" not in str(e).lower():
-            print(f"Warning: {e}")
+    dataset = get_dataset(name=dataset_name, project_name=project_name)
+    if dataset is not None:
+        print(f"✓ Found existing dataset: '{dataset_name}'")
+        return dataset
 
     # Create new dataset
     print(f"✓ Creating new dataset: '{dataset_name}'")
-    dataset = create_dataset(name=dataset_name, content=evaluation_data)
+    dataset = create_dataset(name=dataset_name, content=evaluation_data, project_name=project_name)
     print(f"  Uploaded {len(evaluation_data)} rows")
     return dataset
 
 
-def prepare_dataset_for_splunk_ao(json_path: str, dataset_name: str) -> Any:
+def prepare_dataset_for_splunk_ao(json_path: str | Path, dataset_name: str, project_name: str) -> Any:
     """
     Upload your evaluation data to Splunk AO as a dataset.
 
@@ -121,12 +122,13 @@ def prepare_dataset_for_splunk_ao(json_path: str, dataset_name: str) -> Any:
     Args:
         json_path: Path to JSON with your evaluation results
         dataset_name: Name for the dataset in Splunk AO
+        project_name: Project to associate with the dataset
 
     Returns:
         Dataset object from Splunk AO
     """
     # Load your evaluation results
-    with open(json_path, "r") as f:
+    with open(json_path, encoding="utf-8") as f:
         raw_data = json.load(f)
 
     # Transform to Splunk AO dataset format
@@ -136,10 +138,12 @@ def prepare_dataset_for_splunk_ao(json_path: str, dataset_name: str) -> Any:
         splunk_ao_row = {"input": row["question"], "output": row.get("ground_truth_answer", "")}
         splunk_ao_dataset.append(splunk_ao_row)
 
-    return create_or_get_dataset(dataset_name, splunk_ao_dataset)
+    return create_or_get_dataset(dataset_name, splunk_ao_dataset, project_name)
 
 
-def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_prompt: Optional[str] = None):
+def create_replay_function(
+    evaluation_lookup: dict[str, dict[str, Any]], system_prompt: str | None = None
+) -> Callable[..., str]:
     """
     Create a function that replays your evaluation with full tracing.
 
@@ -156,9 +160,11 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
 
     # Default system prompt if none provided
     if system_prompt is None:
-        system_prompt = "You are a helpful AI assistant. Use the provided context " "to answer the question accurately and concisely."
+        system_prompt = (
+            "You are a helpful AI assistant. Use the provided context to answer the question accurately and concisely."
+        )
 
-    def replay_evaluation(input: str, **kwargs) -> str:
+    def replay_evaluation(input: str, **_kwargs: Any) -> str:
         """
         Replay a single evaluation with full trace reconstruction.
 
@@ -189,7 +195,9 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
         # Format context chunks for the prompt
         # Join multiple chunks with clear separators
         if context_chunks:
-            context_text = "\n\n---\n\n".join([f"Chunk {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks)])
+            context_text = "\n\n---\n\n".join(
+                f"Chunk {index + 1}:\n{chunk}" for index, chunk in enumerate(context_chunks)
+            )
         else:
             context_text = ""
 
@@ -208,7 +216,12 @@ def create_replay_function(evaluation_lookup: Dict[str, Dict[str, Any]], system_
 
 
 def upload_experiment(
-    dataset: Any, evaluation_data_path: str, project_name: str, run_name: str, system_prompt: Optional[str] = None, metrics: Optional[list] = None
+    dataset: Any,
+    evaluation_data_path: str | Path,
+    project_name: str,
+    run_name: str,
+    system_prompt: str | None = None,
+    metrics: list[Any] | None = None,
 ) -> Any:
     """
     Upload your evaluation results as a Splunk AO experiment.
@@ -247,20 +260,14 @@ def upload_experiment(
         ]
 
     # Run experiment with your data
-    results = run_experiment(
-        run_name,
-        project=project_name,
-        dataset=dataset,
-        function=replay_fn,
-        metrics=metrics,
-    )
+    results = run_experiment(run_name, project=project_name, dataset=dataset, function=replay_fn, metrics=metrics)
 
     print("✓ Experiment complete!")
 
     return results
 
 
-def main():
+def main() -> None:
     """
     Example: Upload existing evaluation results to Splunk AO
 
@@ -274,22 +281,32 @@ def main():
     4. View results in Splunk AO console with metrics and detailed traces
     """
 
-    # Verify environment configuration
-    required_vars = ["SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_PROJECT"]
-    missing_vars = [var for var in required_vars if not os.environ.get(var)]
+    # Verify deployment-aware environment configuration.
+    standalone_vars = {"SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL"}
+    standalone_detection_vars = standalone_vars | {"SPLUNK_AO_API_URL"}
+    o11y_vars = {"SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN"}
+    has_standalone_config = any(os.environ.get(var) for var in standalone_detection_vars)
+    has_o11y_config = any(os.environ.get(var) for var in o11y_vars | {"SPLUNK_AO_O11Y_API_TOKEN"})
 
+    if has_standalone_config and has_o11y_config:
+        raise ValueError("Do not mix Standalone and O11y environment variables")
+
+    required_vars = {"SPLUNK_AO_PROJECT"}
+    required_vars |= o11y_vars if has_o11y_config else standalone_vars
+    missing_vars = sorted(var for var in required_vars if not os.environ.get(var))
     if missing_vars:
-        print(f"⚠️  Missing environment variables: {', '.join(missing_vars)}")
-        print("Create a .env file with your Splunk AO credentials (see .env.example)")
-        return
+        raise ValueError(
+            f"Missing environment variables: {', '.join(missing_vars)}. Create a .env file using .env.example."
+        )
 
     print("=" * 70)
     print("Upload Existing Evaluation Results to Splunk AO")
     print("=" * 70)
 
     # Configuration
-    EVALUATION_DATA_PATH = "dataset.json"
-    DATASET_NAME = "space-mission-support-qa-2"
+    evaluation_data_path = Path(__file__).with_name("dataset.json")
+    dataset_name = "space-mission-support-qa"
+    project_name = os.environ["SPLUNK_AO_PROJECT"]
     RUN_NAME = "historical-evaluation-upload"
     SYSTEM_PROMPT = (
         "You are a space mission support AI assistant. "
@@ -299,15 +316,15 @@ def main():
     )
 
     # Step 1: Create or retrieve dataset
-    print(f"\n📊 Preparing dataset: {DATASET_NAME}")
-    dataset = prepare_dataset_for_splunk_ao(EVALUATION_DATA_PATH, DATASET_NAME)
+    print(f"\n📊 Preparing dataset: {dataset_name}")
+    dataset = prepare_dataset_for_splunk_ao(evaluation_data_path, dataset_name, project_name)
 
     # Step 2: Upload experiment with full traces
     print("\n🚀 Uploading experiment...")
     results = upload_experiment(
         dataset=dataset,
-        evaluation_data_path=EVALUATION_DATA_PATH,
-        project_name=os.environ.get("SPLUNK_AO_PROJECT"),
+        evaluation_data_path=evaluation_data_path,
+        project_name=project_name,
         run_name=RUN_NAME,
         system_prompt=SYSTEM_PROMPT,
     )

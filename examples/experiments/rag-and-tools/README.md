@@ -14,17 +14,16 @@ pip install -r requirements.txt
 
 ## Configure environment variables
 
-You will need to configure environment variables to use this project. Copy the `.env.example` file to `.env`, then update the environment variables in the `.env` file with your OpenAI and Splunk AO values:
+Copy `.env.example` to `.env`, choose either the Standalone or O11y block, and update the common OpenAI and Splunk AO
+values. Do not mix deployment modes.
 
-```ini
-# Splunk AO environment variables
-SPLUNK_AO_API_KEY=
-SPLUNK_AO_PROJECT=
-SPLUNK_AO_AGENT_STREAM=
-
-# OpenAI environment variables
-OPENAI_API_KEY=
+```shell
+cp .env.example .env
 ```
+
+O11y requires `SPLUNK_AO_REALM` and `SPLUNK_AO_O11Y_TOKEN` because both scripts emit telemetry. Set
+`SPLUNK_AO_O11Y_API_TOKEN` as well when CRUD operations use a dedicated token. Standalone requires
+`SPLUNK_AO_API_KEY` and `SPLUNK_AO_CONSOLE_URL`.
 
 ## Usage
 
@@ -44,7 +43,9 @@ To run the experiment, run:
 python experiment.py
 ```
 
-A link to the results of the experiment will be written to the console.
+A link to the results of the experiment will be written to the console. This is a runner-function experiment: the
+horoscope application executes locally, its traces are ingested, and the configured `SplunkAOEvaluators` run in the
+Splunk AO platform.
 
 ## Project Structure
 
@@ -52,7 +53,7 @@ The project structure is as follows:
 
 ```folder
 rag-and-tools/
-├── env.example        # List of environment variables
+├── .env.example       # Standalone and O11y configuration templates
 ├── requirements.txt   # Python project requirements
 ├── app.py             # The main python application
 ├── experiment.py      # Code to run the main application as an experiment

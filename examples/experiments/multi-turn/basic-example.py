@@ -1,5 +1,8 @@
 import os
 import time
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from splunk_ao import SplunkAOEvaluators, splunk_ao_context
 from splunk_ao.experiments import create_experiment
@@ -14,14 +17,12 @@ METRIC_NAME = SplunkAOEvaluators.conversation_quality
 # example custom metric name (must be set up in advance)
 # METRIC_NAME = "multi-turn-session-test-metric-apples"
 
-# Load environment variables from the .env file
-from dotenv import load_dotenv
-
-load_dotenv()
+# Load environment variables from the .env file.
+load_dotenv(Path(__file__).with_name(".env"))
 
 # Get the Splunk AO project
 
-project_name = os.getenv("SPLUNK_AO_PROJECT")
+project_name = os.environ["SPLUNK_AO_PROJECT"]
 project_obj = get_project(name=project_name)
 if not project_obj:
     project_obj = create_project(project_name)
@@ -65,25 +66,30 @@ logger.start_session()
 
 for turn in multi_turn_convo:
     logger.start_trace(input=turn["user"], name="User turn")
-    logger.add_llm_span(input=turn["user"], output=turn["assistant"], model="gpt-5.4-mini")
+    logger.add_llm_span(input=turn["user"], output=turn["assistant"], model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
     logger.conclude(output=turn["assistant"])
 
 
-splunk_ao_context.flush()
+# This one-shot script has finished producing telemetry. terminate() drains
+# completed spans and shuts down SDK-owned exporter resources.
+logger.terminate()
 
 # Poll the session-level metric until it's computed
 
-status = "unknown"
-while True:
+poll_interval_seconds = 10
+deadline = time.monotonic() + 300
+while time.monotonic() < deadline:
     sessions = get_sessions(project_id=project_obj.id, experiment_id=experiment.id)
     assert len(sessions.records) > 0, "No sessions found for the experiment"
 
     session = sessions.records[0]
-    metric = session.metric_info[metric_id]
+    metric = session.metric_info.get(metric_id)
 
     if isinstance(metric, MetricSuccess):
         print(f"Metric {METRIC_NAME} computed successfully with value: {metric.value}")
         break
-    print("Metric is not computed yet, retrying in 10 seconds...")
+    print(f"Metric is not computed yet, retrying in {poll_interval_seconds} seconds...")
 
-    time.sleep(10)
+    time.sleep(poll_interval_seconds)
+else:
+    raise TimeoutError(f"Metric {METRIC_NAME} was not computed within 300 seconds")
