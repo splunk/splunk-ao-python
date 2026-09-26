@@ -1290,9 +1290,12 @@ class SplunkAODecorator:
         on_error: Callable[[Exception], None] | None = None,
     ) -> None:
         """
-        Upload all captured traces under a project and agent stream context to Splunk AO.
+        Drain completed spans for the resolved project and agent stream context; does not conclude open spans.
 
-        If no project or agent stream is provided, then the currently initialized context is used.
+        Falls back to the currently initialized context when no project or agent stream is provided.
+
+        Draining is not a shutdown: exporters stay open and the logger stays cached. Use
+        ``reset()`` to terminate the current context's loggers and clear the context.
 
         Parameters
         ----------
@@ -1330,17 +1333,26 @@ class SplunkAODecorator:
 
     def flush_all(self) -> None:
         """
-        Upload all captured traces under all contexts to Splunk AO.
+        Drain completed spans for every logger across all contexts.
 
-        This method flushes all traces regardless of project or log stream.
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and every cached logger is retained.
+        Loggers terminate via their ``atexit`` hooks at interpreter exit.
         """
         SplunkAOLoggerSingleton().flush_all()
 
     def reset(self) -> None:
         """
-        Reset the entire context, which also deletes all traces that haven't been flushed.
+        Reset the entire context and terminate the loggers for the current context.
 
-        This method clears all context variables and resets the logger singleton.
+        Terminating drains completed spans before shutting the exporter down, so work that
+        has already concluded is still exported. Spans left open at that point are discarded
+        rather than exported.
+
+        This method clears all context variables and stacks, and evicts the terminated
+        loggers from the singleton cache.
         """
         SplunkAOLoggerSingleton().reset(
             project=_project_context.get(),
