@@ -13,98 +13,111 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.control_result import ControlResult
     from ..models.document import Document
-    from ..models.extended_session_record_with_children_annotation_aggregates import (
-        ExtendedSessionRecordWithChildrenAnnotationAggregates,
+    from ..models.extended_read_session_record_with_children_annotation_aggregates import (
+        ExtendedReadSessionRecordWithChildrenAnnotationAggregates,
     )
-    from ..models.extended_session_record_with_children_annotation_agreement import (
-        ExtendedSessionRecordWithChildrenAnnotationAgreement,
+    from ..models.extended_read_session_record_with_children_annotation_agreement import (
+        ExtendedReadSessionRecordWithChildrenAnnotationAgreement,
     )
-    from ..models.extended_session_record_with_children_annotations import ExtendedSessionRecordWithChildrenAnnotations
-    from ..models.extended_session_record_with_children_dataset_metadata import (
-        ExtendedSessionRecordWithChildrenDatasetMetadata,
+    from ..models.extended_read_session_record_with_children_annotations import (
+        ExtendedReadSessionRecordWithChildrenAnnotations,
     )
-    from ..models.extended_session_record_with_children_feedback_rating_info import (
-        ExtendedSessionRecordWithChildrenFeedbackRatingInfo,
+    from ..models.extended_read_session_record_with_children_dataset_metadata import (
+        ExtendedReadSessionRecordWithChildrenDatasetMetadata,
     )
-    from ..models.extended_session_record_with_children_files_type_0 import ExtendedSessionRecordWithChildrenFilesType0
-    from ..models.extended_session_record_with_children_metric_info_type_0 import (
-        ExtendedSessionRecordWithChildrenMetricInfoType0,
+    from ..models.extended_read_session_record_with_children_feedback_rating_info import (
+        ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo,
     )
-    from ..models.extended_session_record_with_children_user_metadata import (
-        ExtendedSessionRecordWithChildrenUserMetadata,
+    from ..models.extended_read_session_record_with_children_files_type_0 import (
+        ExtendedReadSessionRecordWithChildrenFilesType0,
+    )
+    from ..models.extended_read_session_record_with_children_metric_info_type_0 import (
+        ExtendedReadSessionRecordWithChildrenMetricInfoType0,
+    )
+    from ..models.extended_read_session_record_with_children_user_metadata import (
+        ExtendedReadSessionRecordWithChildrenUserMetadata,
     )
     from ..models.extended_trace_record_with_children import ExtendedTraceRecordWithChildren
     from ..models.file_content_part import FileContentPart
     from ..models.message import Message
     from ..models.metrics import Metrics
+    from ..models.stub_trace_record import StubTraceRecord
     from ..models.text_content_part import TextContentPart
 
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildren")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildren")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildren:
-    """
-    Attributes:
-        id (str): Galileo ID of the session
-        project_id (str): Galileo ID of the project associated with this trace or span
-        run_id (str): Galileo ID of the run (log stream or experiment) associated with this trace or span
-        traces (list[ExtendedTraceRecordWithChildren] | Unset):
-        type_ (Literal['session'] | Unset): Type of the trace, span or session. Default: 'session'.
-        input_ (list[FileContentPart | TextContentPart] | list[Message] | str | Unset):  Default: ''.
-        redacted_input (list[FileContentPart | TextContentPart] | list[Message] | None | str | Unset): Redacted input of
-            the trace or span.
-        output (ControlResult | list[Document] | list[FileContentPart | TextContentPart] | Message | None | str |
-            Unset): Output of the trace or span.
-        redacted_output (ControlResult | list[Document] | list[FileContentPart | TextContentPart] | Message | None | str
-            | Unset): Redacted output of the trace or span.
-        name (str | Unset): Name of the trace, span or session. Default: ''.
-        created_at (datetime.datetime | Unset): Timestamp of the trace or span's creation.
-        user_metadata (ExtendedSessionRecordWithChildrenUserMetadata | Unset): Metadata associated with this trace or
-            span.
-        tags (list[str] | Unset): Tags associated with this trace or span.
-        status_code (int | None | Unset): Status code of the trace or span. Used for logging failure or error states.
-        metrics (Metrics | Unset):
-        external_id (None | str | Unset): A user-provided session, trace or span ID.
-        dataset_input (None | str | Unset): Input to the dataset associated with this trace
-        dataset_output (None | str | Unset): Output from the dataset associated with this trace
-        dataset_metadata (ExtendedSessionRecordWithChildrenDatasetMetadata | Unset): Metadata from the dataset
-            associated with this trace
-        session_id (None | str | Unset): Galileo ID of the session containing the trace or span or session
-        trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
-        updated_at (datetime.datetime | None | Unset): Timestamp of the session or trace or span's last update
-        has_children (bool | None | Unset): Whether or not this trace or span has child spans
-        metrics_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
-        session_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
-        feedback_rating_info (ExtendedSessionRecordWithChildrenFeedbackRatingInfo | Unset): Feedback information related
-            to the record
-        annotations (ExtendedSessionRecordWithChildrenAnnotations | Unset): Annotations keyed by template ID and
-            annotator ID
-        file_ids (list[str] | Unset): IDs of files associated with this record
-        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
-        annotation_aggregates (ExtendedSessionRecordWithChildrenAnnotationAggregates | Unset): Annotation aggregate
-            information keyed by template ID
-        annotation_agreement (ExtendedSessionRecordWithChildrenAnnotationAgreement | Unset): Annotation agreement scores
-            keyed by template ID
-        overall_annotation_agreement (float | None | Unset): Average annotation agreement across all templates in the
-            queue
-        annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
-        fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
-        progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
-        error_message (str | Unset): Runner error text written directly to CH span Default: ''.
-        metric_info (ExtendedSessionRecordWithChildrenMetricInfoType0 | None | Unset): Detailed information about the
-            metrics associated with this trace or span
-        files (ExtendedSessionRecordWithChildrenFilesType0 | None | Unset): File metadata keyed by file ID for files
-            associated with this record
-        previous_session_id (None | str | Unset):
-        num_traces (int | None | Unset):
+class ExtendedReadSessionRecordWithChildren:
+    """Read-side session response that also accepts synthesized stub_trace roots.
+
+    Same shape as ExtendedSessionRecordWithChildren, except `traces` allows the
+    StubTraceRecord placeholder produced by create_tree_for_extended_read_session
+    for spans whose TraceRecord hasn't arrived yet. Defined independently of
+    ExtendedSessionRecordWithChildren/RecordWithChildTraces rather than
+    subclassing them, since widening their Sequence[ExtendedTraceRecordWithChildren]
+    field to also allow StubTraceRecord in a subclass is an LSP violation mypy
+    correctly rejects.
+
+        Attributes:
+            id (str): Galileo ID of the session
+            project_id (str): Galileo ID of the project associated with this trace or span
+            run_id (str): Galileo ID of the run (log stream or experiment) associated with this trace or span
+            type_ (Literal['session'] | Unset): Type of the trace, span or session. Default: 'session'.
+            input_ (list[FileContentPart | TextContentPart] | list[Message] | str | Unset):  Default: ''.
+            redacted_input (list[FileContentPart | TextContentPart] | list[Message] | None | str | Unset): Redacted input of
+                the trace or span.
+            output (ControlResult | list[Document] | list[FileContentPart | TextContentPart] | Message | None | str |
+                Unset): Output of the trace or span.
+            redacted_output (ControlResult | list[Document] | list[FileContentPart | TextContentPart] | Message | None | str
+                | Unset): Redacted output of the trace or span.
+            name (str | Unset): Name of the trace, span or session. Default: ''.
+            created_at (datetime.datetime | Unset): Timestamp of the trace or span's creation.
+            user_metadata (ExtendedReadSessionRecordWithChildrenUserMetadata | Unset): Metadata associated with this trace
+                or span.
+            tags (list[str] | Unset): Tags associated with this trace or span.
+            status_code (int | None | Unset): Status code of the trace or span. Used for logging failure or error states.
+            metrics (Metrics | Unset):
+            external_id (None | str | Unset): A user-provided session, trace or span ID.
+            dataset_input (None | str | Unset): Input to the dataset associated with this trace
+            dataset_output (None | str | Unset): Output from the dataset associated with this trace
+            dataset_metadata (ExtendedReadSessionRecordWithChildrenDatasetMetadata | Unset): Metadata from the dataset
+                associated with this trace
+            session_id (None | str | Unset): Galileo ID of the session containing the trace or span or session
+            trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
+            updated_at (datetime.datetime | None | Unset): Timestamp of the session or trace or span's last update
+            has_children (bool | None | Unset): Whether or not this trace or span has child spans
+            metrics_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
+            session_batch_id (None | str | Unset): Galileo ID of the metrics batch associated with this trace or span
+            feedback_rating_info (ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo | Unset): Feedback information
+                related to the record
+            annotations (ExtendedReadSessionRecordWithChildrenAnnotations | Unset): Annotations keyed by template ID and
+                annotator ID
+            file_ids (list[str] | Unset): IDs of files associated with this record
+            file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+            annotation_aggregates (ExtendedReadSessionRecordWithChildrenAnnotationAggregates | Unset): Annotation aggregate
+                information keyed by template ID
+            annotation_agreement (ExtendedReadSessionRecordWithChildrenAnnotationAgreement | Unset): Annotation agreement
+                scores keyed by template ID
+            overall_annotation_agreement (float | None | Unset): Average annotation agreement across all templates in the
+                queue
+            annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
+            fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+            progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
+            error_message (str | Unset): Runner error text written directly to CH span Default: ''.
+            metric_info (ExtendedReadSessionRecordWithChildrenMetricInfoType0 | None | Unset): Detailed information about
+                the metrics associated with this trace or span
+            files (ExtendedReadSessionRecordWithChildrenFilesType0 | None | Unset): File metadata keyed by file ID for files
+                associated with this record
+            previous_session_id (None | str | Unset):
+            num_traces (int | None | Unset):
+            traces (list[ExtendedTraceRecordWithChildren | StubTraceRecord] | Unset):
     """
 
     id: str
     project_id: str
     run_id: str
-    traces: list[ExtendedTraceRecordWithChildren] | Unset = UNSET
     type_: Literal["session"] | Unset = "session"
     input_: list[FileContentPart | TextContentPart] | list[Message] | str | Unset = ""
     redacted_input: list[FileContentPart | TextContentPart] | list[Message] | None | str | Unset = UNSET
@@ -116,45 +129,47 @@ class ExtendedSessionRecordWithChildren:
     ) = UNSET
     name: str | Unset = ""
     created_at: datetime.datetime | Unset = UNSET
-    user_metadata: ExtendedSessionRecordWithChildrenUserMetadata | Unset = UNSET
+    user_metadata: ExtendedReadSessionRecordWithChildrenUserMetadata | Unset = UNSET
     tags: list[str] | Unset = UNSET
     status_code: int | None | Unset = UNSET
     metrics: Metrics | Unset = UNSET
     external_id: None | str | Unset = UNSET
     dataset_input: None | str | Unset = UNSET
     dataset_output: None | str | Unset = UNSET
-    dataset_metadata: ExtendedSessionRecordWithChildrenDatasetMetadata | Unset = UNSET
+    dataset_metadata: ExtendedReadSessionRecordWithChildrenDatasetMetadata | Unset = UNSET
     session_id: None | str | Unset = UNSET
     trace_id: None | str | Unset = UNSET
     updated_at: datetime.datetime | None | Unset = UNSET
     has_children: bool | None | Unset = UNSET
     metrics_batch_id: None | str | Unset = UNSET
     session_batch_id: None | str | Unset = UNSET
-    feedback_rating_info: ExtendedSessionRecordWithChildrenFeedbackRatingInfo | Unset = UNSET
-    annotations: ExtendedSessionRecordWithChildrenAnnotations | Unset = UNSET
+    feedback_rating_info: ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo | Unset = UNSET
+    annotations: ExtendedReadSessionRecordWithChildrenAnnotations | Unset = UNSET
     file_ids: list[str] | Unset = UNSET
     file_modalities: list[ContentModality] | Unset = UNSET
-    annotation_aggregates: ExtendedSessionRecordWithChildrenAnnotationAggregates | Unset = UNSET
-    annotation_agreement: ExtendedSessionRecordWithChildrenAnnotationAgreement | Unset = UNSET
+    annotation_aggregates: ExtendedReadSessionRecordWithChildrenAnnotationAggregates | Unset = UNSET
+    annotation_agreement: ExtendedReadSessionRecordWithChildrenAnnotationAgreement | Unset = UNSET
     overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
     fully_annotated: bool | None | Unset = UNSET
     progress_message: str | Unset = ""
     error_message: str | Unset = ""
-    metric_info: ExtendedSessionRecordWithChildrenMetricInfoType0 | None | Unset = UNSET
-    files: ExtendedSessionRecordWithChildrenFilesType0 | None | Unset = UNSET
+    metric_info: ExtendedReadSessionRecordWithChildrenMetricInfoType0 | None | Unset = UNSET
+    files: ExtendedReadSessionRecordWithChildrenFilesType0 | None | Unset = UNSET
     previous_session_id: None | str | Unset = UNSET
     num_traces: int | None | Unset = UNSET
+    traces: list[ExtendedTraceRecordWithChildren | StubTraceRecord] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.control_result import ControlResult
-        from ..models.extended_session_record_with_children_files_type_0 import (
-            ExtendedSessionRecordWithChildrenFilesType0,
+        from ..models.extended_read_session_record_with_children_files_type_0 import (
+            ExtendedReadSessionRecordWithChildrenFilesType0,
         )
-        from ..models.extended_session_record_with_children_metric_info_type_0 import (
-            ExtendedSessionRecordWithChildrenMetricInfoType0,
+        from ..models.extended_read_session_record_with_children_metric_info_type_0 import (
+            ExtendedReadSessionRecordWithChildrenMetricInfoType0,
         )
+        from ..models.extended_trace_record_with_children import ExtendedTraceRecordWithChildren
         from ..models.message import Message
         from ..models.text_content_part import TextContentPart
 
@@ -163,13 +178,6 @@ class ExtendedSessionRecordWithChildren:
         project_id = self.project_id
 
         run_id = self.run_id
-
-        traces: list[dict[str, Any]] | Unset = UNSET
-        if not isinstance(self.traces, Unset):
-            traces = []
-            for traces_item_data in self.traces:
-                traces_item = traces_item_data.to_dict()
-                traces.append(traces_item)
 
         type_ = self.type_
 
@@ -407,7 +415,7 @@ class ExtendedSessionRecordWithChildren:
         metric_info: dict[str, Any] | None | Unset
         if isinstance(self.metric_info, Unset):
             metric_info = UNSET
-        elif isinstance(self.metric_info, ExtendedSessionRecordWithChildrenMetricInfoType0):
+        elif isinstance(self.metric_info, ExtendedReadSessionRecordWithChildrenMetricInfoType0):
             metric_info = self.metric_info.to_dict()
         else:
             metric_info = self.metric_info
@@ -415,7 +423,7 @@ class ExtendedSessionRecordWithChildren:
         files: dict[str, Any] | None | Unset
         if isinstance(self.files, Unset):
             files = UNSET
-        elif isinstance(self.files, ExtendedSessionRecordWithChildrenFilesType0):
+        elif isinstance(self.files, ExtendedReadSessionRecordWithChildrenFilesType0):
             files = self.files.to_dict()
         else:
             files = self.files
@@ -432,11 +440,21 @@ class ExtendedSessionRecordWithChildren:
         else:
             num_traces = self.num_traces
 
+        traces: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.traces, Unset):
+            traces = []
+            for traces_item_data in self.traces:
+                traces_item: dict[str, Any]
+                if isinstance(traces_item_data, ExtendedTraceRecordWithChildren):
+                    traces_item = traces_item_data.to_dict()
+                else:
+                    traces_item = traces_item_data.to_dict()
+
+                traces.append(traces_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "project_id": project_id, "run_id": run_id})
-        if traces is not UNSET:
-            field_dict["traces"] = traces
         if type_ is not UNSET:
             field_dict["type"] = type_
         if input_ is not UNSET:
@@ -509,6 +527,8 @@ class ExtendedSessionRecordWithChildren:
             field_dict["previous_session_id"] = previous_session_id
         if num_traces is not UNSET:
             field_dict["num_traces"] = num_traces
+        if traces is not UNSET:
+            field_dict["traces"] = traces
 
         return field_dict
 
@@ -516,34 +536,35 @@ class ExtendedSessionRecordWithChildren:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.control_result import ControlResult
         from ..models.document import Document
-        from ..models.extended_session_record_with_children_annotation_aggregates import (
-            ExtendedSessionRecordWithChildrenAnnotationAggregates,
+        from ..models.extended_read_session_record_with_children_annotation_aggregates import (
+            ExtendedReadSessionRecordWithChildrenAnnotationAggregates,
         )
-        from ..models.extended_session_record_with_children_annotation_agreement import (
-            ExtendedSessionRecordWithChildrenAnnotationAgreement,
+        from ..models.extended_read_session_record_with_children_annotation_agreement import (
+            ExtendedReadSessionRecordWithChildrenAnnotationAgreement,
         )
-        from ..models.extended_session_record_with_children_annotations import (
-            ExtendedSessionRecordWithChildrenAnnotations,
+        from ..models.extended_read_session_record_with_children_annotations import (
+            ExtendedReadSessionRecordWithChildrenAnnotations,
         )
-        from ..models.extended_session_record_with_children_dataset_metadata import (
-            ExtendedSessionRecordWithChildrenDatasetMetadata,
+        from ..models.extended_read_session_record_with_children_dataset_metadata import (
+            ExtendedReadSessionRecordWithChildrenDatasetMetadata,
         )
-        from ..models.extended_session_record_with_children_feedback_rating_info import (
-            ExtendedSessionRecordWithChildrenFeedbackRatingInfo,
+        from ..models.extended_read_session_record_with_children_feedback_rating_info import (
+            ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo,
         )
-        from ..models.extended_session_record_with_children_files_type_0 import (
-            ExtendedSessionRecordWithChildrenFilesType0,
+        from ..models.extended_read_session_record_with_children_files_type_0 import (
+            ExtendedReadSessionRecordWithChildrenFilesType0,
         )
-        from ..models.extended_session_record_with_children_metric_info_type_0 import (
-            ExtendedSessionRecordWithChildrenMetricInfoType0,
+        from ..models.extended_read_session_record_with_children_metric_info_type_0 import (
+            ExtendedReadSessionRecordWithChildrenMetricInfoType0,
         )
-        from ..models.extended_session_record_with_children_user_metadata import (
-            ExtendedSessionRecordWithChildrenUserMetadata,
+        from ..models.extended_read_session_record_with_children_user_metadata import (
+            ExtendedReadSessionRecordWithChildrenUserMetadata,
         )
         from ..models.extended_trace_record_with_children import ExtendedTraceRecordWithChildren
         from ..models.file_content_part import FileContentPart
         from ..models.message import Message
         from ..models.metrics import Metrics
+        from ..models.stub_trace_record import StubTraceRecord
         from ..models.text_content_part import TextContentPart
 
         d = dict(src_dict)
@@ -552,15 +573,6 @@ class ExtendedSessionRecordWithChildren:
         project_id = d.pop("project_id")
 
         run_id = d.pop("run_id")
-
-        _traces = d.pop("traces", UNSET)
-        traces: list[ExtendedTraceRecordWithChildren] | Unset = UNSET
-        if _traces is not UNSET:
-            traces = []
-            for traces_item_data in _traces:
-                traces_item = ExtendedTraceRecordWithChildren.from_dict(traces_item_data)
-
-                traces.append(traces_item)
 
         type_ = cast(Literal["session"] | Unset, d.pop("type", UNSET))
         if type_ != "session" and not isinstance(type_, Unset):
@@ -822,11 +834,11 @@ class ExtendedSessionRecordWithChildren:
             created_at = datetime.datetime.fromisoformat(_created_at)
 
         _user_metadata = d.pop("user_metadata", UNSET)
-        user_metadata: ExtendedSessionRecordWithChildrenUserMetadata | Unset
+        user_metadata: ExtendedReadSessionRecordWithChildrenUserMetadata | Unset
         if isinstance(_user_metadata, Unset):
             user_metadata = UNSET
         else:
-            user_metadata = ExtendedSessionRecordWithChildrenUserMetadata.from_dict(_user_metadata)
+            user_metadata = ExtendedReadSessionRecordWithChildrenUserMetadata.from_dict(_user_metadata)
 
         tags = cast(list[str], d.pop("tags", UNSET))
 
@@ -874,11 +886,11 @@ class ExtendedSessionRecordWithChildren:
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
 
         _dataset_metadata = d.pop("dataset_metadata", UNSET)
-        dataset_metadata: ExtendedSessionRecordWithChildrenDatasetMetadata | Unset
+        dataset_metadata: ExtendedReadSessionRecordWithChildrenDatasetMetadata | Unset
         if isinstance(_dataset_metadata, Unset):
             dataset_metadata = UNSET
         else:
-            dataset_metadata = ExtendedSessionRecordWithChildrenDatasetMetadata.from_dict(_dataset_metadata)
+            dataset_metadata = ExtendedReadSessionRecordWithChildrenDatasetMetadata.from_dict(_dataset_metadata)
 
         def _parse_session_id(data: object) -> None | str | Unset:
             if data is None:
@@ -943,18 +955,20 @@ class ExtendedSessionRecordWithChildren:
         session_batch_id = _parse_session_batch_id(d.pop("session_batch_id", UNSET))
 
         _feedback_rating_info = d.pop("feedback_rating_info", UNSET)
-        feedback_rating_info: ExtendedSessionRecordWithChildrenFeedbackRatingInfo | Unset
+        feedback_rating_info: ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo | Unset
         if isinstance(_feedback_rating_info, Unset):
             feedback_rating_info = UNSET
         else:
-            feedback_rating_info = ExtendedSessionRecordWithChildrenFeedbackRatingInfo.from_dict(_feedback_rating_info)
+            feedback_rating_info = ExtendedReadSessionRecordWithChildrenFeedbackRatingInfo.from_dict(
+                _feedback_rating_info
+            )
 
         _annotations = d.pop("annotations", UNSET)
-        annotations: ExtendedSessionRecordWithChildrenAnnotations | Unset
+        annotations: ExtendedReadSessionRecordWithChildrenAnnotations | Unset
         if isinstance(_annotations, Unset):
             annotations = UNSET
         else:
-            annotations = ExtendedSessionRecordWithChildrenAnnotations.from_dict(_annotations)
+            annotations = ExtendedReadSessionRecordWithChildrenAnnotations.from_dict(_annotations)
 
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
@@ -968,20 +982,22 @@ class ExtendedSessionRecordWithChildren:
                 file_modalities.append(file_modalities_item)
 
         _annotation_aggregates = d.pop("annotation_aggregates", UNSET)
-        annotation_aggregates: ExtendedSessionRecordWithChildrenAnnotationAggregates | Unset
+        annotation_aggregates: ExtendedReadSessionRecordWithChildrenAnnotationAggregates | Unset
         if isinstance(_annotation_aggregates, Unset):
             annotation_aggregates = UNSET
         else:
-            annotation_aggregates = ExtendedSessionRecordWithChildrenAnnotationAggregates.from_dict(
+            annotation_aggregates = ExtendedReadSessionRecordWithChildrenAnnotationAggregates.from_dict(
                 _annotation_aggregates
             )
 
         _annotation_agreement = d.pop("annotation_agreement", UNSET)
-        annotation_agreement: ExtendedSessionRecordWithChildrenAnnotationAgreement | Unset
+        annotation_agreement: ExtendedReadSessionRecordWithChildrenAnnotationAgreement | Unset
         if isinstance(_annotation_agreement, Unset):
             annotation_agreement = UNSET
         else:
-            annotation_agreement = ExtendedSessionRecordWithChildrenAnnotationAgreement.from_dict(_annotation_agreement)
+            annotation_agreement = ExtendedReadSessionRecordWithChildrenAnnotationAgreement.from_dict(
+                _annotation_agreement
+            )
 
         def _parse_overall_annotation_agreement(data: object) -> float | None | Unset:
             if data is None:
@@ -1007,7 +1023,7 @@ class ExtendedSessionRecordWithChildren:
 
         error_message = d.pop("error_message", UNSET)
 
-        def _parse_metric_info(data: object) -> ExtendedSessionRecordWithChildrenMetricInfoType0 | None | Unset:
+        def _parse_metric_info(data: object) -> ExtendedReadSessionRecordWithChildrenMetricInfoType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1015,16 +1031,16 @@ class ExtendedSessionRecordWithChildren:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                metric_info_type_0 = ExtendedSessionRecordWithChildrenMetricInfoType0.from_dict(data)
+                metric_info_type_0 = ExtendedReadSessionRecordWithChildrenMetricInfoType0.from_dict(data)
 
                 return metric_info_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExtendedSessionRecordWithChildrenMetricInfoType0 | None | Unset, data)
+            return cast(ExtendedReadSessionRecordWithChildrenMetricInfoType0 | None | Unset, data)
 
         metric_info = _parse_metric_info(d.pop("metric_info", UNSET))
 
-        def _parse_files(data: object) -> ExtendedSessionRecordWithChildrenFilesType0 | None | Unset:
+        def _parse_files(data: object) -> ExtendedReadSessionRecordWithChildrenFilesType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1032,12 +1048,12 @@ class ExtendedSessionRecordWithChildren:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                files_type_0 = ExtendedSessionRecordWithChildrenFilesType0.from_dict(data)
+                files_type_0 = ExtendedReadSessionRecordWithChildrenFilesType0.from_dict(data)
 
                 return files_type_0
             except:  # noqa: E722
                 pass
-            return cast(ExtendedSessionRecordWithChildrenFilesType0 | None | Unset, data)
+            return cast(ExtendedReadSessionRecordWithChildrenFilesType0 | None | Unset, data)
 
         files = _parse_files(d.pop("files", UNSET))
 
@@ -1059,11 +1075,99 @@ class ExtendedSessionRecordWithChildren:
 
         num_traces = _parse_num_traces(d.pop("num_traces", UNSET))
 
-        extended_session_record_with_children = cls(
+        _traces = d.pop("traces", UNSET)
+        traces: list[ExtendedTraceRecordWithChildren | StubTraceRecord] | Unset = UNSET
+        if _traces is not UNSET:
+            traces = []
+            for traces_item_data in _traces:
+
+                def _parse_traces_item(data: object) -> ExtendedTraceRecordWithChildren | StubTraceRecord:
+                    # Discriminator-aware parsing for Extended*Record types
+                    if isinstance(data, dict) and "type" in data:
+                        type_value = data.get("type")
+
+                        # Hardcoded discriminator mapping for Extended*Record types
+                        if type_value == "trace":
+                            try:
+                                from ..models.extended_trace_record import ExtendedTraceRecord
+
+                                return ExtendedTraceRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "agent":
+                            try:
+                                from ..models.extended_agent_span_record import ExtendedAgentSpanRecord
+
+                                return ExtendedAgentSpanRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "workflow":
+                            try:
+                                from ..models.extended_workflow_span_record import ExtendedWorkflowSpanRecord
+
+                                return ExtendedWorkflowSpanRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "llm":
+                            try:
+                                from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
+
+                                return ExtendedLlmSpanRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "tool":
+                            try:
+                                from ..models.extended_tool_span_record import ExtendedToolSpanRecord
+
+                                return ExtendedToolSpanRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "retriever":
+                            try:
+                                from ..models.extended_retriever_span_record import ExtendedRetrieverSpanRecord
+
+                                return ExtendedRetrieverSpanRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+                        elif type_value == "session":
+                            try:
+                                from ..models.extended_session_record import ExtendedSessionRecord
+
+                                return ExtendedSessionRecord.from_dict(data)
+                            except:  # noqa: E722
+                                pass
+
+                    # Fallback to standard union parsing
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        traces_item_type_0 = ExtendedTraceRecordWithChildren.from_dict(data)
+
+                        return traces_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        traces_item_type_1 = StubTraceRecord.from_dict(data)
+
+                        return traces_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    # If we reach here, none of the parsers succeeded
+                    discriminator_info = (
+                        f" (type={data.get('type')})" if isinstance(data, dict) and "type" in data else ""
+                    )
+                    raise ValueError(f"Could not parse union type for traces_item{discriminator_info}")
+
+                traces_item = _parse_traces_item(traces_item_data)
+
+                traces.append(traces_item)
+
+        extended_read_session_record_with_children = cls(
             id=id,
             project_id=project_id,
             run_id=run_id,
-            traces=traces,
             type_=type_,
             input_=input_,
             redacted_input=redacted_input,
@@ -1100,10 +1204,11 @@ class ExtendedSessionRecordWithChildren:
             files=files,
             previous_session_id=previous_session_id,
             num_traces=num_traces,
+            traces=traces,
         )
 
-        extended_session_record_with_children.additional_properties = d
-        return extended_session_record_with_children
+        extended_read_session_record_with_children.additional_properties = d
+        return extended_read_session_record_with_children
 
     @property
     def additional_keys(self) -> list[str]:

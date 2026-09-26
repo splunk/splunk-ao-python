@@ -6,11 +6,11 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenAnnotationAgreement")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenAnnotationAgreement")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenAnnotationAgreement:
+class ExtendedReadSessionRecordWithChildrenAnnotationAgreement:
     """Annotation agreement scores keyed by template ID"""
 
     additional_properties: dict[str, float] = _attrs_field(init=False, factory=dict)
@@ -25,10 +25,10 @@ class ExtendedSessionRecordWithChildrenAnnotationAgreement:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        extended_session_record_with_children_annotation_agreement = cls()
+        extended_read_session_record_with_children_annotation_agreement = cls()
 
-        extended_session_record_with_children_annotation_agreement.additional_properties = d
-        return extended_session_record_with_children_annotation_agreement
+        extended_read_session_record_with_children_annotation_agreement.additional_properties = d
+        return extended_read_session_record_with_children_annotation_agreement
 
     @property
     def additional_keys(self) -> list[str]:

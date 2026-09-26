@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -9,6 +10,7 @@ from attrs import field as _attrs_field
 from ..models.content_modality import ContentModality
 from ..models.llm_integration import LLMIntegration
 from ..models.model_cost_by import ModelCostBy
+from ..models.model_lifecycle_state import ModelLifecycleState
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -27,6 +29,10 @@ class Model:
         name (str):
         alias (str):
         integration (LLMIntegration | Unset):
+        lifecycle_state (ModelLifecycleState | Unset):
+        replacement_alias (None | str | Unset):
+        deprecation_date (datetime.date | None | Unset):
+        retirement_date (datetime.date | None | Unset):
         user_role (None | str | Unset):
         assistant_role (None | str | Unset):
         system_supported (bool | Unset):  Default: False.
@@ -55,6 +61,10 @@ class Model:
     name: str
     alias: str
     integration: LLMIntegration | Unset = UNSET
+    lifecycle_state: ModelLifecycleState | Unset = UNSET
+    replacement_alias: None | str | Unset = UNSET
+    deprecation_date: datetime.date | None | Unset = UNSET
+    retirement_date: datetime.date | None | Unset = UNSET
     user_role: None | str | Unset = UNSET
     assistant_role: None | str | Unset = UNSET
     system_supported: bool | Unset = False
@@ -88,6 +98,32 @@ class Model:
         integration: str | Unset = UNSET
         if not isinstance(self.integration, Unset):
             integration = self.integration.value
+
+        lifecycle_state: str | Unset = UNSET
+        if not isinstance(self.lifecycle_state, Unset):
+            lifecycle_state = self.lifecycle_state.value
+
+        replacement_alias: None | str | Unset
+        if isinstance(self.replacement_alias, Unset):
+            replacement_alias = UNSET
+        else:
+            replacement_alias = self.replacement_alias
+
+        deprecation_date: None | str | Unset
+        if isinstance(self.deprecation_date, Unset):
+            deprecation_date = UNSET
+        elif isinstance(self.deprecation_date, datetime.date):
+            deprecation_date = self.deprecation_date.isoformat()
+        else:
+            deprecation_date = self.deprecation_date
+
+        retirement_date: None | str | Unset
+        if isinstance(self.retirement_date, Unset):
+            retirement_date = UNSET
+        elif isinstance(self.retirement_date, datetime.date):
+            retirement_date = self.retirement_date.isoformat()
+        else:
+            retirement_date = self.retirement_date
 
         user_role: None | str | Unset
         if isinstance(self.user_role, Unset):
@@ -185,6 +221,14 @@ class Model:
         field_dict.update({"name": name, "alias": alias})
         if integration is not UNSET:
             field_dict["integration"] = integration
+        if lifecycle_state is not UNSET:
+            field_dict["lifecycle_state"] = lifecycle_state
+        if replacement_alias is not UNSET:
+            field_dict["replacement_alias"] = replacement_alias
+        if deprecation_date is not UNSET:
+            field_dict["deprecation_date"] = deprecation_date
+        if retirement_date is not UNSET:
+            field_dict["retirement_date"] = retirement_date
         if user_role is not UNSET:
             field_dict["user_role"] = user_role
         if assistant_role is not UNSET:
@@ -245,6 +289,56 @@ class Model:
             integration = UNSET
         else:
             integration = LLMIntegration(_integration)
+
+        _lifecycle_state = d.pop("lifecycle_state", UNSET)
+        lifecycle_state: ModelLifecycleState | Unset
+        if isinstance(_lifecycle_state, Unset):
+            lifecycle_state = UNSET
+        else:
+            lifecycle_state = ModelLifecycleState(_lifecycle_state)
+
+        def _parse_replacement_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        replacement_alias = _parse_replacement_alias(d.pop("replacement_alias", UNSET))
+
+        def _parse_deprecation_date(data: object) -> datetime.date | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                deprecation_date_type_0 = datetime.date.fromisoformat(data)
+
+                return deprecation_date_type_0
+            except:  # noqa: E722
+                pass
+            return cast(datetime.date | None | Unset, data)
+
+        deprecation_date = _parse_deprecation_date(d.pop("deprecation_date", UNSET))
+
+        def _parse_retirement_date(data: object) -> datetime.date | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                retirement_date_type_0 = datetime.date.fromisoformat(data)
+
+                return retirement_date_type_0
+            except:  # noqa: E722
+                pass
+            return cast(datetime.date | None | Unset, data)
+
+        retirement_date = _parse_retirement_date(d.pop("retirement_date", UNSET))
 
         def _parse_user_role(data: object) -> None | str | Unset:
             if data is None:
@@ -386,6 +480,10 @@ class Model:
             name=name,
             alias=alias,
             integration=integration,
+            lifecycle_state=lifecycle_state,
+            replacement_alias=replacement_alias,
+            deprecation_date=deprecation_date,
+            retirement_date=retirement_date,
             user_role=user_role,
             assistant_role=assistant_role,
             system_supported=system_supported,

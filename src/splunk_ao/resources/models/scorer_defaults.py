@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ..models.metadata_filter import MetadataFilter
     from ..models.modality_filter import ModalityFilter
     from ..models.node_name_filter import NodeNameFilter
+    from ..models.scorer_invocation_config import ScorerInvocationConfig
 
 
 T = TypeVar("T", bound="ScorerDefaults")
@@ -35,6 +36,8 @@ class ScorerDefaults:
             categorical, etc.).
         input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
             (sessions_normalized, trace_io_only, etc..).
+        invocation (None | ScorerInvocationConfig | Unset): Deprecated compatibility location for direct-invocation
+            metadata. Use ScorerInfo.invocation or BaseScorerDB.invocation instead.
     """
 
     model_name: None | str | Unset = UNSET
@@ -44,11 +47,13 @@ class ScorerDefaults:
     cot_enabled: bool | None | Unset = UNSET
     output_type: None | OutputTypeEnum | Unset = UNSET
     input_type: InputTypeEnum | None | Unset = UNSET
+    invocation: None | ScorerInvocationConfig | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.metadata_filter import MetadataFilter
         from ..models.node_name_filter import NodeNameFilter
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
 
         model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
@@ -112,6 +117,14 @@ class ScorerDefaults:
         else:
             input_type = self.input_type
 
+        invocation: dict[str, Any] | None | Unset
+        if isinstance(self.invocation, Unset):
+            invocation = UNSET
+        elif isinstance(self.invocation, ScorerInvocationConfig):
+            invocation = self.invocation.to_dict()
+        else:
+            invocation = self.invocation
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -129,6 +142,8 @@ class ScorerDefaults:
             field_dict["output_type"] = output_type
         if input_type is not UNSET:
             field_dict["input_type"] = input_type
+        if invocation is not UNSET:
+            field_dict["invocation"] = invocation
 
         return field_dict
 
@@ -137,6 +152,7 @@ class ScorerDefaults:
         from ..models.metadata_filter import MetadataFilter
         from ..models.modality_filter import ModalityFilter
         from ..models.node_name_filter import NodeNameFilter
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
 
         d = dict(src_dict)
 
@@ -264,6 +280,23 @@ class ScorerDefaults:
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
+        def _parse_invocation(data: object) -> None | ScorerInvocationConfig | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                invocation_type_0 = ScorerInvocationConfig.from_dict(data)
+
+                return invocation_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerInvocationConfig | Unset, data)
+
+        invocation = _parse_invocation(d.pop("invocation", UNSET))
+
         scorer_defaults = cls(
             model_name=model_name,
             num_judges=num_judges,
@@ -272,6 +305,7 @@ class ScorerDefaults:
             cot_enabled=cot_enabled,
             output_type=output_type,
             input_type=input_type,
+            invocation=invocation,
         )
 
         scorer_defaults.additional_properties = d

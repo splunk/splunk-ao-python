@@ -101,6 +101,7 @@ class PartialExtendedAgentSpanRecord:
         is_complete (bool | Unset): Whether the parent trace is complete or not Default: True.
         step_number (int | None | Unset): Topological step number of the span.
         agent_type (AgentType | Unset):
+        agent_name (None | str | Unset): Name of the agent.
     """
 
     type_: Literal["agent"] | Unset = "agent"
@@ -148,6 +149,7 @@ class PartialExtendedAgentSpanRecord:
     is_complete: bool | Unset = True
     step_number: int | None | Unset = UNSET
     agent_type: AgentType | Unset = UNSET
+    agent_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -454,6 +456,12 @@ class PartialExtendedAgentSpanRecord:
         if not isinstance(self.agent_type, Unset):
             agent_type = self.agent_type.value
 
+        agent_name: None | str | Unset
+        if isinstance(self.agent_name, Unset):
+            agent_name = UNSET
+        else:
+            agent_name = self.agent_name
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -539,6 +547,8 @@ class PartialExtendedAgentSpanRecord:
             field_dict["step_number"] = step_number
         if agent_type is not UNSET:
             field_dict["agent_type"] = agent_type
+        if agent_name is not UNSET:
+            field_dict["agent_name"] = agent_name
 
         return field_dict
 
@@ -1253,6 +1263,15 @@ class PartialExtendedAgentSpanRecord:
         else:
             agent_type = AgentType(_agent_type)
 
+        def _parse_agent_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        agent_name = _parse_agent_name(d.pop("agent_name", UNSET))
+
         partial_extended_agent_span_record = cls(
             type_=type_,
             input_=input_,
@@ -1295,6 +1314,7 @@ class PartialExtendedAgentSpanRecord:
             is_complete=is_complete,
             step_number=step_number,
             agent_type=agent_type,
+            agent_name=agent_name,
         )
 
         partial_extended_agent_span_record.additional_properties = d

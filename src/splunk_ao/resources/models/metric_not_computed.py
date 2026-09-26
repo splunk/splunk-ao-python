@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.scorer_type import ScorerType
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.standard_error import StandardError
+
 
 T = TypeVar("T", bound="MetricNotComputed")
 
@@ -20,15 +24,21 @@ class MetricNotComputed:
         scorer_type (None | ScorerType | Unset):
         metric_key_alias (None | str | Unset):
         message (str | Unset):  Default: 'Metric not computed.'.
+        ems_error_code (int | None | Unset): EMS error code from errors.yaml catalog for this not-computed reason
+        standard_error (None | StandardError | Unset): Structured EMS error resolved on-the-fly from errors.yaml catalog
     """
 
     status_type: Literal["not_computed"] | Unset = "not_computed"
     scorer_type: None | ScorerType | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     message: str | Unset = "Metric not computed."
+    ems_error_code: int | None | Unset = UNSET
+    standard_error: None | StandardError | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.standard_error import StandardError
+
         status_type = self.status_type
 
         scorer_type: None | str | Unset
@@ -47,6 +57,20 @@ class MetricNotComputed:
 
         message = self.message
 
+        ems_error_code: int | None | Unset
+        if isinstance(self.ems_error_code, Unset):
+            ems_error_code = UNSET
+        else:
+            ems_error_code = self.ems_error_code
+
+        standard_error: dict[str, Any] | None | Unset
+        if isinstance(self.standard_error, Unset):
+            standard_error = UNSET
+        elif isinstance(self.standard_error, StandardError):
+            standard_error = self.standard_error.to_dict()
+        else:
+            standard_error = self.standard_error
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -58,11 +82,17 @@ class MetricNotComputed:
             field_dict["metric_key_alias"] = metric_key_alias
         if message is not UNSET:
             field_dict["message"] = message
+        if ems_error_code is not UNSET:
+            field_dict["ems_error_code"] = ems_error_code
+        if standard_error is not UNSET:
+            field_dict["standard_error"] = standard_error
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.standard_error import StandardError
+
         d = dict(src_dict)
         status_type = cast(Literal["not_computed"] | Unset, d.pop("status_type", UNSET))
         if status_type != "not_computed" and not isinstance(status_type, Unset):
@@ -96,8 +126,39 @@ class MetricNotComputed:
 
         message = d.pop("message", UNSET)
 
+        def _parse_ems_error_code(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        ems_error_code = _parse_ems_error_code(d.pop("ems_error_code", UNSET))
+
+        def _parse_standard_error(data: object) -> None | StandardError | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                standard_error_type_0 = StandardError.from_dict(data)
+
+                return standard_error_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | StandardError | Unset, data)
+
+        standard_error = _parse_standard_error(d.pop("standard_error", UNSET))
+
         metric_not_computed = cls(
-            status_type=status_type, scorer_type=scorer_type, metric_key_alias=metric_key_alias, message=message
+            status_type=status_type,
+            scorer_type=scorer_type,
+            metric_key_alias=metric_key_alias,
+            message=message,
+            ems_error_code=ems_error_code,
+            standard_error=standard_error,
         )
 
         metric_not_computed.additional_properties = d
