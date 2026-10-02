@@ -1104,6 +1104,10 @@ class SplunkAOLogger(TracesLogger):
         temperature: float | None = None,
         status_code: int | None = None,
         time_to_first_token_ns: int | None = None,
+        image_input_tokens: int | None = None,
+        audio_input_tokens: int | None = None,
+        audio_output_tokens: int | None = None,
+        image_output_tokens: int | None = None,
         dataset_input: str | None = None,
         dataset_output: str | None = None,
         dataset_metadata: dict[str, MetadataValue] | None = None,
@@ -1180,6 +1184,14 @@ class SplunkAOLogger(TracesLogger):
             Expected values: 200 (success), 400 (client error), 500 (server error)
         time_to_first_token_ns: Optional[int]
             Time until the first token was returned.
+        image_input_tokens: Optional[int]
+            Image tokens included in ``num_input_tokens``. Priced per modality where the model has an image rate.
+        audio_input_tokens: Optional[int]
+            Audio tokens included in ``num_input_tokens``. Priced per modality where the model has an audio rate.
+        audio_output_tokens: Optional[int]
+            Audio tokens included in ``num_output_tokens``.
+        image_output_tokens: Optional[int]
+            Image tokens included in ``num_output_tokens``.
         dataset_input: Optional[str]
             Input from the associated dataset.
         dataset_output: Optional[str]
@@ -1233,6 +1245,10 @@ class SplunkAOLogger(TracesLogger):
                 num_output_tokens=num_output_tokens,
                 num_total_tokens=total_tokens,
                 time_to_first_token_ns=time_to_first_token_ns,
+                num_image_input_tokens=image_input_tokens,
+                num_audio_input_tokens=audio_input_tokens,
+                num_audio_output_tokens=audio_output_tokens,
+                num_image_output_tokens=image_output_tokens,
             ),
             tools=tools,
             model=model,
@@ -1280,6 +1296,10 @@ class SplunkAOLogger(TracesLogger):
         temperature: float | None = None,
         status_code: int | None = None,
         time_to_first_token_ns: int | None = None,
+        image_input_tokens: int | None = None,
+        audio_input_tokens: int | None = None,
+        audio_output_tokens: int | None = None,
+        image_output_tokens: int | None = None,
         step_number: int | None = None,
         events: list[Event] | None = None,
     ) -> LlmSpan:
@@ -1353,6 +1373,14 @@ class SplunkAOLogger(TracesLogger):
             Expected values: 200 (success), 400 (client error), 500 (server error)
         time_to_first_token_ns: Optional[int]
             Time until the first token was returned.
+        image_input_tokens: Optional[int]
+            Image tokens included in ``num_input_tokens``. Priced per modality where the model has an image rate.
+        audio_input_tokens: Optional[int]
+            Audio tokens included in ``num_input_tokens``. Priced per modality where the model has an audio rate.
+        audio_output_tokens: Optional[int]
+            Audio tokens included in ``num_output_tokens``.
+        image_output_tokens: Optional[int]
+            Image tokens included in ``num_output_tokens``.
         step_number: Optional[int]
             Step number of the span.
 
@@ -1381,6 +1409,10 @@ class SplunkAOLogger(TracesLogger):
                 num_output_tokens=num_output_tokens,
                 num_total_tokens=total_tokens,
                 time_to_first_token_ns=time_to_first_token_ns,
+                num_image_input_tokens=image_input_tokens,
+                num_audio_input_tokens=audio_input_tokens,
+                num_audio_output_tokens=audio_output_tokens,
+                num_image_output_tokens=image_output_tokens,
             ),
             tools=tools,
             events=events,

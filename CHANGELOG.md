@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `SplunkAOLogger.add_llm_span()` and `add_single_llm_span_trace()` accept
+  `image_input_tokens`, `audio_input_tokens`, `audio_output_tokens`, and
+  `image_output_tokens`: the image/audio share of the input and output token
+  counts. They export as `gen_ai.usage.input_tokens_details.{image,audio}` and
+  `gen_ai.usage.output_tokens_details.{image,audio}` so models with per-modality
+  pricing, such as Gemini audio input, are costed at the right rate.
+- The LangChain callbacks and the Google ADK integration (`splunk-ao-adk`)
+  capture this breakdown automatically when the model reports it (Gemini).
+
 ## [0.4.0]
 
 ### Added

@@ -12,7 +12,7 @@ from opentelemetry.trace.status import StatusCode
 
 from splunk_ao import get_tracing_headers
 from splunk_ao.exceptions import SplunkAOLoggerException
-from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
+from splunk_ao.handlers.base_handler import SplunkAOBaseHandler, _modality_token_kwargs
 from splunk_ao.handlers.span_lifecycle import build_handler_step
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import Node
@@ -63,6 +63,46 @@ def test_handler_step_normalizes_missing_llm_output() -> None:
 
     assert isinstance(step, LoggedLlmSpan)
     assert step.output.content == ""
+
+
+def test_handler_step_carries_per_modality_token_counts() -> None:
+    # Given: an LLM callback node whose end params include an image/audio token breakdown
+    node = Node(
+        node_type="llm",
+        run_id=uuid.uuid4(),
+        span_params={
+            "input": "prompt",
+            "output": "answer",
+            "name": "model",
+            "num_input_tokens": 120,
+            "image_input_tokens": 5,
+            "audio_input_tokens": 100,
+            "audio_output_tokens": 20,
+            "image_output_tokens": 0,
+        },
+    )
+
+    # When: the handler builds the step for export
+    step = build_handler_step(node)
+
+    # Then: the breakdown is on the step's LLM metrics
+    assert isinstance(step, LoggedLlmSpan)
+    assert step.metrics.num_image_input_tokens == 5
+    assert step.metrics.num_audio_input_tokens == 100
+    assert step.metrics.num_audio_output_tokens == 20
+    assert step.metrics.num_image_output_tokens == 0
+
+
+def test_modality_token_kwargs_omits_absent_counts() -> None:
+    # Given: span params with one modality count and the rest absent or None
+    span_params = {"audio_input_tokens": 100, "image_input_tokens": None}
+
+    # When: building add_llm_span keyword arguments from them
+    kwargs = _modality_token_kwargs(span_params)
+
+    # Then: only the present count is passed, so loggers without these parameters still accept the call
+    assert kwargs == {"audio_input_tokens": 100}
+    assert _modality_token_kwargs({}) == {}
 
 
 def test_normal_otel_child_enqueues_at_callback_end_without_flush() -> None:

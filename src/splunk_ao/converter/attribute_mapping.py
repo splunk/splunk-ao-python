@@ -60,6 +60,10 @@ SPLUNK_ALIAS_BY_GEN_AI: Mapping[str, str] = {
     "gen_ai.usage.cache_creation.input_tokens": "splunk_ao.llm.usage.cache_creation.input_tokens",
     "gen_ai.usage.cache_read.input_tokens": "splunk_ao.llm.usage.cache_read.input_tokens",
     "gen_ai.usage.reasoning.output_tokens": "splunk_ao.llm.usage.reasoning.output_tokens",
+    "gen_ai.usage.input_tokens_details.image": "splunk_ao.llm.usage.input_tokens_details.image",
+    "gen_ai.usage.input_tokens_details.audio": "splunk_ao.llm.usage.input_tokens_details.audio",
+    "gen_ai.usage.output_tokens_details.image": "splunk_ao.llm.usage.output_tokens_details.image",
+    "gen_ai.usage.output_tokens_details.audio": "splunk_ao.llm.usage.output_tokens_details.audio",
     "gen_ai.response.time_to_first_chunk": "splunk_ao.llm.time_to_first_token_ns",
     **CONTENT_ALIAS_BY_GEN_AI,
 }
@@ -405,6 +409,11 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
         ("cache_creation_input_tokens", "gen_ai.usage.cache_creation.input_tokens"),
         ("cache_read_input_tokens", "gen_ai.usage.cache_read.input_tokens"),
         ("reasoning_output_tokens", "gen_ai.usage.reasoning.output_tokens"),
+        # Per-modality subsets of the input/output token counts; the backend prices them per modality.
+        ("num_image_input_tokens", "gen_ai.usage.input_tokens_details.image"),
+        ("num_audio_input_tokens", "gen_ai.usage.input_tokens_details.audio"),
+        ("num_image_output_tokens", "gen_ai.usage.output_tokens_details.image"),
+        ("num_audio_output_tokens", "gen_ai.usage.output_tokens_details.audio"),
     ):
         _set_if_present(attrs, attribute_name, _field(metrics, field_name))
 

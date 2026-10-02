@@ -131,6 +131,20 @@ def get_custom_metadata(context: Any) -> dict[str, Any]:
     return {}
 
 
+def _modality_token_counts(details: Any) -> dict[str, int]:
+    """Sum IMAGE/AUDIO token counts from a Gemini ``ModalityTokenCount`` list.
+
+    ``modality`` may be an enum (with ``.value``) or a plain string, depending on the SDK version.
+    """
+    counts = {"IMAGE": 0, "AUDIO": 0}
+    for entry in details:
+        modality = getattr(entry, "modality", None)
+        modality = getattr(modality, "value", modality)
+        if isinstance(modality, str) and modality.upper() in counts:
+            counts[modality.upper()] += getattr(entry, "token_count", None) or 0
+    return counts
+
+
 class SplunkAOObserver:
     """Shared observability logic for Plugin and Callback interfaces."""
 
@@ -395,6 +409,10 @@ class SplunkAOObserver:
             num_output_tokens=usage.get("completion_tokens"),
             total_tokens=usage.get("total_tokens"),
             status_code=status_code,
+            image_input_tokens=usage.get("image_input_tokens"),
+            audio_input_tokens=usage.get("audio_input_tokens"),
+            audio_output_tokens=usage.get("audio_output_tokens"),
+            image_output_tokens=usage.get("image_output_tokens"),
         )
 
     def _is_retriever_tool(self, tool: Any) -> bool:
@@ -508,18 +526,34 @@ class SplunkAOObserver:
         return None
 
     def _extract_usage_metadata(self, llm_response: Any) -> dict[str, Any]:
-        """Extract token usage metrics from LLM response."""
+        """Extract token usage metrics from LLM response.
+
+        When the native Gemini SDK reports ``prompt_tokens_details`` / ``candidates_tokens_details``
+        (lists of ``ModalityTokenCount``), also extracts the image/audio breakdown. A modality missing
+        from a reported list counts as 0; a list that is not reported leaves its keys out.
+        """
         if not llm_response:
             return {}
         usage = getattr(llm_response, "usage_metadata", None)
         if not usage:
             return {}
-        return {
+        result: dict[str, Any] = {
             "prompt_tokens": getattr(usage, "prompt_token_count", None) or getattr(usage, "input_token_count", None),
             "completion_tokens": getattr(usage, "candidates_token_count", None)
             or getattr(usage, "output_token_count", None),
             "total_tokens": getattr(usage, "total_token_count", None),
         }
+        prompt_details = getattr(usage, "prompt_tokens_details", None)
+        if prompt_details:
+            counts = _modality_token_counts(prompt_details)
+            result["image_input_tokens"] = counts["IMAGE"]
+            result["audio_input_tokens"] = counts["AUDIO"]
+        candidates_details = getattr(usage, "candidates_tokens_details", None)
+        if candidates_details:
+            counts = _modality_token_counts(candidates_details)
+            result["image_output_tokens"] = counts["IMAGE"]
+            result["audio_output_tokens"] = counts["AUDIO"]
+        return result
 
     def _extract_final_output(self, invocation_context: Any) -> str:
         if hasattr(invocation_context, "session"):
