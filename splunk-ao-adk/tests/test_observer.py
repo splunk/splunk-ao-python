@@ -448,3 +448,45 @@ class TestExtractUsageMetadata:
         # Then: image_output_tokens and audio_output_tokens are both extracted from candidates
         assert result["image_output_tokens"] == 30
         assert result["audio_output_tokens"] == 10
+
+    def test_unreadable_modality_encoding_is_unknown(self, observer: SplunkAOObserver) -> None:
+        # Given: a detail list whose modality is an integer enum value, which carries no readable label
+        entry = MagicMock()
+        entry.modality = MagicMock()
+        entry.modality.value = 4
+        entry.token_count = 100
+        usage = MagicMock()
+        usage.prompt_token_count = 100
+        usage.candidates_token_count = 0
+        usage.total_token_count = 100
+        usage.prompt_tokens_details = [entry]
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: no per-modality keys are reported, rather than confident zeros
+        assert result["prompt_tokens"] == 100
+        assert "audio_input_tokens" not in result
+        assert "image_input_tokens" not in result
+
+    def test_malformed_detail_list_keeps_the_flat_token_counts(self, observer: SplunkAOObserver) -> None:
+        # Given: a truthy, non-iterable prompt detail value
+        usage = MagicMock()
+        usage.prompt_token_count = 10
+        usage.candidates_token_count = 5
+        usage.total_token_count = 15
+        usage.prompt_tokens_details = 42
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: extraction does not raise and the flat counts survive without a breakdown
+        assert result["prompt_tokens"] == 10
+        assert result["completion_tokens"] == 5
+        assert "audio_input_tokens" not in result

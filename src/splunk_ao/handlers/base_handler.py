@@ -27,9 +27,10 @@ _MODALITY_TOKEN_PARAMS = ("image_input_tokens", "audio_input_tokens", "audio_out
 def _modality_token_kwargs(span_params: dict[str, Any]) -> dict[str, int]:
     """Per-modality token counts present in ``span_params``, as ``add_llm_span`` keyword arguments.
 
-    Absent counts are left out rather than passed as ``None`` so that a logger from an older, separately
-    released integration (for example ``splunk-ao-adk``'s ``TraceBuilder``) that predates these parameters
-    keeps working.
+    Absent counts are left out rather than passed as ``None``. An older, separately released
+    ``splunk-ao-adk`` has a ``TraceBuilder.add_llm_span`` without these parameters, and its observer
+    never writes these keys, so with it every count is absent and the call stays compatible. Only a
+    ``splunk-ao-adk`` new enough to write the counts also has a ``TraceBuilder`` that accepts them.
     """
     return {name: span_params[name] for name in _MODALITY_TOKEN_PARAMS if span_params.get(name) is not None}
 

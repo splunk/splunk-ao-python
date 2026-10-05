@@ -131,18 +131,29 @@ def get_custom_metadata(context: Any) -> dict[str, Any]:
     return {}
 
 
+# Every modality label Gemini reports. A detail list counts as a breakdown only if it uses these labels.
+_KNOWN_MODALITY_LABELS = frozenset({"TEXT", "IMAGE", "AUDIO", "VIDEO", "DOCUMENT"})
+
+
 def _modality_token_counts(details: Any) -> dict[str, int]:
     """Sum IMAGE/AUDIO token counts from a Gemini ``ModalityTokenCount`` list.
 
     ``modality`` may be an enum (with ``.value``) or a plain string, depending on the SDK version.
+    Returns ``{}`` when no entry carries a modality label this can read (for example an integer enum
+    value), so the caller treats the breakdown as unknown rather than as a confident zero.
     """
     counts = {"IMAGE": 0, "AUDIO": 0}
+    recognized = False
     for entry in details:
         modality = getattr(entry, "modality", None)
         modality = getattr(modality, "value", modality)
-        if isinstance(modality, str) and modality.upper() in counts:
-            counts[modality.upper()] += getattr(entry, "token_count", None) or 0
-    return counts
+        if not isinstance(modality, str) or modality.upper() not in _KNOWN_MODALITY_LABELS:
+            continue
+        recognized = True
+        count = getattr(entry, "token_count", None)
+        if modality.upper() in counts and isinstance(count, int):
+            counts[modality.upper()] += count
+    return counts if recognized else {}
 
 
 class SplunkAOObserver:
@@ -543,16 +554,21 @@ class SplunkAOObserver:
             or getattr(usage, "output_token_count", None),
             "total_tokens": getattr(usage, "total_token_count", None),
         }
-        prompt_details = getattr(usage, "prompt_tokens_details", None)
-        if prompt_details:
-            counts = _modality_token_counts(prompt_details)
-            result["image_input_tokens"] = counts["IMAGE"]
-            result["audio_input_tokens"] = counts["AUDIO"]
-        candidates_details = getattr(usage, "candidates_tokens_details", None)
-        if candidates_details:
-            counts = _modality_token_counts(candidates_details)
-            result["image_output_tokens"] = counts["IMAGE"]
-            result["audio_output_tokens"] = counts["AUDIO"]
+        # A malformed detail list must cost only the breakdown, never the span.
+        try:
+            prompt_details = getattr(usage, "prompt_tokens_details", None)
+            input_counts = _modality_token_counts(prompt_details) if prompt_details else {}
+            candidates_details = getattr(usage, "candidates_tokens_details", None)
+            output_counts = _modality_token_counts(candidates_details) if candidates_details else {}
+        except Exception as e:
+            _logger.debug(f"Failed to extract per-modality token counts: {e}")
+            return result
+        if input_counts:
+            result["image_input_tokens"] = input_counts["IMAGE"]
+            result["audio_input_tokens"] = input_counts["AUDIO"]
+        if output_counts:
+            result["image_output_tokens"] = output_counts["IMAGE"]
+            result["audio_output_tokens"] = output_counts["AUDIO"]
         return result
 
     def _extract_final_output(self, invocation_context: Any) -> str:

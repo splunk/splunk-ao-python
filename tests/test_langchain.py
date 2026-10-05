@@ -100,13 +100,13 @@ def test_langchain_gemini_modality_breakdown_reaches_exported_llm_span() -> None
             parent_run_id=root_id,
         )
 
-        # Then: the exported LLM span carries the audio count and an explicit zero for the other modalities
+        # Then: the exported span carries the audio count, a zero for image input, and no unreported output counts
         [llm_span] = sink.spans
         attributes = llm_span.attributes or {}
         assert attributes["gen_ai.usage.input_tokens"] == 110
         assert attributes["gen_ai.usage.input_tokens_details.audio"] == 100
         assert attributes["gen_ai.usage.input_tokens_details.image"] == 0
-        assert attributes["gen_ai.usage.output_tokens_details.audio"] == 0
+        assert "gen_ai.usage.output_tokens_details.audio" not in attributes
     finally:
         logger.terminate()
 
@@ -1623,7 +1623,7 @@ class TestParseLlmResult:
 
     def test_gemini_text_only_detail_list_reports_zero_modalities(self) -> None:
         """A Gemini detail list holding only TEXT is a breakdown that says zero image/audio tokens."""
-        # Given: an AIMessage whose prompt token details list only a TEXT entry
+        # Given: an AIMessage whose prompt token details list only a TEXT entry, and no output details
         ai_message = AIMessage(content="hello")
         ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "TEXT", "token_count": 10}]}
         response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
@@ -1631,11 +1631,41 @@ class TestParseLlmResult:
         # When: parsing the LLMResult
         result = parse_llm_result(response)
 
-        # Then: every modality is reported as zero rather than unknown
+        # Then: input modalities are reported as zero, and the unreported output direction stays unknown
         assert result.image_input_tokens == 0
         assert result.audio_input_tokens == 0
-        assert result.audio_output_tokens == 0
-        assert result.image_output_tokens == 0
+        assert result.audio_output_tokens is None
+        assert result.image_output_tokens is None
+
+    def test_gemini_detail_list_with_unreadable_modality_encoding_is_unknown(self) -> None:
+        """A detail list whose modality labels cannot be read is not reported as a confident zero."""
+        # Given: a prompt detail list using integer enum modalities, and a nested usage_metadata fallback
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [{"modality": 4, "token_count": 100}],
+            "usage_metadata": {"input_token_details": {"audio": 100}},
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the unreadable list is skipped and the nested fallback supplies the audio count
+        assert result.audio_input_tokens == 100
+        assert result.image_input_tokens == 0
+
+    def test_gemini_detail_list_accepts_camel_case_token_count(self) -> None:
+        """Raw REST JSON spells the count ``tokenCount``; it is read the same as ``token_count``."""
+        # Given: a prompt detail list using the camelCase count key
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "tokenCount": 64}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is read
+        assert result.audio_input_tokens == 64
 
 
 class TestSplunkAOCallbackIngestionHookWithoutCredentials:

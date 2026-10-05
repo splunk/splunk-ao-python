@@ -9,6 +9,7 @@ from opentelemetry.sdk.trace import ReadableSpan
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao_adk.span_manager import INTEGRATION_TAG, SpanManager
+from splunk_ao_adk.trace_builder import TraceBuilder
 
 
 class RecordingSink:
@@ -344,3 +345,45 @@ class TestSpanManagerToolSpans:
         call_kwargs = mock_handler.start_node.call_args.kwargs
         assert call_kwargs["node_type"] == "tool"
         assert call_kwargs["name"] == "execute_tool [calculator]"
+
+
+def test_ingestion_hook_path_carries_per_modality_tokens_to_the_llm_span() -> None:
+    # Given: the ADK ingestion-hook wiring, where a TraceBuilder stands in for the logger
+    captured = []
+    builder = TraceBuilder(ingestion_hook=captured.append)
+    handler = SplunkAOBaseHandler(
+        splunk_ao_logger=builder,  # type: ignore[arg-type]
+        start_new_trace=True,
+        flush_on_chain_end=True,
+        integration="google_adk",
+    )
+    manager = SpanManager(handler)
+    root_id = uuid4()
+    llm_id = uuid4()
+
+    # When: an LLM run ends with an image/audio breakdown and the root run completes
+    manager.start_run(root_id, "question", agent_name="researcher")
+    manager.start_llm(llm_id, root_id, "prompt", model="gemini-2.5-flash")
+    manager.end_llm(
+        llm_id,
+        "answer",
+        num_input_tokens=120,
+        num_output_tokens=40,
+        total_tokens=160,
+        image_input_tokens=5,
+        audio_input_tokens=100,
+        audio_output_tokens=20,
+        image_output_tokens=0,
+    )
+    manager.end_run(root_id, "done")
+
+    # Then: the LLM span handed to the ingestion hook carries all four counts
+    [request] = captured
+    steps = list(request.traces[0].spans)
+    for step in steps:
+        steps.extend(getattr(step, "spans", None) or [])
+    [llm_span] = [step for step in steps if step.type == "llm"]
+    assert llm_span.metrics.num_image_input_tokens == 5
+    assert llm_span.metrics.num_audio_input_tokens == 100
+    assert llm_span.metrics.num_audio_output_tokens == 20
+    assert llm_span.metrics.num_image_output_tokens == 0
