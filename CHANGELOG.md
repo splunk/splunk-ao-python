@@ -16,7 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gen_ai.usage.output_tokens_details.{image,audio}` so models with per-modality
   pricing, such as Gemini audio input, are costed at the right rate.
 - The LangChain callbacks and the Google ADK integration (`splunk-ao-adk`)
-  capture this breakdown automatically when the model reports it (Gemini).
+  capture this breakdown automatically when the model reports it: Gemini via
+  `ChatVertexAI` or the native Google GenAI SDK. `ChatGoogleGenerativeAI`
+  (`langchain-google-genai`) does not pass Gemini's breakdown through, so its
+  spans keep flat-rate cost.
 
 ## [0.4.0]
 

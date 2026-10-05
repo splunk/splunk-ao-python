@@ -61,6 +61,17 @@ _MODALITIES = ("image", "audio")
 _KNOWN_MODALITY_LABELS = frozenset({"text", "image", "audio", "video", "document"})
 
 
+def _token_count(value: Any) -> int | None:
+    """Read a token count given as an int or, as proto3 JSON encodes 64-bit integers, a numeric string."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None
+
+
 def _modality_counts_from_details(details: Any) -> dict[str, int]:
     """Read image/audio counts from a LangChain ``input_token_details`` / ``output_token_details`` dict.
 
@@ -68,69 +79,72 @@ def _modality_counts_from_details(details: Any) -> dict[str, int]:
     """
     if not isinstance(details, dict):
         return {}
-    return {modality: details[modality] for modality in _MODALITIES if isinstance(details.get(modality), int)}
+    counts = {modality: _token_count(details.get(modality)) for modality in _MODALITIES}
+    return {modality: count for modality, count in counts.items() if count is not None}
 
 
 def _modality_counts_from_entries(entries: Any) -> dict[str, int]:
     """Read image/audio counts from a Gemini ``[{"modality": "AUDIO", "token_count": N}, ...]`` list.
 
-    A list that uses Gemini's modality labels is a breakdown even when it holds only text, so absent
-    modalities count as 0. A list in an encoding this cannot read (for example integer enum values)
-    returns ``{}``, so it is treated as unknown rather than as a confident zero.
+    A list whose entries all carry a Gemini modality label and a readable count is a breakdown even
+    when it holds only text, so absent modalities count as 0. Any entry in an encoding this cannot
+    read (an integer enum value, an unparseable count) makes the whole list unknown, so it is never
+    reported as a confident zero.
     """
-    if not isinstance(entries, list):
+    if not isinstance(entries, list) or not entries:
         return {}
     counts = dict.fromkeys(_MODALITIES, 0)
-    recognized = False
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("modality"), str):
-            continue
+            return {}
         modality = entry["modality"].lower()
-        if modality not in _KNOWN_MODALITY_LABELS:
-            continue
-        recognized = True
-        count = entry.get("token_count", entry.get("tokenCount"))
-        if modality in counts and isinstance(count, int):
+        count = _token_count(entry.get("token_count", entry.get("tokenCount")))
+        if modality not in _KNOWN_MODALITY_LABELS or count is None:
+            return {}
+        if modality in counts:
             counts[modality] += count
-    return counts if recognized else {}
+    return counts
 
 
-def _first_per_modality(*sources: dict[str, int]) -> dict[str, int]:
-    merged: dict[str, int] = {}
-    for source in sources:
-        for modality, count in source.items():
-            merged.setdefault(modality, count)
-    return merged
+def _first_reported(*surfaces: dict[str, int]) -> dict[str, int]:
+    """Return the first surface that reports a breakdown, whole, so counts from different reports never mix."""
+    return next((surface for surface in surfaces if surface), {})
 
 
 def _extract_modality_breakdown(generation: Any) -> tuple[dict[str, int], dict[str, int]]:
     """Extract per-modality (input, output) token counts from a LangChain generation or message.
 
-    Surfaces are checked in priority order, first value wins per modality:
+    For each direction, the first surface that reports a breakdown is used whole:
 
-    1. ``message.usage_metadata`` ``input_token_details`` / ``output_token_details``.
-    2. ``message.response_metadata`` ``prompt_tokens_details`` / ``candidates_tokens_details`` (raw Gemini lists).
-    3. ``message.response_metadata["usage_metadata"]``, for providers that nest usage there.
+    1. Gemini's raw ``prompt_tokens_details`` / ``candidates_tokens_details`` lists, at the top of
+       ``response_metadata`` or inside the raw usage dict at ``response_metadata["usage_metadata"]``
+       (or ``generation_info["usage_metadata"]``). This is where ``ChatVertexAI`` puts them, and the
+       only surface that can carry image counts.
+    2. LangChain's ``usage_metadata`` ``input_token_details`` / ``output_token_details``, then the same
+       keys inside the nested raw usage dict. LangChain's own types define ``audio`` but not ``image``.
 
-    Returns the (input, output) counts. A direction no surface reports is ``{}``, so callers can
-    tell "unknown" from "zero" for each direction separately.
+    A direction no surface reports is ``{}``, so callers can tell "unknown" from "zero".
     """
     message = getattr(generation, "message", None) or generation
     usage = getattr(message, "usage_metadata", None)
     usage = usage if isinstance(usage, dict) else {}
     response_metadata = getattr(message, "response_metadata", None)
     response_metadata = response_metadata if isinstance(response_metadata, dict) else {}
-    nested_usage = response_metadata.get("usage_metadata")
+    generation_info = getattr(generation, "generation_info", None)
+    generation_info = generation_info if isinstance(generation_info, dict) else {}
+    nested_usage = response_metadata.get("usage_metadata") or generation_info.get("usage_metadata")
     nested_usage = nested_usage if isinstance(nested_usage, dict) else {}
 
-    input_counts = _first_per_modality(
-        _modality_counts_from_details(usage.get("input_token_details")),
+    input_counts = _first_reported(
         _modality_counts_from_entries(response_metadata.get("prompt_tokens_details")),
+        _modality_counts_from_entries(nested_usage.get("prompt_tokens_details")),
+        _modality_counts_from_details(usage.get("input_token_details")),
         _modality_counts_from_details(nested_usage.get("input_token_details")),
     )
-    output_counts = _first_per_modality(
-        _modality_counts_from_details(usage.get("output_token_details")),
+    output_counts = _first_reported(
         _modality_counts_from_entries(response_metadata.get("candidates_tokens_details")),
+        _modality_counts_from_entries(nested_usage.get("candidates_tokens_details")),
+        _modality_counts_from_details(usage.get("output_token_details")),
         _modality_counts_from_details(nested_usage.get("output_token_details")),
     )
     return input_counts, output_counts

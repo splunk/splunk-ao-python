@@ -1481,9 +1481,9 @@ class TestParseLlmResult:
         assert result.audio_input_tokens is None
         assert result.audio_output_tokens is None
 
-    def test_gemini_modality_input_token_details_takes_precedence(self) -> None:
-        """input_token_details from usage_metadata takes precedence; response_metadata is ignored for same surface."""
-        # Given: an AIMessage with modality details on both usage_metadata (surface 1) and response_metadata (surface 2)
+    def test_raw_gemini_list_takes_precedence_over_langchain_details_without_mixing(self) -> None:
+        """Gemini's raw detail list wins over LangChain's token details, and counts from the two never mix."""
+        # Given: LangChain details reporting audio=80 and a raw Gemini list reporting audio=99 and image=5
         ai_message = AIMessage(content="hi")
         ai_message.usage_metadata = {
             "input_tokens": 110,
@@ -1492,16 +1492,80 @@ class TestParseLlmResult:
             "input_token_details": {"audio": 80},
             "output_token_details": {"audio": 15},
         }
-        # response_metadata also present (should not double-count)
-        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "token_count": 99}]}
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [
+                {"modality": "TEXT", "token_count": 6},
+                {"modality": "AUDIO", "token_count": 99},
+                {"modality": "IMAGE", "token_count": 5},
+            ]
+        }
         response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
 
         # When: parsing the LLMResult
         result = parse_llm_result(response)
 
-        # Then: surface 1 wins; surface 2 values are not used because the slot is already set
-        assert result.audio_input_tokens == 80
+        # Then: input counts come only from the raw list; output, reported only by LangChain, comes from there
+        assert result.audio_input_tokens == 99
+        assert result.image_input_tokens == 5
         assert result.audio_output_tokens == 15
+
+    def test_chat_vertex_ai_response_shape(self) -> None:
+        """The shape langchain-google-vertexai 3.2.4 produces for a Gemini audio request.
+
+        ``ChatVertexAI`` serializes Gemini's usage with
+        ``proto.Message.to_dict(response.usage_metadata, use_integers_for_enums=False)`` and stores the
+        dict in ``generation_info["usage_metadata"]``, which LangChain merges into ``response_metadata``.
+        Its ``usage_metadata.input_token_details`` carries only ``cache_read``. The literal below is that
+        serialization of a real ``UsageMetadata`` proto.
+        """
+        # Given: an AIMessage shaped exactly as ChatVertexAI returns it
+        raw_usage = {
+            "prompt_token_count": 1010,
+            "candidates_token_count": 25,
+            "total_token_count": 1035,
+            "prompt_tokens_details": [
+                {"modality": "TEXT", "token_count": 10},
+                {"modality": "AUDIO", "token_count": 1000},
+            ],
+            "candidates_tokens_details": [{"modality": "TEXT", "token_count": 25}],
+            "thoughts_token_count": 0,
+            "cached_content_token_count": 0,
+            "cache_tokens_details": [],
+        }
+        ai_message = AIMessage(content="A dog barking.")
+        ai_message.usage_metadata = {
+            "input_tokens": 1010,
+            "output_tokens": 25,
+            "total_tokens": 1035,
+            "input_token_details": {"cache_read": 0},
+        }
+        ai_message.response_metadata = {"model_provider": "google_vertexai", "usage_metadata": raw_usage}
+        response = LLMResult(
+            generations=[[ChatGeneration(message=ai_message, generation_info={"usage_metadata": raw_usage})]],
+            llm_output=None,
+        )
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio input count is read from the nested raw list, with explicit zeros elsewhere
+        assert result.audio_input_tokens == 1000
+        assert result.image_input_tokens == 0
+        assert result.audio_output_tokens == 0
+        assert result.image_output_tokens == 0
+
+    def test_gemini_detail_list_accepts_numeric_string_counts(self) -> None:
+        """proto3 JSON encodes 64-bit integers as strings; a numeric string count is read, not zeroed."""
+        # Given: a prompt detail list whose count is a numeric string
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "token_count": "64"}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is read
+        assert result.audio_input_tokens == 64
 
     def test_gemini_modality_from_response_metadata_nested_usage_metadata(self) -> None:
         """Surface 3: response_metadata['usage_metadata'] nested dict with input/output_token_details.
