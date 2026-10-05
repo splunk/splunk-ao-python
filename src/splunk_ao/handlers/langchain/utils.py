@@ -58,7 +58,7 @@ class LLMEndResult:
 
 _MODALITIES = ("image", "audio")
 # Every modality label Gemini reports. A detail list counts as a breakdown only if it uses these labels.
-_KNOWN_MODALITY_LABELS = frozenset({"text", "image", "audio", "video", "document"})
+_KNOWN_MODALITY_LABELS = frozenset({"modality_unspecified", "text", "image", "audio", "video", "document"})
 
 
 def _token_count(value: Any) -> int | None:
@@ -67,7 +67,7 @@ def _token_count(value: Any) -> int | None:
         return None
     if isinstance(value, int):
         return value
-    if isinstance(value, str) and value.isdigit():
+    if isinstance(value, str) and value.isdecimal():
         return int(value)
     return None
 

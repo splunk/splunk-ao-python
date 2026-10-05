@@ -132,28 +132,29 @@ def get_custom_metadata(context: Any) -> dict[str, Any]:
 
 
 # Every modality label Gemini reports. A detail list counts as a breakdown only if it uses these labels.
-_KNOWN_MODALITY_LABELS = frozenset({"TEXT", "IMAGE", "AUDIO", "VIDEO", "DOCUMENT"})
+_KNOWN_MODALITY_LABELS = frozenset({"MODALITY_UNSPECIFIED", "TEXT", "IMAGE", "AUDIO", "VIDEO", "DOCUMENT"})
 
 
 def _modality_token_counts(details: Any) -> dict[str, int]:
     """Sum IMAGE/AUDIO token counts from a Gemini ``ModalityTokenCount`` list.
 
     ``modality`` may be an enum (with ``.value``) or a plain string, depending on the SDK version.
-    Returns ``{}`` when no entry carries a modality label this can read (for example an integer enum
-    value), so the caller treats the breakdown as unknown rather than as a confident zero.
+    Any entry this cannot read (an integer enum value, a non-integer count) makes the whole list
+    unknown and returns ``{}``, so its tokens are never silently attributed to text; this matches the
+    LangChain extractor.
     """
     counts = {"IMAGE": 0, "AUDIO": 0}
-    recognized = False
     for entry in details:
         modality = getattr(entry, "modality", None)
         modality = getattr(modality, "value", modality)
-        if not isinstance(modality, str) or modality.upper() not in _KNOWN_MODALITY_LABELS:
-            continue
-        recognized = True
         count = getattr(entry, "token_count", None)
-        if modality.upper() in counts and isinstance(count, int):
+        if not isinstance(modality, str) or modality.upper() not in _KNOWN_MODALITY_LABELS:
+            return {}
+        if isinstance(count, bool) or not isinstance(count, int):
+            return {}
+        if modality.upper() in counts:
             counts[modality.upper()] += count
-    return counts if recognized else {}
+    return counts
 
 
 class SplunkAOObserver:

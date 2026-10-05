@@ -1554,6 +1554,37 @@ class TestParseLlmResult:
         assert result.audio_output_tokens == 0
         assert result.image_output_tokens == 0
 
+    def test_gemini_unspecified_modality_entry_keeps_the_breakdown(self) -> None:
+        """MODALITY_UNSPECIFIED is a real Gemini label (the proto default); it does not void the breakdown."""
+        # Given: a prompt detail list with an unspecified entry next to an audio entry
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [
+                {"modality": "MODALITY_UNSPECIFIED", "token_count": 3},
+                {"modality": "AUDIO", "token_count": 64},
+            ]
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is still read
+        assert result.audio_input_tokens == 64
+
+    def test_gemini_non_ascii_digit_count_makes_the_list_unknown(self) -> None:
+        """A count that ``int()`` cannot parse makes the list unknown instead of raising."""
+        # Given: a prompt detail list whose count is a superscript digit
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "token_count": "\u00b2"}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the modality counts stay unknown
+        assert result.audio_input_tokens is None
+
     def test_gemini_detail_list_accepts_numeric_string_counts(self) -> None:
         """proto3 JSON encodes 64-bit integers as strings; a numeric string count is read, not zeroed."""
         # Given: a prompt detail list whose count is a numeric string

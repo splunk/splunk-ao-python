@@ -490,3 +490,25 @@ class TestExtractUsageMetadata:
         assert result["prompt_tokens"] == 10
         assert result["completion_tokens"] == 5
         assert "audio_input_tokens" not in result
+
+    def test_one_unreadable_entry_makes_the_breakdown_unknown(self, observer: SplunkAOObserver) -> None:
+        # Given: a readable AUDIO entry next to an entry whose modality is an integer enum value
+        audio = self._make_modality_entry("AUDIO", 100)
+        unreadable = MagicMock()
+        unreadable.modality = MagicMock()
+        unreadable.modality.value = 2
+        unreadable.token_count = 5
+        usage = MagicMock()
+        usage.prompt_token_count = 105
+        usage.candidates_token_count = 0
+        usage.total_token_count = 105
+        usage.prompt_tokens_details = [audio, unreadable]
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: no partial breakdown is reported, matching the LangChain extractor
+        assert "audio_input_tokens" not in result
