@@ -93,12 +93,12 @@ def test_llm_mapping_emits_per_modality_token_details() -> None:
     exported = normalize_attributes_for_export(attrs)
 
     # Then: each modality has its own token-details attribute, including an explicit zero, plus its alias
-    assert attrs["gen_ai.usage.input_tokens_details.image"] == 5
-    assert attrs["gen_ai.usage.input_tokens_details.audio"] == 100
-    assert attrs["gen_ai.usage.output_tokens_details.image"] == 0
-    assert attrs["gen_ai.usage.output_tokens_details.audio"] == 20
-    assert exported["splunk_ao.llm.usage.input_tokens_details.audio"] == 100
-    assert exported["splunk_ao.llm.usage.output_tokens_details.image"] == 0
+    assert attrs["gen_ai.usage.image.input_tokens"] == 5
+    assert attrs["gen_ai.usage.audio.input_tokens"] == 100
+    assert attrs["gen_ai.usage.image.output_tokens"] == 0
+    assert attrs["gen_ai.usage.audio.output_tokens"] == 20
+    assert exported["splunk_ao.llm.usage.audio.input_tokens"] == 100
+    assert exported["splunk_ao.llm.usage.image.output_tokens"] == 0
 
 
 def test_llm_mapping_omits_token_details_without_a_breakdown() -> None:

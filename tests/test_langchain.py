@@ -104,9 +104,9 @@ def test_langchain_gemini_modality_breakdown_reaches_exported_llm_span() -> None
         [llm_span] = sink.spans
         attributes = llm_span.attributes or {}
         assert attributes["gen_ai.usage.input_tokens"] == 110
-        assert attributes["gen_ai.usage.input_tokens_details.audio"] == 100
-        assert attributes["gen_ai.usage.input_tokens_details.image"] == 0
-        assert "gen_ai.usage.output_tokens_details.audio" not in attributes
+        assert attributes["gen_ai.usage.audio.input_tokens"] == 100
+        assert attributes["gen_ai.usage.image.input_tokens"] == 0
+        assert "gen_ai.usage.audio.output_tokens" not in attributes
     finally:
         logger.terminate()
 

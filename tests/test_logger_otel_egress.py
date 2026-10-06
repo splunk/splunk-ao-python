@@ -126,10 +126,10 @@ def test_llm_span_per_modality_tokens_reach_exported_attributes(
 
     # Then: every modality count is on the wire under its token-details attribute
     attributes = exported.attributes or {}
-    assert attributes["gen_ai.usage.input_tokens_details.image"] == 5
-    assert attributes["gen_ai.usage.input_tokens_details.audio"] == 100
-    assert attributes["gen_ai.usage.output_tokens_details.audio"] == 20
-    assert attributes["gen_ai.usage.output_tokens_details.image"] == 0
+    assert attributes["gen_ai.usage.image.input_tokens"] == 5
+    assert attributes["gen_ai.usage.audio.input_tokens"] == 100
+    assert attributes["gen_ai.usage.audio.output_tokens"] == 20
+    assert attributes["gen_ai.usage.image.output_tokens"] == 0
 
 
 @pytest.mark.parametrize(("leaf_kind", "leaf_operation"), [("tool", "execute_tool"), ("retriever", "retrieval")])
