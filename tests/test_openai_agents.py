@@ -181,6 +181,42 @@ def test_llm_span_input_output_not_double_encoded() -> None:
         logger.terminate()
 
 
+def test_update_owned_root_uses_first_input_fallback() -> None:
+    # Given: a trace with an owned root (ingestion-hook path) and an LLM span that
+    # sets state.first_input before _update_owned_root is called
+    # When: _update_owned_root runs with a node that has no explicit input
+    # Then: owned_root.input uses state.first_input, not the "Step" placeholder
+    from unittest.mock import MagicMock
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    trace = MagicMock(trace_id="trace-update-root", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    state = _trace_state(processor, trace.trace_id)
+
+    root = Node(
+        node_type="agent",
+        run_id="root-node-id",
+        parent_run_id="trace-update-root",
+        span_params={
+            "name": "SupportAgent",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "status_code": 200,
+        },
+    )
+    processor._start_owned_root(root, state)
+
+    # Simulate first_input being set (as would happen when the LLM span is processed)
+    state.first_input = "Look up customer CUST-123"
+
+    processor._update_owned_root(root, state)
+
+    assert state.owned_root is not None
+    assert state.owned_root.input == "Look up customer CUST-123"
+
+    logger.conclude(output="done")
+
+
 def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)

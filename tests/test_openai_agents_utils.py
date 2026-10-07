@@ -415,12 +415,18 @@ class TestExtractUserInput:
         ]
         assert _extract_user_input(llm_input) == "Follow-up question"
 
-    def test_returns_none_for_non_list(self) -> None:
-        # Given: non-list input
+    def test_returns_string_input_directly(self) -> None:
+        # Given: a plain string input (ResponseSpanData path)
+        # When: user input is extracted
+        # Then: the string is returned as-is
+        assert _extract_user_input("Write a haiku") == "Write a haiku"
+
+    def test_returns_none_for_non_string_non_list(self) -> None:
+        # Given: unsupported input type
         # When: user input is extracted
         # Then: None is returned
-        assert _extract_user_input("plain string") is None
         assert _extract_user_input(None) is None
+        assert _extract_user_input(42) is None
 
     def test_returns_none_when_no_user_message(self) -> None:
         # Given: input with no user role messages

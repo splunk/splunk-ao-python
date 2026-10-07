@@ -21,12 +21,13 @@ _logger = logging.getLogger(__name__)
 
 
 def _extract_user_input(llm_input: Any) -> str | None:
-    """Return the last user message content from a GenerationSpanData input list."""
-    if not isinstance(llm_input, list):
-        return None
-    for message in reversed(llm_input):
-        if isinstance(message, dict) and message.get("role") == "user":
-            return str(message.get("content") or "")
+    """Return the last user message content from a span's raw input field."""
+    if isinstance(llm_input, str):
+        return llm_input or None
+    if isinstance(llm_input, list):
+        for message in reversed(llm_input):
+            if isinstance(message, dict) and message.get("role") == "user":
+                return str(message.get("content") or "")
     return None
 
 

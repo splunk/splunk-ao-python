@@ -356,7 +356,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         """Apply final OpenAI callback data to the already-live root."""
         if state.owned_root is None:
             return
-        state.owned_root.input = node.span_params.get("input") or node.node_type.capitalize() + " Step"
+        state.owned_root.input = node.span_params.get("input") or state.first_input or node.node_type.capitalize() + " Step"
         if node.span_params.get("name") is not None:
             state.owned_root.name = node.span_params["name"]
         if node.span_params.get("tags") is not None:
@@ -468,7 +468,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
                 }
             )
             if not state.first_input:
-                state.first_input = _extract_user_input(initial_params.get("input"))
+                state.first_input = _extract_user_input(span.span_data.input)
         elif splunk_ao_type == "tool":
             tool_data = _extract_tool_data(span.span_data)
             initial_params.update(
@@ -586,7 +586,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             if node.span_params.get("input") is None:
                 node.span_params["input"] = llm_data.get("input")
             if not state.first_input:
-                state.first_input = _extract_user_input(llm_data.get("input") or node.span_params.get("input"))
+                state.first_input = _extract_user_input(span.span_data.input)
 
             # Extract embedded tool calls and merge with existing tool definitions
             if isinstance(span.span_data, ResponseSpanData) and span.span_data.response:
