@@ -50,6 +50,104 @@ class LLMEndResult:
     num_input_tokens: int | None
     num_output_tokens: int | None
     total_tokens: int | None
+    image_input_tokens: int | None = None
+    audio_input_tokens: int | None = None
+    audio_output_tokens: int | None = None
+    image_output_tokens: int | None = None
+
+
+_MODALITIES = ("image", "audio")
+# Every modality label Gemini reports. A detail list counts as a breakdown only if it uses these labels.
+_KNOWN_MODALITY_LABELS = frozenset({"modality_unspecified", "text", "image", "audio", "video", "document"})
+
+
+def _token_count(value: Any) -> int | None:
+    """Read a token count given as an int or, as proto3 JSON encodes 64-bit integers, a numeric string."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdecimal():
+        return int(value)
+    return None
+
+
+def _modality_counts_from_details(details: Any) -> dict[str, int]:
+    """Read image/audio counts from a LangChain ``input_token_details`` / ``output_token_details`` dict.
+
+    Other keys such as ``cache_read`` or ``reasoning`` are not a modality breakdown and are ignored.
+    """
+    if not isinstance(details, dict):
+        return {}
+    counts = {modality: _token_count(details.get(modality)) for modality in _MODALITIES}
+    return {modality: count for modality, count in counts.items() if count is not None}
+
+
+def _modality_counts_from_entries(entries: Any) -> dict[str, int]:
+    """Read image/audio counts from a Gemini ``[{"modality": "AUDIO", "token_count": N}, ...]`` list.
+
+    A list whose entries all carry a Gemini modality label and a readable count is a breakdown even
+    when it holds only text, so absent modalities count as 0. Any entry in an encoding this cannot
+    read (an integer enum value, an unparseable count) makes the whole list unknown, so it is never
+    reported as a confident zero.
+    """
+    if not isinstance(entries, list) or not entries:
+        return {}
+    counts = dict.fromkeys(_MODALITIES, 0)
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("modality"), str):
+            return {}
+        modality = entry["modality"].lower()
+        count = _token_count(entry.get("token_count", entry.get("tokenCount")))
+        if modality not in _KNOWN_MODALITY_LABELS or count is None:
+            return {}
+        if modality in counts:
+            counts[modality] += count
+    return counts
+
+
+def _first_reported(*surfaces: dict[str, int]) -> dict[str, int]:
+    """Return the first surface that reports a breakdown, whole, so counts from different reports never mix."""
+    return next((surface for surface in surfaces if surface), {})
+
+
+def _extract_modality_breakdown(generation: Any) -> tuple[dict[str, int], dict[str, int]]:
+    """Extract per-modality (input, output) token counts from a LangChain generation or message.
+
+    For each direction, the first surface that reports a breakdown is used whole:
+
+    1. Gemini's raw ``prompt_tokens_details`` / ``candidates_tokens_details`` lists, at the top of
+       ``response_metadata`` or inside the raw usage dict at ``response_metadata["usage_metadata"]``
+       (or ``generation_info["usage_metadata"]``). This is where ``ChatVertexAI`` puts them, and the
+       only surface that can carry image counts.
+    2. LangChain's ``usage_metadata`` ``input_token_details`` / ``output_token_details``, then the same
+       keys inside the nested raw usage dict. LangChain's own types define ``audio`` but not ``image``.
+
+    A direction no surface reports is ``{}``, so callers can tell "unknown" from "zero".
+    """
+    message = getattr(generation, "message", None) or generation
+    usage = getattr(message, "usage_metadata", None)
+    usage = usage if isinstance(usage, dict) else {}
+    response_metadata = getattr(message, "response_metadata", None)
+    response_metadata = response_metadata if isinstance(response_metadata, dict) else {}
+    generation_info = getattr(generation, "generation_info", None)
+    generation_info = generation_info if isinstance(generation_info, dict) else {}
+    nested_usage = response_metadata.get("usage_metadata") or generation_info.get("usage_metadata")
+    nested_usage = nested_usage if isinstance(nested_usage, dict) else {}
+
+    input_counts = _first_reported(
+        _modality_counts_from_entries(response_metadata.get("prompt_tokens_details")),
+        _modality_counts_from_entries(nested_usage.get("prompt_tokens_details")),
+        _modality_counts_from_details(usage.get("input_token_details")),
+        _modality_counts_from_details(nested_usage.get("input_token_details")),
+    )
+    output_counts = _first_reported(
+        _modality_counts_from_entries(response_metadata.get("candidates_tokens_details")),
+        _modality_counts_from_entries(nested_usage.get("candidates_tokens_details")),
+        _modality_counts_from_details(usage.get("output_token_details")),
+        _modality_counts_from_details(nested_usage.get("output_token_details")),
+    )
+    return input_counts, output_counts
 
 
 def parse_llm_result(response: Any) -> LLMEndResult:
@@ -60,6 +158,9 @@ def parse_llm_result(response: Any) -> LLMEndResult:
     2. Same dict with GCP Vertex AI keys (``input_tokens`` / ``output_tokens``).
     3. ``ChatGeneration.message.usage_metadata`` when ``llm_output`` carries no usage.
 
+    Also extracts the per-modality (image/audio) breakdown that Gemini reports; see
+    ``_extract_modality_breakdown``.
+
     Parameters
     ----------
     response
@@ -67,6 +168,7 @@ def parse_llm_result(response: Any) -> LLMEndResult:
     """
     token_usage: dict[str, Any] = response.llm_output.get("token_usage", {}) if response.llm_output else {}
 
+    first_message = None
     try:
         flattened_messages = [message for batch in response.generations for message in batch]
         first_message = flattened_messages[0] if flattened_messages else None
@@ -83,9 +185,24 @@ def parse_llm_result(response: Any) -> LLMEndResult:
         _logger.warning(f"Failed to serialize LLM output: {e}")
         output = str(response.generations)
 
+    input_counts: dict[str, int] = {}
+    output_counts: dict[str, int] = {}
+    if first_message is not None:
+        try:
+            input_counts, output_counts = _extract_modality_breakdown(first_message)
+        except Exception as e:
+            _logger.debug(f"Failed to extract per-modality token counts: {e}")
+    # Per direction: a reported breakdown makes an unmentioned modality 0; an unreported one leaves it unknown.
+    input_default = 0 if input_counts else None
+    output_default = 0 if output_counts else None
+
     return LLMEndResult(
         output=output,
         num_input_tokens=token_usage.get("prompt_tokens") or token_usage.get("input_tokens"),
         num_output_tokens=token_usage.get("completion_tokens") or token_usage.get("output_tokens"),
         total_tokens=token_usage.get("total_tokens"),
+        image_input_tokens=input_counts.get("image", input_default),
+        audio_input_tokens=input_counts.get("audio", input_default),
+        audio_output_tokens=output_counts.get("audio", output_default),
+        image_output_tokens=output_counts.get("image", output_default),
     )

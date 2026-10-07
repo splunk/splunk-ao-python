@@ -70,6 +70,47 @@ def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> Non
         logger.terminate()
 
 
+def test_langchain_gemini_modality_breakdown_reaches_exported_llm_span() -> None:
+    # Given: a LangChain chat model run whose Gemini result reports audio input tokens
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = SplunkAOCallback(splunk_ao_logger=logger, flush_on_chain_end=False)
+    root_id = uuid.uuid4()
+    llm_id = uuid.uuid4()
+    ai_message = AIMessage(content="transcript")
+    ai_message.usage_metadata = {
+        "input_tokens": 110,
+        "output_tokens": 5,
+        "total_tokens": 115,
+        "input_token_details": {"audio": 100},
+    }
+    try:
+        callback.on_chain_start(serialized={"name": "root"}, inputs={"query": "question"}, run_id=root_id)
+        callback.on_chat_model_start(
+            serialized={"name": "gemini"},
+            messages=[[HumanMessage(content="transcribe")]],
+            run_id=llm_id,
+            parent_run_id=root_id,
+        )
+
+        # When: the model run ends and its span is exported
+        callback.on_llm_end(
+            LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None),
+            run_id=llm_id,
+            parent_run_id=root_id,
+        )
+
+        # Then: the exported span carries the audio count, a zero for image input, and no unreported output counts
+        [llm_span] = sink.spans
+        attributes = llm_span.attributes or {}
+        assert attributes["gen_ai.usage.input_tokens"] == 110
+        assert attributes["gen_ai.usage.audio.input_tokens"] == 100
+        assert attributes["gen_ai.usage.image.input_tokens"] == 0
+        assert "gen_ai.usage.audio.output_tokens" not in attributes
+    finally:
+        logger.terminate()
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback], ids=["sync", "async"])
 async def test_async_langchain_dispatch_keeps_handler_root_active_for_application(callback_type: Any) -> None:
@@ -1376,6 +1417,350 @@ class TestParseLlmResult:
         assert result.num_input_tokens == 8
         assert result.num_output_tokens == 16
         assert result.total_tokens == 24
+
+    def test_gemini_modality_from_usage_metadata_input_token_details(self) -> None:
+        """Gemini native path: per-modality breakdown from usage_metadata.input/output_token_details."""
+        # Given: an AIMessage with Gemini usage_metadata containing per-modality token details
+        ai_message = AIMessage(content="hello")
+        ai_message.usage_metadata = {
+            "input_tokens": 110,
+            "output_tokens": 25,
+            "total_tokens": 135,
+            "input_token_details": {"audio": 100, "image": 5},
+            "output_token_details": {"audio": 20},
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: per-modality counts are extracted from usage_metadata token details
+        assert result.audio_input_tokens == 100
+        assert result.image_input_tokens == 5
+        assert result.audio_output_tokens == 20
+
+    def test_gemini_modality_from_response_metadata_prompt_tokens_details(self) -> None:
+        """Gemini native path: per-modality breakdown from message.response_metadata token detail lists."""
+        # Given: an AIMessage with Gemini response_metadata containing prompt/candidates token detail lists
+        ai_message = AIMessage(content="hello")
+        ai_message.usage_metadata = {"input_tokens": 110, "output_tokens": 25, "total_tokens": 135}
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [
+                {"modality": "TEXT", "token_count": 10},
+                {"modality": "AUDIO", "token_count": 95},
+                {"modality": "IMAGE", "token_count": 5},
+            ],
+            "candidates_tokens_details": [
+                {"modality": "AUDIO", "token_count": 20},
+                {"modality": "TEXT", "token_count": 5},
+            ],
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: per-modality counts are extracted from response_metadata detail lists
+        assert result.audio_input_tokens == 95
+        assert result.image_input_tokens == 5
+        assert result.audio_output_tokens == 20
+
+    def test_no_gemini_modality_for_text_only_response(self) -> None:
+        """Text-only response returns None for all modality fields."""
+        # Given: an LLMResult with no modality detail surfaces on the message
+        response = LLMResult(
+            generations=[[ChatGeneration(message=AIMessage(content="hello"))]],
+            llm_output={"token_usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}},
+        )
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: all modality fields are None because no breakdown data was present
+        assert result.image_input_tokens is None
+        assert result.audio_input_tokens is None
+        assert result.audio_output_tokens is None
+
+    def test_raw_gemini_list_takes_precedence_over_langchain_details_without_mixing(self) -> None:
+        """Gemini's raw detail list wins over LangChain's token details, and counts from the two never mix."""
+        # Given: LangChain details reporting audio=80 and a raw Gemini list reporting audio=99 and image=5
+        ai_message = AIMessage(content="hi")
+        ai_message.usage_metadata = {
+            "input_tokens": 110,
+            "output_tokens": 25,
+            "total_tokens": 135,
+            "input_token_details": {"audio": 80},
+            "output_token_details": {"audio": 15},
+        }
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [
+                {"modality": "TEXT", "token_count": 6},
+                {"modality": "AUDIO", "token_count": 99},
+                {"modality": "IMAGE", "token_count": 5},
+            ]
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: input counts come only from the raw list; output, reported only by LangChain, comes from there
+        assert result.audio_input_tokens == 99
+        assert result.image_input_tokens == 5
+        assert result.audio_output_tokens == 15
+
+    def test_chat_vertex_ai_response_shape(self) -> None:
+        """The shape langchain-google-vertexai 3.2.4 produces for a Gemini audio request.
+
+        ``ChatVertexAI`` serializes Gemini's usage with
+        ``proto.Message.to_dict(response.usage_metadata, use_integers_for_enums=False)`` and stores the
+        dict in ``generation_info["usage_metadata"]``, which LangChain merges into ``response_metadata``.
+        Its ``usage_metadata.input_token_details`` carries only ``cache_read``. The literal below is that
+        serialization of a real ``UsageMetadata`` proto.
+        """
+        # Given: an AIMessage shaped exactly as ChatVertexAI returns it
+        raw_usage = {
+            "prompt_token_count": 1010,
+            "candidates_token_count": 25,
+            "total_token_count": 1035,
+            "prompt_tokens_details": [
+                {"modality": "TEXT", "token_count": 10},
+                {"modality": "AUDIO", "token_count": 1000},
+            ],
+            "candidates_tokens_details": [{"modality": "TEXT", "token_count": 25}],
+            "thoughts_token_count": 0,
+            "cached_content_token_count": 0,
+            "cache_tokens_details": [],
+        }
+        ai_message = AIMessage(content="A dog barking.")
+        ai_message.usage_metadata = {
+            "input_tokens": 1010,
+            "output_tokens": 25,
+            "total_tokens": 1035,
+            "input_token_details": {"cache_read": 0},
+        }
+        ai_message.response_metadata = {"model_provider": "google_vertexai", "usage_metadata": raw_usage}
+        response = LLMResult(
+            generations=[[ChatGeneration(message=ai_message, generation_info={"usage_metadata": raw_usage})]],
+            llm_output=None,
+        )
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio input count is read from the nested raw list, with explicit zeros elsewhere
+        assert result.audio_input_tokens == 1000
+        assert result.image_input_tokens == 0
+        assert result.audio_output_tokens == 0
+        assert result.image_output_tokens == 0
+
+    def test_gemini_unspecified_modality_entry_keeps_the_breakdown(self) -> None:
+        """MODALITY_UNSPECIFIED is a real Gemini label (the proto default); it does not void the breakdown."""
+        # Given: a prompt detail list with an unspecified entry next to an audio entry
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [
+                {"modality": "MODALITY_UNSPECIFIED", "token_count": 3},
+                {"modality": "AUDIO", "token_count": 64},
+            ]
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is still read
+        assert result.audio_input_tokens == 64
+
+    def test_gemini_non_ascii_digit_count_makes_the_list_unknown(self) -> None:
+        """A count that ``int()`` cannot parse makes the list unknown instead of raising."""
+        # Given: a prompt detail list whose count is a superscript digit
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "token_count": "\u00b2"}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the modality counts stay unknown
+        assert result.audio_input_tokens is None
+
+    def test_gemini_detail_list_accepts_numeric_string_counts(self) -> None:
+        """proto3 JSON encodes 64-bit integers as strings; a numeric string count is read, not zeroed."""
+        # Given: a prompt detail list whose count is a numeric string
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "token_count": "64"}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is read
+        assert result.audio_input_tokens == 64
+
+    def test_gemini_modality_from_response_metadata_nested_usage_metadata(self) -> None:
+        """Surface 3: response_metadata['usage_metadata'] nested dict with input/output_token_details.
+
+        Some LangChain providers nest the LangChain Core UsageMetadata under response_metadata
+        instead of (or alongside) message.usage_metadata. Modality fields there should be picked
+        up as a final fallback when the other surfaces are empty.
+        """
+        # Given: an AIMessage with modality details only in the nested response_metadata['usage_metadata'] form
+        ai_message = AIMessage(content="hi")
+        # No top-level usage_metadata, no token_details lists — only the nested form.
+        ai_message.response_metadata = {
+            "usage_metadata": {
+                "input_tokens": 110,
+                "output_tokens": 25,
+                "input_token_details": {"audio": 90, "image": 5},
+                "output_token_details": {"audio": 12},
+            }
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: per-modality counts are extracted from the nested surface 3 fallback
+        assert result.audio_input_tokens == 90
+        assert result.image_input_tokens == 5
+        assert result.audio_output_tokens == 12
+
+    def test_gemini_modality_surface_1_beats_surface_3(self) -> None:
+        """Surface 1 (top-level usage_metadata) wins over Surface 3 (nested under response_metadata)."""
+        # Given: an AIMessage with conflicting modality data on surface 1 and surface 3
+        ai_message = AIMessage(content="hi")
+        ai_message.usage_metadata = {"input_tokens": 100, "output_tokens": 10, "input_token_details": {"audio": 50}}
+        ai_message.response_metadata = {
+            "usage_metadata": {"input_token_details": {"audio": 99}}  # should not be read
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: surface 1 value is used; surface 3 is ignored because the slot is already set
+        assert result.audio_input_tokens == 50
+
+    def test_gemini_image_output_tokens_from_surface_1(self) -> None:
+        """Surface 1: image_output_tokens extracted from output_token_details['image']."""
+        # Given: an AIMessage with image tokens in output_token_details
+        ai_message = AIMessage(content="[generated image]")
+        ai_message.usage_metadata = {
+            "input_tokens": 10,
+            "output_tokens": 50,
+            "output_token_details": {"image": 40, "audio": 5},
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: image_output_tokens and audio_output_tokens are extracted from surface 1
+        assert result.image_output_tokens == 40
+        assert result.audio_output_tokens == 5
+
+    def test_gemini_image_output_tokens_from_surface_2_candidates(self) -> None:
+        """Surface 2: image_output_tokens extracted from candidates_tokens_details IMAGE entry."""
+        # Given: an AIMessage with candidates_tokens_details containing an IMAGE entry
+        ai_message = AIMessage(content="[generated image]")
+        ai_message.response_metadata = {
+            "candidates_tokens_details": [
+                {"modality": "TEXT", "token_count": 5},
+                {"modality": "IMAGE", "token_count": 30},
+                {"modality": "AUDIO", "token_count": 10},
+            ]
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: image_output_tokens comes from the IMAGE entry in candidates_tokens_details
+        assert result.image_output_tokens == 30
+        assert result.audio_output_tokens == 10
+
+    def test_non_gemini_provider_cache_read_only_returns_none_modality(self) -> None:
+        """Non-Gemini providers (e.g. Anthropic) that have cache_read but no audio/image keys must not produce zeros."""
+        # Given: an AIMessage from a non-Gemini provider with only cache_read in input_token_details
+        ai_message = AIMessage(content="response")
+        ai_message.usage_metadata = {
+            "input_tokens": 100,
+            "output_tokens": 20,
+            "input_token_details": {"cache_read": 80},
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: all modality fields are None — cache_read must not be misread as modality breakdown
+        assert result.image_input_tokens is None
+        assert result.audio_input_tokens is None
+        assert result.audio_output_tokens is None
+        assert result.image_output_tokens is None
+
+    def test_nested_usage_metadata_without_modality_keys_returns_none_modality(self) -> None:
+        """A nested response_metadata['usage_metadata'] with only cache_read is not a modality breakdown."""
+        # Given: an AIMessage whose only token details are a nested cache_read count
+        ai_message = AIMessage(content="response")
+        ai_message.response_metadata = {"usage_metadata": {"input_token_details": {"cache_read": 80}}}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: all modality fields stay unknown instead of being coerced to zero
+        assert result.image_input_tokens is None
+        assert result.audio_input_tokens is None
+        assert result.audio_output_tokens is None
+        assert result.image_output_tokens is None
+
+    def test_gemini_text_only_detail_list_reports_zero_modalities(self) -> None:
+        """A Gemini detail list holding only TEXT is a breakdown that says zero image/audio tokens."""
+        # Given: an AIMessage whose prompt token details list only a TEXT entry, and no output details
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "TEXT", "token_count": 10}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: input modalities are reported as zero, and the unreported output direction stays unknown
+        assert result.image_input_tokens == 0
+        assert result.audio_input_tokens == 0
+        assert result.audio_output_tokens is None
+        assert result.image_output_tokens is None
+
+    def test_gemini_detail_list_with_unreadable_modality_encoding_is_unknown(self) -> None:
+        """A detail list whose modality labels cannot be read is not reported as a confident zero."""
+        # Given: a prompt detail list using integer enum modalities, and a nested usage_metadata fallback
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {
+            "prompt_tokens_details": [{"modality": 4, "token_count": 100}],
+            "usage_metadata": {"input_token_details": {"audio": 100}},
+        }
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the unreadable list is skipped and the nested fallback supplies the audio count
+        assert result.audio_input_tokens == 100
+        assert result.image_input_tokens == 0
+
+    def test_gemini_detail_list_accepts_camel_case_token_count(self) -> None:
+        """Raw REST JSON spells the count ``tokenCount``; it is read the same as ``token_count``."""
+        # Given: a prompt detail list using the camelCase count key
+        ai_message = AIMessage(content="hello")
+        ai_message.response_metadata = {"prompt_tokens_details": [{"modality": "AUDIO", "tokenCount": 64}]}
+        response = LLMResult(generations=[[ChatGeneration(message=ai_message)]], llm_output=None)
+
+        # When: parsing the LLMResult
+        result = parse_llm_result(response)
+
+        # Then: the audio count is read
+        assert result.audio_input_tokens == 64
 
 
 class TestSplunkAOCallbackIngestionHookWithoutCredentials:

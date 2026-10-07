@@ -73,6 +73,45 @@ def test_llm_mapping_covers_content_request_response_usage_and_units() -> None:
     assert json.loads(attrs["gen_ai.tool.definitions"])[0]["name"] == "search"
 
 
+def test_llm_mapping_emits_per_modality_token_details() -> None:
+    # Given: an LLM span whose metrics carry an image/audio breakdown of its token counts
+    span = LlmSpan(
+        input="prompt",
+        output="answer",
+        metrics=LlmMetrics(
+            num_input_tokens=120,
+            num_output_tokens=40,
+            num_image_input_tokens=5,
+            num_audio_input_tokens=100,
+            num_image_output_tokens=0,
+            num_audio_output_tokens=20,
+        ),
+    )
+
+    # When: the span is mapped and normalized for export
+    attrs = build_span_attributes(span)
+    exported = normalize_attributes_for_export(attrs)
+
+    # Then: each modality has its own token-details attribute, including an explicit zero, plus its alias
+    assert attrs["gen_ai.usage.image.input_tokens"] == 5
+    assert attrs["gen_ai.usage.audio.input_tokens"] == 100
+    assert attrs["gen_ai.usage.image.output_tokens"] == 0
+    assert attrs["gen_ai.usage.audio.output_tokens"] == 20
+    assert exported["splunk_ao.llm.usage.audio.input_tokens"] == 100
+    assert exported["splunk_ao.llm.usage.image.output_tokens"] == 0
+
+
+def test_llm_mapping_omits_token_details_without_a_breakdown() -> None:
+    # Given: a text-only LLM span with no per-modality counts
+    span = LlmSpan(input="prompt", output="answer", metrics=LlmMetrics(num_input_tokens=12, num_output_tokens=8))
+
+    # When: the span is mapped
+    attrs = build_span_attributes(span)
+
+    # Then: no token-details attributes are emitted
+    assert not any("tokens_details" in key for key in attrs)
+
+
 def test_llm_output_uses_unknown_when_finish_reason_is_absent() -> None:
     attrs = build_span_attributes(LlmSpan(input="prompt", output="answer"))
 

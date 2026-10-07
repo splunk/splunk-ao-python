@@ -137,6 +137,10 @@ def build_handler_step(
                     "time_to_first_token_ns": params.get("time_to_first_token_ns"),
                     "num_reasoning_tokens": params.get("num_reasoning_tokens"),
                     "num_cached_input_tokens": params.get("num_cached_input_tokens"),
+                    "num_image_input_tokens": params.get("image_input_tokens"),
+                    "num_audio_input_tokens": params.get("audio_input_tokens"),
+                    "num_audio_output_tokens": params.get("audio_output_tokens"),
+                    "num_image_output_tokens": params.get("image_output_tokens"),
                 }
             ),
             tools=params.get("tools"),

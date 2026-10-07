@@ -21,6 +21,19 @@ from splunk_ao.utils.serialization import convert_to_string_dict, serialize_to_s
 
 _logger = logging.getLogger(__name__)
 
+_MODALITY_TOKEN_PARAMS = ("image_input_tokens", "audio_input_tokens", "audio_output_tokens", "image_output_tokens")
+
+
+def _modality_token_kwargs(span_params: dict[str, Any]) -> dict[str, int]:
+    """Per-modality token counts present in ``span_params``, as ``add_llm_span`` keyword arguments.
+
+    Absent counts are left out rather than passed as ``None``. An older, separately released
+    ``splunk-ao-adk`` has a ``TraceBuilder.add_llm_span`` without these parameters, and its observer
+    never writes these keys, so with it every count is absent and the call stays compatible. Only a
+    ``splunk-ao-adk`` new enough to write the counts also has a ``TraceBuilder`` that accepts them.
+    """
+    return {name: span_params[name] for name in _MODALITY_TOKEN_PARAMS if span_params.get(name) is not None}
+
 
 class SplunkAOBaseHandler:
     """
@@ -442,6 +455,7 @@ class SplunkAOBaseHandler:
                 created_at=created_at,
                 step_number=step_number,
                 status_code=node.span_params.get("status_code"),
+                **_modality_token_kwargs(node.span_params),
             )
         elif node.node_type == "retriever":
             self._splunk_ao_logger.add_retriever_span(

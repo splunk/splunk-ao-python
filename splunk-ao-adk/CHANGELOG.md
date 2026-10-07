@@ -15,3 +15,6 @@
 - Retained the proprietary ingestion hook as deprecated migration
   compatibility; new custom pipelines should use OpenTelemetry extension
   points.
+- Captures the image/audio token breakdown that Gemini reports in
+  `prompt_tokens_details` / `candidates_tokens_details` on LLM spans, so
+  per-modality pricing applies to the span's cost.

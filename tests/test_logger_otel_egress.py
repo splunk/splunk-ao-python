@@ -104,6 +104,34 @@ def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, rec
     assert otlp_logger.traces == []
 
 
+def test_llm_span_per_modality_tokens_reach_exported_attributes(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: an LLM span logged with an image/audio breakdown of its token counts
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_llm_span(
+        input="prompt",
+        output="answer",
+        model="gemini-2.5-flash",
+        num_input_tokens=120,
+        num_output_tokens=40,
+        image_input_tokens=5,
+        audio_input_tokens=100,
+        audio_output_tokens=20,
+        image_output_tokens=0,
+    )
+
+    # When: the completed span is copied for export
+    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+
+    # Then: every modality count is on the wire under its token-details attribute
+    attributes = exported.attributes or {}
+    assert attributes["gen_ai.usage.image.input_tokens"] == 5
+    assert attributes["gen_ai.usage.audio.input_tokens"] == 100
+    assert attributes["gen_ai.usage.audio.output_tokens"] == 20
+    assert attributes["gen_ai.usage.image.output_tokens"] == 0
+
+
 @pytest.mark.parametrize(("leaf_kind", "leaf_operation"), [("tool", "execute_tool"), ("retriever", "retrieval")])
 def test_pending_leaf_emits_when_trace_envelope_is_released(
     otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, leaf_kind: str, leaf_operation: str
