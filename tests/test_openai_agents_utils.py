@@ -18,11 +18,11 @@ from agents import (
 from agents.tracing import ResponseSpanData
 
 from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
-from splunk_ao.handlers.openai_agents.handler import _extract_user_input
 from splunk_ao.utils.openai_agents import (
     SplunkAOCustomSpan,
     _extract_llm_data,
     _extract_tool_data,
+    _extract_user_input,
     _extract_workflow_data,
     _map_span_name,
     _map_span_type,

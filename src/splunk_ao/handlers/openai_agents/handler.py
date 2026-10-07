@@ -24,6 +24,7 @@ from splunk_ao.utils.openai_agents import (
     SplunkAOCustomSpan,
     _extract_llm_data,
     _extract_tool_data,
+    _extract_user_input,
     _extract_workflow_data,
     _map_span_name,
     _map_span_type,
@@ -32,15 +33,6 @@ from splunk_ao.utils.serialization import convert_time_delta_to_ns, convert_to_s
 
 _logger = logging.getLogger(__name__)
 
-
-def _extract_user_input(llm_input: Any) -> str | None:
-    """Return the last user message content from a GenerationSpanData input list."""
-    if not isinstance(llm_input, list):
-        return None
-    for message in reversed(llm_input):
-        if isinstance(message, dict) and message.get("role") == "user":
-            return str(message.get("content") or "")
-    return None
 
 
 @dataclass
