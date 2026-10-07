@@ -18,6 +18,7 @@ from agents import (
 from agents.tracing import ResponseSpanData
 
 from galileo_core.schemas.logging.span import ToolSpan, WorkflowSpan
+from splunk_ao.handlers.openai_agents.handler import _extract_user_input
 from splunk_ao.utils.openai_agents import (
     SplunkAOCustomSpan,
     _extract_llm_data,
@@ -182,12 +183,38 @@ class TestExtractLlmData:
         assert result["status_code"] == 503
         assert "error_details" in result["metadata"]
 
-    def test_serializes_complex_output(self) -> None:
-        """Test that complex output is serialized."""
-        span_data = GenerationSpanData(input=[{"text": "Question"}], output=[{"text": "Answer"}], model="gpt-4")
+    def test_input_preserved_as_list(self) -> None:
+        # Given: GenerationSpanData with a list input
+        # When: LLM data is extracted
+        # Then: input is a list (not serialized) so LoggedLlmSpan validators can convert it
+        span_data = GenerationSpanData(
+            input=[{"role": "system", "content": "You are helpful."}, {"role": "user", "content": "Hello"}],
+            output=[{"role": "assistant", "content": "Hi"}],
+            model="gpt-4",
+        )
         result = _extract_llm_data(span_data)
-        assert isinstance(result["input"], str)
-        assert isinstance(result["output"], str)
+        assert isinstance(result["input"], list)
+
+    def test_output_unwrapped_from_list(self) -> None:
+        # Given: GenerationSpanData with a single-element output list
+        # When: LLM data is extracted
+        # Then: output is the first element (dict), not the list
+        span_data = GenerationSpanData(
+            input=[{"role": "user", "content": "Hi"}],
+            output=[{"role": "assistant", "content": "Hello"}],
+            model="gpt-4",
+        )
+        result = _extract_llm_data(span_data)
+        assert isinstance(result["output"], dict)
+        assert result["output"]["role"] == "assistant"
+
+    def test_empty_output_list_gives_none(self) -> None:
+        # Given: GenerationSpanData with empty output list
+        # When: LLM data is extracted
+        # Then: output is None
+        span_data = GenerationSpanData(input=[{"role": "user", "content": "Hi"}], output=[], model="gpt-4")
+        result = _extract_llm_data(span_data)
+        assert result["output"] is None
 
 
 class TestExtractToolData:
@@ -362,3 +389,41 @@ class TestSplunkAOCustomSpan:
         metadata = custom_span.span.user_metadata or {}
         result = {**metadata, "status_code": custom_span.span.status_code}
         assert result == {"status_code": 200}
+
+
+class TestExtractUserInput:
+    """Test _extract_user_input function."""
+
+    def test_returns_last_user_message(self) -> None:
+        # Given: multi-turn input with system and user messages
+        # When: user input is extracted
+        # Then: the last user message content is returned
+        llm_input = [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "What is AI?"},
+        ]
+        assert _extract_user_input(llm_input) == "What is AI?"
+
+    def test_returns_last_user_message_in_multi_turn(self) -> None:
+        # Given: multi-turn conversation with multiple user messages
+        # When: user input is extracted
+        # Then: the last user message is returned, not the first
+        llm_input = [
+            {"role": "user", "content": "First question"},
+            {"role": "assistant", "content": "First answer"},
+            {"role": "user", "content": "Follow-up question"},
+        ]
+        assert _extract_user_input(llm_input) == "Follow-up question"
+
+    def test_returns_none_for_non_list(self) -> None:
+        # Given: non-list input
+        # When: user input is extracted
+        # Then: None is returned
+        assert _extract_user_input("plain string") is None
+        assert _extract_user_input(None) is None
+
+    def test_returns_none_when_no_user_message(self) -> None:
+        # Given: input with no user role messages
+        # When: user input is extracted
+        # Then: None is returned
+        assert _extract_user_input([{"role": "system", "content": "System only"}]) is None

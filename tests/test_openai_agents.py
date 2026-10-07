@@ -112,6 +112,75 @@ def test_openai_agents_children_enqueue_before_trace_end() -> None:
         logger.terminate()
 
 
+def test_workflow_span_input_falls_back_to_user_message() -> None:
+    # Given: a trace with an agent (workflow) span wrapping an LLM span
+    # When: the LLM span carries system + user messages and the workflow span has no input
+    # Then: the workflow span's gen_ai.input.messages reflects the user message, not the system prompt
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_wf_input") as openai_trace:
+            with agent_span("SupportAgent", span_id="span_wf", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are a support agent."},
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                    ],
+                    output=[{"role": "assistant", "content": "Found it."}],
+                    model="gpt-4",
+                    span_id="span_llm",
+                    parent=root_span,
+                ):
+                    pass
+
+        workflow_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow")
+        input_messages = (workflow_span.attributes or {}).get("gen_ai.input.messages", "")
+        assert "Look up customer CUST-123" in input_messages
+        assert "You are a support agent." not in input_messages
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_llm_span_input_output_not_double_encoded() -> None:
+    # Given: a generation span with structured message list input/output
+    # When: the span is processed
+    # Then: chat span input contains multiple messages (not a single JSON-encoded string)
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_llm_io") as openai_trace:
+            with agent_span("Agent", span_id="span_agent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are helpful."},
+                        {"role": "user", "content": "What is the capital of France?"},
+                    ],
+                    output=[{"role": "assistant", "content": "Paris."}],
+                    model="gpt-4",
+                    span_id="span_gen",
+                    parent=root_span,
+                ):
+                    pass
+
+        import json
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        input_messages = json.loads((llm_span.attributes or {}).get("gen_ai.input.messages", "[]"))
+        assert len(input_messages) == 2
+        assert input_messages[0]["role"] == "system"
+        assert input_messages[1]["role"] == "user"
+        output_messages = json.loads((llm_span.attributes or {}).get("gen_ai.output.messages", "[]"))
+        assert output_messages[0]["role"] == "assistant"
+        assert "Paris." in str(output_messages[0])
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
 def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)

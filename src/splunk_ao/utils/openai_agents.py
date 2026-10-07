@@ -272,10 +272,13 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
             if hasattr(response, "instructions") and response.instructions:
                 data["metadata"]["instructions"] = response.instructions
 
-    # Serialize complex inputs/outputs for logging
-    # Splunk AO expects input/output as serialized strings for llm spans
-    data["input"] = serialize_to_str(data["input"])
-    data["output"] = serialize_to_str(data["output"])
+    # LoggedLlmSpan validators handle list[dict] → list[Message] / Message conversion directly.
+    # Do not serialize input/output to str — that causes double-encoding and empty I/O in AO.
+    # output is Sequence[Mapping] but LlmSpanAllowedOutputType only accepts a single dict; take [0].
+    if isinstance(data["output"], list):
+        if len(data["output"]) > 1:
+            _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"]))
+        data["output"] = data["output"][0] if data["output"] else None
 
     if data["temperature"] is not None:
         try:
