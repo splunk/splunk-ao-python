@@ -20,6 +20,16 @@ from splunk_ao.utils.serialization import serialize_to_str
 _logger = logging.getLogger(__name__)
 
 
+def _extract_user_input(llm_input: Any) -> str | None:
+    """Return the last user message content from a GenerationSpanData input list."""
+    if not isinstance(llm_input, list):
+        return None
+    for message in reversed(llm_input):
+        if isinstance(message, dict) and message.get("role") == "user":
+            return str(message.get("content") or "")
+    return None
+
+
 class SplunkAOCustomSpan(CustomSpanData):
     def __init__(self, span: SplunkAOSpan, data: dict[str, Any]):
         self.span = span
@@ -272,13 +282,17 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
             if hasattr(response, "instructions") and response.instructions:
                 data["metadata"]["instructions"] = response.instructions
 
-    # LoggedLlmSpan validators handle list[dict] → list[Message] / Message conversion directly.
-    # Do not serialize input/output to str — that causes double-encoding and empty I/O in AO.
-    # output is Sequence[Mapping] but LlmSpanAllowedOutputType only accepts a single dict; take [0].
-    if isinstance(data["output"], list):
-        if len(data["output"]) > 1:
-            _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"]))
-        data["output"] = data["output"][0] if data["output"] else None
+    if isinstance(span_data, GenerationSpanData):
+        # GenerationSpanData: input/output are list[dict] — LoggedLlmSpan validators handle conversion.
+        # output is Sequence[Mapping] but LlmSpanAllowedOutputType only accepts a single dict; take [0].
+        if isinstance(data["output"], list):
+            if len(data["output"]) > 1:
+                _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"]))
+            data["output"] = data["output"][0] if data["output"] else None
+    else:
+        # ResponseSpanData: output is a list of ResponseOutputItem objects — serialize for ingestion.
+        data["input"] = serialize_to_str(data["input"])
+        data["output"] = serialize_to_str(data["output"])
 
     if data["temperature"] is not None:
         try:
