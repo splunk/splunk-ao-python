@@ -217,6 +217,88 @@ def test_update_owned_root_uses_first_input_fallback() -> None:
     logger.conclude(output="done")
 
 
+def test_openai_agents_workflow_rollup_does_not_use_last_inserted_child() -> None:
+    """Keep the final answer when callback insertion order differs from execution order."""
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    trace = MagicMock(trace_id="trace_rollup_order", name="Agent trace", metadata={})
+
+    final_answer = "Sample item item-1 was processed successfully."
+    tool_output = '{"item_id":"item-1","status":"PROCESSED","source":"synthetic-test-data"}'
+    workflow_id = uuid.uuid4()
+    final_answer_id = uuid.uuid4()
+    tool_id = uuid.uuid4()
+
+    workflow = Node(
+        node_type="workflow",
+        run_id=workflow_id,
+        parent_run_id=trace.trace_id,
+        span_params={
+            "input": "Process sample item item-1",
+            "name": "Sample workflow",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "status_code": 200,
+        },
+    )
+    final_answer_span = Node(
+        node_type="llm",
+        run_id=final_answer_id,
+        parent_run_id=str(workflow_id),
+        span_params={
+            "input": "Process sample item item-1",
+            "output": final_answer,
+            "name": "final response",
+            "start_time_iso": "2025-01-01T00:00:02+00:00",
+            "end_time_iso": "2025-01-01T00:00:04+00:00",
+            "duration_ns": 2_000_000,
+            "model": "deterministic-test-model",
+            "status_code": 200,
+        },
+    )
+    tool_span = Node(
+        node_type="tool",
+        run_id=tool_id,
+        parent_run_id=str(workflow_id),
+        span_params={
+            "input": '{"item_id":"item-1"}',
+            "output": tool_output,
+            "name": "process_sample_item",
+            "start_time_iso": "2025-01-01T00:00:01+00:00",
+            "end_time_iso": "2025-01-01T00:00:02+00:00",
+            "duration_ns": 1_000_000,
+            "status_code": 200,
+        },
+    )
+
+    try:
+        processor.on_trace_start(trace)
+        state = _trace_state(processor, trace.trace_id)
+        state.nodes[str(workflow_id)] = workflow
+        state.nodes[str(trace.trace_id)].children.append(str(workflow_id))
+        processor._start_owned_root(workflow, state)
+        processor._start_incremental_span(workflow, state)
+
+        # Completion timestamps show the tool finishing first and the final
+        # answer second, while the stored child order is the reverse. The
+        # workflow rollup must use the final answer, not children[-1].
+        state.nodes[str(final_answer_id)] = final_answer_span
+        state.nodes[str(tool_id)] = tool_span
+        workflow.children.extend([str(final_answer_id), str(tool_id)])
+
+        processor._finish_incremental_span(workflow, state)
+        processor.on_trace_end(trace)
+
+        workflow_span = next(
+            span for span in sink.spans if span.name == "invoke_workflow Sample workflow"
+        )
+        output = (workflow_span.attributes or {})["gen_ai.output.messages"]
+        assert final_answer in output
+        assert tool_output not in output
+    finally:
+        logger.terminate()
+
+
 def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
