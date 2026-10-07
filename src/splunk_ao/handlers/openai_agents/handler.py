@@ -34,7 +34,6 @@ from splunk_ao.utils.serialization import convert_time_delta_to_ns, convert_to_s
 _logger = logging.getLogger(__name__)
 
 
-
 @dataclass
 class _OpenAITraceState:
     """Mutable lifecycle state owned by one OpenAI Agents trace."""
@@ -316,7 +315,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             else:
                 _logger.warning(f"Child node {child_id} not found")
 
-        # Conclude workflow span. Use the last child's output if necessary.
+        # Conclude workflow span. Use the last child's output if necessary
         if is_workflow_span:
             output = output or (last_child.span_params.get("output", "") if last_child else "")
             error = node.span_params.get("error")
@@ -356,7 +355,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
         """Apply final OpenAI callback data to the already-live root."""
         if state.owned_root is None:
             return
-        state.owned_root.input = node.span_params.get("input") or node.node_type.capitalize() + " Step"
+        state.owned_root.input = (
+            node.span_params.get("input") or state.first_input or node.node_type.capitalize() + " Step"
+        )
         if node.span_params.get("name") is not None:
             state.owned_root.name = node.span_params["name"]
         if node.span_params.get("tags") is not None:

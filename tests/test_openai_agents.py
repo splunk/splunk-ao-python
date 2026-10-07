@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import uuid
 from typing import Any
@@ -135,7 +136,9 @@ def test_workflow_span_input_falls_back_to_user_message() -> None:
                 ):
                     pass
 
-        workflow_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow")
+        workflow_span = next(
+            s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+        )
         input_messages = (workflow_span.attributes or {}).get("gen_ai.input.messages", "")
         assert "Look up customer CUST-123" in input_messages
         assert "You are a support agent." not in input_messages
@@ -167,7 +170,6 @@ def test_llm_span_input_output_not_double_encoded() -> None:
                 ):
                     pass
 
-        import json
         llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
         input_messages = json.loads((llm_span.attributes or {}).get("gen_ai.input.messages", "[]"))
         assert len(input_messages) == 2
@@ -176,6 +178,42 @@ def test_llm_span_input_output_not_double_encoded() -> None:
         output_messages = json.loads((llm_span.attributes or {}).get("gen_ai.output.messages", "[]"))
         assert output_messages[0]["role"] == "assistant"
         assert "Paris." in str(output_messages[0])
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_root_input_falls_back_to_user_message(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path, where the root workflow span starts with a placeholder input
+    # When: an LLM span carrying the user message runs and the trace is committed
+    # Then: the committed root span's input is the user message, not "<Type> Step"
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_input") as openai_trace:
+            with agent_span("SupportAgent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are a support agent."},
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                    ],
+                    output=[{"role": "assistant", "content": "Found it."}],
+                    model="gpt-4",
+                    parent=root_span,
+                ):
+                    pass
+
+        root_workflow = logger.traces[0].spans[0]
+        assert root_workflow.input == "Look up customer CUST-123"
     finally:
         set_trace_processors([])
         logger.terminate()

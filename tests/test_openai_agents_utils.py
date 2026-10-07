@@ -200,9 +200,7 @@ class TestExtractLlmData:
         # When: LLM data is extracted
         # Then: output is the first element (dict), not the list
         span_data = GenerationSpanData(
-            input=[{"role": "user", "content": "Hi"}],
-            output=[{"role": "assistant", "content": "Hello"}],
-            model="gpt-4",
+            input=[{"role": "user", "content": "Hi"}], output=[{"role": "assistant", "content": "Hello"}], model="gpt-4"
         )
         result = _extract_llm_data(span_data)
         assert isinstance(result["output"], dict)
@@ -398,10 +396,7 @@ class TestExtractUserInput:
         # Given: multi-turn input with system and user messages
         # When: user input is extracted
         # Then: the last user message content is returned
-        llm_input = [
-            {"role": "system", "content": "You are helpful."},
-            {"role": "user", "content": "What is AI?"},
-        ]
+        llm_input = [{"role": "system", "content": "You are helpful."}, {"role": "user", "content": "What is AI?"}]
         assert _extract_user_input(llm_input) == "What is AI?"
 
     def test_returns_last_user_message_in_multi_turn(self) -> None:

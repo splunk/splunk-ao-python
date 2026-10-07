@@ -287,7 +287,9 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
         # output is Sequence[Mapping] but LlmSpanAllowedOutputType only accepts a single dict; take [0].
         if isinstance(data["output"], list):
             if len(data["output"]) > 1:
-                _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"]))
+                _logger.debug(
+                    "GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"])
+                )
             data["output"] = data["output"][0] if data["output"] else None
     else:
         # ResponseSpanData: output is a list of ResponseOutputItem objects — serialize for ingestion.
