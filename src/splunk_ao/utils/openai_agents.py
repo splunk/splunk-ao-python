@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from agents import (
@@ -18,6 +19,16 @@ from splunk_ao.schema.handlers import SPAN_TYPE
 from splunk_ao.utils.serialization import serialize_to_str
 
 _logger = logging.getLogger(__name__)
+
+
+def _extract_user_input(llm_input: Any) -> str | None:
+    """Return the last user message content from a GenerationSpanData input list."""
+    if not isinstance(llm_input, list):
+        return None
+    for message in reversed(llm_input):
+        if isinstance(message, dict) and message.get("role") == "user":
+            return str(message.get("content") or "")
+    return None
 
 
 class SplunkAOCustomSpan(CustomSpanData):
@@ -272,10 +283,19 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
             if hasattr(response, "instructions") and response.instructions:
                 data["metadata"]["instructions"] = response.instructions
 
-    # Serialize complex inputs/outputs for logging
-    # Splunk AO expects input/output as serialized strings for llm spans
-    data["input"] = serialize_to_str(data["input"])
-    data["output"] = serialize_to_str(data["output"])
+    if isinstance(span_data, GenerationSpanData):
+        # GenerationSpanData: input/output are list[dict] — LoggedLlmSpan validators handle conversion.
+        # output is Sequence[Mapping] (a list from the SDK's models, possibly a tuple from a custom model),
+        # but LlmSpanAllowedOutputType only accepts a single dict; take the first choice.
+        if isinstance(data["output"], Sequence) and not isinstance(data["output"], str):
+            choices = list(data["output"])
+            if len(choices) > 1:
+                _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(choices))
+            data["output"] = choices[0] if choices else None
+    else:
+        # ResponseSpanData: output is a list of ResponseOutputItem objects — serialize for ingestion.
+        data["input"] = serialize_to_str(data["input"])
+        data["output"] = serialize_to_str(data["output"])
 
     if data["temperature"] is not None:
         try:

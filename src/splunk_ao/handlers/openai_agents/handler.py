@@ -24,6 +24,7 @@ from splunk_ao.utils.openai_agents import (
     SplunkAOCustomSpan,
     _extract_llm_data,
     _extract_tool_data,
+    _extract_user_input,
     _extract_workflow_data,
     _map_span_name,
     _map_span_type,
@@ -240,7 +241,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         if node.node_type in ("agent", "chain", "workflow"):
             if not reuse_current:
                 self._splunk_ao_logger.add_workflow_span(
-                    input=input or node.node_type.capitalize() + " Step",
+                    input=input or state.first_input or node.node_type.capitalize() + " Step",
                     output=output,
                     name=name,
                     metadata=metadata,
@@ -354,7 +355,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
         """Apply final OpenAI callback data to the already-live root."""
         if state.owned_root is None:
             return
-        state.owned_root.input = node.span_params.get("input") or node.node_type.capitalize() + " Step"
+        state.owned_root.input = (
+            node.span_params.get("input") or state.first_input or node.node_type.capitalize() + " Step"
+        )
         if node.span_params.get("name") is not None:
             state.owned_root.name = node.span_params["name"]
         if node.span_params.get("tags") is not None:
@@ -395,10 +398,13 @@ class SplunkAOTracingProcessor(TracingProcessor):
             _logger.warning("Unable to complete OpenAI Agents span %s: no active state", node_id)
             return
         try:
-            if node.node_type in ("agent", "chain", "workflow") and not node.span_params.get("output"):
-                last_child = state.nodes.get(node.children[-1]) if node.children else None
-                if last_child is not None:
-                    node.span_params["output"] = last_child.span_params.get("output", "")
+            if node.node_type in ("agent", "chain", "workflow"):
+                if not node.span_params.get("input") and state.first_input:
+                    node.span_params["input"] = state.first_input
+                if not node.span_params.get("output"):
+                    last_child = state.nodes.get(node.children[-1]) if node.children else None
+                    if last_child is not None:
+                        node.span_params["output"] = last_child.span_params.get("output", "")
             final = finalize_handler_step(node, span_state, openai_agents=True)
             final = self._splunk_ao_logger._replace_handler_step(span_state.step, final)
             span_state.step = final
@@ -462,8 +468,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
                     "status_code": llm_data.get("status_code", 200),
                 }
             )
-            if not state.first_input and initial_params.get("input") != serialize_to_str(None):
-                state.first_input = initial_params.get("input")
+            if not state.first_input:
+                state.first_input = _extract_user_input(initial_params.get("input"))
         elif splunk_ao_type == "tool":
             tool_data = _extract_tool_data(span.span_data)
             initial_params.update(
@@ -580,12 +586,8 @@ class SplunkAOTracingProcessor(TracingProcessor):
             # Ensure input is preserved if it wasn't available at start
             if node.span_params.get("input") is None:
                 node.span_params["input"] = llm_data.get("input")
-                if (
-                    not state.first_input
-                    and node.span_params["input"]
-                    and node.span_params["input"] != serialize_to_str(None)
-                ):
-                    state.first_input = node.span_params["input"]
+            if not state.first_input:
+                state.first_input = _extract_user_input(llm_data.get("input") or node.span_params.get("input"))
 
             # Extract embedded tool calls and merge with existing tool definitions
             if isinstance(span.span_data, ResponseSpanData) and span.span_data.response:
