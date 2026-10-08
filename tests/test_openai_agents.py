@@ -802,3 +802,65 @@ async def test_token_details_extraction() -> None:
     assert extracted_data_no_usage.get("num_total_tokens") is None
     assert "input_tokens_details" not in extracted_data_no_usage["metadata"]
     assert "output_tokens_details" not in extracted_data_no_usage["metadata"]
+
+
+def test_generation_span_exports_when_input_is_populated_after_start() -> None:
+    # Given: a generation span starts without input, as OpenAIChatCompletionsModel does
+    # When: OpenAI populates input, output, and usage after the start callback
+    # Then: the completed LLM span is exported with its messages and token counts
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Delayed generation input") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(model="gpt-4", parent=root_span) as span:
+                    span.span_data.input = [{"role": "user", "content": "Hi"}]
+                    span.span_data.output = [{"role": "assistant", "content": "Hello"}]
+                    span.span_data.usage = {"input_tokens": 1, "output_tokens": 2, "total_tokens": 3}
+
+        operations = [(s.attributes or {}).get("gen_ai.operation.name") for s in sink.spans]
+        assert "chat" in operations, f"Missing LLM span; exported operations: {operations}"
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        attributes = llm_span.attributes or {}
+        input_messages = json.loads(attributes.get("gen_ai.input.messages", "[]"))
+        output_messages = json.loads(attributes.get("gen_ai.output.messages", "[]"))
+        assert input_messages[0]["role"] == "user"
+        assert "Hi" in str(input_messages[0])
+        assert output_messages[0]["role"] == "assistant"
+        assert "Hello" in str(output_messages[0])
+        assert attributes["gen_ai.usage.input_tokens"] == 1
+        assert attributes["gen_ai.usage.output_tokens"] == 2
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_generation_span_exports_tuple_output() -> None:
+    # Given: GenerationSpanData permits a Sequence of output mappings, including a tuple
+    # When: a generation span finishes with a tuple containing an assistant message
+    # Then: the completed LLM span is exported instead of being discarded during validation
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Tuple generation output") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[{"role": "user", "content": "Hi"}], model="gpt-4", parent=root_span
+                ) as span:
+                    span.span_data.output = ({"role": "assistant", "content": "Hello"},)
+
+        operations = [(s.attributes or {}).get("gen_ai.operation.name") for s in sink.spans]
+        assert "chat" in operations, f"Missing LLM span; exported operations: {operations}"
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        output_messages = json.loads((llm_span.attributes or {}).get("gen_ai.output.messages", "[]"))
+        assert output_messages[0]["role"] == "assistant"
+        assert "Hello" in str(output_messages[0])
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()

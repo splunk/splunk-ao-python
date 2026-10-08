@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from agents import (
@@ -284,13 +285,13 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
 
     if isinstance(span_data, GenerationSpanData):
         # GenerationSpanData: input/output are list[dict] — LoggedLlmSpan validators handle conversion.
-        # output is Sequence[Mapping] but LlmSpanAllowedOutputType only accepts a single dict; take [0].
-        if isinstance(data["output"], list):
-            if len(data["output"]) > 1:
-                _logger.debug(
-                    "GenerationSpanData.output has %d choices; only the first is recorded", len(data["output"])
-                )
-            data["output"] = data["output"][0] if data["output"] else None
+        # output is Sequence[Mapping] (a list from the SDK's models, possibly a tuple from a custom model),
+        # but LlmSpanAllowedOutputType only accepts a single dict; take the first choice.
+        if isinstance(data["output"], Sequence) and not isinstance(data["output"], str):
+            choices = list(data["output"])
+            if len(choices) > 1:
+                _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(choices))
+            data["output"] = choices[0] if choices else None
     else:
         # ResponseSpanData: output is a list of ResponseOutputItem objects — serialize for ingestion.
         data["input"] = serialize_to_str(data["input"])
