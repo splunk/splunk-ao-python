@@ -7,6 +7,7 @@ import pytest
 from splunk_ao import AgentControlTarget, AgentControlTargetUnresolvedError, get_agent_control_target
 from splunk_ao.constants import DEFAULT_AGENT_STREAM_NAME, DEFAULT_PROJECT_NAME
 from splunk_ao.decorator import splunk_ao_context
+from splunk_ao.logger.control import ControlAppliesTo
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
 
@@ -40,6 +41,14 @@ def _stub_cached_logger(monkeypatch, logger: SimpleNamespace) -> None:
 
 def _stub_cached_loggers(monkeypatch, loggers: dict[tuple[str, ...], SimpleNamespace]) -> None:
     monkeypatch.setattr(SplunkAOLoggerSingleton, "get_all_loggers", lambda self: loggers)
+
+
+def test_control_applies_to_supports_agent_control_values() -> None:
+    # Given: the supported Agent Control parent execution types
+    applies_to = {value.value for value in ControlAppliesTo}
+
+    # Then: the SDK preserves all values without adding unsupported types
+    assert applies_to == {"llm_call", "tool_call", "retriever_call", "trace_call", "session_call"}
 
 
 def test_get_agent_control_target_uses_explicit_log_stream_id() -> None:

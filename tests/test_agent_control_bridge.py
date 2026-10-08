@@ -13,7 +13,7 @@ import pytest
 
 from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.handlers.agent_control import setup_agent_control_bridge
-from splunk_ao.logger.control import ControlResult, ControlSpan
+from splunk_ao.logger.control import ControlAppliesTo, ControlResult, ControlSpan
 from splunk_ao.logger.logger import SplunkAOLogger
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
@@ -320,8 +320,13 @@ def test_idle_new_logger_does_not_mask_active_logger_context(
 @patch("splunk_ao.logger.logger.AgentStreams")
 @patch("splunk_ao.logger.logger.Projects")
 @patch("splunk_ao.logger.logger.Traces")
+@pytest.mark.parametrize("applies_to", [value.value for value in ControlAppliesTo])
 def test_agent_control_event_converts_to_control_span_in_batch_mode(
-    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock, fake_agent_control_modules
+    mock_traces_client: Mock,
+    mock_projects_client: Mock,
+    mock_logstreams_client: Mock,
+    fake_agent_control_modules,
+    applies_to: str,
 ) -> None:
     # Given: a batch logger with an active parent and a matching Agent Control event
     mock_traces_client_instance = setup_mock_traces_client(mock_traces_client)
@@ -330,8 +335,10 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     logger = SplunkAOLogger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(input="trace input")
     workflow = logger.add_workflow_span(input="workflow input", name="workflow")
+    session_id = str(uuid.uuid4())
+    logger.set_session(session_id)
     bridge = setup_agent_control_bridge(logger)
-    event = _make_event(logger)
+    event = _make_event(logger, applies_to=applies_to)
 
     # When: the bridge receives the event through the public sink contract
     result = bridge.write_events([event])
@@ -345,7 +352,10 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
     assert isinstance(control_span, ControlSpan)
     assert control_span.id == uuid.UUID(event.control_execution_id)
     assert control_span.trace_id == logger.traces[0].id
+    assert control_span.session_id == uuid.UUID(session_id)
     assert control_span.parent_id == workflow.id
+    assert control_span.applies_to == ControlAppliesTo(applies_to)
+    assert control_span.model_dump(mode="json")["applies_to"] == applies_to
     assert control_span.name == "toxicity-guardrail"
     assert control_span.input == "selected text"
     assert control_span.output == ControlResult(action="observe", matched=True, confidence=0.91)
@@ -380,7 +390,7 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
         "agent_control.control_name": "toxicity-guardrail",
         "agent_control.agent_name": "assistant",
         "agent_control.check_stage": "pre",
-        "agent_control.applies_to": "llm_call",
+        "agent_control.applies_to": applies_to,
         "agent_control.evaluator_name": "regex",
         "agent_control.selector_path": "input",
         "agent_control.action": "observe",
@@ -388,12 +398,14 @@ def test_agent_control_event_converts_to_control_span_in_batch_mode(
         "agent_control.confidence": 0.91,
     }
     assert exported_attrs["gen_ai.operation.name"] == "control"
+    assert exported_attrs["gen_ai.conversation.id"] == session_id
     assert "splunk_ao.operation.name" not in exported_attrs
     assert json.loads(exported_attrs["gen_ai.input.messages"]) == [
         {"parts": [{"content": "selected text", "type": "text"}], "role": "user"}
     ]
     assert exported.context == emitted.context
     assert exported.parent == logger._otel_ids[workflow.id].span_context
+    assert exported.context.trace_id == logger._otel_ids[workflow.id].span_context.trace_id
     epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)
     elapsed = event.timestamp - epoch
     expected_start_ns = ((elapsed.days * 86_400 + elapsed.seconds) * 1_000_000_000) + elapsed.microseconds * 1_000
