@@ -25,8 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `SplunkAOTracingProcessor` (OpenAI Agents) no longer double-encodes Chat Completions LLM span
-  input and output, and workflow/agent spans without input now show the user message instead
-  of a `"<Type> Step"` placeholder.
+  input and output. With Chat Completions models, workflow/agent spans without input now show the
+  user message instead of a `"<Type> Step"` placeholder. The Responses API path is unchanged.
 
 ## [0.4.0]
 
