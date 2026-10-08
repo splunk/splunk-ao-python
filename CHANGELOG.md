@@ -7,15 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Successful `@log` agent/workflow calls returning `None` now inherit their last
-  child's output, matching manual logger behavior. Explicit empty answers and
-  exception handling remain distinct from missing output.
-- The OpenAI Chat Completions wrapper preserves provider finish reasons for
-  normal and streaming responses. Manual LLM logger methods accept
-  `finish_reason`; enclosing agent/workflow messages retain the terminal LLM's
-  reason when their outputs match.
+## [0.5.0]
 
 ### Added
 
@@ -34,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Successful `@log` agent/workflow calls returning `None` now inherit their last
+  child's output, matching manual logger behavior. Explicit empty answers and
+  exception handling remain distinct from missing output.
+- The OpenAI Chat Completions wrapper preserves provider finish reasons for
+  normal and streaming responses. Manual LLM logger methods accept
+  `finish_reason`; enclosing agent/workflow messages retain the terminal LLM's
+  reason when their outputs match.
 - `SplunkAOTracingProcessor` (OpenAI Agents) no longer double-encodes Chat Completions LLM span
   input and output. With Chat Completions models, workflow/agent spans without input now show the
   user message instead of a `"<Type> Step"` placeholder. The Responses API path is unchanged.
@@ -204,6 +203,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
 [0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
 [0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/
 [0.2.1]: https://pypi.org/project/splunk-ao/0.2.1/
