@@ -52,6 +52,7 @@ from splunk_ao.openai.extractors import (
     OpenAiArgsExtractor,
     convert_to_splunk_ao_message,
     extract_data_from_default_response,
+    extract_finish_reason,
     extract_input_data_from_kwargs,
     has_pending_function_calls,
     is_openai_v1,
@@ -244,6 +245,7 @@ def _wrap(
                 # openai client library doesn't return http_status code, so we only can hardcode it here
                 # because we if we parsed and extracted data from response it means we get it and it's 200OK
                 status_code=status_code,
+                finish_reason=extract_finish_reason(openai_response),
             )
             span.metrics.num_reasoning_tokens = usage.get("reasoning_tokens", 0) if usage else 0
             span.metrics.num_cached_input_tokens = usage.get("cached_tokens", 0) if usage else 0

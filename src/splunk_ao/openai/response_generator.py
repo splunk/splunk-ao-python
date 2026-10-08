@@ -5,6 +5,7 @@ from typing import Any
 from splunk_ao import SplunkAOLogger
 from splunk_ao.openai.extractors import (
     convert_to_splunk_ao_message,
+    extract_finish_reason,
     extract_streamed_openai_response,
     has_pending_function_calls,
     process_function_call_outputs,
@@ -177,6 +178,10 @@ class ResponseGeneratorSync:
                 total_tokens=usage.get("total_tokens", 0),
                 metadata={str(k): str(v) for k, v in self.input_data.model_parameters.items()},
                 status_code=self.status_code,
+                finish_reason=next(
+                    (reason for item in reversed(self.items) if (reason := extract_finish_reason(item)) is not None),
+                    None,
+                ),
             )
             span.metrics.num_reasoning_tokens = usage.get("reasoning_tokens", 0) if usage else 0
             span.metrics.num_cached_input_tokens = usage.get("cached_tokens", 0) if usage else 0

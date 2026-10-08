@@ -205,6 +205,19 @@ make_nested_call()
 If a decorated function, synchronous generator, or asynchronous generator
 raises, the SDK finalizes its telemetry and re-raises the original exception.
 
+A decorated agent or workflow that returns `None` uses its last child's output
+when available. This supports an operation that prints an instrumented model's
+answer without returning it; the SDK does not capture arbitrary standard output.
+Explicit return values, including an empty string, take precedence. Failed
+operations do not inherit a successful child's answer.
+
+The OpenAI Chat Completions wrapper preserves provider-reported finish reasons,
+including terminal streaming chunks. Manual `add_llm_span()` and
+`add_single_llm_span_trace()` calls can supply `finish_reason="stop"` (or another
+provider-reported value). Enclosing agent and workflow messages use the terminal
+LLM's finish reason when their output matches that child's answer. Without a
+reported reason, the SDK retains `unknown` rather than assuming completion.
+
 Create a retriever span:
 
 ```python

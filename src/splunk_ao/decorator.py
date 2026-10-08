@@ -893,12 +893,16 @@ class SplunkAODecorator:
         error: BaseException | None = None,
     ) -> Any:
         final_params = span_params
-        if error is not None and span_params.get("status_code") is None:
-            final_params = {**span_params, "status_code": 500}
+        if error is not None:
+            final_params = {**span_params}
+            if final_params.get("status_code") is None:
+                final_params["status_code"] = 500
+            if final_params.get("output") is None:
+                final_params["output"] = ""
 
         output = final_params.get("output")
         if output is None:
-            output = result if result is not None else ""
+            output = result
 
         try:
             self._handle_call_result(span_type, final_params, result, logger=call_state.logger)
@@ -927,7 +931,7 @@ class SplunkAODecorator:
             return
 
         try:
-            trace_output = self._serialize_output(output, None)
+            trace_output = self._serialize_output(output, None) if output is not None else None
         except Exception:
             trace_output = ""
 
@@ -1006,14 +1010,17 @@ class SplunkAODecorator:
         # Serialize output and redacted_output - set to None if serialization fails
         output = span_params.get("output")
         if output is None:
-            output = result if result is not None else ""
+            output = result
+        if output is None and span_type and not is_concludable_span_type(span_type):
+            output = ""
 
         redacted_output = span_params.get("redacted_output")
         span_name = span_params.get("name", "unknown")
 
         try:
             # Serialize output and redacted_output
-            output = self._serialize_output(output, span_type)
+            if output is not None:
+                output = self._serialize_output(output, span_type)
             if redacted_output is not None:
                 redacted_output = self._serialize_output(redacted_output, span_type)
 

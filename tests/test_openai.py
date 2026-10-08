@@ -83,6 +83,7 @@ def test_basic_openai_call(
     )
     assert payload.traces[0].spans[0].input == [Message(content="Say this is a test", role=MessageRole.user)]
     assert payload.traces[0].spans[0].output == Message(content="The mock is working! ;)", role=MessageRole.assistant)
+    assert payload.traces[0].spans[0].finish_reason == create_chat_completion.choices[0].finish_reason
     assert payload.traces[0].spans[0].tools == [
         {
             "type": "function",
@@ -141,6 +142,7 @@ def test_streamed_openai_call(
     assert payload.traces[0].spans[0].status_code == 200
     assert payload.traces[0].spans[0].input == [Message(content="Say this is a test", role=MessageRole.user)]
     assert payload.traces[0].spans[0].output == Message(content="Hello", role=MessageRole.assistant)
+    assert payload.traces[0].spans[0].finish_reason == "stop"
 
 
 @patch("openai.resources.chat.Completions.create")

@@ -140,6 +140,12 @@ matching end callback, so a child can enter `BatchSpanProcessor` while its paren
 - Completion, emission, and state release are separate operations. Preserve idempotency under retries and cleanup.
 - Telemetry failures are diagnostic events, not reasons to fail the instrumented application.
 
+Successful decorated agent/workflow calls that return `None` preserve the logger's last-child output fallback.
+Explicit empty strings remain explicit outputs; exceptions do not substitute a successful child's answer.
+Manual LLM logging and the OpenAI Chat Completions wrapper preserve provider-reported finish reasons before enqueue.
+Conversion uses a terminal child's reason on an enclosing agent/workflow output only when the normalized outputs match.
+Missing reasons remain unknown, including streams closed before a terminal provider chunk.
+
 OTel `ReadableSpan` data is effectively immutable after end. `exporter/span_transform.py` creates normalized copies;
 never change private span fields in place. This protects concurrent exporters and caller-owned processors.
 

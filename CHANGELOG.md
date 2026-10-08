@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Successful `@log` agent/workflow calls returning `None` now inherit their last
+  child's output, matching manual logger behavior. Explicit empty answers and
+  exception handling remain distinct from missing output.
+- The OpenAI Chat Completions wrapper preserves provider finish reasons for
+  normal and streaming responses. Manual LLM logger methods accept
+  `finish_reason`; enclosing agent/workflow messages retain the terminal LLM's
+  reason when their outputs match.
+
 ### Added
 
 - `SplunkAOLogger.add_llm_span()` and `add_single_llm_span_trace()` accept
