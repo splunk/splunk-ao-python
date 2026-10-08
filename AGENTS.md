@@ -151,6 +151,9 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
   code; sanitize and rate-limit diagnostics.
 - Preserve standard `gen_ai.*` attributes. New SDK-owned attributes use `splunk_ao.*`; do not introduce new proprietary
   `galileo.*` wire attributes.
+- Successful agent/workflow decorators returning `None` inherit the last child's output through the logger. Preserve
+  explicit empty outputs and do not substitute successful child output for an exception. Capture provider finish reasons
+  before enqueue; enclosing output may inherit a terminal LLM reason only when their normalized outputs match.
 - Explicit session selection is ambient within the current thread or async execution context and is shared by logger
   instances in that context. An explicit clear masks inbound baggage in that context. Independent simultaneous sessions
   require separate execution contexts.

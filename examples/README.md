@@ -5,6 +5,7 @@
 | Example | Framework | Description |
 |---|---|---|
 | [healthcare-assistant](agent/healthcare-assistant/README.md) | LangGraph + Streamlit | Full-stack chat app with RAG, text-to-SQL, hallucination demo, and Splunk AO tracing |
+| [banking-agent](logging-samples/agent-streams/README.md) | OpenAI | Tool-using banking agent with Agent Stream routing and a shared session |
 
 ## Preconditions
 

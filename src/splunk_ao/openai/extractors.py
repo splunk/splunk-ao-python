@@ -746,6 +746,16 @@ def has_pending_function_calls(output_items: list) -> bool:
     return has_function_call and not has_final_message
 
 
+def extract_finish_reason(response: Any) -> str | None:
+    """Read the first completion choice's provider-reported finish reason."""
+    choices = response.get("choices", []) if isinstance(response, dict) else getattr(response, "choices", [])
+    if not choices:
+        return None
+    choice = choices[0]
+    reason = choice.get("finish_reason") if isinstance(choice, dict) else getattr(choice, "finish_reason", None)
+    return reason if isinstance(reason, str) else None
+
+
 def extract_data_from_default_response(resource: OpenAiModuleDefinition, response: dict[str, Any] | None) -> Any:
     if response is None:
         return None, "<NoneType response returned from OpenAI>", None

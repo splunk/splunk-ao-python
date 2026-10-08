@@ -1112,6 +1112,7 @@ class SplunkAOLogger(TracesLogger):
         dataset_output: str | None = None,
         dataset_metadata: dict[str, MetadataValue] | None = None,
         span_step_number: int | None = None,
+        finish_reason: str | None = None,
     ) -> LoggedTrace:
         """
         Create a new trace with a single span and add it to the list of traces.
@@ -1201,6 +1202,8 @@ class SplunkAOLogger(TracesLogger):
             Expected format: `{"key1": "value1", "key2": "value2"}`
         span_step_number: Optional[int]
             Step number of the span.
+        finish_reason: Optional[str]
+            Provider-reported reason for finishing the model response.
 
         Returns
         -------
@@ -1259,6 +1262,7 @@ class SplunkAOLogger(TracesLogger):
             dataset_metadata=dataset_metadata if dataset_metadata is not None else {},
             id=uuid.uuid4(),
             step_number=span_step_number,
+            finish_reason=finish_reason,
         )
         llm_span._parent = trace
         trace.add_child_span(llm_span)
@@ -1302,6 +1306,7 @@ class SplunkAOLogger(TracesLogger):
         image_output_tokens: int | None = None,
         step_number: int | None = None,
         events: list[Event] | None = None,
+        finish_reason: str | None = None,
     ) -> LlmSpan:
         """
         Add a new llm span to the current parent.
@@ -1383,6 +1388,8 @@ class SplunkAOLogger(TracesLogger):
             Image tokens included in ``num_output_tokens``.
         step_number: Optional[int]
             Step number of the span.
+        finish_reason: Optional[str]
+            Provider-reported reason for finishing the model response.
 
         Returns
         -------
@@ -1421,6 +1428,7 @@ class SplunkAOLogger(TracesLogger):
             status_code=status_code,
             id=uuid.uuid4(),
             step_number=step_number,
+            finish_reason=finish_reason,
         )
         return self._add_completed_leaf(span, parent=parent)
 

@@ -1,0 +1,3 @@
+splunk-ao[openai]
+openai
+python-dotenv

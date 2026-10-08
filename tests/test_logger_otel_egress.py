@@ -7,10 +7,13 @@ import pytest
 from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.trace import ReadableSpan
 
+from splunk_ao import log, splunk_ao_context
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.logger import SplunkAOLogger
+from splunk_ao.openai import _wrap
+from splunk_ao.openai.models import OpenAiModuleDefinition
 from splunk_ao.shared.exceptions import MissingConfigurationError
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
@@ -102,6 +105,89 @@ def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, rec
     assert llm_span.parent is None
     assert otlp_logger._otel_ids == {}
     assert otlp_logger.traces == []
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_agent_inherits_last_llm_output_and_finish_reason(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, nested: bool
+) -> None:
+    # Given: a manual agent with a completed LLM child
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_agent_span(input="question", name="agent")
+    if nested:
+        otlp_logger.add_workflow_span(input="question", name="nested")
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5", finish_reason="stop")
+
+    # When: parents conclude without explicit outputs
+    otlp_logger.conclude(conclude_all=True)
+
+    # Then: both the LLM and enclosing operations preserve the answer and its reason
+    for span in recording_sink.spans:
+        output = json.loads(span.attributes["gen_ai.output.messages"])
+        assert output[0]["parts"] == [{"type": "text", "content": "answer"}]
+        assert output[0]["finish_reason"] == "stop"
+    assert recording_sink.spans[0].attributes["gen_ai.response.finish_reasons"] == ("stop",)
+
+
+@pytest.mark.parametrize("output", ["", "Different answer"])
+def test_agent_explicit_output_does_not_inherit_child_finish_reason(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, output: str
+) -> None:
+    # Given: an LLM answer with a known finish reason
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_agent_span(input="question", name="agent")
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5", finish_reason="stop")
+
+    # When: the agent concludes with a different explicit output
+    otlp_logger.conclude(output=output)
+    otlp_logger.conclude()
+
+    # Then: the output is preserved and the child's reason is not assigned to it
+    agent_output = json.loads(recording_sink.spans[-1].attributes["gen_ai.output.messages"])
+    assert agent_output[0]["parts"] == [{"type": "text", "content": output}]
+    assert agent_output[0]["finish_reason"] == "unknown"
+
+
+def test_single_llm_trace_preserves_finish_reason(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
+    # Given/When: a single completed LLM trace with a provider finish reason
+    otlp_logger.add_single_llm_span_trace(input="question", output="answer", model="gpt-5", finish_reason="length")
+
+    # Then: the provider's reason is present in the exported message and attribute
+    [span] = recording_sink.spans
+    assert span.attributes["gen_ai.response.finish_reasons"] == ("length",)
+    assert json.loads(span.attributes["gen_ai.output.messages"])[0]["finish_reason"] == "length"
+
+
+@pytest.mark.parametrize("return_answer", [False, True])
+def test_openai_answer_and_finish_reason_reach_decorated_agent(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, create_chat_completion, return_answer: bool
+) -> None:
+    # Given: an instrumented OpenAI completion with a provider finish reason
+    definition = OpenAiModuleDefinition(
+        module="openai.resources.chat.completions", object="Completions", method="create", type="chat", sync=True
+    )
+    wrapped = _wrap(definition, lambda: otlp_logger)
+
+    @log(span_type="agent")
+    def agent() -> str | None:
+        response = wrapped(
+            Mock(return_value=create_chat_completion),
+            None,
+            (),
+            {"messages": [{"role": "user", "content": "question"}], "model": "gpt-5"},
+        )
+        answer = response.choices[0].message.content
+        print(answer)
+        return answer if return_answer else None
+
+    # When: the agent prints the answer, optionally returning it as well
+    with patch.object(splunk_ao_context, "get_logger_instance", return_value=otlp_logger):
+        assert agent() == (create_chat_completion.choices[0].message.content if return_answer else None)
+
+    # Then: the parent and child have identical output and the provider's finish reason
+    llm, parent = recording_sink.spans
+    assert parent.attributes["gen_ai.output.messages"] == llm.attributes["gen_ai.output.messages"]
+    assert json.loads(parent.attributes["gen_ai.output.messages"])[0]["finish_reason"] == "stop"
 
 
 def test_llm_span_per_modality_tokens_reach_exported_attributes(

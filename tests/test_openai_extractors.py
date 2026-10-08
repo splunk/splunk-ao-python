@@ -7,7 +7,30 @@ from unittest.mock import Mock
 
 import pytest
 
-from splunk_ao.openai.extractors import _parse_usage
+from splunk_ao.openai.extractors import _parse_usage, extract_finish_reason
+
+
+@pytest.mark.parametrize("finish_reason", ["stop", "length", "tool_calls", "content_filter", None])
+def test_extract_finish_reason_preserves_provider_value(finish_reason: str | None) -> None:
+    # Given: a completion choice with the provider's finish reason
+    response = {"choices": [{"finish_reason": finish_reason}]}
+
+    # When/Then: the reason is captured without inferring or rewriting it
+    assert extract_finish_reason(response) == finish_reason
+
+
+def test_extract_finish_reason_from_object_choice() -> None:
+    # Given: an OpenAI response object with a completed choice
+    response = Mock(choices=[Mock(finish_reason="stop")])
+
+    # When/Then: the object representation is handled as well as dictionaries
+    assert extract_finish_reason(response) == "stop"
+
+
+@pytest.mark.parametrize("response", [None, {}, {"choices": []}, {"choices": [{"finish_reason": None}]}])
+def test_extract_finish_reason_does_not_invent_missing_reason(response: Any) -> None:
+    # Given/When/Then: missing terminal chunks or metadata retain an unknown reason
+    assert extract_finish_reason(response) is None
 
 
 class TestParseUsage:

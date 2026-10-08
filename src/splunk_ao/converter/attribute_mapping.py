@@ -10,7 +10,14 @@ from typing import Any, cast
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import (
+    AgentSpan,
+    LlmSpan,
+    RetrieverSpan,
+    StepWithChildSpans,
+    ToolSpan,
+    WorkflowSpan,
+)
 from galileo_core.schemas.logging.step import BaseStep, StepType
 from splunk_ao.logger.control import ControlSpan
 
@@ -449,6 +456,19 @@ def set_retriever_attributes(attrs: MutableMapping[str, AttributeValue], span: R
     _set_if_present(attrs, "gen_ai.retrieval.top_k", requested_top_k)
 
 
+def _matching_child_finish_reason(span: WorkflowSpan | AgentSpan, output_messages: list[dict[str, Any]]) -> str | None:
+    """Use a terminal LLM's reason only for an enclosing operation with the same output."""
+    child: BaseStep = span
+    while isinstance(child, StepWithChildSpans) and child.spans:
+        child = child.spans[-1]
+        child_messages, _ = _orchestration_messages(child.output, "assistant")
+        if child_messages != output_messages:
+            return None
+        if isinstance(child, LlmSpan):
+            return child.finish_reason
+    return None
+
+
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
     input_messages, _ = _orchestration_messages(span.input, "user")
     if input_messages is not None:
@@ -478,7 +498,8 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
         )
         if terminal is not None:
             output_messages = output_messages[terminal : terminal + 1]
-    attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
+    finish_reason = _matching_child_finish_reason(span, output_messages)
+    attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages, finish_reason))
 
 
 def set_workflow_attributes(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan) -> None:

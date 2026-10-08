@@ -1,10 +1,12 @@
 import asyncio
+import json
 from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
 
 from splunk_ao import log, splunk_ao_context
+from splunk_ao.schema.trace import SPAN_TYPE
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
 
@@ -58,6 +60,93 @@ def test_nested_decorators_share_trace_and_preserve_parenting(initialized_contex
     assert workflow.context.trace_id == llm.context.trace_id
     assert llm.parent.span_id == workflow.context.span_id
     assert logger.current_parent() is None
+
+
+@pytest.mark.parametrize("span_type", ["agent", "workflow"])
+def test_operation_without_return_inherits_last_child_output(initialized_context: None, span_type: SPAN_TYPE) -> None:
+    # Given: an operation that prints its child's answer without returning it
+    @log(span_type="llm")
+    def model_call() -> str:
+        return "Insufficient balance for loan"
+
+    @log(span_type=span_type)
+    def operation() -> None:
+        print(model_call())
+
+    # When: the decorated operation completes
+    assert operation() is None
+
+    # Then: the operation's output contains the child's answer
+    logger = splunk_ao_context.get_logger_instance()
+    parent = next(span for span in logger._sink.spans if span.name.endswith("operation"))
+    output = json.loads(parent.attributes["gen_ai.output.messages"])
+    assert output[0]["parts"] == [{"type": "text", "content": "Insufficient balance for loan"}]
+    assert logger.current_parent() is None
+
+
+@pytest.mark.parametrize("result", ["", "A different answer"])
+def test_explicit_operation_output_is_not_replaced_by_child(initialized_context: None, result: str) -> None:
+    # Given: an operation with a child answer and an explicit return value
+    @log(span_type="llm")
+    def model_call() -> str:
+        return "Child answer"
+
+    @log(span_type="agent")
+    def operation() -> str:
+        model_call()
+        return result
+
+    # When: the operation completes
+    assert operation() == result
+
+    # Then: even an explicitly empty answer is preserved
+    logger = splunk_ao_context.get_logger_instance()
+    parent = next(span for span in logger._sink.spans if span.name.endswith("operation"))
+    output = json.loads(parent.attributes["gen_ai.output.messages"])
+    assert output[0]["parts"] == [{"type": "text", "content": result}]
+
+
+@pytest.mark.asyncio
+async def test_async_operation_without_return_inherits_last_child_output(initialized_context: None) -> None:
+    # Given: an async operation that does not return its child's answer
+    @log(span_type="llm")
+    async def model_call() -> str:
+        return "Async answer"
+
+    @log(span_type="agent")
+    async def operation() -> None:
+        await model_call()
+
+    # When: the operation completes
+    assert await operation() is None
+
+    # Then: the parent captures its child's output without changing the return value
+    logger = splunk_ao_context.get_logger_instance()
+    parent = next(span for span in logger._sink.spans if span.name.endswith("operation"))
+    output = json.loads(parent.attributes["gen_ai.output.messages"])
+    assert output[0]["parts"] == [{"type": "text", "content": "Async answer"}]
+
+
+def test_failed_operation_does_not_inherit_successful_child_output(initialized_context: None) -> None:
+    # Given: an operation that fails after a successful child
+    @log(span_type="llm")
+    def model_call() -> str:
+        return "Child answer"
+
+    @log(span_type="agent")
+    def operation() -> None:
+        model_call()
+        raise RuntimeError("application failure")
+
+    # When: the operation raises
+    with pytest.raises(RuntimeError, match="application failure"):
+        operation()
+
+    # Then: a successful answer is not substituted for the failed operation's output
+    logger = splunk_ao_context.get_logger_instance()
+    parent = next(span for span in logger._sink.spans if span.name.endswith("operation"))
+    output = json.loads(parent.attributes["gen_ai.output.messages"])
+    assert output[0]["parts"] == [{"type": "text", "content": ""}]
 
 
 def test_decorator_does_not_conclude_caller_owned_trace(initialized_context: None) -> None:
