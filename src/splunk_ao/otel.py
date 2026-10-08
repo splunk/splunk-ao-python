@@ -35,6 +35,7 @@ from splunk_ao.exporter import (
 )
 from splunk_ao.exporter.diagnostics import get_export_health
 from splunk_ao.session_context import get_effective_session_id
+from splunk_ao.simulation_run_context import get_simulation_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -244,9 +245,12 @@ class SplunkAOSpanProcessor(SpanProcessor):
     def on_start(self, span: Span, parent_context: context.Context | None = None) -> None:
         """Handle span start events by delegating to the underlying processor."""
         session_id = get_effective_session_id(context=parent_context)
+        simulation_run_id = get_simulation_run_id()
 
         if session_id:
             span.set_attribute("gen_ai.conversation.id", session_id)
+        if simulation_run_id:
+            span.set_attribute("splunk_ao.simulation_run.id", simulation_run_id)
 
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(

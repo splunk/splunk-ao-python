@@ -48,6 +48,7 @@ def convert(
     parent_span_context: SpanContext | None = None,
     resource: Resource | None = None,
     session_id: str | None = "session-1",
+    simulation_run_id: str | None = None,
     end_time_ns: int | None = None,
 ) -> ReadableSpan:
     return SpanConverter().convert_span(
@@ -55,6 +56,7 @@ def convert(
         span_context=span_context or make_context(),
         parent_span_context=parent_span_context,
         session_id=session_id,
+        simulation_run_id=simulation_run_id,
         resource=resource or Resource.create({}),
         end_time_ns=end_time_ns,
     )
@@ -163,6 +165,18 @@ def test_converter_leaves_final_export_normalization_to_the_sink() -> None:
     assert "splunk_ao.input.messages" not in attributes
     assert "splunk_ao.output.messages" not in attributes
     assert "splunk_ao.system" not in attributes
+
+
+@pytest.mark.parametrize(("span", "expected_name", "expected_kind"), supported_spans())
+def test_simulation_run_id_is_a_direct_attribute_for_every_span_type(
+    span: BaseStep, expected_name: str, expected_kind: SpanKind
+) -> None:
+    result = convert(span, simulation_run_id="run-1")
+
+    assert (result.attributes or {})["splunk_ao.simulation_run.id"] == "run-1"
+    assert (result.attributes or {})["gen_ai.conversation.id"] == "session-1"
+    assert "splunk_ao.simulation_run.id" not in result.resource.attributes
+    assert "splunk_ao.experiment.id" not in (result.attributes or {})
 
 
 def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attributes() -> None:

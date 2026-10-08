@@ -12,6 +12,7 @@ from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.shared.exceptions import MissingConfigurationError
+from splunk_ao.simulation_run_context import _simulation_run_id_context
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
 
@@ -91,6 +92,25 @@ def test_path1_session_is_captured_when_stable_span_identity_is_assigned(
     assert workflow_span.attributes["gen_ai.conversation.id"] == "conversation-at-start"
     assert "splunk_ao.session.id" not in workflow_span.attributes
     otlp_logger.clear_session()
+
+
+def test_simulation_run_id_is_captured_when_stable_span_identity_is_assigned(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    token = _simulation_run_id_context.set("run-at-start")
+    try:
+        otlp_logger.start_trace(input="question")
+        otlp_logger.add_workflow_span(input="work", name="workflow")
+
+        _simulation_run_id_context.set("run-changed-later")
+        otlp_logger.conclude(output="done")
+        otlp_logger.conclude(output="trace done")
+    finally:
+        _simulation_run_id_context.reset(token)
+
+    [workflow_span] = recording_sink.spans
+    assert workflow_span.attributes["splunk_ao.simulation_run.id"] == "run-at-start"
+    assert "splunk_ao.experiment.id" not in workflow_span.attributes
 
 
 def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:

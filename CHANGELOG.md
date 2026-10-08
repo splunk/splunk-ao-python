@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `splunk_ao_context.simulation_run()` to scope a run ID across separate
+  conversations. Logger-created and native OpenTelemetry spans capture it as
+  the direct `splunk_ao.simulation_run.id` span attribute without changing routing.
+
 ## [0.4.0]
 
 ### Added

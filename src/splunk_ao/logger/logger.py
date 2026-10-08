@@ -76,6 +76,7 @@ from splunk_ao.schema.trace import (
     TracesIngestRequest,
 )
 from splunk_ao.session_context import clear_session_context, get_effective_session_id, set_session_context
+from splunk_ao.simulation_run_context import get_simulation_run_id
 from splunk_ao.traces import Traces
 from splunk_ao.utils.decorators import async_warn_catch_exception, nop_async, nop_sync, warn_catch_exception
 from splunk_ao.utils.env_helpers import _get_mode_or_default
@@ -108,6 +109,7 @@ class OtelIds:
     parent_span_context: SpanContext | None
     exportable: bool
     session_id: str | None
+    simulation_run_id: str | None
 
 
 @dataclass(frozen=True)
@@ -419,6 +421,7 @@ class SplunkAOLogger(TracesLogger):
                 parent_span_context=parent_span_context,
                 exportable=not isinstance(step, Trace),
                 session_id=get_effective_session_id(self.session_id),
+                simulation_run_id=get_simulation_run_id(),
             )
             self._otel_ids[step.id] = ids
             return ids
@@ -583,6 +586,7 @@ class SplunkAOLogger(TracesLogger):
                     span_context=ids.span_context,
                     parent_span_context=self._export_parent_context(finished_step, ids),
                     session_id=ids.session_id,
+                    simulation_run_id=ids.simulation_run_id,
                     resource=self._resource,
                 )
             )

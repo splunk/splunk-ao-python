@@ -120,6 +120,10 @@ instances in that context. The most recent explicit selection applies to subsequ
 propagation. An explicit clear masks inbound conversation baggage for the rest of that execution context. Independent
 simultaneous sessions require separate execution contexts.
 
+`splunk_ao_context.simulation_run(run_id)` scopes a run ID to the current execution context. Logger-created and native
+OpenTelemetry spans capture it when each span starts. They export it as the direct `splunk_ao.simulation_run.id` span
+attribute. This context does not change Project or Agent Stream routing, Resource attributes, or experiment routing.
+
 Remote W3C sampling is authoritative. Descendants of a valid remote parent with `sampled=0` retain its IDs for
 continuation but do not enter the Splunk AO exporter.
 

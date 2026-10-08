@@ -74,6 +74,7 @@ from splunk_ao.session_context import (
     set_session_context,
 )
 from splunk_ao.shared.exceptions import ConfigurationError
+from splunk_ao.simulation_run_context import _simulation_run_id_context
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.serialization import EventSerializer, convert_time_delta_to_ns, serialize_to_str
@@ -112,6 +113,7 @@ _agent_stream_stack: ContextVar[list[str | None] | None] = ContextVar("log_strea
 _trace_stack: ContextVar[list[Trace | None] | None] = ContextVar("trace_stack", default=None)
 _experiment_id_stack: ContextVar[list[str | None] | None] = ContextVar("experiment_id_stack", default=None)
 _session_id_stack: ContextVar[list[SessionSelection] | None] = ContextVar("session_id_stack", default=None)
+_simulation_run_id_stack: ContextVar[list[str | None] | None] = ContextVar("simulation_run_id_stack", default=None)
 _mode_stack: ContextVar[list[LoggerModeType] | None] = ContextVar("mode_stack", default=None)
 _span_stack_stack: ContextVar[list[list[WorkflowSpan]] | None] = ContextVar("span_stack_stack", default=None)
 
@@ -181,6 +183,7 @@ class SplunkAODecorator:
         ).flush()
 
         set_session_context(None)
+        _simulation_run_id_context.set(None)
 
         # Pop values from the stacks and restore the previous context
         _project_context.set(_get_or_init_list(_project_stack).pop())
@@ -191,6 +194,7 @@ class SplunkAODecorator:
         _span_stack_context.set(_get_or_init_list(_span_stack_stack).pop())
         restored_selection = _get_or_init_list(_session_id_stack).pop()
         restore_session_selection(restored_selection)
+        _simulation_run_id_context.set(_get_or_init_list(_simulation_run_id_stack).pop())
         has_explicit_session, restored_session_id = explicit_session_id(restored_selection)
         if has_explicit_session:
             try:
@@ -214,6 +218,7 @@ class SplunkAODecorator:
         experiment_id: str | None = None,
         mode: str | None = None,
         session_id: str | None = None,
+        simulation_run_id: str | None = None,
     ) -> "SplunkAODecorator":
         """
         Call method to use the decorator as a context manager.
@@ -236,6 +241,8 @@ class SplunkAODecorator:
             The logger mode
         session_id
             The session ID to use for this context
+        simulation_run_id
+            The simulation run ID to attach to spans created in this context
 
         Returns
         -------
@@ -250,6 +257,7 @@ class SplunkAODecorator:
         _get_or_init_list(_mode_stack).append(_mode_context.get())
         _get_or_init_list(_span_stack_stack).append(_get_or_init_list(_span_stack_context).copy())
         _get_or_init_list(_session_id_stack).append(get_session_selection())
+        _get_or_init_list(_simulation_run_id_stack).append(_simulation_run_id_context.get())
 
         # Reset trace context values
         _span_stack_context.set([])
@@ -261,6 +269,7 @@ class SplunkAODecorator:
         _experiment_id_context.set(None)
         _mode_context.set(_get_mode_or_default(None))
         set_session_context(None)
+        _simulation_run_id_context.set(None)
 
         # Override with explicitly provided values
         if project is not None:
@@ -273,6 +282,8 @@ class SplunkAODecorator:
             _mode_context.set(_get_mode_or_default(mode))
         if session_id is not None:
             self.set_session(session_id)
+        if simulation_run_id is not None:
+            _simulation_run_id_context.set(simulation_run_id)
 
         return self
 
@@ -1355,6 +1366,7 @@ class SplunkAODecorator:
         _span_stack_context.set([])
         _trace_context.set(None)
         set_session_context(None)
+        _simulation_run_id_context.set(None)
         # Clear all stacks
         _get_or_init_list(_project_stack).clear()
         _get_or_init_list(_agent_stream_stack).clear()
@@ -1363,6 +1375,7 @@ class SplunkAODecorator:
         _get_or_init_list(_mode_stack).clear()
         _get_or_init_list(_span_stack_stack).clear()
         _get_or_init_list(_session_id_stack).clear()
+        _get_or_init_list(_simulation_run_id_stack).clear()
 
     def reset_trace_context(self) -> None:
         """Reset the trace context inside the decorator."""
@@ -1416,6 +1429,7 @@ class SplunkAODecorator:
         _span_stack_context.set([])
         _trace_context.set(None)
         set_session_context(None)
+        _simulation_run_id_context.set(None)
 
     def start_session(
         self,
@@ -1461,6 +1475,15 @@ class SplunkAODecorator:
             The id of the session to set.
         """
         self.get_logger_instance().set_session(session_id)
+
+    @contextmanager
+    def simulation_run(self, simulation_run_id: str) -> Generator[None, None, None]:
+        """Bind emitted spans to one simulation run without changing logger routing."""
+        token = _simulation_run_id_context.set(simulation_run_id)
+        try:
+            yield
+        finally:
+            _simulation_run_id_context.reset(token)
 
 
 splunk_ao_context = SplunkAODecorator()

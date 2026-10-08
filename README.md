@@ -424,6 +424,17 @@ from that context. `clear_session()` explicitly masks an inbound conversation
 for later telemetry and outbound propagation in the same execution context. Use
 separate execution contexts for independent sessions.
 
+Use `splunk_ao_context.simulation_run()` to add one run ID to spans across
+separate conversations. The SDK captures the value at span start as the direct
+`splunk_ao.simulation_run.id` span attribute. This scope does not change routing.
+
+```python
+from splunk_ao import splunk_ao_context
+
+with splunk_ao_context.simulation_run("simulation-run-123"):
+    run_conversation()
+```
+
 Incoming W3C sampling decisions are honored. If an inbound `traceparent` has
 the sampled flag unset (`sampled=0`), its Splunk AO descendants retain the trace
 identity for propagation but are not exported. Configure upstream head sampling
