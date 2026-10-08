@@ -1841,6 +1841,7 @@ class SplunkAOLogger(TracesLogger):
             "status_code": status_code,
             "metrics": Metrics(duration_ns=duration_ns),
             "id": span_id or uuid.uuid4(),
+            "session_id": self.session_id,
             "trace_id": trace_id,
             "parent_id": parent_id,
             "step_number": step_number,

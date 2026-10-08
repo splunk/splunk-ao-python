@@ -852,7 +852,8 @@ def test_orchestration_keeps_non_json_strings_as_text_messages() -> None:
     ]
 
 
-def test_control_mapping_exports_fully_populated_backend_contract() -> None:
+@pytest.mark.parametrize("applies_to", [value.value for value in ControlAppliesTo])
+def test_control_mapping_exports_fully_populated_backend_contract(applies_to: str) -> None:
     span = LoggedControlSpan(
         name="PII Guard",
         input="question",
@@ -860,7 +861,7 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
         control_id=42,
         agent_name="planner",
         check_stage=ControlCheckStage.pre,
-        applies_to=ControlAppliesTo.llm_call,
+        applies_to=ControlAppliesTo(applies_to),
         evaluator_name="pii-check",
         selector_path="$.input",
         tags=["agent_control", "control"],
@@ -877,7 +878,7 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
         "agent_control.control_name": "PII Guard",
         "agent_control.agent_name": "planner",
         "agent_control.check_stage": "pre",
-        "agent_control.applies_to": "llm_call",
+        "agent_control.applies_to": applies_to,
         "agent_control.evaluator_name": "pii-check",
         "agent_control.selector_path": "$.input",
         "agent_control.action": "deny",
