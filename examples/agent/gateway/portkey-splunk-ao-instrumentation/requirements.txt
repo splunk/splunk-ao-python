@@ -1,0 +1,10 @@
+splunk-ao[langchain]>=0.4.0
+opentelemetry-sdk>=1.38.0
+opentelemetry-api>=1.38.0
+opentelemetry-exporter-otlp-proto-http>=1.38.0
+langchain>=0.3
+langchain-openai>=0.3
+langgraph>=0.3
+portkey-ai>=2.3.0
+python-dotenv>=1.0.0
+requests>=2.32.0
