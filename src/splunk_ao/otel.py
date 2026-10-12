@@ -17,7 +17,6 @@ from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.decorator import (
     _agent_stream_context,
     _dataset_input_context,
@@ -36,7 +35,7 @@ from splunk_ao.exporter import (
 )
 from splunk_ao.exporter.diagnostics import get_export_health
 from splunk_ao.session_context import get_effective_session_id
-from splunk_ao.simulation_run_context import get_simulation_run_id
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID, get_simulation_run_id
 
 logger = logging.getLogger(__name__)
 

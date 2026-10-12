@@ -5,16 +5,16 @@ from contextvars import ContextVar
 from opentelemetry import baggage
 from opentelemetry.context import Context
 
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
+SPLUNK_AO_SIMULATION_RUN_ID = "splunk_ao.simulation.run_id"
 
 _simulation_run_id_context: ContextVar[str | None] = ContextVar("simulation_run_id_context", default=None)
 
 
 def validate_simulation_run_id(simulation_run_id: object) -> str:
-    """Validate a public simulation run ID and return it unchanged."""
+    """Validate a public simulation run ID and return its normalized value."""
     if not isinstance(simulation_run_id, str) or not simulation_run_id.strip():
         raise ValueError("simulation_run_id must be a non-empty string")
-    return simulation_run_id
+    return simulation_run_id.strip()
 
 
 def get_baggage_simulation_run_id(context: Context | None = None) -> str | None:
