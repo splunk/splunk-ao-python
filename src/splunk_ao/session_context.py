@@ -11,8 +11,11 @@ from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
 from opentelemetry.propagators import textmap
 
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
-from splunk_ao.simulation_run_context import get_baggage_simulation_run_id, get_simulation_run_id
+from splunk_ao.simulation_run_context import (
+    SPLUNK_AO_SIMULATION_RUN_ID,
+    get_baggage_simulation_run_id,
+    get_simulation_run_id,
+)
 
 GEN_AI_CONVERSATION_ID = "gen_ai.conversation.id"
 

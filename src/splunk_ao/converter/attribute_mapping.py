@@ -13,10 +13,10 @@ from pydantic import BaseModel
 from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.step import BaseStep, StepType
 from splunk_ao.logger.control import ControlSpan
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID
 
 SPLUNK_AO_SYSTEM = "splunk_ao.system"
 SPLUNK_AO_SYSTEM_VALUE = "splunk_ao_python"
-SPLUNK_AO_SIMULATION_RUN_ID = "splunk_ao.simulation.run_id"
 
 CONTENT_ALIAS_BY_GEN_AI: Mapping[str, str] = {
     "gen_ai.input.messages": "splunk_ao.input.messages",
