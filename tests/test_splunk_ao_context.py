@@ -84,7 +84,9 @@ def test_simulation_run_scope_restores_the_previous_value() -> None:
         _simulation_run_id_context.reset(outer_token)
 
 
-def test_simulation_run_id_is_normalized_at_public_context_boundaries() -> None:
+def test_simulation_run_id_is_normalized_at_public_context_boundaries(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(splunk_ao_context, "get_logger_instance", Mock())
+
     with splunk_ao_context.simulation_run("  run-1\n"):
         assert _simulation_run_id_context.get() == "run-1"
 
