@@ -101,9 +101,10 @@ High-level setup is idempotent per provider for Splunk AO processor registration
 and each server application must still have one instrumentation owner; do not combine the helper with direct upstream
 instrumentation of the same component.
 
-Automatic setup wraps the current process-global text-map propagator with a session-aware delegate. Applications must
-install custom global propagators before invoking the helper. Replacing the global propagator afterward removes the
-session adapter until setup is invoked again. This propagator mutation is independent of tracer-provider ownership.
+Automatic setup wraps the current process-global text-map propagator with a delegate for session and simulation-run
+baggage. Applications must install custom global propagators before invoking the helper. Replacing the global
+propagator afterward removes the SDK adapter until setup is invoked again. This propagator mutation is independent of
+tracer-provider ownership.
 
 SDK-owned authentication, health-check, CRUD, routing-resolution, token-refresh, and streaming control-plane requests
 execute inside OTel HTTP-instrumentation suppression. This boundary is scoped to the SDK request and must restore the
@@ -112,8 +113,9 @@ shared configuration/API-client boundary, never by excluding deployment URLs glo
 
 An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
 may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
-baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
-endpoint, model, workflow, or agent identity in baggage.
+baggage member. An active simulation run propagates as `splunk_ao.simulation.run_id` baggage and becomes the direct
+`splunk_ao.simulation.run_id` span attribute on exported spans. The SDK must not propagate authentication, deployment,
+Project, Agent Stream/log stream, experiment, endpoint, model, workflow, or agent identity in baggage.
 
 Explicit session selection is ambient within the current thread or async execution context and is shared by logger
 instances in that context. The most recent explicit selection applies to subsequently started telemetry and outbound
@@ -121,8 +123,11 @@ propagation. An explicit clear masks inbound conversation baggage for the rest o
 simultaneous sessions require separate execution contexts.
 
 `splunk_ao_context.simulation_run(run_id)` scopes a run ID to the current execution context. Logger-created and native
-OpenTelemetry spans capture it when each span starts. They export it as the direct `splunk_ao.simulation_run.id` span
-attribute. This context does not change Project or Agent Stream routing, Resource attributes, or experiment routing.
+OpenTelemetry spans capture it when each span starts. They export it as the direct `splunk_ao.simulation.run_id` span
+attribute. Supported W3C propagation carries the run ID across service boundaries. Nested `splunk_ao_context(...)`
+scopes start without the outer run ID unless an ID is explicitly supplied, then restore the outer ID on exit. Calling
+`splunk_ao_context.init()` clears the active run ID. This context does not change Project or Agent Stream routing,
+Resource attributes, or experiment routing.
 
 Remote W3C sampling is authoritative. Descendants of a valid remote parent with `sampled=0` retain its IDs for
 continuation but do not enter the Splunk AO exporter.

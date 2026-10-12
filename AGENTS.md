@@ -152,7 +152,9 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 - Preserve standard `gen_ai.*` attributes. New SDK-owned attributes use `splunk_ao.*`; do not introduce new proprietary
   `galileo.*` wire attributes.
 - `splunk_ao_context.simulation_run()` scopes a run ID for logger-created and native OpenTelemetry spans. Capture it at
-  span start as the direct `splunk_ao.simulation_run.id` span attribute. Keep it out of Resource routing.
+  span start as the direct `splunk_ao.simulation.run_id` span attribute. Propagate it in W3C baggage for supported
+  cross-service calls. Nested `splunk_ao_context(...)` scopes start without the outer run ID unless explicitly set and
+  restore the outer ID on exit; `init()` clears it. Keep it out of Resource routing.
 - Explicit session selection is ambient within the current thread or async execution context and is shared by logger
   instances in that context. An explicit clear masks inbound baggage in that context. Independent simultaneous sessions
   require separate execution contexts.

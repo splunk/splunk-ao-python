@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from opentelemetry.sdk.resources import Resource
@@ -13,7 +13,7 @@ from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter import SpanConverter, span_converter
-from splunk_ao.converter.attribute_mapping import build_span_attributes
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID, build_span_attributes
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
 from splunk_ao.schema.logged import LoggedControlSpan
 from splunk_ao.utils.headers_data import get_package_version
@@ -167,15 +167,28 @@ def test_converter_leaves_final_export_normalization_to_the_sink() -> None:
     assert "splunk_ao.system" not in attributes
 
 
+def test_simulation_run_attribute_name_is_stable() -> None:
+    assert SPLUNK_AO_SIMULATION_RUN_ID == "splunk_ao.simulation.run_id"
+
+
+@pytest.mark.parametrize("simulation_run_id", ["", "  ", 123])
+def test_converter_rejects_invalid_simulation_run_ids(simulation_run_id: object) -> None:
+    with pytest.raises(ValueError, match="simulation_run_id must be a non-empty string"):
+        convert(
+            WorkflowSpan(input="work", output="done", name="workflow", created_at=CREATED_AT),
+            simulation_run_id=cast(str, simulation_run_id),
+        )
+
+
 @pytest.mark.parametrize(("span", "expected_name", "expected_kind"), supported_spans())
 def test_simulation_run_id_is_a_direct_attribute_for_every_span_type(
     span: BaseStep, expected_name: str, expected_kind: SpanKind
 ) -> None:
     result = convert(span, simulation_run_id="run-1")
 
-    assert (result.attributes or {})["splunk_ao.simulation_run.id"] == "run-1"
+    assert (result.attributes or {})[SPLUNK_AO_SIMULATION_RUN_ID] == "run-1"
     assert (result.attributes or {})["gen_ai.conversation.id"] == "session-1"
-    assert "splunk_ao.simulation_run.id" not in result.resource.attributes
+    assert SPLUNK_AO_SIMULATION_RUN_ID not in result.resource.attributes
     assert "splunk_ao.experiment.id" not in (result.attributes or {})
 
 

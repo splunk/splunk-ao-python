@@ -31,7 +31,8 @@ from starlette.routing import Route
 from starlette.testclient import TestClient
 from yarl import URL
 
-from splunk_ao import configure_distributed_tracing, instrument_distributed_tracing
+from splunk_ao import configure_distributed_tracing, instrument_distributed_tracing, splunk_ao_context
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.http_instrumentation import (
     _client_providers,
     _configured_providers,
@@ -473,7 +474,7 @@ def test_uses_current_provider_without_replacing_it(
     assert recorders["requests"].instrument_calls == [{"tracer_provider": provider}]
 
 
-def test_installed_global_propagator_injects_only_conversation_session(
+def test_installed_global_propagator_injects_session_and_simulation_run_baggage(
     instrumentors: tuple[dict[str, type], dict[str, RecordingInstrumentor]],
 ) -> None:
     types, _ = instrumentors
@@ -494,12 +495,14 @@ def test_installed_global_propagator_injects_only_conversation_session(
                 instrument_aiohttp_client=False,
             )
         carrier: dict[str, str] = {}
-        propagate.inject(carrier)
+        with splunk_ao_context.simulation_run("run-123"):
+            propagate.inject(carrier)
     finally:
         context.detach(token)
 
     extracted = propagate.extract(carrier)
     assert baggage.get_baggage(GEN_AI_CONVERSATION_ID, context=extracted) == "conversation-123"
+    assert baggage.get_baggage(SPLUNK_AO_SIMULATION_RUN_ID, context=extracted) == "run-123"
     assert "splunk_ao.session.id" not in carrier.get("baggage", "")
 
 

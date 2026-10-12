@@ -394,12 +394,12 @@ component that is owned by the high-level helper; each component should have one
 instrumentation owner.
 
 Both automatic setup helpers wrap the process-global OpenTelemetry text-map
-propagator so an explicit Splunk AO session can travel as W3C baggage. If the
-application uses a custom propagator (for example, a composite that also supports
-B3), install it before calling the Splunk AO helper. Replacing the global
-propagator afterward removes the session adapter; call the helper again after
-that replacement if session propagation is still required. This does not replace
-the process-global tracer provider.
+propagator. This lets explicit Splunk AO sessions and simulation run IDs travel
+as W3C baggage. If the application uses a custom propagator, install it before
+calling the Splunk AO helper. Replacing the global propagator afterward removes
+the SDK adapter. Call the helper again after that replacement if session or run
+propagation is still required. This does not replace the process-global tracer
+provider.
 
 After this startup call, supported inbound requests extract W3C context and
 supported outbound clients inject it automatically. Application code does not
@@ -413,9 +413,11 @@ They therefore do not appear as application traces, while HTTP requests made by
 the application remain instrumented normally.
 
 An explicit SDK session propagates as the standard
-`gen_ai.conversation.id` W3C baggage member. Project, Agent Stream,
-experiment, deployment, authentication, model, workflow, and agent identity
-remain local and are never added to baggage by the SDK.
+`gen_ai.conversation.id` W3C baggage member. An active simulation run also
+propagates as `splunk_ao.simulation.run_id` baggage. The SDK adds that run ID to
+each exported span as the `splunk_ao.simulation.run_id` span attribute. Project,
+Agent Stream, experiment, deployment, authentication, model, workflow, and agent
+identity remain local and are never added to baggage by the SDK.
 
 Explicit session selection is ambient within the current thread or async
 execution context. Setting a session through any logger in that context selects
@@ -426,12 +428,23 @@ separate execution contexts for independent sessions.
 
 Use `splunk_ao_context.simulation_run()` to add one run ID to spans across
 separate conversations. The SDK captures the value at span start as the direct
-`splunk_ao.simulation_run.id` span attribute. This scope does not change routing.
+`splunk_ao.simulation.run_id` span attribute. Supported W3C propagation carries
+the value to downstream services. A nested `splunk_ao_context(...)` starts a
+fresh run-ID scope unless it supplies `simulation_run_id`; exiting restores the
+outer run ID. Calling `splunk_ao_context.init()` clears the active run ID. The
+run ID does not change routing, experiment selection, or Resource attributes.
 
 ```python
 from splunk_ao import splunk_ao_context
 
 with splunk_ao_context.simulation_run("simulation-run-123"):
+    run_conversation()
+```
+
+You can also set the ID on a routing context:
+
+```python
+with splunk_ao_context(project="my_project", agent_stream="my_stream", simulation_run_id="simulation-run-123"):
     run_conversation()
 ```
 

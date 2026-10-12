@@ -215,8 +215,9 @@ def instrument_distributed_tracing(
     Client instrumentation is process-wide. Configure each supported client
     through one owner. The caller also owns provider shutdown. This function
     wraps the current process-global text-map propagator so explicit Splunk AO
-    sessions can use W3C baggage. Install any custom global propagator before
-    calling this function; replacing it afterward removes the session adapter.
+    sessions and simulation runs can use W3C baggage. Install custom global
+    propagators before calling this function. Replacing one later removes the
+    SDK adapter.
     """
     resolved_provider = tracer_provider or cast(TracerProvider, trace.get_tracer_provider())
     app_framework = _validate_app_ownership(app, resolved_provider) if app is not None else None
@@ -279,9 +280,9 @@ def configure_distributed_tracing(
     Repeated calls with the same provider do not attach another Splunk AO span
     processor. Use :func:`instrument_distributed_tracing` instead when export
     has already been configured separately on the provider. This function also
-    wraps the current process-global text-map propagator for session baggage.
-    Install a custom global propagator first; replacing it afterward removes
-    the session adapter.
+    wraps the current process-global text-map propagator for session and run
+    baggage. Install a custom global propagator first. Replacing it later
+    removes the SDK adapter.
     """
     resolved_provider = tracer_provider or SDKTracerProvider()
     app_framework = _validate_app_ownership(app, resolved_provider) if app is not None else None

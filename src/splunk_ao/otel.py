@@ -17,6 +17,7 @@ from galileo_core.schemas.logging.span import AgentSpan, WorkflowSpan
 from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.decorator import (
     _agent_stream_context,
     _dataset_input_context,
@@ -245,12 +246,12 @@ class SplunkAOSpanProcessor(SpanProcessor):
     def on_start(self, span: Span, parent_context: context.Context | None = None) -> None:
         """Handle span start events by delegating to the underlying processor."""
         session_id = get_effective_session_id(context=parent_context)
-        simulation_run_id = get_simulation_run_id()
+        simulation_run_id = get_simulation_run_id(context=parent_context)
 
         if session_id:
             span.set_attribute("gen_ai.conversation.id", session_id)
-        if simulation_run_id:
-            span.set_attribute("splunk_ao.simulation_run.id", simulation_run_id)
+        if simulation_run_id is not None:
+            span.set_attribute(SPLUNK_AO_SIMULATION_RUN_ID, simulation_run_id)
 
         # Set dataset attributes for ground truth/reference output support
         _apply_dataset_attributes(

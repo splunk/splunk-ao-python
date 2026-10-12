@@ -14,6 +14,7 @@ from opentelemetry.trace.status import Status, StatusCode
 
 from galileo_core.schemas.logging.span import WorkflowSpan
 from splunk_ao import get_tracing_headers
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.decorator import (
     _agent_stream_context,
     _dataset_input_context,
@@ -364,7 +365,7 @@ def test_processor_does_not_put_routing_on_span_attributes() -> None:
     calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
     assert not ROUTING_KEYS.intersection(calls)
     assert calls["gen_ai.conversation.id"] == "session-id"
-    assert calls["splunk_ao.simulation_run.id"] == "run-id"
+    assert calls[SPLUNK_AO_SIMULATION_RUN_ID] == "run-id"
     assert "splunk_ao.experiment.id" not in calls
     assert calls["splunk_ao.dataset.input"] == "question"
     processor.shutdown()
@@ -374,13 +375,28 @@ def test_processor_reads_inbound_standard_conversation_baggage() -> None:
     exporter = RecordingExporter()
     processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
     parent_context = baggage.set_baggage("gen_ai.conversation.id", "inbound-conversation", context.Context())
+    parent_context = baggage.set_baggage(SPLUNK_AO_SIMULATION_RUN_ID, "inbound-run", context=parent_context)
     span = MagicMock()
 
     processor.on_start(span, parent_context=parent_context)
 
     calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
     assert calls["gen_ai.conversation.id"] == "inbound-conversation"
+    assert calls[SPLUNK_AO_SIMULATION_RUN_ID] == "inbound-run"
     assert "splunk_ao.session.id" not in calls
+    processor.shutdown()
+
+
+def test_processor_ignores_empty_inbound_simulation_run_baggage() -> None:
+    exporter = RecordingExporter()
+    processor = SplunkAOSpanProcessor(SpanProcessor=RecordingSpanProcessor, _exporter=exporter)
+    parent_context = baggage.set_baggage(SPLUNK_AO_SIMULATION_RUN_ID, "", context.Context())
+    span = MagicMock()
+
+    processor.on_start(span, parent_context=parent_context)
+
+    calls = {args[0]: args[1] for args, _ in span.set_attribute.call_args_list}
+    assert SPLUNK_AO_SIMULATION_RUN_ID not in calls
     processor.shutdown()
 
 

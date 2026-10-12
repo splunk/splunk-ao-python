@@ -11,7 +11,8 @@ from opentelemetry.sdk.util.instrumentation import InstrumentationScope
 from opentelemetry.trace import SpanContext, SpanKind, Status, StatusCode
 
 from galileo_core.schemas.logging.step import BaseStep, StepType
-from splunk_ao.converter.attribute_mapping import build_span_attributes
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID, build_span_attributes
+from splunk_ao.simulation_run_context import validate_simulation_run_id
 from splunk_ao.utils.headers_data import get_package_version
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -92,7 +93,8 @@ class SpanConverter:
         start_time_ns = _to_unix_ns(span.created_at)
         attributes = build_span_attributes(span, session_id)
         if simulation_run_id is not None:
-            attributes["splunk_ao.simulation_run.id"] = simulation_run_id
+            simulation_run_id = validate_simulation_run_id(simulation_run_id)
+            attributes[SPLUNK_AO_SIMULATION_RUN_ID] = simulation_run_id
 
         return ReadableSpan(
             name=_span_name(span, step_type),
