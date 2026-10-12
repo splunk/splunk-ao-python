@@ -7,17 +7,17 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.file_metadata import FileMetadata
+    from ..models.annotation_aggregate import AnnotationAggregate
 
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenFilesType0")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenAnnotationAggregates")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenFilesType0:
-    """ """
+class ExtendedReadSessionRecordWithChildrenAnnotationAggregates:
+    """Annotation aggregate information keyed by template ID"""
 
-    additional_properties: dict[str, FileMetadata] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, AnnotationAggregate] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
 
@@ -29,28 +29,28 @@ class ExtendedSessionRecordWithChildrenFilesType0:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.file_metadata import FileMetadata
+        from ..models.annotation_aggregate import AnnotationAggregate
 
         d = dict(src_dict)
-        extended_session_record_with_children_files_type_0 = cls()
+        extended_read_session_record_with_children_annotation_aggregates = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = FileMetadata.from_dict(prop_dict)
+            additional_property = AnnotationAggregate.from_dict(prop_dict)
 
             additional_properties[prop_name] = additional_property
 
-        extended_session_record_with_children_files_type_0.additional_properties = additional_properties
-        return extended_session_record_with_children_files_type_0
+        extended_read_session_record_with_children_annotation_aggregates.additional_properties = additional_properties
+        return extended_read_session_record_with_children_annotation_aggregates
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> FileMetadata:
+    def __getitem__(self, key: str) -> AnnotationAggregate:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: FileMetadata) -> None:
+    def __setitem__(self, key: str, value: AnnotationAggregate) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

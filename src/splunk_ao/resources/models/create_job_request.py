@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from ..models.prompt_injection_scorer import PromptInjectionScorer
     from ..models.prompt_run_settings import PromptRunSettings
     from ..models.registered_scorer import RegisteredScorer
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
     from ..models.scorers_configuration import ScorersConfiguration
     from ..models.segment_filter import SegmentFilter
     from ..models.task_resource_limits import TaskResourceLimits
@@ -79,7 +79,6 @@ class CreateJobRequest:
         tasks (list[str] | None | Unset):
         non_inference_logged (bool | Unset):  Default: False.
         migration_name (None | str | Unset):
-        xray (bool | Unset):  Default: True.
         process_existing_inference_runs (bool | Unset):  Default: False.
         feature_names (list[str] | None | Unset):
         prompt_dataset_id (None | str | Unset):
@@ -94,8 +93,8 @@ class CreateJobRequest:
             CompletenessScorer | ContextAdherenceScorer | ContextRelevanceScorer | CorrectnessScorer |
             GroundTruthAdherenceScorer | InputPIIScorer | InputSexistScorer | InputToneScorer | InputToxicityScorer |
             InstructionAdherenceScorer | OutputPIIScorer | OutputSexistScorer | OutputToneScorer | OutputToxicityScorer |
-            PromptInjectionScorer | ToolErrorRateScorer | ToolSelectionQualityScorer] | list[ScorerConfig] | None | Unset):
-            For G2.0 we send all scorers as ScorerConfig, for G1.0 we send preset scorers  as GalileoScorer
+            PromptInjectionScorer | ToolErrorRateScorer | ToolSelectionQualityScorer] | list[RuntimeScorerConfig] | None |
+            Unset): For G2.0 we send all scorers as ScorerConfig, for G1.0 we send preset scorers  as GalileoScorer
         prompt_registered_scorers_configuration (list[RegisteredScorer] | None | Unset):
         prompt_generated_scorers_configuration (list[str] | None | Unset):
         prompt_finetuned_scorers_configuration (list[FineTunedScorer] | None | Unset):
@@ -108,7 +107,7 @@ class CreateJobRequest:
             CustomizedToolErrorRateGPTScorer | CustomizedToolSelectionQualityGPTScorer | CustomizedToxicityGPTScorer] | None
             | Unset):
         prompt_scorer_settings (BaseScorer | None | Unset):
-        scorer_config (None | ScorerConfig | Unset):
+        scorer_config (None | RuntimeScorerConfig | Unset):
         sub_scorers (list[ScorerName] | Unset):
         luna_model (None | str | Unset):
         segment_filters (list[SegmentFilter] | None | Unset):
@@ -135,7 +134,6 @@ class CreateJobRequest:
     tasks: list[str] | None | Unset = UNSET
     non_inference_logged: bool | Unset = False
     migration_name: None | str | Unset = UNSET
-    xray: bool | Unset = True
     process_existing_inference_runs: bool | Unset = False
     feature_names: list[str] | None | Unset = UNSET
     prompt_dataset_id: None | str | Unset = UNSET
@@ -169,7 +167,7 @@ class CreateJobRequest:
             | ToolErrorRateScorer
             | ToolSelectionQualityScorer
         ]
-        | list[ScorerConfig]
+        | list[RuntimeScorerConfig]
         | None
         | Unset
     ) = UNSET
@@ -199,7 +197,7 @@ class CreateJobRequest:
         | Unset
     ) = UNSET
     prompt_scorer_settings: BaseScorer | None | Unset = UNSET
-    scorer_config: None | ScorerConfig | Unset = UNSET
+    scorer_config: None | RuntimeScorerConfig | Unset = UNSET
     sub_scorers: list[ScorerName] | Unset = UNSET
     luna_model: None | str | Unset = UNSET
     segment_filters: list[SegmentFilter] | None | Unset = UNSET
@@ -251,7 +249,7 @@ class CreateJobRequest:
         from ..models.output_toxicity_scorer import OutputToxicityScorer
         from ..models.prompt_injection_scorer import PromptInjectionScorer
         from ..models.prompt_run_settings import PromptRunSettings
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
         from ..models.scorers_configuration import ScorersConfiguration
         from ..models.task_resource_limits import TaskResourceLimits
         from ..models.tool_error_rate_scorer import ToolErrorRateScorer
@@ -330,8 +328,6 @@ class CreateJobRequest:
             migration_name = UNSET
         else:
             migration_name = self.migration_name
-
-        xray = self.xray
 
         process_existing_inference_runs = self.process_existing_inference_runs
 
@@ -611,7 +607,7 @@ class CreateJobRequest:
         scorer_config: dict[str, Any] | None | Unset
         if isinstance(self.scorer_config, Unset):
             scorer_config = UNSET
-        elif isinstance(self.scorer_config, ScorerConfig):
+        elif isinstance(self.scorer_config, RuntimeScorerConfig):
             scorer_config = self.scorer_config.to_dict()
         else:
             scorer_config = self.scorer_config
@@ -694,8 +690,6 @@ class CreateJobRequest:
             field_dict["non_inference_logged"] = non_inference_logged
         if migration_name is not UNSET:
             field_dict["migration_name"] = migration_name
-        if xray is not UNSET:
-            field_dict["xray"] = xray
         if process_existing_inference_runs is not UNSET:
             field_dict["process_existing_inference_runs"] = process_existing_inference_runs
         if feature_names is not UNSET:
@@ -799,7 +793,7 @@ class CreateJobRequest:
         from ..models.prompt_injection_scorer import PromptInjectionScorer
         from ..models.prompt_run_settings import PromptRunSettings
         from ..models.registered_scorer import RegisteredScorer
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
         from ..models.scorers_configuration import ScorersConfiguration
         from ..models.segment_filter import SegmentFilter
         from ..models.task_resource_limits import TaskResourceLimits
@@ -936,8 +930,6 @@ class CreateJobRequest:
 
         migration_name = _parse_migration_name(d.pop("migration_name", UNSET))
 
-        xray = d.pop("xray", UNSET)
-
         process_existing_inference_runs = d.pop("process_existing_inference_runs", UNSET)
 
         def _parse_feature_names(data: object) -> list[str] | None | Unset:
@@ -1062,7 +1054,7 @@ class CreateJobRequest:
                 | ToolErrorRateScorer
                 | ToolSelectionQualityScorer
             ]
-            | list[ScorerConfig]
+            | list[RuntimeScorerConfig]
             | None
             | Unset
         ):
@@ -1076,7 +1068,7 @@ class CreateJobRequest:
                 scorers_type_0 = []
                 _scorers_type_0 = data
                 for scorers_type_0_item_data in _scorers_type_0:
-                    scorers_type_0_item = ScorerConfig.from_dict(scorers_type_0_item_data)
+                    scorers_type_0_item = RuntimeScorerConfig.from_dict(scorers_type_0_item_data)
 
                     scorers_type_0.append(scorers_type_0_item)
 
@@ -1302,7 +1294,7 @@ class CreateJobRequest:
                     | ToolErrorRateScorer
                     | ToolSelectionQualityScorer
                 ]
-                | list[ScorerConfig]
+                | list[RuntimeScorerConfig]
                 | None
                 | Unset,
                 data,
@@ -1666,7 +1658,7 @@ class CreateJobRequest:
 
         prompt_scorer_settings = _parse_prompt_scorer_settings(d.pop("prompt_scorer_settings", UNSET))
 
-        def _parse_scorer_config(data: object) -> None | ScorerConfig | Unset:
+        def _parse_scorer_config(data: object) -> None | RuntimeScorerConfig | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1674,12 +1666,12 @@ class CreateJobRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                scorer_config_type_0 = ScorerConfig.from_dict(data)
+                scorer_config_type_0 = RuntimeScorerConfig.from_dict(data)
 
                 return scorer_config_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerConfig | Unset, data)
+            return cast(None | RuntimeScorerConfig | Unset, data)
 
         scorer_config = _parse_scorer_config(d.pop("scorer_config", UNSET))
 
@@ -1775,7 +1767,6 @@ class CreateJobRequest:
             tasks=tasks,
             non_inference_logged=non_inference_logged,
             migration_name=migration_name,
-            xray=xray,
             process_existing_inference_runs=process_existing_inference_runs,
             feature_names=feature_names,
             prompt_dataset_id=prompt_dataset_id,

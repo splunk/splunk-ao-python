@@ -89,6 +89,17 @@ def sync_detailed(
 ) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
 
@@ -112,6 +123,17 @@ def sync(
 ) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
 
@@ -130,6 +152,17 @@ async def asyncio_detailed(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
 ) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
+
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
@@ -153,6 +186,17 @@ async def asyncio(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
 ) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
+
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):

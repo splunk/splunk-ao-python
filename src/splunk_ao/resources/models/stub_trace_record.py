@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
@@ -32,6 +33,7 @@ class StubTraceRecord:
 
         Attributes:
             id (str): ID of the missing trace, taken from span trace_id references.
+            created_at (datetime.datetime): Earliest created_at among child spans; used to order under a session.
             spans (list[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord |
                 ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren |
                 ExtendedWorkflowSpanRecordWithChildren] | Unset):
@@ -43,6 +45,7 @@ class StubTraceRecord:
     """
 
     id: str
+    created_at: datetime.datetime
     spans: (
         list[
             ExtendedAgentSpanRecordWithChildren
@@ -67,6 +70,8 @@ class StubTraceRecord:
         from ..models.extended_workflow_span_record_with_children import ExtendedWorkflowSpanRecordWithChildren
 
         id = self.id
+
+        created_at = self.created_at.isoformat()
 
         spans: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.spans, Unset):
@@ -110,7 +115,7 @@ class StubTraceRecord:
 
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({"id": id})
+        field_dict.update({"id": id, "created_at": created_at})
         if spans is not UNSET:
             field_dict["spans"] = spans
         if type_ is not UNSET:
@@ -134,6 +139,8 @@ class StubTraceRecord:
 
         d = dict(src_dict)
         id = d.pop("id")
+
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
         _spans = d.pop("spans", UNSET)
         spans: (
@@ -307,7 +314,13 @@ class StubTraceRecord:
         session_id = _parse_session_id(d.pop("session_id", UNSET))
 
         stub_trace_record = cls(
-            id=id, spans=spans, type_=type_, project_id=project_id, run_id=run_id, session_id=session_id
+            id=id,
+            created_at=created_at,
+            spans=spans,
+            type_=type_,
+            project_id=project_id,
+            run_id=run_id,
+            session_id=session_id,
         )
 
         return stub_trace_record

@@ -7,17 +7,17 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.feedback_rating_info import FeedbackRatingInfo
+    from ..models.annotation_rating_info import AnnotationRatingInfo
 
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenFeedbackRatingInfo")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenFeedbackRatingInfo:
-    """Feedback information related to the record"""
+class ExtendedReadSessionRecordWithChildrenAnnotationsAdditionalProperty:
+    """ """
 
-    additional_properties: dict[str, FeedbackRatingInfo] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, AnnotationRatingInfo] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
 
@@ -29,28 +29,30 @@ class ExtendedSessionRecordWithChildrenFeedbackRatingInfo:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.feedback_rating_info import FeedbackRatingInfo
+        from ..models.annotation_rating_info import AnnotationRatingInfo
 
         d = dict(src_dict)
-        extended_session_record_with_children_feedback_rating_info = cls()
+        extended_read_session_record_with_children_annotations_additional_property = cls()
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = FeedbackRatingInfo.from_dict(prop_dict)
+            additional_property = AnnotationRatingInfo.from_dict(prop_dict)
 
             additional_properties[prop_name] = additional_property
 
-        extended_session_record_with_children_feedback_rating_info.additional_properties = additional_properties
-        return extended_session_record_with_children_feedback_rating_info
+        extended_read_session_record_with_children_annotations_additional_property.additional_properties = (
+            additional_properties
+        )
+        return extended_read_session_record_with_children_annotations_additional_property
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> FeedbackRatingInfo:
+    def __getitem__(self, key: str) -> AnnotationRatingInfo:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: FeedbackRatingInfo) -> None:
+    def __setitem__(self, key: str, value: AnnotationRatingInfo) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

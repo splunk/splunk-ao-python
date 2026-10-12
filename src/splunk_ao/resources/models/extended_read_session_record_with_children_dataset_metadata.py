@@ -6,12 +6,12 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="ExtendedSessionRecordWithChildrenUserMetadata")
+T = TypeVar("T", bound="ExtendedReadSessionRecordWithChildrenDatasetMetadata")
 
 
 @_attrs_define
-class ExtendedSessionRecordWithChildrenUserMetadata:
-    """Metadata associated with this trace or span."""
+class ExtendedReadSessionRecordWithChildrenDatasetMetadata:
+    """Metadata from the dataset associated with this trace"""
 
     additional_properties: dict[str, str] = _attrs_field(init=False, factory=dict)
 
@@ -25,10 +25,10 @@ class ExtendedSessionRecordWithChildrenUserMetadata:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        extended_session_record_with_children_user_metadata = cls()
+        extended_read_session_record_with_children_dataset_metadata = cls()
 
-        extended_session_record_with_children_user_metadata.additional_properties = d
-        return extended_session_record_with_children_user_metadata
+        extended_read_session_record_with_children_dataset_metadata.additional_properties = d
+        return extended_read_session_record_with_children_dataset_metadata
 
     @property
     def additional_keys(self) -> list[str]:

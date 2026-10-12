@@ -17,7 +17,7 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
-from ...models.extended_session_record_with_children import ExtendedSessionRecordWithChildren
+from ...models.extended_read_session_record_with_children import ExtendedReadSessionRecordWithChildren
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
@@ -46,9 +46,9 @@ def _get_kwargs(project_id: str, session_id: str, *, include_presigned_urls: boo
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> ExtendedSessionRecordWithChildren | HTTPValidationError:
+) -> ExtendedReadSessionRecordWithChildren | HTTPValidationError:
     if response.status_code == 200:
-        response_200 = ExtendedSessionRecordWithChildren.from_dict(response.json())
+        response_200 = ExtendedReadSessionRecordWithChildren.from_dict(response.json())
 
         return response_200
 
@@ -77,7 +77,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,7 +88,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
@@ -101,7 +101,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
@@ -113,7 +113,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
@@ -126,7 +126,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        ExtendedReadSessionRecordWithChildren | HTTPValidationError
     """
 
     return sync_detailed(
@@ -136,7 +136,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
@@ -149,7 +149,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
@@ -161,7 +161,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
@@ -174,7 +174,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        ExtendedReadSessionRecordWithChildren | HTTPValidationError
     """
 
     return (
