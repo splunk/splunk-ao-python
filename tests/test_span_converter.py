@@ -165,7 +165,8 @@ def test_converter_leaves_final_export_normalization_to_the_sink() -> None:
     assert "splunk_ao.system" not in attributes
 
 
-def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attributes() -> None:
+@pytest.mark.parametrize("applies_to", [value.value for value in ControlAppliesTo])
+def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attributes(applies_to: str) -> None:
     parent_context = make_context(span_id=PARENT_SPAN_ID)
     span = LoggedControlSpan(
         name="PII Guard",
@@ -181,7 +182,7 @@ def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attribu
         control_id=42,
         agent_name="planner",
         check_stage=ControlCheckStage.pre,
-        applies_to=ControlAppliesTo.llm_call,
+        applies_to=ControlAppliesTo(applies_to),
         evaluator_name="pii-check",
         selector_path="$.input",
     )
@@ -197,6 +198,7 @@ def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attribu
     assert result.status.status_code is StatusCode.ERROR
     assert attrs["galileo.span.kind"] == "control"
     assert attrs["agent_control.control_id"] == 42
+    assert attrs["agent_control.applies_to"] == applies_to
     assert attrs["agent_control.action"] == "deny"
     assert attrs["agent_control.matched"] is False
     assert attrs["agent_control.error_message"] == "blocked"

@@ -294,7 +294,7 @@ class SplunkAOAgentControlBridge:
             "control_id": getattr(event, "control_id", None),
             "agent_name": getattr(event, "agent_name", None),
             "check_stage": ControlCheckStage(check_stage) if check_stage else None,
-            "applies_to": ControlAppliesTo(applies_to) if applies_to else None,
+            "applies_to": ControlAppliesTo(getattr(applies_to, "value", applies_to)) if applies_to else None,
             "evaluator_name": getattr(event, "evaluator_name", None),
             "selector_path": getattr(event, "selector_path", None),
         }
