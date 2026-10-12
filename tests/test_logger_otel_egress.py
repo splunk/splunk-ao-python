@@ -7,6 +7,7 @@ import pytest
 from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.trace import ReadableSpan
 
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.exporter.span_transform import copy_span_for_export
@@ -109,7 +110,7 @@ def test_simulation_run_id_is_captured_when_stable_span_identity_is_assigned(
         _simulation_run_id_context.reset(token)
 
     [workflow_span] = recording_sink.spans
-    assert workflow_span.attributes["splunk_ao.simulation_run.id"] == "run-at-start"
+    assert workflow_span.attributes[SPLUNK_AO_SIMULATION_RUN_ID] == "run-at-start"
     assert "splunk_ao.experiment.id" not in workflow_span.attributes
 
 

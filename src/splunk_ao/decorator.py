@@ -74,7 +74,7 @@ from splunk_ao.session_context import (
     set_session_context,
 )
 from splunk_ao.shared.exceptions import ConfigurationError
-from splunk_ao.simulation_run_context import _simulation_run_id_context
+from splunk_ao.simulation_run_context import _simulation_run_id_context, validate_simulation_run_id
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.env_helpers import _get_mode_or_default
 from splunk_ao.utils.serialization import EventSerializer, convert_time_delta_to_ns, serialize_to_str
@@ -249,6 +249,9 @@ class SplunkAODecorator:
         SplunkAODecorator
             The decorator instance for use in a with statement
         """
+        if simulation_run_id is not None:
+            simulation_run_id = validate_simulation_run_id(simulation_run_id)
+
         # Push current values onto the stacks
         _get_or_init_list(_project_stack).append(_project_context.get())
         _get_or_init_list(_agent_stream_stack).append(_agent_stream_context.get())
@@ -1479,6 +1482,7 @@ class SplunkAODecorator:
     @contextmanager
     def simulation_run(self, simulation_run_id: str) -> Generator[None, None, None]:
         """Bind emitted spans to one simulation run without changing logger routing."""
+        simulation_run_id = validate_simulation_run_id(simulation_run_id)
         token = _simulation_run_id_context.set(simulation_run_id)
         try:
             yield

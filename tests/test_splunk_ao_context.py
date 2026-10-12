@@ -1,3 +1,4 @@
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -37,9 +38,43 @@ def test_nested_context_restoration(
     assert _experiment_id_context.get() is None
     assert _simulation_run_id_context.get() is None
 
+    # First level context
+    with splunk_ao_context(project="project1", agent_stream="log_stream1", simulation_run_id="run-1"):
+        assert _project_context.get() == "project1"
+        assert _agent_stream_context.get() == "log_stream1"
+        assert _experiment_id_context.get() is None
+        assert _simulation_run_id_context.get() == "run-1"
 
-def test_simulation_run_scope_restores_the_previous_value(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(splunk_ao_context, "get_logger_instance", Mock())
+        # A nested routing context starts without the outer simulation run.
+        with splunk_ao_context(project="project2", agent_stream="log_stream2"):
+            assert _project_context.get() == "project2"
+            assert _agent_stream_context.get() == "log_stream2"
+            assert _experiment_id_context.get() is None
+            assert _simulation_run_id_context.get() is None
+
+            with splunk_ao_context(project="project3", agent_stream="log_stream3", simulation_run_id="run-3"):
+                assert _project_context.get() == "project3"
+                assert _agent_stream_context.get() == "log_stream3"
+                assert _experiment_id_context.get() is None
+                assert _simulation_run_id_context.get() == "run-3"
+
+            assert _project_context.get() == "project2"
+            assert _agent_stream_context.get() == "log_stream2"
+            assert _experiment_id_context.get() is None
+            assert _simulation_run_id_context.get() is None
+
+        assert _project_context.get() == "project1"
+        assert _agent_stream_context.get() == "log_stream1"
+        assert _experiment_id_context.get() is None
+        assert _simulation_run_id_context.get() == "run-1"
+
+    assert _project_context.get() is None
+    assert _agent_stream_context.get() is None
+    assert _experiment_id_context.get() is None
+    assert _simulation_run_id_context.get() is None
+
+
+def test_simulation_run_scope_restores_the_previous_value() -> None:
     outer_token = _simulation_run_id_context.set("outer-run")
     try:
         with splunk_ao_context.simulation_run("inner-run"):
@@ -48,43 +83,28 @@ def test_simulation_run_scope_restores_the_previous_value(monkeypatch: pytest.Mo
     finally:
         _simulation_run_id_context.reset(outer_token)
 
-    # First level context
-    with splunk_ao_context(project="project1", agent_stream="log_stream1", simulation_run_id="run-1"):
-        assert _project_context.get() == "project1"
-        assert _agent_stream_context.get() == "log_stream1"
-        assert _experiment_id_context.get() is None
-        assert _simulation_run_id_context.get() == "run-1"
 
-        # Second level context
-        with splunk_ao_context(project="project2", agent_stream="log_stream2"):
-            assert _project_context.get() == "project2"
-            assert _agent_stream_context.get() == "log_stream2"
-            assert _experiment_id_context.get() is None
-            assert _simulation_run_id_context.get() is None
+def test_init_clears_active_simulation_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    logger = Mock()
+    singleton = Mock()
+    singleton.get.return_value = logger
+    monkeypatch.setattr("splunk_ao.decorator.SplunkAOLoggerSingleton", lambda: singleton)
 
-            # Third level context
-            with splunk_ao_context(project="project3", agent_stream="log_stream3", simulation_run_id="run-3"):
-                assert _project_context.get() == "project3"
-                assert _agent_stream_context.get() == "log_stream3"
-                assert _experiment_id_context.get() is None
-                assert _simulation_run_id_context.get() == "run-3"
+    with splunk_ao_context.simulation_run("active-run"):
+        splunk_ao_context.init(project="project", agent_stream="stream")
+        assert _simulation_run_id_context.get() is None
 
-            # After exiting third level, should be back to second level
-            assert _project_context.get() == "project2"
-            assert _agent_stream_context.get() == "log_stream2"
-            assert _experiment_id_context.get() is None
-            assert _simulation_run_id_context.get() is None
 
-        # After exiting second level, should be back to first level
-        assert _project_context.get() == "project1"
-        assert _agent_stream_context.get() == "log_stream1"
-        assert _experiment_id_context.get() is None
-        assert _simulation_run_id_context.get() == "run-1"
+@pytest.mark.parametrize("simulation_run_id", [None, "", " \t", 123])
+def test_simulation_run_rejects_invalid_ids(simulation_run_id: object) -> None:
+    with pytest.raises(ValueError, match="simulation_run_id must be a non-empty string"):
+        with splunk_ao_context.simulation_run(cast(str, simulation_run_id)):
+            pytest.fail("invalid simulation run ID entered the scope")
 
-    # After exiting first level, should be back to None
-    assert _project_context.get() is None
-    assert _agent_stream_context.get() is None
-    assert _experiment_id_context.get() is None
+    if simulation_run_id is not None:
+        with pytest.raises(ValueError, match="simulation_run_id must be a non-empty string"):
+            splunk_ao_context(simulation_run_id=cast(str, simulation_run_id))
+
     assert _simulation_run_id_context.get() is None
 
 

@@ -10,8 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `splunk_ao_context.simulation_run()` to scope a run ID across separate
-  conversations. Logger-created and native OpenTelemetry spans capture it as
-  the direct `splunk_ao.simulation_run.id` span attribute without changing routing.
+  conversations. The ID can also be selected with
+  `splunk_ao_context(simulation_run_id=...)`. Logger-created and native
+  OpenTelemetry spans capture it as the direct `splunk_ao.simulation.run_id` span attribute. Supported W3C baggage
+  carries the run ID across service boundaries without changing routing. Nested
+  routing contexts start a fresh run-ID scope and restore the outer ID on exit;
+  `init()` clears the active run ID.
 
 ## [0.4.0]
 

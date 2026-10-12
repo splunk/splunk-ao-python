@@ -5,11 +5,13 @@ from opentelemetry import baggage, context, trace
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
 
-from splunk_ao import extract_tracing_context, get_tracing_headers
+from splunk_ao import extract_tracing_context, get_tracing_headers, splunk_ao_context
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import _otel_context_state
 from splunk_ao.session_context import GEN_AI_CONVERSATION_ID, _session_id_context
+from splunk_ao.simulation_run_context import _simulation_run_id_context
 
 
 class RecordingSink:
@@ -52,11 +54,13 @@ class RepeatedHeaders(Mapping[str, str]):
 def isolated_context() -> Generator[None, None, None]:
     state_token = _otel_context_state.set(None)
     session_token = _session_id_context.set(None)
+    run_token = _simulation_run_id_context.set(None)
     token = context.attach(context.Context())
     try:
         yield
     finally:
         context.detach(token)
+        _simulation_run_id_context.reset(run_token)
         _session_id_context.reset(session_token)
         _otel_context_state.reset(state_token)
 
@@ -158,6 +162,25 @@ def test_get_tracing_headers_injects_only_standard_conversation_baggage() -> Non
         logger.terminate()
 
 
+def test_get_tracing_headers_injects_simulation_run_baggage() -> None:
+    logger, sink = make_logger()
+    try:
+        with splunk_ao_context.simulation_run("run-123"):
+            logger.start_trace(input="request")
+            logger.add_workflow_span(input="work", name="operation")
+            headers = get_tracing_headers()
+            logger.conclude(output="work")
+            logger.conclude(output="done")
+
+        extracted = extract_tracing_context(headers)
+        assert baggage.get_baggage(SPLUNK_AO_SIMULATION_RUN_ID, context=extracted) == "run-123"
+        assert any(
+            (span.attributes or {}).get(SPLUNK_AO_SIMULATION_RUN_ID) == "run-123" for span in sink.spans
+        )
+    finally:
+        logger.terminate()
+
+
 def test_explicit_session_selection_is_shared_across_loggers_in_execution_context() -> None:
     first_logger, first_sink = make_logger()
     second_logger, _ = make_logger()
@@ -191,6 +214,18 @@ def test_extract_tracing_context_restores_conversation_baggage() -> None:
     )
 
     assert baggage.get_baggage(GEN_AI_CONVERSATION_ID, context=extracted) == "conversation-456"
+    assert baggage.get_baggage("unrelated", context=extracted) == "value"
+
+
+def test_extract_tracing_context_restores_simulation_run_baggage() -> None:
+    extracted = extract_tracing_context(
+        {
+            "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+            "baggage": f"{SPLUNK_AO_SIMULATION_RUN_ID}=run-456,unrelated=value",
+        }
+    )
+
+    assert baggage.get_baggage(SPLUNK_AO_SIMULATION_RUN_ID, context=extracted) == "run-456"
     assert baggage.get_baggage("unrelated", context=extracted) == "value"
 
 

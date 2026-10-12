@@ -1,4 +1,4 @@
-"""Execution-context-local session selection and W3C baggage propagation."""
+"""Execution-context-local session selection and Splunk AO baggage propagation."""
 
 from __future__ import annotations
 
@@ -10,6 +10,9 @@ from opentelemetry import context as otel_context
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
 from opentelemetry.propagators import textmap
+
+from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
+from splunk_ao.simulation_run_context import get_baggage_simulation_run_id, get_simulation_run_id
 
 GEN_AI_CONVERSATION_ID = "gen_ai.conversation.id"
 
@@ -87,8 +90,16 @@ def _context_with_conversation_id(context: Context, session_id: str | None) -> C
     return normalized
 
 
+def _context_with_simulation_run_id(context: Context, simulation_run_id: str | None) -> Context:
+    """Return a context with the simulation run baggage normalized or removed."""
+    normalized = baggage.remove_baggage(SPLUNK_AO_SIMULATION_RUN_ID, context=context)
+    if simulation_run_id:
+        normalized = baggage.set_baggage(SPLUNK_AO_SIMULATION_RUN_ID, simulation_run_id, context=normalized)
+    return normalized
+
+
 class SplunkAOSessionPropagator(textmap.TextMapPropagator):
-    """Preserve the configured propagator while normalizing session baggage."""
+    """Preserve the configured propagator while normalizing session and run baggage."""
 
     def __init__(self, delegate: textmap.TextMapPropagator) -> None:
         self._delegate = delegate
@@ -102,7 +113,8 @@ class SplunkAOSessionPropagator(textmap.TextMapPropagator):
     ) -> Context:
         extracted = self._delegate.extract(carrier, context=context, getter=getter)
         extracted = self._baggage.extract(carrier, context=extracted, getter=getter)
-        return _context_with_conversation_id(extracted, _baggage_session_id(extracted))
+        extracted = _context_with_conversation_id(extracted, _baggage_session_id(extracted))
+        return _context_with_simulation_run_id(extracted, get_baggage_simulation_run_id(extracted))
 
     def inject(
         self,
@@ -112,6 +124,7 @@ class SplunkAOSessionPropagator(textmap.TextMapPropagator):
     ) -> None:
         active = context if context is not None else otel_context.get_current()
         normalized = _context_with_conversation_id(active, get_effective_session_id(context=active))
+        normalized = _context_with_simulation_run_id(normalized, get_simulation_run_id(context=active))
         self._delegate.inject(carrier, context=normalized, setter=setter)
         self._baggage.inject(carrier, context=normalized, setter=setter)
 
@@ -128,7 +141,7 @@ def _session_propagator() -> SplunkAOSessionPropagator:
 
 
 def install_session_propagator() -> None:
-    """Wrap the process-global propagator with the session-aware adapter.
+    """Wrap the process-global propagator with the session and run adapter.
 
     The current propagator remains the delegate. Replacing the global
     propagator later also removes this adapter until this function is called
@@ -142,12 +155,12 @@ def install_session_propagator() -> None:
 def inject_session_context(
     carrier: Any, context: Context | None = None, setter: textmap.Setter[Any] = textmap.default_setter
 ) -> None:
-    """Inject configured trace context and normalized session baggage."""
+    """Inject configured trace context and normalized session and run baggage."""
     _session_propagator().inject(carrier, context=context, setter=setter)
 
 
 def extract_session_context(
     carrier: Any, context: Context | None = None, getter: textmap.Getter[Any] = textmap.default_getter
 ) -> Context:
-    """Extract configured trace context and normalize session baggage."""
+    """Extract configured trace context and normalize session and run baggage."""
     return _session_propagator().extract(carrier, context=context, getter=getter)
