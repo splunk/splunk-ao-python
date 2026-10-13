@@ -26,6 +26,8 @@ from splunk_ao.utils.openai_agents import (
     _extract_workflow_data,
     _map_span_name,
     _map_span_type,
+    _normalize_responses_input,
+    _normalize_responses_output,
     _parse_usage,
 )
 
@@ -422,3 +424,188 @@ class TestExtractUserInput:
         # When: user input is extracted
         # Then: None is returned
         assert _extract_user_input([{"role": "system", "content": "System only"}]) is None
+
+    def test_joins_text_blocks_and_skips_image_only_message(self) -> None:
+        # Given: a user message with text and image blocks, followed by an image-only user message
+        # When: user input is extracted
+        # Then: the latest user message with text is used, and only its text is returned
+        llm_input = [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "Describe"}, {"type": "data", "modality": "image", "url": "u"}],
+            },
+            {"role": "user", "content": [{"type": "data", "modality": "image", "url": "u2"}]},
+        ]
+        assert _extract_user_input(llm_input) == "Describe"
+
+
+class TestNormalizeResponsesInput:
+    """Test _normalize_responses_input function."""
+
+    def test_string_input_is_one_user_message(self) -> None:
+        # Given: a plain string Responses input
+        # When: it is normalized
+        # Then: it becomes one user message
+        assert _normalize_responses_input("Hi") == [{"role": "user", "content": "Hi"}]
+
+    def test_tool_turn_items_keep_roles_and_order(self) -> None:
+        # Given: a second-turn Responses input with developer, reasoning, parallel calls, results and replies
+        # When: it is normalized
+        # Then: items map to system/user/assistant/tool messages in order, and reasoning is skipped
+        items = [
+            {"role": "developer", "content": "Be brief."},
+            {"role": "user", "content": "Look up CUST-1"},
+            {"type": "reasoning", "id": "rs_1", "summary": []},
+            {"type": "function_call", "call_id": "c1", "name": "get_customer", "arguments": "{}"},
+            {"type": "function_call", "call_id": "c2", "name": "get_tickets", "arguments": "{}"},
+            {"type": "function_call_output", "call_id": "c1", "output": '{"name": "Acme"}'},
+            {"type": "function_call_output", "call_id": "c2", "output": "[]"},
+            {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Acme."}]},
+        ]
+        result = _normalize_responses_input(items)
+        assert [m["role"] for m in result] == ["system", "user", "assistant", "tool", "tool", "assistant"]
+        assert [c["id"] for c in result[2]["tool_calls"]] == ["c1", "c2"]
+        assert result[3] == {"role": "tool", "tool_call_id": "c1", "content": '{"name": "Acme"}'}
+        assert result[5]["content"] == [{"type": "text", "text": "Acme."}]
+
+    def test_multimodal_parts_become_content_blocks(self) -> None:
+        # Given: a Responses user message with text, a base64 image, and an image known only by file_id
+        # When: it is normalized
+        # Then: text stays text, the base64 image becomes a data block, and the file_id stays text without payload
+        items = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": "What is this?"},
+                    {"type": "input_image", "image_url": "data:image/png;base64,AAAA"},
+                    {"type": "input_image", "file_id": "file-123"},
+                ],
+            }
+        ]
+        blocks = _normalize_responses_input(items)[0]["content"]
+        assert blocks[0] == {"type": "text", "text": "What is this?"}
+        assert blocks[1] == {"type": "data", "modality": "image", "base64": "AAAA", "mime_type": "image/png"}
+        assert blocks[2]["type"] == "text" and "file-123" in blocks[2]["text"]
+
+
+class TestNormalizeResponsesOutput:
+    """Test _normalize_responses_output function."""
+
+    def test_message_and_tool_call_combine_into_one_assistant_message(self) -> None:
+        # Given: Responses output with reasoning, a text message, and a function call
+        # When: it is normalized
+        # Then: one assistant message holds the text and the tool call
+        items = [
+            {"type": "reasoning", "id": "rs_1", "summary": []},
+            {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Checking."}]},
+            {"type": "function_call", "call_id": "c1", "name": "lookup", "arguments": '{"id": 1}'},
+        ]
+        assert _normalize_responses_output(items) == {
+            "role": "assistant",
+            "content": "Checking.",
+            "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "lookup", "arguments": '{"id": 1}'}}],
+        }
+
+    def test_reasoning_only_output_gives_none(self) -> None:
+        # Given: Responses output with only a reasoning item
+        # When: it is normalized
+        # Then: there is no message to record
+        assert _normalize_responses_output([{"type": "reasoning", "id": "rs_1", "summary": []}]) is None
+
+
+class TestGenerationMultimodalInput:
+    """Test multi-part Chat Completions content in _extract_llm_data."""
+
+    def test_image_part_becomes_content_block(self) -> None:
+        # Given: GenerationSpanData whose user message has text and an image_url part
+        # When: LLM data is extracted
+        # Then: the content is converted to text and data blocks instead of being kept as raw parts
+        span_data = GenerationSpanData(
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What is this?"},
+                        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+                    ],
+                }
+            ],
+            output=[{"role": "assistant", "content": "A cat."}],
+            model="gpt-4",
+        )
+        content = _extract_llm_data(span_data)["input"][0]["content"]
+        assert content == [
+            {"type": "text", "text": "What is this?"},
+            {"type": "data", "modality": "image", "url": "https://example.com/a.png"},
+        ]
+
+    def test_tuple_input_parts_become_content_blocks(self) -> None:
+        # Given: GenerationSpanData input as a tuple, which its Sequence type allows a custom model to pass
+        # When: LLM data is extracted
+        # Then: the multi-part content is still converted to content blocks
+        span_data = GenerationSpanData(
+            input=(
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "What is this?"},
+                        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+                    ],
+                },
+            ),
+            output=[{"role": "assistant", "content": "A cat."}],
+            model="gpt-4",
+        )
+        assert _extract_llm_data(span_data)["input"][0]["content"] == [
+            {"type": "text", "text": "What is this?"},
+            {"type": "data", "modality": "image", "url": "https://example.com/a.png"},
+        ]
+
+
+class TestGenerationStreamedOutput:
+    """Test GenerationSpanData output from a streamed Chat Completions run."""
+
+    # Streamed runs record [Response.model_dump()] instead of [ChatCompletionMessage.model_dump()].
+    @staticmethod
+    def _streamed_output(*items: dict[str, Any]) -> list[dict[str, Any]]:
+        return [{"id": "__fake_id__", "object": "response", "model": "gpt-4", "output": list(items), "usage": None}]
+
+    def test_streamed_tool_call_response_becomes_assistant_tool_calls(self) -> None:
+        # Given: streamed GenerationSpanData whose output is a response object holding two function calls
+        # When: LLM data is extracted
+        # Then: output is one assistant message with both tool calls, not a JSON dump of the response
+        span_data = GenerationSpanData(
+            input=[{"role": "user", "content": "Look up CUST-1"}],
+            output=self._streamed_output(
+                {"type": "function_call", "call_id": "c1", "name": "get_customer", "arguments": '{"id": "CUST-1"}'},
+                {"type": "function_call", "call_id": "c2", "name": "get_tickets", "arguments": '{"id": "CUST-1"}'},
+            ),
+            model="gpt-4",
+        )
+        assert _extract_llm_data(span_data)["output"] == {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"id": "c1", "type": "function", "function": {"name": "get_customer", "arguments": '{"id": "CUST-1"}'}},
+                {"id": "c2", "type": "function", "function": {"name": "get_tickets", "arguments": '{"id": "CUST-1"}'}},
+            ],
+        }
+
+    def test_streamed_text_response_becomes_assistant_text(self) -> None:
+        # Given: streamed GenerationSpanData whose output is a response object holding one output_text message
+        # When: LLM data is extracted
+        # Then: output is an assistant message with the answer text
+        span_data = GenerationSpanData(
+            input=[{"role": "user", "content": "Hi"}],
+            output=self._streamed_output(
+                {
+                    "type": "message",
+                    "id": "__fake_id__",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [{"type": "output_text", "text": "Hello!", "annotations": []}],
+                }
+            ),
+            model="gpt-4",
+        )
+        assert _extract_llm_data(span_data)["output"] == {"role": "assistant", "content": "Hello!"}

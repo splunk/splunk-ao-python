@@ -8,7 +8,7 @@ from typing import Any, cast
 from agents import Span, Trace, TracingProcessor
 from agents.tracing import ResponseSpanData, get_current_span, get_trace_provider
 
-from galileo_core.schemas.logging.span import LlmMetrics, LlmSpan
+from galileo_core.schemas.logging.span import LlmMetrics
 from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao import SplunkAOLogger, splunk_ao_context
 from splunk_ao.handlers.span_lifecycle import (
@@ -19,6 +19,7 @@ from splunk_ao.handlers.span_lifecycle import (
     release_handler_steps,
 )
 from splunk_ao.schema.handlers import Node
+from splunk_ao.schema.logged import LoggedLlmSpan
 from splunk_ao.utils import _get_timestamp
 from splunk_ao.utils.openai_agents import (
     SplunkAOCustomSpan,
@@ -253,7 +254,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         elif node.node_type in ("llm", "chat"):
             tools = node.span_params.get("tools")
 
-            span = LlmSpan(
+            span = LoggedLlmSpan(
                 input=input,
                 output=output,
                 name=name or "LLM Span",

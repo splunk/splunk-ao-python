@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
+  default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
+  `user` message, the output is a single assistant message, and workflow/agent spans show the
+  latest user message and the answer text instead of `"Workflow Step"` and raw `output_text` parts.
+  Streamed Chat Completions runs (`Runner.run_streamed`), whose LLM spans hold a Responses-style
+  object, now record the assistant message instead of a JSON dump of the whole response.
+- Image and file parts in OpenAI Agents user messages, on both the Responses and Chat Completions
+  paths, are now recorded as content blocks instead of a JSON dump of the whole message, including
+  through `SplunkAOLogger(ingestion_hook=...)`.
+
 ## [0.5.0]
 
 ### Added
