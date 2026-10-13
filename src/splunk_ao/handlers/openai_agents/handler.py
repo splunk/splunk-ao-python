@@ -229,7 +229,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
         """
         is_workflow_span = False
         input = node.span_params.get("input", "")
-        output = node.span_params.get("output", "")
+        # An explicit None (e.g. a GenerationSpanData that errors before output is set) must not reach
+        # LoggedLlmSpan below, which requires a LoggedMessage, not None.
+        output = node.span_params.get("output") or ""
         name = node.span_params.get("name")
         metadata = node.span_params.get("metadata")
         tags = node.span_params.get("tags")

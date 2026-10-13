@@ -487,6 +487,34 @@ class TestNormalizeResponsesInput:
         assert blocks[1] == {"type": "data", "modality": "image", "base64": "AAAA", "mime_type": "image/png"}
         assert blocks[2]["type"] == "text" and "file-123" in blocks[2]["text"]
 
+    def test_tool_output_with_image_parts_becomes_content_blocks(self) -> None:
+        # Given: a function_call_output whose output is a list of parts (text + a base64 image), as the
+        #   Agents SDK produces for tool results that return multimodal content
+        # When: it is normalized
+        # Then: the tool message's content is content blocks, not a JSON dump of the whole list
+        #   (including the base64 payload as text)
+        items = [
+            {
+                "type": "function_call_output",
+                "call_id": "c1",
+                "output": [
+                    {"type": "input_text", "text": "Here is the chart."},
+                    {"type": "input_image", "image_url": "data:image/png;base64,AAAA"},
+                ],
+            }
+        ]
+        result = _normalize_responses_input(items)
+        assert result == [
+            {
+                "role": "tool",
+                "tool_call_id": "c1",
+                "content": [
+                    {"type": "text", "text": "Here is the chart."},
+                    {"type": "data", "modality": "image", "base64": "AAAA", "mime_type": "image/png"},
+                ],
+            }
+        ]
+
 
 class TestNormalizeResponsesOutput:
     """Test _normalize_responses_output function."""
@@ -609,3 +637,17 @@ class TestGenerationStreamedOutput:
             model="gpt-4",
         )
         assert _extract_llm_data(span_data)["output"] == {"role": "assistant", "content": "Hello!"}
+
+    def test_streamed_reasoning_only_response_does_not_return_none(self) -> None:
+        # Given: streamed GenerationSpanData whose output is a response object holding only a
+        #   role-less reasoning item (no "message" or tool-call item for _normalize_responses_output
+        #   to combine into an assistant message)
+        # When: LLM data is extracted
+        # Then: output falls back to a safe string instead of None - on the ingestion-hook path, None
+        #   reaches LoggedLlmSpan(output=...), which requires a LoggedMessage and rejects None
+        span_data = GenerationSpanData(
+            input=[{"role": "user", "content": "Hi"}],
+            output=self._streamed_output({"type": "reasoning", "id": "__fake_id__", "summary": []}),
+            model="gpt-4",
+        )
+        assert _extract_llm_data(span_data)["output"] == "null"

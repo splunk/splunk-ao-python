@@ -310,6 +310,36 @@ def test_ingestion_hook_keeps_multimodal_llm_input(
         logger.terminate()
 
 
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_llm_span_with_no_output_does_not_crash_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path and a generation span that ends with no output set
+    #   (e.g. the model call errored before GenerationSpanData.output was populated)
+    # When: the trace is committed
+    # Then: the trace completes instead of failing - LoggedLlmSpan(output=...) requires a LoggedMessage
+    #   and raises on a bare None reaching it
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_no_output") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(input=[{"role": "user", "content": "Hi"}], model="gpt-4", parent=root_span):
+                    pass
+
+        llm_span = logger.traces[0].spans[0].spans[0]
+        assert llm_span.output.content == ""
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
 def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)

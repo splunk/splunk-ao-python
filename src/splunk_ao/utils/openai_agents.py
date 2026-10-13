@@ -100,7 +100,14 @@ def _normalize_responses_input(items: Any) -> list[dict[str, Any]]:
                 messages.append({"role": "assistant", "content": "", "tool_calls": [_tool_call(item)]})
         elif kind in _TOOL_OUTPUT_ITEM_TYPES:
             output = item.get("output")
-            content = output if isinstance(output, str) else serialize_to_str(output)
+            if isinstance(output, str):
+                content = output
+            elif isinstance(output, list):
+                # A tool result can carry multimodal parts (e.g. text + an image); convert them into
+                # content blocks instead of dumping the whole list, including any base64 payload, as JSON.
+                content = _message_content(output)
+            else:
+                content = serialize_to_str(output)
             messages.append({"role": "tool", "tool_call_id": item.get("call_id"), "content": content})
         elif "role" in item:
             role = _ROLE_MAP.get(item["role"], item["role"])
@@ -413,7 +420,7 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
             first = choices[0] if choices else None
             if isinstance(first, dict) and first.get("object") == "response":
                 # Streamed Chat Completions record the adapter's Responses-shaped response, not the message.
-                data["output"] = _normalize_responses_output(first.get("output"))
+                data["output"] = _normalize_responses_output(first.get("output")) or serialize_to_str(None)
             else:
                 data["output"] = _normalize_chat_messages([first])[0] if first is not None else None
     else:
