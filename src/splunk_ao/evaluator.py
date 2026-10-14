@@ -19,7 +19,7 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import Configuration
-from splunk_ao.evaluators import Evaluators
+from splunk_ao.evaluators import Evaluators, _resolve_create_scope
 from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
@@ -33,6 +33,7 @@ from splunk_ao.resources.models import (
     CreateScorerRequest,
     HTTPValidationError,
     OutputTypeEnum,
+    ScorerScopeProjectRef,
     ScorerTypes,
     TaskResultStatus,
     UpdateScorerRequest,
@@ -107,6 +108,10 @@ class Evaluator(StateManagementMixin, ABC):
         created_at (datetime | None): When the metric was created.
         updated_at (datetime | None): When the metric was last updated.
         version (int | None): Evaluator version number.
+        is_global (bool | None): Whether the evaluator is global, as reported by the API.
+            ``None`` until populated from the API.
+        scope_projects (list[ScorerScopeProjectRef]): Projects the evaluator is scoped to, as
+            reported by the API. Empty until populated, and for global evaluators.
 
     Class Attributes
     ----------------
@@ -163,6 +168,10 @@ class Evaluator(StateManagementMixin, ABC):
     judges: int | None
     cot_enabled: bool | None
 
+    # Access scope reported by the API
+    is_global: bool | None
+    scope_projects: list[ScorerScopeProjectRef]
+
     def __init__(
         self, name: str, *, description: str = "", tags: list[str] | None = None, version: int | None = None
     ) -> None:
@@ -189,6 +198,9 @@ class Evaluator(StateManagementMixin, ABC):
         self.model = None
         self.judges = None
         self.cot_enabled = None
+
+        self.is_global = None
+        self.scope_projects = []
 
         self._set_state(SyncState.LOCAL_ONLY)
 
@@ -396,6 +408,9 @@ class Evaluator(StateManagementMixin, ABC):
             judges = None
             cot_enabled = None
 
+        is_global = None if isinstance(scorer_response.is_global, Unset) else scorer_response.is_global
+        scope_projects = [] if isinstance(scorer_response.scope_projects, Unset) else scorer_response.scope_projects
+
         self._sync_attrs(
             id=scorer_response.id,
             name=scorer_response.name,
@@ -408,6 +423,8 @@ class Evaluator(StateManagementMixin, ABC):
             model=model,
             judges=judges,
             cot_enabled=cot_enabled,
+            is_global=is_global,
+            scope_projects=list(scope_projects),
         )
 
         # LLM-specific attributes (only set if this is an LlmEvaluator)
@@ -708,6 +725,9 @@ class LlmEvaluator(Evaluator):
         cot_enabled: bool | None = None,
         output_type: str | OutputTypeEnum | None = None,
         ground_truth: bool = False,
+        # Access scope
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
         # Common parameters
         description: str = "",
         tags: list[str] | None = None,
@@ -730,6 +750,9 @@ class LlmEvaluator(Evaluator):
             output_type: Output type ("percentage", "boolean", etc.).
             ground_truth: Whether the scorer requires ground truth (``reference_output``) from the dataset.
                 When True, the judge LLM receives the row's ground-truth value in its prompt.
+            project_ids: Projects to scope the metric to when it is created. Defaults to the current
+                project (decorator context, SPLUNK_AO_PROJECT_ID, or SPLUNK_AO_PROJECT).
+            is_global: Create a global metric (org admins only). Cannot be combined with ``project_ids``.
             description: Description of the metric.
             tags: Tags associated with the metric.
             version: Specific version to reference (for existing metrics).
@@ -775,6 +798,8 @@ class LlmEvaluator(Evaluator):
             self.output_type = output_type or OutputTypeEnum.BOOLEAN
 
         self.ground_truth = ground_truth
+        self.project_ids = project_ids
+        self.is_global = is_global
 
         self.scorer_type = ScorerTypes.LLM
 
@@ -817,6 +842,8 @@ class LlmEvaluator(Evaluator):
                 if isinstance(self.output_type, OutputTypeEnum)
                 else OutputTypeEnum.BOOLEAN,
                 ground_truth=self.ground_truth,
+                project_ids=self.project_ids,
+                is_global=self.is_global,
             )
 
             # Update attributes from response without triggering dirty-tracking
@@ -893,6 +920,8 @@ class CodeEvaluator(Evaluator):
         node_level: StepType | None = None,
         output_type: str | OutputTypeEnum | None = None,
         required_metrics: list[str] | None = None,
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
         description: str = "",
         tags: list[str] | None = None,
         version: int | None = None,
@@ -907,6 +936,9 @@ class CodeEvaluator(Evaluator):
             output_type: Output type for the metric ("percentage", "boolean", "categorical",
                 "count", "discrete"). Accepts string or OutputTypeEnum.
             required_metrics: List of metric names that this code metric depends on.
+            project_ids: Projects to scope the metric to when it is created. Defaults to the current
+                project (decorator context, SPLUNK_AO_PROJECT_ID, or SPLUNK_AO_PROJECT).
+            is_global: Create a global metric (org admins only). Cannot be combined with ``project_ids``.
             description: Description of the metric.
             tags: Tags associated with the metric.
             version: Specific version to reference (for existing metrics).
@@ -916,6 +948,8 @@ class CodeEvaluator(Evaluator):
         self.code = code
         self.node_level = node_level or StepType.llm
         self.required_metrics = required_metrics
+        self.project_ids = project_ids
+        self.is_global = is_global
         self.scorer_type = ScorerTypes.CODE
 
         self.output_type = Evaluator._parse_output_type(output_type)
@@ -1099,6 +1133,9 @@ class CodeEvaluator(Evaluator):
             # Ensure node_level is set (should always be set in __init__, but checking for type safety)
             assert self.node_level is not None
 
+            # Resolve scope first so a bad scope fails before any API call
+            scope_is_global, scope_project_ids = _resolve_create_scope(self.project_ids, self.is_global)
+
             # Step 1: Validate the code and get validation result
             logger.debug(f"CodeEvaluator.create: name='{self.name}' - validating code")
             validation_result = self._validate_code(config)
@@ -1113,6 +1150,8 @@ class CodeEvaluator(Evaluator):
                 scoreable_node_types=[self.node_level.value],
                 output_type=self.output_type,
                 required_scorers=self.required_metrics,
+                is_global=scope_is_global,
+                project_ids=scope_project_ids,
             )
 
             scorer_response = create_scorers_post.sync(client=config.api_client, body=scorer_request)

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `LlmEvaluator`, `CodeEvaluator`, `Evaluators.create_custom_llm_evaluator()` and the module-level
+  `create_custom_llm_evaluator()` accept `project_ids` and `is_global` to choose the scope of a new evaluator.
+  Passing both, or an empty `project_ids`, raises `ValidationError` before any request is sent.
+- `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
+  `create()`, `get()`, `list()` and `refresh()`.
+
+### Changed
+
+- New evaluators are scoped to the current project by default: the decorator context project, then
+  `SPLUNK_AO_PROJECT_ID`, then `SPLUNK_AO_PROJECT`. If that project cannot be found, creation raises
+  `NotFoundError` rather than falling back to a global evaluator. When no current project is set and no scope is
+  passed, no scope is sent and the server default (global, org admins only) applies. Org admins who relied on creating
+  global evaluators with a project set must now pass `is_global=True`.
+- Creating project-scoped evaluators requires `splunk-ao` 0.6.0 or later. Earlier versions send no scope, so on servers
+  with metric RBAC enabled, non-admin users get a 403 when creating an evaluator.
+
 ## [0.5.0]
 
 ### Added

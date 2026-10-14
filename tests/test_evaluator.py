@@ -6,14 +6,48 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
+from splunk_ao.decorator import _project_context
 from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
-from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerTypes
+from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerScopeProjectRef, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.models.task_result_status import TaskResultStatus
+from splunk_ao.resources.types import UNSET
 from splunk_ao.shared.base import SyncState
 from splunk_ao.shared.exceptions import APIError, ValidationError
 
 # Test fixtures and helper functions
+
+
+@pytest.fixture(autouse=True)
+def no_current_project(monkeypatch: pytest.MonkeyPatch):
+    """Start every test with no current project in the environment or the decorator context."""
+    monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
+    token = _project_context.set(None)
+    yield
+    _project_context.reset(token)
+
+
+def _scope_scorer(scorer_id: str, *, scorer_type: ScorerTypes = ScorerTypes.LLM, is_global=False, scope_projects=UNSET):
+    """Build a scorer response carrying scope fields."""
+    scorer = MagicMock()
+    scorer.id = scorer_id
+    scorer.name = "Scoped Evaluator"
+    scorer.scorer_type = scorer_type
+    scorer.tags = []
+    scorer.description = ""
+    scorer.created_at = MagicMock()
+    scorer.updated_at = MagicMock()
+    scorer.output_type = OutputTypeEnum.BOOLEAN
+    scorer.user_prompt = "Is it accurate?"
+    scorer.defaults = MagicMock()
+    scorer.defaults.model_name = "gpt-4.1-mini"
+    scorer.defaults.num_judges = 3
+    scorer.defaults.cot_enabled = True
+    scorer.scoreable_node_types = ["llm"]
+    scorer.is_global = is_global
+    scorer.scope_projects = scope_projects
+    return scorer
 
 
 @pytest.fixture
@@ -2025,3 +2059,155 @@ class TestCodeMetricValidationConfiguration:
         assert Configuration.code_validation_initial_delay == 3.0
         assert Configuration.code_validation_max_delay == 45.0
         assert Configuration.code_validation_backoff_multiplier == 1.8
+
+
+class TestEvaluatorScope:
+    """Scope on evaluator construction, creation and population from the API."""
+
+    def test_fresh_evaluator_has_no_scope(self, reset_configuration: None) -> None:
+        # Given a local evaluator that has never been synced
+        evaluator = LocalEvaluator(name="local", scorer_fn=lambda x: 1.0)
+
+        # Then it reports no server scope
+        assert evaluator.is_global is None
+        assert evaluator.scope_projects == []
+
+    @pytest.mark.parametrize(
+        ("is_global", "scope_projects", "expected_global", "expected_projects"),
+        [
+            (False, [ScorerScopeProjectRef(id="p1", name="One")], False, [ScorerScopeProjectRef(id="p1", name="One")]),
+            (True, [], True, []),
+            (UNSET, UNSET, None, []),
+        ],
+    )
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_get_list_and_refresh_populate_scope(
+        self, mock_scorers_class, is_global, scope_projects, expected_global, expected_projects, reset_configuration
+    ) -> None:
+        # Given a scorer response with scope fields
+        scorer_id = str(uuid4())
+        scorer = _scope_scorer(scorer_id, is_global=is_global, scope_projects=scope_projects)
+        mock_scorers_class.return_value.list.return_value = [scorer]
+
+        # When read through get(), list() and refresh()
+        from_get = Evaluator.get(name="Scoped Evaluator")
+        from_list = Evaluator.list()[0]
+        refreshed = LlmEvaluator(name="Scoped Evaluator", prompt="x")
+        refreshed.id = scorer_id
+        refreshed.refresh()
+
+        # Then each reflects the response
+        for evaluator in (from_get, from_list, refreshed):
+            assert evaluator.is_global is expected_global
+            assert evaluator.scope_projects == expected_projects
+
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_llm_evaluator_forwards_scope_and_populates_after_create(
+        self, mock_scorers_class, mock_evaluators_class, reset_configuration: None
+    ) -> None:
+        # Given an LLM evaluator built with an explicit scope
+        scorer_id = str(uuid4())
+        mock_version = MagicMock()
+        mock_version.scorer_id = scorer_id
+        mock_evaluators_class.return_value.create_custom_llm_evaluator.return_value = mock_version
+        projects = [ScorerScopeProjectRef(id="a", name="A"), ScorerScopeProjectRef(id="b", name="B")]
+        mock_scorers_class.return_value.list.return_value = [
+            _scope_scorer(scorer_id, is_global=False, scope_projects=projects)
+        ]
+
+        # When created
+        evaluator = LlmEvaluator(name="Scoped Evaluator", prompt="Is it accurate?", project_ids=["a", "b"]).create()
+
+        # Then the scope reaches the service and the server scope is surfaced
+        kwargs = mock_evaluators_class.return_value.create_custom_llm_evaluator.call_args.kwargs
+        assert kwargs["project_ids"] == ["a", "b"]
+        assert kwargs["is_global"] is None
+        assert evaluator.is_global is False
+        assert evaluator.scope_projects == projects
+
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_llm_evaluator_forwards_is_global(
+        self, mock_scorers_class, mock_evaluators_class, reset_configuration: None
+    ) -> None:
+        scorer_id = str(uuid4())
+        mock_evaluators_class.return_value.create_custom_llm_evaluator.return_value = MagicMock(scorer_id=scorer_id)
+        mock_scorers_class.return_value.list.return_value = [_scope_scorer(scorer_id, is_global=True)]
+
+        evaluator = LlmEvaluator(name="Scoped Evaluator", prompt="x", is_global=True).create()
+
+        kwargs = mock_evaluators_class.return_value.create_custom_llm_evaluator.call_args.kwargs
+        assert kwargs["is_global"] is True
+        assert kwargs["project_ids"] is None
+        assert evaluator.is_global is True
+
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.get_validate_code_scorer_task_result_scorers_code_validate_task_id_get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_code_scorer_version_scorers_scorer_id_version_code_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_code_evaluator_sends_scope_and_populates_after_create(
+        self,
+        mock_scorers_class,
+        mock_create_scorers,
+        mock_create_version,
+        mock_validate_post,
+        mock_validate_get,
+        mock_config,
+        reset_configuration,
+        mock_validation_response,
+        mock_validation_task_result,
+        mock_version_response,
+        mock_scorer_response,
+    ) -> None:
+        # Given a code evaluator with explicit scope and a working API
+        scorer_id = str(uuid4())
+        mock_validate_post.sync.return_value = mock_validation_response()
+        mock_validate_get.sync.return_value = mock_validation_task_result(TaskResultStatus.COMPLETED)
+        mock_create_scorers.sync.return_value = mock_scorer_response(scorer_id, "Scoped Code")
+        mock_create_version.sync.return_value = mock_version_response(scorer_id)
+        projects = [ScorerScopeProjectRef(id="a", name="A")]
+        mock_scorers_class.return_value.list.return_value = [
+            _scope_scorer(scorer_id, scorer_type=ScorerTypes.CODE, scope_projects=projects)
+        ]
+
+        # When created
+        evaluator = CodeEvaluator(name="Scoped Code", code="def score(t): return 1.0", project_ids=["a", "a"]).create()
+
+        # Then the request carries the deduplicated scope and the server scope is surfaced
+        body = mock_create_scorers.sync.call_args.kwargs["body"]
+        assert body.is_global is False
+        assert body.project_ids == ["a"]
+        assert evaluator.scope_projects == projects
+
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    def test_code_evaluator_global_sends_no_project_ids(
+        self, mock_create_scorers, mock_config, reset_configuration
+    ) -> None:
+        mock_create_scorers.sync.return_value = None
+
+        with patch.object(CodeEvaluator, "_validate_code", return_value="{}"):
+            with pytest.raises(ValueError, match="No response"):
+                CodeEvaluator(name="G", code="x", is_global=True).create()
+
+        body = mock_create_scorers.sync.call_args.kwargs["body"]
+        assert body.is_global is True
+        assert "project_ids" not in body.to_dict()
+
+    @pytest.mark.parametrize(
+        "kwargs", [{"is_global": True, "project_ids": ["a"]}, {"project_ids": []}, {"is_global": False}]
+    )
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.validate_code_scorer_scorers_code_validate_post")
+    @patch("splunk_ao.evaluator.create_scorers_post")
+    def test_code_evaluator_resolves_scope_before_validating_code(
+        self, mock_create_scorers, mock_validate_post, mock_config, kwargs, reset_configuration
+    ) -> None:
+        with pytest.raises(ValidationError):
+            CodeEvaluator(name="Bad", code="x", **kwargs).create()
+
+        mock_validate_post.sync.assert_not_called()
+        mock_create_scorers.sync.assert_not_called()
