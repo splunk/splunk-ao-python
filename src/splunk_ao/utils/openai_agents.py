@@ -24,7 +24,7 @@ _TEXT_PART_TYPES = ("text", "input_text", "output_text")
 # Responses API tool-call items, by the field holding the call's arguments.
 _TOOL_CALL_ITEM_FIELDS = {"function_call": "arguments", "custom_tool_call": "input"}
 _TOOL_OUTPUT_ITEM_TYPES = ("function_call_output", "custom_tool_call_output")
-# Message roles have no "developer" in the OTel GenAI schema or in LoggedMessage.
+# The OTel GenAI message schema has no "developer" role; record it as the equivalent "system".
 _ROLE_MAP = {"developer": "system"}
 
 
@@ -46,6 +46,13 @@ def _content_block(part: Any) -> dict[str, Any] | None:
         # Responses API carries image_url as a plain string, not {"url": ...}.
         part = {"type": "image_url", "image_url": {"url": part["image_url"]}}
     elif kind == "input_file":
+        file_url = part.get("file_url")
+        if isinstance(file_url, str) and file_url:
+            return {"type": "data", "modality": "document", "url": file_url}
+        file_data = part.get("file_data")
+        if isinstance(file_data, str) and file_data and not file_data.startswith("data:"):
+            # Raw base64 without a data URI: do not dump the payload as text.
+            return {"type": "text", "text": serialize_to_str({k: v for k, v in part.items() if k != "file_data"})}
         # Responses API carries the file fields on the part itself, not under "file".
         part = {"type": "file", "file": part}
     return _convert_langchain_content_block(part)
@@ -412,7 +419,10 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
         # GenerationSpanData: input/output are list[dict] — LoggedLlmSpan validators handle conversion.
         # output is Sequence[Mapping] (a list from the SDK's models, possibly a tuple from a custom model),
         # but LlmSpanAllowedOutputType only accepts a single dict; take the first choice.
-        data["input"] = _normalize_chat_messages(data["input"])
+        # GenerationSpanData.input/output stay None when tracing.include_data() is false
+        # (e.g. RunConfig(trace_include_sensitive_data=False)); LoggedLlmSpan requires a message
+        # list, not None, so an empty list is the valid "no data" representation.
+        data["input"] = _normalize_chat_messages(data["input"]) if data["input"] is not None else []
         if isinstance(data["output"], Sequence) and not isinstance(data["output"], str):
             choices = list(data["output"])
             if len(choices) > 1:
@@ -420,17 +430,19 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
             first = choices[0] if choices else None
             if isinstance(first, dict) and first.get("object") == "response":
                 # Streamed Chat Completions record the adapter's Responses-shaped response, not the message.
-                data["output"] = _normalize_responses_output(first.get("output")) or serialize_to_str(None)
+                data["output"] = _normalize_responses_output(first.get("output")) or ""
             else:
                 data["output"] = _normalize_chat_messages([first])[0] if first is not None else None
     else:
         # ResponseSpanData: input is a string or item list, output a list of ResponseOutputItem objects.
-        # Both are only set once the model call returns, so they are None when the span starts.
+        # Both are only set once the model call returns, so they are None when the span starts
+        # (or stay None if tracing.include_data() is false); an empty list is the valid "no data"
+        # representation LoggedLlmSpan and the exporter expect, not a literal "null" string.
         if data["input"] is None:
-            data["input"] = serialize_to_str(None)
+            data["input"] = []
         else:
             data["input"] = _normalize_responses_input(data["input"])
-        data["output"] = _normalize_responses_output(data["output"]) or serialize_to_str(None)
+        data["output"] = _normalize_responses_output(data["output"]) or ""
 
     if data["temperature"] is not None:
         try:

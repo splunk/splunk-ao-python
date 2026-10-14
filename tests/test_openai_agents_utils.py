@@ -515,6 +515,27 @@ class TestNormalizeResponsesInput:
             }
         ]
 
+    def test_input_file_with_url_becomes_document_data_block(self) -> None:
+        # Given: a Responses input_file part that carries a URL, not inline data
+        # When: it is normalized
+        # Then: it becomes a document data block with that URL, not a JSON dump of the part
+        items = [{"role": "user", "content": [{"type": "input_file", "file_url": "https://x/a.pdf"}]}]
+        blocks = _normalize_responses_input(items)[0]["content"]
+        assert blocks == [{"type": "data", "modality": "document", "url": "https://x/a.pdf"}]
+
+    def test_input_file_with_raw_base64_does_not_dump_payload_as_text(self) -> None:
+        # Given: a Responses input_file part with file_data that is raw base64, no "data:" URI prefix
+        # When: it is normalized
+        # Then: the payload itself is dropped from the text fallback, not embedded in it
+        items = [
+            {"role": "user", "content": [{"type": "input_file", "filename": "a.pdf", "file_data": "AAAAAAAAAAAAAAAA"}]}
+        ]
+        blocks = _normalize_responses_input(items)[0]["content"]
+        assert len(blocks) == 1
+        assert blocks[0]["type"] == "text"
+        assert "AAAAAAAAAAAAAAAA" not in blocks[0]["text"]
+        assert "a.pdf" in blocks[0]["text"]
+
 
 class TestNormalizeResponsesOutput:
     """Test _normalize_responses_output function."""
@@ -643,11 +664,13 @@ class TestGenerationStreamedOutput:
         #   role-less reasoning item (no "message" or tool-call item for _normalize_responses_output
         #   to combine into an assistant message)
         # When: LLM data is extracted
-        # Then: output falls back to a safe string instead of None - on the ingestion-hook path, None
-        #   reaches LoggedLlmSpan(output=...), which requires a LoggedMessage and rejects None
+        # Then: output falls back to an empty string, not None - on the ingestion-hook path, None
+        #   reaches LoggedLlmSpan(output=...), which requires a LoggedMessage and rejects None.
+        #   Not the literal "null" string either, which would be truthy and defeat every
+        #   downstream fallback (workflow/trace output would show "null" as the answer).
         span_data = GenerationSpanData(
             input=[{"role": "user", "content": "Hi"}],
             output=self._streamed_output({"type": "reasoning", "id": "__fake_id__", "summary": []}),
             model="gpt-4",
         )
-        assert _extract_llm_data(span_data)["output"] == "null"
+        assert _extract_llm_data(span_data)["output"] == ""

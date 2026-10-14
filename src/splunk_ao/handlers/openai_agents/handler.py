@@ -229,9 +229,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         """
         is_workflow_span = False
         input = node.span_params.get("input", "")
-        # An explicit None (e.g. a GenerationSpanData that errors before output is set) must not reach
-        # LoggedLlmSpan below, which requires a LoggedMessage, not None.
-        output = node.span_params.get("output") or ""
+        output = node.span_params.get("output", "")
         name = node.span_params.get("name")
         metadata = node.span_params.get("metadata")
         tags = node.span_params.get("tags")
@@ -256,9 +254,12 @@ class SplunkAOTracingProcessor(TracingProcessor):
         elif node.node_type in ("llm", "chat"):
             tools = node.span_params.get("tools")
 
+            # An explicit None (e.g. a GenerationSpanData that errors before output is set) must not
+            # reach LoggedLlmSpan, which requires a LoggedMessage, not None. Scoped to this branch only -
+            # other node types (e.g. a retriever's output=[]) must keep their own falsy-but-valid output.
             span = LoggedLlmSpan(
-                input=input,
-                output=output,
+                input=input if input is not None else "",
+                output=output if output is not None else "",
                 name=name or "LLM Span",
                 created_at=start_time_iso,
                 user_metadata=metadata or {},
