@@ -162,7 +162,8 @@ class Evaluators:
         Raises
         ------
         ValidationError
-            If the scope arguments conflict or ``project_ids`` is empty.
+            If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+            passed with no project to scope to.
         NotFoundError
             If the current project is set but cannot be found.
         """
@@ -282,7 +283,8 @@ def create_custom_llm_evaluator(
     Raises
     ------
     ValidationError
-        If the scope arguments conflict or ``project_ids`` is empty.
+        If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+        passed with no project to scope to.
     NotFoundError
         If the current project is set but cannot be found.
     """
