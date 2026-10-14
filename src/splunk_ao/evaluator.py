@@ -1137,7 +1137,7 @@ class CodeEvaluator(Evaluator):
             # Ensure node_level is set (should always be set in __init__, but checking for type safety)
             assert self.node_level is not None
 
-            # Resolve scope first so a bad scope fails before any API call
+            # Resolve scope before code validation or any write, so a bad scope fails fast
             scope_is_global, scope_project_ids = _resolve_create_scope(self.project_ids, self.is_global)
 
             # Step 1: Validate the code and get validation result

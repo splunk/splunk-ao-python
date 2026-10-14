@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `LlmEvaluator`, `CodeEvaluator`, `Evaluators.create_custom_llm_evaluator()` and the module-level
   `create_custom_llm_evaluator()` accept `project_ids` and `is_global` to choose the scope of a new evaluator.
-  Passing both, or an empty `project_ids`, raises `ValidationError` before any request is sent.
+  Passing both, or an empty `project_ids` without `is_global=True`, raises `ValidationError` before any request is sent.
 - `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
   `create()`, `get()`, `list()` and `refresh()`.
 

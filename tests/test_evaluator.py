@@ -2093,6 +2093,14 @@ class TestEvaluatorScope:
             assert evaluator.is_global is expected_global
             assert evaluator.scope_projects == expected_projects
 
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_fetched_evaluator_has_no_requested_project_ids(self, mock_scorers_class, reset_configuration) -> None:
+        # Given an evaluator built by get(), which skips __init__
+        mock_scorers_class.return_value.list.return_value = [_scope_scorer(str(uuid4()))]
+
+        # Then the requested-scope attribute still exists
+        assert Evaluator.get(name="Scoped Evaluator").project_ids is None
+
     @patch("splunk_ao.evaluator.Evaluators")
     @patch("splunk_ao.evaluator.Scorers")
     def test_llm_evaluator_forwards_scope_and_populates_after_create(
