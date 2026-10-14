@@ -36,14 +36,7 @@ from splunk_ao.shared.exceptions import ValidationError as SplunkAOValidationErr
 FIXED_PROJECT_ID = str(uuid4())
 
 
-@pytest.fixture(autouse=True)
-def no_current_project(monkeypatch: pytest.MonkeyPatch):
-    """Start every test with no current project in the environment or the decorator context."""
-    monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-    monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
-    token = _project_context.set(None)
-    yield
-    _project_context.reset(token)
+pytestmark = pytest.mark.usefixtures("no_current_project")
 
 
 @pytest.fixture

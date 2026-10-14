@@ -6,7 +6,6 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.decorator import _project_context
 from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
 from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerScopeProjectRef, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
@@ -18,14 +17,7 @@ from splunk_ao.shared.exceptions import APIError, ValidationError
 # Test fixtures and helper functions
 
 
-@pytest.fixture(autouse=True)
-def no_current_project(monkeypatch: pytest.MonkeyPatch):
-    """Start every test with no current project in the environment or the decorator context."""
-    monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
-    monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
-    token = _project_context.set(None)
-    yield
-    _project_context.reset(token)
+pytestmark = pytest.mark.usefixtures("no_current_project")
 
 
 def _scope_scorer(scorer_id: str, *, scorer_type: ScorerTypes = ScorerTypes.LLM, is_global=False, scope_projects=UNSET):
@@ -2077,7 +2069,7 @@ class TestEvaluatorScope:
         [
             (False, [ScorerScopeProjectRef(id="p1", name="One")], False, [ScorerScopeProjectRef(id="p1", name="One")]),
             (True, [], True, []),
-            (UNSET, UNSET, None, []),
+            (UNSET, UNSET, False, []),
         ],
     )
     @patch("splunk_ao.evaluator.Scorers")

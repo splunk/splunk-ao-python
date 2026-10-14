@@ -108,8 +108,9 @@ class Evaluator(StateManagementMixin, ABC):
         created_at (datetime | None): When the metric was created.
         updated_at (datetime | None): When the metric was last updated.
         version (int | None): Evaluator version number.
-        is_global (bool | None): Whether the evaluator is global, as reported by the API.
-            ``None`` until populated from the API.
+        is_global (bool | None): Whether the evaluator is global. ``None`` on a fresh evaluator. On
+            ``LlmEvaluator`` and ``CodeEvaluator`` it holds the ``is_global`` passed to the constructor until
+            ``create()`` or ``refresh()`` replaces it with the value the API reports.
         scope_projects (list[ScorerScopeProjectRef]): Projects the evaluator is scoped to, as
             reported by the API. Empty until populated, and for global evaluators.
 
@@ -171,6 +172,9 @@ class Evaluator(StateManagementMixin, ABC):
     # Access scope reported by the API
     is_global: bool | None
     scope_projects: list[ScorerScopeProjectRef]
+
+    # Requested scope used by create(); a class default because get() and list() skip __init__
+    project_ids: list[str] | None = None
 
     def __init__(
         self, name: str, *, description: str = "", tags: list[str] | None = None, version: int | None = None
@@ -408,7 +412,7 @@ class Evaluator(StateManagementMixin, ABC):
             judges = None
             cot_enabled = None
 
-        is_global = None if isinstance(scorer_response.is_global, Unset) else scorer_response.is_global
+        is_global = False if isinstance(scorer_response.is_global, Unset) else scorer_response.is_global
         scope_projects = [] if isinstance(scorer_response.scope_projects, Unset) else scorer_response.scope_projects
 
         self._sync_attrs(
