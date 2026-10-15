@@ -16,18 +16,150 @@ from agents.tracing import ResponseSpanData
 
 from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.schema.handlers import SPAN_TYPE
-from splunk_ao.utils.serialization import serialize_to_str
+from splunk_ao.utils.serialization import _convert_langchain_content_block, serialize_to_str
 
 _logger = logging.getLogger(__name__)
 
+_TEXT_PART_TYPES = ("text", "input_text", "output_text")
+# Responses API tool-call items, by the field holding the call's arguments.
+_TOOL_CALL_ITEM_FIELDS = {"function_call": "arguments", "custom_tool_call": "input"}
+_TOOL_OUTPUT_ITEM_TYPES = ("function_call_output", "custom_tool_call_output")
+# The OTel GenAI message schema has no "developer" role; record it as the equivalent "system".
+_ROLE_MAP = {"developer": "system"}
+
+
+def _content_block(part: Any) -> dict[str, Any] | None:
+    """Convert one Chat Completions or Responses content part into an ingest content block."""
+    if isinstance(part, str):
+        return {"type": "text", "text": part}
+    if not isinstance(part, dict):
+        return None
+    kind = part.get("type")
+    if kind in _TEXT_PART_TYPES or (kind is None and isinstance(part.get("text"), str)):
+        return {"type": "text", "text": part.get("text") or ""}
+    if kind == "refusal":
+        return {"type": "text", "text": part.get("refusal") or ""}
+    if kind == "input_image":
+        if not isinstance(part.get("image_url"), str):
+            # Only a provider file_id: there is no data or URL to attach.
+            return {"type": "text", "text": serialize_to_str(part)}
+        # Responses API carries image_url as a plain string, not {"url": ...}.
+        part = {"type": "image_url", "image_url": {"url": part["image_url"]}}
+    elif kind == "input_file":
+        file_url = part.get("file_url")
+        if isinstance(file_url, str) and file_url:
+            return {"type": "data", "modality": "document", "url": file_url}
+        file_data = part.get("file_data")
+        if isinstance(file_data, str) and file_data and not file_data.startswith("data:"):
+            # Raw base64 without a data URI: do not dump the payload as text.
+            return {"type": "text", "text": serialize_to_str({k: v for k, v in part.items() if k != "file_data"})}
+        # Responses API carries the file fields on the part itself, not under "file".
+        part = {"type": "file", "file": part}
+    return _convert_langchain_content_block(part)
+
+
+def _message_content(content: Any) -> Any:
+    """Keep string content; convert a list of parts into ingest content blocks."""
+    if not isinstance(content, list):
+        return content
+    return [block for block in (_content_block(part) for part in content) if block is not None]
+
+
+def _normalize_chat_messages(messages: Any) -> Any:
+    """Convert multi-part content in Chat Completions messages into ingest content blocks."""
+    if not isinstance(messages, list | tuple):
+        return messages
+    return [
+        {**message, "content": _message_content(message["content"])}
+        if isinstance(message, dict) and isinstance(message.get("content"), list)
+        else message
+        for message in messages
+    ]
+
+
+def _as_dict(item: Any) -> Any:
+    return item.model_dump(exclude_none=True) if hasattr(item, "model_dump") else item
+
+
+def _tool_call(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": item.get("call_id"),
+        "type": "function",
+        "function": {"name": item.get("name"), "arguments": item.get(_TOOL_CALL_ITEM_FIELDS[item["type"]])},
+    }
+
+
+def _normalize_responses_input(items: Any) -> list[dict[str, Any]]:
+    """Convert Responses API input (a string or item list) into chat messages, in the order sent."""
+    if isinstance(items, str):
+        return [{"role": "user", "content": items}]
+    messages: list[dict[str, Any]] = []
+    for item in map(_as_dict, items or []):
+        if not isinstance(item, dict):
+            continue
+        kind = item.get("type")
+        if kind in _TOOL_CALL_ITEM_FIELDS:
+            previous = messages[-1] if messages else None
+            # Parallel tool calls are one assistant turn that the item list splits up.
+            if previous and previous["role"] == "assistant" and previous.get("tool_calls") and not previous["content"]:
+                previous["tool_calls"].append(_tool_call(item))
+            else:
+                messages.append({"role": "assistant", "content": "", "tool_calls": [_tool_call(item)]})
+        elif kind in _TOOL_OUTPUT_ITEM_TYPES:
+            output = item.get("output")
+            if isinstance(output, str):
+                content = output
+            elif isinstance(output, list):
+                # A tool result can carry multimodal parts (e.g. text + an image); convert them into
+                # content blocks instead of dumping the whole list, including any base64 payload, as JSON.
+                content = _message_content(output)
+            else:
+                content = serialize_to_str(output)
+            messages.append({"role": "tool", "tool_call_id": item.get("call_id"), "content": content})
+        elif "role" in item:
+            role = _ROLE_MAP.get(item["role"], item["role"])
+            messages.append({"role": role, "content": _message_content(item.get("content") or "")})
+        # Items without a role (reasoning, hosted tool calls) are skipped, as in the OTel OpenAI instrumentation.
+    return messages
+
+
+def _normalize_responses_output(items: Any) -> dict[str, Any] | None:
+    """Combine Responses API output items into the single assistant message an LLM span records."""
+    texts: list[str] = []
+    tool_calls: list[dict[str, Any]] = []
+    for item in map(_as_dict, items or []):
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") == "message":
+            content = _message_content(item.get("content") or [])
+            if isinstance(content, str):
+                texts.append(content)
+                continue
+            texts.extend(block["text"] for block in content if block.get("type") == "text" and block.get("text"))
+        elif item.get("type") in _TOOL_CALL_ITEM_FIELDS:
+            tool_calls.append(_tool_call(item))
+    if not texts and not tool_calls:
+        return None
+    message: dict[str, Any] = {"role": "assistant", "content": "\n".join(texts)}
+    if tool_calls:
+        message["tool_calls"] = tool_calls
+    return message
+
 
 def _extract_user_input(llm_input: Any) -> str | None:
-    """Return the last user message content from a GenerationSpanData input list."""
+    """Return the text of the latest user message that has any, from an LLM span's message list."""
     if not isinstance(llm_input, list):
         return None
     for message in reversed(llm_input):
-        if isinstance(message, dict) and message.get("role") == "user":
-            return str(message.get("content") or "")
+        if not isinstance(message, dict) or message.get("role") != "user":
+            continue
+        content = message.get("content")
+        if isinstance(content, str) and content:
+            return content
+        if isinstance(content, list):
+            texts = [b["text"] for b in content if isinstance(b, dict) and isinstance(b.get("text"), str) and b["text"]]
+            if texts:
+                return " ".join(texts)
     return None
 
 
@@ -287,15 +419,30 @@ def _extract_llm_data(span_data: GenerationSpanData | ResponseSpanData) -> dict[
         # GenerationSpanData: input/output are list[dict] — LoggedLlmSpan validators handle conversion.
         # output is Sequence[Mapping] (a list from the SDK's models, possibly a tuple from a custom model),
         # but LlmSpanAllowedOutputType only accepts a single dict; take the first choice.
+        # GenerationSpanData.input/output stay None when tracing.include_data() is false
+        # (e.g. RunConfig(trace_include_sensitive_data=False)); LoggedLlmSpan requires a message
+        # list, not None, so an empty list is the valid "no data" representation.
+        data["input"] = _normalize_chat_messages(data["input"]) if data["input"] is not None else []
         if isinstance(data["output"], Sequence) and not isinstance(data["output"], str):
             choices = list(data["output"])
             if len(choices) > 1:
                 _logger.debug("GenerationSpanData.output has %d choices; only the first is recorded", len(choices))
-            data["output"] = choices[0] if choices else None
+            first = choices[0] if choices else None
+            if isinstance(first, dict) and first.get("object") == "response":
+                # Streamed Chat Completions record the adapter's Responses-shaped response, not the message.
+                data["output"] = _normalize_responses_output(first.get("output")) or ""
+            else:
+                data["output"] = _normalize_chat_messages([first])[0] if first is not None else None
     else:
-        # ResponseSpanData: output is a list of ResponseOutputItem objects — serialize for ingestion.
-        data["input"] = serialize_to_str(data["input"])
-        data["output"] = serialize_to_str(data["output"])
+        # ResponseSpanData: input is a string or item list, output a list of ResponseOutputItem objects.
+        # Both are only set once the model call returns, so they are None when the span starts
+        # (or stay None if tracing.include_data() is false); an empty list is the valid "no data"
+        # representation LoggedLlmSpan and the exporter expect, not a literal "null" string.
+        if data["input"] is None:
+            data["input"] = []
+        else:
+            data["input"] = _normalize_responses_input(data["input"])
+        data["output"] = _normalize_responses_output(data["output"]) or ""
 
     if data["temperature"] is not None:
         try:
