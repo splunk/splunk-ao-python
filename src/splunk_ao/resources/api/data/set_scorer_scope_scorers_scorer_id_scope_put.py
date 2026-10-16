@@ -14,7 +14,7 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_scorer_capabilities_header, get_sdk_header
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
@@ -37,6 +37,7 @@ def _get_kwargs(scorer_id: str, *, body: UpdateScorerScopeRequest) -> dict[str, 
     headers["Content-Type"] = "application/json"
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
