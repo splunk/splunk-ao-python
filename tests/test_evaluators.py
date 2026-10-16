@@ -839,3 +839,24 @@ class TestCreateDecisionEvaluatorGuards:
         with pytest.raises(ValueError, match="output_type"):
             create_decision_evaluator(name="q", question="q", output_type="categorial", answer_options=["a", "b"])
         mock_create_scorer.sync.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("question", "answer_options"),
+        [
+            ("", None),
+            ("x" * 2001, None),
+            ("q", ["only"]),
+            ("q", ["a", "a"]),
+            ("q", [f"l{i}" for i in range(256)]),
+            ("q", [{"level": 1, "label": "x"}, {"level": 2, "label": "y"}]),
+            ("q", [{"level": 0, "label": "x"}, {"level": 0, "label": "y"}]),
+            ("q", [{"level": i, "label": str(i)} for i in range(11)]),
+        ],
+    )
+    def test_server_limits_are_checked_before_any_request(
+        self, mock_create_scorer, mock_create_version, mock_delete, question, answer_options
+    ) -> None:
+        # When/Then: inputs the server would reject with 422 raise before the scorer is created
+        with pytest.raises(ValueError):
+            create_decision_evaluator(name="q", question=question, answer_options=answer_options)
+        mock_create_scorer.sync.assert_not_called()

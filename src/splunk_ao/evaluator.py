@@ -948,7 +948,7 @@ class DecisionEvaluator(Evaluator):
         try:
             normalized_options = normalize_decision_answer_options(answer_options)
             resolved_output_type = resolve_decision_output_type(output_type, normalized_options)
-            validate_decision_request(resolved_output_type, normalized_options)
+            validate_decision_request(resolved_output_type, normalized_options, question)
         except ValueError as error:
             raise ValidationError(str(error)) from error
         self.output_type = resolved_output_type

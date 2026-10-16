@@ -78,6 +78,9 @@ def normalize_decision_answer_options(
 class DecisionVersionOutcomeUnknownError(RuntimeError):
     """The version request failed without a definitive rejection, so the scorer was kept.
 
+    A rate limit (429) is also treated as unknown, so it leaves a scorer without a version; delete it by id
+    before retrying with the same name.
+
     Attributes
     ----------
         scorer_id (str): The scorer that may or may not have a version.
@@ -127,18 +130,37 @@ def resolve_decision_output_type(
     return OutputTypeEnum.DISCRETE
 
 
+MAX_QUESTION_LENGTH = 2000
+
+
 def validate_decision_request(
-    output_type: OutputTypeEnum, answer_options: list[str] | list[DecisionLevel] | None
+    output_type: OutputTypeEnum, answer_options: list[str] | list[DecisionLevel] | None, question: str | None = None
 ) -> None:
-    """Reject answer options that do not match the output type, before anything is created."""
+    """Reject requests the server would refuse, before anything is created.
+
+    Checks the question length (1-2,000 characters when given) and that the answer options match the output
+    type: none for boolean_probability, 2-255 unique labels for categorical, 2-10 levels numbered 0, 1, 2 and
+    so on in order for discrete.
+    """
+    if question is not None and not 1 <= len(question) <= MAX_QUESTION_LENGTH:
+        raise ValueError(f"question must be 1-{MAX_QUESTION_LENGTH} characters; got {len(question)}.")
     if output_type == OutputTypeEnum.BOOLEAN_PROBABILITY:
         if answer_options is not None:
             raise ValueError("answer_options must be None for boolean_probability.")
     elif output_type == OutputTypeEnum.CATEGORICAL:
         if not answer_options or not all(isinstance(option, str) for option in answer_options):
             raise ValueError("answer_options must be a list of label strings for categorical.")
-    elif not answer_options or not all(isinstance(option, DecisionLevel) for option in answer_options):
-        raise ValueError("answer_options must be a list of levels (DecisionLevel or dict) for discrete.")
+        if not 2 <= len(answer_options) <= 255 or len(set(answer_options)) != len(answer_options):
+            raise ValueError("answer_options must hold 2-255 unique labels for categorical.")
+    else:
+        if not answer_options or not all(isinstance(option, DecisionLevel) for option in answer_options):
+            raise ValueError("answer_options must be a list of levels (DecisionLevel or dict) for discrete.")
+        if not 2 <= len(answer_options) <= 10:
+            raise ValueError("answer_options must hold 2-10 levels for discrete.")
+        if [level.level for level in answer_options if isinstance(level, DecisionLevel)] != list(
+            range(len(answer_options))
+        ):
+            raise ValueError("discrete levels must be numbered 0, 1, 2 and so on in order.")
 
 
 def _build_decision_version_request(
@@ -254,7 +276,7 @@ class Evaluators:
         question: str,
         node_level: StepType = StepType.llm,
         model_name: str = DEFAULT_DECISION_MODEL_NAME,
-        output_type: OutputTypeEnum | None = None,
+        output_type: OutputTypeEnum | str | None = None,
         answer_options: DecisionAnswerOptions | None = None,
         input_type: InputTypeEnum | None = None,
         description: str = "",
@@ -274,7 +296,7 @@ class Evaluators:
             The single node type the evaluator scores.
         model_name: str
             Decision model registry version, for example ``jev-1.13.0``.
-        output_type: OutputTypeEnum | None
+        output_type: OutputTypeEnum | str | None
             ``BOOLEAN_PROBABILITY``, ``CATEGORICAL`` or ``DISCRETE``. When ``None``, it is inferred from
             ``answer_options``: ``None`` gives ``BOOLEAN_PROBABILITY``, strings give ``CATEGORICAL`` and levels
             give ``DISCRETE``. An explicit value that does not match ``answer_options`` raises ``ValueError``.
@@ -310,7 +332,7 @@ class Evaluators:
         """
         normalized_options = normalize_decision_answer_options(answer_options)
         output_type = resolve_decision_output_type(output_type, normalized_options)
-        validate_decision_request(output_type, normalized_options)
+        validate_decision_request(output_type, normalized_options, question)
         version_req = _build_decision_version_request(
             model_name=model_name, question=question, answer_options=normalized_options
         )
@@ -471,7 +493,7 @@ def create_decision_evaluator(
     question: str,
     node_level: StepType = StepType.llm,
     model_name: str = DEFAULT_DECISION_MODEL_NAME,
-    output_type: OutputTypeEnum | None = None,
+    output_type: OutputTypeEnum | str | None = None,
     answer_options: DecisionAnswerOptions | None = None,
     input_type: InputTypeEnum | None = None,
     description: str = "",
@@ -494,7 +516,7 @@ def create_decision_evaluator(
         The single node type the evaluator scores.
     model_name: str
         Decision model registry version, for example ``jev-1.13.0``.
-    output_type: OutputTypeEnum | None
+    output_type: OutputTypeEnum | str | None
         ``BOOLEAN_PROBABILITY``, ``CATEGORICAL`` or ``DISCRETE``. When ``None``, it is inferred from
         ``answer_options``: ``None`` gives ``BOOLEAN_PROBABILITY``, strings give ``CATEGORICAL`` and levels
         give ``DISCRETE``. An explicit value that does not match ``answer_options`` raises ``ValueError``.
