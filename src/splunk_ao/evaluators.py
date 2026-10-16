@@ -33,8 +33,6 @@ from splunk_ao.search import FilterType
 
 _logger = logging.getLogger(__name__)
 
-DEFAULT_DECISION_MODEL_NAME = "jev-1.13.0"
-
 DecisionAnswerOptions = Sequence[str] | Sequence[DecisionLevel | Mapping[str, Any]]
 
 
@@ -275,7 +273,7 @@ class Evaluators:
         name: str,
         question: str,
         node_level: StepType = StepType.llm,
-        model_name: str = DEFAULT_DECISION_MODEL_NAME,
+        model_name: str = "jev-1.13.0",
         output_type: OutputTypeEnum | str | None = None,
         answer_options: DecisionAnswerOptions | None = None,
         input_type: InputTypeEnum | None = None,
@@ -492,7 +490,7 @@ def create_decision_evaluator(
     name: str,
     question: str,
     node_level: StepType = StepType.llm,
-    model_name: str = DEFAULT_DECISION_MODEL_NAME,
+    model_name: str = "jev-1.13.0",
     output_type: OutputTypeEnum | str | None = None,
     answer_options: DecisionAnswerOptions | None = None,
     input_type: InputTypeEnum | None = None,

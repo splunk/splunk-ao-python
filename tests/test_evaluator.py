@@ -2175,6 +2175,30 @@ class TestDecisionEvaluator:
         assert evaluator.id == "s1"
         assert evaluator.is_synced()
 
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_default_model_comes_from_configuration(
+        self,
+        mock_scorers_class: MagicMock,
+        mock_evaluators_class: MagicMock,
+        reset_configuration: None,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Given: the default decision model is set through the environment
+        monkeypatch.setenv("SPLUNK_AO_DEFAULT_DECISION_MODEL", "jev-9.9.9")
+        version = MagicMock()
+        version.scorer_id = "s1"
+        mock_evaluators_class.return_value.create_decision_evaluator.return_value = version
+        mock_scorers_class.return_value.list.return_value = [_decision_scorer("categorical", ["a", "b"])]
+
+        # When: creating a DecisionEvaluator without a model
+        evaluator = DecisionEvaluator(name="tone", question="Which tone?", answer_options=["a", "b"])
+        evaluator.create()
+
+        # Then: the configured model is used
+        kwargs = mock_evaluators_class.return_value.create_decision_evaluator.call_args.kwargs
+        assert kwargs["model_name"] == "jev-9.9.9"
+
 
 class TestDecisionEvaluatorReadPath:
     @patch("splunk_ao.evaluator.Scorers")

@@ -20,7 +20,6 @@ from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import Configuration
 from splunk_ao.evaluators import (
-    DEFAULT_DECISION_MODEL_NAME,
     DecisionAnswerOptions,
     DecisionVersionOutcomeUnknownError,
     Evaluators,
@@ -922,7 +921,8 @@ class DecisionEvaluator(Evaluator):
         Args:
             name: The name of the evaluator.
             question: The question the decision model answers (1-2,000 characters).
-            model: Decision model registry version. Defaults to ``jev-1.13.0``.
+            model: Decision model registry version. Defaults to Configuration.default_decision_model
+                (env: SPLUNK_AO_DEFAULT_DECISION_MODEL), which is ``jev-1.13.0`` unless set.
             node_level: The single node type the evaluator scores. Defaults to StepType.llm.
             output_type: ``boolean_probability``, ``categorical`` or ``discrete``. Inferred from ``answer_options`` when None.
             answer_options: None for boolean_probability, a list of labels for categorical, or a list of
@@ -943,7 +943,7 @@ class DecisionEvaluator(Evaluator):
             raise ValidationError("'question' must be provided for decision evaluators.")
 
         self.question = question
-        self.model = model or DEFAULT_DECISION_MODEL_NAME
+        self.model = model or Configuration.default_decision_model
         self.node_level = node_level or StepType.llm
         try:
             normalized_options = normalize_decision_answer_options(answer_options)
@@ -984,7 +984,7 @@ class DecisionEvaluator(Evaluator):
                 name=self.name,
                 question=self.question or "",
                 node_level=self.node_level if self.node_level is not None else StepType.llm,
-                model_name=self.model if self.model is not None else DEFAULT_DECISION_MODEL_NAME,
+                model_name=self.model if self.model is not None else Configuration.default_decision_model,
                 output_type=self.output_type,
                 answer_options=self.answer_options,
                 input_type=self.input_type,
