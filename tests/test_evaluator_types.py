@@ -426,17 +426,33 @@ class TestDecisionEvaluator:
         assert evaluator.ground_truth is False
 
     @pytest.mark.parametrize(
-        ("output_type", "expected"),
+        ("output_type", "answer_options", "expected"),
         [
-            ("boolean_probability", OutputTypeEnum.BOOLEAN_PROBABILITY),
-            ("Categorical", OutputTypeEnum.CATEGORICAL),
-            ("discrete", OutputTypeEnum.DISCRETE),
-            (OutputTypeEnum.DISCRETE, OutputTypeEnum.DISCRETE),
+            ("boolean_probability", None, OutputTypeEnum.BOOLEAN_PROBABILITY),
+            ("Categorical", ["a", "b"], OutputTypeEnum.CATEGORICAL),
+            ("discrete", [{"level": 0, "label": "x"}, {"level": 1, "label": "y"}], OutputTypeEnum.DISCRETE),
+            (OutputTypeEnum.CATEGORICAL, ["a", "b"], OutputTypeEnum.CATEGORICAL),
         ],
     )
-    def test_output_type_accepts_decision_types(self, output_type, expected):
+    def test_output_type_accepts_decision_types(self, output_type, answer_options, expected):
         # When/Then: decision output types parse from strings and enums
-        assert DecisionEvaluator(name="q", question="q", output_type=output_type).output_type == expected
+        evaluator = DecisionEvaluator(name="q", question="q", output_type=output_type, answer_options=answer_options)
+        assert evaluator.output_type == expected
+
+    @pytest.mark.parametrize(
+        ("output_type", "answer_options"),
+        [
+            ("categorical", None),
+            ("discrete", ["a", "b"]),
+            ("boolean_probability", ["a", "b"]),
+            (None, []),
+            (None, [{"level": "0", "label": "x"}, {"level": 1, "label": "y"}]),
+        ],
+    )
+    def test_mismatched_or_malformed_options_raise_validation_error(self, output_type, answer_options):
+        # When/Then: bad options fail at construction as ValidationError, before any request
+        with pytest.raises(ValidationError):
+            DecisionEvaluator(name="q", question="q", output_type=output_type, answer_options=answer_options)
 
     @pytest.mark.parametrize("output_type", ["categorial", "boolean", OutputTypeEnum.PERCENTAGE])
     def test_output_type_rejects_non_decision_types(self, output_type):

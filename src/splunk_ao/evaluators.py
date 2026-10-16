@@ -63,11 +63,10 @@ def normalize_decision_answer_options(
             missing = [key for key in ("level", "label") if key not in option]
             if missing:
                 raise ValueError(f"answer_options[{index}] is missing required key(s): {', '.join(missing)}.")
-            levels.append(
-                DecisionLevel(
-                    level=option["level"], label=option["label"], description=option.get("description") or UNSET
-                )
-            )
+            level, label = option["level"], option["label"]
+            if isinstance(level, bool) or not isinstance(level, int) or not isinstance(label, str):
+                raise ValueError(f"answer_options[{index}] needs an integer 'level' and a string 'label'.")
+            levels.append(DecisionLevel(level=level, label=label, description=option.get("description") or UNSET))
         else:
             raise ValueError(
                 "answer_options must be a list of strings (categorical) or a list of DecisionLevel / "
@@ -112,7 +111,7 @@ def resolve_decision_output_type(
     """
     if output_type is not None:
         try:
-            resolved = OutputTypeEnum(output_type)
+            resolved = OutputTypeEnum(output_type.lower() if isinstance(output_type, str) else output_type)
         except ValueError:
             resolved = None
         if resolved not in DECISION_OUTPUT_TYPES:
@@ -128,15 +127,10 @@ def resolve_decision_output_type(
     return OutputTypeEnum.DISCRETE
 
 
-def _validate_decision_request(
+def validate_decision_request(
     output_type: OutputTypeEnum, answer_options: list[str] | list[DecisionLevel] | None
 ) -> None:
-    """Reject requests the server would refuse, before anything is created."""
-    if output_type not in DECISION_OUTPUT_TYPES:
-        raise ValueError(
-            f"output_type must be one of {[t.value for t in DECISION_OUTPUT_TYPES]} for decision evaluators; "
-            f"got {output_type!r}."
-        )
+    """Reject answer options that do not match the output type, before anything is created."""
     if output_type == OutputTypeEnum.BOOLEAN_PROBABILITY:
         if answer_options is not None:
             raise ValueError("answer_options must be None for boolean_probability.")
@@ -308,7 +302,7 @@ class Evaluators:
             If an argument is invalid or the API answers with a validation error. If the scorer was created
             but its version was rejected, the scorer is deleted before the error is raised.
         SplunkAOAPIError
-            For a definitive rejection (400, 403, 404, 422), for example 403 when the feature flag is off.
+            For a definitive rejection (400, 403, 404, 422), for example 403 when the feature is not enabled.
             The scorer is deleted before the error is raised.
         DecisionVersionOutcomeUnknownError
             For a timeout, network error, 5xx or any other failure. The version may have been saved, so the
@@ -316,7 +310,7 @@ class Evaluators:
         """
         normalized_options = normalize_decision_answer_options(answer_options)
         output_type = resolve_decision_output_type(output_type, normalized_options)
-        _validate_decision_request(output_type, normalized_options)
+        validate_decision_request(output_type, normalized_options)
         version_req = _build_decision_version_request(
             model_name=model_name, question=question, answer_options=normalized_options
         )
@@ -487,7 +481,7 @@ def create_decision_evaluator(
     """
     Create a decision evaluator.
 
-    A decision evaluator asks a decision model (for example TypeSafe's Jev) one typed question and
+    A decision evaluator asks a decision model (for example a decision model) one typed question and
     scores the node with the probabilities of the answers.
 
     Parameters
@@ -528,7 +522,7 @@ def create_decision_evaluator(
         If an argument is invalid or the API answers with a validation error. If the scorer was created
         but its version was rejected, the scorer is deleted before the error is raised.
     SplunkAOAPIError
-        For a definitive rejection (400, 403, 404, 422), for example 403 when the feature flag is off.
+        For a definitive rejection (400, 403, 404, 422), for example 403 when the feature is not enabled.
         The scorer is deleted before the error is raised.
     DecisionVersionOutcomeUnknownError
         For a timeout, network error, 5xx or any other failure. The version may have been saved, so the
@@ -536,7 +530,7 @@ def create_decision_evaluator(
 
     Examples
     --------
-        from splunk_ao.metrics import create_decision_evaluator
+        from splunk_ao.evaluators import create_decision_evaluator
         from splunk_ao.resources.models import OutputTypeEnum
 
         create_decision_evaluator(

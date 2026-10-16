@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
+from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
 from splunk_ao.evaluator import CodeEvaluator, DecisionEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
 from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerResponse, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
@@ -2189,10 +2190,10 @@ class TestDecisionEvaluatorReadPath:
         # When: listing evaluators
         evaluators = Evaluator.list()
 
-        # Then: nothing raises and the raw values are kept
+        # Then: nothing raises and the unreadable options are dropped
         assert [type(m) for m in evaluators] == [DecisionEvaluator, DecisionEvaluator]
-        assert evaluators[0].answer_options == []
-        assert evaluators[1].answer_options == [{"level": 0}]
+        assert evaluators[0].answer_options is None
+        assert evaluators[1].answer_options is None
 
     @patch("splunk_ao.evaluator.Scorers")
     def test_latest_version_is_used_when_default_version_has_no_decision_row(
@@ -2210,3 +2211,35 @@ class TestDecisionEvaluatorReadPath:
         # Then: the question comes from the latest version
         assert isinstance(evaluator, DecisionEvaluator)
         assert evaluator.question == "Which tone?"
+
+
+class TestDecisionEvaluatorOutcomeAndModel:
+    def test_unknown_outcome_keeps_scorer_id_on_the_evaluator(self, reset_configuration: None) -> None:
+        # Given: the service keeps the scorer after an unknown outcome
+        evaluator = DecisionEvaluator(name="tone", question="q")
+        error = DecisionVersionOutcomeUnknownError("scorer-1", TimeoutError("slow"))
+
+        # When/Then: the id is set so the scorer can be refreshed or deleted, and the state is failed
+        with patch("splunk_ao.evaluator.Evaluators") as evaluators_cls:
+            evaluators_cls.return_value.create_decision_evaluator.side_effect = error
+            with pytest.raises(DecisionVersionOutcomeUnknownError):
+                evaluator.create()
+        assert evaluator.id == "scorer-1"
+        assert evaluator.has_failed()
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_model_is_kept_when_the_response_has_no_decision_version(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: an evaluator with a custom model and a refresh response without a version
+        evaluator = DecisionEvaluator(name="tone", question="q", model="jev-1.12.0")
+        mock_scorers_class.return_value.list.return_value = [
+            _decision_scorer("boolean_probability", None, with_version=False)
+        ]
+        evaluator._sync_attrs(id="s1")
+
+        # When: refreshing
+        evaluator.refresh()
+
+        # Then: the model survives
+        assert evaluator.model == "jev-1.12.0"

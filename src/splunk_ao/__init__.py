@@ -52,6 +52,7 @@ from splunk_ao.evaluator import (
     LocalEvaluator,
     SplunkAOEvaluator,
 )
+from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -125,6 +126,7 @@ __all__ = [
     "ControlSpan",
     "Dataset",
     "DecisionEvaluator",
+    "DecisionVersionOutcomeUnknownError",
     "Document",
     "Evaluator",
     "Experiment",

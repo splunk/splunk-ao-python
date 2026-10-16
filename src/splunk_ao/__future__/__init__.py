@@ -6,6 +6,7 @@ from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.experiment import Experiment
+from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
 from splunk_ao.integration import Integration
 from splunk_ao.agent_stream import AgentStream
 from splunk_ao.evaluator import (
@@ -43,6 +44,7 @@ __all__ = [
     "ConfigurationError",
     "Dataset",
     "DecisionEvaluator",
+    "DecisionVersionOutcomeUnknownError",
     "Evaluator",
     "Experiment",
     "Integration",

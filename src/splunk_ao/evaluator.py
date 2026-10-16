@@ -22,9 +22,11 @@ from splunk_ao.configuration import Configuration
 from splunk_ao.evaluators import (
     DEFAULT_DECISION_MODEL_NAME,
     DecisionAnswerOptions,
+    DecisionVersionOutcomeUnknownError,
     Evaluators,
     normalize_decision_answer_options,
     resolve_decision_output_type,
+    validate_decision_request,
 )
 from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
@@ -38,9 +40,11 @@ from splunk_ao.resources.models import (
     BodyValidateCodeScorerScorersCodeValidatePost,
     CreateScorerRequest,
     DecisionLevel,
+    DecisionScorerDB,
     HTTPValidationError,
     InputTypeEnum,
     OutputTypeEnum,
+    ScorerResponse,
     ScorerTypes,
     TaskResultStatus,
     UpdateScorerRequest,
@@ -407,6 +411,9 @@ class Evaluator(StateManagementMixin, ABC):
             model = None
             judges = None
             cot_enabled = None
+        if model is None and isinstance(self, DecisionEvaluator):
+            # Decision scorers carry no LLM defaults; keep the model the evaluator already has.
+            model = getattr(self, "model", None)
 
         self._sync_attrs(
             id=scorer_response.id,
@@ -938,13 +945,13 @@ class DecisionEvaluator(Evaluator):
         self.question = question
         self.model = model or DEFAULT_DECISION_MODEL_NAME
         self.node_level = node_level or StepType.llm
-        normalized_options = normalize_decision_answer_options(answer_options)
-        if isinstance(output_type, str) and not isinstance(output_type, OutputTypeEnum):
-            output_type = output_type.lower()
         try:
-            self.output_type = resolve_decision_output_type(output_type, normalized_options)
+            normalized_options = normalize_decision_answer_options(answer_options)
+            resolved_output_type = resolve_decision_output_type(output_type, normalized_options)
+            validate_decision_request(resolved_output_type, normalized_options)
         except ValueError as error:
             raise ValidationError(str(error)) from error
+        self.output_type = resolved_output_type
         self.answer_options = normalized_options
         self.input_type = input_type
         self.ground_truth = ground_truth
@@ -962,6 +969,8 @@ class DecisionEvaluator(Evaluator):
         ------
             ValueError: If an argument is invalid or the API answers with a validation error.
             SplunkAOAPIError: For HTTP errors. A scorer created before a clear rejection is deleted.
+            DecisionVersionOutcomeUnknownError: When the outcome of the version request is unknown (timeout,
+                network error, 5xx). The scorer is kept and ``id`` is set so it can be refreshed or deleted.
 
         Examples
         --------
@@ -976,9 +985,7 @@ class DecisionEvaluator(Evaluator):
                 question=self.question or "",
                 node_level=self.node_level if self.node_level is not None else StepType.llm,
                 model_name=self.model if self.model is not None else DEFAULT_DECISION_MODEL_NAME,
-                output_type=self.output_type
-                if isinstance(self.output_type, OutputTypeEnum)
-                else OutputTypeEnum.BOOLEAN_PROBABILITY,
+                output_type=self.output_type,
                 answer_options=self.answer_options,
                 input_type=self.input_type,
                 description=self.description,
@@ -998,11 +1005,13 @@ class DecisionEvaluator(Evaluator):
             logger.info(f"DecisionEvaluator.create: id='{self.id}' - completed")
             return self
         except Exception as e:
+            if isinstance(e, DecisionVersionOutcomeUnknownError):
+                self._sync_attrs(id=e.scorer_id)
             self._set_state(SyncState.FAILED_SYNC, error=e)
             logger.error(f"DecisionEvaluator.create: name='{self.name}' - failed: {e}")
             raise
 
-    def _populate_decision_attrs(self, scorer_response: Any) -> None:
+    def _populate_decision_attrs(self, scorer_response: ScorerResponse) -> None:
         """Fill decision fields from a scorer response.
 
         The question and answer options live on the scorer's version. When the response carries no version,
@@ -1032,7 +1041,8 @@ class DecisionEvaluator(Evaluator):
             if version is None or isinstance(version, Unset):
                 continue
             decision = version.decision_scorer
-            if decision is None or isinstance(decision, Unset):
+            # The generated decoder leaves a payload it cannot parse as a raw dict.
+            if not isinstance(decision, DecisionScorerDB):
                 continue
             self._sync_attrs(question=decision.question, answer_options=self._read_answer_options(decision))
             if not isinstance(version.model_name, Unset) and version.model_name:
@@ -1040,13 +1050,15 @@ class DecisionEvaluator(Evaluator):
             break
 
     @staticmethod
-    def _read_answer_options(decision: Any) -> Any:
+    def _read_answer_options(decision: DecisionScorerDB) -> list[str] | list[DecisionLevel] | None:
         """Convert server answer options leniently: a read must never raise on unexpected data."""
         try:
             return normalize_decision_answer_options(decision.answer_options)
         except ValueError as error:
-            logger.warning(f"DecisionEvaluator: keeping raw answer_options for decision_scorer {decision.id}: {error}")
-            return decision.answer_options
+            logger.warning(
+                f"DecisionEvaluator: ignoring unreadable answer_options for decision_scorer {decision.id}: {error}"
+            )
+            return None
 
     def __repr__(self) -> str:
         """Detailed string representation of the evaluator."""
