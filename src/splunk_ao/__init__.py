@@ -44,7 +44,15 @@ from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.decorator import SplunkAODecorator, log, splunk_ao_context, start_session
-from splunk_ao.evaluator import CodeEvaluator, Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
+from splunk_ao.evaluator import (
+    CodeEvaluator,
+    DecisionEvaluator,
+    Evaluator,
+    LlmEvaluator,
+    LocalEvaluator,
+    SplunkAOEvaluator,
+)
+from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -117,6 +125,8 @@ __all__ = [
     "ControlResult",
     "ControlSpan",
     "Dataset",
+    "DecisionEvaluator",
+    "DecisionVersionOutcomeUnknownError",
     "Document",
     "Evaluator",
     "Experiment",

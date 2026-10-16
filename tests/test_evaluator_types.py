@@ -10,10 +10,19 @@ This module tests the four metric types:
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator, SplunkAOEvaluator
+from splunk_ao.evaluator import (
+    CodeEvaluator,
+    DecisionEvaluator,
+    LlmEvaluator,
+    LocalEvaluator,
+    Evaluator,
+    SplunkAOEvaluator,
+)
 from splunk_ao.resources.models import OutputTypeEnum, ScorerTypes
 from splunk_ao.shared.exceptions import ValidationError
 
@@ -400,3 +409,101 @@ class TestMetricEdgeCases:
         assert StepType.llm in metric.scorable_types
         assert StepType.workflow in metric.scorable_types
         assert StepType.agent in metric.scorable_types
+
+
+class TestDecisionEvaluator:
+    def test_defaults(self):
+        # When: creating an evaluator with only name and question
+        evaluator = DecisionEvaluator(name="tone", question="Is it polite?")
+
+        # Then: the decision defaults apply
+        assert evaluator.scorer_type == ScorerTypes.DECISION
+        assert evaluator.model == "jev-1.13.0"
+        assert evaluator.node_level == StepType.llm
+        assert evaluator.output_type == OutputTypeEnum.BOOLEAN_PROBABILITY
+        assert evaluator.answer_options is None
+        assert evaluator.input_type is None
+        assert evaluator.ground_truth is False
+
+    @pytest.mark.parametrize(
+        ("output_type", "answer_options", "expected"),
+        [
+            ("boolean_probability", None, OutputTypeEnum.BOOLEAN_PROBABILITY),
+            ("Categorical", ["a", "b"], OutputTypeEnum.CATEGORICAL),
+            ("discrete", [{"level": 0, "label": "x"}, {"level": 1, "label": "y"}], OutputTypeEnum.DISCRETE),
+            (OutputTypeEnum.CATEGORICAL, ["a", "b"], OutputTypeEnum.CATEGORICAL),
+        ],
+    )
+    def test_output_type_accepts_decision_types(self, output_type, answer_options, expected):
+        # When/Then: decision output types parse from strings and enums
+        evaluator = DecisionEvaluator(name="q", question="q", output_type=output_type, answer_options=answer_options)
+        assert evaluator.output_type == expected
+
+    @pytest.mark.parametrize(
+        ("output_type", "answer_options"),
+        [
+            ("categorical", None),
+            ("discrete", ["a", "b"]),
+            ("boolean_probability", ["a", "b"]),
+            (None, []),
+            (None, [{"level": "0", "label": "x"}, {"level": 1, "label": "y"}]),
+        ],
+    )
+    def test_mismatched_or_malformed_options_raise_validation_error(self, output_type, answer_options):
+        # When/Then: bad options fail at construction as ValidationError, before any request
+        with pytest.raises(ValidationError):
+            DecisionEvaluator(name="q", question="q", output_type=output_type, answer_options=answer_options)
+
+    @pytest.mark.parametrize("output_type", ["categorial", "boolean", OutputTypeEnum.PERCENTAGE])
+    def test_output_type_rejects_non_decision_types(self, output_type):
+        # When/Then: typos and non-decision types raise instead of defaulting
+        with pytest.raises(ValidationError, match="output_type"):
+            DecisionEvaluator(name="q", question="q", output_type=output_type)
+
+    def test_dict_levels_become_decision_levels(self):
+        # When: discrete options are given as dicts
+        evaluator = DecisionEvaluator(
+            name="q",
+            question="How good?",
+            output_type="discrete",
+            answer_options=[{"level": 0, "label": "bad"}, {"level": 1, "label": "good"}],
+        )
+
+        # Then: they are normalized to DecisionLevel objects
+        assert [(o.level, o.label) for o in evaluator.answer_options] == [(0, "bad"), (1, "good")]
+
+    @pytest.mark.parametrize("question", [None, ""])
+    def test_requires_question(self, question):
+        # When/Then: a missing or empty question is rejected
+        with pytest.raises(ValidationError, match="question"):
+            DecisionEvaluator(name="tone", question=question)
+
+    def test_repr(self):
+        # When/Then: repr shows the name
+        assert "DecisionEvaluator(name='tone'" in repr(DecisionEvaluator(name="tone", question="Is it polite?"))
+
+    def test_create_failure_marks_failed_sync(self):
+        # Given: the service rejects the request
+        evaluator = DecisionEvaluator(name="tone", question="q")
+
+        # When/Then: the error propagates and the evaluator is marked failed
+        with patch("splunk_ao.evaluator.Evaluators") as evaluators_cls:
+            evaluators_cls.return_value.create_decision_evaluator.side_effect = ValueError("bad model")
+            with pytest.raises(ValueError, match="bad model"):
+                evaluator.create()
+        assert evaluator.has_failed()
+
+    @pytest.mark.parametrize(
+        ("answer_options", "expected"),
+        [
+            (None, OutputTypeEnum.BOOLEAN_PROBABILITY),
+            (["a", "b"], OutputTypeEnum.CATEGORICAL),
+            ([{"level": 0, "label": "x"}, {"level": 1, "label": "y"}], OutputTypeEnum.DISCRETE),
+        ],
+    )
+    def test_output_type_is_inferred_from_answer_options(self, answer_options, expected):
+        # When: no output_type is given
+        evaluator = DecisionEvaluator(name="q", question="q", answer_options=answer_options)
+
+        # Then: it follows the answer options
+        assert evaluator.output_type == expected

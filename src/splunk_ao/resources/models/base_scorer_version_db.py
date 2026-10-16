@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
     from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
     from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
+    from ..models.decision_scorer_db import DecisionScorerDB
 
 
 T = TypeVar("T", bound="BaseScorerVersionDB")
@@ -30,6 +31,7 @@ class BaseScorerVersionDB:
         generated_scorer (BaseGeneratedScorerDB | None | Unset):
         registered_scorer (BaseRegisteredScorerDB | None | Unset):
         finetuned_scorer (BaseFinetunedScorerDB | None | Unset):
+        decision_scorer (DecisionScorerDB | None | Unset):
         model_name (None | str | Unset):
         num_judges (int | None | Unset):
         scoreable_node_types (list[str] | None | Unset): List of node types that can be scored by this scorer. Defaults
@@ -48,6 +50,7 @@ class BaseScorerVersionDB:
     generated_scorer: BaseGeneratedScorerDB | None | Unset = UNSET
     registered_scorer: BaseRegisteredScorerDB | None | Unset = UNSET
     finetuned_scorer: BaseFinetunedScorerDB | None | Unset = UNSET
+    decision_scorer: DecisionScorerDB | None | Unset = UNSET
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
@@ -60,6 +63,7 @@ class BaseScorerVersionDB:
         from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
         from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
         from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
+        from ..models.decision_scorer_db import DecisionScorerDB
 
         id = self.id
 
@@ -90,6 +94,14 @@ class BaseScorerVersionDB:
             finetuned_scorer = self.finetuned_scorer.to_dict()
         else:
             finetuned_scorer = self.finetuned_scorer
+
+        decision_scorer: dict[str, Any] | None | Unset
+        if isinstance(self.decision_scorer, Unset):
+            decision_scorer = UNSET
+        elif isinstance(self.decision_scorer, DecisionScorerDB):
+            decision_scorer = self.decision_scorer.to_dict()
+        else:
+            decision_scorer = self.decision_scorer
 
         model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
@@ -143,6 +155,8 @@ class BaseScorerVersionDB:
             field_dict["registered_scorer"] = registered_scorer
         if finetuned_scorer is not UNSET:
             field_dict["finetuned_scorer"] = finetuned_scorer
+        if decision_scorer is not UNSET:
+            field_dict["decision_scorer"] = decision_scorer
         if model_name is not UNSET:
             field_dict["model_name"] = model_name
         if num_judges is not UNSET:
@@ -163,6 +177,7 @@ class BaseScorerVersionDB:
         from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
         from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
         from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
+        from ..models.decision_scorer_db import DecisionScorerDB
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -221,6 +236,23 @@ class BaseScorerVersionDB:
             return cast(BaseFinetunedScorerDB | None | Unset, data)
 
         finetuned_scorer = _parse_finetuned_scorer(d.pop("finetuned_scorer", UNSET))
+
+        def _parse_decision_scorer(data: object) -> DecisionScorerDB | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                decision_scorer_type_0 = DecisionScorerDB.from_dict(data)
+
+                return decision_scorer_type_0
+            except:  # noqa: E722
+                pass
+            return cast(DecisionScorerDB | None | Unset, data)
+
+        decision_scorer = _parse_decision_scorer(d.pop("decision_scorer", UNSET))
 
         def _parse_model_name(data: object) -> None | str | Unset:
             if data is None:
@@ -307,6 +339,7 @@ class BaseScorerVersionDB:
             generated_scorer=generated_scorer,
             registered_scorer=registered_scorer,
             finetuned_scorer=finetuned_scorer,
+            decision_scorer=decision_scorer,
             model_name=model_name,
             num_judges=num_judges,
             scoreable_node_types=scoreable_node_types,
