@@ -149,7 +149,7 @@ def _build_decision_version_request(
     The generated ``CreateDecisionScorerVersionRequest.to_dict`` has two identical ``isinstance(list)``
     branches for ``list[str] | list[DecisionLevel]``, so it never calls ``DecisionLevel.to_dict`` and would
     send raw objects. ``additional_properties`` is merged into the body verbatim, so levels go there.
-    Fixing the codegen template touches many unrelated generated models, so it is left as a follow-up.
+    Fixing the codegen template would touch many unrelated generated models.
     """
     if answer_options and all(isinstance(level, DecisionLevel) for level in answer_options):
         request = CreateDecisionScorerVersionRequest(model_name=model_name, question=question)
@@ -481,7 +481,7 @@ def create_decision_evaluator(
     """
     Create a decision evaluator.
 
-    A decision evaluator asks a decision model (for example a decision model) one typed question and
+    A decision evaluator asks a decision model one typed question and
     scores the node with the probabilities of the answers.
 
     Parameters

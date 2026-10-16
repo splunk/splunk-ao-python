@@ -870,7 +870,7 @@ class DecisionEvaluator(Evaluator):
     """
     Decision model evaluator.
 
-    A decision evaluator asks a decision model (for example TypeSafe's Jev) one typed question and scores
+    A decision evaluator asks a decision model one typed question and scores
     the node with the probabilities of the answers.
 
     Attributes
