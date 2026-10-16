@@ -19,7 +19,13 @@ from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import Configuration
-from splunk_ao.evaluators import Evaluators
+from splunk_ao.evaluators import (
+    DEFAULT_DECISION_MODEL_NAME,
+    DecisionAnswerOptions,
+    Evaluators,
+    normalize_decision_answer_options,
+    resolve_decision_output_type,
+)
 from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
@@ -31,7 +37,9 @@ from splunk_ao.resources.models import (
     BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
     BodyValidateCodeScorerScorersCodeValidatePost,
     CreateScorerRequest,
+    DecisionLevel,
     HTTPValidationError,
+    InputTypeEnum,
     OutputTypeEnum,
     ScorerTypes,
     TaskResultStatus,
@@ -94,6 +102,7 @@ class Evaluator(StateManagementMixin, ABC):
 
     - **SplunkAOEvaluator**: Built-in Splunk AO evaluators (access via Evaluator.metrics)
     - **LlmEvaluator**: Custom LLM-based metrics with prompt templates
+    - **DecisionEvaluator**: Decision model evaluators (one typed question per evaluator)
     - **LocalEvaluator**: Local function-based metrics
     - **CodeEvaluator**: Code-based metrics (future support)
 
@@ -226,7 +235,7 @@ class Evaluator(StateManagementMixin, ABC):
         Returns
         -------
             Evaluator: An uninitialized instance of the appropriate subclass
-                   (LlmEvaluator, CodeEvaluator, or SplunkAOEvaluator).
+                   (LlmEvaluator, CodeEvaluator, DecisionEvaluator, or SplunkAOEvaluator).
 
         Examples
         --------
@@ -237,6 +246,8 @@ class Evaluator(StateManagementMixin, ABC):
             return LlmEvaluator.__new__(LlmEvaluator)
         if scorer_type == ScorerTypes.CODE:
             return CodeEvaluator.__new__(CodeEvaluator)
+        if scorer_type == ScorerTypes.DECISION:
+            return DecisionEvaluator.__new__(DecisionEvaluator)
         # Default to SplunkAOEvaluator for built-in scorers (LUNA, PRESET, etc.)
         return SplunkAOEvaluator.__new__(SplunkAOEvaluator)
 
@@ -253,7 +264,8 @@ class Evaluator(StateManagementMixin, ABC):
 
         Returns
         -------
-            Optional[Evaluator]: The metric if found (SplunkAOEvaluator, LlmEvaluator, or CodeEvaluator), None otherwise.
+            Optional[Evaluator]: The metric if found (SplunkAOEvaluator, LlmEvaluator, CodeEvaluator, or DecisionEvaluator),
+                None otherwise.
 
         Raises
         ------
@@ -431,6 +443,10 @@ class Evaluator(StateManagementMixin, ABC):
             )
 
             self._sync_attrs(output_type=output_type, prompt=prompt, node_level=node_level, ground_truth=ground_truth)
+
+        # Decision-specific attributes (only set if this is a DecisionEvaluator)
+        if isinstance(self, DecisionEvaluator):
+            self._populate_decision_attrs(scorer_response)
 
         # Code-specific attributes (only set if this is a CodeEvaluator)
         if isinstance(self, CodeEvaluator):
@@ -841,6 +857,202 @@ class LlmEvaluator(Evaluator):
     def __repr__(self) -> str:
         """Detailed string representation of the metric."""
         return f"LlmEvaluator(name='{self.name}', id='{self.id}', model='{self.model}', judges={self.judges})"
+
+
+class DecisionEvaluator(Evaluator):
+    """
+    Decision model evaluator.
+
+    A decision evaluator asks a decision model (for example TypeSafe's Jev) one typed question and scores
+    the node with the probabilities of the answers.
+
+    Attributes
+    ----------
+        question (str | None): The question the model answers.
+        model (str | None): Decision model registry version, for example ``jev-1.13.0``.
+        node_level (StepType | None): The single node type the evaluator scores.
+        output_type (OutputTypeEnum | None): ``BOOLEAN_PROBABILITY``, ``CATEGORICAL`` or ``DISCRETE``.
+        answer_options (list[str] | list[DecisionLevel] | None): Labels (categorical), levels (discrete) or None.
+        input_type (InputTypeEnum | None): What the model sees. None lets the server choose.
+        ground_truth (bool): Whether the scorer requires ground truth from the dataset.
+
+    Examples
+    --------
+        evaluator = DecisionEvaluator(
+            name="tone",
+            question="Is the tone of this response professional?",
+            output_type=OutputTypeEnum.CATEGORICAL,
+            answer_options=["professional", "casual", "rude"],
+        ).create()
+    """
+
+    question: str | None
+    model: str | None
+    node_level: StepType | None
+    output_type: OutputTypeEnum | None
+    answer_options: list[str] | list[DecisionLevel] | None
+    input_type: InputTypeEnum | None
+    ground_truth: bool
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        question: str | None = None,
+        model: str | None = None,
+        node_level: StepType | None = None,
+        output_type: str | OutputTypeEnum | None = None,
+        answer_options: DecisionAnswerOptions | None = None,
+        input_type: InputTypeEnum | None = None,
+        ground_truth: bool = False,
+        description: str = "",
+        tags: list[str] | None = None,
+        version: int | None = None,
+    ) -> None:
+        """
+        Initialize a decision evaluator.
+
+        Args:
+            name: The name of the evaluator.
+            question: The question the decision model answers (1-2,000 characters).
+            model: Decision model registry version. Defaults to ``jev-1.13.0``.
+            node_level: The single node type the evaluator scores. Defaults to StepType.llm.
+            output_type: ``boolean_probability``, ``categorical`` or ``discrete``. Inferred from ``answer_options`` when None.
+            answer_options: None for boolean_probability, a list of labels for categorical, or a list of
+                ``DecisionLevel`` / ``{level, label, description}`` dicts for discrete.
+            input_type: What the model sees. None lets the server choose a default for the node type.
+            ground_truth: Whether the scorer requires ground truth (``reference_output``) from the dataset.
+            description: Description of the evaluator.
+            tags: Tags associated with the evaluator.
+            version: Specific version to reference (for existing evaluators).
+
+        Raises
+        ------
+            ValidationError: If question is not provided.
+        """
+        super().__init__(name=name, description=description, tags=tags, version=version)
+
+        if not question:
+            raise ValidationError("'question' must be provided for decision evaluators.")
+
+        self.question = question
+        self.model = model or DEFAULT_DECISION_MODEL_NAME
+        self.node_level = node_level or StepType.llm
+        normalized_options = normalize_decision_answer_options(answer_options)
+        if isinstance(output_type, str) and not isinstance(output_type, OutputTypeEnum):
+            output_type = output_type.lower()
+        try:
+            self.output_type = resolve_decision_output_type(output_type, normalized_options)
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
+        self.answer_options = normalized_options
+        self.input_type = input_type
+        self.ground_truth = ground_truth
+        self.scorer_type = ScorerTypes.DECISION
+
+    def create(self) -> DecisionEvaluator:
+        """
+        Persist this decision evaluator to the API.
+
+        Returns
+        -------
+            DecisionEvaluator: This evaluator instance with updated attributes from the API.
+
+        Raises
+        ------
+            ValueError: If an argument is invalid or the API answers with a validation error.
+            SplunkAOAPIError: For HTTP errors. A scorer created before a clear rejection is deleted.
+
+        Examples
+        --------
+            evaluator = DecisionEvaluator(name="tone", question="Is the tone professional?").create()
+            assert evaluator.is_synced()
+        """
+        try:
+            logger.info(f"DecisionEvaluator.create: name='{self.name}' - started")
+
+            created_version = Evaluators().create_decision_evaluator(
+                name=self.name,
+                question=self.question or "",
+                node_level=self.node_level if self.node_level is not None else StepType.llm,
+                model_name=self.model if self.model is not None else DEFAULT_DECISION_MODEL_NAME,
+                output_type=self.output_type
+                if isinstance(self.output_type, OutputTypeEnum)
+                else OutputTypeEnum.BOOLEAN_PROBABILITY,
+                answer_options=self.answer_options,
+                input_type=self.input_type,
+                description=self.description,
+                tags=self.tags,
+                ground_truth=self.ground_truth,
+            )
+
+            self._sync_attrs(
+                id=str(created_version.scorer_id),
+                created_at=created_version.created_at,
+                updated_at=created_version.updated_at,
+            )
+
+            # Refresh to get full scorer details
+            self.refresh()
+
+            logger.info(f"DecisionEvaluator.create: id='{self.id}' - completed")
+            return self
+        except Exception as e:
+            self._set_state(SyncState.FAILED_SYNC, error=e)
+            logger.error(f"DecisionEvaluator.create: name='{self.name}' - failed: {e}")
+            raise
+
+    def _populate_decision_attrs(self, scorer_response: Any) -> None:
+        """Fill decision fields from a scorer response.
+
+        The question and answer options live on the scorer's version. When the response carries no version,
+        existing values are kept and instances built by ``Evaluator.get`` start as None.
+        """
+        if not hasattr(self, "question"):
+            self._sync_attrs(question=None, answer_options=None)
+        output_type = None if isinstance(scorer_response.output_type, Unset) else scorer_response.output_type
+        input_type = None if isinstance(scorer_response.input_type, Unset) else scorer_response.input_type
+        scoreable = scorer_response.scoreable_node_types
+        node_level: StepType | None = None
+        if not isinstance(scoreable, Unset) and scoreable:
+            try:
+                node_level = StepType(scoreable[0])
+            except ValueError:
+                node_level = None
+        ground_truth = (
+            False
+            if isinstance(scorer_response.ground_truth, Unset) or scorer_response.ground_truth is None
+            else scorer_response.ground_truth
+        )
+        self._sync_attrs(
+            output_type=output_type, input_type=input_type, node_level=node_level, ground_truth=ground_truth
+        )
+
+        for version in (scorer_response.default_version, scorer_response.latest_version):
+            if version is None or isinstance(version, Unset):
+                continue
+            decision = version.decision_scorer
+            if decision is None or isinstance(decision, Unset):
+                continue
+            self._sync_attrs(question=decision.question, answer_options=self._read_answer_options(decision))
+            if not isinstance(version.model_name, Unset) and version.model_name:
+                self._sync_attrs(model=version.model_name)
+            break
+
+    @staticmethod
+    def _read_answer_options(decision: Any) -> Any:
+        """Convert server answer options leniently: a read must never raise on unexpected data."""
+        try:
+            return normalize_decision_answer_options(decision.answer_options)
+        except ValueError as error:
+            logger.warning(f"DecisionEvaluator: keeping raw answer_options for decision_scorer {decision.id}: {error}")
+            return decision.answer_options
+
+    def __repr__(self) -> str:
+        """Detailed string representation of the evaluator."""
+        return (
+            f"DecisionEvaluator(name='{self.name}', id='{self.id}', model='{self.model}', question='{self.question}')"
+        )
 
 
 class CodeEvaluator(Evaluator):

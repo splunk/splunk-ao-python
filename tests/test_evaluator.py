@@ -6,8 +6,8 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
-from splunk_ao.evaluator import CodeEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
-from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerTypes
+from splunk_ao.evaluator import CodeEvaluator, DecisionEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
+from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerResponse, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.models.task_result_status import TaskResultStatus
 from splunk_ao.shared.base import SyncState
@@ -2025,3 +2025,188 @@ class TestCodeMetricValidationConfiguration:
         assert Configuration.code_validation_initial_delay == 3.0
         assert Configuration.code_validation_max_delay == 45.0
         assert Configuration.code_validation_backoff_multiplier == 1.8
+
+
+def _decision_scorer(output_type: str, answer_options, *, with_version: bool = True) -> ScorerResponse:
+    """Decode a scorer the way the API client does, so answer_options arrive in their wire shape."""
+    row: dict = {
+        "id": "s1",
+        "name": "tone",
+        "scorer_type": "decision",
+        "tags": ["t"],
+        "output_type": output_type,
+        "scoreable_node_types": ["trace"],
+        "ground_truth": True,
+    }
+    if with_version:
+        decision: dict = {
+            "id": str(uuid4()),
+            "organization_id": str(uuid4()),
+            "question": "Which tone?",
+            "created_at": "2025-01-01T00:00:00+00:00",
+        }
+        if answer_options is not None:
+            decision["answer_options"] = answer_options
+        row["latest_version"] = {
+            "id": str(uuid4()),
+            "version": 1,
+            "scorer_id": "s1",
+            "model_name": "jev-1.13.0",
+            "decision_scorer": decision,
+        }
+    return ScorerResponse.from_dict(row)
+
+
+class TestDecisionEvaluator:
+    """Test suite for DecisionEvaluator create and Evaluator.get/list."""
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_get_returns_decision_evaluator_with_categorical_fields(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: the API returns a categorical decision scorer
+        mock_scorers_class.return_value.list.return_value = [_decision_scorer("categorical", ["a", "b"])]
+
+        # When: getting it by name
+        evaluator = Evaluator.get(name="tone")
+
+        # Then: it is a DecisionEvaluator with the version fields filled in
+        assert isinstance(evaluator, DecisionEvaluator)
+        assert evaluator.is_synced()
+        assert evaluator.question == "Which tone?"
+        assert evaluator.answer_options == ["a", "b"]
+        assert evaluator.model == "jev-1.13.0"
+        assert evaluator.output_type == OutputTypeEnum.CATEGORICAL
+        assert evaluator.node_level == StepType.trace
+        assert evaluator.ground_truth is True
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_get_populates_discrete_levels_from_raw_dicts(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: a discrete scorer whose levels the decoder leaves as raw dicts
+        scorer = _decision_scorer("discrete", [{"level": 0, "label": "bad"}, {"level": 1, "label": "good"}])
+        mock_scorers_class.return_value.list.return_value = [scorer]
+
+        # When: getting it by id
+        evaluator = Evaluator.get(id="s1")
+
+        # Then: the levels are DecisionLevel objects
+        assert isinstance(evaluator, DecisionEvaluator)
+        assert [(lvl.level, lvl.label) for lvl in evaluator.answer_options] == [(0, "bad"), (1, "good")]
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_get_boolean_probability_without_answer_options(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: a boolean_probability scorer whose decision row omits answer_options
+        mock_scorers_class.return_value.list.return_value = [_decision_scorer("boolean_probability", None)]
+
+        # When: getting it
+        evaluator = Evaluator.get(name="tone")
+
+        # Then: answer_options is None and the evaluator is synced
+        assert isinstance(evaluator, DecisionEvaluator)
+        assert evaluator.answer_options is None
+        assert evaluator.is_synced()
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_get_without_version_keeps_attributes_readable(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: a decision scorer with no version in the response
+        mock_scorers_class.return_value.list.return_value = [
+            _decision_scorer("boolean_probability", None, with_version=False)
+        ]
+
+        # When: getting it
+        evaluator = Evaluator.get(name="tone")
+
+        # Then: question and answer_options are None and repr works
+        assert isinstance(evaluator, DecisionEvaluator)
+        assert evaluator.question is None
+        assert evaluator.answer_options is None
+        assert "DecisionEvaluator(name='tone'" in repr(evaluator)
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_list_returns_decision_evaluator(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:
+        # Given: the API lists a decision scorer
+        mock_scorers_class.return_value.list.return_value = [_decision_scorer("categorical", ["a", "b"])]
+
+        # When: listing evaluators
+        evaluators = Evaluator.list()
+
+        # Then: it is a DecisionEvaluator
+        assert len(evaluators) == 1
+        assert isinstance(evaluators[0], DecisionEvaluator)
+
+    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_create_sends_fields_and_refreshes(
+        self, mock_scorers_class: MagicMock, mock_evaluators_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: the service creates the evaluator and the list endpoint returns it
+        version = MagicMock()
+        version.scorer_id = "s1"
+        mock_evaluators_class.return_value.create_decision_evaluator.return_value = version
+        mock_scorers_class.return_value.list.return_value = [_decision_scorer("categorical", ["a", "b"])]
+
+        # When: creating a DecisionEvaluator
+        evaluator = DecisionEvaluator(
+            name="tone",
+            question="Which tone?",
+            node_level=StepType.trace,
+            output_type=OutputTypeEnum.CATEGORICAL,
+            answer_options=["a", "b"],
+            tags=["t"],
+            ground_truth=True,
+        ).create()
+
+        # Then: every field reaches the service and the evaluator is synced
+        kwargs = mock_evaluators_class.return_value.create_decision_evaluator.call_args.kwargs
+        assert kwargs["name"] == "tone"
+        assert kwargs["question"] == "Which tone?"
+        assert kwargs["node_level"] == StepType.trace
+        assert kwargs["model_name"] == "jev-1.13.0"
+        assert kwargs["output_type"] == OutputTypeEnum.CATEGORICAL
+        assert kwargs["answer_options"] == ["a", "b"]
+        assert kwargs["ground_truth"] is True
+        assert evaluator.id == "s1"
+        assert evaluator.is_synced()
+
+
+class TestDecisionEvaluatorReadPath:
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_list_survives_malformed_answer_options(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: one decision scorer with an empty options list and one with a level missing its label
+        mock_scorers_class.return_value.list.return_value = [
+            _decision_scorer("categorical", []),
+            _decision_scorer("discrete", [{"level": 0}]),
+        ]
+
+        # When: listing evaluators
+        evaluators = Evaluator.list()
+
+        # Then: nothing raises and the raw values are kept
+        assert [type(m) for m in evaluators] == [DecisionEvaluator, DecisionEvaluator]
+        assert evaluators[0].answer_options == []
+        assert evaluators[1].answer_options == [{"level": 0}]
+
+    @patch("splunk_ao.evaluator.Scorers")
+    def test_latest_version_is_used_when_default_version_has_no_decision_row(
+        self, mock_scorers_class: MagicMock, reset_configuration: None
+    ) -> None:
+        # Given: a default version without decision data and a latest version with it
+        scorer = _decision_scorer("categorical", ["a", "b"])
+        row = scorer.to_dict()
+        row["default_version"] = {"id": str(uuid4()), "version": 1, "scorer_id": "s1"}
+        mock_scorers_class.return_value.list.return_value = [ScorerResponse.from_dict(row)]
+
+        # When: getting the evaluator
+        evaluator = Evaluator.get(name="tone")
+
+        # Then: the question comes from the latest version
+        assert isinstance(evaluator, DecisionEvaluator)
+        assert evaluator.question == "Which tone?"

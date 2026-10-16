@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
+  read decision-model evaluators: one typed question per evaluator, answered with probabilities. Supports
+  `boolean_probability`, `categorical` and `discrete` output types; when `output_type` is omitted it is inferred
+  from `answer_options`. If the version request is clearly rejected (400, 403, 404, 422) the new scorer is
+  deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
+- Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
+  `decision`, so decision scorers appear in list and get responses and decode.
+
 ### Fixed
 
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
