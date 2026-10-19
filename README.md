@@ -631,7 +631,8 @@ run_experiment(
 
 New evaluators are scoped to the current project (`SPLUNK_AO_PROJECT_ID` or `SPLUNK_AO_PROJECT`) by default. Pass
 `project_ids` to choose other projects, or `is_global=True` for a global evaluator. Only org admins can create global
-evaluators, and changing or deleting an evaluator needs the owner or editor role on one of its projects.
+evaluators, and updating or deleting an evaluator needs the owner or editor role on one of its projects. Changing
+scope needs the owner or editor role on each project added or removed, and org admin to make it global.
 
 ```python
 from splunk_ao import EvaluatorPermissionError, LlmEvaluator

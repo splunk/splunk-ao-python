@@ -103,6 +103,10 @@ _SCOPED_CREATE_DENIED_HINT = (
     "Creating a project-scoped evaluator needs the owner or editor role on every project in project_ids "
     "(or on the current project when it is the default). Ask a project owner for access, or choose other projects."
 )
+_DECISION_VERSION_DENIED_HINT = (
+    "The server refused the decision version request, so the new evaluator was deleted. "
+    "Check that decision evaluators are enabled for your organization."
+)
 _SCOPE_CHANGE_DENIED_HINT = (
     "Changing an evaluator's scope needs the owner or editor role on each project added or removed; "
     "making it global needs the org admin role."
@@ -479,8 +483,8 @@ class Evaluators:
             If an argument is invalid or the API answers with a validation error. If the scorer was created
             but its version was rejected, the scorer is deleted before the error is raised.
         SplunkAOAPIError
-            For a definitive rejection (400, 403, 404, 422), for example 403 when the feature is not enabled.
-            The scorer is deleted before the error is raised.
+            For a definitive rejection of the version request (400, 404, 422). The scorer is deleted before the
+            error is raised. A 403 on either request is raised as ``EvaluatorPermissionError``.
         DecisionVersionOutcomeUnknownError
             For a timeout, network error, 5xx or any other failure. The version may have been saved, so the
             scorer is kept and the error names its id.
@@ -524,7 +528,7 @@ class Evaluators:
         except Exception as error:
             if self._was_rejected(error):
                 self._delete_scorer_quietly(scorer.id)
-                with _translate_forbidden(create_hint):
+                with _translate_forbidden(_DECISION_VERSION_DENIED_HINT):
                     raise
             _logger.warning(
                 "Decision evaluator version request failed with an unknown outcome; scorer_id=%s was kept: %s",
@@ -751,8 +755,8 @@ def create_decision_evaluator(
         If an argument is invalid or the API answers with a validation error. If the scorer was created
         but its version was rejected, the scorer is deleted before the error is raised.
     SplunkAOAPIError
-        For a definitive rejection (400, 403, 404, 422), for example 403 when the feature is not enabled.
-        The scorer is deleted before the error is raised.
+        For a definitive rejection of the version request (400, 404, 422). The scorer is deleted before the
+        error is raised. A 403 on either request is raised as ``EvaluatorPermissionError``.
     DecisionVersionOutcomeUnknownError
         For a timeout, network error, 5xx or any other failure. The version may have been saved, so the
         scorer is kept and the error names its id.

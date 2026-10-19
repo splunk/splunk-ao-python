@@ -210,10 +210,13 @@ class TestCreateDecisionDenied:
         mock_create_scorer.sync.return_value = scorer
         mock_create_version.sync.side_effect = _forbidden()
 
-        # When/Then: the permission error carries the scoped hint and the orphan scorer is deleted
+        # When/Then: the permission error explains the refused version (not a create-scope problem) and the
+        # orphan scorer is deleted
         with pytest.raises(EvaluatorPermissionError) as exc_info:
             create_decision_evaluator(name="tone", question="q", project_ids=["p1"])
-        _assert_permission_error(exc_info.value, SCOPED_HINT)
+        _assert_permission_error(exc_info.value, "decision version request")
+        assert SCOPED_HINT not in str(exc_info.value)
+        assert GLOBAL_HINT not in str(exc_info.value)
         mock_delete.sync.assert_called_once()
         assert mock_delete.sync.call_args.kwargs["scorer_id"] == scorer.id
 
