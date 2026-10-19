@@ -138,6 +138,7 @@ class TestCreateLlmDenied:
         with pytest.raises(EvaluatorPermissionError) as exc_info:
             Evaluators().create_custom_llm_evaluator(name="m", user_prompt="prompt", is_global=True)
         assert exc_info.value is original
+        assert exc_info.value.__cause__ is None
 
     def test_422_is_raised_as_value_error(self, mock_create_scorer, mock_create_version) -> None:
         # Given: the scorer post answers with a validation error

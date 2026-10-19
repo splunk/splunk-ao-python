@@ -47,8 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Evaluators.delete_evaluator()` and `Evaluator.refresh()` now say "not found, or not shared with your projects"
   when the evaluator is missing, since the server hides evaluators outside the caller's projects. `Evaluator.get()`
   still returns `None` in that case. A 404 from update, delete or `set_scope` stays a `NotFoundError`.
-- Creating an LLM or code evaluator no longer fails with an `AttributeError` when the API answers with a validation
-  error; the detail is raised as a `ValueError`, as it already was for decision evaluators.
+- Creating an LLM or code evaluator no longer fails with an `AttributeError` when the scorer request is answered with
+  a validation error; the detail is raised as a `ValueError`, as it already was for decision evaluators.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
