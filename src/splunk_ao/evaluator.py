@@ -556,7 +556,7 @@ class Evaluator(StateManagementMixin, ABC):
         logger.info(f"Evaluator.update: id='{self.id}' name='{self.name}' - started")
         try:
             config = SplunkAOConfig.get()
-            with _translate_forbidden(_edit_denied_hint("update")):
+            with _translate_forbidden(_edit_denied_hint("Updating")):
                 response = update_scorers_scorer_id_patch.sync(scorer_id=self.id, client=config.api_client, body=body)
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
@@ -575,56 +575,57 @@ class Evaluator(StateManagementMixin, ABC):
 
     def set_scope(self, *, project_ids: builtins.list[str] | None = None, is_global: bool = False) -> Evaluator:
         """
-        Replace this metric's scope on the API.
+        Replace this evaluator's scope on the API.
 
-        This is a full replace: the metric ends up scoped to exactly ``project_ids``, or global. It never
+        This is a full replace: the evaluator ends up scoped to exactly ``project_ids``, or global. It never
         falls back to the current project. On success the instance is updated with the API response and
         returned in SYNCED state.
 
         Parameters
         ----------
         project_ids : list[str], optional
-            Projects to scope the metric to. Required (and non-empty) unless ``is_global=True``.
+            Projects to scope the evaluator to. Required (and non-empty) unless ``is_global=True``.
         is_global : bool
-            Make the metric global. Cannot be combined with ``project_ids``. Org admins only.
+            Make the evaluator global. Cannot be combined with ``project_ids``. Org admins only.
 
         Returns
         -------
-            Evaluator: This metric instance with updated attributes from the API.
+            Evaluator: This evaluator instance with updated attributes from the API.
 
         Raises
         ------
-            ValidationError: If this is a local metric, or the arguments are invalid (``is_global=True`` with
+            ValidationError: If this is a local evaluator, or the arguments are invalid (``is_global=True`` with
                 ``project_ids``, ``project_ids`` missing, empty or a single string).
-            ValueError: If the metric ID is not set, the metric is deleted, or the metric is in FAILED_SYNC state.
+            ValueError: If the evaluator ID is not set, the evaluator is deleted, or the evaluator is in FAILED_SYNC state.
             APIError: If the API returns a validation error or empty response.
-            EvaluatorPermissionError: If the API answers 403: the owner or editor role is needed on each project
-                added or removed, and the org admin role to make the metric global.
-            NotFoundError: If the API answers 404. The server also answers 404 for a metric that exists but
-                isn't shared with your projects.
+            EvaluatorPermissionError: If the API answers 403: changing an evaluator's scope needs the owner or
+                editor role on one of its current projects and on each project added or removed. Making it global,
+                or changing the scope of a global evaluator, needs the org admin role.
+            NotFoundError: If the API answers 404. The server also answers 404 for an evaluator that exists but
+                isn't shared with your projects, or the server is too old to support evaluator scopes.
             Exception: If the API call fails (state is set to FAILED_SYNC).
 
         Examples
         --------
-            metric = Evaluator.get(name="factuality-checker")
-            metric.set_scope(project_ids=["<project-id>"])
-            metric.set_scope(is_global=True)  # org admins only
+            evaluator = Evaluator.get(name="factuality-checker")
+            evaluator.set_scope(project_ids=["<project-id>"])
+            evaluator.set_scope(is_global=True)  # org admins only
         """
         if isinstance(self, LocalEvaluator):
-            raise ValidationError("Local metrics don't exist on the server and can't change scope.")
+            raise ValidationError("Local evaluators don't exist on the server and can't change scope.")
         if self.id is None:
-            raise ValueError("Evaluator ID is not set. Cannot change the scope of a local-only metric.")
+            raise ValueError("Evaluator ID is not set. Cannot change the scope of a local-only evaluator.")
         if self.sync_state == SyncState.DELETED:
-            raise ValueError("Cannot change the scope of a deleted metric.")
+            raise ValueError("Cannot change the scope of a deleted evaluator.")
         if self.sync_state == SyncState.FAILED_SYNC:
             raise ValueError(
-                "Cannot change the scope of a metric in FAILED_SYNC state. "
+                "Cannot change the scope of an evaluator in FAILED_SYNC state. "
                 "Call refresh() to re-sync from the API, then retry your changes."
             )
 
         if is_global:
             if project_ids:
-                raise ValidationError("A metric cannot be both global and scoped: pass is_global=True or project_ids.")
+                raise ValidationError("An evaluator cannot be both global and scoped: pass is_global=True or project_ids.")
             body = UpdateScorerScopeRequest(is_global=True)
         else:
             # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
@@ -632,7 +633,7 @@ class Evaluator(StateManagementMixin, ABC):
             if isinstance(requested, str):
                 raise ValidationError("project_ids must be a list of project ids, not a single string.")
             if not project_ids:
-                raise ValidationError("project_ids must not be empty. Pass is_global=True to make the metric global.")
+                raise ValidationError("project_ids must not be empty. Pass is_global=True to make the evaluator global.")
             body = UpdateScorerScopeRequest(is_global=False, project_ids=list(dict.fromkeys(project_ids)))
 
         logger.info(f"Evaluator.set_scope: id='{self.id}' name='{self.name}' - started")

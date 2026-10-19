@@ -103,27 +103,38 @@ _SCOPED_CREATE_DENIED_HINT = (
     "Creating a project-scoped evaluator needs the owner or editor role on every project in project_ids "
     "(or on the current project when it is the default). Ask a project owner for access, or choose other projects."
 )
+_EXPLICIT_GLOBAL_CREATE_DENIED_HINT = (
+    "Only org admins can create global evaluators. Drop is_global=True and pass project_ids=[...] "
+    "to scope the evaluator to your projects."
+)
+_DECISION_ENABLED_HINT = " Decision evaluators may also not be enabled for your organization."
 _DECISION_VERSION_DENIED_HINT = (
-    "The server refused the decision version request, and the SDK tried to delete the new evaluator. "
+    "The server refused to save the decision evaluator's configuration, so the SDK deleted the new evaluator "
+    "(a warning with its id is logged if that cleanup failed). "
     "Check that decision evaluators are enabled for your organization."
 )
 _SCOPE_CHANGE_DENIED_HINT = (
-    "Changing an evaluator's scope needs the owner or editor role on each project added or removed; "
-    "making it global needs the org admin role."
+    "Changing an evaluator's scope needs the owner or editor role on one of its current projects and on each "
+    "project added or removed. Making it global, or changing the scope of a global evaluator, needs the org admin "
+    "role."
 )
 
 
-def _edit_denied_hint(action: str) -> str:
-    """Hint for a 403 when updating or deleting an evaluator."""
+def _edit_denied_hint(gerund: str) -> str:
+    """Hint for a 403 when updating or deleting an evaluator; ``gerund`` is "Updating" or "Deleting"."""
     return (
-        f"You can't {action} this evaluator. It needs the owner or editor role on one of the evaluator's projects "
+        f"{gerund} an evaluator needs the owner or editor role on one of its projects "
         "(org admin for a global evaluator)."
     )
 
 
 def _create_denied_hint(scope_is_global: bool | Unset) -> str:
     """Hint for a 403 on create, chosen from the scope that was actually sent."""
-    return _SCOPED_CREATE_DENIED_HINT if scope_is_global is False else _GLOBAL_CREATE_DENIED_HINT
+    if scope_is_global is False:
+        return _SCOPED_CREATE_DENIED_HINT
+    if scope_is_global is True:
+        return _EXPLICIT_GLOBAL_CREATE_DENIED_HINT
+    return _GLOBAL_CREATE_DENIED_HINT
 
 
 @contextmanager
@@ -307,7 +318,7 @@ class Evaluators:
             raise ValueError(f"Evaluator with name '{name}' not found, or not shared with your projects.")
 
         for scorer in scorers_to_delete:
-            with _translate_forbidden(_edit_denied_hint("delete")):
+            with _translate_forbidden(_edit_denied_hint("Deleting")):
                 response = delete_scorer_scorers_scorer_id_delete.sync(
                     scorer_id=scorer.id, client=self.config.api_client
                 )
@@ -509,8 +520,7 @@ class Evaluators:
             project_ids=scope_project_ids,
         )
 
-        create_hint = _create_denied_hint(scope_is_global)
-        with _translate_forbidden(create_hint):
+        with _translate_forbidden(_create_denied_hint(scope_is_global) + _DECISION_ENABLED_HINT):
             scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
         if isinstance(scorer, HTTPValidationError):
             raise ValueError(scorer.detail)
@@ -528,6 +538,7 @@ class Evaluators:
         except Exception as error:
             if self._was_rejected(error):
                 self._delete_scorer_quietly(scorer.id)
+                # The bare raise re-raises the 403 inside the with, which translates it.
                 with _translate_forbidden(_DECISION_VERSION_DENIED_HINT):
                     raise
             _logger.warning(

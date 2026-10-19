@@ -24,9 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
   `create()`, `get()`, `list()` and `refresh()`.
 - `EvaluatorPermissionError`, a `ForbiddenError` subclass, replaces the generic 403 message when creating,
-  updating, deleting or re-scoping an evaluator is refused. It says what is needed: org admin to create a global
-  evaluator (or pass `project_ids`), the owner or editor role on the projects for scoped create, update, delete and
-  scope changes. The server response body is kept in the message.
+  updating, deleting or re-scoping an evaluator is refused, and says what is needed. Create needs the owner or
+  editor role on every listed project. Update and delete need it on one of the evaluator's projects. A scope change
+  needs it on one of the current projects and on each project added or removed. Anything on a global evaluator,
+  including creating one, needs the org admin role. The server response body is kept in the message.
 - `Evaluator.set_scope(project_ids=[...])` and `set_scope(is_global=True)` replace an evaluator's scope through
   `PUT /scorers/{scorer_id}/scope`. Promoting to global is org admin only.
 
@@ -46,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Evaluators.delete_evaluator()` and `Evaluator.refresh()` now say "not found, or not shared with your projects"
   when the evaluator is missing, since the server hides evaluators outside the caller's projects. `Evaluator.get()`
-  still returns `None` in that case. A 404 from update, delete or `set_scope` stays a `NotFoundError`.
+  still returns `None` in that case.
 - Creating an LLM or code evaluator no longer fails with an `AttributeError` when the scorer request is answered with
   a validation error; the detail is raised as a `ValueError`, as it already was for decision evaluators.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
