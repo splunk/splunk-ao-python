@@ -219,6 +219,9 @@ def _resolve_create_scope(
         return True, UNSET
 
     if project_ids is not None:
+        requested: object = project_ids
+        if isinstance(requested, str):
+            raise ValidationError("project_ids must be a list of project ids, not a single string.")
         if not project_ids:
             raise ValidationError("project_ids must not be empty. Pass is_global=True for a global evaluator.")
         return False, list(dict.fromkeys(project_ids))

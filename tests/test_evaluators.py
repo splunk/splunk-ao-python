@@ -638,6 +638,10 @@ class TestResolveCreateScope:
         with pytest.raises(SplunkAOValidationError, match="must not be empty"):
             _resolve_create_scope([], None)
 
+    def test_string_project_ids_rejected(self, mock_projects) -> None:
+        with pytest.raises(SplunkAOValidationError, match="not a single string"):
+            _resolve_create_scope("3f2a", None)  # type: ignore[arg-type]
+
     def test_is_global_false_without_any_project_rejected(self, mock_projects) -> None:
         with pytest.raises(SplunkAOValidationError, match="is_global=False needs project_ids"):
             _resolve_create_scope(None, False)

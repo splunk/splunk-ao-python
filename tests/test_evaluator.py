@@ -2511,6 +2511,18 @@ class TestDecisionEvaluatorScope:
 
         mock_create_scorers.sync.assert_not_called()
 
+    @patch("splunk_ao.evaluators.SplunkAOConfig.get")
+    def test_invalid_scope_does_not_mark_evaluator_failed(self, mock_config, reset_configuration) -> None:
+        # Given a decision evaluator with a conflicting scope
+        evaluator = DecisionEvaluator(name="tone", question="Which tone?", is_global=True, project_ids=["a"])
+
+        # When created
+        with pytest.raises(ValidationError):
+            evaluator.create()
+
+        # Then its state is untouched, as for LlmEvaluator and CodeEvaluator
+        assert evaluator.sync_state == SyncState.LOCAL_ONLY
+
     @patch("splunk_ao.evaluator.Scorers")
     def test_get_populates_scope_for_fetched_decision_evaluator(
         self, mock_scorers_class: MagicMock, reset_configuration: None
