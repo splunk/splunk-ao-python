@@ -104,7 +104,7 @@ _SCOPED_CREATE_DENIED_HINT = (
     "(or on the current project when it is the default). Ask a project owner for access, or choose other projects."
 )
 _DECISION_VERSION_DENIED_HINT = (
-    "The server refused the decision version request, so the new evaluator was deleted. "
+    "The server refused the decision version request, and the SDK tried to delete the new evaluator. "
     "Check that decision evaluators are enabled for your organization."
 )
 _SCOPE_CHANGE_DENIED_HINT = (
