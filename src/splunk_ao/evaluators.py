@@ -1,11 +1,12 @@
 import datetime
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from typing import Any
 
 from galileo_core.schemas.logging.step import StepType
 from splunk_ao.config import SplunkAOConfig
-from splunk_ao.exceptions import SplunkAOAPIError
+from splunk_ao.exceptions import EvaluatorPermissionError, ForbiddenError, SplunkAOAPIError
 from splunk_ao.resources.api.data import (
     create_decision_scorer_version_scorers_scorer_id_version_decision_post,
     create_llm_scorer_version_scorers_scorer_id_version_llm_post,
@@ -92,6 +93,52 @@ class DecisionVersionOutcomeUnknownError(RuntimeError):
             f"Creating the decision evaluator version failed with an unknown outcome; scorer_id={scorer_id} "
             f"was kept and may have a version: {cause}"
         )
+
+
+_GLOBAL_CREATE_DENIED_HINT = (
+    "Only org admins can create global evaluators. Pass project_ids=[...] to scope the evaluator to your projects, "
+    "or set SPLUNK_AO_PROJECT / SPLUNK_AO_PROJECT_ID so it defaults to one."
+)
+_SCOPED_CREATE_DENIED_HINT = (
+    "Creating a project-scoped evaluator needs the owner or editor role on every project in project_ids "
+    "(or on the current project when it is the default). Ask a project owner for access, or choose other projects."
+)
+_SCOPE_CHANGE_DENIED_HINT = (
+    "Changing an evaluator's scope needs the owner or editor role on each project added or removed; "
+    "making it global needs the org admin role."
+)
+
+
+def _edit_denied_hint(action: str) -> str:
+    """Hint for a 403 when updating or deleting an evaluator."""
+    return (
+        f"You can't {action} this evaluator. It needs the owner or editor role on one of the evaluator's projects "
+        "(org admin for a global evaluator)."
+    )
+
+
+def _create_denied_hint(scope_is_global: bool | Unset) -> str:
+    """Hint for a 403 on create, chosen from the scope that was actually sent."""
+    return _SCOPED_CREATE_DENIED_HINT if scope_is_global is False else _GLOBAL_CREATE_DENIED_HINT
+
+
+def _as_permission_error(error: ForbiddenError, hint: str) -> EvaluatorPermissionError:
+    """Turn a generic 403 into an ``EvaluatorPermissionError``; an existing one is returned unchanged."""
+    if isinstance(error, EvaluatorPermissionError):
+        return error
+    return EvaluatorPermissionError(error.status_code, error.content, hint)
+
+
+@contextmanager
+def _translate_forbidden(hint: str) -> Iterator[None]:
+    """Re-raise a 403 from the wrapped call as an ``EvaluatorPermissionError`` carrying ``hint``."""
+    try:
+        yield
+    except ForbiddenError as error:
+        translated = _as_permission_error(error, hint)
+        if translated is error:
+            raise
+        raise translated from error
 
 
 REJECTION_STATUS_CODES = frozenset({400, 403, 404, 422})
@@ -261,10 +308,13 @@ class Evaluators:
     def delete_evaluator(self, name: str) -> None:
         scorers_to_delete = Scorers().list(name=name)
         if not scorers_to_delete:
-            raise ValueError(f"Scorer with name {name} not found.")
+            raise ValueError(f"Evaluator with name '{name}' not found, or not shared with your projects.")
 
         for scorer in scorers_to_delete:
-            response = delete_scorer_scorers_scorer_id_delete.sync(scorer_id=scorer.id, client=self.config.api_client)
+            with _translate_forbidden(_edit_denied_hint("delete")):
+                response = delete_scorer_scorers_scorer_id_delete.sync(
+                    scorer_id=scorer.id, client=self.config.api_client
+                )
 
             if isinstance(response, HTTPValidationError):
                 raise ValueError(response.detail)
@@ -329,6 +379,9 @@ class Evaluators:
         ValidationError
             If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
             passed with no project to scope to.
+        EvaluatorPermissionError
+            If the API answers 403: org admins only for a global evaluator, owner or editor role on the
+            projects for a scoped one.
         NotFoundError
             If the current project is set but cannot be found.
         """
@@ -348,7 +401,12 @@ class Evaluators:
             project_ids=scope_project_ids,
         )
 
-        scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
+        with _translate_forbidden(_create_denied_hint(scope_is_global)):
+            scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
+        if isinstance(scorer, HTTPValidationError):
+            raise ValueError(scorer.detail)
+        if scorer is None:
+            raise ValueError("Failed to create custom LLM evaluator.")
 
         version_req = CreateLLMScorerVersionRequest(user_prompt=user_prompt)
         version_resp = create_llm_scorer_version_scorers_scorer_id_version_llm_post.sync(
@@ -420,6 +478,9 @@ class Evaluators:
         ValidationError
             If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
             passed with no project to scope to.
+        EvaluatorPermissionError
+            If the API answers 403: org admins only for a global evaluator, owner or editor role on the
+            projects for a scoped one.
         NotFoundError
             If the current project is set but cannot be found.
         ValueError
@@ -452,7 +513,9 @@ class Evaluators:
             project_ids=scope_project_ids,
         )
 
-        scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
+        create_hint = _create_denied_hint(scope_is_global)
+        with _translate_forbidden(create_hint):
+            scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
         if isinstance(scorer, HTTPValidationError):
             raise ValueError(scorer.detail)
         if scorer is None:
@@ -469,6 +532,10 @@ class Evaluators:
         except Exception as error:
             if self._was_rejected(error):
                 self._delete_scorer_quietly(scorer.id)
+                if isinstance(error, ForbiddenError):
+                    translated = _as_permission_error(error, create_hint)
+                    if translated is not error:
+                        raise translated from error
                 raise
             _logger.warning(
                 "Decision evaluator version request failed with an unknown outcome; scorer_id=%s was kept: %s",
@@ -599,6 +666,9 @@ def create_custom_llm_evaluator(
     ValidationError
         If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
         passed with no project to scope to.
+    EvaluatorPermissionError
+        If the API answers 403: org admins only for a global evaluator, owner or editor role on the
+        projects for a scoped one.
     NotFoundError
         If the current project is set but cannot be found.
     """
@@ -683,6 +753,9 @@ def create_decision_evaluator(
     ValidationError
         If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
         passed with no project to scope to.
+    EvaluatorPermissionError
+        If the API answers 403: org admins only for a global evaluator, owner or editor role on the
+        projects for a scoped one.
     NotFoundError
         If the current project is set but cannot be found.
     ValueError

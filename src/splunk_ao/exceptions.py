@@ -6,6 +6,7 @@ __all__ = [
     "AuthenticationError",
     "BadRequestError",
     "ConflictError",
+    "EvaluatorPermissionError",
     "ForbiddenError",
     "NotFoundError",
     "RateLimitError",
@@ -63,6 +64,17 @@ class ForbiddenError(SplunkAOAPIError):
             "Permission denied. Your API key doesn't have access to this resource. "
             "Check your organization and project permissions.",
         )
+
+
+class EvaluatorPermissionError(ForbiddenError):
+    """HTTP 403 on an evaluator create, update, delete or scope change.
+
+    Subclasses ``ForbiddenError``, so existing ``except ForbiddenError`` handlers still catch it. The message says
+    which role or permission the operation needs; the server response body follows it.
+    """
+
+    def __init__(self, status_code: int, content: bytes, message: str):
+        SplunkAOAPIError.__init__(self, status_code, content, message)
 
 
 class NotFoundError(SplunkAOAPIError):

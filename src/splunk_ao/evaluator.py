@@ -20,10 +20,14 @@ from galileo_core.schemas.shared.metric import MetricValueType
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import Configuration
 from splunk_ao.evaluators import (
+    _SCOPE_CHANGE_DENIED_HINT,
     DecisionAnswerOptions,
     DecisionVersionOutcomeUnknownError,
     Evaluators,
+    _create_denied_hint,
+    _edit_denied_hint,
     _resolve_create_scope,
+    _translate_forbidden,
     normalize_decision_answer_options,
     resolve_decision_output_type,
     validate_decision_request,
@@ -32,6 +36,7 @@ from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
     get_validate_code_scorer_task_result_scorers_code_validate_task_id_get,
+    set_scorer_scope_scorers_scorer_id_scope_put,
     update_scorers_scorer_id_patch,
     validate_code_scorer_scorers_code_validate_post,
 )
@@ -49,6 +54,7 @@ from splunk_ao.resources.models import (
     ScorerTypes,
     TaskResultStatus,
     UpdateScorerRequest,
+    UpdateScorerScopeRequest,
 )
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.types import UNSET, File, Unset
@@ -285,7 +291,7 @@ class Evaluator(StateManagementMixin, ABC):
         Returns
         -------
             Optional[Evaluator]: The metric if found (SplunkAOEvaluator, LlmEvaluator, CodeEvaluator, or DecisionEvaluator),
-                None otherwise.
+                None otherwise. ``None`` can also mean the evaluator exists but isn't shared with the caller's projects.
 
         Raises
         ------
@@ -384,7 +390,9 @@ class Evaluator(StateManagementMixin, ABC):
 
         Raises
         ------
-            ValueError: If no metric with the given name exists.
+            ValueError: If no metric with the given name exists, or it isn't shared with your projects.
+            EvaluatorPermissionError: If the API answers 403 (owner or editor role needed on one of the
+                evaluator's projects; org admin for a global evaluator).
 
         Examples
         --------
@@ -514,6 +522,8 @@ class Evaluator(StateManagementMixin, ABC):
                 or the metric is in FAILED_SYNC state.
             ValueError: If any unsupported fields are passed.
             APIError: If the API returns a validation error or empty response.
+            EvaluatorPermissionError: If the API answers 403: updating needs the owner or editor role on one of the
+                evaluator's projects (org admin for a global evaluator). State is set to FAILED_SYNC.
             Exception: If the API call fails (state is set to FAILED_SYNC).
 
         Examples
@@ -546,7 +556,8 @@ class Evaluator(StateManagementMixin, ABC):
         logger.info(f"Evaluator.update: id='{self.id}' name='{self.name}' - started")
         try:
             config = SplunkAOConfig.get()
-            response = update_scorers_scorer_id_patch.sync(scorer_id=self.id, client=config.api_client, body=body)
+            with _translate_forbidden(_edit_denied_hint("update")):
+                response = update_scorers_scorer_id_patch.sync(scorer_id=self.id, client=config.api_client, body=body)
         except Exception as e:
             self._set_state(SyncState.FAILED_SYNC, error=e)
             logger.error(f"Evaluator.update: id='{self.id}' - failed: {e}")
@@ -562,6 +573,90 @@ class Evaluator(StateManagementMixin, ABC):
         logger.info(f"Evaluator.update: id='{self.id}' - completed")
         return self
 
+    def set_scope(self, *, project_ids: builtins.list[str] | None = None, is_global: bool = False) -> Evaluator:
+        """
+        Replace this metric's scope on the API.
+
+        This is a full replace: the metric ends up scoped to exactly ``project_ids``, or global. It never
+        falls back to the current project. On success the instance is updated with the API response and
+        returned in SYNCED state.
+
+        Parameters
+        ----------
+        project_ids : list[str], optional
+            Projects to scope the metric to. Required (and non-empty) unless ``is_global=True``.
+        is_global : bool
+            Make the metric global. Cannot be combined with ``project_ids``. Org admins only.
+
+        Returns
+        -------
+            Evaluator: This metric instance with updated attributes from the API.
+
+        Raises
+        ------
+            ValidationError: If this is a local metric, or the arguments are invalid (``is_global=True`` with
+                ``project_ids``, ``project_ids`` missing, empty or a single string).
+            ValueError: If the metric ID is not set, the metric is deleted, or the metric is in FAILED_SYNC state.
+            APIError: If the API returns a validation error or empty response.
+            EvaluatorPermissionError: If the API answers 403: the owner or editor role is needed on each project
+                added or removed, and the org admin role to make the metric global.
+            NotFoundError: If the API answers 404. The server also answers 404 for a metric that exists but
+                isn't shared with your projects.
+            Exception: If the API call fails (state is set to FAILED_SYNC).
+
+        Examples
+        --------
+            metric = Evaluator.get(name="factuality-checker")
+            metric.set_scope(project_ids=["<project-id>"])
+            metric.set_scope(is_global=True)  # org admins only
+        """
+        if isinstance(self, LocalEvaluator):
+            raise ValidationError("Local metrics don't exist on the server and can't change scope.")
+        if self.id is None:
+            raise ValueError("Evaluator ID is not set. Cannot change the scope of a local-only metric.")
+        if self.sync_state == SyncState.DELETED:
+            raise ValueError("Cannot change the scope of a deleted metric.")
+        if self.sync_state == SyncState.FAILED_SYNC:
+            raise ValueError(
+                "Cannot change the scope of a metric in FAILED_SYNC state. "
+                "Call refresh() to re-sync from the API, then retry your changes."
+            )
+
+        # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
+        requested: object = project_ids
+        if isinstance(requested, str):
+            raise ValidationError("project_ids must be a list of project ids, not a single string.")
+        if is_global:
+            if project_ids:
+                raise ValidationError("A metric cannot be both global and scoped: pass is_global=True or project_ids.")
+            body = UpdateScorerScopeRequest(is_global=True)
+        else:
+            if not project_ids:
+                raise ValidationError("project_ids must not be empty. Pass is_global=True to make the metric global.")
+            body = UpdateScorerScopeRequest(is_global=False, project_ids=list(dict.fromkeys(project_ids)))
+
+        logger.info(f"Evaluator.set_scope: id='{self.id}' name='{self.name}' - started")
+        try:
+            config = SplunkAOConfig.get()
+            with _translate_forbidden(_SCOPE_CHANGE_DENIED_HINT):
+                response = set_scorer_scope_scorers_scorer_id_scope_put.sync(
+                    scorer_id=self.id, client=config.api_client, body=body
+                )
+        except Exception as e:
+            self._set_state(SyncState.FAILED_SYNC, error=e)
+            logger.error(f"Evaluator.set_scope: id='{self.id}' - failed: {e}")
+            raise
+
+        if isinstance(response, HTTPValidationError):
+            raise APIError(f"Evaluator scope validation error: {response.detail}")
+        if response is None:
+            raise APIError(f"Evaluator scope update returned empty response for id '{self.id}'")
+
+        self._populate_from_scorer_response(response)
+        self._set_state(SyncState.SYNCED)
+        logger.info(f"Evaluator.set_scope: id='{self.id}' - completed")
+        return self
+
     def delete(self) -> None:
         """
         Delete this metric.
@@ -571,7 +666,9 @@ class Evaluator(StateManagementMixin, ABC):
         Raises
         ------
             ValidationError: If this is a local metric.
-            ValueError: If the metric is not synced.
+            ValueError: If the metric is not synced, or is not found (or not shared with your projects).
+            EvaluatorPermissionError: If the API answers 403: deleting needs the owner or editor role on one of the
+                evaluator's projects (org admin for a global evaluator).
 
         Examples
         --------
@@ -605,7 +702,8 @@ class Evaluator(StateManagementMixin, ABC):
         ------
             ValidationError: If this is a local metric.
             ValueError: If the metric is not synced.
-            Exception: If the API call fails or the metric no longer exists.
+            ValueError: If the metric is not found, or not shared with your projects.
+            Exception: If the API call fails.
 
         Examples
         --------
@@ -625,7 +723,7 @@ class Evaluator(StateManagementMixin, ABC):
             retrieved_scorer = next((s for s in scorers if s.id == self.id), None)
 
             if retrieved_scorer is None:
-                raise ValueError(f"Evaluator with id '{self.id}' no longer exists")
+                raise ValueError(f"Evaluator with id '{self.id}' not found, or not shared with your projects")
 
             self._populate_from_scorer_response(retrieved_scorer)
             self._set_state(SyncState.SYNCED)
@@ -847,6 +945,8 @@ class LlmEvaluator(Evaluator):
             ValidationError: If configuration is invalid, or the scope is invalid (``is_global=True`` with
                 ``project_ids``, an empty ``project_ids``, or ``is_global=False`` with no project). Scope errors
                 are ``ValidationError``, not ``ValueError``.
+            EvaluatorPermissionError: If the API answers 403: org admins only for a global evaluator, owner or
+                editor role on the projects for a scoped one.
             NotFoundError: If the current project is set but cannot be found.
             Exception: If the API call fails.
 
@@ -1020,6 +1120,8 @@ class DecisionEvaluator(Evaluator):
             ValidationError: If the scope is invalid (``is_global=True`` with ``project_ids``, an empty
                 ``project_ids``, or ``is_global=False`` with no project). Scope errors are ``ValidationError``,
                 not ``ValueError``.
+            EvaluatorPermissionError: If the API answers 403: org admins only for a global evaluator, owner or
+                editor role on the projects for a scoped one.
             NotFoundError: If the current project is set but cannot be found.
             ValueError: If an argument is invalid or the API answers with a validation error.
             SplunkAOAPIError: For HTTP errors. A scorer created before a clear rejection is deleted.
@@ -1361,6 +1463,8 @@ class CodeEvaluator(Evaluator):
             ValidationError: If code is not set, validation fails, or configuration is invalid, or the scope is
                 invalid (``is_global=True`` with ``project_ids``, an empty ``project_ids``, or ``is_global=False``
                 with no project). Scope errors are ``ValidationError``, not ``ValueError``.
+            EvaluatorPermissionError: If the API answers 403: org admins only for a global evaluator, owner or
+                editor role on the projects for a scoped one.
             NotFoundError: If the current project is set but cannot be found.
             Exception: If the API call fails.
 
@@ -1416,8 +1520,11 @@ class CodeEvaluator(Evaluator):
                 project_ids=scope_project_ids,
             )
 
-            scorer_response = create_scorers_post.sync(client=config.api_client, body=scorer_request)
+            with _translate_forbidden(_create_denied_hint(scope_is_global)):
+                scorer_response = create_scorers_post.sync(client=config.api_client, body=scorer_request)
 
+            if isinstance(scorer_response, HTTPValidationError):
+                raise ValueError(scorer_response.detail)
             if scorer_response is None:
                 logger.debug("CodeEvaluator.create: No response from create_scorers_post")
                 raise ValueError("Failed to create code-based metric: No response from API")

@@ -627,6 +627,29 @@ run_experiment(
 )
 ```
 
+#### Evaluators
+
+New evaluators are scoped to the current project (`SPLUNK_AO_PROJECT_ID` or `SPLUNK_AO_PROJECT`) by default. Pass
+`project_ids` to choose other projects, or `is_global=True` for a global evaluator. Only org admins can create global
+evaluators, and changing or deleting an evaluator needs the owner or editor role on one of its projects.
+
+```python
+from splunk_ao import EvaluatorPermissionError
+from splunk_ao.__future__ import LlmEvaluator
+
+try:
+    evaluator = LlmEvaluator(
+        name="politeness", prompt="Is the answer polite?", project_ids=["<project-id>"]
+    ).create()
+    # Replace the scope: scoped to exactly these projects (is_global=True is org admins only).
+    evaluator.set_scope(project_ids=["<project-id>", "<other-project-id>"])
+except EvaluatorPermissionError as error:
+    print(error)  # says which role is missing and how to fix it
+```
+
+`EvaluatorPermissionError` subclasses `ForbiddenError`. Looking up an evaluator by name returns `None` when it does
+not exist or is not shared with your projects.
+
 ### Sessions
 
 Sessions group related traces under the same conversation. To explicitly create

@@ -635,7 +635,7 @@ class TestMetricRefresh:
 
         metric = Evaluator.get(id=metric_id)
 
-        with pytest.raises(ValueError, match="no longer exists"):
+        with pytest.raises(ValueError, match="not found, or not shared with your projects"):
             metric.refresh()
 
 
