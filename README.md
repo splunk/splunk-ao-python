@@ -634,8 +634,7 @@ New evaluators are scoped to the current project (`SPLUNK_AO_PROJECT_ID` or `SPL
 evaluators, and changing or deleting an evaluator needs the owner or editor role on one of its projects.
 
 ```python
-from splunk_ao import EvaluatorPermissionError
-from splunk_ao.__future__ import LlmEvaluator
+from splunk_ao import EvaluatorPermissionError, LlmEvaluator
 
 try:
     evaluator = LlmEvaluator(

@@ -394,7 +394,7 @@ class TestSetScope:
             ({"project_ids": []}, "must not be empty"),
             ({"project_ids": None, "is_global": False}, "must not be empty"),
             ({"project_ids": "a-single-id"}, "not a single string"),
-            ({"project_ids": "a-single-id", "is_global": True}, "not a single string"),
+            ({"project_ids": "a-single-id", "is_global": True}, "both global and scoped"),
         ],
     )
     def test_invalid_arguments_make_no_request_and_keep_state(self, mock_config, mock_put, kwargs, message) -> None:

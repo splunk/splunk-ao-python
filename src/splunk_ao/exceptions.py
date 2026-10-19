@@ -73,7 +73,8 @@ class EvaluatorPermissionError(ForbiddenError):
     which role or permission the operation needs; the server response body follows it.
     """
 
-    def __init__(self, status_code: int, content: bytes, message: str):
+    def __init__(self, status_code: int, content: bytes, message: str) -> None:
+        # ForbiddenError fixes its own message, so skip it and use the base initializer to set ours.
         SplunkAOAPIError.__init__(self, status_code, content, message)
 
 

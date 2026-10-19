@@ -622,15 +622,15 @@ class Evaluator(StateManagementMixin, ABC):
                 "Call refresh() to re-sync from the API, then retry your changes."
             )
 
-        # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
-        requested: object = project_ids
-        if isinstance(requested, str):
-            raise ValidationError("project_ids must be a list of project ids, not a single string.")
         if is_global:
             if project_ids:
                 raise ValidationError("A metric cannot be both global and scoped: pass is_global=True or project_ids.")
             body = UpdateScorerScopeRequest(is_global=True)
         else:
+            # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
+            requested: object = project_ids
+            if isinstance(requested, str):
+                raise ValidationError("project_ids must be a list of project ids, not a single string.")
             if not project_ids:
                 raise ValidationError("project_ids must not be empty. Pass is_global=True to make the metric global.")
             body = UpdateScorerScopeRequest(is_global=False, project_ids=list(dict.fromkeys(project_ids)))

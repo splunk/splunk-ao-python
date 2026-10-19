@@ -122,23 +122,15 @@ def _create_denied_hint(scope_is_global: bool | Unset) -> str:
     return _SCOPED_CREATE_DENIED_HINT if scope_is_global is False else _GLOBAL_CREATE_DENIED_HINT
 
 
-def _as_permission_error(error: ForbiddenError, hint: str) -> EvaluatorPermissionError:
-    """Turn a generic 403 into an ``EvaluatorPermissionError``; an existing one is returned unchanged."""
-    if isinstance(error, EvaluatorPermissionError):
-        return error
-    return EvaluatorPermissionError(error.status_code, error.content, hint)
-
-
 @contextmanager
 def _translate_forbidden(hint: str) -> Iterator[None]:
     """Re-raise a 403 from the wrapped call as an ``EvaluatorPermissionError`` carrying ``hint``."""
     try:
         yield
+    except EvaluatorPermissionError:
+        raise
     except ForbiddenError as error:
-        translated = _as_permission_error(error, hint)
-        if translated is error:
-            raise
-        raise translated from error
+        raise EvaluatorPermissionError(error.status_code, error.content, hint) from error
 
 
 REJECTION_STATUS_CODES = frozenset({400, 403, 404, 422})
@@ -532,11 +524,8 @@ class Evaluators:
         except Exception as error:
             if self._was_rejected(error):
                 self._delete_scorer_quietly(scorer.id)
-                if isinstance(error, ForbiddenError):
-                    translated = _as_permission_error(error, create_hint)
-                    if translated is not error:
-                        raise translated from error
-                raise
+                with _translate_forbidden(create_hint):
+                    raise
             _logger.warning(
                 "Decision evaluator version request failed with an unknown outcome; scorer_id=%s was kept: %s",
                 scorer.id,
