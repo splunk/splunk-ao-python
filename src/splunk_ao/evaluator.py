@@ -1122,7 +1122,8 @@ class DecisionEvaluator(Evaluator):
                 ``project_ids``, or ``is_global=False`` with no project). Scope errors are ``ValidationError``,
                 not ``ValueError``.
             EvaluatorPermissionError: If the API answers 403: org admins only for a global evaluator, owner or
-                editor role on the projects for a scoped one.
+                editor role on the projects for a scoped one. Decision evaluators may also not be enabled for the
+                organization. A 403 on the version request deletes the new scorer before the error is raised.
             NotFoundError: If the current project is set but cannot be found.
             ValueError: If an argument is invalid or the API answers with a validation error.
             SplunkAOAPIError: For HTTP errors. A scorer created before a clear rejection is deleted.
