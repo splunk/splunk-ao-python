@@ -30,7 +30,7 @@ from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
 from splunk_ao.resources.types import UNSET, Unset
 from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
-from splunk_ao.shared.exceptions import ValidationError, _resolve_project_identifiers
+from splunk_ao.shared.exceptions import NotFoundError, ValidationError, _resolve_project_identifiers
 from splunk_ao.shared.project_resolver import _resolve_project
 
 _logger = logging.getLogger(__name__)
@@ -219,6 +219,7 @@ def _resolve_create_scope(
         return True, UNSET
 
     if project_ids is not None:
+        # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
         requested: object = project_ids
         if isinstance(requested, str):
             raise ValidationError("project_ids must be a list of project ids, not a single string.")
@@ -229,14 +230,22 @@ def _resolve_create_scope(
     # Imported here because decorator.py imports modules that depend on this one.
     from splunk_ao.decorator import splunk_ao_context
 
-    context_project = splunk_ao_context.get_current_project()
+    context_project = (splunk_ao_context.get_current_project() or "").strip() or None
+    project_id: str | None
+    project_name: str | None
     if context_project:
         project_id, project_name = None, context_project
     else:
         project_id, project_name = _resolve_project_identifiers(None, None)
 
     if project_id or project_name:
-        return False, [_resolve_project(project_id, project_name).id]
+        try:
+            return False, [_resolve_project(project_id, project_name).id]
+        except NotFoundError as e:
+            raise type(e)(
+                "Evaluator scope defaults to the current project (decorator context, SPLUNK_AO_PROJECT_ID or "
+                f"SPLUNK_AO_PROJECT), which was not found. Pass project_ids=[...] or is_global=True. {e}"
+            ) from e
 
     if is_global is False:
         raise ValidationError("is_global=False needs project_ids or a current project.")

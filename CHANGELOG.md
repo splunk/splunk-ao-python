@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LlmEvaluator`, `CodeEvaluator`, `DecisionEvaluator`, `Evaluators.create_custom_llm_evaluator()`,
   `Evaluators.create_decision_evaluator()` and the module-level `create_custom_llm_evaluator()` and
   `create_decision_evaluator()` accept `project_ids` and `is_global` to choose the scope of a new evaluator.
-  Passing both, or an empty `project_ids` without `is_global=True`, raises `ValidationError` before any request is sent.
+  Passing `is_global=True` together with `project_ids`, an empty `project_ids`, or `is_global=False` with no
+  `project_ids` and no current project raises `ValidationError` before any request is sent.
 - `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
   `create()`, `get()`, `list()` and `refresh()`.
 
@@ -30,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NotFoundError` rather than falling back to a global evaluator. When no current project is set and no scope is
   passed, no scope is sent and the server default (global, org admins only) applies. Org admins who relied on creating
   global evaluators with a project set must now pass `is_global=True`.
+  The current project must already exist: unlike logging, creating an evaluator does not create it. Create it first,
+  or pass `project_ids` or `is_global=True`.
 - Creating project-scoped evaluators requires `splunk-ao` 0.6.0 or later. Earlier versions send no scope, so on servers
   with metric RBAC enabled, non-admin users get a 403 when creating an evaluator.
 

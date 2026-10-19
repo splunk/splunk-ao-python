@@ -2070,7 +2070,7 @@ class TestEvaluatorScope:
         [
             (False, [ScorerScopeProjectRef(id="p1", name="One")], False, [ScorerScopeProjectRef(id="p1", name="One")]),
             (True, [], True, []),
-            (UNSET, UNSET, False, []),
+            (UNSET, UNSET, None, []),
         ],
     )
     @patch("splunk_ao.evaluator.Scorers")
@@ -2094,13 +2094,45 @@ class TestEvaluatorScope:
             assert evaluator.is_global is expected_global
             assert evaluator.scope_projects == expected_projects
 
+    @pytest.mark.parametrize(
+        ("is_global", "scope_projects"), [(False, [ScorerScopeProjectRef(id="a", name="A")]), (True, [])]
+    )
+    @patch("splunk_ao.shared.project_resolver.Projects")
+    @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
+    @patch("splunk_ao.evaluators.create_scorers_post")
+    @patch("splunk_ao.evaluators.SplunkAOConfig.get")
     @patch("splunk_ao.evaluator.Scorers")
-    def test_fetched_evaluator_has_no_requested_project_ids(self, mock_scorers_class, reset_configuration) -> None:
-        # Given an evaluator built by get(), which skips __init__
-        mock_scorers_class.return_value.list.return_value = [_scope_scorer(str(uuid4()))]
+    def test_create_on_fetched_evaluator_ignores_the_fetched_scope(
+        self,
+        mock_scorers_class,
+        mock_config,
+        mock_create_scorers,
+        mock_create_version,
+        mock_projects_class,
+        is_global,
+        scope_projects,
+        monkeypatch,
+        reset_configuration,
+    ) -> None:
+        # Given an evaluator fetched with a server scope, and a different current project in the environment
+        scorer_id = str(uuid4())
+        mock_scorers_class.return_value.list.return_value = [
+            _scope_scorer(scorer_id, is_global=is_global, scope_projects=scope_projects)
+        ]
+        fetched = Evaluator.get(name="Scoped Evaluator")
+        assert fetched.is_global is is_global
+        monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
+        mock_projects_class.return_value.get_with_env_fallbacks.return_value = MagicMock(id="env-project-id")
+        mock_create_scorers.sync.return_value = MagicMock(id=scorer_id)
+        mock_create_version.sync.return_value = MagicMock(scorer_id=scorer_id)
 
-        # Then the requested-scope attribute still exists
-        assert Evaluator.get(name="Scoped Evaluator").project_ids is None
+        # When create() is called on it
+        fetched.create()
+
+        # Then the scope comes from the current project, not from the fetched server values
+        body = mock_create_scorers.sync.call_args.kwargs["body"]
+        assert body.is_global is False
+        assert body.project_ids == ["env-project-id"]
 
     @patch("splunk_ao.evaluator.Evaluators")
     @patch("splunk_ao.evaluator.Scorers")
@@ -2132,12 +2164,15 @@ class TestEvaluatorScope:
     def test_llm_evaluator_forwards_is_global(
         self, mock_scorers_class, mock_evaluators_class, reset_configuration: None
     ) -> None:
+        # Given an LLM evaluator built with is_global=True
         scorer_id = str(uuid4())
         mock_evaluators_class.return_value.create_custom_llm_evaluator.return_value = MagicMock(scorer_id=scorer_id)
         mock_scorers_class.return_value.list.return_value = [_scope_scorer(scorer_id, is_global=True)]
 
+        # When created
         evaluator = LlmEvaluator(name="Scoped Evaluator", prompt="x", is_global=True).create()
 
+        # Then the request is global and the server value is surfaced
         kwargs = mock_evaluators_class.return_value.create_custom_llm_evaluator.call_args.kwargs
         assert kwargs["is_global"] is True
         assert kwargs["project_ids"] is None
@@ -2188,12 +2223,15 @@ class TestEvaluatorScope:
     def test_code_evaluator_global_sends_no_project_ids(
         self, mock_create_scorers, mock_config, reset_configuration
     ) -> None:
+        # Given a global code evaluator and a create endpoint that returns nothing; we only inspect the request
         mock_create_scorers.sync.return_value = None
 
+        # When created, the missing response raises after the request is built
         with patch.object(CodeEvaluator, "_validate_code", return_value="{}"):
             with pytest.raises(ValueError, match="No response"):
                 CodeEvaluator(name="G", code="x", is_global=True).create()
 
+        # Then the request was global with no project ids
         body = mock_create_scorers.sync.call_args.kwargs["body"]
         assert body.is_global is True
         assert "project_ids" not in body.to_dict()
@@ -2207,9 +2245,12 @@ class TestEvaluatorScope:
     def test_code_evaluator_resolves_scope_before_validating_code(
         self, mock_create_scorers, mock_validate_post, mock_config, kwargs, reset_configuration
     ) -> None:
+        # Given a code evaluator with an invalid scope
+        # When created
         with pytest.raises(ValidationError):
             CodeEvaluator(name="Bad", code="x", **kwargs).create()
 
+        # Then neither validation nor creation was attempted
         mock_validate_post.sync.assert_not_called()
         mock_create_scorers.sync.assert_not_called()
 
@@ -2487,13 +2528,16 @@ class TestDecisionEvaluatorScope:
     def test_forwards_is_global(
         self, mock_scorers_class: MagicMock, mock_evaluators_class: MagicMock, reset_configuration: None
     ) -> None:
+        # Given a decision evaluator built with is_global=True
         version = MagicMock()
         version.scorer_id = "s1"
         mock_evaluators_class.return_value.create_decision_evaluator.return_value = version
         mock_scorers_class.return_value.list.return_value = [_decision_scorer("boolean_probability", None)]
 
+        # When created
         DecisionEvaluator(name="tone", question="Which tone?", is_global=True).create()
 
+        # Then the request is global
         kwargs = mock_evaluators_class.return_value.create_decision_evaluator.call_args.kwargs
         assert kwargs["is_global"] is True
         assert kwargs["project_ids"] is None
@@ -2540,4 +2584,4 @@ class TestDecisionEvaluatorScope:
         assert isinstance(evaluator, DecisionEvaluator)
         assert evaluator.is_global is False
         assert [(p.id, p.name) for p in evaluator.scope_projects] == [("a", "A")]
-        assert evaluator.project_ids is None
+        assert evaluator._create_project_ids is None

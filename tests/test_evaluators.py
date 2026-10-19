@@ -44,7 +44,6 @@ from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
 from splunk_ao.resources.models.scorer_response import ScorerResponse
 from splunk_ao.resources.models.scorer_types import ScorerTypes
 from splunk_ao.resources.types import UNSET
-from splunk_ao.shared.exceptions import NotFoundError as ProjectLookupNotFoundError
 from splunk_ao.shared.exceptions import ValidationError as SplunkAOValidationError
 
 FIXED_PROJECT_ID = str(uuid4())
@@ -606,7 +605,20 @@ class TestResolveCreateScope:
         mock_projects.get_with_env_fallbacks.assert_not_called()
 
     def test_explicit_project_ids_with_is_global_false(self, mock_projects) -> None:
-        assert _resolve_create_scope(["a"], False) == (False, ["a"])
+        # Given explicit ids and is_global=False
+        # When resolving
+        result = _resolve_create_scope(["a"], False)
+
+        # Then the ids are used
+        assert result == (False, ["a"])
+
+    def test_empty_project_ids_with_is_global_true_is_global(self, mock_projects) -> None:
+        # Given is_global=True and an empty list, which does not conflict
+        # When resolving
+        result = _resolve_create_scope([], True)
+
+        # Then the evaluator is global
+        assert result == (True, UNSET)
 
     def test_is_global_true_sends_no_project_ids_even_with_current_project(self, monkeypatch, mock_projects) -> None:
         # Given a current project
@@ -620,14 +632,37 @@ class TestResolveCreateScope:
         mock_projects.get_with_env_fallbacks.assert_not_called()
 
     def test_nothing_set_sends_no_scope(self, mock_projects) -> None:
-        assert _resolve_create_scope(None, None) == (UNSET, UNSET)
+        # Given no arguments, context project or env vars
+        # When resolving
+        result = _resolve_create_scope(None, None)
+
+        # Then no scope is sent and no lookup happens
+        assert result == (UNSET, UNSET)
         mock_projects.get_with_env_fallbacks.assert_not_called()
 
+    def test_whitespace_context_project_counts_as_unset(self, mock_projects) -> None:
+        # Given a whitespace-only context project and nothing else
+        _project_context.set("   ")
+
+        # When resolving
+        result = _resolve_create_scope(None, None)
+
+        # Then it is treated as no current project
+        assert result == (UNSET, UNSET)
+
     def test_whitespace_env_counts_as_unset(self, monkeypatch, mock_projects) -> None:
+        # Given a whitespace-only SPLUNK_AO_PROJECT
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "   ")
-        assert _resolve_create_scope(None, None) == (UNSET, UNSET)
+
+        # When resolving
+        result = _resolve_create_scope(None, None)
+
+        # Then it is treated as no current project
+        assert result == (UNSET, UNSET)
 
     def test_global_and_project_ids_conflict(self, mock_projects) -> None:
+        # Given is_global=True together with project ids
+        # Then resolving fails
         with pytest.raises(SplunkAOValidationError, match="both global and scoped"):
             _resolve_create_scope(["a"], True)
 
@@ -643,21 +678,31 @@ class TestResolveCreateScope:
             _resolve_create_scope("3f2a", None)  # type: ignore[arg-type]
 
     def test_is_global_false_without_any_project_rejected(self, mock_projects) -> None:
+        # Given is_global=False and no project anywhere
+        # Then resolving fails
         with pytest.raises(SplunkAOValidationError, match="is_global=False needs project_ids"):
             _resolve_create_scope(None, False)
 
     def test_is_global_false_uses_current_project(self, monkeypatch, mock_projects) -> None:
+        # Given a current project
         monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
-        assert _resolve_create_scope(None, False) == (False, ["project-id-1"])
+
+        # When is_global=False is passed with no ids
+        result = _resolve_create_scope(None, False)
+
+        # Then the current project is used
+        assert result == (False, ["project-id-1"])
 
     def test_current_project_not_found_raises_not_found(self, monkeypatch, mock_projects) -> None:
         # Given a current project that does not exist
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "missing")
         mock_projects.get_with_env_fallbacks.return_value = None
 
-        # Then there is no silent fallback to global
-        with pytest.raises(ProjectLookupNotFoundError, match="missing"):
+        # Then there is no silent fallback to global, and the error says why a project was looked up
+        with pytest.raises(NotFoundError, match="missing") as exc_info:
             _resolve_create_scope(None, None)
+        assert "defaults to the current project" in str(exc_info.value)
+        assert "is_global=True" in str(exc_info.value)
 
 
 class TestCreateCustomLlmEvaluatorScope:
@@ -690,14 +735,17 @@ class TestCreateCustomLlmEvaluatorScope:
     @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
     @patch("splunk_ao.evaluators.create_llm_scorer_version_scorers_scorer_id_version_llm_post")
     @patch("splunk_ao.evaluators.create_scorers_post")
-    def test_explicit_project_ids(
+    def test_explicit_project_ids_override_current_project(
         self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects, mock_scorer_response
     ) -> None:
+        # Given a current project from the environment
         monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
         mock_create_scorer.sync.return_value = mock_scorer_response
 
+        # When creating with explicit project ids
         self._create(use_function, project_ids=["a", "b"])
 
+        # Then the explicit ids are sent
         body = mock_create_scorer.sync.call_args.kwargs["body"]
         assert body.is_global is False
         assert body.project_ids == ["a", "b"]
@@ -708,11 +756,14 @@ class TestCreateCustomLlmEvaluatorScope:
     def test_explicit_global_overrides_current_project(
         self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects, mock_scorer_response
     ) -> None:
+        # Given a current project from the environment
         monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
         mock_create_scorer.sync.return_value = mock_scorer_response
 
+        # When creating with is_global=True
         self._create(use_function, is_global=True)
 
+        # Then the request is global with no project ids
         body = mock_create_scorer.sync.call_args.kwargs["body"]
         assert body.is_global is True
         assert "project_ids" not in body.to_dict()
@@ -723,10 +774,13 @@ class TestCreateCustomLlmEvaluatorScope:
     def test_no_current_project_sends_no_scope(
         self, mock_create_scorer, mock_create_version, use_function, mock_projects, mock_scorer_response
     ) -> None:
+        # Given no current project
         mock_create_scorer.sync.return_value = mock_scorer_response
 
+        # When creating with no scope
         self._create(use_function)
 
+        # Then no scope fields are sent
         body_dict = mock_create_scorer.sync.call_args.kwargs["body"].to_dict()
         assert "is_global" not in body_dict
         assert "project_ids" not in body_dict
@@ -739,9 +793,12 @@ class TestCreateCustomLlmEvaluatorScope:
     def test_invalid_scope_fails_before_any_http_call(
         self, mock_create_scorer, kwargs, use_function, mock_projects
     ) -> None:
+        # Given an invalid scope
+        # When creating
         with pytest.raises(SplunkAOValidationError):
             self._create(use_function, **kwargs)
 
+        # Then nothing is sent
         mock_create_scorer.sync.assert_not_called()
 
     @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
@@ -752,7 +809,7 @@ class TestCreateCustomLlmEvaluatorScope:
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "missing")
         mock_projects.get_with_env_fallbacks.return_value = None
 
-        with pytest.raises(ProjectLookupNotFoundError):
+        with pytest.raises(NotFoundError):
             self._create(use_function)
 
         mock_create_scorer.sync.assert_not_called()
@@ -1200,7 +1257,7 @@ class TestCreateDecisionEvaluatorScope:
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "missing")
         mock_projects.get_with_env_fallbacks.return_value = None
 
-        with pytest.raises(ProjectLookupNotFoundError):
+        with pytest.raises(NotFoundError):
             self._create(use_function)
 
         mock_create_scorer.sync.assert_not_called()
