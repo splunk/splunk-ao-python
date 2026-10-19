@@ -12,7 +12,11 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+{# Endpoints whose responses carry scorer_type; the API leaves decision scorers out unless the header is sent.
+   The blank line after the import is needed: trim_blocks drops the newline that follows {% endif %}. #}
+{% set scorer_discovery = endpoint.path.startswith("/scorers") or endpoint.path.endswith("/scorer-settings") or endpoint.path.endswith("/metric_settings") %}
+from splunk_ao.utils.headers_data import get_sdk_header{% if scorer_discovery %}, get_scorer_capabilities_header{% endif %}
+
 from galileo_core.constants.request_method import RequestMethod
 from galileo_core.helpers.api_client import ApiClient
 from ...types import Response, UNSET
@@ -73,6 +77,9 @@ def _get_kwargs(
 {% endif %}
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+{% if scorer_discovery %}
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
+{% endif %}
 
     _kwargs["content_headers"] = headers
     return _kwargs

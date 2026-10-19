@@ -14,7 +14,7 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_scorer_capabilities_header, get_sdk_header
 
 from ... import errors
 from ...types import Response
@@ -26,6 +26,7 @@ def _get_kwargs() -> dict[str, Any]:
     _kwargs: dict[str, Any] = {"method": RequestMethod.GET, "return_raw_response": True, "path": "/scorers/tags"}
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

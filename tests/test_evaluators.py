@@ -8,11 +8,22 @@ import pytest
 from galileo_core.schemas.logging.step import StepType
 from splunk_ao.decorator import _project_context
 from splunk_ao.evaluators import (
+    DecisionVersionOutcomeUnknownError,
     Evaluators,
     _resolve_create_scope,
     create_custom_llm_evaluator,
+    create_decision_evaluator,
     delete_evaluator,
     get_evaluators,
+)
+from splunk_ao.exceptions import (
+    BadRequestError,
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    RateLimitError,
+    ServerError,
+    SplunkAOAPIError,
 )
 from splunk_ao.resources.models import (
     BucketedMetrics,
@@ -23,14 +34,17 @@ from splunk_ao.resources.models import (
     ValidationError,
 )
 from splunk_ao.resources.models.base_scorer_version_response import BaseScorerVersionResponse
+from splunk_ao.resources.models.create_decision_scorer_version_request import CreateDecisionScorerVersionRequest
 from splunk_ao.resources.models.create_llm_scorer_version_request import CreateLLMScorerVersionRequest
 from splunk_ao.resources.models.create_scorer_request import CreateScorerRequest
+from splunk_ao.resources.models.decision_level import DecisionLevel
+from splunk_ao.resources.models.input_type_enum import InputTypeEnum
 from splunk_ao.resources.models.output_type_enum import OutputTypeEnum
 from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
 from splunk_ao.resources.models.scorer_response import ScorerResponse
 from splunk_ao.resources.models.scorer_types import ScorerTypes
 from splunk_ao.resources.types import UNSET
-from splunk_ao.shared.exceptions import NotFoundError
+from splunk_ao.shared.exceptions import NotFoundError as ProjectLookupNotFoundError
 from splunk_ao.shared.exceptions import ValidationError as SplunkAOValidationError
 
 FIXED_PROJECT_ID = str(uuid4())
@@ -638,7 +652,7 @@ class TestResolveCreateScope:
         mock_projects.get_with_env_fallbacks.return_value = None
 
         # Then there is no silent fallback to global
-        with pytest.raises(NotFoundError, match="missing"):
+        with pytest.raises(ProjectLookupNotFoundError, match="missing"):
             _resolve_create_scope(None, None)
 
 
@@ -734,7 +748,7 @@ class TestCreateCustomLlmEvaluatorScope:
         monkeypatch.setenv("SPLUNK_AO_PROJECT", "missing")
         mock_projects.get_with_env_fallbacks.return_value = None
 
-        with pytest.raises(NotFoundError):
+        with pytest.raises(ProjectLookupNotFoundError):
             self._create(use_function)
 
         mock_create_scorer.sync.assert_not_called()
@@ -749,3 +763,440 @@ class TestCreateCustomLlmEvaluatorScope:
             "m", "prompt", StepType.llm, True, "gpt-4o", 5, "desc", ["t"], OutputTypeEnum.PERCENTAGE, True,
             project_ids=["a"], is_global=False,
         )  # fmt: skip
+
+
+@pytest.fixture
+def decision_scorer_response():
+    return ScorerResponse(
+        id=UUID("12345678-1234-5678-9012-123456789abc"),
+        name="tone",
+        scorer_type=ScorerTypes.DECISION,
+        tags=[],
+        created_at="2025-01-01T00:00:00Z",
+        updated_at="2025-01-01T00:00:00Z",
+    )
+
+
+@patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
+@patch("splunk_ao.evaluators.create_decision_scorer_version_scorers_scorer_id_version_decision_post")
+@patch("splunk_ao.evaluators.create_scorers_post")
+class TestCreateDecisionEvaluator:
+    def test_boolean_probability_defaults(
+        self,
+        mock_create_scorer,
+        mock_create_version,
+        mock_delete,
+        decision_scorer_response,
+        mock_scorer_version_response,
+    ) -> None:
+        # Given: both endpoints succeed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = mock_scorer_version_response
+
+        # When: creating a decision evaluator with only the required arguments
+        result = create_decision_evaluator(name="tone", question="Is the tone professional?")
+
+        # Then: the scorer and version requests carry the defaults and the version response is returned
+        assert result is mock_scorer_version_response
+        scorer_request = mock_create_scorer.sync.call_args.kwargs["body"]
+        assert isinstance(scorer_request, CreateScorerRequest)
+        assert scorer_request.name == "tone"
+        assert scorer_request.scorer_type == ScorerTypes.DECISION
+        assert scorer_request.output_type == OutputTypeEnum.BOOLEAN_PROBABILITY
+        assert scorer_request.scoreable_node_types == [StepType.llm]
+        assert scorer_request.ground_truth is False
+        assert "input_type" not in scorer_request.to_dict()
+        assert "defaults" not in scorer_request.to_dict()
+
+        version_call = mock_create_version.sync.call_args
+        version_request = version_call.kwargs["body"]
+        assert isinstance(version_request, CreateDecisionScorerVersionRequest)
+        assert version_request.model_name == "jev-1.13.0"
+        assert version_request.question == "Is the tone professional?"
+        assert version_request.answer_options is None
+        assert version_call.kwargs["scorer_id"] == decision_scorer_response.id
+        mock_delete.sync.assert_not_called()
+
+    def test_categorical_with_options_and_node_level(
+        self,
+        mock_create_scorer,
+        mock_create_version,
+        mock_delete,
+        decision_scorer_response,
+        mock_scorer_version_response,
+    ) -> None:
+        # Given: both endpoints succeed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = mock_scorer_version_response
+
+        # When: creating a categorical evaluator on trace nodes with every optional argument set
+        create_decision_evaluator(
+            name="tone",
+            question="Which tone?",
+            node_level=StepType.trace,
+            output_type=OutputTypeEnum.CATEGORICAL,
+            answer_options=["a", "b"],
+            input_type=InputTypeEnum.TRACE_IO_ONLY,
+            description="d",
+            tags=["t"],
+            ground_truth=True,
+        )
+
+        # Then: the node level is a single-element list and the labels are sent as strings
+        scorer_request = mock_create_scorer.sync.call_args.kwargs["body"]
+        assert scorer_request.scoreable_node_types == [StepType.trace]
+        assert scorer_request.output_type == OutputTypeEnum.CATEGORICAL
+        assert scorer_request.input_type == InputTypeEnum.TRACE_IO_ONLY
+        assert scorer_request.description == "d"
+        assert scorer_request.tags == ["t"]
+        assert scorer_request.ground_truth is True
+        version_request = mock_create_version.sync.call_args.kwargs["body"]
+        assert version_request.to_dict()["answer_options"] == ["a", "b"]
+
+    def test_discrete_accepts_levels_and_dicts(
+        self,
+        mock_create_scorer,
+        mock_create_version,
+        mock_delete,
+        decision_scorer_response,
+        mock_scorer_version_response,
+    ) -> None:
+        # Given: both endpoints succeed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = mock_scorer_version_response
+
+        # When: creating a discrete evaluator from a DecisionLevel and a plain dict
+        create_decision_evaluator(
+            name="quality",
+            question="How good?",
+            output_type=OutputTypeEnum.DISCRETE,
+            answer_options=[DecisionLevel(level=0, label="bad"), {"level": 1, "label": "good", "description": "ok"}],
+        )
+
+        # Then: the request body holds JSON-ready level dicts
+        version_request = mock_create_version.sync.call_args.kwargs["body"]
+        assert version_request.to_dict()["answer_options"] == [
+            {"level": 0, "label": "bad"},
+            {"level": 1, "label": "good", "description": "ok"},
+        ]
+
+    @pytest.mark.parametrize(
+        ("answer_options", "message"),
+        [
+            ("yes", "single string"),
+            ({"level": 0, "label": "x"}, "single string or dict"),
+            ([], "must not be empty"),
+            ([{"label": "bad"}, {"label": "good"}], r"answer_options\[0\] is missing required key\(s\): level"),
+            ([1, 2], "got int"),
+        ],
+    )
+    def test_invalid_answer_options_raise_before_any_request(
+        self, mock_create_scorer, mock_create_version, mock_delete, answer_options, message
+    ) -> None:
+        # When/Then: malformed answer options raise ValueError and no request is sent
+        with pytest.raises(ValueError, match=message):
+            create_decision_evaluator(
+                name="q", question="q", output_type=OutputTypeEnum.DISCRETE, answer_options=answer_options
+            )
+        mock_create_scorer.sync.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "version_result",
+        [
+            HTTPValidationError(detail="unknown model jev-9"),
+            None,
+            BadRequestError(400, b"bad"),
+            ForbiddenError(403, b"no"),
+            NotFoundError(404, b"gone"),
+            SplunkAOAPIError(422, b"unprocessable", "Unprocessable"),
+        ],
+    )
+    def test_rejected_version_deletes_scorer(
+        self, mock_create_scorer, mock_create_version, mock_delete, decision_scorer_response, version_result
+    ) -> None:
+        # Given: the scorer is created and the version request is clearly rejected
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        if isinstance(version_result, Exception):
+            mock_create_version.sync.side_effect = version_result
+        else:
+            mock_create_version.sync.return_value = version_result
+
+        # When/Then: the error surfaces and the scorer is deleted
+        with pytest.raises((ValueError, SplunkAOAPIError)):
+            create_decision_evaluator(name="tone", question="q", model_name="jev-9")
+        mock_delete.sync.assert_called_once()
+        assert mock_delete.sync.call_args.kwargs["scorer_id"] == decision_scorer_response.id
+
+    def test_http_validation_error_detail_is_in_the_message(
+        self, mock_create_scorer, mock_create_version, mock_delete, decision_scorer_response
+    ) -> None:
+        # Given: the version request fails validation
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = HTTPValidationError(detail="unknown model jev-9")
+
+        # When/Then: the API detail reaches the caller
+        with pytest.raises(ValueError, match="unknown model jev-9"):
+            create_decision_evaluator(name="tone", question="q", model_name="jev-9")
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            ServerError(502, b"bad gateway"),
+            RateLimitError(429, b"slow"),
+            ConflictError(409, b"conflict"),
+            TimeoutError("timed out"),
+        ],
+    )
+    def test_unknown_outcome_keeps_scorer(
+        self, mock_create_scorer, mock_create_version, mock_delete, decision_scorer_response, error
+    ) -> None:
+        # Given: the version request fails in a way that may have saved the version
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.side_effect = error
+
+        # When/Then: the error names the kept scorer, chains the cause, and the scorer is not deleted
+        with pytest.raises(DecisionVersionOutcomeUnknownError, match=str(decision_scorer_response.id)) as raised:
+            create_decision_evaluator(name="tone", question="q")
+        assert raised.value.__cause__ is error
+        assert raised.value.scorer_id == str(decision_scorer_response.id)
+        mock_delete.sync.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "delete_behavior",
+        [
+            {"side_effect": RuntimeError("delete failed")},
+            {"return_value": None},
+            {"return_value": HTTPValidationError(detail="no")},
+        ],
+    )
+    def test_failed_cleanup_does_not_mask_original_error(
+        self, mock_create_scorer, mock_create_version, mock_delete, decision_scorer_response, delete_behavior
+    ) -> None:
+        # Given: the version is rejected and the cleanup delete fails or is not confirmed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = HTTPValidationError(detail="bad options")
+        mock_delete.sync.configure_mock(**delete_behavior)
+
+        # When/Then: the original error still surfaces
+        with pytest.raises(ValueError, match="bad options"):
+            create_decision_evaluator(name="tone", question="q")
+
+    @pytest.mark.parametrize("scorer_result", [HTTPValidationError(detail="name taken"), None])
+    def test_scorer_failure_raises_without_version_call(
+        self, mock_create_scorer, mock_create_version, mock_delete, scorer_result
+    ) -> None:
+        # Given: the scorer request fails
+        mock_create_scorer.sync.return_value = scorer_result
+
+        # When/Then: ValueError is raised and neither the version nor the delete endpoint is called
+        with pytest.raises(ValueError):
+            create_decision_evaluator(name="tone", question="q")
+        mock_create_version.sync.assert_not_called()
+        mock_delete.sync.assert_not_called()
+
+
+@patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
+@patch("splunk_ao.evaluators.create_decision_scorer_version_scorers_scorer_id_version_decision_post")
+@patch("splunk_ao.evaluators.create_scorers_post")
+class TestCreateDecisionEvaluatorGuards:
+    @pytest.mark.parametrize(
+        ("output_type", "answer_options"),
+        [
+            (OutputTypeEnum.PERCENTAGE, None),
+            (OutputTypeEnum.BOOLEAN_PROBABILITY, ["a", "b"]),
+            (OutputTypeEnum.CATEGORICAL, None),
+            (OutputTypeEnum.CATEGORICAL, [{"level": 0, "label": "x"}, {"level": 1, "label": "y"}]),
+            (OutputTypeEnum.DISCRETE, ["a", "b"]),
+            (OutputTypeEnum.DISCRETE, None),
+        ],
+    )
+    def test_mismatched_output_type_and_options_create_nothing(
+        self, mock_create_scorer, mock_create_version, mock_delete, output_type, answer_options
+    ) -> None:
+        # When/Then: a request the server would refuse raises before the scorer is created
+        with pytest.raises(ValueError):
+            create_decision_evaluator(name="q", question="q", output_type=output_type, answer_options=answer_options)
+        mock_create_scorer.sync.assert_not_called()
+
+    def test_unparseable_success_response_keeps_scorer(
+        self, mock_create_scorer, mock_create_version, mock_delete, decision_scorer_response
+    ) -> None:
+        # Given: the server saved the version but the 200 body cannot be parsed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.side_effect = ValueError("Expecting value: line 1 column 1 (char 0)")
+
+        # When/Then: the error surfaces and the scorer is kept, since the version may exist
+        with pytest.raises(DecisionVersionOutcomeUnknownError, match="Expecting value"):
+            create_decision_evaluator(name="tone", question="q")
+        mock_delete.sync.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("answer_options", "expected"),
+        [
+            (None, OutputTypeEnum.BOOLEAN_PROBABILITY),
+            (["a", "b"], OutputTypeEnum.CATEGORICAL),
+            ([{"level": 0, "label": "x"}, {"level": 1, "label": "y"}], OutputTypeEnum.DISCRETE),
+            ([DecisionLevel(level=0, label="x"), DecisionLevel(level=1, label="y")], OutputTypeEnum.DISCRETE),
+        ],
+    )
+    def test_output_type_is_inferred_from_answer_options(
+        self,
+        mock_create_scorer,
+        mock_create_version,
+        mock_delete,
+        decision_scorer_response,
+        mock_scorer_version_response,
+        answer_options,
+        expected,
+    ) -> None:
+        # Given: both endpoints succeed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = mock_scorer_version_response
+
+        # When: creating without an output_type
+        create_decision_evaluator(name="q", question="q", answer_options=answer_options)
+
+        # Then: the scorer is created with the output type that matches the options
+        assert mock_create_scorer.sync.call_args.kwargs["body"].output_type == expected
+
+    def test_explicit_output_type_that_matches_options_is_kept(
+        self,
+        mock_create_scorer,
+        mock_create_version,
+        mock_delete,
+        decision_scorer_response,
+        mock_scorer_version_response,
+    ) -> None:
+        # Given: both endpoints succeed
+        mock_create_scorer.sync.return_value = decision_scorer_response
+        mock_create_version.sync.return_value = mock_scorer_version_response
+
+        # When: output_type is given as a string that matches the options
+        create_decision_evaluator(name="q", question="q", output_type="categorical", answer_options=["a", "b"])
+
+        # Then: it is sent as the enum value
+        assert mock_create_scorer.sync.call_args.kwargs["body"].output_type == OutputTypeEnum.CATEGORICAL
+
+    def test_unknown_output_type_string_raises(self, mock_create_scorer, mock_create_version, mock_delete) -> None:
+        # When/Then: an unknown output type raises before any request
+        with pytest.raises(ValueError, match="output_type"):
+            create_decision_evaluator(name="q", question="q", output_type="categorial", answer_options=["a", "b"])
+        mock_create_scorer.sync.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("question", "answer_options"),
+        [
+            ("", None),
+            ("x" * 2001, None),
+            ("q", ["only"]),
+            ("q", ["a", "a"]),
+            ("q", [f"l{i}" for i in range(256)]),
+            ("q", [{"level": 1, "label": "x"}, {"level": 2, "label": "y"}]),
+            ("q", [{"level": 0, "label": "x"}, {"level": 0, "label": "y"}]),
+            ("q", [{"level": i, "label": str(i)} for i in range(11)]),
+        ],
+    )
+    def test_server_limits_are_checked_before_any_request(
+        self, mock_create_scorer, mock_create_version, mock_delete, question, answer_options
+    ) -> None:
+        # When/Then: inputs the server would reject with 422 raise before the scorer is created
+        with pytest.raises(ValueError):
+            create_decision_evaluator(name="q", question=question, answer_options=answer_options)
+        mock_create_scorer.sync.assert_not_called()
+
+
+@patch("splunk_ao.evaluators.create_decision_scorer_version_scorers_scorer_id_version_decision_post")
+@patch("splunk_ao.evaluators.create_scorers_post")
+class TestCreateDecisionEvaluatorScope:
+    """The scope reaches the CreateScorerRequest on both decision create paths."""
+
+    @staticmethod
+    def _create(use_function: bool, **kwargs):
+        if use_function:
+            return create_decision_evaluator("tone", "Is the tone professional?", **kwargs)
+        return Evaluators().create_decision_evaluator(name="tone", question="Is the tone professional?", **kwargs)
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    def test_defaults_to_current_project(
+        self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects, decision_scorer_response
+    ) -> None:
+        # Given a current project from the environment
+        monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
+        mock_create_scorer.sync.return_value = decision_scorer_response
+
+        # When creating with no explicit scope
+        self._create(use_function)
+
+        # Then the request is scoped to that project
+        body = mock_create_scorer.sync.call_args.kwargs["body"]
+        assert body.is_global is False
+        assert body.project_ids == ["project-id-1"]
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    def test_explicit_project_ids_override_current_project(
+        self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects, decision_scorer_response
+    ) -> None:
+        # Given a current project and explicit ids with a duplicate
+        monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
+        mock_create_scorer.sync.return_value = decision_scorer_response
+
+        # When creating
+        self._create(use_function, project_ids=["a", "b", "a"])
+
+        # Then the explicit ids win, deduplicated
+        body = mock_create_scorer.sync.call_args.kwargs["body"]
+        assert body.is_global is False
+        assert body.project_ids == ["a", "b"]
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    def test_explicit_global_overrides_current_project(
+        self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects, decision_scorer_response
+    ) -> None:
+        # Given a current project
+        monkeypatch.setenv("SPLUNK_AO_PROJECT_ID", "env-id")
+        mock_create_scorer.sync.return_value = decision_scorer_response
+
+        # When is_global=True is passed
+        self._create(use_function, is_global=True)
+
+        # Then the request is global with no project_ids
+        body = mock_create_scorer.sync.call_args.kwargs["body"]
+        assert body.is_global is True
+        assert "project_ids" not in body.to_dict()
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    def test_no_current_project_sends_no_scope(
+        self, mock_create_scorer, mock_create_version, use_function, mock_projects, decision_scorer_response
+    ) -> None:
+        mock_create_scorer.sync.return_value = decision_scorer_response
+
+        self._create(use_function)
+
+        body_dict = mock_create_scorer.sync.call_args.kwargs["body"].to_dict()
+        assert "is_global" not in body_dict
+        assert "project_ids" not in body_dict
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    @pytest.mark.parametrize(
+        "kwargs", [{"is_global": True, "project_ids": ["a"]}, {"project_ids": []}, {"is_global": False}]
+    )
+    def test_invalid_scope_fails_before_any_http_call(
+        self, mock_create_scorer, mock_create_version, kwargs, use_function, mock_projects
+    ) -> None:
+        with pytest.raises(SplunkAOValidationError):
+            self._create(use_function, **kwargs)
+
+        mock_create_scorer.sync.assert_not_called()
+        mock_create_version.sync.assert_not_called()
+
+    @pytest.mark.parametrize("use_function", [False, True], ids=["method", "module_function"])
+    def test_current_project_not_found_sends_no_create_request(
+        self, mock_create_scorer, mock_create_version, use_function, monkeypatch, mock_projects
+    ) -> None:
+        monkeypatch.setenv("SPLUNK_AO_PROJECT", "missing")
+        mock_projects.get_with_env_fallbacks.return_value = None
+
+        with pytest.raises(ProjectLookupNotFoundError):
+            self._create(use_function)
+
+        mock_create_scorer.sync.assert_not_called()

@@ -14,6 +14,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.chain_poll_template import ChainPollTemplate
     from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
+    from ..models.decision_scorer_db import DecisionScorerDB
     from ..models.fine_tuned_scorer_response import FineTunedScorerResponse
     from ..models.generated_scorer_response import GeneratedScorerResponse
 
@@ -33,6 +34,7 @@ class BaseScorerVersionResponse:
         generated_scorer (GeneratedScorerResponse | None | Unset):
         registered_scorer (CreateUpdateRegisteredScorerResponse | None | Unset):
         finetuned_scorer (FineTunedScorerResponse | None | Unset):
+        decision_scorer (DecisionScorerDB | None | Unset):
         model_name (None | str | Unset):
         num_judges (int | None | Unset):
         scoreable_node_types (list[str] | None | Unset):
@@ -53,6 +55,7 @@ class BaseScorerVersionResponse:
     generated_scorer: GeneratedScorerResponse | None | Unset = UNSET
     registered_scorer: CreateUpdateRegisteredScorerResponse | None | Unset = UNSET
     finetuned_scorer: FineTunedScorerResponse | None | Unset = UNSET
+    decision_scorer: DecisionScorerDB | None | Unset = UNSET
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
@@ -67,6 +70,7 @@ class BaseScorerVersionResponse:
     def to_dict(self) -> dict[str, Any]:
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
+        from ..models.decision_scorer_db import DecisionScorerDB
         from ..models.fine_tuned_scorer_response import FineTunedScorerResponse
         from ..models.generated_scorer_response import GeneratedScorerResponse
 
@@ -103,6 +107,14 @@ class BaseScorerVersionResponse:
             finetuned_scorer = self.finetuned_scorer.to_dict()
         else:
             finetuned_scorer = self.finetuned_scorer
+
+        decision_scorer: dict[str, Any] | None | Unset
+        if isinstance(self.decision_scorer, Unset):
+            decision_scorer = UNSET
+        elif isinstance(self.decision_scorer, DecisionScorerDB):
+            decision_scorer = self.decision_scorer.to_dict()
+        else:
+            decision_scorer = self.decision_scorer
 
         model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
@@ -178,6 +190,8 @@ class BaseScorerVersionResponse:
             field_dict["registered_scorer"] = registered_scorer
         if finetuned_scorer is not UNSET:
             field_dict["finetuned_scorer"] = finetuned_scorer
+        if decision_scorer is not UNSET:
+            field_dict["decision_scorer"] = decision_scorer
         if model_name is not UNSET:
             field_dict["model_name"] = model_name
         if num_judges is not UNSET:
@@ -203,6 +217,7 @@ class BaseScorerVersionResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
+        from ..models.decision_scorer_db import DecisionScorerDB
         from ..models.fine_tuned_scorer_response import FineTunedScorerResponse
         from ..models.generated_scorer_response import GeneratedScorerResponse
 
@@ -267,6 +282,23 @@ class BaseScorerVersionResponse:
             return cast(FineTunedScorerResponse | None | Unset, data)
 
         finetuned_scorer = _parse_finetuned_scorer(d.pop("finetuned_scorer", UNSET))
+
+        def _parse_decision_scorer(data: object) -> DecisionScorerDB | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                decision_scorer_type_0 = DecisionScorerDB.from_dict(data)
+
+                return decision_scorer_type_0
+            except:  # noqa: E722
+                pass
+            return cast(DecisionScorerDB | None | Unset, data)
+
+        decision_scorer = _parse_decision_scorer(d.pop("decision_scorer", UNSET))
 
         def _parse_model_name(data: object) -> None | str | Unset:
             if data is None:
@@ -390,6 +422,7 @@ class BaseScorerVersionResponse:
             generated_scorer=generated_scorer,
             registered_scorer=registered_scorer,
             finetuned_scorer=finetuned_scorer,
+            decision_scorer=decision_scorer,
             model_name=model_name,
             num_judges=num_judges,
             scoreable_node_types=scoreable_node_types,

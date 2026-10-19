@@ -108,6 +108,12 @@ _CONFIGURATION_KEYS = [
         parser=int,
     ),
     ConfigKey(
+        name="default_decision_model",
+        env_var="SPLUNK_AO_DEFAULT_DECISION_MODEL",
+        description="Default model for decision evaluators",
+        default="jev-1.13.0",
+    ),
+    ConfigKey(
         name="logging_disabled",
         env_var="SPLUNK_AO_LOGGING_DISABLED",
         description="Disable all telemetry logging to Splunk Agent Observability",
