@@ -50,11 +50,11 @@ curl -s "${HOST_URL}/openapi.json" | poetry run python -c 'import sys, json, yam
 
 # The enum patches below would silently create stub schemas if the server renamed one, so check they all exist.
 poetry run python -m yq -e '
-  [.components.schemas | (.ScorerName, .IntegrationProvider, .LLMIntegration, .TaskType) | .enum | type == "array"] | all
+  [.components.schemas | (.ScorerName, .StepType, .IntegrationProvider, .LLMIntegration, .TaskType) | .enum | type == "array"] | all
 ' "$HOME_DIR/openapi.yaml" > /dev/null
 
 if [ $? -ne 0 ]; then
-  echo "OpenAPI spec is missing the ScorerName, IntegrationProvider, LLMIntegration or TaskType enum: update the enum patches below"
+  echo "OpenAPI spec is missing the ScorerName, StepType, IntegrationProvider, LLMIntegration or TaskType enum: update the enum patches below"
   exit 1
 fi
 
