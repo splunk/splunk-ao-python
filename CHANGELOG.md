@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `IntegrationProvider.VEGAS_GATEWAY` and `LLMIntegration.VEGAS_GATEWAY`, and `TaskType` 7, 9 and 12.
     `ScorerName` now holds the public metric names (for example `context_adherence`) instead of the internal
     underscore-prefixed ones. Reading a resource that still carries a removed value (for example a legacy run
-    with `task_type` 7, or a `vegas_gateway` integration) now raises `ValueError`.
+    with `task_type` 7, or a `vegas_gateway` integration) can now raise `ValueError`.
 
 ### Fixed
 
