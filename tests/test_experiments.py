@@ -8,7 +8,9 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 from unittest.mock import call as mock_call
 from uuid import UUID
 
+import httpx
 import pytest
+from respx import MockRouter
 from time_machine import travel
 
 import splunk_ao.experiments
@@ -2097,3 +2099,30 @@ class TestExperimentGroups:
         list_experiments_mock.sync.assert_called_once_with(project_id=str(UUID(int=0)), client=ANY)
         assert isinstance(result, list)
         assert len(result) == 1
+
+
+def test_list_experiments_parses_legacy_task_type(respx_mock: MockRouter) -> None:
+    # Given: a project whose experiments include a legacy row with task_type 7
+    project_id = str(UUID(int=0))
+    respx_mock.get(f"http://fake.test:8088/projects/{project_id}/experiments").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {
+                    "id": str(UUID(int=1)),
+                    "name": "legacy-experiment",
+                    "project_id": project_id,
+                    "task_type": 7,
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z",
+                }
+            ],
+        )
+    )
+
+    # When: the experiments are listed
+    result = Experiments().list(project_id=project_id)
+
+    # Then: the legacy row parses instead of failing the whole page
+    assert isinstance(result, list)
+    assert [e.task_type for e in result] == [TaskType.VALUE_7]

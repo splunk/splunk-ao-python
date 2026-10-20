@@ -112,6 +112,7 @@ class TestProjects:
     def test_get_project_by_id_parses_configure_rate_limit_permission(
         self, respx_mock: MockRouter, project_response: dict
     ) -> None:
+        # Given: a project whose permissions include configure_rate_limit
         project_id = project_response["id"]
         project_response["permissions"] = [
             {"action": "delete", "allowed": True},
@@ -121,21 +122,28 @@ class TestProjects:
             return_value=httpx.Response(200, json=project_response)
         )
 
+        # When: the project is fetched by id
         project = Projects().get(id=project_id)
 
+        # Then: the generated parser maps every action to ProjectAction
         assert route.called
         assert project is not None
         assert project.id == project_id
         assert project.permissions is not None
         assert [p.action for p in project.permissions] == [ProjectAction.DELETE, ProjectAction.CONFIGURE_RATE_LIMIT]
 
-    def test_create_project_posts_gen_ai_project(self, respx_mock: MockRouter, project_response: dict) -> None:
+    def test_create_project_posts_body_without_example_templates(
+        self, respx_mock: MockRouter, project_response: dict
+    ) -> None:
+        # Given: a server that accepts project creation
         route = respx_mock.post("http://fake.test:8088/projects").mock(
             return_value=httpx.Response(200, json=project_response)
         )
 
+        # When: a project is created
         project = Projects().create(name="my_project")
 
+        # Then: the request body no longer carries create_example_templates
         assert route.called
         assert json.loads(route.calls.last.request.content) == {
             "name": "my_project",
