@@ -4,7 +4,12 @@ from uuid import uuid4
 
 import pytest
 
-from splunk_ao.resources.models import HTTPValidationError, RunScorerSettingsResponse, ScorerConfig, ValidationError
+from splunk_ao.resources.models import (
+    HTTPValidationError,
+    RunScorerSettingsResponse,
+    RuntimeScorerConfig,
+    ValidationError,
+)
 from splunk_ao.runs import update_scorer_settings
 
 FIXED_PROJECT_ID = str(uuid4())
@@ -16,7 +21,7 @@ class TestUpdateScorerSettings:
     def test_successful_call(self, mock_api_call):
         mock_response = Mock(spec=RunScorerSettingsResponse)
         mock_api_call.return_value = mock_response
-        mock_scorers = [Mock(spec=ScorerConfig)]
+        mock_scorers = [Mock(spec=RuntimeScorerConfig)]
 
         response = update_scorer_settings(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID, scorers=mock_scorers)
 
@@ -32,7 +37,7 @@ class TestUpdateScorerSettings:
     @patch("splunk_ao.runs.upsert_scorers_config_projects_project_id_runs_run_id_scorer_settings_patch.sync")
     def test_api_failure_raises_value_error(self, mock_api_call):
         mock_api_call.return_value = None
-        mock_scorers = [Mock(spec=ScorerConfig)]
+        mock_scorers = [Mock(spec=RuntimeScorerConfig)]
 
         with pytest.raises(ValueError, match="Failed to update scorer settings"):
             update_scorer_settings(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID, scorers=mock_scorers)
@@ -43,7 +48,7 @@ class TestUpdateScorerSettings:
     def test_http_validation_error_raises_exception(self, mock_api_call):
         detail = [ValidationError(loc=["body", "project_id"], msg="value is not a valid uuid", type_="type_error.uuid")]
         mock_api_call.return_value = HTTPValidationError(detail=detail)
-        mock_scorers = [Mock(spec=ScorerConfig)]
+        mock_scorers = [Mock(spec=RuntimeScorerConfig)]
 
         with pytest.raises(ValueError, match=re.escape(str(detail))):
             update_scorer_settings(project_id=FIXED_PROJECT_ID, run_id=FIXED_RUN_ID, scorers=mock_scorers)

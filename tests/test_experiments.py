@@ -38,7 +38,7 @@ from splunk_ao.resources.models import (
     ProjectCreateResponse,
     ProjectType,
     PromptRunSettings,
-    ScorerConfig,
+    RuntimeScorerConfig,
     ScorerResponse,
     ScorerTypes,
     TaskType,
@@ -941,7 +941,7 @@ class TestExperiments:
             dataset_obj=mock_get_dataset.return_value,
             trigger=True,
             prompt_template=ANY,
-            scorers=[ScorerConfig.from_dict(scorers()[0].to_dict())],
+            scorers=[RuntimeScorerConfig.from_dict(scorers()[0].to_dict())],
             prompt_settings=ANY,
         )
         mock_scorers_class.return_value.list_by_labels.assert_called_once()
