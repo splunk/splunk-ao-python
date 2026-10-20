@@ -35,9 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   or pass `project_ids` or `is_global=True`.
 - Creating project-scoped evaluators requires `splunk-ao` 0.6.0 or later. Earlier versions send no scope, so on servers
   with metric RBAC enabled, non-admin users get a 403 when creating an evaluator.
-
-### Changed
-
 - **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
   spec. Code that imports generated symbols directly may need updating:
   - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`
