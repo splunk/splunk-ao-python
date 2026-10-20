@@ -16,9 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
 - Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
   `decision`, so decision scorers appear in list and get responses and decode.
+- `LlmEvaluator`, `CodeEvaluator`, `DecisionEvaluator`, `Evaluators.create_custom_llm_evaluator()`,
+  `Evaluators.create_decision_evaluator()` and the module-level `create_custom_llm_evaluator()` and
+  `create_decision_evaluator()` accept `project_ids` and `is_global` to choose the scope of a new evaluator.
+  Passing `is_global=True` together with `project_ids`, an empty `project_ids` without `is_global=True`, or
+  `is_global=False` with no `project_ids` and no current project raises `ValidationError` before any request is
+  sent.
+- `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
+  `create()`, `get()`, `list()` and `refresh()`.
 
 ### Changed
 
+- New evaluators are scoped to the current project by default: the decorator context project, then
+  `SPLUNK_AO_PROJECT_ID`, then `SPLUNK_AO_PROJECT`. If that project cannot be found, creation raises
+  `NotFoundError` rather than falling back to a global evaluator. When no current project is set and no scope is
+  passed, no scope is sent and the server default (global, org admins only) applies. Org admins who relied on creating
+  global evaluators with a project set must now pass `is_global=True`.
+  The current project must already exist: unlike logging, creating an evaluator does not create it. Create it first,
+  or pass `project_ids` or `is_global=True`.
+- Creating project-scoped evaluators requires `splunk-ao` 0.6.0 or later. Earlier versions send no scope, so on servers
+  with metric RBAC enabled, non-admin users get a 403 when creating an evaluator.
 - **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
   spec. Code that imports generated symbols directly may need updating:
   - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`

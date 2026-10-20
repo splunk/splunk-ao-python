@@ -30,6 +30,8 @@ from splunk_ao.resources.models.scorer_defaults import ScorerDefaults
 from splunk_ao.resources.types import UNSET, Unset
 from splunk_ao.scorers import Scorers
 from splunk_ao.search import FilterType
+from splunk_ao.shared.exceptions import NotFoundError, ValidationError, _resolve_project_identifiers
+from splunk_ao.shared.project_resolver import _resolve_project
 
 _logger = logging.getLogger(__name__)
 
@@ -180,6 +182,76 @@ def _build_decision_version_request(
     return CreateDecisionScorerVersionRequest(model_name=model_name, question=question, answer_options=answer_options)
 
 
+def _resolve_create_scope(
+    project_ids: list[str] | None, is_global: bool | None
+) -> tuple[bool | Unset, list[str] | Unset]:
+    """
+    Resolve the ``(is_global, project_ids)`` pair to send when creating an evaluator.
+
+    Explicit arguments win. Otherwise the scope defaults to the current project, taken from
+    the decorator context, then ``SPLUNK_AO_PROJECT_ID``, then ``SPLUNK_AO_PROJECT``. When
+    none of those is set and nothing was passed, no scope is sent and the server default
+    (global, org admins only) applies.
+
+    Parameters
+    ----------
+    project_ids
+        Projects to scope the evaluator to.
+    is_global
+        Whether the evaluator is global. Cannot be combined with ``project_ids``.
+
+    Returns
+    -------
+    tuple[bool | Unset, list[str] | Unset]
+        The values for ``CreateScorerRequest.is_global`` and ``CreateScorerRequest.project_ids``.
+
+    Raises
+    ------
+    ValidationError
+        If the arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is passed
+        with no project to scope to.
+    NotFoundError
+        If a current project is set but cannot be found.
+    """
+    if is_global is True:
+        if project_ids:
+            raise ValidationError("An evaluator cannot be both global and scoped: pass is_global=True or project_ids.")
+        return True, UNSET
+
+    if project_ids is not None:
+        # Typed as object so the str guard is not flagged unreachable for a list[str] parameter.
+        requested: object = project_ids
+        if isinstance(requested, str):
+            raise ValidationError("project_ids must be a list of project ids, not a single string.")
+        if not project_ids:
+            raise ValidationError("project_ids must not be empty. Pass is_global=True for a global evaluator.")
+        return False, list(dict.fromkeys(project_ids))
+
+    # Imported here because decorator.py imports modules that depend on this one.
+    from splunk_ao.decorator import splunk_ao_context
+
+    context_project = (splunk_ao_context.get_current_project() or "").strip() or None
+    project_id: str | None
+    project_name: str | None
+    if context_project:
+        project_id, project_name = None, context_project
+    else:
+        project_id, project_name = _resolve_project_identifiers(None, None)
+
+    if project_id or project_name:
+        try:
+            return False, [_resolve_project(project_id, project_name).id]
+        except NotFoundError as e:
+            raise type(e)(
+                "Evaluator scope defaults to the current project (decorator context, SPLUNK_AO_PROJECT_ID or "
+                f"SPLUNK_AO_PROJECT), which was not found. Pass project_ids=[...] or is_global=True. {e}"
+            ) from e
+
+    if is_global is False:
+        raise ValidationError("is_global=False needs project_ids or a current project.")
+    return UNSET, UNSET
+
+
 class Evaluators:
     config: SplunkAOConfig
 
@@ -211,6 +283,8 @@ class Evaluators:
         tags: list[str] | None = None,
         output_type: OutputTypeEnum = OutputTypeEnum.BOOLEAN,
         ground_truth: bool = False,
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
     ) -> BaseScorerVersionResponse:
         """
         Create a custom LLM metric.
@@ -238,14 +312,29 @@ class Evaluators:
         ground_truth: bool
             Whether the scorer requires ground truth (``reference_output``) from the dataset.
             When True, the judge LLM receives the row's ground-truth value in its prompt.
+        project_ids: List[str]
+            Projects to scope the metric to. Defaults to the current project (decorator context,
+            ``SPLUNK_AO_PROJECT_ID``, or ``SPLUNK_AO_PROJECT``) when one is set.
+        is_global: bool
+            Create a global metric, visible to every project. Requires the org admin role and
+            cannot be combined with ``project_ids``.
 
         Returns
         -------
         BaseScorerVersionResponse
             Response containing the created metric details.
+
+        Raises
+        ------
+        ValidationError
+            If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+            passed with no project to scope to.
+        NotFoundError
+            If the current project is set but cannot be found.
         """
         if tags is None:
             tags = []
+        scope_is_global, scope_project_ids = _resolve_create_scope(project_ids, is_global)
         create_scorer_request = CreateScorerRequest(
             name=name,
             scorer_type=ScorerTypes.LLM,
@@ -255,6 +344,8 @@ class Evaluators:
             scoreable_node_types=[node_level],
             output_type=output_type,
             ground_truth=ground_truth,
+            is_global=scope_is_global,
+            project_ids=scope_project_ids,
         )
 
         scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
@@ -280,6 +371,8 @@ class Evaluators:
         description: str = "",
         tags: list[str] | None = None,
         ground_truth: bool = False,
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
     ) -> BaseScorerVersionResponse:
         """
         Create a decision evaluator.
@@ -310,6 +403,12 @@ class Evaluators:
             Tags associated with the evaluator.
         ground_truth: bool
             Whether the scorer requires ground truth (``reference_output``) from the dataset.
+        project_ids: List[str]
+            Projects to scope the evaluator to. Defaults to the current project (decorator context,
+            ``SPLUNK_AO_PROJECT_ID``, or ``SPLUNK_AO_PROJECT``) when one is set.
+        is_global: bool
+            Create a global evaluator, visible to every project. Requires the org admin role and
+            cannot be combined with ``project_ids``.
 
         Returns
         -------
@@ -318,6 +417,11 @@ class Evaluators:
 
         Raises
         ------
+        ValidationError
+            If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+            passed with no project to scope to.
+        NotFoundError
+            If the current project is set but cannot be found.
         ValueError
             If an argument is invalid or the API answers with a validation error. If the scorer was created
             but its version was rejected, the scorer is deleted before the error is raised.
@@ -334,6 +438,7 @@ class Evaluators:
         version_req = _build_decision_version_request(
             model_name=model_name, question=question, answer_options=normalized_options
         )
+        scope_is_global, scope_project_ids = _resolve_create_scope(project_ids, is_global)
         create_scorer_request = CreateScorerRequest(
             name=name,
             scorer_type=ScorerTypes.DECISION,
@@ -343,6 +448,8 @@ class Evaluators:
             output_type=output_type,
             input_type=input_type if input_type is not None else UNSET,
             ground_truth=ground_truth,
+            is_global=scope_is_global,
+            project_ids=scope_project_ids,
         )
 
         scorer = create_scorers_post.sync(body=create_scorer_request, client=self.config.api_client)
@@ -446,6 +553,8 @@ def create_custom_llm_evaluator(
     tags: list[str] | None = None,
     output_type: OutputTypeEnum = OutputTypeEnum.BOOLEAN,
     ground_truth: bool = False,
+    project_ids: list[str] | None = None,
+    is_global: bool | None = None,
 ) -> BaseScorerVersionResponse:
     """
     Create a custom LLM metric.
@@ -473,16 +582,41 @@ def create_custom_llm_evaluator(
     ground_truth: bool
         Whether the scorer requires ground truth (``reference_output``) from the dataset.
         When True, the judge LLM receives the row's ground-truth value in its prompt.
+    project_ids: List[str]
+        Projects to scope the metric to. Defaults to the current project (decorator context,
+        ``SPLUNK_AO_PROJECT_ID``, or ``SPLUNK_AO_PROJECT``) when one is set.
+    is_global: bool
+        Create a global metric, visible to every project. Requires the org admin role and
+        cannot be combined with ``project_ids``.
 
     Returns
     -------
     BaseScorerVersionResponse
         Response containing the created metric details.
+
+    Raises
+    ------
+    ValidationError
+        If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+        passed with no project to scope to.
+    NotFoundError
+        If the current project is set but cannot be found.
     """
     if tags is None:
         tags = []
     return Evaluators().create_custom_llm_evaluator(
-        name, user_prompt, node_level, cot_enabled, model_name, num_judges, description, tags, output_type, ground_truth
+        name,
+        user_prompt,
+        node_level,
+        cot_enabled,
+        model_name,
+        num_judges,
+        description,
+        tags,
+        output_type,
+        ground_truth,
+        project_ids=project_ids,
+        is_global=is_global,
     )
 
 
@@ -497,6 +631,8 @@ def create_decision_evaluator(
     description: str = "",
     tags: list[str] | None = None,
     ground_truth: bool = False,
+    project_ids: list[str] | None = None,
+    is_global: bool | None = None,
 ) -> BaseScorerVersionResponse:
     """
     Create a decision evaluator.
@@ -530,6 +666,12 @@ def create_decision_evaluator(
         Tags associated with the evaluator.
     ground_truth: bool
         Whether the scorer requires ground truth (``reference_output``) from the dataset.
+    project_ids: List[str]
+        Projects to scope the evaluator to. Defaults to the current project (decorator context,
+        ``SPLUNK_AO_PROJECT_ID``, or ``SPLUNK_AO_PROJECT``) when one is set.
+    is_global: bool
+        Create a global evaluator, visible to every project. Requires the org admin role and
+        cannot be combined with ``project_ids``.
 
     Returns
     -------
@@ -538,6 +680,11 @@ def create_decision_evaluator(
 
     Raises
     ------
+    ValidationError
+        If the scope arguments conflict, ``project_ids`` is empty, or ``is_global=False`` is
+        passed with no project to scope to.
+    NotFoundError
+        If the current project is set but cannot be found.
     ValueError
         If an argument is invalid or the API answers with a validation error. If the scorer was created
         but its version was rejected, the scorer is deleted before the error is raised.
@@ -571,6 +718,8 @@ def create_decision_evaluator(
         description=description,
         tags=tags,
         ground_truth=ground_truth,
+        project_ids=project_ids,
+        is_global=is_global,
     )
 
 
