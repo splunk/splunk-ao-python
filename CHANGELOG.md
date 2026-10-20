@@ -19,11 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec. Code that
-  imports generated symbols directly may need updating:
-  - `ScorerConfig` is now `RuntimeScorerConfig` (same fields, plus new optional ones; `scorer_type` is now
-    optional). `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or
-    return `RuntimeScorerConfig`.
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
+  spec. Code that imports generated symbols directly may need updating:
+  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones with defaults and makes
+    `scorer_type` optional; the field order changed, so pass fields by keyword. `Experiments.create(scorers=...)`,
+    `update_scorer_settings()` and `create_metric_configs()` take or return `RuntimeScorerConfig`.
   - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
     (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
     (`/integrations/vegas_gateway`).
@@ -37,13 +37,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed enum values: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`,
     `IntegrationProvider.VEGAS_GATEWAY` and `LLMIntegration.VEGAS_GATEWAY`, and `TaskType` 7, 9 and 12.
     `ScorerName` now holds the public metric names (for example `context_adherence`) instead of the internal
-    underscore-prefixed ones.
+    underscore-prefixed ones. Reading a resource that still carries a removed value (for example a legacy run
+    with `task_type` 7, or a `vegas_gateway` integration) now raises `ValueError`.
 
 ### Fixed
 
-- The SDK no longer fails to read projects and other resources when the server returns permission or enum values
-  the old client did not know. For example, `Projects().get(id=...)` raised
-  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` against current servers.
+- The API client now knows the permission and enum values that current servers return, so reading projects and
+  other resources no longer fails on them. For example, `Projects().get(id=...)` raised
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction`.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
