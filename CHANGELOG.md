@@ -17,8 +17,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
   `decision`, so decision scorers appear in list and get responses and decode.
 
+### Changed
+
+- The low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec. Code that
+  imports generated symbols directly may need updating:
+  - `ScorerConfig` is now `RuntimeScorerConfig` (same fields, plus new optional ones; `scorer_type` is now
+    optional). `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or
+    return `RuntimeScorerConfig`.
+  - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
+    (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
+    (`/integrations/vegas_gateway`).
+  - Removed models: the `Customized*GPTScorer` and `*Template` scorer families, `ChunkAttributionUtilizationScorer`,
+    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `CoreScorerName`,
+    `MetricCritiqueColumnar`, `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
+    `ExtendedReadSessionRecordWithChildren`), `VegasGatewayIntegration` and `VegasGatewayIntegrationCreate`.
+  - Removed fields: `ProjectCreate.create_example_templates`, `scorer_type` and `critique` on the `Metric*` status
+    models, and the `prompt_*scorers_configuration`, `sub_scorers`, `store_metric_ids`, `stream_metrics` and `xray`
+    fields on `CreateJobRequest` / `CreateJobResponse`.
+  - Removed enum values: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`,
+    `IntegrationProvider.VEGAS_GATEWAY` and `LLMIntegration.VEGAS_GATEWAY`, and `TaskType` 7, 9 and 12.
+    `ScorerName` now holds the public metric names (for example `context_adherence`) instead of the internal
+    underscore-prefixed ones.
+
 ### Fixed
 
+- The SDK no longer fails to read projects and other resources when the server returns permission or enum values
+  the old client did not know. For example, `Projects().get(id=...)` raised
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` against current servers.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
