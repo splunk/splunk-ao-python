@@ -24,38 +24,40 @@ class ValidateLLMScorerDatasetRequest:
     """Request to validate a new LLM scorer against a dataset.
 
     Attributes:
+        dataset_id (str):
         query (str):
         response (str):
         chain_poll_template (ChainPollTemplate): Template for a chainpoll metric prompt,
             containing all the info necessary to send a chainpoll prompt.
         scorer_configuration (GeneratedScorerConfiguration):
         user_prompt (str):
-        dataset_id (str):
-        normalized_input (list[FileContentPart | TextContentPart] | None | Unset): Optional multimodal content parts.
-            When set, replaces the text-only query/response formatting in the validation job so that file content is passed
-            through to the LLM.
         dataset_version_index (int | None | Unset):
         limit (int | Unset): Maximum number of dataset rows to process. Default: 100.
         starting_token (int | None | Unset): Pagination offset into dataset rows.
+        normalized_input (list[FileContentPart | TextContentPart] | None | Unset): Optional multimodal content parts.
+            When set, replaces the text-only query/response formatting in the validation job so that file content is passed
+            through to the LLM.
         sort (None | Unset | ValidateLLMScorerDatasetRequestSortType0): Optional sort configuration for dataset rows.
     """
 
+    dataset_id: str
     query: str
     response: str
     chain_poll_template: ChainPollTemplate
     scorer_configuration: GeneratedScorerConfiguration
     user_prompt: str
-    dataset_id: str
-    normalized_input: list[FileContentPart | TextContentPart] | None | Unset = UNSET
     dataset_version_index: int | None | Unset = UNSET
     limit: int | Unset = 100
     starting_token: int | None | Unset = UNSET
+    normalized_input: list[FileContentPart | TextContentPart] | None | Unset = UNSET
     sort: None | Unset | ValidateLLMScorerDatasetRequestSortType0 = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.text_content_part import TextContentPart
         from ..models.validate_llm_scorer_dataset_request_sort_type_0 import ValidateLLMScorerDatasetRequestSortType0
+
+        dataset_id = self.dataset_id
 
         query = self.query
 
@@ -67,7 +69,19 @@ class ValidateLLMScorerDatasetRequest:
 
         user_prompt = self.user_prompt
 
-        dataset_id = self.dataset_id
+        dataset_version_index: int | None | Unset
+        if isinstance(self.dataset_version_index, Unset):
+            dataset_version_index = UNSET
+        else:
+            dataset_version_index = self.dataset_version_index
+
+        limit = self.limit
+
+        starting_token: int | None | Unset
+        if isinstance(self.starting_token, Unset):
+            starting_token = UNSET
+        else:
+            starting_token = self.starting_token
 
         normalized_input: list[dict[str, Any]] | None | Unset
         if isinstance(self.normalized_input, Unset):
@@ -86,20 +100,6 @@ class ValidateLLMScorerDatasetRequest:
         else:
             normalized_input = self.normalized_input
 
-        dataset_version_index: int | None | Unset
-        if isinstance(self.dataset_version_index, Unset):
-            dataset_version_index = UNSET
-        else:
-            dataset_version_index = self.dataset_version_index
-
-        limit = self.limit
-
-        starting_token: int | None | Unset
-        if isinstance(self.starting_token, Unset):
-            starting_token = UNSET
-        else:
-            starting_token = self.starting_token
-
         sort: dict[str, Any] | None | Unset
         if isinstance(self.sort, Unset):
             sort = UNSET
@@ -112,22 +112,22 @@ class ValidateLLMScorerDatasetRequest:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "dataset_id": dataset_id,
                 "query": query,
                 "response": response,
                 "chain_poll_template": chain_poll_template,
                 "scorer_configuration": scorer_configuration,
                 "user_prompt": user_prompt,
-                "dataset_id": dataset_id,
             }
         )
-        if normalized_input is not UNSET:
-            field_dict["normalized_input"] = normalized_input
         if dataset_version_index is not UNSET:
             field_dict["dataset_version_index"] = dataset_version_index
         if limit is not UNSET:
             field_dict["limit"] = limit
         if starting_token is not UNSET:
             field_dict["starting_token"] = starting_token
+        if normalized_input is not UNSET:
+            field_dict["normalized_input"] = normalized_input
         if sort is not UNSET:
             field_dict["sort"] = sort
 
@@ -142,6 +142,8 @@ class ValidateLLMScorerDatasetRequest:
         from ..models.validate_llm_scorer_dataset_request_sort_type_0 import ValidateLLMScorerDatasetRequestSortType0
 
         d = dict(src_dict)
+        dataset_id = d.pop("dataset_id")
+
         query = d.pop("query")
 
         response = d.pop("response")
@@ -152,7 +154,25 @@ class ValidateLLMScorerDatasetRequest:
 
         user_prompt = d.pop("user_prompt")
 
-        dataset_id = d.pop("dataset_id")
+        def _parse_dataset_version_index(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        dataset_version_index = _parse_dataset_version_index(d.pop("dataset_version_index", UNSET))
+
+        limit = d.pop("limit", UNSET)
+
+        def _parse_starting_token(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        starting_token = _parse_starting_token(d.pop("starting_token", UNSET))
 
         def _parse_normalized_input(data: object) -> list[FileContentPart | TextContentPart] | None | Unset:
             if data is None:
@@ -194,26 +214,6 @@ class ValidateLLMScorerDatasetRequest:
 
         normalized_input = _parse_normalized_input(d.pop("normalized_input", UNSET))
 
-        def _parse_dataset_version_index(data: object) -> int | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(int | None | Unset, data)
-
-        dataset_version_index = _parse_dataset_version_index(d.pop("dataset_version_index", UNSET))
-
-        limit = d.pop("limit", UNSET)
-
-        def _parse_starting_token(data: object) -> int | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(int | None | Unset, data)
-
-        starting_token = _parse_starting_token(d.pop("starting_token", UNSET))
-
         def _parse_sort(data: object) -> None | Unset | ValidateLLMScorerDatasetRequestSortType0:
             if data is None:
                 return data
@@ -232,16 +232,16 @@ class ValidateLLMScorerDatasetRequest:
         sort = _parse_sort(d.pop("sort", UNSET))
 
         validate_llm_scorer_dataset_request = cls(
+            dataset_id=dataset_id,
             query=query,
             response=response,
             chain_poll_template=chain_poll_template,
             scorer_configuration=scorer_configuration,
             user_prompt=user_prompt,
-            dataset_id=dataset_id,
-            normalized_input=normalized_input,
             dataset_version_index=dataset_version_index,
             limit=limit,
             starting_token=starting_token,
+            normalized_input=normalized_input,
             sort=sort,
         )
 

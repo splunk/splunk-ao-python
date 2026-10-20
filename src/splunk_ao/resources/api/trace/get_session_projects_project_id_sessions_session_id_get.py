@@ -17,17 +17,25 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
-from ...models.extended_session_record_with_children import ExtendedSessionRecordWithChildren
+from ...models.extended_read_session_record_with_children import ExtendedReadSessionRecordWithChildren
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, session_id: str, *, include_presigned_urls: bool | Unset = False) -> dict[str, Any]:
+def _get_kwargs(
+    project_id: str,
+    session_id: str,
+    *,
+    include_presigned_urls: bool | Unset = False,
+    include_redacted_io: bool | Unset = True,
+) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
     params["include_presigned_urls"] = include_presigned_urls
+
+    params["include_redacted_io"] = include_redacted_io
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -46,9 +54,9 @@ def _get_kwargs(project_id: str, session_id: str, *, include_presigned_urls: boo
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> ExtendedSessionRecordWithChildren | HTTPValidationError:
+) -> ExtendedReadSessionRecordWithChildren | HTTPValidationError:
     if response.status_code == 200:
-        response_200 = ExtendedSessionRecordWithChildren.from_dict(response.json())
+        response_200 = ExtendedReadSessionRecordWithChildren.from_dict(response.json())
 
         return response_200
 
@@ -77,7 +85,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -87,24 +95,38 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str,
+    session_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    include_redacted_io: bool | Unset = True,
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
+            `redacted_output` fields from the response. When redaction is active these hold the same
+            text already returned in `input`/`output`, so clients that do not read them can halve the
+            payload. This does not change whether redaction is applied. Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
+    kwargs = _get_kwargs(
+        project_id=project_id,
+        session_id=session_id,
+        include_presigned_urls=include_presigned_urls,
+        include_redacted_io=include_redacted_io,
+    )
 
     response = client.request(**kwargs)
 
@@ -112,47 +134,74 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str,
+    session_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    include_redacted_io: bool | Unset = True,
+) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
+            `redacted_output` fields from the response. When redaction is active these hold the same
+            text already returned in `input`/`output`, so clients that do not read them can halve the
+            payload. This does not change whether redaction is applied. Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        ExtendedReadSessionRecordWithChildren | HTTPValidationError
     """
 
     return sync_detailed(
-        project_id=project_id, session_id=session_id, client=client, include_presigned_urls=include_presigned_urls
+        project_id=project_id,
+        session_id=session_id,
+        client=client,
+        include_presigned_urls=include_presigned_urls,
+        include_redacted_io=include_redacted_io,
     ).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Response[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str,
+    session_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    include_redacted_io: bool | Unset = True,
+) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
+            `redacted_output` fields from the response. When redaction is active these hold the same
+            text already returned in `input`/`output`, so clients that do not read them can halve the
+            payload. This does not change whether redaction is applied. Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedSessionRecordWithChildren | HTTPValidationError]
+        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, session_id=session_id, include_presigned_urls=include_presigned_urls)
+    kwargs = _get_kwargs(
+        project_id=project_id,
+        session_id=session_id,
+        include_presigned_urls=include_presigned_urls,
+        include_redacted_io=include_redacted_io,
+    )
 
     response = await client.arequest(**kwargs)
 
@@ -160,25 +209,38 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, session_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
-) -> Optional[ExtendedSessionRecordWithChildren | HTTPValidationError]:
+    project_id: str,
+    session_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    include_redacted_io: bool | Unset = True,
+) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
 
     Args:
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
+            `redacted_output` fields from the response. When redaction is active these hold the same
+            text already returned in `input`/`output`, so clients that do not read them can halve the
+            payload. This does not change whether redaction is applied. Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedSessionRecordWithChildren | HTTPValidationError
+        ExtendedReadSessionRecordWithChildren | HTTPValidationError
     """
 
     return (
         await asyncio_detailed(
-            project_id=project_id, session_id=session_id, client=client, include_presigned_urls=include_presigned_urls
+            project_id=project_id,
+            session_id=session_id,
+            client=client,
+            include_presigned_urls=include_presigned_urls,
+            include_redacted_io=include_redacted_io,
         )
     ).parsed

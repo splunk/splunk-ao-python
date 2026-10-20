@@ -17,6 +17,7 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
+from ...models.http_validation_error import HTTPValidationError
 from ...models.integration_db import IntegrationDB
 from ...types import Response
 
@@ -32,7 +33,7 @@ def _get_kwargs() -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> list[IntegrationDB]:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | list[IntegrationDB]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -42,6 +43,11 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> list[Inte
             response_200.append(response_200_item)
 
         return response_200
+
+    if response.status_code == 422:
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -61,7 +67,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> list[Inte
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[list[IntegrationDB]]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[HTTPValidationError | list[IntegrationDB]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -70,7 +78,7 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]]:
+def sync_detailed(*, client: ApiClient) -> Response[HTTPValidationError | list[IntegrationDB]]:
     """List Integrations
 
      List the created integrations for the requesting user.
@@ -80,7 +88,7 @@ def sync_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]]:
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[IntegrationDB]]
+        Response[HTTPValidationError | list[IntegrationDB]]
     """
 
     kwargs = _get_kwargs()
@@ -90,7 +98,7 @@ def sync_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]]:
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient) -> Optional[list[IntegrationDB]]:
+def sync(*, client: ApiClient) -> Optional[HTTPValidationError | list[IntegrationDB]]:
     """List Integrations
 
      List the created integrations for the requesting user.
@@ -100,13 +108,13 @@ def sync(*, client: ApiClient) -> Optional[list[IntegrationDB]]:
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[IntegrationDB]
+        HTTPValidationError | list[IntegrationDB]
     """
 
     return sync_detailed(client=client).parsed
 
 
-async def asyncio_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]]:
+async def asyncio_detailed(*, client: ApiClient) -> Response[HTTPValidationError | list[IntegrationDB]]:
     """List Integrations
 
      List the created integrations for the requesting user.
@@ -116,7 +124,7 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[IntegrationDB]]
+        Response[HTTPValidationError | list[IntegrationDB]]
     """
 
     kwargs = _get_kwargs()
@@ -126,7 +134,7 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[list[IntegrationDB]
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient) -> Optional[list[IntegrationDB]]:
+async def asyncio(*, client: ApiClient) -> Optional[HTTPValidationError | list[IntegrationDB]]:
     """List Integrations
 
      List the created integrations for the requesting user.
@@ -136,7 +144,7 @@ async def asyncio(*, client: ApiClient) -> Optional[list[IntegrationDB]]:
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[IntegrationDB]
+        HTTPValidationError | list[IntegrationDB]
     """
 
     return (await asyncio_detailed(client=client)).parsed

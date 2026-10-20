@@ -20,6 +20,7 @@ from ... import errors
 from ...models.http_validation_error import HTTPValidationError
 from ...models.partial_extended_agent_span_record import PartialExtendedAgentSpanRecord
 from ...models.partial_extended_control_span_record import PartialExtendedControlSpanRecord
+from ...models.partial_extended_http_span_record import PartialExtendedHttpSpanRecord
 from ...models.partial_extended_llm_span_record import PartialExtendedLlmSpanRecord
 from ...models.partial_extended_retriever_span_record import PartialExtendedRetrieverSpanRecord
 from ...models.partial_extended_session_record import PartialExtendedSessionRecord
@@ -50,6 +51,7 @@ def _parse_response(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -64,6 +66,7 @@ def _parse_response(
         ) -> (
             PartialExtendedAgentSpanRecord
             | PartialExtendedControlSpanRecord
+            | PartialExtendedHttpSpanRecord
             | PartialExtendedLlmSpanRecord
             | PartialExtendedRetrieverSpanRecord
             | PartialExtendedSessionRecord
@@ -186,9 +189,17 @@ def _parse_response(
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                response_200_type_7 = PartialExtendedSessionRecord.from_dict(data)
+                response_200_type_7 = PartialExtendedHttpSpanRecord.from_dict(data)
 
                 return response_200_type_7
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_8 = PartialExtendedSessionRecord.from_dict(data)
+
+                return response_200_type_8
             except:  # noqa: E722
                 pass
             # If we reach here, none of the parsers succeeded
@@ -228,6 +239,7 @@ def _build_response(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -249,6 +261,7 @@ def sync_detailed(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -272,7 +285,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
+        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedHttpSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, record_id=record_id)
@@ -288,6 +301,7 @@ def sync(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -311,7 +325,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
+        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedHttpSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
     """
 
     return sync_detailed(queue_id=queue_id, record_id=record_id, client=client).parsed
@@ -323,6 +337,7 @@ async def asyncio_detailed(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -346,7 +361,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
+        Response[HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedHttpSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord]
     """
 
     kwargs = _get_kwargs(queue_id=queue_id, record_id=record_id)
@@ -362,6 +377,7 @@ async def asyncio(
     HTTPValidationError
     | PartialExtendedAgentSpanRecord
     | PartialExtendedControlSpanRecord
+    | PartialExtendedHttpSpanRecord
     | PartialExtendedLlmSpanRecord
     | PartialExtendedRetrieverSpanRecord
     | PartialExtendedSessionRecord
@@ -385,7 +401,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
+        HTTPValidationError | PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedHttpSpanRecord | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord
     """
 
     return (await asyncio_detailed(queue_id=queue_id, record_id=record_id, client=client)).parsed

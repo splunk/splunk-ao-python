@@ -19,6 +19,7 @@ from splunk_ao.utils.headers_data import get_sdk_header
 from ... import errors
 from ...models.extended_agent_span_record_with_children import ExtendedAgentSpanRecordWithChildren
 from ...models.extended_control_span_record import ExtendedControlSpanRecord
+from ...models.extended_http_span_record_with_children import ExtendedHttpSpanRecordWithChildren
 from ...models.extended_llm_span_record import ExtendedLlmSpanRecord
 from ...models.extended_retriever_span_record_with_children import ExtendedRetrieverSpanRecordWithChildren
 from ...models.extended_tool_span_record_with_children import ExtendedToolSpanRecordWithChildren
@@ -54,6 +55,7 @@ def _parse_response(
 ) -> (
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -67,6 +69,7 @@ def _parse_response(
         ) -> (
             ExtendedAgentSpanRecordWithChildren
             | ExtendedControlSpanRecord
+            | ExtendedHttpSpanRecordWithChildren
             | ExtendedLlmSpanRecord
             | ExtendedRetrieverSpanRecordWithChildren
             | ExtendedToolSpanRecordWithChildren
@@ -176,6 +179,14 @@ def _parse_response(
                 return response_200_type_5
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_6 = ExtendedHttpSpanRecordWithChildren.from_dict(data)
+
+                return response_200_type_6
+            except:  # noqa: E722
+                pass
             # If we reach here, none of the parsers succeeded
             discriminator_info = f" (type={data.get('type')})" if isinstance(data, dict) and "type" in data else ""
             raise ValueError(f"Could not parse union type for response_200{discriminator_info}")
@@ -212,6 +223,7 @@ def _build_response(
 ) -> Response[
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -231,6 +243,7 @@ def sync_detailed(
 ) -> Response[
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -249,7 +262,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError]
+        Response[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedHttpSpanRecordWithChildren | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, span_id=span_id, include_presigned_urls=include_presigned_urls)
@@ -264,6 +277,7 @@ def sync(
 ) -> Optional[
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -282,7 +296,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError
+        ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedHttpSpanRecordWithChildren | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError
     """
 
     return sync_detailed(
@@ -295,6 +309,7 @@ async def asyncio_detailed(
 ) -> Response[
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -313,7 +328,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError]
+        Response[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedHttpSpanRecordWithChildren | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, span_id=span_id, include_presigned_urls=include_presigned_urls)
@@ -328,6 +343,7 @@ async def asyncio(
 ) -> Optional[
     ExtendedAgentSpanRecordWithChildren
     | ExtendedControlSpanRecord
+    | ExtendedHttpSpanRecordWithChildren
     | ExtendedLlmSpanRecord
     | ExtendedRetrieverSpanRecordWithChildren
     | ExtendedToolSpanRecordWithChildren
@@ -346,7 +362,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError
+        ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedHttpSpanRecordWithChildren | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren | ExtendedWorkflowSpanRecordWithChildren | HTTPValidationError
     """
 
     return (
