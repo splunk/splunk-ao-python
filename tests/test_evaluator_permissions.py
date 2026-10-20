@@ -350,12 +350,11 @@ class TestUpdateAndDeleteDenied:
         # Then: the delete hint is raised
         _assert_permission_error(exc_info.value, DELETE_HINT)
 
-    @patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
-    @patch("splunk_ao.scorers.Scorers.list")
-    def test_instance_delete_403_is_translated_and_marks_failed(self, mock_list, mock_delete) -> None:
+    @patch("splunk_ao.evaluator.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    def test_instance_delete_403_is_translated_and_marks_failed(self, mock_config, mock_delete) -> None:
         # Given: a synced evaluator whose delete the server refuses
         evaluator = _synced(LlmEvaluator(name="ev", prompt="p"))
-        mock_list.return_value = [_scorer_response(str(uuid4()))]
         mock_delete.sync.side_effect = _forbidden()
 
         # When: it is deleted
@@ -364,6 +363,56 @@ class TestUpdateAndDeleteDenied:
 
         # Then: the delete hint is raised and the state is FAILED_SYNC
         _assert_permission_error(exc_info.value, DELETE_HINT)
+        assert evaluator.sync_state == SyncState.FAILED_SYNC
+
+    @patch("splunk_ao.evaluator.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.scorers.Scorers.list")
+    def test_instance_delete_sends_one_delete_for_its_own_id(self, mock_list, mock_config, mock_delete) -> None:
+        # Given: a synced evaluator and a same-named sibling that the name lookup would also return
+        evaluator = _synced(LlmEvaluator(name="ev", prompt="p"))
+        mock_list.return_value = [_scorer_response(evaluator.id), _scorer_response(str(uuid4()))]
+        mock_delete.sync.return_value = {"message": "deleted"}
+
+        # When: the evaluator is deleted
+        evaluator.delete()
+
+        # Then: exactly one DELETE goes out, for its own id, and the sibling is untouched
+        mock_delete.sync.assert_called_once()
+        assert mock_delete.sync.call_args.kwargs["scorer_id"] == evaluator.id
+        mock_list.assert_not_called()
+        assert evaluator.sync_state == SyncState.DELETED
+
+    @patch("splunk_ao.evaluator.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    def test_instance_delete_404_stays_not_found(self, mock_config, mock_delete) -> None:
+        # Given: the server answers 404 (it hides evaluators outside the caller's projects)
+        evaluator = _synced(LlmEvaluator(name="ev", prompt="p"))
+        mock_delete.sync.side_effect = NotFoundError(404, b"gone")
+
+        # When: the evaluator is deleted
+        with pytest.raises(NotFoundError) as exc_info:
+            evaluator.delete()
+
+        # Then: it stays a NotFoundError, never a permission error, and the state is FAILED_SYNC
+        assert not isinstance(exc_info.value, EvaluatorPermissionError)
+        assert evaluator.sync_state == SyncState.FAILED_SYNC
+
+    @patch("splunk_ao.evaluator.delete_scorer_scorers_scorer_id_delete")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @pytest.mark.parametrize(
+        ("response", "message"),
+        [(HTTPValidationError(detail="bad id"), "bad id"), (None, "Failed to delete")],
+        ids=["validation_error", "empty_response"],
+    )
+    def test_instance_delete_rejects_a_bad_response(self, mock_config, mock_delete, response, message) -> None:
+        # Given: the server answers with a validation error or nothing
+        evaluator = _synced(LlmEvaluator(name="ev", prompt="p"))
+        mock_delete.sync.return_value = response
+
+        # When/Then: a ValueError is raised and the state is FAILED_SYNC
+        with pytest.raises(ValueError, match=message):
+            evaluator.delete()
         assert evaluator.sync_state == SyncState.FAILED_SYNC
 
     @patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")

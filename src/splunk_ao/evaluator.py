@@ -35,6 +35,7 @@ from splunk_ao.evaluators import (
 from splunk_ao.resources.api.data import (
     create_code_scorer_version_scorers_scorer_id_version_code_post,
     create_scorers_post,
+    delete_scorer_scorers_scorer_id_delete,
     get_validate_code_scorer_task_result_scorers_code_validate_task_id_get,
     set_scorer_scope_scorers_scorer_id_scope_put,
     update_scorers_scorer_id_patch,
@@ -662,14 +663,17 @@ class Evaluator(StateManagementMixin, ABC):
         """
         Delete this metric.
 
-        Only works for server-side metrics. Local metrics don't need deletion.
+        Only works for server-side metrics. Local metrics don't need deletion. Deletes by id, so a different
+        evaluator that shares this one's name is not touched.
 
         Raises
         ------
             ValidationError: If this is a local metric.
-            ValueError: If the metric is not synced, or is not found (or not shared with your projects).
+            ValueError: If the metric ID is not set, or the API answers with a validation error or empty response.
             EvaluatorPermissionError: If the API answers 403: deleting needs the owner or editor role on one of the
                 evaluator's projects (org admin for a global evaluator).
+            NotFoundError: If the API answers 404. The server also answers 404 for an evaluator that exists but
+                isn't shared with your projects.
 
         Examples
         --------
@@ -684,8 +688,13 @@ class Evaluator(StateManagementMixin, ABC):
 
         try:
             logger.info(f"Evaluator.delete: id='{self.id}' name='{self.name}' - started")
-            metrics_service = Evaluators()
-            metrics_service.delete_evaluator(name=self.name)
+            config = SplunkAOConfig.get()
+            with _translate_forbidden(_edit_denied_hint("Deleting")):
+                response = delete_scorer_scorers_scorer_id_delete.sync(scorer_id=self.id, client=config.api_client)
+            if isinstance(response, HTTPValidationError):
+                raise ValueError(response.detail)
+            if response is None:
+                raise ValueError("Failed to delete metric.")
             self._set_state(SyncState.DELETED)
             logger.info(f"Evaluator.delete: id='{self.id}' - completed")
         except Exception as e:
@@ -724,7 +733,7 @@ class Evaluator(StateManagementMixin, ABC):
             retrieved_scorer = next((s for s in scorers if s.id == self.id), None)
 
             if retrieved_scorer is None:
-                raise ValueError(f"Evaluator with id '{self.id}' not found, or not shared with your projects")
+                raise ValueError(f"Evaluator with id '{self.id}' not found, or not shared with your projects.")
 
             self._populate_from_scorer_response(retrieved_scorer)
             self._set_state(SyncState.SYNCED)

@@ -651,8 +651,9 @@ except EvaluatorPermissionError as error:
 
 `EvaluatorPermissionError` subclasses `ForbiddenError`. `Evaluator.get(name=...)` returns `None` when the evaluator
 does not exist or is not shared with your projects. The server answers 404 rather than 403 for an evaluator outside
-your projects on some paths. In that case `update` and `set_scope` can raise `NotFoundError`, and `delete` (which goes
-by name) raises a `ValueError` saying it was not found, or not shared with your projects.
+your projects on some paths. In that case `update`, `delete` and `set_scope` (which go by id) can raise `NotFoundError`,
+while `delete_evaluator(name=...)` and `Evaluator.delete_by_name` (which go by name) raise a `ValueError` saying the
+evaluator was not found, or not shared with your projects.
 
 ### Sessions
 

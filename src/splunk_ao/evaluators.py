@@ -95,6 +95,7 @@ class DecisionVersionOutcomeUnknownError(RuntimeError):
         )
 
 
+# E2E tests match the phrases "org admin" and "owner or editor" in these hints, so keep them.
 _GLOBAL_CREATE_DENIED_HINT = (
     "Only org admins can create global evaluators. Pass project_ids=[...] to scope the evaluator to your projects, "
     "or set SPLUNK_AO_PROJECT / SPLUNK_AO_PROJECT_ID so it defaults to one."

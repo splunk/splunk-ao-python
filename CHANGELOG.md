@@ -76,7 +76,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Evaluators.delete_evaluator()` and `Evaluator.refresh()` now say "not found, or not shared with your projects"
   when the evaluator is missing, since the server hides evaluators outside the caller's projects. `Evaluator.get()`
-  still returns `None` in that case.
+  still returns `None` in that case. Calls by id (`update()`, `delete()`, `set_scope()`) may raise `NotFoundError`
+  instead; `delete_evaluator(name=...)` and `Evaluator.delete_by_name()` raise `ValueError`.
+- `Evaluator.delete()` now deletes by id. It used to delete every evaluator that shared its name, which could also hit
+  one the caller had no permission to delete.
 - Creating an LLM or code evaluator no longer fails with an `AttributeError` when the scorer request is answered with
   a validation error; the detail is raised as a `ValueError`, as it already was for decision evaluators.
 - The API client now knows the permission and enum values that current servers return, so reading projects and
