@@ -19,7 +19,6 @@ def reset_env_vars() -> None:
 
 @pytest.fixture
 def project_response() -> dict:
-    """A sample gen_ai project response dict."""
     return {
         "id": "00000000-0000-0000-0000-000000000123",
         "name": "my_project",
@@ -331,7 +330,7 @@ class TestProjects:
         # Mock the get method to return a non-GEN_AI project
         mock_project = Mock()
         mock_project.id = "123"
-        mock_project.type = ProjectType.PROTECT  # Not GEN_AI
+        mock_project.type = ProjectType.PROTECT
         mock_project.name = "test_project"
 
         get_mock.return_value = mock_project
