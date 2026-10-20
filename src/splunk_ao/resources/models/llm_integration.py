@@ -11,6 +11,7 @@ class LLMIntegration(str, Enum):
     MISTRAL = "mistral"
     NVIDIA = "nvidia"
     OPENAI = "openai"
+    VEGAS_GATEWAY = "vegas_gateway"
     VERTEX_AI = "vertex_ai"
     WRITER = "writer"
 
