@@ -21,30 +21,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
   spec. Code that imports generated symbols directly may need updating:
-  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones with defaults and makes
-    `scorer_type` optional; the field order changed, so pass fields by keyword. `Experiments.create(scorers=...)`,
-    `update_scorer_settings()` and `create_metric_configs()` take or return `RuntimeScorerConfig`.
+  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`
+    optional. The field order changed, so a positional `ScorerConfig(id, scorer_type)` call must become
+    `RuntimeScorerConfig(id=..., scorer_type=...)`. Keyword construction now also sends the defaults
+    `ground_truth=False`, `threshold=0.5` and `requires_tools_in_llm_span=False`; building one from a scorer
+    with `from_dict` leaves them unset. `Experiments.create(scorers=...)`, `update_scorer_settings()` and
+    `create_metric_configs()` take or return `RuntimeScorerConfig`.
+  - `CoreScorerName` is renamed to `ScorerName`. The old `ScorerName`, whose members were internal
+    underscore-prefixed values (for example `ScorerName.VALUE_1 = "_context_adherence_luna"`), is gone; use the
+    public names such as `ScorerName.CONTEXT_ADHERENCE`.
   - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
     (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
     (`/integrations/vegas_gateway`).
   - Removed models: the `Customized*GPTScorer` and `*Template` scorer families, `ChunkAttributionUtilizationScorer`,
-    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `CoreScorerName`,
-    `MetricCritiqueColumnar`, `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
+    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `MetricCritiqueColumnar`,
+    `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
     `ExtendedReadSessionRecordWithChildren`), `VegasGatewayIntegration` and `VegasGatewayIntegrationCreate`.
-  - Removed fields: `ProjectCreate.create_example_templates`, `scorer_type` and `critique` on the `Metric*` status
-    models, and the `prompt_*scorers_configuration`, `sub_scorers`, `store_metric_ids`, `stream_metrics` and `xray`
-    fields on `CreateJobRequest` / `CreateJobResponse`.
-  - Removed enum values: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`,
-    `IntegrationProvider.VEGAS_GATEWAY` and `LLMIntegration.VEGAS_GATEWAY`, and `TaskType` 7, 9 and 12.
-    `ScorerName` now holds the public metric names (for example `context_adherence`) instead of the internal
-    underscore-prefixed ones. Reading a resource that still carries a removed value (for example a legacy run
-    with `task_type` 7, or a `vegas_gateway` integration) can now raise `ValueError`.
+  - Removed fields:
+    - `BaseScorerVersionResponse.input_type` (returned by `create_custom_llm_evaluator()` and the other evaluator
+      create functions), and `input_type`, `output_type` and `scoreable_node_types` on `BaseScorerVersionDB`.
+    - `BaseScorer.sub_scorers` and `ProjectCreate.create_example_templates`.
+    - `scorer_type` on `MetricComputing`, `MetricError`, `MetricFailed`, `MetricNotApplicable`, `MetricNotComputed`,
+      `MetricPending`, `MetricRollUp` and `MetricSuccess`, and `critique` on `MetricRollUp` and `MetricSuccess`.
+    - `prompt_scorers_configuration`, `prompt_customized_scorers_configuration`,
+      `prompt_finetuned_scorers_configuration`, `prompt_registered_scorers_configuration`, `sub_scorers`,
+      `store_metric_ids`, `stream_metrics` and `xray` on `CreateJobRequest` and `CreateJobResponse`.
+  - Removed enum members: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`.
 
 ### Fixed
 
 - The API client now knows the permission and enum values that current servers return, so reading projects and
   other resources no longer fails on them. For example, `Projects().get(id=...)` raised
-  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction`.
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
+  `ProjectAction` lacked `configure_rate_limit`). Values that older servers still return, `vegas_gateway` for
+  integrations and task types 7, 9 and 12, are kept so reads from those servers keep working.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
