@@ -17,6 +17,21 @@ def reset_env_vars() -> None:
     os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
 
 
+@pytest.fixture
+def project_response() -> dict:
+    """A sample gen_ai project response dict."""
+    return {
+        "id": "00000000-0000-0000-0000-000000000123",
+        "name": "my_project",
+        "type": "gen_ai",
+        "created_by": "user-id-123",
+        "created_by_user": {"id": "user-id-123", "email": "test@test.com"},
+        "runs": [],
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+    }
+
+
 class TestProjects:
     @patch("splunk_ao.projects.get_all_projects_projects_all_get")
     def test_get_all_projects_projects_all_get_exc(self, get_all_projects_projects_all_get) -> None:
@@ -95,26 +110,16 @@ class TestProjects:
             get_project_projects_project_id_get.assert_called_once_with(project_id="123", client=ANY)
             assert result is None
 
-    def test_get_project_by_id_parses_configure_rate_limit_permission(self, respx_mock: MockRouter) -> None:
-        project_id = "00000000-0000-0000-0000-000000000123"
+    def test_get_project_by_id_parses_configure_rate_limit_permission(
+        self, respx_mock: MockRouter, project_response: dict
+    ) -> None:
+        project_id = project_response["id"]
+        project_response["permissions"] = [
+            {"action": "delete", "allowed": True},
+            {"action": "configure_rate_limit", "allowed": True},
+        ]
         route = respx_mock.get(f"http://fake.test:8088/projects/{project_id}").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": project_id,
-                    "name": "my_project",
-                    "type": "gen_ai",
-                    "created_by": "user-id-123",
-                    "created_by_user": {"id": "user-id-123", "email": "test@test.com"},
-                    "runs": [],
-                    "created_at": "2024-01-01T00:00:00Z",
-                    "updated_at": "2024-01-01T00:00:00Z",
-                    "permissions": [
-                        {"action": "delete", "allowed": True},
-                        {"action": "configure_rate_limit", "allowed": True},
-                    ],
-                },
-            )
+            return_value=httpx.Response(200, json=project_response)
         )
 
         project = Projects().get(id=project_id)
@@ -125,18 +130,9 @@ class TestProjects:
         assert project.permissions is not None
         assert [p.action for p in project.permissions] == [ProjectAction.DELETE, ProjectAction.CONFIGURE_RATE_LIMIT]
 
-    def test_create_project_posts_gen_ai_project(self, respx_mock: MockRouter) -> None:
+    def test_create_project_posts_gen_ai_project(self, respx_mock: MockRouter, project_response: dict) -> None:
         route = respx_mock.post("http://fake.test:8088/projects").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": "00000000-0000-0000-0000-000000000456",
-                    "name": "my_project",
-                    "type": "gen_ai",
-                    "created_at": "2024-01-01T00:00:00Z",
-                    "updated_at": "2024-01-01T00:00:00Z",
-                },
-            )
+            return_value=httpx.Response(200, json=project_response)
         )
 
         project = Projects().create(name="my_project")

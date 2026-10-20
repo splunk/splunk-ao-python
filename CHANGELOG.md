@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec. Code that
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec. Code that
   imports generated symbols directly may need updating:
   - `ScorerConfig` is now `RuntimeScorerConfig` (same fields, plus new optional ones; `scorer_type` is now
     optional). `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or
