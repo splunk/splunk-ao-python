@@ -1,3 +1,4 @@
+import json
 import os
 from unittest.mock import ANY, Mock, patch
 
@@ -123,6 +124,30 @@ class TestProjects:
         assert project.id == project_id
         assert project.permissions is not None
         assert [p.action for p in project.permissions] == [ProjectAction.DELETE, ProjectAction.CONFIGURE_RATE_LIMIT]
+
+    def test_create_project_posts_gen_ai_project(self, respx_mock: MockRouter) -> None:
+        route = respx_mock.post("http://fake.test:8088/projects").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "00000000-0000-0000-0000-000000000456",
+                    "name": "my_project",
+                    "type": "gen_ai",
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z",
+                },
+            )
+        )
+
+        project = Projects().create(name="my_project")
+
+        assert route.called
+        assert json.loads(route.calls.last.request.content) == {
+            "name": "my_project",
+            "type": "gen_ai",
+            "created_by": None,
+        }
+        assert project.name == "my_project"
 
     @patch("splunk_ao.projects.get_projects_projects_get.sync_detailed")
     def test_get_project_with_name_gets_project_by_name(self, get_projects_projects_get: Mock) -> None:
