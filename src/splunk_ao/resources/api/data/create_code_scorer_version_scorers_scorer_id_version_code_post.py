@@ -22,16 +22,33 @@ from ...models.body_create_code_scorer_version_scorers_scorer_id_version_code_po
     BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
 )
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(scorer_id: str, *, body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost) -> dict[str, Any]:
+def _get_kwargs(
+    scorer_id: str,
+    *,
+    body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
+    organization_id: None | str | Unset = UNSET,
+) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+
+    params: dict[str, Any] = {}
+
+    json_organization_id: None | str | Unset
+    if isinstance(organization_id, Unset):
+        json_organization_id = UNSET
+    else:
+        json_organization_id = organization_id
+    params["organization_id"] = json_organization_id
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": RequestMethod.POST,
         "return_raw_response": True,
         "path": "/scorers/{scorer_id}/version/code".format(scorer_id=scorer_id),
+        "params": params,
     }
 
     _kwargs["files"] = body.to_multipart()
@@ -84,12 +101,17 @@ def _build_response(
 
 
 def sync_detailed(
-    scorer_id: str, *, client: ApiClient, body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost
+    scorer_id: str,
+    *,
+    client: ApiClient,
+    body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
+    organization_id: None | str | Unset = UNSET,
 ) -> Response[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Code Scorer Version
 
     Args:
         scorer_id (str):
+        organization_id (None | str | Unset):
         body (BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost):
 
     Raises:
@@ -100,7 +122,7 @@ def sync_detailed(
         Response[BaseScorerVersionResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
+    kwargs = _get_kwargs(scorer_id=scorer_id, body=body, organization_id=organization_id)
 
     response = client.request(**kwargs)
 
@@ -108,12 +130,17 @@ def sync_detailed(
 
 
 def sync(
-    scorer_id: str, *, client: ApiClient, body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost
+    scorer_id: str,
+    *,
+    client: ApiClient,
+    body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
+    organization_id: None | str | Unset = UNSET,
 ) -> Optional[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Code Scorer Version
 
     Args:
         scorer_id (str):
+        organization_id (None | str | Unset):
         body (BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost):
 
     Raises:
@@ -124,16 +151,21 @@ def sync(
         BaseScorerVersionResponse | HTTPValidationError
     """
 
-    return sync_detailed(scorer_id=scorer_id, client=client, body=body).parsed
+    return sync_detailed(scorer_id=scorer_id, client=client, body=body, organization_id=organization_id).parsed
 
 
 async def asyncio_detailed(
-    scorer_id: str, *, client: ApiClient, body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost
+    scorer_id: str,
+    *,
+    client: ApiClient,
+    body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
+    organization_id: None | str | Unset = UNSET,
 ) -> Response[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Code Scorer Version
 
     Args:
         scorer_id (str):
+        organization_id (None | str | Unset):
         body (BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost):
 
     Raises:
@@ -144,7 +176,7 @@ async def asyncio_detailed(
         Response[BaseScorerVersionResponse | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(scorer_id=scorer_id, body=body)
+    kwargs = _get_kwargs(scorer_id=scorer_id, body=body, organization_id=organization_id)
 
     response = await client.arequest(**kwargs)
 
@@ -152,12 +184,17 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    scorer_id: str, *, client: ApiClient, body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost
+    scorer_id: str,
+    *,
+    client: ApiClient,
+    body: BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost,
+    organization_id: None | str | Unset = UNSET,
 ) -> Optional[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Code Scorer Version
 
     Args:
         scorer_id (str):
+        organization_id (None | str | Unset):
         body (BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost):
 
     Raises:
@@ -168,4 +205,6 @@ async def asyncio(
         BaseScorerVersionResponse | HTTPValidationError
     """
 
-    return (await asyncio_detailed(scorer_id=scorer_id, client=client, body=body)).parsed
+    return (
+        await asyncio_detailed(scorer_id=scorer_id, client=client, body=body, organization_id=organization_id)
+    ).parsed

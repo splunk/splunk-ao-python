@@ -98,6 +98,18 @@ def sync_detailed(
      Share an integration with groups.
 
     Args:
+        body: Groups to share with.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 404 when a group does not exist, 422 when it already has access.
+
+    Args:
         integration_id (str):
         body (list[GroupCollaboratorCreate]):
 
@@ -124,6 +136,18 @@ def sync(
      Share an integration with groups.
 
     Args:
+        body: Groups to share with.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 404 when a group does not exist, 422 when it already has access.
+
+    Args:
         integration_id (str):
         body (list[GroupCollaboratorCreate]):
 
@@ -144,6 +168,18 @@ async def asyncio_detailed(
     """Create Group Integration Collaborators
 
      Share an integration with groups.
+
+    Args:
+        body: Groups to share with.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 404 when a group does not exist, 422 when it already has access.
 
     Args:
         integration_id (str):
@@ -170,6 +206,18 @@ async def asyncio(
     """Create Group Integration Collaborators
 
      Share an integration with groups.
+
+    Args:
+        body: Groups to share with.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 404 when a group does not exist, 422 when it already has access.
 
     Args:
         integration_id (str):

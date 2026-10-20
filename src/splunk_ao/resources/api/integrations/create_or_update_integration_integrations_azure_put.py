@@ -79,7 +79,14 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(*, client: ApiClient, body: AzureIntegrationCreate) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Azure integration
 
-     Create or update an Azure integration for this user from Galileo.
+     Create or update an Azure integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AzureIntegrationCreate):
@@ -102,7 +109,14 @@ def sync_detailed(*, client: ApiClient, body: AzureIntegrationCreate) -> Respons
 def sync(*, client: ApiClient, body: AzureIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Azure integration
 
-     Create or update an Azure integration for this user from Galileo.
+     Create or update an Azure integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AzureIntegrationCreate):
@@ -123,7 +137,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Azure integration
 
-     Create or update an Azure integration for this user from Galileo.
+     Create or update an Azure integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AzureIntegrationCreate):
@@ -146,7 +167,14 @@ async def asyncio_detailed(
 async def asyncio(*, client: ApiClient, body: AzureIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Azure integration
 
-     Create or update an Azure integration for this user from Galileo.
+     Create or update an Azure integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AzureIntegrationCreate):

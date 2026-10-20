@@ -6,13 +6,12 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.input_type_enum import InputTypeEnum
-from ..models.output_type_enum import OutputTypeEnum
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
     from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
+    from ..models.base_luna_3_scorer_db import BaseLuna3ScorerDB
     from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
     from ..models.decision_scorer_db import DecisionScorerDB
 
@@ -31,17 +30,14 @@ class BaseScorerVersionDB:
         generated_scorer (BaseGeneratedScorerDB | None | Unset):
         registered_scorer (BaseRegisteredScorerDB | None | Unset):
         finetuned_scorer (BaseFinetunedScorerDB | None | Unset):
+        luna3_scorer (BaseLuna3ScorerDB | None | Unset):
         decision_scorer (DecisionScorerDB | None | Unset):
         model_name (None | str | Unset):
         num_judges (int | None | Unset):
-        scoreable_node_types (list[str] | None | Unset): List of node types that can be scored by this scorer. Defaults
-            to llm/chat.
         cot_enabled (bool | None | Unset): Whether to enable chain of thought for this scorer. Defaults to False for llm
             scorers.
-        output_type (None | OutputTypeEnum | Unset): What type of output to use for model-based scorers
-            (sessions_normalized, trace_io_only, etc.).
-        input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
-            (sessions_normalized, trace_io_only, etc.).
+        runtime (None | str | Unset): The runtime a code metric version runs on, such as python3.14. Null for a version
+            saved before runtimes were recorded, which runs on the legacy Python 3.12 runtime.
     """
 
     id: str
@@ -50,18 +46,18 @@ class BaseScorerVersionDB:
     generated_scorer: BaseGeneratedScorerDB | None | Unset = UNSET
     registered_scorer: BaseRegisteredScorerDB | None | Unset = UNSET
     finetuned_scorer: BaseFinetunedScorerDB | None | Unset = UNSET
+    luna3_scorer: BaseLuna3ScorerDB | None | Unset = UNSET
     decision_scorer: DecisionScorerDB | None | Unset = UNSET
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
-    scoreable_node_types: list[str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
+    runtime: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
         from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
+        from ..models.base_luna_3_scorer_db import BaseLuna3ScorerDB
         from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
         from ..models.decision_scorer_db import DecisionScorerDB
 
@@ -95,6 +91,14 @@ class BaseScorerVersionDB:
         else:
             finetuned_scorer = self.finetuned_scorer
 
+        luna3_scorer: dict[str, Any] | None | Unset
+        if isinstance(self.luna3_scorer, Unset):
+            luna3_scorer = UNSET
+        elif isinstance(self.luna3_scorer, BaseLuna3ScorerDB):
+            luna3_scorer = self.luna3_scorer.to_dict()
+        else:
+            luna3_scorer = self.luna3_scorer
+
         decision_scorer: dict[str, Any] | None | Unset
         if isinstance(self.decision_scorer, Unset):
             decision_scorer = UNSET
@@ -115,36 +119,17 @@ class BaseScorerVersionDB:
         else:
             num_judges = self.num_judges
 
-        scoreable_node_types: list[str] | None | Unset
-        if isinstance(self.scoreable_node_types, Unset):
-            scoreable_node_types = UNSET
-        elif isinstance(self.scoreable_node_types, list):
-            scoreable_node_types = self.scoreable_node_types
-
-        else:
-            scoreable_node_types = self.scoreable_node_types
-
         cot_enabled: bool | None | Unset
         if isinstance(self.cot_enabled, Unset):
             cot_enabled = UNSET
         else:
             cot_enabled = self.cot_enabled
 
-        output_type: None | str | Unset
-        if isinstance(self.output_type, Unset):
-            output_type = UNSET
-        elif isinstance(self.output_type, OutputTypeEnum):
-            output_type = self.output_type.value
+        runtime: None | str | Unset
+        if isinstance(self.runtime, Unset):
+            runtime = UNSET
         else:
-            output_type = self.output_type
-
-        input_type: None | str | Unset
-        if isinstance(self.input_type, Unset):
-            input_type = UNSET
-        elif isinstance(self.input_type, InputTypeEnum):
-            input_type = self.input_type.value
-        else:
-            input_type = self.input_type
+            runtime = self.runtime
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -155,20 +140,18 @@ class BaseScorerVersionDB:
             field_dict["registered_scorer"] = registered_scorer
         if finetuned_scorer is not UNSET:
             field_dict["finetuned_scorer"] = finetuned_scorer
+        if luna3_scorer is not UNSET:
+            field_dict["luna3_scorer"] = luna3_scorer
         if decision_scorer is not UNSET:
             field_dict["decision_scorer"] = decision_scorer
         if model_name is not UNSET:
             field_dict["model_name"] = model_name
         if num_judges is not UNSET:
             field_dict["num_judges"] = num_judges
-        if scoreable_node_types is not UNSET:
-            field_dict["scoreable_node_types"] = scoreable_node_types
         if cot_enabled is not UNSET:
             field_dict["cot_enabled"] = cot_enabled
-        if output_type is not UNSET:
-            field_dict["output_type"] = output_type
-        if input_type is not UNSET:
-            field_dict["input_type"] = input_type
+        if runtime is not UNSET:
+            field_dict["runtime"] = runtime
 
         return field_dict
 
@@ -176,6 +159,7 @@ class BaseScorerVersionDB:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.base_finetuned_scorer_db import BaseFinetunedScorerDB
         from ..models.base_generated_scorer_db import BaseGeneratedScorerDB
+        from ..models.base_luna_3_scorer_db import BaseLuna3ScorerDB
         from ..models.base_registered_scorer_db import BaseRegisteredScorerDB
         from ..models.decision_scorer_db import DecisionScorerDB
 
@@ -237,6 +221,23 @@ class BaseScorerVersionDB:
 
         finetuned_scorer = _parse_finetuned_scorer(d.pop("finetuned_scorer", UNSET))
 
+        def _parse_luna3_scorer(data: object) -> BaseLuna3ScorerDB | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                luna3_scorer_type_0 = BaseLuna3ScorerDB.from_dict(data)
+
+                return luna3_scorer_type_0
+            except:  # noqa: E722
+                pass
+            return cast(BaseLuna3ScorerDB | None | Unset, data)
+
+        luna3_scorer = _parse_luna3_scorer(d.pop("luna3_scorer", UNSET))
+
         def _parse_decision_scorer(data: object) -> DecisionScorerDB | None | Unset:
             if data is None:
                 return data
@@ -272,23 +273,6 @@ class BaseScorerVersionDB:
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[str] | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, list):
-                    raise TypeError()
-                scoreable_node_types_type_0 = cast(list[str], data)
-
-                return scoreable_node_types_type_0
-            except:  # noqa: E722
-                pass
-            return cast(list[str] | None | Unset, data)
-
-        scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
-
         def _parse_cot_enabled(data: object) -> bool | None | Unset:
             if data is None:
                 return data
@@ -298,39 +282,14 @@ class BaseScorerVersionDB:
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_runtime(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                output_type_type_0 = OutputTypeEnum(data)
+            return cast(None | str | Unset, data)
 
-                return output_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(None | OutputTypeEnum | Unset, data)
-
-        output_type = _parse_output_type(d.pop("output_type", UNSET))
-
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                input_type_type_0 = InputTypeEnum(data)
-
-                return input_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(InputTypeEnum | None | Unset, data)
-
-        input_type = _parse_input_type(d.pop("input_type", UNSET))
+        runtime = _parse_runtime(d.pop("runtime", UNSET))
 
         base_scorer_version_db = cls(
             id=id,
@@ -339,13 +298,12 @@ class BaseScorerVersionDB:
             generated_scorer=generated_scorer,
             registered_scorer=registered_scorer,
             finetuned_scorer=finetuned_scorer,
+            luna3_scorer=luna3_scorer,
             decision_scorer=decision_scorer,
             model_name=model_name,
             num_judges=num_judges,
-            scoreable_node_types=scoreable_node_types,
             cot_enabled=cot_enabled,
-            output_type=output_type,
-            input_type=input_type,
+            runtime=runtime,
         )
 
         base_scorer_version_db.additional_properties = d

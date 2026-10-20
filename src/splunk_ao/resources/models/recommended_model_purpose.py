@@ -7,6 +7,7 @@ class RecommendedModelPurpose(str, Enum):
     CUSTOM_METRIC_AUTOGEN = "custom_metric_autogen"
     CUSTOM_METRIC_JUDGE = "custom_metric_judge"
     SIGNALS = "signals"
+    SIGNALS_V2 = "signals_v2"
 
     def __str__(self) -> str:
         return str(self.value)

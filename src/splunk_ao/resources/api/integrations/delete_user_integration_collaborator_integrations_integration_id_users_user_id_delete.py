@@ -79,6 +79,14 @@ def sync_detailed(integration_id: str, user_id: str, *, client: ApiClient) -> Re
      Remove a user's access to an integration.
 
     Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        user_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the user and integration.
+
+    Args:
         integration_id (str):
         user_id (str):
 
@@ -103,6 +111,14 @@ def sync(integration_id: str, user_id: str, *, client: ApiClient) -> Optional[An
      Remove a user's access to an integration.
 
     Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        user_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the user and integration.
+
+    Args:
         integration_id (str):
         user_id (str):
 
@@ -123,6 +139,14 @@ async def asyncio_detailed(
     """Delete User Integration Collaborator
 
      Remove a user's access to an integration.
+
+    Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        user_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the user and integration.
 
     Args:
         integration_id (str):
@@ -147,6 +171,14 @@ async def asyncio(integration_id: str, user_id: str, *, client: ApiClient) -> Op
     """Delete User Integration Collaborator
 
      Remove a user's access to an integration.
+
+    Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        user_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the user and integration.
 
     Args:
         integration_id (str):

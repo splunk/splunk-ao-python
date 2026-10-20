@@ -11,6 +11,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.extended_agent_span_record import ExtendedAgentSpanRecord
     from ..models.extended_control_span_record import ExtendedControlSpanRecord
+    from ..models.extended_http_span_record import ExtendedHttpSpanRecord
     from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
     from ..models.extended_retriever_span_record import ExtendedRetrieverSpanRecord
     from ..models.extended_session_record import ExtendedSessionRecord
@@ -31,9 +32,9 @@ class LogRecordsQueryResponse:
         paginated (bool | Unset):  Default: False.
         next_starting_token (int | None | Unset):
         last_row_id (None | str | Unset):
-        records (list[ExtendedAgentSpanRecord | ExtendedControlSpanRecord | ExtendedLlmSpanRecord |
-            ExtendedRetrieverSpanRecord | ExtendedSessionRecord | ExtendedToolSpanRecord | ExtendedTraceRecord |
-            ExtendedWorkflowSpanRecord] | Unset): records matching the query
+        records (list[ExtendedAgentSpanRecord | ExtendedControlSpanRecord | ExtendedHttpSpanRecord |
+            ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecord | ExtendedSessionRecord | ExtendedToolSpanRecord |
+            ExtendedTraceRecord | ExtendedWorkflowSpanRecord] | Unset): records matching the query
     """
 
     starting_token: int | Unset = 0
@@ -45,6 +46,7 @@ class LogRecordsQueryResponse:
         list[
             ExtendedAgentSpanRecord
             | ExtendedControlSpanRecord
+            | ExtendedHttpSpanRecord
             | ExtendedLlmSpanRecord
             | ExtendedRetrieverSpanRecord
             | ExtendedSessionRecord
@@ -59,6 +61,7 @@ class LogRecordsQueryResponse:
     def to_dict(self) -> dict[str, Any]:
         from ..models.extended_agent_span_record import ExtendedAgentSpanRecord
         from ..models.extended_control_span_record import ExtendedControlSpanRecord
+        from ..models.extended_http_span_record import ExtendedHttpSpanRecord
         from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
         from ..models.extended_retriever_span_record import ExtendedRetrieverSpanRecord
         from ..models.extended_tool_span_record import ExtendedToolSpanRecord
@@ -102,6 +105,8 @@ class LogRecordsQueryResponse:
                     records_item = records_item_data.to_dict()
                 elif isinstance(records_item_data, ExtendedControlSpanRecord):
                     records_item = records_item_data.to_dict()
+                elif isinstance(records_item_data, ExtendedHttpSpanRecord):
+                    records_item = records_item_data.to_dict()
                 else:
                     records_item = records_item_data.to_dict()
 
@@ -128,6 +133,7 @@ class LogRecordsQueryResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.extended_control_span_record import ExtendedControlSpanRecord
+        from ..models.extended_http_span_record import ExtendedHttpSpanRecord
 
         d = dict(src_dict)
         starting_token = d.pop("starting_token", UNSET)
@@ -159,6 +165,7 @@ class LogRecordsQueryResponse:
             list[
                 ExtendedAgentSpanRecord
                 | ExtendedControlSpanRecord
+                | ExtendedHttpSpanRecord
                 | ExtendedLlmSpanRecord
                 | ExtendedRetrieverSpanRecord
                 | ExtendedSessionRecord
@@ -177,6 +184,7 @@ class LogRecordsQueryResponse:
                 ) -> (
                     ExtendedAgentSpanRecord
                     | ExtendedControlSpanRecord
+                    | ExtendedHttpSpanRecord
                     | ExtendedLlmSpanRecord
                     | ExtendedRetrieverSpanRecord
                     | ExtendedSessionRecord
@@ -299,9 +307,17 @@ class LogRecordsQueryResponse:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        records_item_type_7 = ExtendedSessionRecord.from_dict(data)
+                        records_item_type_7 = ExtendedHttpSpanRecord.from_dict(data)
 
                         return records_item_type_7
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        records_item_type_8 = ExtendedSessionRecord.from_dict(data)
+
+                        return records_item_type_8
                     except:  # noqa: E722
                         pass
                     # If we reach here, none of the parsers succeeded

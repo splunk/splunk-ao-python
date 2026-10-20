@@ -6,6 +6,7 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.insight_summary_label_type_0 import InsightSummaryLabelType0
 from ..models.insight_summary_priority_category_type_0 import InsightSummaryPriorityCategoryType0
 from ..types import UNSET, Unset
 
@@ -16,13 +17,14 @@ T = TypeVar("T", bound="InsightSummary")
 class InsightSummary:
     """
     Attributes:
-        id (str):
+        id (str): Signal ID.
         title (str):
         observation (str):
         details (str):
         suggested_action (str):
         priority (int):
         priority_category (InsightSummaryPriorityCategoryType0 | None | Unset):
+        label (InsightSummaryLabelType0 | None | Unset):
     """
 
     id: str
@@ -32,6 +34,7 @@ class InsightSummary:
     suggested_action: str
     priority: int
     priority_category: InsightSummaryPriorityCategoryType0 | None | Unset = UNSET
+    label: InsightSummaryLabelType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -55,6 +58,14 @@ class InsightSummary:
         else:
             priority_category = self.priority_category
 
+        label: None | str | Unset
+        if isinstance(self.label, Unset):
+            label = UNSET
+        elif isinstance(self.label, InsightSummaryLabelType0):
+            label = self.label.value
+        else:
+            label = self.label
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -69,6 +80,8 @@ class InsightSummary:
         )
         if priority_category is not UNSET:
             field_dict["priority_category"] = priority_category
+        if label is not UNSET:
+            field_dict["label"] = label
 
         return field_dict
 
@@ -104,6 +117,23 @@ class InsightSummary:
 
         priority_category = _parse_priority_category(d.pop("priority_category", UNSET))
 
+        def _parse_label(data: object) -> InsightSummaryLabelType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                label_type_0 = InsightSummaryLabelType0(data)
+
+                return label_type_0
+            except:  # noqa: E722
+                pass
+            return cast(InsightSummaryLabelType0 | None | Unset, data)
+
+        label = _parse_label(d.pop("label", UNSET))
+
         insight_summary = cls(
             id=id,
             title=title,
@@ -112,6 +142,7 @@ class InsightSummary:
             suggested_action=suggested_action,
             priority=priority,
             priority_category=priority_category,
+            label=label,
         )
 
         insight_summary.additional_properties = d
