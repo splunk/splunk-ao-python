@@ -24,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sent.
 - `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
   `create()`, `get()`, `list()` and `refresh()`.
+- `EvaluatorPermissionError`, a `ForbiddenError` subclass, replaces the generic 403 message when creating,
+  updating, deleting or re-scoping an evaluator is refused, and says what is needed. Create needs the owner or
+  editor role on every listed project. Update and delete need it on one of the evaluator's projects. A scope change
+  needs it on one of the current projects and on each project added or removed. Anything on a global evaluator,
+  including creating one, needs the org admin role. The server response body is kept in the message.
+- `Evaluator.set_scope(project_ids=[...])` and `set_scope(is_global=True)` replace an evaluator's scope through
+  `PUT /scorers/{scorer_id}/scope`. Promoting to global is org admin only.
 
 ### Changed
 
@@ -68,6 +75,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Evaluators.delete_evaluator()` and `Evaluator.refresh()` now say "not found, or not shared with your projects"
+  when the evaluator is missing, since the server hides evaluators outside the caller's projects. `Evaluator.get()`
+  still returns `None` in that case. Calls by id (`update()`, `delete()`, `set_scope()`) may raise `NotFoundError`
+  instead; `delete_evaluator(name=...)` and `Evaluator.delete_by_name()` raise `ValueError`.
+- `Evaluator.delete()` now deletes by id. It used to delete every evaluator that shared its name, which could also hit
+  one the caller had no permission to delete.
+- Creating an LLM or code evaluator no longer fails with an `AttributeError` when the scorer request is answered with
+  a validation error; the detail is raised as a `ValueError`, as it already was for decision evaluators.
 - The API client now knows the permission and enum values that current servers return, so reading projects and
   other resources no longer fails on them. For example, `Projects().get(id=...)` raised
   `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
