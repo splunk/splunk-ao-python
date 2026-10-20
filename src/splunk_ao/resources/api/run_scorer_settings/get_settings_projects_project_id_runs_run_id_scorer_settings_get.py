@@ -83,6 +83,20 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
     """Get Settings
 
+     Return a run's scorer settings.
+
+    Args:
+        run_id: Run whose settings are requested, used for the not-found message.
+        run_scorer_settings: Hydrated settings resolved by the route dependency.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's scorer settings.
+
+    Raises:
+        HTTPException: 404 when the run has no scorer settings recorded.
+
     Args:
         project_id (str):
         run_id (str):
@@ -107,6 +121,20 @@ def sync(
 ) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
     """Get Settings
 
+     Return a run's scorer settings.
+
+    Args:
+        run_id: Run whose settings are requested, used for the not-found message.
+        run_scorer_settings: Hydrated settings resolved by the route dependency.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's scorer settings.
+
+    Raises:
+        HTTPException: 404 when the run has no scorer settings recorded.
+
     Args:
         project_id (str):
         run_id (str):
@@ -126,6 +154,20 @@ async def asyncio_detailed(
     project_id: str, run_id: str, *, client: ApiClient
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
     """Get Settings
+
+     Return a run's scorer settings.
+
+    Args:
+        run_id: Run whose settings are requested, used for the not-found message.
+        run_scorer_settings: Hydrated settings resolved by the route dependency.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's scorer settings.
+
+    Raises:
+        HTTPException: 404 when the run has no scorer settings recorded.
 
     Args:
         project_id (str):
@@ -150,6 +192,20 @@ async def asyncio(
     project_id: str, run_id: str, *, client: ApiClient
 ) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
     """Get Settings
+
+     Return a run's scorer settings.
+
+    Args:
+        run_id: Run whose settings are requested, used for the not-found message.
+        run_scorer_settings: Hydrated settings resolved by the route dependency.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's scorer settings.
+
+    Raises:
+        HTTPException: 404 when the run has no scorer settings recorded.
 
     Args:
         project_id (str):

@@ -85,7 +85,14 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Databricks integration (legacy)
 
-     Create or update a databricks integration for this user from Galileo.
+     Create or update the caller's Databricks integration.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Databricks host, warehouse path and token.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (DatabricksIntegrationCreate):
@@ -108,7 +115,14 @@ def sync_detailed(
 def sync(*, client: ApiClient, body: DatabricksIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Databricks integration (legacy)
 
-     Create or update a databricks integration for this user from Galileo.
+     Create or update the caller's Databricks integration.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Databricks host, warehouse path and token.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (DatabricksIntegrationCreate):
@@ -129,7 +143,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Databricks integration (legacy)
 
-     Create or update a databricks integration for this user from Galileo.
+     Create or update the caller's Databricks integration.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Databricks host, warehouse path and token.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (DatabricksIntegrationCreate):
@@ -154,7 +175,14 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Databricks integration (legacy)
 
-     Create or update a databricks integration for this user from Galileo.
+     Create or update the caller's Databricks integration.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Databricks host, warehouse path and token.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (DatabricksIntegrationCreate):

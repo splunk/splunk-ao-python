@@ -85,7 +85,14 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Vertex AI integration
 
-     Create or update a Google Vertex AI integration for a user.
+     Create or update a Google Vertex AI integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (VertexAIIntegrationCreate):
@@ -108,7 +115,14 @@ def sync_detailed(
 def sync(*, client: ApiClient, body: VertexAIIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Vertex AI integration
 
-     Create or update a Google Vertex AI integration for a user.
+     Create or update a Google Vertex AI integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (VertexAIIntegrationCreate):
@@ -129,7 +143,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Vertex AI integration
 
-     Create or update a Google Vertex AI integration for a user.
+     Create or update a Google Vertex AI integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (VertexAIIntegrationCreate):
@@ -154,7 +175,14 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Vertex AI integration
 
-     Create or update a Google Vertex AI integration for a user.
+     Create or update a Google Vertex AI integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (VertexAIIntegrationCreate):

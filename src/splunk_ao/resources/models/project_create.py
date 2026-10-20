@@ -19,13 +19,11 @@ class ProjectCreate:
         name (str):
         created_by (None | str | Unset):
         type_ (ProjectType | Unset):
-        create_example_templates (bool | Unset):  Default: False.
     """
 
     name: str
     created_by: None | str | Unset = UNSET
     type_: ProjectType | Unset = UNSET
-    create_example_templates: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,8 +39,6 @@ class ProjectCreate:
         if not isinstance(self.type_, Unset):
             type_ = self.type_.value
 
-        create_example_templates = self.create_example_templates
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"name": name})
@@ -50,8 +46,6 @@ class ProjectCreate:
             field_dict["created_by"] = created_by
         if type_ is not UNSET:
             field_dict["type"] = type_
-        if create_example_templates is not UNSET:
-            field_dict["create_example_templates"] = create_example_templates
 
         return field_dict
 
@@ -76,11 +70,7 @@ class ProjectCreate:
         else:
             type_ = ProjectType(_type_)
 
-        create_example_templates = d.pop("create_example_templates", UNSET)
-
-        project_create = cls(
-            name=name, created_by=created_by, type_=type_, create_example_templates=create_example_templates
-        )
+        project_create = cls(name=name, created_by=created_by, type_=type_)
 
         project_create.additional_properties = d
         return project_create

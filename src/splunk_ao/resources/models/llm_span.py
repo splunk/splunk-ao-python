@@ -57,6 +57,7 @@ class LlmSpan:
             MCPListToolsEvent | MessageEvent | ReasoningEvent | WebSearchCallEvent] | None | Unset): List of reasoning,
             internal tool call, or MCP events that occurred during the LLM span.
         model (None | str | Unset): Model used for this span.
+        provider (None | str | Unset): Provider used for this span.
         temperature (float | None | Unset): Temperature used for generation.
         finish_reason (None | str | Unset): Reason for finishing.
     """
@@ -97,6 +98,7 @@ class LlmSpan:
         | Unset
     ) = UNSET
     model: None | str | Unset = UNSET
+    provider: None | str | Unset = UNSET
     temperature: float | None | Unset = UNSET
     finish_reason: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -267,6 +269,12 @@ class LlmSpan:
         else:
             model = self.model
 
+        provider: None | str | Unset
+        if isinstance(self.provider, Unset):
+            provider = UNSET
+        else:
+            provider = self.provider
+
         temperature: float | None | Unset
         if isinstance(self.temperature, Unset):
             temperature = UNSET
@@ -328,6 +336,8 @@ class LlmSpan:
             field_dict["events"] = events
         if model is not UNSET:
             field_dict["model"] = model
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if temperature is not UNSET:
             field_dict["temperature"] = temperature
         if finish_reason is not UNSET:
@@ -681,6 +691,15 @@ class LlmSpan:
 
         model = _parse_model(d.pop("model", UNSET))
 
+        def _parse_provider(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        provider = _parse_provider(d.pop("provider", UNSET))
+
         def _parse_temperature(data: object) -> float | None | Unset:
             if data is None:
                 return data
@@ -723,6 +742,7 @@ class LlmSpan:
             tools=tools,
             events=events,
             model=model,
+            provider=provider,
             temperature=temperature,
             finish_reason=finish_reason,
         )

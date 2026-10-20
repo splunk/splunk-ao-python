@@ -3,6 +3,7 @@ from enum import Enum
 
 class CollaboratorRole(str, Enum):
     ANNOTATOR = "annotator"
+    CUSTOM = "custom"
     EDITOR = "editor"
     OWNER = "owner"
     VIEWER = "viewer"

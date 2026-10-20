@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.core_scorer_name import CoreScorerName
 from ..models.luna_input_type_enum import LunaInputTypeEnum
 from ..models.luna_output_type_enum import LunaOutputTypeEnum
+from ..models.scorer_name import ScorerName
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class BaseFinetunedScorerDB:
         luna_output_type (LunaOutputTypeEnum | None | Unset):
         class_name_to_vocab_ix (BaseFinetunedScorerDBClassNameToVocabIxType0 |
             BaseFinetunedScorerDBClassNameToVocabIxType1 | None | Unset):
-        executor (CoreScorerName | None | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
+        executor (None | ScorerName | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
             custom galileo score pipelines.
     """
 
@@ -50,7 +50,7 @@ class BaseFinetunedScorerDB:
     class_name_to_vocab_ix: (
         BaseFinetunedScorerDBClassNameToVocabIxType0 | BaseFinetunedScorerDBClassNameToVocabIxType1 | None | Unset
     ) = UNSET
-    executor: CoreScorerName | None | Unset = UNSET
+    executor: None | ScorerName | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,7 +104,7 @@ class BaseFinetunedScorerDB:
         executor: None | str | Unset
         if isinstance(self.executor, Unset):
             executor = UNSET
-        elif isinstance(self.executor, CoreScorerName):
+        elif isinstance(self.executor, ScorerName):
             executor = self.executor.value
         else:
             executor = self.executor
@@ -219,7 +219,7 @@ class BaseFinetunedScorerDB:
 
         class_name_to_vocab_ix = _parse_class_name_to_vocab_ix(d.pop("class_name_to_vocab_ix", UNSET))
 
-        def _parse_executor(data: object) -> CoreScorerName | None | Unset:
+        def _parse_executor(data: object) -> None | ScorerName | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -227,12 +227,12 @@ class BaseFinetunedScorerDB:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                executor_type_0 = CoreScorerName(data)
+                executor_type_0 = ScorerName(data)
 
                 return executor_type_0
             except:  # noqa: E722
                 pass
-            return cast(CoreScorerName | None | Unset, data)
+            return cast(None | ScorerName | Unset, data)
 
         executor = _parse_executor(d.pop("executor", UNSET))
 
