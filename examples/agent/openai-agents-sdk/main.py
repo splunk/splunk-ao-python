@@ -40,15 +40,13 @@ log = logging.getLogger("openai-agents-demo")
 
 from agents import Agent, Runner, function_tool
 from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
-from openai import AsyncAzureOpenAI
+from openai import AsyncOpenAI
 
-_client = AsyncAzureOpenAI(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-12-01-preview"),
-)
+# The client reads OPENAI_API_KEY and, if set, OPENAI_BASE_URL from the environment, so it works with
+# OpenAI or with any OpenAI-compatible endpoint (for example a LiteLLM proxy).
+_client = AsyncOpenAI()
 _model = OpenAIChatCompletionsModel(
-    model=os.environ.get("AZURE_CHAT_DEPLOYMENT", "gpt-4o-mini"),
+    model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
     openai_client=_client,
 )
 
@@ -130,7 +128,8 @@ if INSTRUMENTATION == "otel":
 
     try:
         from opentelemetry.instrumentation.genai.openai_agents import OpenAIAgentsInstrumentor
-        OpenAIAgentsInstrumentor().instrument()
+        # Keep the Agents SDK's default exporter from also sending traces to OpenAI's tracing backend.
+        OpenAIAgentsInstrumentor().instrument(disable_openai_trace_export=True)
         log.info("OpenAIAgentsInstrumentor active")
     except ImportError:
         log.warning(

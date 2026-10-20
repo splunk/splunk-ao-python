@@ -15,7 +15,7 @@ The example shows two ways to send the same agent's telemetry to Splunk AO:
 
 - Python 3.11 or later
 - A Splunk AO project and agent stream, plus a token that can send telemetry
-- An Azure OpenAI chat deployment (the script uses `AsyncAzureOpenAI`)
+- An OpenAI API key, or any OpenAI-compatible endpoint (set `OPENAI_BASE_URL`, for example to a LiteLLM proxy)
 
 ## Setup
 
@@ -47,4 +47,6 @@ the two tool calls.
 ## Notes
 
 - The tools return deterministic mock data and call no external services.
+- By default the Agents SDK also exports traces to OpenAI's tracing backend. `sdk` mode replaces that exporter, and
+  `otel` mode turns it off, so telemetry from this example goes only to Splunk AO.
 - Environment variables you export in your shell take precedence over values in `.env`.
