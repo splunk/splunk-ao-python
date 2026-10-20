@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LlmEvaluator`, `CodeEvaluator`, `DecisionEvaluator`, `Evaluators.create_custom_llm_evaluator()`,
   `Evaluators.create_decision_evaluator()` and the module-level `create_custom_llm_evaluator()` and
   `create_decision_evaluator()` accept `project_ids` and `is_global` to choose the scope of a new evaluator.
-  Passing `is_global=True` together with `project_ids`, an empty `project_ids`, or `is_global=False` with no
-  `project_ids` and no current project raises `ValidationError` before any request is sent.
+  Passing `is_global=True` together with `project_ids`, an empty `project_ids` without `is_global=True`, or
+  `is_global=False` with no `project_ids` and no current project raises `ValidationError` before any request is
+  sent.
 - `Evaluator.is_global` and `Evaluator.scope_projects` report the scope the API returned, after
   `create()`, `get()`, `list()` and `refresh()`.
 - `EvaluatorPermissionError`, a `ForbiddenError` subclass, replaces the generic 403 message when creating,
