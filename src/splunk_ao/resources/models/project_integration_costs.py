@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,12 +21,14 @@ class ProjectIntegrationCosts:
     Attributes:
         project_id (str):
         project_name (str):
+        run_id (None | str | Unset):
         total_cost (float | Unset):  Default: 0.0.
         data_points (list[IntegrationCostsDataPoint] | Unset):
     """
 
     project_id: str
     project_name: str
+    run_id: None | str | Unset = UNSET
     total_cost: float | Unset = 0.0
     data_points: list[IntegrationCostsDataPoint] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -35,6 +37,12 @@ class ProjectIntegrationCosts:
         project_id = self.project_id
 
         project_name = self.project_name
+
+        run_id: None | str | Unset
+        if isinstance(self.run_id, Unset):
+            run_id = UNSET
+        else:
+            run_id = self.run_id
 
         total_cost = self.total_cost
 
@@ -48,6 +56,8 @@ class ProjectIntegrationCosts:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"project_id": project_id, "project_name": project_name})
+        if run_id is not UNSET:
+            field_dict["run_id"] = run_id
         if total_cost is not UNSET:
             field_dict["total_cost"] = total_cost
         if data_points is not UNSET:
@@ -64,6 +74,15 @@ class ProjectIntegrationCosts:
 
         project_name = d.pop("project_name")
 
+        def _parse_run_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        run_id = _parse_run_id(d.pop("run_id", UNSET))
+
         total_cost = d.pop("total_cost", UNSET)
 
         _data_points = d.pop("data_points", UNSET)
@@ -76,7 +95,11 @@ class ProjectIntegrationCosts:
                 data_points.append(data_points_item)
 
         project_integration_costs = cls(
-            project_id=project_id, project_name=project_name, total_cost=total_cost, data_points=data_points
+            project_id=project_id,
+            project_name=project_name,
+            run_id=run_id,
+            total_cost=total_cost,
+            data_points=data_points,
         )
 
         project_integration_costs.additional_properties = d

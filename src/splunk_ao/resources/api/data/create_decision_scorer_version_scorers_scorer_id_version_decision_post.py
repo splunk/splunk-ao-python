@@ -97,7 +97,7 @@ def sync_detailed(
 
             The inherited scoreable_node_types, output_type and input_type are optional, but each must
             match the scorer when sent. The service checks these fields, and it checks answer_options
-            against the stored output_type.
+            against the stored output_type. The service also runs check_decision_model on model_name.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -128,7 +128,7 @@ def sync(
 
             The inherited scoreable_node_types, output_type and input_type are optional, but each must
             match the scorer when sent. The service checks these fields, and it checks answer_options
-            against the stored output_type.
+            against the stored output_type. The service also runs check_decision_model on model_name.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -155,7 +155,7 @@ async def asyncio_detailed(
 
             The inherited scoreable_node_types, output_type and input_type are optional, but each must
             match the scorer when sent. The service checks these fields, and it checks answer_options
-            against the stored output_type.
+            against the stored output_type. The service also runs check_decision_model on model_name.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -186,7 +186,7 @@ async def asyncio(
 
             The inherited scoreable_node_types, output_type and input_type are optional, but each must
             match the scorer when sent. The service checks these fields, and it checks answer_options
-            against the stored output_type.
+            against the stored output_type. The service also runs check_decision_model on model_name.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

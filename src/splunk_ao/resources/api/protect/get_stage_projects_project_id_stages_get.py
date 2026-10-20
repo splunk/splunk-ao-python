@@ -101,6 +101,21 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | StageDB]:
     """Get Stage
 
+     Get a stage by ID or by (project ID and name).
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_name: Stage name to look up (used with project_id when stage_id is omitted).
+        stage_id: Stage ID to look up directly.
+        ctx: Async request context.
+
+    Returns:
+        The matching stage.
+
+    Raises:
+        HTTPException: 422 if neither stage_id nor stage_name is provided.
+        GalileoServerException: 404 if the stage exists but belongs to a different project.
+
     Args:
         project_id (str):
         stage_name (None | str | Unset):
@@ -126,6 +141,21 @@ def sync(
 ) -> Optional[HTTPValidationError | StageDB]:
     """Get Stage
 
+     Get a stage by ID or by (project ID and name).
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_name: Stage name to look up (used with project_id when stage_id is omitted).
+        stage_id: Stage ID to look up directly.
+        ctx: Async request context.
+
+    Returns:
+        The matching stage.
+
+    Raises:
+        HTTPException: 422 if neither stage_id nor stage_name is provided.
+        GalileoServerException: 404 if the stage exists but belongs to a different project.
+
     Args:
         project_id (str):
         stage_name (None | str | Unset):
@@ -146,6 +176,21 @@ async def asyncio_detailed(
     project_id: str, *, client: ApiClient, stage_name: None | str | Unset = UNSET, stage_id: None | str | Unset = UNSET
 ) -> Response[HTTPValidationError | StageDB]:
     """Get Stage
+
+     Get a stage by ID or by (project ID and name).
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_name: Stage name to look up (used with project_id when stage_id is omitted).
+        stage_id: Stage ID to look up directly.
+        ctx: Async request context.
+
+    Returns:
+        The matching stage.
+
+    Raises:
+        HTTPException: 422 if neither stage_id nor stage_name is provided.
+        GalileoServerException: 404 if the stage exists but belongs to a different project.
 
     Args:
         project_id (str):
@@ -171,6 +216,21 @@ async def asyncio(
     project_id: str, *, client: ApiClient, stage_name: None | str | Unset = UNSET, stage_id: None | str | Unset = UNSET
 ) -> Optional[HTTPValidationError | StageDB]:
     """Get Stage
+
+     Get a stage by ID or by (project ID and name).
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_name: Stage name to look up (used with project_id when stage_id is omitted).
+        stage_id: Stage ID to look up directly.
+        ctx: Async request context.
+
+    Returns:
+        The matching stage.
+
+    Raises:
+        HTTPException: 422 if neither stage_id nor stage_name is provided.
+        GalileoServerException: 404 if the stage exists but belongs to a different project.
 
     Args:
         project_id (str):
