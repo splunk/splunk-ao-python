@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0]
+
 ### Added
 
 - `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Require `certifi>=2026.10.19` and `uv>=0.13.4` (where used) to remove trust in the compromised
+  eMudhra certificate authorities (CVE-2026-111943). Update CI tooling and example certificate bundle pins.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
@@ -227,6 +231,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
 [0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
 [0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
 [0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/
