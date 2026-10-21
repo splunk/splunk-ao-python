@@ -68,6 +68,10 @@ filelock = ">=3.20.1"
 idna = ">=3.15,<4"
 python-dotenv = ">=1.2.2"
 requests = ">=2.33.0"
+# Security floor only (VULN-120002 / CVE-2026-63374): not imported directly under src/;
+# pulled in transitively via httpx (required), openai, mcp and starlette.
+# Do not remove as "unused".
+anyio = ">=4.14.2"
 # Security floor only (VULN-106433 / CVE-2026-69247): not imported directly under src/;
 # pulled in transitively via pdfminer-six (crewai/all) and mcp -> pyjwt[crypto] (openai).
 # Do not remove as "unused".
