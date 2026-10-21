@@ -287,7 +287,7 @@ class CrewAIEventListener:
     @staticmethod
     def _hash_to_uuid(value: str) -> UUID:
         """Hash a string to a deterministic UUID."""
-        return UUID(hashlib.md5(value.encode()).hexdigest())
+        return UUID(bytes=hashlib.sha256(value.encode()).digest()[:16])
 
     def _generate_run_id(self, source: Any, event: Any) -> UUID:
         """Generate a consistent UUID for event tracing."""
