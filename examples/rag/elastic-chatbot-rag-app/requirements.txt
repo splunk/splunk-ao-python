@@ -84,7 +84,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.3.0
+fsspec==2026.9.0
     # via
     #   huggingface-hub
     #   langtrace-python-sdk
