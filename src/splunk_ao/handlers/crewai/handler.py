@@ -1,4 +1,3 @@
-import hashlib
 import json
 import logging
 from datetime import datetime
@@ -11,6 +10,7 @@ from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import NodeType
 from splunk_ao.utils.serialization import serialize_to_str
+from splunk_ao.utils.uuid_utils import deterministic_uuid4
 
 _logger = logging.getLogger(__name__)
 
@@ -287,7 +287,7 @@ class CrewAIEventListener:
     @staticmethod
     def _hash_to_uuid(value: str) -> UUID:
         """Hash a string to a deterministic UUID."""
-        return UUID(hashlib.md5(value.encode()).hexdigest())
+        return deterministic_uuid4(value)
 
     def _generate_run_id(self, source: Any, event: Any) -> UUID:
         """Generate a consistent UUID for event tracing."""
