@@ -32,7 +32,6 @@ from starlette.testclient import TestClient
 from yarl import URL
 
 from splunk_ao import configure_distributed_tracing, instrument_distributed_tracing, splunk_ao_context
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.http_instrumentation import (
     _client_providers,
     _configured_providers,
@@ -41,6 +40,7 @@ from splunk_ao.http_instrumentation import (
 )
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.session_context import GEN_AI_CONVERSATION_ID, SplunkAOSessionPropagator, _session_id_context
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID
 
 
 class FakeTracerProvider:

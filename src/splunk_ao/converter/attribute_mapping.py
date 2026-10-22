@@ -16,7 +16,6 @@ from splunk_ao.logger.control import ControlSpan
 
 SPLUNK_AO_SYSTEM = "splunk_ao.system"
 SPLUNK_AO_SYSTEM_VALUE = "splunk_ao_python"
-SPLUNK_AO_SIMULATION_RUN_ID = "splunk_ao.simulation.run_id"
 
 CONTENT_ALIAS_BY_GEN_AI: Mapping[str, str] = {
     "gen_ai.input.messages": "splunk_ao.input.messages",

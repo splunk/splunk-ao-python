@@ -7,13 +7,12 @@ import pytest
 from opentelemetry import context, propagate, trace
 from opentelemetry.sdk.trace import ReadableSpan
 
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.deployment import DeploymentMode
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.shared.exceptions import MissingConfigurationError
-from splunk_ao.simulation_run_context import _simulation_run_id_context
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID, _simulation_run_id_context
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
 

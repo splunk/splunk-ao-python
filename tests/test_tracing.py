@@ -6,12 +6,11 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
 
 from splunk_ao import extract_tracing_context, get_tracing_headers, splunk_ao_context
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.exceptions import SplunkAOLoggerException
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import _otel_context_state
 from splunk_ao.session_context import GEN_AI_CONVERSATION_ID, _session_id_context
-from splunk_ao.simulation_run_context import _simulation_run_id_context
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID, _simulation_run_id_context
 
 
 class RecordingSink:
