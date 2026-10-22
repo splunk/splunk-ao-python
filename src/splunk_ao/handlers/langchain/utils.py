@@ -27,6 +27,20 @@ def is_agent_node(node_name: str) -> bool:
     return node_name.lower() in ["langgraph", "agent"]
 
 
+def normalize_langgraph_output(outputs: Any, node: Node | None) -> Any:
+    """Select the graph root's terminal response without changing checkpoint state."""
+    if node is None or not node.span_params.get("_langgraph_root") or not isinstance(outputs, dict):
+        return outputs
+    messages = outputs.get("messages")
+    if not isinstance(messages, list) or not messages:
+        return outputs
+    for message in reversed(messages):
+        role = message.get("role", message.get("type")) if isinstance(message, dict) else getattr(message, "type", None)
+        if role in ("assistant", "ai", "tool", "function"):
+            return {**outputs, "messages": [message]}
+    return outputs
+
+
 def update_root_to_agent(parent_run_id: UUID | None, metadata: dict[str, Any], parent_node: Node | None) -> None:
     """Update the parent node to be an agent if it is a root-level chain and has LangGraph metadata in the children.
 
@@ -40,8 +54,10 @@ def update_root_to_agent(parent_run_id: UUID | None, metadata: dict[str, Any], p
     # Only mark as agent if parent is a root-level chain (no grandparent)
     if parent_run_id and metadata and any(key.startswith("langgraph_") for key in metadata):
         # Only convert to agent if parent is a root-level chain (no parent of its own)
-        if parent_node and parent_node.node_type == "chain" and parent_node.parent_run_id is None:
-            parent_node.node_type = "agent"
+        if parent_node and parent_node.parent_run_id is None:
+            parent_node.span_params["_langgraph_root"] = True
+            if parent_node.node_type == "chain":
+                parent_node.node_type = "agent"
 
 
 @dataclass
