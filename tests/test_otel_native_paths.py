@@ -14,7 +14,6 @@ from opentelemetry.trace.status import Status, StatusCode
 
 from galileo_core.schemas.logging.span import WorkflowSpan
 from splunk_ao import get_tracing_headers
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.decorator import (
     _agent_stream_context,
     _dataset_input_context,
@@ -35,6 +34,7 @@ from splunk_ao.otel import (
     start_splunk_ao_span,
 )
 from splunk_ao.shared.exceptions import MissingConfigurationError
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID
 
 ROUTING_KEYS = {
     "splunk_ao.project.name",

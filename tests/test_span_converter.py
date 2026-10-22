@@ -13,9 +13,10 @@ from galileo_core.schemas.logging.step import BaseStep, Metrics, StepType
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.converter import SpanConverter, span_converter
-from splunk_ao.converter.attribute_mapping import SPLUNK_AO_SIMULATION_RUN_ID, build_span_attributes
+from splunk_ao.converter.attribute_mapping import build_span_attributes
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
 from splunk_ao.schema.logged import LoggedControlSpan
+from splunk_ao.simulation_run_context import SPLUNK_AO_SIMULATION_RUN_ID
 from splunk_ao.utils.headers_data import get_package_version
 
 TRACE_ID = 0x1234567890ABCDEF1234567890ABCDEF
@@ -190,6 +191,15 @@ def test_simulation_run_id_is_a_direct_attribute_for_every_span_type(
     assert (result.attributes or {})["gen_ai.conversation.id"] == "session-1"
     assert SPLUNK_AO_SIMULATION_RUN_ID not in result.resource.attributes
     assert "splunk_ao.experiment.id" not in (result.attributes or {})
+
+
+def test_converter_normalizes_simulation_run_id_before_export() -> None:
+    result = convert(
+        WorkflowSpan(input="work", output="done", name="workflow", created_at=CREATED_AT),
+        simulation_run_id=" run-1 ",
+    )
+
+    assert (result.attributes or {})[SPLUNK_AO_SIMULATION_RUN_ID] == "run-1"
 
 
 def test_fully_populated_logged_control_span_preserves_otlp_envelope_and_attributes() -> None:
