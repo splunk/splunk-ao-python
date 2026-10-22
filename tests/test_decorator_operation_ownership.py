@@ -4,8 +4,9 @@ from collections.abc import Generator
 from unittest.mock import patch
 
 import pytest
+from opentelemetry import trace as otel_trace
 
-from splunk_ao import log, splunk_ao_context
+from splunk_ao import get_tracing_headers, log, splunk_ao_context
 from splunk_ao.schema.trace import SPAN_TYPE
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
@@ -59,6 +60,111 @@ def test_nested_decorators_share_trace_and_preserve_parenting(initialized_contex
 
     assert workflow.context.trace_id == llm.context.trace_id
     assert llm.parent.span_id == workflow.context.span_id
+    assert logger.current_parent() is None
+
+
+def test_nested_tools_activate_their_own_context_and_preserve_parenting(initialized_context: None) -> None:
+    # Given: two decorated tools nested beneath an agent, with no framework callbacks.
+    headers = {}
+
+    @log(span_type="tool", name="inner")
+    def inner() -> str:
+        headers["inner"] = get_tracing_headers()["traceparent"]
+        return "done"
+
+    @log(span_type="tool", name="outer")
+    def outer() -> str:
+        headers["outer"] = get_tracing_headers()["traceparent"]
+        return inner()
+
+    @log(span_type="agent", name="agent")
+    def agent() -> str:
+        return outer()
+
+    # When: the nested calls finish normally.
+    assert agent() == "done"
+
+    # Then: every tool is active during execution and keeps the actual calling tool as parent.
+    logger = splunk_ao_context.get_logger_instance()
+    spans = {span.name: span for span in logger._sink.spans}
+    assert len(spans) == 3
+    agent_span = spans["invoke_agent agent"]
+    outer_span = spans["execute_tool outer"]
+    inner_span = spans["execute_tool inner"]
+    assert outer_span.parent == agent_span.context
+    assert inner_span.parent == outer_span.context
+    assert agent_span.context.trace_id == outer_span.context.trace_id == inner_span.context.trace_id
+    for name, span in (("inner", inner_span), ("outer", outer_span)):
+        assert int(headers[name].split("-")[2], 16) == span.context.span_id
+        assert span.attributes["gen_ai.operation.name"] == "execute_tool"
+    assert logger.current_parent() is None
+    assert not otel_trace.get_current_span().get_span_context().is_valid
+
+
+@pytest.mark.asyncio
+async def test_async_nested_tools_preserve_parenting_and_caller_context(initialized_context: None) -> None:
+    # Given: nested async tools within a caller-owned agent operation.
+    logger = splunk_ao_context.get_logger_instance()
+    logger.start_trace(input="request")
+    caller = logger.add_agent_span(input="request", name="caller")
+    caller_context = otel_trace.get_current_span().get_span_context()
+    contexts = {}
+
+    @log(span_type="tool", name="inner")
+    async def inner() -> str:
+        contexts["inner"] = otel_trace.get_current_span().get_span_context()
+        await asyncio.sleep(0)
+        return "done"
+
+    @log(span_type="tool", name="outer")
+    async def outer() -> str:
+        contexts["outer"] = otel_trace.get_current_span().get_span_context()
+        return await inner()
+
+    # When: async decorated work completes beneath that caller.
+    assert await outer() == "done"
+
+    # Then: only decorator-owned operations complete, with their original active identities.
+    assert logger.current_parent() is caller
+    assert otel_trace.get_current_span().get_span_context() == caller_context
+    logger.conclude(output="done", conclude_all=True)
+    spans = {span.name: span for span in logger._sink.spans}
+    assert len(spans) == 3
+    assert spans["execute_tool outer"].parent == spans["invoke_agent caller"].context
+    assert spans["execute_tool inner"].parent == spans["execute_tool outer"].context
+    assert contexts["outer"] == spans["execute_tool outer"].context
+    assert contexts["inner"] == spans["execute_tool inner"].context
+
+
+@pytest.mark.parametrize("sibling_type", ["tool", "llm", "retriever", "workflow", "agent"])
+def test_calls_after_nested_tool_remain_siblings(initialized_context: None, sibling_type: SPAN_TYPE) -> None:
+    @log(span_type="tool", name="inner")
+    def inner() -> str:
+        return "inner result"
+
+    @log(span_type="tool", name="outer")
+    def outer() -> str:
+        return inner()
+
+    @log(span_type=sibling_type, name="sibling")
+    def sibling() -> str:
+        return "sibling result"
+
+    @log(span_type="agent", name="caller")
+    def caller() -> str:
+        outer()
+        return sibling()
+
+    assert caller() == "sibling result"
+    logger = splunk_ao_context.get_logger_instance()
+    spans = logger._sink.spans
+    assert len(spans) == 4
+    agent = next(span for span in spans if span.name == "invoke_agent caller")
+    outer_span = next(span for span in spans if span.name == "execute_tool outer")
+    inner_span = next(span for span in spans if span.name == "execute_tool inner")
+    sibling_span = next(span for span in spans if span not in (agent, outer_span, inner_span))
+    assert inner_span.parent == outer_span.context
+    assert outer_span.parent == sibling_span.parent == agent.context
     assert logger.current_parent() is None
 
 
@@ -164,8 +270,11 @@ def test_decorator_does_not_conclude_caller_owned_trace(initialized_context: Non
     assert logger.current_parent() is None
 
 
-def test_user_exception_is_preserved_and_owned_trace_is_concluded(initialized_context: None) -> None:
-    @log(span_type="workflow")
+@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+def test_user_exception_is_preserved_and_owned_trace_is_concluded(
+    initialized_context: None, span_type: SPAN_TYPE
+) -> None:
+    @log(span_type=span_type)
     def failing_operation() -> None:
         raise RuntimeError("application failure")
 
@@ -177,10 +286,17 @@ def test_user_exception_is_preserved_and_owned_trace_is_concluded(initialized_co
     assert splunk_ao_context.get_current_trace() is None
 
 
-def test_sync_generator_concludes_on_close_and_preserves_errors(initialized_context: None) -> None:
-    @log(span_type="workflow")
+@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+def test_sync_generator_concludes_on_close_and_preserves_errors(
+    initialized_context: None, span_type: SPAN_TYPE
+) -> None:
+    @log(span_type="tool", name="child")
+    def child() -> str:
+        return "first"
+
+    @log(span_type=span_type, name="stream")
     def stream(fail: bool = False):
-        yield "first"
+        yield child()
         if fail:
             raise ValueError("stream failure")
         yield "second"
@@ -197,14 +313,23 @@ def test_sync_generator_concludes_on_close_and_preserves_errors(initialized_cont
     with pytest.raises(ValueError, match="stream failure"):
         next(failing_stream)
     assert splunk_ao_context.get_current_trace() is None
+    spans = splunk_ao_context.get_logger_instance()._sink.spans
+    parents = [span.context for span in spans if span.name.endswith(" stream")]
+    children = [span for span in spans if span.name == "execute_tool child"]
+    assert len(spans) == 4
+    assert len(children) == 2
+    assert all(child.parent in parents for child in children)
 
 
 @pytest.mark.asyncio
-async def test_async_operations_have_invocation_local_ownership(initialized_context: None) -> None:
+@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+async def test_async_operations_have_invocation_local_ownership(
+    initialized_context: None, span_type: SPAN_TYPE
+) -> None:
     entered = 0
     both_entered = asyncio.Event()
 
-    @log(span_type="workflow")
+    @log(span_type=span_type)
     async def operation(value: str) -> str:
         nonlocal entered
         entered += 1
@@ -223,10 +348,15 @@ async def test_async_operations_have_invocation_local_ownership(initialized_cont
 
 
 @pytest.mark.asyncio
-async def test_async_generator_concludes_on_close(initialized_context: None) -> None:
-    @log(span_type="workflow")
+@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+async def test_async_generator_concludes_on_close(initialized_context: None, span_type: SPAN_TYPE) -> None:
+    @log(span_type="tool", name="child")
+    async def child() -> str:
+        return "first"
+
+    @log(span_type=span_type, name="stream")
     async def stream():
-        yield "first"
+        yield await child()
         yield "second"
 
     result = stream()
@@ -237,6 +367,44 @@ async def test_async_generator_concludes_on_close(initialized_context: None) -> 
     logger = splunk_ao_context.get_logger_instance()
     assert logger.current_parent() is None
     assert splunk_ao_context.get_current_trace() is None
+    spans = logger._sink.spans
+    assert len(spans) == 2
+    parent = next(span for span in spans if span.name.endswith(" stream"))
+    child_span = next(span for span in spans if span.name == "execute_tool child")
+    assert child_span.parent == parent.context
+
+
+@pytest.mark.asyncio
+async def test_cancelled_tool_restores_caller_context(initialized_context: None) -> None:
+    logger = splunk_ao_context.get_logger_instance()
+    caller = logger.start_trace(input="request")
+    caller_context = otel_trace.get_current_span().get_span_context()
+
+    @log(span_type="tool")
+    async def cancelled() -> None:
+        raise asyncio.CancelledError()
+
+    with pytest.raises(asyncio.CancelledError):
+        await cancelled()
+
+    assert logger.current_parent() is caller
+    assert otel_trace.get_current_span().get_span_context() == caller_context
+    assert len(logger._sink.spans) == 1
+    assert logger._sink.spans[0].status.status_code == otel_trace.StatusCode.ERROR
+    logger.conclude(output="done")
+
+
+def test_manual_tool_keeps_caller_active(initialized_context: None) -> None:
+    # Decorating tools must not change the leaf semantics of the public logger method.
+    logger = splunk_ao_context.get_logger_instance()
+    logger.start_trace(input="request")
+    caller = logger.add_agent_span(input="request", name="caller")
+    caller_context = otel_trace.get_current_span().get_span_context()
+    logger.add_tool_span(input="input", output="output", name="manual")
+
+    assert logger.current_parent() is caller
+    assert otel_trace.get_current_span().get_span_context() == caller_context
+    logger.conclude(output="done", conclude_all=True)
 
 
 def test_flush_and_flush_all_do_not_conclude_active_trace(initialized_context: None) -> None:

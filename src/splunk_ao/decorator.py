@@ -812,6 +812,20 @@ class SplunkAODecorator:
                 else:
                     span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)
                 _get_or_init_list(_span_stack_context).append(span)
+            elif span_type == "tool":
+                # A tool must be active while its function runs so nested calls inherit it.
+                valid_params = inspect.signature(client_instance.add_tool_span).parameters
+                kwargs = {**span_params, "input": input_}
+                tool_span = client_instance.add_tool_span(
+                    **{
+                        key: value
+                        for key, value in kwargs.items()
+                        if key in valid_params and key not in {"output", "redacted_output"}
+                    }
+                )
+                if tool_span is None:
+                    raise RuntimeError("Unable to start a Splunk AO tool span")
+                client_instance._set_current_parent(tool_span)
         except Exception:
             if owns_trace:
                 self._conclude_owned_trace(call_state, "", 500)
@@ -1035,20 +1049,21 @@ class SplunkAODecorator:
                 span_params["created_at"] = created_at
                 span_params["duration_ns"] = 0
 
-            # Workflow and agent spans are "concludable" - they need to be concluded
-            # Default (no span_type) is treated as workflow
-            if not span_type or is_concludable_span_type(span_type):
-                # Pop from stack and conclude the workflow/agent span
-                if stack:
+            # Decorated tools, workflows, and agents start before execution.
+            if not span_type or is_concludable_span_type(span_type) or span_type == "tool":
+                if span_type != "tool" and stack:
                     stack.pop()
                     _span_stack_context.set(stack)
 
                 status_code = span_params.get("status_code")
-                logger.conclude(output=output, duration_ns=span_params["duration_ns"], status_code=status_code)
+                conclude_kwargs = {"redacted_output": redacted_output} if span_type == "tool" else {}
+                logger.conclude(
+                    output=output, duration_ns=span_params["duration_ns"], status_code=status_code, **conclude_kwargs
+                )
 
             else:
-                # Non-concludable spans (llm, tool, retriever) are  added to the parent
-                span_methods = {"llm": "add_llm_span", "tool": "add_tool_span", "retriever": "add_retriever_span"}
+                # LLM and retriever spans are added to the parent after execution.
+                span_methods = {"llm": "add_llm_span", "retriever": "add_retriever_span"}
 
                 if span_type in span_methods:
                     method_name = span_methods[span_type]
