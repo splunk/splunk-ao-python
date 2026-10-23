@@ -89,6 +89,31 @@ if TYPE_CHECKING:
 # Type alias for metadata values that can be auto-converted to strings
 MetadataValue = str | bool | int | float | None
 StepT = TypeVar("StepT", bound=BaseStep)
+LookupT = TypeVar("LookupT")
+
+# Look-ups after a lost create race. The process that won may still be granting access to a new project.
+LOST_RACE_LOOKUP_ATTEMPTS = 5
+LOST_RACE_LOOKUP_DELAY_SECONDS = 0.2
+
+
+def _find_after_lost_create_race(lookup: Callable[[], LookupT | None], create_error: Exception) -> LookupT:
+    """Return what another process just created, or re-raise the error from our own create.
+
+    Processes that start together can all find nothing and all try to create. The server keeps one and
+    rejects the rest, for example with HTTP 400 for an agent stream and HTTP 422 for a project. Look again,
+    and use what the winner made. If it is still not there, the create failed for another reason.
+    """
+    for attempt in range(LOST_RACE_LOOKUP_ATTEMPTS):
+        try:
+            found = lookup()
+        except Exception as lookup_error:
+            raise create_error from lookup_error
+        if found is not None:
+            return found
+        if attempt < LOST_RACE_LOOKUP_ATTEMPTS - 1:
+            time.sleep(LOST_RACE_LOOKUP_DELAY_SECONDS)
+    raise create_error
+
 
 DEFAULT_TERMINATE_TIMEOUT_SECONDS = 90
 # Absolute threshold above which a slow SplunkAOLogger.terminate() shutdown is
@@ -722,15 +747,23 @@ class SplunkAOLogger(TracesLogger):
         project_obj = projects_client.get(name=self.project_name)
         if project_obj is None:
             # Create project if it doesn't exist
-            project = projects_client.create(name=self.project_name)
-            if project is None:
-                raise SplunkAOLoggerException(f"Failed to create project {self.project_name}.")
-            self.project_id = project.id
-            self._logger.info(f"🚀 Creating new project... project {self.project_name} created!")
-        else:
-            if project_obj.type != "gen_ai":
-                raise Exception(f"Project {self.project_name} is not a Splunk AO project")
-            self.project_id = project_obj.id
+            try:
+                project = projects_client.create(name=self.project_name)
+            except Exception as create_error:
+                # Another process created it first. Use that one.
+                project_obj = _find_after_lost_create_race(
+                    lambda: projects_client.get(name=self.project_name), create_error
+                )
+                self._logger.info(f"Project {self.project_name} was created by another process; using it.")
+            else:
+                if project is None:
+                    raise SplunkAOLoggerException(f"Failed to create project {self.project_name}.")
+                self.project_id = project.id
+                self._logger.info(f"🚀 Creating new project... project {self.project_name} created!")
+                return
+        if project_obj.type != "gen_ai":
+            raise Exception(f"Project {self.project_name} is not a Splunk AO project")
+        self.project_id = project_obj.id
 
     @nop_sync
     def _init_agent_stream(self) -> None:
@@ -739,8 +772,19 @@ class SplunkAOLogger(TracesLogger):
         log_stream_obj = log_streams_client.get(name=self.agent_stream_name, project_id=self.project_id)
         if log_stream_obj is None:
             # Create log stream if it doesn't exist
-            self.agent_stream_id = log_streams_client.create(name=self.agent_stream_name, project_id=self.project_id).id
-            self._logger.info(f"🚀 Creating new agent stream... agent stream {self.agent_stream_name} created!")
+            try:
+                created = log_streams_client.create(name=self.agent_stream_name, project_id=self.project_id)
+            except Exception as create_error:
+                # Another process created it first. Use that one.
+                log_stream_obj = _find_after_lost_create_race(
+                    lambda: log_streams_client.get(name=self.agent_stream_name, project_id=self.project_id),
+                    create_error,
+                )
+                self.agent_stream_id = log_stream_obj.id
+                self._logger.info(f"Agent stream {self.agent_stream_name} was created by another process; using it.")
+            else:
+                self.agent_stream_id = created.id
+                self._logger.info(f"🚀 Creating new agent stream... agent stream {self.agent_stream_name} created!")
         else:
             self.agent_stream_id = log_stream_obj.id
 
