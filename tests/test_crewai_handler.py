@@ -1,10 +1,15 @@
+import asyncio
+import inspect
 import sys
 import uuid
+from contextvars import copy_context
 from datetime import datetime
+from types import ModuleType
 from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry import trace
 from opentelemetry.sdk.trace import ReadableSpan
 
 # Skip all tests in this module on Python 3.14+ (crewai doesn't support it yet)
@@ -92,6 +97,310 @@ class RecordingSink:
 
     def shutdown(self) -> None:
         return None
+
+
+@pytest.fixture
+def crewai_bus():
+    # Given: a bus that can deliver synchronous callbacks in reverse worker order.
+    # Async listeners run without yielding, as in CrewAI's dedicated event loop.
+    modules = {}
+    events = {}
+    for group, names in {
+        "crew_events": ["CrewKickoffStartedEvent", "CrewKickoffCompletedEvent", "CrewKickoffFailedEvent"],
+        "task_events": ["TaskStartedEvent", "TaskCompletedEvent", "TaskFailedEvent"],
+        "agent_events": ["AgentExecutionStartedEvent", "AgentExecutionCompletedEvent", "AgentExecutionErrorEvent"],
+        "llm_events": ["LLMCallStartedEvent", "LLMCallCompletedEvent", "LLMCallFailedEvent"],
+        "tool_usage_events": ["ToolUsageStartedEvent", "ToolUsageFinishedEvent", "ToolUsageErrorEvent"],
+    }.items():
+        module = ModuleType(f"crewai.utilities.events.{group}")
+        for name in names:
+            events[name] = type(name, (MockEvent,), {})
+            setattr(module, name, events[name])
+        modules[module.__name__] = module
+
+    callbacks = {}
+    bus = Mock()
+
+    def on(event_type):
+        def register(callback):
+            callbacks[event_type] = callback
+            return callback
+
+        return register
+
+    bus.on.side_effect = on
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    with (
+        patch("splunk_ao.handlers.crewai.handler._crewai_imports_resolved", True),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", False),
+        patch("splunk_ao.handlers.crewai.handler.LITE_LLM_AVAILABLE", False),
+    ):
+        listener = CrewAIEventListener(splunk_ao_logger=logger)
+    with (
+        patch.dict(sys.modules, modules),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_AVAILABLE", True),
+        patch("splunk_ao.handlers.crewai.handler.CREWAI_EVENTS_MODULE_AVAILABLE", False),
+    ):
+        listener.setup_listeners(bus)
+
+    async def deliver(batch):
+        pending = []
+        for source, event in batch:
+            callback = callbacks[type(event)]
+            if inspect.iscoroutinefunction(callback):
+                # Each event is delivered in a distinct task/copied context.
+                pending.append(asyncio.create_task(callback(source, event)))
+            else:
+                pending.append((callback, source, event))
+        if pending and isinstance(pending[0], tuple):
+            for callback, source, event in reversed(pending):
+                copy_context().run(callback, source, event)
+        else:
+            await asyncio.gather(*pending)
+
+    try:
+        yield listener, logger, sink, events, deliver
+    finally:
+        logger.terminate()
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize("legacy_agent_source", [False, True])
+def test_crewai_event_bus_preserves_callback_order_and_context(crewai_bus, asynchronous, legacy_agent_source) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    agent = MockAgent(crew=crew)
+    task = MockTask(agent=agent)
+    agent_source = MockSource() if legacy_agent_source else agent
+
+    async def run(turns):
+        for turn in turns:
+            call_id = f"call-{turn}"
+            await deliver(
+                [
+                    (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={"turn": turn})),
+                    (task, events["TaskStartedEvent"](task=task)),
+                    (
+                        agent_source,
+                        events["AgentExecutionStartedEvent"](agent=agent, task=task, task_prompt="Question"),
+                    ),
+                    (
+                        MockSource(),
+                        events["LLMCallStartedEvent"](
+                            call_id=call_id,
+                            model="local-model",
+                            agent_id=str(agent.id),
+                            task_id=str(task.id),
+                            messages=[],
+                        ),
+                    ),
+                    (
+                        MockSource(),
+                        events["LLMCallCompletedEvent"](
+                            call_id=call_id, agent_id=str(agent.id), task_id=str(task.id), response=f"Reply {turn}"
+                        ),
+                    ),
+                    (
+                        agent_source,
+                        events["AgentExecutionCompletedEvent"](agent=agent, task=task, output=f"Reply {turn}"),
+                    ),
+                    (task, events["TaskCompletedEvent"](task=task, output=MockOutput(f"Reply {turn}"))),
+                    (crew, events["CrewKickoffCompletedEvent"](output=MockOutput(f"Reply {turn}"))),
+                ]
+            )
+            # Then: one complete tree, clean state, and no context leaked into the caller.
+            spans = sink.spans[turn * 4 :]
+            assert len(spans) == 4
+            by_operation = {span.attributes["gen_ai.operation.name"]: span for span in spans}
+            llm = by_operation["chat"]
+            agent_span = by_operation["invoke_agent"]
+            task_span, root = [span for span in spans if span.attributes["gen_ai.operation.name"] == "invoke_workflow"]
+            assert llm.parent == agent_span.context
+            assert agent_span.parent == task_span.context
+            assert task_span.parent == root.context
+            assert logger.current_parent() is None
+            assert not trace.get_current_span().get_span_context().is_valid
+            assert not listener._handler.get_nodes()
+            assert not listener._handler._active_steps
+            assert not listener._crew_runs
+
+    try:
+        # When: the same listener/crew is reused from sync or async application code.
+        if asynchronous:
+            asyncio.run(run(range(3)))
+        else:
+            for turn in range(3):
+                asyncio.run(run([turn]))
+        assert len({span.context.trace_id for span in sink.spans}) == 3
+    finally:
+        logger.terminate()
+
+
+def test_crewai_event_bus_isolates_overlapping_crews(crewai_bus) -> None:
+    # Given: two crews sharing one listener and logger, with interleaved callbacks.
+    listener, logger, sink, events, deliver = crewai_bus
+    crews = [MockCrew(), MockCrew()]
+    agents = [MockAgent(crew=crew) for crew in crews]
+    tasks = [MockTask(agent=agent) for agent in agents]
+    starts, ends = [], []
+    for index, (crew, agent, task) in enumerate(zip(crews, agents, tasks, strict=True)):
+        starts.extend(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name=f"Crew {index}", inputs={})),
+                (task, events["TaskStartedEvent"](task=task)),
+                (agent, events["AgentExecutionStartedEvent"](agent=agent, task=task, task_prompt="Question")),
+                (
+                    MockSource(),
+                    events["LLMCallStartedEvent"](
+                        call_id=str(index),
+                        agent_id=str(agent.id),
+                        task_id=str(task.id),
+                        model="local-model",
+                        messages=[],
+                    ),
+                ),
+            ]
+        )
+        ends.extend(
+            [
+                (
+                    MockSource(),
+                    events["LLMCallCompletedEvent"](
+                        call_id=str(index), agent_id=str(agent.id), task_id=str(task.id), response="Reply"
+                    ),
+                ),
+                (agent, events["AgentExecutionCompletedEvent"](agent=agent, task=task, output="Reply")),
+                (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply"))),
+                (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+            ]
+        )
+
+    # When: both trees open before either completes.
+    asyncio.run(deliver(starts + ends))
+
+    # Then: each tree has its own trace and complete, consistent hierarchy.
+    assert len(sink.spans) == 8
+    roots = [span for span in sink.spans if span.parent is None]
+    assert len(roots) == 2
+    for root in roots:
+        tree = [span for span in sink.spans if span.context.trace_id == root.context.trace_id]
+        assert len(tree) == 4
+        assert all(span.parent in [other.context for other in tree] for span in tree if span is not root)
+    assert not listener._crew_runs
+    assert not listener._handler._active_steps
+    assert logger.current_parent() is None
+    assert not trace.get_current_span().get_span_context().is_valid
+
+
+def test_crewai_event_bus_failure_releases_unfinished_children(crewai_bus) -> None:
+    # Given: a crew fails while a child is unfinished.
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    task = MockTask(agent=MockAgent(crew=crew))
+    asyncio.run(
+        deliver(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                (task, events["TaskStartedEvent"](task=task)),
+                (crew, events["CrewKickoffFailedEvent"](error="synthetic failure")),
+            ]
+        )
+    )
+
+    # Then: only the failed root is exported and no invocation/context remains.
+    assert len(sink.spans) == 1
+    assert not listener._crew_runs
+    assert not listener._handler.get_nodes()
+    assert not listener._handler._active_steps
+    assert logger.current_parent() is None
+    assert not trace.get_current_span().get_span_context().is_valid
+
+
+def test_crewai_event_bus_preserves_caller_owned_context(crewai_bus) -> None:
+    # Given: the application has an active operation when CrewAI emits its events.
+    listener, logger, sink, events, deliver = crewai_bus
+    listener._handler._start_new_trace = False
+    logger.start_trace(input="Request")
+    caller = logger.add_workflow_span(input="Request", name="Caller")
+    caller_context = trace.get_current_span().get_span_context()
+    crew = MockCrew()
+    task = MockTask(agent=MockAgent(crew=crew))
+    try:
+        # When: callbacks finish in independent delivery tasks.
+        asyncio.run(
+            deliver(
+                [
+                    (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                    (task, events["TaskStartedEvent"](task=task)),
+                    (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply"))),
+                    (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+                ]
+            )
+        )
+
+        # Then: the subtree inherits the caller, and callback cleanup leaves it open.
+        assert len(sink.spans) == 2
+        assert sink.spans[-1].parent == caller_context
+        assert logger.current_parent() is caller
+        assert trace.get_current_span().get_span_context() == caller_context
+        assert not listener._crew_runs
+    finally:
+        logger.conclude(output="Reply")
+        logger.conclude(output="Reply")
+
+
+def test_crewai_event_bus_inherits_native_otel_parent(crewai_bus) -> None:
+    # Given: standalone handler ownership beneath a caller-owned native OTel span.
+    listener, logger, sink, events, deliver = crewai_bus
+    caller_context = trace.SpanContext(trace_id=123, span_id=456, is_remote=True, trace_flags=trace.TraceFlags(1))
+    crew = MockCrew()
+    with trace.use_span(trace.NonRecordingSpan(caller_context)):
+        # When: the handler opens and concludes its own SDK trace.
+        asyncio.run(
+            deliver(
+                [
+                    (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                    (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+                ]
+            )
+        )
+
+        # Then: it inherits W3C parentage and leaves the caller context active.
+        assert len(sink.spans) == 1
+        assert sink.spans[0].parent == caller_context
+        assert trace.get_current_span().get_span_context() == caller_context
+        assert logger.current_parent() is None
+        assert not listener._crew_runs
+
+
+def test_crewai_event_bus_callback_exception_releases_invocation(crewai_bus) -> None:
+    # Given: a malformed callback fails after the crew root was activated.
+    listener, logger, _sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    asyncio.run(deliver([(crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={}))]))
+
+    # When: processing the completion fails before it can conclude the root.
+    with patch.object(listener, "_handle_crew_kickoff_completed", side_effect=ValueError("synthetic event failure")):
+        with pytest.raises(ValueError, match="synthetic event failure"):
+            asyncio.run(deliver([(crew, events["CrewKickoffCompletedEvent"](output=MockOutput()))]))
+
+    # Then: no pending callback state or caller context remains.
+    assert not listener._crew_runs
+    assert not listener._handler.get_nodes()
+    assert not listener._handler._active_steps
+    assert logger.current_parent() is None
+    assert not trace.get_current_span().get_span_context().is_valid
+
+
+def test_crewai_event_bus_without_async_api_retains_registration(crewai_callback) -> None:
+    bus = Mock(spec=["on"])
+    callback = Mock()
+
+    crewai_callback._on(bus, MockEvent)(callback)
+
+    bus.on.assert_called_once_with(MockEvent)
+    bus.on.return_value.assert_called_once_with(callback)
 
 
 def test_crewai_adapter_enqueues_task_at_callback_end_without_flush() -> None:

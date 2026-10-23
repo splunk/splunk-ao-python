@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships.
+
 ## [0.6.0]
 
 ### Added

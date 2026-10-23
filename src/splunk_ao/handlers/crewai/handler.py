@@ -1,7 +1,11 @@
 import hashlib
 import json
 import logging
+from collections.abc import Callable
+from contextvars import Context, copy_context
+from dataclasses import dataclass, field
 from datetime import datetime
+from functools import wraps
 from typing import Any
 from uuid import UUID
 
@@ -53,6 +57,17 @@ def _resolve_crewai_imports() -> None:
         litellm = None
 
 
+@dataclass
+class _CrewRun:
+    """Callback state retained only until one crew invocation ends."""
+
+    handler: SplunkAOBaseHandler
+    context: Context
+    tasks: set[str] = field(default_factory=set)
+    agent_run_ids: dict[tuple[str, str], UUID] = field(default_factory=dict)
+    active_tool_run_id: UUID | None = None
+
+
 class CrewAIEventListener:
     """
     CrewAI event listener for logging traces to the Splunk AO platform.
@@ -78,6 +93,8 @@ class CrewAIEventListener:
             integration="crewai",
         )
         self._active_tool_run_id: UUID | None = None
+        self._agent_run_ids: dict[tuple[str, str], UUID] = {}
+        self._crew_runs: dict[UUID, _CrewRun] = {}
 
         if CREWAI_AVAILABLE:
             # Register with the event bus directly instead of inheriting from
@@ -96,6 +113,90 @@ class CrewAIEventListener:
             if not litellm.success_callback:
                 litellm.success_callback = []
             litellm.success_callback.append(self.lite_llm_usage_callback)
+
+    def _on(self, event_bus: Any, event_type: type) -> Callable:
+        """Use CrewAI's event loop instead of its unordered synchronous worker pool."""
+        # Preserve registration for older event buses without an async event API.
+        if not callable(getattr(event_bus, "aemit", None)):
+            return event_bus.on(event_type)
+
+        def register(callback: Callable[[Any, Any], None]) -> Callable:
+            @wraps(callback)
+            async def receive(source: Any, event: Any) -> None:
+                # Deliberately no await: one lifecycle mutation must finish before
+                # the next event's callback can run on the bus's event loop.
+                self._dispatch_event(callback, source, event)
+
+            return event_bus.on(event_type)(receive)
+
+        return register
+
+    def _dispatch_event(self, callback: Callable[[Any, Any], None], source: Any, event: Any) -> None:
+        """Keep each crew's callbacks in one context, independent of delivery tasks."""
+        name = callback.__name__
+        crew_id: UUID | None
+        if name.startswith("on_crew_kickoff_"):
+            crew_id = self._generate_run_id(source, event)
+        else:
+            task = getattr(event, "task", None)
+            agent = getattr(event, "agent", None) or getattr(task, "agent", None)
+            crew = getattr(agent, "crew", None)
+            crew_id = self._to_uuid(getattr(crew, "id", None))
+            if crew_id is None:
+                task_id = str(getattr(event, "task_id", None) or getattr(task, "id", ""))
+                matches = [run_id for run_id, run in self._crew_runs.items() if task_id in run.tasks]
+                if len(matches) == 1:
+                    crew_id = matches[0]
+                elif len(self._crew_runs) == 1:
+                    crew_id = next(iter(self._crew_runs))
+
+        if crew_id is None:
+            _logger.debug("Ignoring CrewAI callback without an identifiable crew: %s", name)
+            return
+
+        if name == "on_crew_kickoff_started" and crew_id not in self._crew_runs:
+            handler = self._handler
+            if self._crew_runs:
+                handler = SplunkAOBaseHandler(
+                    splunk_ao_logger=handler._splunk_ao_logger,
+                    start_new_trace=handler._start_new_trace,
+                    flush_on_chain_end=handler._flush_on_chain_end,
+                    integration="crewai",
+                )
+            self._crew_runs[crew_id] = _CrewRun(handler, copy_context())
+
+        run = self._crew_runs.get(crew_id)
+        if run is None:
+            _logger.debug("Ignoring CrewAI callback without an active crew: %s", name)
+            return
+
+        previous_handler, previous_tool, previous_agents = self._handler, self._active_tool_run_id, self._agent_run_ids
+        self._handler, self._active_tool_run_id, self._agent_run_ids = (
+            run.handler,
+            run.active_tool_run_id,
+            run.agent_run_ids,
+        )
+        if name == "on_task_started":
+            run.tasks.add(str(getattr(getattr(event, "task", source), "id", "")))
+        try:
+            run.context.run(callback, source, event)
+        except Exception:
+            # A malformed event must not retain an unfinished invocation forever.
+            try:
+                run.context.run(run.handler._conclude_owned_state_on_failure)
+            finally:
+                run.context.run(run.handler._reset_handler_state)
+                self._crew_runs.pop(crew_id, None)
+            raise
+        finally:
+            run.active_tool_run_id = self._active_tool_run_id
+            self._handler, self._active_tool_run_id, self._agent_run_ids = (
+                previous_handler,
+                previous_tool,
+                previous_agents,
+            )
+            if name in ("on_crew_kickoff_completed", "on_crew_kickoff_failed"):
+                self._crew_runs.pop(crew_id, None)
 
     def setup_listeners(self, crewai_event_bus: Any) -> None:
         """Setup event listeners for CrewAI events."""
@@ -179,108 +280,108 @@ class CrewAIEventListener:
             MemoryRetrievalFailedEvent = None
 
         # Crew event handlers
-        @crewai_event_bus.on(CrewKickoffStartedEvent)
+        @self._on(crewai_event_bus, CrewKickoffStartedEvent)
         def on_crew_kickoff_started(source: Any, event: CrewKickoffStartedEvent) -> None:
             self._handle_crew_kickoff_started(source, event)
 
-        @crewai_event_bus.on(CrewKickoffCompletedEvent)
+        @self._on(crewai_event_bus, CrewKickoffCompletedEvent)
         def on_crew_kickoff_completed(source: Any, event: CrewKickoffCompletedEvent) -> None:
             self._handle_crew_kickoff_completed(source, event)
 
-        @crewai_event_bus.on(CrewKickoffFailedEvent)
+        @self._on(crewai_event_bus, CrewKickoffFailedEvent)
         def on_crew_kickoff_failed(source: Any, event: CrewKickoffFailedEvent) -> None:
             self._handle_crew_kickoff_failed(source, event)
 
         # Agent event handlers
-        @crewai_event_bus.on(AgentExecutionStartedEvent)
+        @self._on(crewai_event_bus, AgentExecutionStartedEvent)
         def on_agent_execution_started(source: Any, event: AgentExecutionStartedEvent) -> None:
             self._handle_agent_execution_started(source, event)
 
-        @crewai_event_bus.on(AgentExecutionCompletedEvent)
+        @self._on(crewai_event_bus, AgentExecutionCompletedEvent)
         def on_agent_execution_completed(source: Any, event: AgentExecutionCompletedEvent) -> None:
             self._handle_agent_execution_completed(source, event)
 
-        @crewai_event_bus.on(AgentExecutionErrorEvent)
+        @self._on(crewai_event_bus, AgentExecutionErrorEvent)
         def on_agent_execution_error(source: Any, event: AgentExecutionErrorEvent) -> None:
             self._handle_agent_execution_error(source, event)
 
         # Task event handlers
-        @crewai_event_bus.on(TaskStartedEvent)
+        @self._on(crewai_event_bus, TaskStartedEvent)
         def on_task_started(source: Any, event: TaskStartedEvent) -> None:
             self._handle_task_started(source, event)
 
-        @crewai_event_bus.on(TaskCompletedEvent)
+        @self._on(crewai_event_bus, TaskCompletedEvent)
         def on_task_completed(source: Any, event: TaskCompletedEvent) -> None:
             self._handle_task_completed(source, event)
 
-        @crewai_event_bus.on(TaskFailedEvent)
+        @self._on(crewai_event_bus, TaskFailedEvent)
         def on_task_failed(source: Any, event: TaskFailedEvent) -> None:
             self._handle_task_failed(source, event)
 
         # Tool event handlers
-        @crewai_event_bus.on(ToolUsageStartedEvent)
+        @self._on(crewai_event_bus, ToolUsageStartedEvent)
         def on_tool_usage_started(source: Any, event: ToolUsageStartedEvent) -> None:
             self._handle_tool_usage_started(source, event)
 
-        @crewai_event_bus.on(ToolUsageFinishedEvent)
+        @self._on(crewai_event_bus, ToolUsageFinishedEvent)
         def on_tool_usage_finished(source: Any, event: ToolUsageFinishedEvent) -> None:
             self._handle_tool_usage_finished(source, event)
 
-        @crewai_event_bus.on(ToolUsageErrorEvent)
+        @self._on(crewai_event_bus, ToolUsageErrorEvent)
         def on_tool_usage_error(source: Any, event: ToolUsageErrorEvent) -> None:
             self._handle_tool_usage_error(source, event)
 
         # LLM event handlers
-        @crewai_event_bus.on(LLMCallStartedEvent)
+        @self._on(crewai_event_bus, LLMCallStartedEvent)
         def on_llm_call_started(source: Any, event: LLMCallStartedEvent) -> None:
             self._handle_llm_call_started(source, event)
 
-        @crewai_event_bus.on(LLMCallCompletedEvent)
+        @self._on(crewai_event_bus, LLMCallCompletedEvent)
         def on_llm_call_completed(source: Any, event: LLMCallCompletedEvent) -> None:
             self._handle_llm_call_completed(source, event)
 
-        @crewai_event_bus.on(LLMCallFailedEvent)
+        @self._on(crewai_event_bus, LLMCallFailedEvent)
         def on_llm_call_failed(source: Any, event: LLMCallFailedEvent) -> None:
             self._handle_llm_call_failed(source, event)
 
         # Memory event handlers (only available in CrewAI >= 0.177.0)
         if CREWAI_EVENTS_MODULE_AVAILABLE:
 
-            @crewai_event_bus.on(MemoryQueryStartedEvent)
+            @self._on(crewai_event_bus, MemoryQueryStartedEvent)
             def on_memory_query_started(source: Any, event: MemoryQueryStartedEvent) -> None:
                 self._handle_memory_query_started(source, event)
 
-            @crewai_event_bus.on(MemoryQueryCompletedEvent)
+            @self._on(crewai_event_bus, MemoryQueryCompletedEvent)
             def on_memory_query_completed(source: Any, event: MemoryQueryCompletedEvent) -> None:
                 self._handle_memory_query_completed(source, event)
 
-            @crewai_event_bus.on(MemoryQueryFailedEvent)
+            @self._on(crewai_event_bus, MemoryQueryFailedEvent)
             def on_memory_query_failed(source: Any, event: MemoryQueryFailedEvent) -> None:
                 self._handle_memory_query_failed(source, event)
 
-            @crewai_event_bus.on(MemorySaveStartedEvent)
+            @self._on(crewai_event_bus, MemorySaveStartedEvent)
             def on_memory_save_started(source: Any, event: MemorySaveStartedEvent) -> None:
                 self._handle_memory_save_started(source, event)
 
-            @crewai_event_bus.on(MemorySaveCompletedEvent)
+            @self._on(crewai_event_bus, MemorySaveCompletedEvent)
             def on_memory_save_completed(source: Any, event: MemorySaveCompletedEvent) -> None:
                 self._handle_memory_save_completed(source, event)
 
-            @crewai_event_bus.on(MemorySaveFailedEvent)
+            @self._on(crewai_event_bus, MemorySaveFailedEvent)
             def on_memory_save_failed(source: Any, event: MemorySaveFailedEvent) -> None:
                 self._handle_memory_save_failed(source, event)
 
-            @crewai_event_bus.on(MemoryRetrievalStartedEvent)
+            @self._on(crewai_event_bus, MemoryRetrievalStartedEvent)
             def on_memory_retrieval_started(source: Any, event: MemoryRetrievalStartedEvent) -> None:
                 self._handle_memory_retrieval_started(source, event)
 
-            @crewai_event_bus.on(MemoryRetrievalCompletedEvent)
+            @self._on(crewai_event_bus, MemoryRetrievalCompletedEvent)
             def on_memory_retrieval_completed(source: Any, event: MemoryRetrievalCompletedEvent) -> None:
                 self._handle_memory_retrieval_completed(source, event)
 
             if MemoryRetrievalFailedEvent is not None:
 
-                @crewai_event_bus.on(MemoryRetrievalFailedEvent)
+                @self._on(crewai_event_bus, MemoryRetrievalFailedEvent)
                 def on_memory_retrieval_failed(source: Any, event: MemoryRetrievalFailedEvent) -> None:
                     self._handle_memory_retrieval_failed(source, event)
 
@@ -416,6 +517,7 @@ class CrewAIEventListener:
         output = getattr(event, "output", {})
         self._update_crew_input(str(run_id))
         self._handler.end_node(run_id=run_id, output=serialize_to_str(getattr(output, "raw", output)))
+        self._agent_run_ids.clear()
 
     def _handle_crew_kickoff_failed(self, source: Any, event: Any) -> None:
         """Handle crew execution failure."""
@@ -424,12 +526,16 @@ class CrewAIEventListener:
         metadata["error"] = event.error
 
         self._handler.end_node(run_id=run_id, output=f"Error: {event.error}", metadata=metadata)
+        self._agent_run_ids.clear()
 
     # Agent event handlers
     def _handle_agent_execution_started(self, source: Any, event: Any) -> None:
         """Handle agent execution start."""
         run_id = self._generate_run_id(source, event)
         event_task = getattr(event, "task", None)
+        agent_id = str(getattr(getattr(event, "agent", None), "id", ""))
+        task_id = str(getattr(event_task, "id", ""))
+        self._agent_run_ids[agent_id, task_id] = run_id
         parent_run_id = self._to_uuid(getattr(event_task, "id", None)) if event_task else None
 
         # When a delegation tool creates a temporary task, that task has no node.
@@ -588,7 +694,9 @@ class CrewAIEventListener:
     def _handle_llm_call_started(self, source: Any, event: Any) -> None:
         """Handle LLM call start."""
         run_id = self._generate_run_id(source, event)
-        parent_run_id = self._to_uuid(getattr(event, "agent_id", None))
+        parent_run_id = self._agent_run_ids.get(
+            (str(getattr(event, "agent_id", "")), str(getattr(event, "task_id", "")))
+        ) or self._to_uuid(getattr(event, "agent_id", None))
         llm_name = getattr(event, "model", None) or getattr(source, "model", "Unknown Model")
 
         metadata = self._extract_metadata(event)
