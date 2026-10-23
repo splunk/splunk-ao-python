@@ -389,7 +389,9 @@ def test_interleaved_logger_reset_preserves_current_logger(make_logger: Callable
     logger_a = make_logger()
     logger_b = make_logger()
     logger_a.start_trace(input="a")
-    root_b = logger_b.start_trace(input="b")
+    with pytest.raises(ValueError, match=r"already.*declared"):
+        logger_b.start_trace(input="b")
+    root_b = logger_b._start_trace_envelope(input="b")
     workflow_b = logger_b.add_workflow_span(input="workflow-b")
     workflow_b_context = logger_b._otel_ids[workflow_b.id].span_context
 

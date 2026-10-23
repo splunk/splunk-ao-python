@@ -252,7 +252,7 @@ class SplunkAOBaseHandler:
             return
 
         if self._owned_trace is None:
-            self._owned_trace = self._splunk_ao_logger.start_trace(
+            self._owned_trace = self._splunk_ao_logger._start_trace_envelope(
                 input=SplunkAOLogger._coerce_output(root_node.span_params.get("input", "")),
                 name=root_node.span_params.get("name"),
                 metadata=root_node.span_params.get("metadata"),

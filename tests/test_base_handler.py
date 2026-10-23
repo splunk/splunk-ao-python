@@ -131,6 +131,7 @@ def test_normal_otel_child_enqueues_at_callback_end_without_flush() -> None:
         child_span, root_span = sink.spans
         assert child_span.parent == root_span.context
         assert root_span.parent is None
+        assert not any(key.startswith("splunk_ao.trace.") for span in sink.spans for key in span.attributes)
         assert [child.name for child in root_step.spans] == ["child"]
         assert sink.force_flush_calls == 0
     finally:

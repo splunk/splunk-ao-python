@@ -67,6 +67,22 @@ Path 3: external OTel/OpenInference + A2A
 internal trace/step model. Stable OTel context is associated with actual operations. Completed steps are converted to
 OTel spans; the `LoggedTrace` envelope remains an internal lifecycle container and must not become a wire span.
 
+Manual `start_trace()` and independent top-level decorators freeze supplied trace fields into a private immutable
+snapshot, excluded from legacy hook model dumps. Actual operations directly parented by that envelope carry identical
+`splunk_ao.trace.*` attributes; descendants do not. Conversion adds them before constructing `ReadableSpan`, without
+changing operation input, IDs, timing, parentage, or sampling. Snapshots are released with their envelope.
+Backend trace projection requires compatible new Go OTel ingestion; no trace CRUD request is added.
+
+Internal integration envelopes use `_start_trace_envelope()` without a declaration. The low-level `add_trace()` and
+single-LLM convenience path remain unmarked. Deprecated public `start_trace()` timing and external-ID arguments are
+ignored; private integration timing and actual operation timing remain supported.
+
+One content-free trace-ID claim per execution context detects known local redeclarations across logger instances and
+local conclusion. Automatic decorator continuations open unmarked envelopes, without replaying the original snapshot.
+The claim is not cleared by a logger's conclusion or termination. Independent calls without a remaining upstream parent
+create fresh traces. This is bounded local detection, not global ownership: origins declare once and downstream services
+continue spans. No baggage, propagation, global trace registry, provider replacement, or sampling change is involved.
+
 Do not bypass this path when extending an existing handler. It centralizes lifecycle behavior, content conversion,
 session handling, and compatibility hooks. Conversion changes must cover workflow, agent, LLM, tool, retriever, and
 Agent Control kinds that they affect.

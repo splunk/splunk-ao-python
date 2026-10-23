@@ -1,6 +1,8 @@
 import asyncio
 import json
 from collections.abc import Generator
+from contextvars import copy_context
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -14,6 +16,7 @@ from splunk_ao.exporter.span_transform import copy_span_for_export
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.openai import _wrap
 from splunk_ao.openai.models import OpenAiModuleDefinition
+from splunk_ao.schema.content_blocks import TextContentBlock
 from splunk_ao.shared.exceptions import MissingConfigurationError
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
 
@@ -64,6 +67,247 @@ def configure_o11y(monkeypatch: pytest.MonkeyPatch, *, ingest_token: bool = True
         monkeypatch.setenv("SPLUNK_AO_O11Y_TOKEN", "ingest-token")
     else:
         monkeypatch.delenv("SPLUNK_AO_O11Y_TOKEN", raising=False)
+
+
+def trace_attributes(span: ReadableSpan) -> dict:
+    return {key: value for key, value in span.attributes.items() if key.startswith("splunk_ao.trace.")}
+
+
+def test_trace_declaration_is_frozen_and_repeated_only_on_direct_siblings(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: an explicit trace declaration, separate from each operation's input
+    metadata = {"count": 3, "enabled": True, "missing": None}
+    tags = ["initial"]
+    dataset_metadata = {"row": 1}
+    envelope = otlp_logger.start_trace(
+        input='{"text": "not content blocks"}',
+        redacted_input="safe",
+        name="support",
+        metadata=metadata,
+        tags=tags,
+        dataset_input="question",
+        dataset_output="reference",
+        dataset_metadata=dataset_metadata,
+    )
+    metadata["count"] = 9
+    tags.append("later")
+    dataset_metadata["row"] = 2
+    envelope.input = "changed envelope"
+    envelope.name = "changed name"
+
+    # When: direct siblings finish, including an enclosing operation with a child
+    otlp_logger.add_llm_span(input="actual prompt", output="answer", model="model")
+    otlp_logger.add_workflow_span(input="actual workflow input", name="workflow")
+    otlp_logger.add_llm_span(input="nested prompt", output="answer", model="model")
+    otlp_logger.conclude(output="done")
+    otlp_logger.conclude()
+
+    # Then: only direct operations carry the same original snapshot
+    first, nested, workflow = recording_sink.spans
+    expected = {
+        "splunk_ao.trace.schema_version": 1,
+        "splunk_ao.trace.input": json.dumps('{"text": "not content blocks"}'),
+        "splunk_ao.trace.redacted_input": json.dumps("safe"),
+        "splunk_ao.trace.name": "support",
+        "splunk_ao.trace.metadata": json.dumps({"count": "3", "enabled": "True", "missing": "None"}),
+        "splunk_ao.trace.tags": ("initial",),
+        "splunk_ao.trace.dataset.input": "question",
+        "splunk_ao.trace.dataset.output": "reference",
+        "splunk_ao.trace.dataset.metadata": json.dumps({"row": "1"}),
+    }
+    assert trace_attributes(first) == trace_attributes(workflow) == expected
+    assert envelope._trace_attributes == ()
+    assert trace_attributes(nested) == {}
+    assert json.loads(first.attributes["gen_ai.input.messages"])[0]["parts"][0]["content"] == "actual prompt"
+    assert workflow.name == "invoke_workflow workflow"
+    assert workflow.parent is first.parent is None
+    assert nested.parent == workflow.context
+
+
+@pytest.mark.parametrize("explicit_empty", [False, True])
+def test_trace_declaration_preserves_presence(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, explicit_empty: bool
+) -> None:
+    # Given/When: omitted fields or explicitly empty values
+    kwargs = dict(name="", metadata={}, tags=[], dataset_input="", dataset_output="", dataset_metadata={})
+    otlp_logger.start_trace(input="", **(kwargs if explicit_empty else {}))
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="model")
+    attributes = trace_attributes(recording_sink.spans[0])
+
+    # Then: model defaults never manufacture declared fields
+    assert attributes.pop("splunk_ao.trace.schema_version") == 1
+    assert attributes.pop("splunk_ao.trace.input") == json.dumps("")
+    assert attributes == (
+        {
+            "splunk_ao.trace.name": "",
+            "splunk_ao.trace.metadata": "{}",
+            "splunk_ao.trace.tags": (),
+            "splunk_ao.trace.dataset.input": "",
+            "splunk_ao.trace.dataset.output": "",
+            "splunk_ao.trace.dataset.metadata": "{}",
+        }
+        if explicit_empty
+        else {}
+    )
+
+
+def test_active_trace_redeclaration_does_not_mutate_state(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: an active declaration
+    envelope = otlp_logger.start_trace(input="original", name="original")
+    identity = dict(otlp_logger._otel_ids)
+    # When: a second declaration is attempted
+    with pytest.raises(ValueError, match="conclude"):
+        otlp_logger.start_trace(input="replacement", name="replacement")
+    # Then: original lifecycle and declaration remain intact
+    assert otlp_logger.current_parent() is envelope
+    assert otlp_logger._otel_ids == identity
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="model")
+    assert recording_sink.spans[0].attributes["splunk_ao.trace.name"] == "original"
+
+
+@pytest.mark.parametrize("sampled", [False, True])
+def test_trace_declaration_rejects_known_continuation_across_loggers(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, sampled: bool
+) -> None:
+    # Given: a declaration beneath an upstream distributed parent
+    upstream = trace.SpanContext(0x12345, 0x6789, True, trace.TraceFlags(int(sampled)), trace.TraceState())
+    token = context.attach(trace.set_span_in_context(trace.NonRecordingSpan(upstream)))
+    other = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=recording_sink)
+    try:
+        otlp_logger.start_trace(input="original")
+        otlp_logger.add_llm_span(input="prompt", output="answer", model="model")
+        otlp_logger.conclude()
+        # When: another logger tries to redefine that same trace after local conclusion
+        with pytest.raises(ValueError, match=r"already.*declared"):
+            other.start_trace(input="replacement")
+        assert other.current_parent() is None
+        # Then: automatic bookkeeping continues without replaying the declaration
+        other._start_trace_envelope(input="automatic")
+        other.add_llm_span(input="continued", output="answer", model="model")
+        other.conclude()
+        assert trace.get_current_span().get_span_context() == upstream
+        assert len(recording_sink.spans) == (2 if sampled else 0)
+        if sampled:
+            assert all(span.context.trace_id == upstream.trace_id for span in recording_sink.spans)
+            assert all(span.parent == upstream for span in recording_sink.spans)
+            assert trace_attributes(recording_sink.spans[-1]) == {}
+    finally:
+        other.terminate()
+        context.detach(token)
+
+
+def test_deprecated_start_trace_arguments_are_ignored(otlp_logger: SplunkAOLogger) -> None:
+    # Given/When: deprecated envelope identity and timing arguments
+    old_time = datetime(2000, 1, 1, tzinfo=UTC)
+    with pytest.warns(DeprecationWarning) as warnings:
+        envelope = otlp_logger.start_trace(
+            input="question", created_at=old_time, duration_ns=42, external_id="business-id"
+        )
+    # Then: no user-supplied timing or external identity enters the envelope
+    assert len(warnings) == 3
+    assert envelope.created_at != old_time
+    assert envelope.metrics.duration_ns is None
+    assert envelope.external_id != "business-id"
+    assert "_trace_attributes" not in envelope.model_dump()
+
+
+def test_content_block_declaration_is_serialized_before_caller_mutation(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: a mutable multimodal input model
+    block = TextContentBlock(text="original")
+    otlp_logger.start_trace(input=[block])
+    # When: the caller edits the model before an operation completes
+    block.text = "edited"
+    otlp_logger.add_llm_span(input="actual", output="answer", model="model")
+    # Then: declaration encoding is stable and survives export normalization
+    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    assert json.loads(exported.attributes["splunk_ao.trace.input"]) == [{"type": "text", "text": "original"}]
+
+
+def test_independent_traces_and_execution_contexts_do_not_share_declarations(recording_sink: RecordingSink) -> None:
+    # Given: two execution contexts copied before either originates a declaration
+    first_context, second_context = copy_context(), copy_context()
+
+    def operation(name: str) -> int:
+        logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=recording_sink)
+        try:
+            logger.start_trace(input=name, name=name)
+            logger.add_llm_span(input="actual", output="answer", model="model")
+            logger.conclude()
+            return recording_sink.spans[-1].context.trace_id
+        finally:
+            logger.terminate()
+
+    # When: independent calls run in those contexts, and again without an upstream parent
+    first_id = first_context.run(operation, "first")
+    second_id = second_context.run(operation, "second")
+    third_id = first_context.run(operation, "third")
+    # Then: identities and declarations remain independent
+    assert len({first_id, second_id, third_id}) == 3
+    assert [span.attributes["splunk_ao.trace.name"] for span in recording_sink.spans] == ["first", "second", "third"]
+
+
+def test_decorator_continuation_does_not_redeclare_or_replay(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given: independent decorator calls within one upstream request
+    upstream = trace.SpanContext(0x2468, 0x1357, True, trace.TraceFlags(1), trace.TraceState())
+    token = context.attach(trace.set_span_in_context(trace.NonRecordingSpan(upstream)))
+
+    @log(span_type="workflow", params={"metadata": lambda _: {"source": "decorator"}, "tags": lambda _: []})
+    def operation() -> str:
+        return "answer"
+
+    try:
+        with patch.object(splunk_ao_context, "get_logger_instance", return_value=otlp_logger):
+            # When: both top-level calls finish under the same OTel trace
+            operation()
+            operation()
+        # Then: both real operations exist, only the origin carries a declaration
+        first, continuation = recording_sink.spans
+        assert json.loads(first.attributes["splunk_ao.trace.metadata"]) == {"source": "decorator"}
+        assert first.attributes["splunk_ao.trace.tags"] == ()
+        assert trace_attributes(continuation) == {}
+        assert first.parent == continuation.parent == upstream
+    finally:
+        context.detach(token)
+
+
+def test_internal_envelope_preserves_timing_without_declaration(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    # Given/When: integration bookkeeping supplies an internal timestamp
+    created_at = datetime(2000, 1, 1, tzinfo=UTC)
+    envelope = otlp_logger._start_trace_envelope(input="automatic", created_at=created_at, duration_ns=42)
+    otlp_logger.add_llm_span(input="actual", output="answer", model="model")
+    # Then: private timing remains supported without originating trace fields
+    assert envelope.created_at == created_at
+    assert envelope.metrics.duration_ns == 42
+    assert trace_attributes(recording_sink.spans[0]) == {}
+
+
+def test_hook_payload_excludes_private_declaration_and_preserves_dispatch() -> None:
+    # Given: legacy hook egress, with the same supplied manual fields
+    hook = Mock()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", ingestion_hook=hook)
+    try:
+        envelope = logger.start_trace(input="question", name="support", metadata={"count": 3})
+        logger.add_llm_span(input="prompt", output="answer", model="model")
+        logger.conclude(output="done")
+        # When: completed legacy payloads are dispatched
+        logger.flush()
+        # Then: normal envelope fields remain, with no wire snapshot leaking into models
+        hook.assert_called_once()
+        assert envelope.input == "question"
+        assert envelope.user_metadata == {"count": "3"}
+        assert "_trace_attributes" not in envelope.model_dump()
+        assert "splunk_ao.trace." not in json.dumps(envelope.model_dump(mode="json"))
+    finally:
+        logger.terminate()
 
 
 def test_complete_leaf_is_enqueued_before_flush(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:

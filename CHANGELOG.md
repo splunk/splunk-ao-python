@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Manual `start_trace()` fields are frozen and carried as dedicated `splunk_ao.trace.*` attributes on direct real
+  operation spans, separate from operation input. Requires compatible new Go OTel ingestion for backend projection.
+  Top-level decorators include mapped metadata/tags. Known local same-trace redeclarations are rejected; automatic
+  integration/decorator continuation envelopes remain unmarked. No artificial span or CRUD request is introduced.
+
 - `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
   read decision-model evaluators: one typed question per evaluator, answered with probabilities. Supports
   `boolean_probability`, `categorical` and `discrete` output types; when `output_type` is omitted it is inferred
@@ -16,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
 - Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
   `decision`, so decision scorers appear in list and get responses and decode.
+
+### Deprecated
+
+- Public `start_trace(created_at=..., duration_ns=..., external_id=...)` accepts but ignores these values and emits
+  `DeprecationWarning`, including hook-backed callers. Actual operation timing APIs are unchanged; use metadata for
+  business identifiers. Declare trace fields only at the origin, not again in downstream distributed services.
 
 ### Fixed
 
