@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from json import dumps
 from typing import Annotated, Any
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from galileo_core.schemas.logging.llm import Message, MessageRole
 from galileo_core.schemas.logging.span import (
@@ -26,6 +26,7 @@ from galileo_core.schemas.logging.step import BaseStep
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.document import Document
 from splunk_ao.logger.control import ControlSpan
+from splunk_ao.logger.trace_metadata import TraceAttributes
 from splunk_ao.schema.content_blocks import IngestContentBlock, IngestMessageContent
 from splunk_ao.schema.message import LoggedMessage
 
@@ -51,6 +52,7 @@ class LoggedTrace(Trace):
     output: TextOrContentBlocks | None = _OUTPUT_FIELD
     redacted_output: TextOrContentBlocks | None = _REDACTED_OUTPUT_FIELD
     spans: list["LoggedSpan"] = Field(default_factory=list)
+    _trace_attributes: TraceAttributes = PrivateAttr(default=())
 
 
 class LoggedWorkflowSpan(WorkflowSpan):

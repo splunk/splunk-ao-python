@@ -282,6 +282,33 @@ for normal scheduled export. `terminate()` drains completed spans and shuts
 down resources owned by `SplunkAOLogger`; it does not turn unfinished manual
 spans into completed spans.
 
+`start_trace()` opens an internal envelope, not an artificial root span or a
+backend CRUD resource. It freezes supplied trace `name`, `input`,
+`redacted_input`, `metadata`, `tags`, `dataset_input`, `dataset_output`, and
+`dataset_metadata`. Real operations directly below the envelope carry these
+values as `splunk_ao.trace.*` attributes; nested operations retain only their
+own fields. Trace input never replaces an operation's input. Explicit empty
+values are preserved; later edits to supplied collections do not change the
+declaration. Backend trace-field projection requires compatible new Go-based
+OTel ingestion support; older ingestion routes are not supported for this feature.
+
+Declare fields once in the originating application. A duplicate active call,
+or a redeclaration of the same OTel trace known to the local execution context,
+raises `ValueError`. `conclude()` ends local bookkeeping, not a distributed
+trace. Downstream services should continue operations without redeclaring trace
+fields. Automatic integration envelopes do not declare fields; independent
+top-level decorators declare once, then use unmarked envelopes for known local
+continuations. No ownership marker is propagated, so the SDK cannot detect
+redeclarations in independent services or execution contexts. Propagated worker
+contexts can share a trace ID even across threads.
+
+The `start_trace()` arguments `created_at`, `duration_ns`, and `external_id`
+are deprecated and ignored, including with an `ingestion_hook`. Actual operation
+timing APIs are unchanged. The backend uses the OTel trace ID for correlation;
+put business identifiers in metadata instead. No artificial span, sampling
+override, or separate network call is added. Without an exported real operation,
+the declaration is not delivered.
+
 #### Using Agent Observability context with Agent Control
 
 If you use Agent Control hosted by Splunk, initialize Agent Control with the
