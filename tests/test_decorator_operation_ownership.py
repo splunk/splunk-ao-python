@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from opentelemetry import trace as otel_trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from splunk_ao import get_tracing_headers, log, splunk_ao_context
 from splunk_ao.schema.trace import SPAN_TYPE
@@ -286,9 +287,9 @@ def test_user_exception_is_preserved_and_owned_trace_is_concluded(
     assert splunk_ao_context.get_current_trace() is None
 
 
-@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+@pytest.mark.parametrize("span_type", ["workflow", "agent", "tool", None])
 def test_sync_generator_concludes_on_close_and_preserves_errors(
-    initialized_context: None, span_type: SPAN_TYPE
+    initialized_context: None, span_type: SPAN_TYPE | None
 ) -> None:
     @log(span_type="tool", name="child")
     def child() -> str:
@@ -304,7 +305,7 @@ def test_sync_generator_concludes_on_close_and_preserves_errors(
     closed_stream = stream()
     assert splunk_ao_context.get_current_trace() is None
     assert next(closed_stream) == "first"
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
     closed_stream.close()
     assert splunk_ao_context.get_current_trace() is None
 
@@ -322,9 +323,9 @@ def test_sync_generator_concludes_on_close_and_preserves_errors(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+@pytest.mark.parametrize("span_type", ["workflow", "agent", "tool", None])
 async def test_async_operations_have_invocation_local_ownership(
-    initialized_context: None, span_type: SPAN_TYPE
+    initialized_context: None, span_type: SPAN_TYPE | None
 ) -> None:
     entered = 0
     both_entered = asyncio.Event()
@@ -348,8 +349,8 @@ async def test_async_operations_have_invocation_local_ownership(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("span_type", ["workflow", "tool"])
-async def test_async_generator_concludes_on_close(initialized_context: None, span_type: SPAN_TYPE) -> None:
+@pytest.mark.parametrize("span_type", ["workflow", "agent", "tool", None])
+async def test_async_generator_concludes_on_close(initialized_context: None, span_type: SPAN_TYPE | None) -> None:
     @log(span_type="tool", name="child")
     async def child() -> str:
         return "first"
@@ -361,7 +362,7 @@ async def test_async_generator_concludes_on_close(initialized_context: None, spa
 
     result = stream()
     assert await anext(result) == "first"
-    assert splunk_ao_context.get_current_trace() is not None
+    assert splunk_ao_context.get_current_trace() is None
     await result.aclose()
 
     logger = splunk_ao_context.get_logger_instance()
@@ -405,6 +406,389 @@ def test_manual_tool_keeps_caller_active(initialized_context: None) -> None:
     assert logger.current_parent() is caller
     assert otel_trace.get_current_span().get_span_context() == caller_context
     logger.conclude(output="done", conclude_all=True)
+
+
+@pytest.mark.parametrize("factory", [False, True])
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+def test_generator_restores_consumer_between_yields(
+    initialized_context: None, factory: bool, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    # Given: an operation yields nested work, then its consumer makes a sibling call.
+    logger = splunk_ao_context.get_logger_instance()
+    contexts = []
+
+    @log(span_type="tool", name="nested")
+    def nested() -> str:
+        return "chunk"
+
+    def generate():
+        contexts.append(otel_trace.get_current_span().get_span_context())
+        yield nested()
+        contexts.append(otel_trace.get_current_span().get_span_context())
+        yield nested()
+
+    def create_stream():
+        return generate()
+
+    stream = log(span_type=span_type, name="stream")(create_stream if factory else generate)
+
+    @log(span_type="tool", name="sibling")
+    def sibling() -> str:
+        return "sibling"
+
+    @log(span_type="agent", name="caller")
+    def caller() -> str:
+        parent = logger.current_parent()
+        caller_context = otel_trace.get_current_span().get_span_context()
+        iterator = stream()
+        assert logger.current_parent() is parent
+        for chunk in iterator:
+            assert chunk == "chunk"
+            assert logger.current_parent() is parent
+            assert otel_trace.get_current_span().get_span_context() == caller_context
+            sibling()
+        return "done"
+
+    assert caller() == "done"
+    spans = logger._sink.spans
+    agent = next(span for span in spans if span.name == "invoke_agent caller")
+    tool = next(span for span in spans if span.name == f"{operation} stream")
+    assert len(spans) == 6
+    assert tool.parent == agent.context
+    assert contexts == [tool.context, tool.context]
+    assert all(span.parent == tool.context for span in spans if span.name == "execute_tool nested")
+    assert all(span.parent == agent.context for span in spans if span.name == "execute_tool sibling")
+    assert logger.current_parent() is None
+    assert not otel_trace.get_current_span().get_span_context().is_valid
+
+
+@pytest.mark.parametrize("factory", [False, True])
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+def test_interleaved_generators_keep_their_own_output(
+    initialized_context: None, factory: bool, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    # Given: two generators that finish in a different order from their last activation.
+    def generate(prefix):
+        yield prefix + "1"
+        yield prefix + "2"
+
+    if factory:
+        first = log(span_type=span_type, name="first")(lambda: generate("A"))
+        second = log(span_type=span_type, name="second")(lambda: generate("B"))
+    else:
+
+        @log(span_type=span_type, name="first")
+        def first():
+            yield from generate("A")
+
+        @log(span_type=span_type, name="second")
+        def second():
+            yield from generate("B")
+
+    @log(span_type="agent", name="caller")
+    def caller() -> None:
+        a, b = first(), second()
+        try:
+            assert list(zip(a, b, strict=False)) == [("A1", "B1"), ("A2", "B2")]
+        finally:
+            a.close()
+            b.close()
+
+    assert caller() is None
+    spans = {span.name: span for span in splunk_ao_context.get_logger_instance()._sink.spans}
+    assert len(spans) == 3
+    agent = spans["invoke_agent caller"]
+    assert json.loads(agent.attributes["gen_ai.output.messages"])[0]["parts"] == [{"type": "text", "content": "B1B2"}]
+    for name, output in (("first", "A1A2"), ("second", "B1B2")):
+        span = spans[f"{operation} {name}"]
+        assert span.parent == agent.context
+        if span_type == "tool":
+            assert json.loads(span.attributes["gen_ai.tool.call.result"]) == {"value": output}
+        else:
+            assert json.loads(span.attributes["gen_ai.output.messages"])[0]["parts"] == [
+                {"type": "text", "content": output}
+            ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("factory", ["generator", "sync", "async"])
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+async def test_async_generator_restores_consumer_between_yields(
+    initialized_context: None, factory: str, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    logger = splunk_ao_context.get_logger_instance()
+    contexts = []
+
+    @log(span_type="tool", name="nested")
+    async def nested() -> str:
+        await asyncio.sleep(0)
+        return "chunk"
+
+    async def generate():
+        contexts.append(otel_trace.get_current_span().get_span_context())
+        yield await nested()
+        contexts.append(otel_trace.get_current_span().get_span_context())
+        yield await nested()
+
+    if factory == "sync":
+
+        @log(span_type=span_type, name="stream")
+        def stream():
+            return generate()
+    elif factory == "async":
+
+        @log(span_type=span_type, name="stream")
+        async def stream():
+            return generate()
+    else:
+        stream = log(span_type=span_type, name="stream")(generate)
+
+    @log(span_type="tool", name="sibling")
+    async def sibling() -> str:
+        return "sibling"
+
+    @log(span_type="agent", name="caller")
+    async def caller() -> str:
+        parent = logger.current_parent()
+        caller_context = otel_trace.get_current_span().get_span_context()
+        iterator = await stream() if factory == "async" else stream()
+        assert logger.current_parent() is parent
+        async for chunk in iterator:
+            assert chunk == "chunk"
+            assert logger.current_parent() is parent
+            assert otel_trace.get_current_span().get_span_context() == caller_context
+            await sibling()
+        return "done"
+
+    assert await caller() == "done"
+    spans = logger._sink.spans
+    agent = next(span for span in spans if span.name == "invoke_agent caller")
+    tool = next(span for span in spans if span.name == f"{operation} stream")
+    assert len(spans) == 6
+    assert tool.parent == agent.context
+    assert contexts == [tool.context, tool.context]
+    assert all(span.parent == tool.context for span in spans if span.name == "execute_tool nested")
+    assert all(span.parent == agent.context for span in spans if span.name == "execute_tool sibling")
+    assert logger.current_parent() is None
+    assert not otel_trace.get_current_span().get_span_context().is_valid
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+async def test_interleaved_async_generators_keep_their_own_output(
+    initialized_context: None, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    @log(span_type=span_type, name="stream")
+    async def stream(prefix):
+        yield prefix + "1"
+        await asyncio.sleep(0)
+        yield prefix + "2"
+
+    @log(span_type="agent", name="caller")
+    async def caller() -> None:
+        first, second = stream("A"), stream("B")
+        try:
+            assert await anext(first) == "A1"
+            assert await anext(second) == "B1"
+            assert await anext(first) == "A2"
+            assert await anext(second) == "B2"
+            with pytest.raises(StopAsyncIteration):
+                await anext(first)
+            with pytest.raises(StopAsyncIteration):
+                await anext(second)
+        finally:
+            await first.aclose()
+            await second.aclose()
+
+    assert await caller() is None
+    spans = splunk_ao_context.get_logger_instance()._sink.spans
+    agent = next(span for span in spans if span.name == "invoke_agent caller")
+    assert json.loads(agent.attributes["gen_ai.output.messages"])[0]["parts"] == [{"type": "text", "content": "B1B2"}]
+    tools = [span for span in spans if span.name == f"{operation} stream"]
+    assert len(spans) == 3
+    assert all(span.parent == agent.context for span in tools)
+    for span, output in zip(tools, ["A1A2", "B1B2"], strict=True):
+        if span_type == "tool":
+            assert json.loads(span.attributes["gen_ai.tool.call.result"]) == {"value": output}
+        else:
+            assert json.loads(span.attributes["gen_ai.output.messages"])[0]["parts"] == [
+                {"type": "text", "content": output}
+            ]
+
+
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+def test_partially_consumed_generator_restores_native_caller(
+    initialized_context: None, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    # Given: the consumer retains a real native recording span while a tool is suspended.
+    logger = splunk_ao_context.get_logger_instance()
+    provider = TracerProvider()
+    observed = []
+
+    @log(span_type="tool", name="cleanup")
+    def cleanup() -> str:
+        return "closed"
+
+    @log(span_type=span_type, name="stream")
+    def stream():
+        try:
+            with provider.get_tracer(__name__).start_as_current_span("generator native span") as inner:
+                yield "first"
+                observed.append(otel_trace.get_current_span() is inner)
+                yield "second"
+                yield "third"
+        finally:
+            cleanup()
+
+    try:
+        with provider.get_tracer(__name__).start_as_current_span("native caller") as native:
+            iterator = stream()
+            assert next(iterator) == "first"
+            assert logger.current_parent() is None
+            assert splunk_ao_context.get_current_trace() is None
+            assert otel_trace.get_current_span() is native
+            otel_trace.get_current_span().set_attribute("after_yield", True)
+            assert next(iterator) == "second"
+            assert observed == [True]
+            assert otel_trace.get_current_span() is native
+            iterator.close()
+            assert otel_trace.get_current_span() is native
+            assert native.attributes["after_yield"] is True
+        spans = {span.name: span for span in logger._sink.spans}
+        assert len(spans) == 2
+        assert spans["execute_tool cleanup"].parent == spans[f"{operation} stream"].context
+        assert spans[f"{operation} stream"].parent == native.get_span_context()
+        assert logger.current_parent() is None
+        assert not logger._otel_ids
+        assert not logger._pending_otel_steps
+    finally:
+        provider.shutdown()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("finish", ["close", "error", "cancel"])
+@pytest.mark.parametrize(
+    "span_type, operation",
+    [("tool", "execute_tool"), ("workflow", "invoke_workflow"), ("agent", "invoke_agent"), (None, "invoke_workflow")],
+)
+async def test_suspended_async_generator_cleanup_restores_caller(
+    initialized_context: None, finish: str, span_type: SPAN_TYPE | None, operation: str
+) -> None:
+    logger = splunk_ao_context.get_logger_instance()
+    entered = asyncio.Event()
+
+    @log(span_type="tool", name="cleanup")
+    async def cleanup() -> str:
+        return "closed"
+
+    @log(span_type=span_type, name="stream")
+    async def stream():
+        try:
+            yield "first"
+            if finish == "error":
+                raise ValueError("stream failure")
+            entered.set()
+            await asyncio.Event().wait()
+        finally:
+            await cleanup()
+
+    @log(span_type="agent", name="caller")
+    async def caller() -> str:
+        parent = logger.current_parent()
+        caller_context = otel_trace.get_current_span().get_span_context()
+        iterator = stream()
+        assert await anext(iterator) == "first"
+        assert logger.current_parent() is parent
+        assert otel_trace.get_current_span().get_span_context() == caller_context
+        if finish == "close":
+            await iterator.aclose()
+        elif finish == "error":
+            with pytest.raises(ValueError, match="stream failure"):
+                await anext(iterator)
+        else:
+            task = asyncio.create_task(anext(iterator))
+            await entered.wait()
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        assert logger.current_parent() is parent
+        assert otel_trace.get_current_span().get_span_context() == caller_context
+        return "done"
+
+    assert await caller() == "done"
+    spans = {span.name: span for span in logger._sink.spans}
+    assert len(spans) == 3
+    tool = spans[f"{operation} stream"]
+    assert tool.parent == spans["invoke_agent caller"].context
+    assert spans["execute_tool cleanup"].parent == tool.context
+    assert (tool.status.status_code == otel_trace.StatusCode.ERROR) == (finish != "close")
+    assert logger.current_parent() is None
+    assert not logger._otel_ids
+    assert not logger._pending_otel_steps
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("span_type", ["tool", "workflow", "agent", None])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_interleaved_top_level_generators_own_separate_traces(
+    initialized_context: None, span_type: SPAN_TYPE | None, asynchronous: bool
+) -> None:
+    logger = splunk_ao_context.get_logger_instance()
+    if asynchronous:
+
+        @log(span_type=span_type, name="stream")
+        async def stream(prefix):
+            yield prefix + "1"
+            await asyncio.sleep(0)
+            yield prefix + "2"
+    else:
+
+        @log(span_type=span_type, name="stream")
+        def stream(prefix):
+            yield prefix + "1"
+            yield prefix + "2"
+
+    first, second = stream("A"), stream("B")
+    for expected, iterator in [("A1", first), ("B1", second), ("A2", first), ("B2", second)]:
+        assert (await anext(iterator) if asynchronous else next(iterator)) == expected
+        assert logger.current_parent() is None
+        assert splunk_ao_context.get_current_trace() is None
+        assert not otel_trace.get_current_span().get_span_context().is_valid
+    for iterator in (first, second):
+        if asynchronous:
+            with pytest.raises(StopAsyncIteration):
+                await anext(iterator)
+        else:
+            with pytest.raises(StopIteration):
+                next(iterator)
+    spans = logger._sink.spans
+    assert len(spans) == 2
+    assert all(span.parent is None for span in spans)
+    assert len({span.context.trace_id for span in spans}) == 2
+    for span, output in zip(spans, ["A1A2", "B1B2"], strict=True):
+        if span_type == "tool":
+            assert json.loads(span.attributes["gen_ai.tool.call.result"]) == {"value": output}
+        else:
+            assert json.loads(span.attributes["gen_ai.output.messages"])[0]["parts"] == [
+                {"type": "text", "content": output}
+            ]
+    assert not logger._otel_ids
+    assert not logger._pending_otel_steps
 
 
 def test_flush_and_flush_all_do_not_conclude_active_trace(initialized_context: None) -> None:

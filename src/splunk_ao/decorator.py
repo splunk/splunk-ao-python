@@ -48,19 +48,21 @@ import inspect
 import json
 import logging
 from collections.abc import AsyncGenerator, Callable, Generator
-from contextlib import contextmanager
-from contextvars import ContextVar
-from dataclasses import dataclass
+from contextlib import ExitStack, contextmanager, nullcontext
+from contextvars import Context, ContextVar, copy_context
+from dataclasses import dataclass, replace
 from functools import wraps
 from types import TracebackType
 from typing import Any, TypeVar, cast, overload
 
+from opentelemetry import context as otel_context
 from typing_extensions import ParamSpec
 
-from galileo_core.schemas.logging.span import WorkflowSpan
+from galileo_core.schemas.logging.span import StepWithChildSpans, ToolSpan, WorkflowSpan
 from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.logger import SplunkAOLogger
+from splunk_ao.logger.logger import _otel_context_state
 from splunk_ao.schema.content_blocks import is_content_block_list
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.metrics import LocalMetricConfig
@@ -123,6 +125,8 @@ class _CallState:
     owns_trace: bool
     set_trace_context: bool
     span_stack_depth: int
+    span: StepWithChildSpans | None = None
+    scope: ExitStack | None = None
 
 
 def _get_or_init_list(context_var: ContextVar, default_factory: Callable = list) -> list:
@@ -732,14 +736,49 @@ class SplunkAODecorator:
         _CallState | None
             Per-call ownership state when preparation succeeds.
         """
+        scope = ExitStack() if span_type in (None, "workflow", "agent", "tool") else None
         try:
-            return self._prepare_call(span_type, span_params, dataset_record)
+            if scope is not None:
+                scope.enter_context(self._operation_execution_context())
+            state = self._prepare_call(span_type, span_params, dataset_record)
+            return replace(state, scope=scope) if scope is not None else state
         except Exception as e:
+            if scope is not None:
+                scope.close()
             if isinstance(e, ConfigurationError):
                 _logger.error("Splunk AO logging initialization failed: %s", e, exc_info=True)
             else:
                 _logger.warning("Splunk AO logging initialization failed, continuing without logging: %s", e)
             return None
+
+    @contextmanager
+    def _operation_execution_context(
+        self, state: _CallState | None = None, execution: Context | None = None
+    ) -> Generator[None, None, None]:
+        """Activate an operation only while its function or generator step executes."""
+        logger = state.logger if state is not None else self.get_logger_instance()
+        caller = logger.current_parent()
+        with ExitStack() as restore:
+            token = otel_context.attach(otel_context.get_current())
+            restore.callback(otel_context.detach, token)
+            # Rebuilding operation context must not consume the caller's activation tokens.
+            tracking_token = _otel_context_state.set(None)
+            restore.callback(_otel_context_state.reset, tracking_token)
+            trace_token = _trace_context.set(state.trace if state is not None else _trace_context.get())
+            restore.callback(_trace_context.reset, trace_token)
+            stack_token = _span_stack_context.set(list(_span_stack_context.get() or []))
+            restore.callback(_span_stack_context.reset, stack_token)
+            restore.callback(logger._set_current_parent, caller)
+            if state is not None:
+                parent = execution.run(logger.current_parent) if execution is not None else state.span
+                logger._set_current_parent(parent)
+                if execution is not None:
+                    _span_stack_context.set(list(execution.get(_span_stack_context) or []))
+                    token = otel_context.attach(execution.run(otel_context.get_current))
+                    restore.callback(otel_context.detach, token)
+                elif state.span is not None and not isinstance(state.span, ToolSpan):
+                    _get_or_init_list(_span_stack_context).append(state.span)
+            yield
 
     def _prepare_call(
         self, span_type: SPAN_TYPE | None, span_params: dict[str, Any], dataset_record: DatasetRecord | None
@@ -801,6 +840,7 @@ class SplunkAODecorator:
             set_trace_context=set_trace_context,
             span_stack_depth=span_stack_depth,
         )
+        span = None
         try:
             if not span_type or span_type in ["workflow", "agent"]:
                 created_at = span_params.get("created_at", _get_timestamp())
@@ -816,16 +856,16 @@ class SplunkAODecorator:
                 # A tool must be active while its function runs so nested calls inherit it.
                 valid_params = inspect.signature(client_instance.add_tool_span).parameters
                 kwargs = {**span_params, "input": input_}
-                tool_span = client_instance.add_tool_span(
+                span = client_instance.add_tool_span(
                     **{
                         key: value
                         for key, value in kwargs.items()
                         if key in valid_params and key not in {"output", "redacted_output"}
                     }
                 )
-                if tool_span is None:
+                if span is None:
                     raise RuntimeError("Unable to start a Splunk AO tool span")
-                client_instance._set_current_parent(tool_span)
+                client_instance._set_current_parent(span)
         except Exception:
             if owns_trace:
                 self._conclude_owned_trace(call_state, "", 500)
@@ -833,7 +873,7 @@ class SplunkAODecorator:
                 _trace_context.set(None)
             raise
 
-        return call_state
+        return replace(call_state, span=span) if span is not None else call_state
 
     def _get_input_from_func_args(
         self, *, is_method: bool = False, func_args: tuple = (), func_kwargs: dict | None = None
@@ -891,6 +931,9 @@ class SplunkAODecorator:
         -------
         The original result, possibly wrapped if it's a generator
         """
+        if (inspect.isgenerator(result) or inspect.isasyncgen(result)) and call_state.scope is not None:
+            # A factory has already executed; suspend its operation before returning to the consumer.
+            call_state.scope.close()
         if inspect.isgenerator(result):
             return self._wrap_sync_generator_result(span_type, span_params, result, call_state=call_state)
         if inspect.isasyncgen(result):
@@ -932,6 +975,8 @@ class SplunkAODecorator:
                     _span_stack_context.set(stack[: call_state.span_stack_depth])
                 if call_state.set_trace_context and _trace_context.get() is call_state.trace:
                     _trace_context.set(None)
+                if call_state.scope is not None:
+                    call_state.scope.close()
 
         return result
 
@@ -1122,15 +1167,27 @@ class SplunkAODecorator:
         """
         items = []
         state = call_state or self._safe_prepare_call(span_type, span_params, dataset_record)
+        has_operation = state is not None and state.span is not None
+        execution: Context | None = None
+        if state is not None and state.scope is not None:
+            state.scope.close()
         error: BaseException | None = None
 
         try:
-            for item in generator:
+            while True:
+                with self._operation_execution_context(state, execution) if has_operation else nullcontext():
+                    try:
+                        item = next(generator)
+                    except StopIteration:
+                        break
+                    if has_operation:
+                        execution = copy_context()
                 items.append(item)
 
                 yield item
         except GeneratorExit:
-            generator.close()
+            with self._operation_execution_context(state, execution) if has_operation else nullcontext():
+                generator.close()
             raise
         except BaseException as exc:
             error = exc
@@ -1142,7 +1199,8 @@ class SplunkAODecorator:
                 output = "".join(items)
 
             if state is not None:
-                self._complete_call(span_type, span_params, output, state, error=error)
+                with self._operation_execution_context(state) if has_operation else nullcontext():
+                    self._complete_call(span_type, span_params, output, state, error=error)
 
     async def _wrap_async_generator_result(
         self,
@@ -1177,15 +1235,27 @@ class SplunkAODecorator:
 
         items = []
         state = call_state or self._safe_prepare_call(span_type, span_params, dataset_record)
+        has_operation = state is not None and state.span is not None
+        execution: Context | None = None
+        if state is not None and state.scope is not None:
+            state.scope.close()
         error: BaseException | None = None
 
         try:
-            async for item in generator:
+            while True:
+                with self._operation_execution_context(state, execution) if has_operation else nullcontext():
+                    try:
+                        item = await anext(generator)
+                    except StopAsyncIteration:
+                        break
+                    if has_operation:
+                        execution = copy_context()
                 items.append(item)
 
                 yield item
         except GeneratorExit:
-            await generator.aclose()
+            with self._operation_execution_context(state, execution) if has_operation else nullcontext():
+                await generator.aclose()
             raise
         except BaseException as exc:
             error = exc
@@ -1197,7 +1267,8 @@ class SplunkAODecorator:
                 output = "".join(items)
 
             if state is not None:
-                self._complete_call(span_type, span_params, output, state, error=error)
+                with self._operation_execution_context(state) if has_operation else nullcontext():
+                    self._complete_call(span_type, span_params, output, state, error=error)
 
     def get_logger_instance(
         self,
