@@ -9,8 +9,10 @@ import pytest
 from langchain_core.callbacks.manager import AsyncCallbackManager
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from opentelemetry import baggage, context, trace
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
 
 from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
@@ -32,6 +34,63 @@ class RecordingSink:
 
     def shutdown(self) -> None:
         pass
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback])
+async def test_copied_completion_preserves_caller_span_recording(callback_type: Any) -> None:
+    # Given: callbacks run beneath a real recording span on an application-owned provider.
+    provider = TracerProvider()
+    exporter = InMemorySpanExporter()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    tracer = provider.get_tracer(__name__)
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = callback_type(splunk_ao_logger=logger, flush_on_chain_end=False)
+    manager = AsyncCallbackManager(handlers=[callback], inheritable_handlers=[callback])
+    try:
+        with tracer.start_as_current_span("server", end_on_exit=False) as server:
+            run = await manager.on_chain_start({"name": "LangGraph"}, {})
+            child = await run.get_child().on_chain_start({"name": "child"}, {})
+            # Open SDK operations must not forward mutations to their caller.
+            assert not trace.get_current_span().is_recording()
+            trace.get_current_span().set_attribute("during_sdk", True)
+
+            # When: both end callbacks execute in LangChain's copied tasks.
+            await child.on_chain_end({"answer": "child"})
+            assert not trace.get_current_span().is_recording()
+            await run.on_chain_end({"answer": "done"})
+
+            # Then: the current span records to the caller before any logger accessor reconciles it.
+            current = trace.get_current_span()
+            assert current.get_span_context() == server.get_span_context()
+            assert current.is_recording()
+            current.set_attribute("after_sdk", True)
+            current.set_attributes({"batch_attribute": "retained"})
+            current.add_event("after_sdk", {"event_attribute": "retained"}, timestamp=123)
+            current.record_exception(ValueError("local failure"), escaped=True)
+            current.update_name("renamed server")
+            current.set_status(StatusCode.ERROR, "local status")
+            link = SpanContext(1234, 5678, is_remote=True)
+            current.add_link(link, {"link_attribute": "retained"})
+            with tracer.start_as_current_span("subsequent child") as subsequent:
+                assert subsequent.parent == server.get_span_context()
+            current.end()
+            assert not current.is_recording()
+            assert logger.current_parent() is None
+        recorded = next(span for span in exporter.get_finished_spans() if span.name == "renamed server")
+        assert recorded.attributes == {"after_sdk": True, "batch_attribute": "retained"}
+        assert recorded.status.status_code == StatusCode.ERROR
+        assert recorded.status.description == "local status"
+        assert [event.name for event in recorded.events] == ["after_sdk", "exception"]
+        assert recorded.events[0].timestamp == 123
+        assert recorded.events[0].attributes == {"event_attribute": "retained"}
+        assert recorded.events[1].attributes["exception.message"] == "local failure"
+        assert recorded.links[0].context == link
+        assert recorded.links[0].attributes == {"link_attribute": "retained"}
+    finally:
+        logger.terminate()
+        provider.shutdown()
 
 
 @pytest.mark.asyncio
@@ -299,10 +358,82 @@ def test_graph_root_normalization_preserves_terminal_message_content(terminal: A
     assert len(outputs["messages"]) == 3
 
 
+@pytest.mark.parametrize("representation", ["objects", "type", "role"])
+@pytest.mark.parametrize("response", [False, True])
+def test_graph_root_normalization_stops_at_current_turn_input(representation: str, response: bool) -> None:
+    # Given: persisted history followed by a new input, optionally with a current response.
+    node = Node(node_type="agent", run_id=uuid4(), span_params={"_langgraph_root": True})
+    history = [HumanMessage(content="old question"), AIMessage(content="old reply"), HumanMessage(content="new input")]
+    if response:
+        history.append(AIMessage(content="new reply"))
+    messages: list[Any] = list(history)
+    if representation == "type":
+        messages = [{"type": message.type, "content": message.content} for message in history]
+    elif representation == "role":
+        messages = [
+            {"role": "user" if message.type == "human" else "assistant", "content": message.content}
+            for message in history
+        ]
+    outputs = {"messages": messages, "other_state": "retained"}
+
+    # When: the root finishes, including turns that produce no response.
+    normalized = normalize_langgraph_output(outputs, node)
+
+    # Then: output never crosses into an earlier turn or presents input as a response.
+    assert normalized["messages"] == ([messages[-1]] if response else [])
+    assert normalized["other_state"] == "retained"
+    assert outputs["messages"] is messages
+    assert len(messages) == (4 if response else 3)
+
+
 @pytest.mark.parametrize("outputs", [{"messages": []}, {"result": "arbitrary state"}, "", None])
 def test_graph_root_normalization_preserves_empty_and_generic_outputs(outputs: Any) -> None:
     node = Node(node_type="agent", run_id=uuid4(), span_params={"_langgraph_root": True})
     assert normalize_langgraph_output(outputs, node) is outputs
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback])
+@pytest.mark.parametrize("interrupted", [False, True])
+async def test_real_graph_turn_without_response_does_not_export_previous_reply(
+    callback_type: Any, interrupted: bool
+) -> None:
+    # Given: a checkpointed conversation whose second turn ends without a response.
+    graph_module = pytest.importorskip("langgraph.graph")
+    memory_module = pytest.importorskip("langgraph.checkpoint.memory")
+    types_module = pytest.importorskip("langgraph.types")
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = callback_type(splunk_ao_logger=logger, flush_on_chain_end=False)
+
+    async def assistant(state: dict) -> dict:
+        if sum(isinstance(message, HumanMessage) for message in state["messages"]) == 1:
+            return {"messages": [AIMessage(content="old reply")]}
+        if interrupted:
+            types_module.interrupt("awaiting approval")
+        return {}
+
+    builder = graph_module.StateGraph(graph_module.MessagesState)
+    builder.add_node("assistant", assistant)
+    builder.add_edge(graph_module.START, "assistant")
+    builder.add_edge("assistant", graph_module.END)
+    graph = builder.compile(checkpointer=memory_module.InMemorySaver())
+    config = {"configurable": {"thread_id": "no-response"}, "callbacks": [callback]}
+    try:
+        await graph.ainvoke({"messages": [HumanMessage(content="old question")]}, config=config)
+        before = len(sink.spans)
+
+        # When: a terminal branch or interrupt produces no current-turn message.
+        result = await graph.ainvoke({"messages": [HumanMessage(content="new question")]}, config=config)
+
+        # Then: history remains intact, but root telemetry contains no stale reply or input-as-output.
+        roots = [span for span in sink.spans[before:] if span.parent is None]
+        assert len(roots) == 1
+        assert json.loads(roots[0].attributes["gen_ai.output.messages"]) == []
+        assert [message.content for message in result["messages"]] == ["old question", "old reply", "new question"]
+        assert logger.current_parent() is None
+    finally:
+        logger.terminate()
 
 
 @pytest.mark.asyncio

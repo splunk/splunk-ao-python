@@ -38,6 +38,9 @@ def normalize_langgraph_output(outputs: Any, node: Node | None) -> Any:
         role = message.get("role", message.get("type")) if isinstance(message, dict) else getattr(message, "type", None)
         if role in ("assistant", "ai", "tool", "function"):
             return {**outputs, "messages": [message]}
+        if role in ("human", "user"):
+            # A turn with no response must not reuse a reply from checkpoint history.
+            return {**outputs, "messages": []}
     return outputs
 
 

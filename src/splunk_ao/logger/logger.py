@@ -6,7 +6,7 @@ import json
 import logging
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,6 +16,7 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
+from opentelemetry.util.types import Attributes, AttributeValue
 from pydantic import PrivateAttr
 
 from galileo_core.helpers.execution import async_run
@@ -111,7 +112,7 @@ class OtelIds:
     completed: bool = False
 
 
-class _ActiveSpan(NonRecordingSpan):
+class _ActiveSpan(otel_trace.Span):
     """Resolve completed SDK activations to their caller, including in copied contexts.
 
     Only this internal context view changes on completion; span identities and
@@ -120,17 +121,53 @@ class _ActiveSpan(NonRecordingSpan):
     """
 
     def __init__(self, ids: OtelIds, previous: otel_trace.Span) -> None:
-        super().__init__(ids.span_context)
+        self._span = NonRecordingSpan(ids.span_context)
         self._ids = ids
         self._previous = previous
 
-    def get_span_context(self) -> SpanContext:
+    def _resolve(self) -> otel_trace.Span:
         span: otel_trace.Span = self
         while isinstance(span, _ActiveSpan):
             if not span._ids.completed:
-                return span._ids.span_context
+                return span._span
             span = span._previous
-        return span.get_span_context()
+        return span
+
+    def get_span_context(self) -> SpanContext:
+        return self._resolve().get_span_context()
+
+    def is_recording(self) -> bool:
+        return self._resolve().is_recording()
+
+    def set_attribute(self, key: str, value: AttributeValue) -> None:
+        self._resolve().set_attribute(key, value)
+
+    def set_attributes(self, attributes: Mapping[str, AttributeValue]) -> None:
+        self._resolve().set_attributes(attributes)
+
+    def add_event(self, name: str, attributes: Attributes = None, timestamp: int | None = None) -> None:
+        self._resolve().add_event(name, attributes, timestamp)
+
+    def add_link(self, context: SpanContext, attributes: Attributes = None) -> None:
+        self._resolve().add_link(context, attributes)
+
+    def update_name(self, name: str) -> None:
+        self._resolve().update_name(name)
+
+    def set_status(self, status: otel_trace.Status | otel_trace.StatusCode, description: str | None = None) -> None:
+        self._resolve().set_status(status, description)
+
+    def record_exception(
+        self,
+        exception: BaseException,
+        attributes: Attributes = None,
+        timestamp: int | None = None,
+        escaped: bool = False,
+    ) -> None:
+        self._resolve().record_exception(exception, attributes, timestamp, escaped)
+
+    def end(self, end_time: int | None = None) -> None:
+        self._resolve().end(end_time)
 
 
 @dataclass(frozen=True)
