@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable
 from contextvars import Context, copy_context
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import wraps
 from typing import Any
 from uuid import UUID
@@ -14,7 +14,7 @@ from packaging.version import Version
 from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import NodeType
-from splunk_ao.utils.serialization import serialize_to_str
+from splunk_ao.utils.serialization import convert_time_delta_to_ns, serialize_to_str
 
 _logger = logging.getLogger(__name__)
 
@@ -59,13 +59,15 @@ def _resolve_crewai_imports() -> None:
 
 @dataclass
 class _CrewRun:
-    """Callback state retained only until one crew invocation ends."""
+    """Callback state retained until one crew or standalone operation ends."""
 
     handler: SplunkAOBaseHandler
     context: Context
     tasks: set[str] = field(default_factory=set)
     agent_run_ids: dict[tuple[str, str], UUID] = field(default_factory=dict)
     active_tool_run_id: UUID | None = None
+    warned: bool = False
+    source: Any = None
 
 
 class CrewAIEventListener:
@@ -95,6 +97,7 @@ class CrewAIEventListener:
         self._active_tool_run_id: UUID | None = None
         self._agent_run_ids: dict[tuple[str, str], UUID] = {}
         self._crew_runs: dict[UUID, _CrewRun] = {}
+        self._standalone_runs: dict[UUID, _CrewRun] = {}
 
         if CREWAI_AVAILABLE:
             # Register with the event bus directly instead of inheriting from
@@ -123,20 +126,24 @@ class CrewAIEventListener:
         def register(callback: Callable[[Any, Any], None]) -> Callable:
             @wraps(callback)
             async def receive(source: Any, event: Any) -> None:
-                # Deliberately no await: one lifecycle mutation must finish before
-                # the next event's callback can run on the bus's event loop.
-                self._dispatch_event(callback, source, event)
+                # Lifecycle mutations cannot yield; export waiting happens afterward.
+                flush_logger = self._dispatch_event(callback, source, event)
+                if flush_logger is not None:
+                    await flush_logger.async_flush()
 
             return event_bus.on(event_type)(receive)
 
         return register
 
-    def _dispatch_event(self, callback: Callable[[Any, Any], None], source: Any, event: Any) -> None:
+    def _dispatch_event(self, callback: Callable[[Any, Any], None], source: Any, event: Any) -> SplunkAOLogger | None:
         """Keep each crew's callbacks in one context, independent of delivery tasks."""
         name = callback.__name__
+        run_id = self._generate_run_id(source, event)
+        runs = self._crew_runs
+        standalone_failure = False
         crew_id: UUID | None
         if name.startswith("on_crew_kickoff_"):
-            crew_id = self._generate_run_id(source, event)
+            crew_id = self._to_uuid(run_id)
         else:
             task = getattr(event, "task", None)
             agent = getattr(event, "agent", None) or getattr(task, "agent", None)
@@ -144,31 +151,56 @@ class CrewAIEventListener:
             crew_id = self._to_uuid(getattr(crew, "id", None))
             if crew_id is None:
                 task_id = str(getattr(event, "task_id", None) or getattr(task, "id", ""))
-                matches = [run_id for run_id, run in self._crew_runs.items() if task_id in run.tasks]
+                agent_id = str(getattr(event, "agent_id", None) or getattr(agent, "id", ""))
+                matches = [
+                    (registry, owner)
+                    for registry in (self._crew_runs, self._standalone_runs)
+                    for owner, run in registry.items()
+                    if (task_id and task_id in run.tasks)
+                    or (agent_id and any(key[0] == agent_id for key in run.agent_run_ids))
+                ]
                 if len(matches) == 1:
-                    crew_id = matches[0]
-                elif len(self._crew_runs) == 1:
-                    crew_id = next(iter(self._crew_runs))
+                    runs, crew_id = matches[0]
+                elif not matches:
+                    # An unlinked call is independent, even while a crew is active.
+                    runs, crew_id = self._standalone_runs, self._to_uuid(run_id)
+                    if crew_id not in runs and name == "on_llm_call_failed":
+                        # Older failures have no call ID or messages; use only an unambiguous source.
+                        owners = [
+                            owner
+                            for owner, run in runs.items()
+                            if run.source is source
+                            and run.handler._root_node is not None
+                            and run.handler._root_node.node_type == NodeType.LLM.value
+                        ]
+                        if len(owners) == 1:
+                            crew_id, standalone_failure = owners[0], True
 
         if crew_id is None:
             _logger.debug("Ignoring CrewAI callback without an identifiable crew: %s", name)
-            return
+            return None
 
-        if name == "on_crew_kickoff_started" and crew_id not in self._crew_runs:
+        is_root = (
+            standalone_failure
+            or name.startswith("on_crew_kickoff_")
+            or (runs is self._standalone_runs and crew_id == self._to_uuid(run_id))
+        )
+        terminal = is_root and not name.endswith("_started")
+        if is_root and name.endswith("_started") and crew_id not in runs:
             handler = self._handler
-            if self._crew_runs:
+            if self._crew_runs or self._standalone_runs:
                 handler = SplunkAOBaseHandler(
                     splunk_ao_logger=handler._splunk_ao_logger,
                     start_new_trace=handler._start_new_trace,
                     flush_on_chain_end=handler._flush_on_chain_end,
                     integration="crewai",
                 )
-            self._crew_runs[crew_id] = _CrewRun(handler, copy_context())
+            runs[crew_id] = _CrewRun(handler, copy_context(), source=source)
 
-        run = self._crew_runs.get(crew_id)
+        run = runs.get(crew_id)
         if run is None:
             _logger.debug("Ignoring CrewAI callback without an active crew: %s", name)
-            return
+            return None
 
         previous_handler, previous_tool, previous_agents = self._handler, self._active_tool_run_id, self._agent_run_ids
         self._handler, self._active_tool_run_id, self._agent_run_ids = (
@@ -178,25 +210,35 @@ class CrewAIEventListener:
         )
         if name == "on_task_started":
             run.tasks.add(str(getattr(getattr(event, "task", source), "id", "")))
+        flush = run.handler._flush_on_chain_end
+        run.handler._flush_on_chain_end = False
         try:
             run.context.run(callback, source, event)
-        except Exception:
-            # A malformed event must not retain an unfinished invocation forever.
-            try:
-                run.context.run(run.handler._conclude_owned_state_on_failure)
-            finally:
-                run.context.run(run.handler._reset_handler_state)
-                self._crew_runs.pop(crew_id, None)
-            raise
+        except Exception as exc:
+            if is_root:
+                # A root callback failure must not retain an unfinished invocation.
+                try:
+                    run.context.run(run.handler._conclude_owned_state_on_failure)
+                finally:
+                    run.context.run(run.handler._reset_handler_state)
+                    runs.pop(crew_id, None)
+                raise
+            if not run.warned:
+                _logger.warning(
+                    "CrewAI telemetry callback %s failed (%s); continuing the crew", name, type(exc).__name__
+                )
+                run.warned = True
         finally:
+            run.handler._flush_on_chain_end = flush
             run.active_tool_run_id = self._active_tool_run_id
             self._handler, self._active_tool_run_id, self._agent_run_ids = (
                 previous_handler,
                 previous_tool,
                 previous_agents,
             )
-            if name in ("on_crew_kickoff_completed", "on_crew_kickoff_failed"):
-                self._crew_runs.pop(crew_id, None)
+            if terminal:
+                runs.pop(crew_id, None)
+        return run.handler._splunk_ao_logger if terminal and flush else None
 
     def setup_listeners(self, crewai_event_bus: Any) -> None:
         """Setup event listeners for CrewAI events."""
@@ -456,6 +498,30 @@ class CrewAIEventListener:
             f"{getattr(event, 'crew_name', '')}_{getattr(event, 'agent', '')}_{getattr(event, 'task', '')}"
         )
 
+    @staticmethod
+    def _event_timestamp(event: Any) -> datetime | None:
+        timestamp = getattr(event, "timestamp", None)
+        if not isinstance(timestamp, datetime):
+            return None
+        return timestamp.replace(tzinfo=UTC) if timestamp.tzinfo is None else timestamp.astimezone(UTC)
+
+    def _start_node(self, event: Any, **kwargs: Any) -> None:
+        timestamp = self._event_timestamp(event)
+        if timestamp is not None:
+            existing = self._handler.get_node(kwargs["run_id"])
+            kwargs["created_at"] = existing.span_params.get("created_at", timestamp) if existing else timestamp
+        self._handler.start_node(**kwargs)
+
+    def _end_node(self, event: Any, *, run_id: UUID, **kwargs: Any) -> None:
+        timestamp = self._event_timestamp(event)
+        node = self._handler.get_node(run_id)
+        created_at = node.span_params.get("created_at") if node else None
+        if timestamp is not None and isinstance(created_at, datetime):
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=UTC)
+            kwargs["duration_ns"] = max(0, convert_time_delta_to_ns(timestamp - created_at))
+        self._handler.end_node(run_id=run_id, **kwargs)
+
     def _extract_metadata(self, event: Any) -> dict:
         """Extract metadata from event for span attributes."""
         metadata = {}
@@ -481,7 +547,8 @@ class CrewAIEventListener:
 
         input = getattr(event, "inputs", {})
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.CHAIN.value,
             parent_run_id=None,  # Root node
             run_id=run_id,
@@ -516,7 +583,7 @@ class CrewAIEventListener:
         run_id = self._generate_run_id(source, event)
         output = getattr(event, "output", {})
         self._update_crew_input(str(run_id))
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(getattr(output, "raw", output)))
+        self._end_node(event, run_id=run_id, output=serialize_to_str(getattr(output, "raw", output)))
         self._agent_run_ids.clear()
 
     def _handle_crew_kickoff_failed(self, source: Any, event: Any) -> None:
@@ -525,7 +592,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = event.error
 
-        self._handler.end_node(run_id=run_id, output=f"Error: {event.error}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Error: {event.error}", metadata=metadata)
         self._agent_run_ids.clear()
 
     # Agent event handlers
@@ -555,7 +622,8 @@ class CrewAIEventListener:
         if hasattr(event, "tools") and event.tools:
             metadata["available_tools"] = [str(getattr(tool, "name", tool)) for tool in event.tools]
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.AGENT.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -567,7 +635,7 @@ class CrewAIEventListener:
     def _handle_agent_execution_completed(self, source: Any, event: Any) -> None:
         """Handle agent execution completion."""
         run_id = self._generate_run_id(source, event)
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(getattr(event, "output", "")))
+        self._end_node(event, run_id=run_id, output=serialize_to_str(getattr(event, "output", "")))
 
     def _handle_agent_execution_error(self, source: Any, event: Any) -> None:
         """Handle agent execution error."""
@@ -575,8 +643,8 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = getattr(event, "error", "Unknown error")
 
-        self._handler.end_node(
-            run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
+        self._end_node(
+            event, run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
         )
 
     # Task event handlers
@@ -604,7 +672,8 @@ class CrewAIEventListener:
         if not input:
             input = task.description if task and hasattr(task, "description") else ""
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.CHAIN.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -620,7 +689,7 @@ class CrewAIEventListener:
         if hasattr(event, "output") and event.output:
             output = event.output.raw if hasattr(event.output, "raw") else str(event.output)
 
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(output))
+        self._end_node(event, run_id=run_id, output=serialize_to_str(output))
 
     def _handle_task_failed(self, source: Any, event: Any) -> None:
         """Handle task failure."""
@@ -628,7 +697,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = event.error
 
-        self._handler.end_node(run_id=run_id, output=f"Error: {event.error}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Error: {event.error}", metadata=metadata)
 
     # Tool event handlers
     def _handle_tool_usage_started(self, source: Any, event: Any) -> None:
@@ -653,7 +722,8 @@ class CrewAIEventListener:
         if input:
             metadata["tool_args"] = str(input)
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.TOOL.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -666,7 +736,7 @@ class CrewAIEventListener:
     def _handle_tool_usage_finished(self, source: Any, event: Any) -> None:
         """Handle tool usage completion."""
         run_id = self._generate_run_id(source, event)
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(getattr(event, "output", "")))
+        self._end_node(event, run_id=run_id, output=serialize_to_str(getattr(event, "output", "")))
         self._active_tool_run_id = None
 
     def _handle_tool_usage_error(self, source: Any, event: Any) -> None:
@@ -675,8 +745,8 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = getattr(event, "error", "Unknown error")
 
-        self._handler.end_node(
-            run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
+        self._end_node(
+            event, run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
         )
         self._active_tool_run_id = None
 
@@ -704,7 +774,8 @@ class CrewAIEventListener:
         if hasattr(source, "temperature"):
             metadata["temperature"] = str(source.temperature)
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.LLM.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -732,16 +803,19 @@ class CrewAIEventListener:
                 token_kwargs["num_output_tokens"] = _get("completion_tokens", 0)
                 token_kwargs["total_tokens"] = _get("total_tokens", 0)
 
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(response or ""), **token_kwargs)
+        self._end_node(event, run_id=run_id, output=serialize_to_str(response or ""), **token_kwargs)
 
     def _handle_llm_call_failed(self, source: Any, event: Any) -> None:
         """Handle LLM call failure."""
         run_id = self._generate_run_id(source, event)
+        root = self._handler._root_node
+        if self._handler.get_node(run_id) is None and root is not None and root.node_type == NodeType.LLM.value:
+            run_id = root.run_id
         metadata = self._extract_metadata(event)
         metadata["error"] = getattr(event, "error", "Unknown error")
 
-        self._handler.end_node(
-            run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
+        self._end_node(
+            event, run_id=run_id, output=f"Error: {getattr(event, 'error', 'Unknown error')}", metadata=metadata
         )
 
     # Memory event handlers
@@ -757,7 +831,8 @@ class CrewAIEventListener:
                 task_run_id = self._to_uuid(task_id)
                 parent_node = self._handler.get_node(task_run_id) if task_run_id else None
                 if parent_node:
-                    self._handler.start_node(
+                    self._start_node(
+                        event,
                         node_type=NodeType.AGENT.value,
                         parent_run_id=task_run_id,
                         run_id=parent_run_id,
@@ -773,7 +848,8 @@ class CrewAIEventListener:
         if hasattr(event, "agent_role") and event.agent_role:
             metadata["agent_role"] = event.agent_role
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.RETRIEVER.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -791,7 +867,7 @@ class CrewAIEventListener:
         metadata["results_count"] = len(event.results) if hasattr(event.results, "__len__") else 0
 
         output = serialize_to_str(event.results) if event.results else "No results found"
-        self._handler.end_node(run_id=run_id, output=output, metadata=metadata)
+        self._end_node(event, run_id=run_id, output=output, metadata=metadata)
 
     def _handle_memory_query_failed(self, source: Any, event: Any) -> None:
         """Handle memory query failure."""
@@ -800,7 +876,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = event.error
 
-        self._handler.end_node(run_id=run_id, output=f"Memory query failed: {event.error}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Memory query failed: {event.error}", metadata=metadata)
 
     def _handle_memory_save_started(self, source: Any, event: Any) -> None:
         """Handle memory save start."""
@@ -815,7 +891,8 @@ class CrewAIEventListener:
 
         input_value = event.value if event.value else "Memory content"
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.CHAIN.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -831,7 +908,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["save_time_ms"] = event.save_time_ms
 
-        self._handler.end_node(run_id=run_id, output=f"Memory saved successfully: {event.value}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Memory saved successfully: {event.value}", metadata=metadata)
 
     def _handle_memory_save_failed(self, source: Any, event: Any) -> None:
         """Handle memory save failure."""
@@ -840,7 +917,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = event.error
 
-        self._handler.end_node(run_id=run_id, output=f"Memory save failed: {event.error}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Memory save failed: {event.error}", metadata=metadata)
 
     def _handle_memory_retrieval_started(self, source: Any, event: Any) -> None:
         """Handle memory retrieval start."""
@@ -851,7 +928,8 @@ class CrewAIEventListener:
         if hasattr(event, "task_id") and event.task_id:
             metadata["task_id"] = event.task_id
 
-        self._handler.start_node(
+        self._start_node(
+            event,
             node_type=NodeType.CHAIN.value,
             parent_run_id=parent_run_id,
             run_id=run_id,
@@ -867,7 +945,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["retrieval_time_ms"] = event.retrieval_time_ms
 
-        self._handler.end_node(run_id=run_id, output=serialize_to_str(event.memory_content), metadata=metadata)
+        self._end_node(event, run_id=run_id, output=serialize_to_str(event.memory_content), metadata=metadata)
 
     def _handle_memory_retrieval_failed(self, source: Any, event: Any) -> None:
         """Handle memory retrieval failure."""
@@ -876,7 +954,7 @@ class CrewAIEventListener:
         metadata = self._extract_metadata(event)
         metadata["error"] = getattr(event, "error", "Unknown error")
 
-        self._handler.end_node(run_id=run_id, output=f"Memory retrieval failed: {metadata['error']}", metadata=metadata)
+        self._end_node(event, run_id=run_id, output=f"Memory retrieval failed: {metadata['error']}", metadata=metadata)
 
     def lite_llm_usage_callback(
         self,
@@ -888,11 +966,17 @@ class CrewAIEventListener:
         node_id = self._generate_run_id(kwargs, kwargs)
 
         node = self._handler.get_node(node_id)
+        if node is None:
+            for run in (*tuple(self._crew_runs.values()), *tuple(self._standalone_runs.values())):
+                node = run.handler.get_node(node_id)
+                if node is not None:
+                    break
         if not node:
             _logger.debug(f"No node exists for run_id {node_id}")
             return
         usage = completion_response.model_extra["usage"]
         node.span_params["usage"] = usage.model_dump() if hasattr(usage, "model_dump") else usage
-        node.span_params["num_input_tokens"] = getattr(usage, "prompt_tokens", 0)
-        node.span_params["num_output_tokens"] = getattr(usage, "completion_tokens", 0)
-        node.span_params["total_tokens"] = getattr(usage, "total_tokens", 0)
+        get_usage = usage.get if isinstance(usage, dict) else lambda key, default=0: getattr(usage, key, default)
+        node.span_params["num_input_tokens"] = get_usage("prompt_tokens", 0)
+        node.span_params["num_output_tokens"] = get_usage("completion_tokens", 0)
+        node.span_params["total_tokens"] = get_usage("total_tokens", 0)

@@ -1,9 +1,10 @@
 import asyncio
 import inspect
 import sys
+import threading
 import uuid
 from contextvars import copy_context
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from types import ModuleType
 from typing import Any
 from unittest.mock import Mock, patch
@@ -101,7 +102,7 @@ class RecordingSink:
 
 @pytest.fixture
 def crewai_bus():
-    # Given: a bus that can deliver synchronous callbacks in reverse worker order.
+    # Given: synchronous registrations are reversed so reverting async registration fails the regression.
     # Async listeners run without yielding, as in CrewAI's dedicated event loop.
     modules = {}
     events = {}
@@ -119,7 +120,7 @@ def crewai_bus():
         modules[module.__name__] = module
 
     callbacks = {}
-    bus = Mock()
+    bus = Mock(spec=["on", "aemit"])
 
     def on(event_type):
         def register(callback):
@@ -401,6 +402,440 @@ def test_crewai_event_bus_without_async_api_retains_registration(crewai_callback
 
     bus.on.assert_called_once_with(MockEvent)
     bus.on.return_value.assert_called_once_with(callback)
+
+
+@pytest.mark.parametrize("phase", ["start", "end"])
+def test_crewai_review_child_callback_failure_keeps_crew(crewai_bus, caplog, enable_galileo_logging, phase) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    agent = MockAgent(crew=crew)
+    task = MockTask(agent=agent)
+    source = MockSource()
+
+    def llm_event(kind, call_id):
+        return events[kind](
+            call_id=call_id,
+            task_id=str(task.id),
+            agent_id=str(agent.id),
+            model="local-model",
+            messages=[],
+            response="Reply",
+        )
+
+    async def run():
+        await deliver(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                (task, events["TaskStartedEvent"](task=task)),
+                (agent, events["AgentExecutionStartedEvent"](agent=agent, task=task)),
+            ]
+        )
+        if phase == "end":
+            await deliver([(source, llm_event("LLMCallStartedEvent", "bad"))])
+        method = "_handle_llm_call_started" if phase == "start" else "_handle_llm_call_completed"
+        kind = "LLMCallStartedEvent" if phase == "start" else "LLMCallCompletedEvent"
+        with patch.object(listener, method, side_effect=ValueError("private event payload")):
+            await deliver([(source, llm_event(kind, "bad")), (source, llm_event(kind, "bad"))])
+        assert crew.id in listener._crew_runs
+        await deliver(
+            [
+                (source, llm_event("LLMCallStartedEvent", "good")),
+                (source, llm_event("LLMCallCompletedEvent", "good")),
+                (agent, events["AgentExecutionCompletedEvent"](agent=agent, task=task, output="Reply")),
+                (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply"))),
+                (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+            ]
+        )
+
+    asyncio.run(run())
+    assert len(sink.spans) == 4
+    assert len({span.context.trace_id for span in sink.spans}) == 1
+    assert sink.spans[-1].status.status_code != trace.StatusCode.ERROR
+    warnings = [record for record in caplog.records if record.name == "splunk_ao.handlers.crewai.handler"]
+    assert len(warnings) == 1
+    assert "private event payload" not in caplog.text
+    assert not listener._crew_runs
+    assert not listener._handler._active_steps
+    assert not logger._otel_ids
+
+
+@pytest.mark.parametrize("crew_active", [False, True])
+def test_crewai_review_standalone_llms_keep_separate_traces(crewai_bus, crew_active) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    source = MockSource()
+
+    async def run():
+        if crew_active:
+            await deliver([(crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={}))])
+        for index in range(2):
+            await deliver(
+                [
+                    (
+                        source,
+                        events["LLMCallStartedEvent"](call_id=f"standalone-{index}", model="local-model", messages=[]),
+                    )
+                ]
+            )
+            assert logger.current_parent() is None
+            assert not trace.get_current_span().get_span_context().is_valid
+        for index in range(2):
+            await deliver(
+                [(source, events["LLMCallCompletedEvent"](call_id=f"standalone-{index}", response=f"Reply {index}"))]
+            )
+        if crew_active:
+            await deliver([(crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Crew reply")))])
+
+    asyncio.run(run())
+    assert len(sink.spans) == 2 + int(crew_active)
+    assert all(span.parent is None for span in sink.spans)
+    assert len({span.context.trace_id for span in sink.spans}) == len(sink.spans)
+    assert sum(span.attributes["gen_ai.operation.name"] == "chat" for span in sink.spans) == 2
+    assert not listener._crew_runs
+    assert not listener._standalone_runs
+    assert not logger._otel_ids
+
+
+@pytest.mark.parametrize("string_id", [False, True])
+def test_crewai_review_standalone_task_ids_can_be_reused(crewai_bus, string_id) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    task_id = uuid.uuid4()
+    task = MockTask(task_id=str(task_id) if string_id else task_id)
+
+    async def run():
+        for _ in range(2):
+            await deliver(
+                [
+                    (task, events["TaskStartedEvent"](task=task)),
+                    (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply"))),
+                ]
+            )
+            assert not listener._standalone_runs
+            assert logger.current_parent() is None
+
+    asyncio.run(run())
+    assert len(sink.spans) == 2
+    assert all(span.parent is None for span in sink.spans)
+    assert len({span.context.trace_id for span in sink.spans}) == 2
+    assert not logger._otel_ids
+
+
+@pytest.mark.parametrize("call_id", [None, "standalone-failure"])
+def test_crewai_review_failed_standalone_llm_releases_state(crewai_bus, call_id) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    source = MockSource(model="local-model")
+    correlation = {"call_id": call_id} if call_id else {}
+    # CrewAI 1.6 failure events omit messages and have no call_id.
+    asyncio.run(
+        deliver(
+            [
+                (
+                    source,
+                    events["LLMCallStartedEvent"](
+                        messages=[{"role": "user", "content": "Question"}], model="local-model", **correlation
+                    ),
+                ),
+                (source, events["LLMCallFailedEvent"](error="synthetic failure", **correlation)),
+            ]
+        )
+    )
+    assert len(sink.spans) == 1
+    assert sink.spans[0].attributes["gen_ai.operation.name"] == "chat"
+    assert "synthetic failure" in sink.spans[0].attributes["gen_ai.output.messages"]
+    assert not listener._standalone_runs
+    assert not logger._otel_ids
+    assert logger.current_parent() is None
+
+
+def test_crewai_review_usage_reaches_overlapping_crews(crewai_bus) -> None:
+    listener, _logger, sink, events, deliver = crewai_bus
+    calls = []
+    starts, ends = [], []
+    for index in range(2):
+        crew = MockCrew()
+        agent = MockAgent(crew=crew)
+        task = MockTask(agent=agent)
+        source = MockSource()
+        messages = [{"role": "user", "content": f"Question {index}"}]
+        calls.append({"messages": messages})
+        starts.extend(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name=f"Crew {index}", inputs={})),
+                (task, events["TaskStartedEvent"](task=task)),
+                (agent, events["AgentExecutionStartedEvent"](agent=agent, task=task)),
+                (
+                    source,
+                    events["LLMCallStartedEvent"](
+                        messages=messages, agent_id=str(agent.id), task_id=str(task.id), model="local-model"
+                    ),
+                ),
+            ]
+        )
+        ends.extend(
+            [
+                (
+                    source,
+                    events["LLMCallCompletedEvent"](
+                        messages=messages, agent_id=str(agent.id), task_id=str(task.id), response="Reply"
+                    ),
+                ),
+                (agent, events["AgentExecutionCompletedEvent"](agent=agent, task=task, output="Reply")),
+                (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply"))),
+                (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+            ]
+        )
+
+    async def run():
+        await deliver(starts)
+        for index, kwargs in enumerate(calls):
+            usage = Mock(prompt_tokens=10 + index, completion_tokens=5, total_tokens=15 + index)
+            usage.model_dump.return_value = {
+                "prompt_tokens": 10 + index,
+                "completion_tokens": 5,
+                "total_tokens": 15 + index,
+            }
+            listener.lite_llm_usage_callback(
+                kwargs, Mock(model_extra={"usage": usage}), datetime.now(UTC), datetime.now(UTC)
+            )
+        await deliver(ends)
+
+    asyncio.run(run())
+    chats = [span for span in sink.spans if span.attributes["gen_ai.operation.name"] == "chat"]
+    assert len(sink.spans) == 8
+    assert len(chats) == 2
+    assert [span.attributes.get("gen_ai.usage.input_tokens") for span in chats] == [10, 11]
+    assert [span.attributes.get("gen_ai.usage.output_tokens") for span in chats] == [5, 5]
+    assert not listener._crew_runs
+
+
+def test_crewai_review_flush_runs_off_event_loop(crewai_bus, monkeypatch) -> None:
+    listener, _logger, sink, events, deliver = crewai_bus
+    listener._handler._flush_on_chain_end = True
+    crew = MockCrew()
+    flush_threads = []
+    loop_thread = threading.get_ident()
+
+    def flush():
+        flush_threads.append(threading.get_ident())
+        return True
+
+    monkeypatch.setattr(sink, "force_flush", flush)
+    asyncio.run(
+        deliver(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+            ]
+        )
+    )
+    assert len(sink.spans) == 1
+    assert len(flush_threads) == 1
+    assert flush_threads[0] != loop_thread
+    assert listener._handler._flush_on_chain_end is True
+
+
+@pytest.mark.parametrize("naive", [False, True])
+def test_crewai_review_uses_original_event_times(crewai_bus, naive) -> None:
+    listener, _logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    agent = MockAgent(crew=crew)
+    agent_source = MockSource()
+    task = MockTask(agent=agent)
+    base = datetime(2020, 1, 2, tzinfo=UTC)
+    event_base = base.replace(tzinfo=None) if naive else base
+
+    def event(kind, seconds, **kwargs):
+        return events[kind](timestamp=event_base + timedelta(seconds=seconds), **kwargs)
+
+    asyncio.run(
+        deliver(
+            [
+                (crew, event("CrewKickoffStartedEvent", 0, crew_name="Crew", inputs={})),
+                (task, event("TaskStartedEvent", 1, task=task)),
+                (agent_source, event("AgentExecutionStartedEvent", 2, agent=agent, task=task)),
+                (
+                    MockSource(),
+                    event(
+                        "ToolUsageStartedEvent",
+                        3,
+                        tool_name="lookup",
+                        tool_args={},
+                        agent_id=str(agent.id),
+                        task_id=str(task.id),
+                    ),
+                ),
+                (
+                    MockSource(),
+                    event(
+                        "ToolUsageFinishedEvent",
+                        3.5,
+                        tool_name="lookup",
+                        tool_args={},
+                        agent_id=str(agent.id),
+                        task_id=str(task.id),
+                        output="result",
+                    ),
+                ),
+                (
+                    MockSource(),
+                    event(
+                        "LLMCallStartedEvent",
+                        4,
+                        call_id="timed",
+                        model="local-model",
+                        agent_id=str(agent.id),
+                        task_id=str(task.id),
+                        messages=[],
+                    ),
+                ),
+                (
+                    MockSource(),
+                    event(
+                        "LLMCallCompletedEvent",
+                        5,
+                        call_id="timed",
+                        agent_id=str(agent.id),
+                        task_id=str(task.id),
+                        response="Reply",
+                    ),
+                ),
+                (agent_source, event("AgentExecutionCompletedEvent", 6, agent=agent, task=task, output="Reply")),
+                (task, event("TaskCompletedEvent", 7, task=task, output=MockOutput("Reply"))),
+                (crew, event("CrewKickoffCompletedEvent", 8, output=MockOutput("Reply"))),
+            ]
+        )
+    )
+    expected = {
+        "invoke_workflow Crew": (0, 8),
+        "invoke_workflow Test task": (1, 7),
+        "invoke_agent Test Agent": (2, 6),
+        "execute_tool lookup": (3, 3.5),
+        "chat local-model": (4, 5),
+    }
+    assert len(sink.spans) == len(expected)
+    for span in sink.spans:
+        start, end = expected[span.name]
+        assert span.start_time == int((base + timedelta(seconds=start)).timestamp() * 1e9)
+        assert span.end_time - span.start_time == int((end - start) * 1e9)
+    assert not listener._crew_runs
+
+
+def test_crewai_review_duplicate_events_emit_once(crewai_bus) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    task = MockTask(agent=MockAgent(crew=crew))
+    crew_start = (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={}))
+    start = (task, events["TaskStartedEvent"](task=task))
+    end = (task, events["TaskCompletedEvent"](task=task, output=MockOutput("Reply")))
+    crew_end = (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply")))
+    asyncio.run(deliver([crew_start, crew_start, start, start, end, end, crew_end, crew_end]))
+    assert len(sink.spans) == 2
+    assert sink.spans[0].parent == sink.spans[1].context
+    assert not listener._crew_runs
+    assert not logger._otel_ids
+
+
+@pytest.mark.parametrize("caller_owned", [False, True])
+def test_crewai_review_inherits_context_across_loop_thread(crewai_bus, caller_owned) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    loop = asyncio.new_event_loop()
+    ready = threading.Event()
+
+    def serve():
+        asyncio.set_event_loop(loop)
+        loop.call_soon(ready.set)
+        loop.run_forever()
+
+    worker = threading.Thread(target=serve, daemon=True)
+    worker.start()
+    crew = MockCrew()
+    remote = trace.SpanContext(123, 456, is_remote=True, trace_flags=trace.TraceFlags(1))
+    try:
+        assert ready.wait(timeout=5)
+        with trace.use_span(trace.NonRecordingSpan(remote)):
+            if caller_owned:
+                listener._handler._start_new_trace = False
+                logger.start_trace(input="caller")
+                logger.add_workflow_span(input="caller", name="caller")
+            caller = logger.current_parent()
+            expected = trace.get_current_span().get_span_context()
+            for _ in range(2):
+                future = asyncio.run_coroutine_threadsafe(
+                    deliver(
+                        [
+                            (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={})),
+                            (crew, events["CrewKickoffCompletedEvent"](output=MockOutput("Reply"))),
+                        ]
+                    ),
+                    loop,
+                )
+                future.result(timeout=5)
+                assert logger.current_parent() is caller
+                assert trace.get_current_span().get_span_context() == expected
+            assert len(sink.spans) == 2
+            assert all(span.parent == expected for span in sink.spans)
+            assert not listener._crew_runs
+            if caller_owned:
+                logger.conclude(output="Reply", conclude_all=True)
+    finally:
+        loop.call_soon_threadsafe(loop.stop)
+        worker.join(timeout=5)
+        assert not worker.is_alive()
+        loop.close()
+
+
+def test_crewai_review_two_agent_turns_keep_all_twenty_one_spans(crewai_bus) -> None:
+    listener, logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    agents = [MockAgent(crew=crew, role=role) for role in ("Researcher", "Reviewer")]
+    tasks = [MockTask(agent=agent) for agent in agents]
+
+    async def run():
+        for turn in range(3):
+            batch = [(crew, events["CrewKickoffStartedEvent"](crew_name="LocalCrew", inputs={"turn": turn}))]
+            for index, (agent, task) in enumerate(zip(agents, tasks, strict=True)):
+                source = MockSource()
+                call = {"call_id": f"{turn}-{index}", "agent_id": str(agent.id), "task_id": str(task.id)}
+                batch.extend(
+                    [
+                        (task, events["TaskStartedEvent"](task=task)),
+                        (source, events["AgentExecutionStartedEvent"](agent=agent, task=task)),
+                        (source, events["LLMCallStartedEvent"](**call, model="local-model", messages=[])),
+                        (source, events["LLMCallCompletedEvent"](**call, response=f"Reply {turn}")),
+                        (
+                            source,
+                            events["AgentExecutionCompletedEvent"](agent=agent, task=task, output=f"Reply {turn}"),
+                        ),
+                        (task, events["TaskCompletedEvent"](task=task, output=MockOutput(f"Reply {turn}"))),
+                    ]
+                )
+            batch.append((crew, events["CrewKickoffCompletedEvent"](output=MockOutput(f"Reply {turn}"))))
+            before = len(sink.spans)
+            await deliver(batch)
+            spans = sink.spans[before:]
+            assert len(spans) == 7
+            roots = [span for span in spans if span.parent is None]
+            assert len(roots) == 1
+            by_id = {span.context.span_id: span for span in spans}
+            for span in spans:
+                operation = span.attributes["gen_ai.operation.name"]
+                if span is roots[0]:
+                    assert operation == "invoke_workflow"
+                elif operation == "chat":
+                    assert by_id[span.parent.span_id].attributes["gen_ai.operation.name"] == "invoke_agent"
+                elif operation == "invoke_agent":
+                    assert by_id[span.parent.span_id].attributes["gen_ai.operation.name"] == "invoke_workflow"
+                else:
+                    assert span.parent == roots[0].context
+            assert not listener._crew_runs
+            assert not listener._standalone_runs
+            assert not logger._otel_ids
+            assert logger.current_parent() is None
+            assert not trace.get_current_span().get_span_context().is_valid
+
+    asyncio.run(run())
+    assert len(sink.spans) == 21
+    assert len({span.context.trace_id for span in sink.spans}) == 3
 
 
 def test_crewai_adapter_enqueues_task_at_callback_end_without_flush() -> None:
