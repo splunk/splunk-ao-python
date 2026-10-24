@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
+  preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
+- LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
+  without modifying graph state or reducing nested tool-node outputs. Turns without a response do not reuse earlier replies.
+
 ## [0.6.0]
 
 ### Added
