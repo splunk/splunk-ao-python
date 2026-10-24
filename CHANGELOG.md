@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
+  usage, child callback errors do not end healthy crews, and spans use original event timestamps.
+- CrewAI completion flushes run outside the shared event loop when explicitly enabled.
+
 ## [0.6.0]
 
 ### Added
