@@ -123,6 +123,9 @@ class _ActiveSpan(otel_trace.Span):
     def __init__(self, ids: OtelIds, previous: otel_trace.Span) -> None:
         self._span = NonRecordingSpan(ids.span_context)
         self._ids = ids
+        # Copied-task completion can leave stale activations in the caller's context.
+        while isinstance(previous, _ActiveSpan) and previous._ids.completed:
+            previous = previous._previous
         self._previous = previous
 
     def _resolve(self) -> otel_trace.Span:

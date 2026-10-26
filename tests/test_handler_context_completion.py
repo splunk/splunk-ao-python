@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from langchain_core.callbacks.manager import AsyncCallbackManager
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, ChatMessage, HumanMessage, HumanMessageChunk, ToolMessage
 from opentelemetry import baggage, context, trace
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -19,6 +19,7 @@ from splunk_ao.handlers.base_handler import SplunkAOBaseHandler
 from splunk_ao.handlers.langchain import SplunkAOAsyncCallback, SplunkAOCallback
 from splunk_ao.handlers.langchain.utils import normalize_langgraph_output
 from splunk_ao.logger import SplunkAOLogger
+from splunk_ao.logger.logger import _ActiveSpan
 from splunk_ao.schema.handlers import Node
 
 
@@ -119,6 +120,7 @@ async def test_real_async_dispatch_restores_caller_and_allows_callback_reuse(
         )
         manager = AsyncCallbackManager(handlers=[callback], inheritable_handlers=[callback])
         roots = []
+        first_turn_depth = None
         for turn in range(3):
             run = await manager.on_chain_start({"name": "LangGraph"}, {"question": str(turn)})
             root_context = trace.get_current_span().get_span_context()
@@ -132,6 +134,14 @@ async def test_real_async_dispatch_restores_caller_and_allows_callback_reuse(
 
             # Then: the original task has its caller context, and exactly two spans completed.
             assert trace.get_current_span().get_span_context() == baseline
+            activation = trace.get_current_span()
+            depth = 0
+            while isinstance(activation, _ActiveSpan):
+                depth += 1
+                activation = activation._previous
+            if first_turn_depth is None:
+                first_turn_depth = depth
+            assert depth == first_turn_depth
             assert logger.current_parent() is caller
             assert baggage.get_baggage("test-key") == "retained"
             assert not callback._handler._nodes
@@ -358,7 +368,7 @@ def test_graph_root_normalization_preserves_terminal_message_content(terminal: A
     assert len(outputs["messages"]) == 3
 
 
-@pytest.mark.parametrize("representation", ["objects", "type", "role"])
+@pytest.mark.parametrize("representation", ["objects", "type", "role", "chunks", "chat"])
 @pytest.mark.parametrize("response", [False, True])
 def test_graph_root_normalization_stops_at_current_turn_input(representation: str, response: bool) -> None:
     # Given: persisted history followed by a new input, optionally with a current response.
@@ -367,7 +377,19 @@ def test_graph_root_normalization_stops_at_current_turn_input(representation: st
     if response:
         history.append(AIMessage(content="new reply"))
     messages: list[Any] = list(history)
-    if representation == "type":
+    if representation == "chunks":
+        messages = [
+            HumanMessageChunk(content=message.content)
+            if isinstance(message, HumanMessage)
+            else AIMessageChunk(content=message.content)
+            for message in history
+        ]
+    elif representation == "chat":
+        messages = [
+            ChatMessage(role="user" if isinstance(message, HumanMessage) else "assistant", content=message.content)
+            for message in history
+        ]
+    elif representation == "type":
         messages = [{"type": message.type, "content": message.content} for message in history]
     elif representation == "role":
         messages = [

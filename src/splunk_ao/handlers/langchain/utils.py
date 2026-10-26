@@ -35,7 +35,12 @@ def normalize_langgraph_output(outputs: Any, node: Node | None) -> Any:
     if not isinstance(messages, list) or not messages:
         return outputs
     for message in reversed(messages):
-        role = message.get("role", message.get("type")) if isinstance(message, dict) else getattr(message, "type", None)
+        if isinstance(message, dict):
+            role = message.get("role", message.get("type"))
+        else:
+            role = getattr(message, "role", None) or getattr(message, "type", None)
+        if isinstance(role, str):
+            role = role.removesuffix("MessageChunk").lower()
         if role in ("assistant", "ai", "tool", "function"):
             return {**outputs, "messages": [message]}
         if role in ("human", "user"):
