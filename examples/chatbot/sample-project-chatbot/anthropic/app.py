@@ -11,7 +11,7 @@ All interactions are logged to Splunk AO. The structure is:
     as a workflow span
 - The call to the LLM is logged manually as an LLM span.
 - After the response is received, the trace is concluded with the response
-    and flushed to ensure it is sent to Splunk AO.
+    and flushed so it is exported immediately.
 
 To run this, you will need to have the following environment variables set:
 - `SPLUNK_AO_API_KEY`: Your Splunk AO API key.
@@ -25,14 +25,13 @@ Set the following environment variable for your LLM:
 
 """
 
-from datetime import datetime
 import os
+from datetime import datetime
 
 from anthropic import Anthropic
-
 from dotenv import load_dotenv
 
-from splunk_ao import splunk_ao_context, log
+from splunk_ao import log, splunk_ao_context
 
 # Load the environment variables from the .env file
 # This will override any existing environment variables with the same name
@@ -102,10 +101,7 @@ def send_chat_to_anthropic() -> str:
 
     # Send the chat history to the Anthropic API and get the response
     response = client.messages.create(
-        max_tokens=1024,
-        messages=chat_history_anthropic,
-        system=system_prompt,
-        model=MODEL_NAME,
+        max_tokens=1024, messages=chat_history_anthropic, system=system_prompt, model=MODEL_NAME
     )
 
     # Print the response to the console
@@ -182,8 +178,8 @@ def main() -> None:
         # Call the chat_with_llm function to get a response from the LLM
         response = chat_with_llm(user_input)
 
-        # Conclude and flush the logger after each interaction
-        # so that a new trace is started each time
+        # conclude() ends the trace so the next interaction starts a new one;
+        # flush() exports it immediately instead of waiting for the batch timer
         logger.conclude(output=response)
         logger.flush()
 

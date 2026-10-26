@@ -1,20 +1,20 @@
 # A script to generate log streams
 
 # Load the dataset.json
-from datetime import datetime
 import json
 import uuid
+from datetime import datetime
 
-from splunk_ao import splunk_ao_context
-
-from app import chat_with_llm, chat_history
+from app import chat_history, chat_with_llm
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
 
+from splunk_ao import splunk_ao_context
+
 load_dotenv(override=True)
 
-with open("../dataset.json", "r", encoding="utf-8") as f:
+with open("../dataset.json", encoding="utf-8") as f:
     dataset_content = json.load(f)
 
 print(f"Starting to log {len(dataset_content)} interactions...")
@@ -44,8 +44,8 @@ for row in dataset_content:
     # Print the response from the LLM
     print(f"LLM Response: {response}")
 
-    # Conclude and flush the logger after each interaction
-    # so that a new trace is started each time
+    # conclude() ends the trace so the next interaction starts a new one;
+    # flush() exports it immediately instead of waiting for the batch timer
     logger.conclude(output=response)
     logger.flush()
 

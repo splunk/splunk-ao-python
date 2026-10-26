@@ -20,8 +20,12 @@ class SplunkAOLoggerSingleton:
     provides a thread-safe way to retrieve or create SplunkAOLogger clients based on
     the given 'project' and 'agent_stream' parameters. If the parameters are not provided,
     the class attempts to read the values from the environment variables
-    SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM. The loggers are stored in a dictionary
-    using a tuple (project, agent_stream) as the key.
+    SPLUNK_AO_PROJECT and SPLUNK_AO_AGENT_STREAM, falling back to the standalone defaults.
+
+    Loggers are cached under a tuple key built from the calling thread's name, the logger
+    mode, the deployment, and the resolved project and agent stream (or experiment)
+    identity, plus the distributed trace and span IDs when present. Because the thread name
+    is part of the key, instances are never shared across threads.
     """
 
     _instance = None  # Class-level attribute to hold the singleton instance.
@@ -242,7 +246,14 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None = None,
     ) -> None:
         """
-        Reset (terminate and remove) one or all SplunkAOLogger instances.
+        Reset (terminate and remove) the SplunkAOLogger instances matching the given key.
+
+        Matching is by key prefix, so a logger's per-trace and hook-backed variants are
+        included. With no arguments this covers the current thread's loggers at the default
+        mode and resolved routing, not every cached instance; use ``reset_all()`` for that.
+
+        Terminating drains completed spans before shutting the exporter down. Spans still
+        open at that point are discarded rather than exported.
 
         Parameters
         ----------
@@ -293,11 +304,18 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None = None,
     ) -> None:
         """
-        Flush (upload and clear) a SplunkAOLogger instance.
+        Drain completed spans for the matching cached SplunkAOLogger instances.
 
-        If both project and agent_stream are None, then all cached loggers are flushed
-        and cleared. Otherwise, only the specific logger corresponding to the provided
-        key (project, agent_stream) is flushed and removed.
+        With no arguments, drains the loggers registered for the current thread whose mode and
+        resolved project/agent stream match the active defaults — not every cached logger.
+        Passing a project or agent stream narrows this to the loggers matching that key.
+
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and the loggers remain cached. Use
+        ``reset()`` or ``reset_all()`` to terminate and evict them; otherwise each logger
+        terminates via its ``atexit`` hook at interpreter exit.
 
         Parameters
         ----------
@@ -329,9 +347,17 @@ class SplunkAOLoggerSingleton:
                 self._splunk_ao_loggers[key].flush()
 
     def flush_all(self) -> None:
-        """Flush (upload and clear) all SplunkAOLogger instances."""
+        """
+        Drain completed spans for every cached SplunkAOLogger instance.
+
+        Open spans are left unconcluded, except for hook-backed loggers, which conclude any
+        open spans on the active trace before handing it off.
+
+        Draining is not a shutdown: exporters stay open and the loggers remain cached. Use
+        ``reset_all()`` to terminate and evict them; otherwise each logger terminates via its
+        ``atexit`` hook at interpreter exit.
+        """
         with self._lock:
-            # Terminate and clear all logger instances.
             for logger in self._splunk_ao_loggers.values():
                 logger.flush()
 
