@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
+  usage, child callback errors do not end healthy crews, and spans use original event timestamps.
+- CrewAI OTLP completion flushes run outside the shared event loop when explicitly enabled. Legacy ingestion-hook
+  flushes wait for active runs to finish and remain synchronous to preserve their whole-trace batches.
 - Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
   preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
 - LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
