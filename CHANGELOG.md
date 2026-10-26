@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
   usage, child callback errors do not end healthy crews, and spans use original event timestamps.
 - CrewAI completion flushes run outside the shared event loop when explicitly enabled.
+- Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
+  preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
+- LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
+  without modifying graph state or reducing nested tool-node outputs. Turns without a response do not reuse earlier replies.
+- Nested `@log(span_type="tool")` calls now retain the calling tool as their parent and expose their own active
+  tracing context during execution. Tool, workflow, and agent generators restore the consumer context between
+  yields and keep their own outputs when interleaved.
 
 ## [0.6.0]
 
