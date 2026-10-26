@@ -1,8 +1,11 @@
 """Unit tests for SplunkAOObserver extraction methods."""
 
+import asyncio
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
+from opentelemetry import trace
 
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao_adk.observer import SplunkAOObserver
@@ -14,6 +17,41 @@ from .mocks import MockContent, MockEvent, MockInvocationContext, MockPart
 def observer() -> SplunkAOObserver:
     """Create observer with ingestion hook for testing (no credentials needed)."""
     return SplunkAOObserver(ingestion_hook=lambda r: None)
+
+
+@pytest.mark.asyncio
+async def test_observer_completion_in_copied_task_restores_caller_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: ADK's normal exporter path uses the shared base handler and logger.
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")
+    sink = MagicMock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    baseline = trace.get_current_span().get_span_context()
+    try:
+        with patch("splunk_ao_adk.observer.splunk_ao_context.get_logger_instance", return_value=logger):
+            adapter = SplunkAOObserver()
+        for _ in range(2):
+            run_id = adapter.on_run_start(MockInvocationContext(), MockContent(text="question"))
+
+            async def finish(run: UUID = run_id) -> None:
+                adapter.on_run_end(run, "answer")
+
+            # When: completion runs in a copied context, as an async framework may do.
+            await asyncio.create_task(finish())
+
+            # Then: the original context is clear and the next invocation can emit.
+            assert trace.get_current_span().get_span_context() == baseline
+            assert logger.current_parent() is None
+        assert sink.emit.call_count == 2
+        first, second = [call.args[0] for call in sink.emit.call_args_list]
+        assert first.parent is None
+        assert second.parent is None
+        assert first.context.trace_id != second.context.trace_id
+    finally:
+        logger.terminate()
 
 
 class TestExtractInvocationMetadata:
