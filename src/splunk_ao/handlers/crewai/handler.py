@@ -129,7 +129,13 @@ class CrewAIEventListener:
                 # Lifecycle mutations cannot yield; export waiting happens afterward.
                 flush_logger = self._dispatch_event(callback, source, event)
                 if flush_logger is not None:
-                    await flush_logger.async_flush()
+                    if flush_logger._ingestion_hook:
+                        # Legacy hooks flush the whole mutable trace list. Wait for
+                        # active runs and do not yield while that list is flushed.
+                        if not self._crew_runs and not self._standalone_runs:
+                            flush_logger.flush()
+                    else:
+                        await flush_logger.async_flush()
 
             return event_bus.on(event_type)(receive)
 

@@ -608,6 +608,42 @@ def test_crewai_review_usage_reaches_overlapping_crews(crewai_bus) -> None:
     assert not listener._crew_runs
 
 
+@pytest.mark.parametrize("overlap", [False, True])
+def test_crewai_hook_flush_preserves_other_runs(crewai_bus, monkeypatch, overlap) -> None:
+    # Given: a legacy hook shares one mutable trace list across crew invocations.
+    listener, logger, _sink, events, deliver = crewai_bus
+    listener._handler._flush_on_chain_end = True
+    batches = []
+
+    def hook(request):
+        batches.append([(item.name, item.output) for item in request.traces])
+
+    monkeypatch.setattr(logger, "_ingestion_hook", hook)
+    crews = [MockCrew(name="First"), MockCrew(name="Second")]
+    starts = [(crew, events["CrewKickoffStartedEvent"](crew_name=crew.name, inputs={})) for crew in crews]
+    ends = [(crew, events["CrewKickoffCompletedEvent"](output=MockOutput(f"Reply {crew.name}"))) for crew in crews]
+
+    async def run():
+        # When: another run is open, or its start is already queued behind the first completion.
+        if overlap:
+            await deliver(starts)
+            await deliver([ends[0]])
+            assert not batches
+            assert len(logger.traces) == 2
+            await deliver([ends[1]])
+        else:
+            await deliver([starts[0], ends[0], starts[1], ends[1]])
+
+    asyncio.run(run())
+
+    # Then: only completed traces reach the hook, exactly once, with neither run lost.
+    assert [item for batch in batches for item in batch] == [(crew.name, f"Reply {crew.name}") for crew in crews]
+    assert len(batches) == (1 if overlap else 2)
+    assert not logger.traces
+    assert not listener._crew_runs
+    assert not listener._standalone_runs
+
+
 def test_crewai_review_flush_runs_off_event_loop(crewai_bus, monkeypatch) -> None:
     listener, _logger, sink, events, deliver = crewai_bus
     listener._handler._flush_on_chain_end = True
