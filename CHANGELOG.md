@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
+  usage, child callback errors do not end healthy crews, and spans use original event timestamps.
+- CrewAI OTLP completion flushes run outside the shared event loop when explicitly enabled. Legacy ingestion-hook
+  flushes wait for active runs to finish and remain synchronous to preserve their whole-trace batches.
+- Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
+  preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
+- LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
+  without modifying graph state or reducing nested tool-node outputs. Turns without a response do not reuse earlier replies.
+- Nested `@log(span_type="tool")` calls now retain the calling tool as their parent and expose their own active
+  tracing context during execution. Tool, workflow, and agent generators restore the consumer context between
+  yields and keep their own outputs when interleaved.
+
+## [0.6.0]
+
 ### Added
 
 - `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
@@ -19,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Require `certifi>=2026.10.19` and `uv>=0.13.4` (where used) to remove trust in the compromised
+  eMudhra certificate authorities (CVE-2026-111943). Update CI tooling and example certificate bundle pins.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
@@ -227,6 +246,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
 [0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
 [0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
 [0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/
