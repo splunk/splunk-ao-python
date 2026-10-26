@@ -20,6 +20,7 @@ from agents import (
     set_trace_processors,
 )
 from agents.tracing import ResponseSpanData, agent_span, generation_span, response_span
+from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
@@ -459,6 +460,39 @@ def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> No
         ]
         assert sink.spans[0].parent == sink.spans[1].context
         assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+async def test_openai_agents_completion_in_copied_task_releases_original_context() -> None:
+    # Given: the independent OpenAI Agents processor shares logger context helpers.
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    baseline = otel_trace.get_current_span().get_span_context()
+    set_trace_processors([processor])
+    try:
+        for turn in range(2):
+            framework_trace = agents_tracing.trace("Agent trace", trace_id=f"trace_copied_{turn}")
+            framework_trace.start()
+            root = agent_span("agent", span_id=f"span_copied_{turn}", parent=framework_trace)
+            root.start()
+
+            async def finish(agent: Any = root, owner: Any = framework_trace) -> None:
+                agent.finish()
+                owner.finish()
+
+            # When: framework completion happens in a copied execution context.
+            await asyncio.create_task(finish())
+
+            # Then: the original task restores its caller and the processor is reusable.
+            assert otel_trace.get_current_span().get_span_context() == baseline
+            assert logger.current_parent() is None
+            assert processor._trace_states == {}
+        assert len(sink.spans) == 2
+        assert sink.spans[0].context.trace_id != sink.spans[1].context.trace_id
     finally:
         set_trace_processors([])
         logger.terminate()
