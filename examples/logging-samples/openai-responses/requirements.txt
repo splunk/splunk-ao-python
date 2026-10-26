@@ -10,7 +10,7 @@ attrs==25.4.0
     # via splunk-ao
 backoff==2.2.1
     # via splunk-ao
-certifi==2026.1.4
+certifi==2026.10.19
     # via
     #   httpcore
     #   httpx

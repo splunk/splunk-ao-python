@@ -30,7 +30,7 @@ botocore==1.37.13
     #   s3transfer
 cachetools==5.5.2
     # via google-auth
-certifi==2025.1.31
+certifi==2026.10.19
     # via
     #   elastic-transport
     #   httpcore
@@ -84,7 +84,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.3.0
+fsspec==2026.9.0
     # via
     #   huggingface-hub
     #   langtrace-python-sdk
