@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Nested `@log(span_type="tool")` calls now retain the calling tool as their parent and expose their own active
+  tracing context during execution. Tool, workflow, and agent generators restore the consumer context between
+  yields and keep their own outputs when interleaved.
+
 ## [0.6.0]
 
 ### Added
