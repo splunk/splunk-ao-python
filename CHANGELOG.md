@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `SplunkAOLogger` no longer fails at startup when several processes start together and race to create the same
+  agent stream or project. After a failed create, the SDK looks it up again and uses the one the winner made.
+  A project is retried up to 5 times, 0.2 s apart, while access is granted. If it never appears, the original
+  create error is raised.
+
 ## [0.6.1]
 
 ### Fixed
