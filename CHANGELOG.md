@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1]
+
 ### Fixed
 
 - CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
@@ -248,6 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.6.1]: https://pypi.org/project/splunk-ao/0.6.1/
 [0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
 [0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
 [0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
