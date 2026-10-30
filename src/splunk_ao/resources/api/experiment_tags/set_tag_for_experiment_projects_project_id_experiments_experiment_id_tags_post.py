@@ -87,7 +87,19 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Set Tag For Experiment
 
-     Sets a tag for an experiment.
+     Set a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created tag.
+
+    Raises:
+        HTTPException: 400 if a tag with this key already exists on the experiment.
 
     Args:
         project_id (str):
@@ -114,7 +126,19 @@ def sync(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Set Tag For Experiment
 
-     Sets a tag for an experiment.
+     Set a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created tag.
+
+    Raises:
+        HTTPException: 400 if a tag with this key already exists on the experiment.
 
     Args:
         project_id (str):
@@ -137,7 +161,19 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Set Tag For Experiment
 
-     Sets a tag for an experiment.
+     Set a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created tag.
+
+    Raises:
+        HTTPException: 400 if a tag with this key already exists on the experiment.
 
     Args:
         project_id (str):
@@ -164,7 +200,19 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Set Tag For Experiment
 
-     Sets a tag for an experiment.
+     Set a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created tag.
+
+    Raises:
+        HTTPException: 400 if a tag with this key already exists on the experiment.
 
     Args:
         project_id (str):

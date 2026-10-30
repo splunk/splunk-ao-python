@@ -73,6 +73,8 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(*, client: ApiClient) -> Response[list[CollaboratorRoleInfo]]:
     """Get Collaborator Roles
 
+     List the collaborator roles that can be assigned on a project.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -91,6 +93,8 @@ def sync_detailed(*, client: ApiClient) -> Response[list[CollaboratorRoleInfo]]:
 def sync(*, client: ApiClient) -> Optional[list[CollaboratorRoleInfo]]:
     """Get Collaborator Roles
 
+     List the collaborator roles that can be assigned on a project.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -104,6 +108,8 @@ def sync(*, client: ApiClient) -> Optional[list[CollaboratorRoleInfo]]:
 
 async def asyncio_detailed(*, client: ApiClient) -> Response[list[CollaboratorRoleInfo]]:
     """Get Collaborator Roles
+
+     List the collaborator roles that can be assigned on a project.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -122,6 +128,8 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[list[CollaboratorRo
 
 async def asyncio(*, client: ApiClient) -> Optional[list[CollaboratorRoleInfo]]:
     """Get Collaborator Roles
+
+     List the collaborator roles that can be assigned on a project.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

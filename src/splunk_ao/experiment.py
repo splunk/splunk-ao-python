@@ -34,7 +34,7 @@ from splunk_ao.resources.models import (
     LogRecordsSortClause,
     PromptRunSettings,
     RootType,
-    ScorerConfig,
+    RuntimeScorerConfig,
 )
 from splunk_ao.resources.models.log_records_available_columns_request import LogRecordsAvailableColumnsRequest
 from splunk_ao.resources.models.log_records_available_columns_response import LogRecordsAvailableColumnsResponse
@@ -460,7 +460,7 @@ class Experiment(StateManagementMixin):
                 effective_prompt_settings = _default_prompt_settings()
 
             # Set up metrics if provided
-            scorer_settings: list[ScorerConfig] | None = None
+            scorer_settings: list[RuntimeScorerConfig] | None = None
             if self.metrics is not None:
                 scorer_settings, _ = create_metric_configs(self.project_id, None, self.metrics)
 

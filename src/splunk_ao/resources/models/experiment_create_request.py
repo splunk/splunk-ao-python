@@ -11,7 +11,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.experiment_dataset_request import ExperimentDatasetRequest
     from ..models.prompt_run_settings import PromptRunSettings
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
 
 
 T = TypeVar("T", bound="ExperimentCreateRequest")
@@ -28,7 +28,7 @@ class ExperimentCreateRequest:
         dataset (ExperimentDatasetRequest | None | Unset):
         playground_prompt_id (None | str | Unset):
         prompt_settings (None | PromptRunSettings | Unset):
-        scorers (list[ScorerConfig] | Unset):
+        scorers (list[RuntimeScorerConfig] | Unset):
         trigger (bool | Unset):  Default: False.
         experiment_group_id (None | str | Unset):
         experiment_group_name (None | str | Unset):
@@ -41,7 +41,7 @@ class ExperimentCreateRequest:
     dataset: ExperimentDatasetRequest | None | Unset = UNSET
     playground_prompt_id: None | str | Unset = UNSET
     prompt_settings: None | PromptRunSettings | Unset = UNSET
-    scorers: list[ScorerConfig] | Unset = UNSET
+    scorers: list[RuntimeScorerConfig] | Unset = UNSET
     trigger: bool | Unset = False
     experiment_group_id: None | str | Unset = UNSET
     experiment_group_name: None | str | Unset = UNSET
@@ -144,7 +144,7 @@ class ExperimentCreateRequest:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.experiment_dataset_request import ExperimentDatasetRequest
         from ..models.prompt_run_settings import PromptRunSettings
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
 
         d = dict(src_dict)
         name = d.pop("name")
@@ -225,11 +225,11 @@ class ExperimentCreateRequest:
         prompt_settings = _parse_prompt_settings(d.pop("prompt_settings", UNSET))
 
         _scorers = d.pop("scorers", UNSET)
-        scorers: list[ScorerConfig] | Unset = UNSET
+        scorers: list[RuntimeScorerConfig] | Unset = UNSET
         if _scorers is not UNSET:
             scorers = []
             for scorers_item_data in _scorers:
-                scorers_item = ScorerConfig.from_dict(scorers_item_data)
+                scorers_item = RuntimeScorerConfig.from_dict(scorers_item_data)
 
                 scorers.append(scorers_item)
 

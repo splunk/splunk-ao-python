@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..models.agent_span import AgentSpan
     from ..models.control_span import ControlSpan
     from ..models.document import Document
+    from ..models.http_span import HttpSpan
     from ..models.llm_span import LlmSpan
     from ..models.metrics import Metrics
     from ..models.retriever_span_dataset_metadata import RetrieverSpanDatasetMetadata
@@ -48,7 +49,8 @@ class RetrieverSpan:
         trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
         step_number (int | None | Unset): Topological step number of the span.
         parent_id (None | str | Unset): Galileo ID of the parent of this span
-        spans (list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset): Child spans.
+        spans (list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset):
+            Child spans.
     """
 
     type_: Literal["retriever"] | Unset = "retriever"
@@ -71,11 +73,12 @@ class RetrieverSpan:
     trace_id: None | str | Unset = UNSET
     step_number: int | None | Unset = UNSET
     parent_id: None | str | Unset = UNSET
-    spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+    spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_span import AgentSpan
+        from ..models.control_span import ControlSpan
         from ..models.llm_span import LlmSpan
         from ..models.tool_span import ToolSpan
         from ..models.workflow_span import WorkflowSpan
@@ -200,6 +203,8 @@ class RetrieverSpan:
                     spans_item = spans_item_data.to_dict()
                 elif isinstance(spans_item_data, ToolSpan):
                     spans_item = spans_item_data.to_dict()
+                elif isinstance(spans_item_data, ControlSpan):
+                    spans_item = spans_item_data.to_dict()
                 else:
                     spans_item = spans_item_data.to_dict()
 
@@ -258,6 +263,7 @@ class RetrieverSpan:
         from ..models.agent_span import AgentSpan
         from ..models.control_span import ControlSpan
         from ..models.document import Document
+        from ..models.http_span import HttpSpan
         from ..models.llm_span import LlmSpan
         from ..models.metrics import Metrics
         from ..models.retriever_span_dataset_metadata import RetrieverSpanDatasetMetadata
@@ -426,14 +432,16 @@ class RetrieverSpan:
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
 
         _spans = d.pop("spans", UNSET)
-        spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+        spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = (
+            UNSET
+        )
         if _spans is not UNSET:
             spans = []
             for spans_item_data in _spans:
 
                 def _parse_spans_item(
                     data: object,
-                ) -> AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+                ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -474,11 +482,19 @@ class RetrieverSpan:
                         return spans_item_type_4
                     except:  # noqa: E722
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        spans_item_type_5 = ControlSpan.from_dict(data)
+
+                        return spans_item_type_5
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    spans_item_type_5 = ControlSpan.from_dict(data)
+                    spans_item_type_6 = HttpSpan.from_dict(data)
 
-                    return spans_item_type_5
+                    return spans_item_type_6
 
                 spans_item = _parse_spans_item(spans_item_data)
 

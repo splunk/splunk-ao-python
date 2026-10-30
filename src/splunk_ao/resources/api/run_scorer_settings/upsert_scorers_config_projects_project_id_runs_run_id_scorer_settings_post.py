@@ -88,6 +88,18 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
     """Upsert Scorers Config
 
+     Enable or disable a run's scorers, recomputing metrics for any newly enabled ones.
+
+    Args:
+        run_scorer_settings: Scorer settings to apply to the run.
+        run: Run resolved from the URL, verified to belong to the URL project.
+        a_ctx: Async request context supplying the read session and current user.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's settings after the update.
+
     Args:
         project_id (str):
         run_id (str):
@@ -113,6 +125,18 @@ def sync(
 ) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
     """Upsert Scorers Config
 
+     Enable or disable a run's scorers, recomputing metrics for any newly enabled ones.
+
+    Args:
+        run_scorer_settings: Scorer settings to apply to the run.
+        run: Run resolved from the URL, verified to belong to the URL project.
+        a_ctx: Async request context supplying the read session and current user.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's settings after the update.
+
     Args:
         project_id (str):
         run_id (str):
@@ -133,6 +157,18 @@ async def asyncio_detailed(
     project_id: str, run_id: str, *, client: ApiClient, body: RunScorerSettingsPatchRequest
 ) -> Response[HTTPValidationError | RunScorerSettingsResponse]:
     """Upsert Scorers Config
+
+     Enable or disable a run's scorers, recomputing metrics for any newly enabled ones.
+
+    Args:
+        run_scorer_settings: Scorer settings to apply to the run.
+        run: Run resolved from the URL, verified to belong to the URL project.
+        a_ctx: Async request context supplying the read session and current user.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's settings after the update.
 
     Args:
         project_id (str):
@@ -158,6 +194,18 @@ async def asyncio(
     project_id: str, run_id: str, *, client: ApiClient, body: RunScorerSettingsPatchRequest
 ) -> Optional[HTTPValidationError | RunScorerSettingsResponse]:
     """Upsert Scorers Config
+
+     Enable or disable a run's scorers, recomputing metrics for any newly enabled ones.
+
+    Args:
+        run_scorer_settings: Scorer settings to apply to the run.
+        run: Run resolved from the URL, verified to belong to the URL project.
+        a_ctx: Async request context supplying the read session and current user.
+        capabilities: Scorer types the client can decode; decision scorers are left out of the response
+    otherwise.
+
+    Returns:
+        The run's settings after the update.
 
     Args:
         project_id (str):

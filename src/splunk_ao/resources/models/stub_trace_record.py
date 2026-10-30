@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
@@ -10,6 +11,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.extended_agent_span_record_with_children import ExtendedAgentSpanRecordWithChildren
     from ..models.extended_control_span_record import ExtendedControlSpanRecord
+    from ..models.extended_http_span_record_with_children import ExtendedHttpSpanRecordWithChildren
     from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
     from ..models.extended_retriever_span_record_with_children import ExtendedRetrieverSpanRecordWithChildren
     from ..models.extended_tool_span_record_with_children import ExtendedToolSpanRecordWithChildren
@@ -32,8 +34,9 @@ class StubTraceRecord:
 
         Attributes:
             id (str): ID of the missing trace, taken from span trace_id references.
-            spans (list[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedLlmSpanRecord |
-                ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren |
+            created_at (datetime.datetime): Earliest created_at among child spans; used to order under a session.
+            spans (list[ExtendedAgentSpanRecordWithChildren | ExtendedControlSpanRecord | ExtendedHttpSpanRecordWithChildren
+                | ExtendedLlmSpanRecord | ExtendedRetrieverSpanRecordWithChildren | ExtendedToolSpanRecordWithChildren |
                 ExtendedWorkflowSpanRecordWithChildren] | Unset):
             type_ (Literal['stub_trace'] | Unset): Discriminator; identifies this as a synthesized placeholder, not a real
                 trace. Default: 'stub_trace'.
@@ -43,10 +46,12 @@ class StubTraceRecord:
     """
 
     id: str
+    created_at: datetime.datetime
     spans: (
         list[
             ExtendedAgentSpanRecordWithChildren
             | ExtendedControlSpanRecord
+            | ExtendedHttpSpanRecordWithChildren
             | ExtendedLlmSpanRecord
             | ExtendedRetrieverSpanRecordWithChildren
             | ExtendedToolSpanRecordWithChildren
@@ -61,12 +66,15 @@ class StubTraceRecord:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.extended_agent_span_record_with_children import ExtendedAgentSpanRecordWithChildren
+        from ..models.extended_control_span_record import ExtendedControlSpanRecord
         from ..models.extended_llm_span_record import ExtendedLlmSpanRecord
         from ..models.extended_retriever_span_record_with_children import ExtendedRetrieverSpanRecordWithChildren
         from ..models.extended_tool_span_record_with_children import ExtendedToolSpanRecordWithChildren
         from ..models.extended_workflow_span_record_with_children import ExtendedWorkflowSpanRecordWithChildren
 
         id = self.id
+
+        created_at = self.created_at.isoformat()
 
         spans: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.spans, Unset):
@@ -82,6 +90,8 @@ class StubTraceRecord:
                 elif isinstance(spans_item_data, ExtendedToolSpanRecordWithChildren):
                     spans_item = spans_item_data.to_dict()
                 elif isinstance(spans_item_data, ExtendedRetrieverSpanRecordWithChildren):
+                    spans_item = spans_item_data.to_dict()
+                elif isinstance(spans_item_data, ExtendedControlSpanRecord):
                     spans_item = spans_item_data.to_dict()
                 else:
                     spans_item = spans_item_data.to_dict()
@@ -110,7 +120,7 @@ class StubTraceRecord:
 
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({"id": id})
+        field_dict.update({"id": id, "created_at": created_at})
         if spans is not UNSET:
             field_dict["spans"] = spans
         if type_ is not UNSET:
@@ -128,6 +138,7 @@ class StubTraceRecord:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.extended_agent_span_record_with_children import ExtendedAgentSpanRecordWithChildren
         from ..models.extended_control_span_record import ExtendedControlSpanRecord
+        from ..models.extended_http_span_record_with_children import ExtendedHttpSpanRecordWithChildren
         from ..models.extended_retriever_span_record_with_children import ExtendedRetrieverSpanRecordWithChildren
         from ..models.extended_tool_span_record_with_children import ExtendedToolSpanRecordWithChildren
         from ..models.extended_workflow_span_record_with_children import ExtendedWorkflowSpanRecordWithChildren
@@ -135,11 +146,14 @@ class StubTraceRecord:
         d = dict(src_dict)
         id = d.pop("id")
 
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
+
         _spans = d.pop("spans", UNSET)
         spans: (
             list[
                 ExtendedAgentSpanRecordWithChildren
                 | ExtendedControlSpanRecord
+                | ExtendedHttpSpanRecordWithChildren
                 | ExtendedLlmSpanRecord
                 | ExtendedRetrieverSpanRecordWithChildren
                 | ExtendedToolSpanRecordWithChildren
@@ -156,6 +170,7 @@ class StubTraceRecord:
                 ) -> (
                     ExtendedAgentSpanRecordWithChildren
                     | ExtendedControlSpanRecord
+                    | ExtendedHttpSpanRecordWithChildren
                     | ExtendedLlmSpanRecord
                     | ExtendedRetrieverSpanRecordWithChildren
                     | ExtendedToolSpanRecordWithChildren
@@ -265,6 +280,14 @@ class StubTraceRecord:
                         return spans_item_type_5
                     except:  # noqa: E722
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        spans_item_type_6 = ExtendedHttpSpanRecordWithChildren.from_dict(data)
+
+                        return spans_item_type_6
+                    except:  # noqa: E722
+                        pass
                     # If we reach here, none of the parsers succeeded
                     discriminator_info = (
                         f" (type={data.get('type')})" if isinstance(data, dict) and "type" in data else ""
@@ -307,7 +330,13 @@ class StubTraceRecord:
         session_id = _parse_session_id(d.pop("session_id", UNSET))
 
         stub_trace_record = cls(
-            id=id, spans=spans, type_=type_, project_id=project_id, run_id=run_id, session_id=session_id
+            id=id,
+            created_at=created_at,
+            spans=spans,
+            type_=type_,
+            project_id=project_id,
+            run_id=run_id,
+            session_id=session_id,
         )
 
         return stub_trace_record

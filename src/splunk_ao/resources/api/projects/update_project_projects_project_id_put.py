@@ -87,6 +87,8 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | ProjectUpdateResponse]:
     """Update Project
 
+     Rename a project while rejecting unsupported project field updates.
+
     Args:
         project_id (str):
         body (ProjectUpdate):
@@ -111,6 +113,8 @@ def sync(
 ) -> Optional[HTTPValidationError | ProjectUpdateResponse]:
     """Update Project
 
+     Rename a project while rejecting unsupported project field updates.
+
     Args:
         project_id (str):
         body (ProjectUpdate):
@@ -130,6 +134,8 @@ async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: ProjectUpdate
 ) -> Response[HTTPValidationError | ProjectUpdateResponse]:
     """Update Project
+
+     Rename a project while rejecting unsupported project field updates.
 
     Args:
         project_id (str):
@@ -154,6 +160,8 @@ async def asyncio(
     project_id: str, *, client: ApiClient, body: ProjectUpdate
 ) -> Optional[HTTPValidationError | ProjectUpdateResponse]:
     """Update Project
+
+     Rename a project while rejecting unsupported project field updates.
 
     Args:
         project_id (str):
