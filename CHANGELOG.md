@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     optional. The field order changed, so a positional `ScorerConfig(id, scorer_type)` call must become
     `RuntimeScorerConfig(id=..., scorer_type=...)`. Keyword construction now also sends the defaults
     `ground_truth=False`, `threshold=0.5` and `requires_tools_in_llm_span=False`; building one from a scorer
-    with `from_dict` takes `ground_truth` from the scorer and leaves the other two unset.
+    with `from_dict` takes `ground_truth` from the scorer and leaves the other two unset. The server keeps an
+    explicit `ground_truth`, so a keyword-built config for a ground-truth scorer turns ground truth off; build it
+    from the scorer with `from_dict` or pass `ground_truth=True`.
     `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or return
     `RuntimeScorerConfig`.
   - `CoreScorerName` is renamed to `ScorerName`. The old `ScorerName`, whose members were internal
