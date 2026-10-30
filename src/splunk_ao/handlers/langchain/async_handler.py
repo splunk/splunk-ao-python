@@ -7,7 +7,13 @@ from uuid import UUID
 
 from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
 from splunk_ao.handlers.langchain.handler import SplunkAOCallback
-from splunk_ao.handlers.langchain.utils import get_agent_name, is_agent_node, parse_llm_result, update_root_to_agent
+from splunk_ao.handlers.langchain.utils import (
+    get_agent_name,
+    is_agent_node,
+    normalize_langgraph_output,
+    parse_llm_result,
+    update_root_to_agent,
+)
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import NODE_TYPE
 from splunk_ao.schema.trace import TracesIngestRequest
@@ -81,6 +87,10 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
         node_type: NODE_TYPE = "chain"
         node_name = SplunkAOCallback._get_node_name(node_type, serialized, kwargs)
 
+        kwargs["_langgraph_root"] = parent_run_id is None and (
+            node_name.lower() == "langgraph" or (kwargs.get("metadata") or {}).get("ls_integration") == "langgraph"
+        )
+
         # If the `name` is `LangGraph` or `Agent`, set the node type to `agent`.
         if is_agent_node(node_name):
             node_type = "agent"
@@ -105,6 +115,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
         # The input is sent via kwargs in on_chain_end in async streaming mode
         if "inputs" in kwargs:
             kwargs["input"] = serialize_to_str(kwargs["inputs"])
+        outputs = normalize_langgraph_output(outputs, self._handler.get_node(run_id))
         await self._handler.async_end_node(run_id, output=serialize_to_str(outputs), status_code=200, **kwargs)
 
     async def on_agent_finish(self, finish: AgentFinish, *, run_id: UUID, **kwargs: Any) -> Any:
