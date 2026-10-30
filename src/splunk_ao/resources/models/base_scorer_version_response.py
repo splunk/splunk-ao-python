@@ -41,11 +41,15 @@ class BaseScorerVersionResponse:
         cot_enabled (bool | None | Unset):
         runtime (None | str | Unset): The runtime a code metric version runs on, such as python3.14. Null for a version
             saved before runtimes were recorded, which runs on the legacy Python 3.12 runtime.
+        code_sha256 (None | str | Unset): SHA-256 of the code bytes uploaded for a code metric version. Null for a
+            version saved before digests were recorded.
         chain_poll_template (ChainPollTemplate | None | Unset):
         scoreable_node_types (list[str] | None | Unset):
         output_type (None | OutputTypeEnum | Unset):
         allowed_model (bool | None | Unset):
         created_by (None | str | Unset):
+        validation_task_id (None | str | Unset):
+        request_id (None | str | Unset):
     """
 
     id: str
@@ -62,11 +66,14 @@ class BaseScorerVersionResponse:
     num_judges: int | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
     runtime: None | str | Unset = UNSET
+    code_sha256: None | str | Unset = UNSET
     chain_poll_template: ChainPollTemplate | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
     output_type: None | OutputTypeEnum | Unset = UNSET
     allowed_model: bool | None | Unset = UNSET
     created_by: None | str | Unset = UNSET
+    validation_task_id: None | str | Unset = UNSET
+    request_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -151,6 +158,12 @@ class BaseScorerVersionResponse:
         else:
             runtime = self.runtime
 
+        code_sha256: None | str | Unset
+        if isinstance(self.code_sha256, Unset):
+            code_sha256 = UNSET
+        else:
+            code_sha256 = self.code_sha256
+
         chain_poll_template: dict[str, Any] | None | Unset
         if isinstance(self.chain_poll_template, Unset):
             chain_poll_template = UNSET
@@ -188,6 +201,18 @@ class BaseScorerVersionResponse:
         else:
             created_by = self.created_by
 
+        validation_task_id: None | str | Unset
+        if isinstance(self.validation_task_id, Unset):
+            validation_task_id = UNSET
+        else:
+            validation_task_id = self.validation_task_id
+
+        request_id: None | str | Unset
+        if isinstance(self.request_id, Unset):
+            request_id = UNSET
+        else:
+            request_id = self.request_id
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -211,6 +236,8 @@ class BaseScorerVersionResponse:
             field_dict["cot_enabled"] = cot_enabled
         if runtime is not UNSET:
             field_dict["runtime"] = runtime
+        if code_sha256 is not UNSET:
+            field_dict["code_sha256"] = code_sha256
         if chain_poll_template is not UNSET:
             field_dict["chain_poll_template"] = chain_poll_template
         if scoreable_node_types is not UNSET:
@@ -221,6 +248,10 @@ class BaseScorerVersionResponse:
             field_dict["allowed_model"] = allowed_model
         if created_by is not UNSET:
             field_dict["created_by"] = created_by
+        if validation_task_id is not UNSET:
+            field_dict["validation_task_id"] = validation_task_id
+        if request_id is not UNSET:
+            field_dict["request_id"] = request_id
 
         return field_dict
 
@@ -365,6 +396,15 @@ class BaseScorerVersionResponse:
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
 
+        def _parse_code_sha256(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        code_sha256 = _parse_code_sha256(d.pop("code_sha256", UNSET))
+
         def _parse_chain_poll_template(data: object) -> ChainPollTemplate | None | Unset:
             if data is None:
                 return data
@@ -434,6 +474,24 @@ class BaseScorerVersionResponse:
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
 
+        def _parse_validation_task_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        validation_task_id = _parse_validation_task_id(d.pop("validation_task_id", UNSET))
+
+        def _parse_request_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        request_id = _parse_request_id(d.pop("request_id", UNSET))
+
         base_scorer_version_response = cls(
             id=id,
             version=version,
@@ -449,11 +507,14 @@ class BaseScorerVersionResponse:
             num_judges=num_judges,
             cot_enabled=cot_enabled,
             runtime=runtime,
+            code_sha256=code_sha256,
             chain_poll_template=chain_poll_template,
             scoreable_node_types=scoreable_node_types,
             output_type=output_type,
             allowed_model=allowed_model,
             created_by=created_by,
+            validation_task_id=validation_task_id,
+            request_id=request_id,
         )
 
         base_scorer_version_response.additional_properties = d

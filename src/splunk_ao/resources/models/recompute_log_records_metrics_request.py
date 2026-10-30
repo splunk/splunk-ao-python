@@ -34,7 +34,8 @@ class RecomputeLogRecordsMetricsRequest:
         Attributes:
             scorer_ids (list[str]): List of scorer IDs for which metrics should be recomputed.
             starting_token (int | Unset):  Default: 0.
-            limit (int | Unset):  Default: 100.
+            limit (int | Unset): Records per page, at most 1000. Page through larger result sets with starting_token or
+                previous_last_row_id. Default: 100.
             previous_last_row_id (None | str | Unset):
             log_stream_id (None | str | Unset): Log stream id associated with the traces.
             experiment_id (None | str | Unset): Experiment id associated with the traces.
