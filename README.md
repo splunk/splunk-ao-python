@@ -627,6 +627,34 @@ run_experiment(
 )
 ```
 
+#### Evaluators
+
+New evaluators are scoped to the current project (decorator context, then `SPLUNK_AO_PROJECT_ID`, then
+`SPLUNK_AO_PROJECT`) by default. Pass `project_ids` to choose other projects, or `is_global=True` for a global
+evaluator. With no current project and no `project_ids`, the evaluator is created global, which only org admins can do.
+Updating or deleting an evaluator needs the owner or editor role on one of its projects (org admin for a global
+evaluator). Changing scope needs the owner or editor role on one of its current projects and on each project added or
+removed; making it global, or changing the scope of a global evaluator, needs the org admin role.
+
+```python
+from splunk_ao import EvaluatorPermissionError, LlmEvaluator
+
+try:
+    evaluator = LlmEvaluator(
+        name="politeness", prompt="Is the answer polite?", project_ids=["<project-id>"]
+    ).create()
+    # Replace the scope: scoped to exactly these projects (is_global=True is org admins only).
+    evaluator.set_scope(project_ids=["<project-id>", "<other-project-id>"])
+except EvaluatorPermissionError as error:
+    print(error)  # says which role is missing and how to fix it
+```
+
+`EvaluatorPermissionError` subclasses `ForbiddenError`. `Evaluator.get(name=...)` returns `None` when the evaluator
+does not exist or is not shared with your projects. The server answers 404 rather than 403 for an evaluator outside
+your projects on some paths. In that case `update`, `delete` and `set_scope` (which go by id) can raise `NotFoundError`,
+while `delete_evaluator(name=...)` and `Evaluator.delete_by_name` (which go by name) raise a `ValueError` saying the
+evaluator was not found, or not shared with your projects.
+
 ### Sessions
 
 Sessions group related traces under the same conversation. To explicitly create

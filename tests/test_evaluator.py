@@ -502,17 +502,20 @@ class TestMetricList:
 class TestMetricDelete:
     """Test suite for Evaluator.delete() method."""
 
-    @patch("splunk_ao.evaluator.Evaluators")
+    @patch("splunk_ao.evaluator.SplunkAOConfig.get")
+    @patch("splunk_ao.evaluator.delete_scorer_scorers_scorer_id_delete")
     @patch("splunk_ao.evaluator.Scorers")
     def test_delete_removes_metric(
-        self, mock_scorers_class: MagicMock, mock_metrics_class: MagicMock, reset_configuration: None
+        self,
+        mock_scorers_class: MagicMock,
+        mock_delete: MagicMock,
+        mock_config_get: MagicMock,
+        reset_configuration: None,
     ) -> None:
-        """Test delete() removes the metric."""
+        """Test delete() removes the metric by id."""
         mock_scorers_service = MagicMock()
         mock_scorers_class.return_value = mock_scorers_service
-
-        mock_metrics_service = MagicMock()
-        mock_metrics_class.return_value = mock_metrics_service
+        mock_delete.sync.return_value = {"message": "deleted"}
 
         metric_id = str(uuid4())
         mock_scorer = MagicMock()
@@ -533,7 +536,7 @@ class TestMetricDelete:
         metric = Evaluator.get(id=metric_id)
         metric.delete()
 
-        mock_metrics_service.delete_evaluator.assert_called_once_with(name="Test Evaluator")
+        mock_delete.sync.assert_called_once_with(scorer_id=metric_id, client=mock_config_get.return_value.api_client)
         assert metric.sync_state == SyncState.DELETED
 
     def test_delete_raises_error_for_local_only(self, reset_configuration: None) -> None:
@@ -635,7 +638,7 @@ class TestMetricRefresh:
 
         metric = Evaluator.get(id=metric_id)
 
-        with pytest.raises(ValueError, match="no longer exists"):
+        with pytest.raises(ValueError, match="not found, or not shared with your projects"):
             metric.refresh()
 
 

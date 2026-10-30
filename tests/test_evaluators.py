@@ -279,7 +279,9 @@ class TestMetrics:
         mock_list_scorers.return_value = []
         metrics = Evaluators()
 
-        with pytest.raises(ValueError, match="Scorer with name test_metric not found."):
+        with pytest.raises(
+            ValueError, match="Evaluator with name .test_metric. not found, or not shared with your projects"
+        ):
             metrics.delete_evaluator(name="test_metric")
 
     @patch("splunk_ao.evaluators.delete_scorer_scorers_scorer_id_delete")
