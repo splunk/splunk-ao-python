@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
+  SAST finding. IDs for the same inputs differ from earlier releases.
+
 ## [0.6.1]
 
 ### Fixed
