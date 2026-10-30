@@ -18,7 +18,8 @@ class BodyCreateCodeScorerVersionScorersScorerIdVersionCodePost:
     """
     Attributes:
         file (File):
-        validation_result (str): Pre-validated result as JSON string from the validate endpoint
+        validation_result (str): The result from the validate endpoint, as a JSON string. Only its task_id is read: the
+            version is built from the result stored for that validation task.
     """
 
     file: File
