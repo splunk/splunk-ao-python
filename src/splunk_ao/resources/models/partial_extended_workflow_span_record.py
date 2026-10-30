@@ -84,7 +84,7 @@ class PartialExtendedWorkflowSpanRecord:
         annotations (PartialExtendedWorkflowSpanRecordAnnotations | Unset): Annotations keyed by template ID and
             annotator ID
         file_ids (list[str] | Unset): IDs of files associated with this record
-        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+        file_modalities (list[ContentModality | str] | Unset): Modalities of files associated with this record
         annotation_aggregates (PartialExtendedWorkflowSpanRecordAnnotationAggregates | Unset): Annotation aggregate
             information keyed by template ID
         annotation_agreement (PartialExtendedWorkflowSpanRecordAnnotationAgreement | Unset): Annotation agreement scores
@@ -135,7 +135,7 @@ class PartialExtendedWorkflowSpanRecord:
     feedback_rating_info: PartialExtendedWorkflowSpanRecordFeedbackRatingInfo | Unset = UNSET
     annotations: PartialExtendedWorkflowSpanRecordAnnotations | Unset = UNSET
     file_ids: list[str] | Unset = UNSET
-    file_modalities: list[ContentModality] | Unset = UNSET
+    file_modalities: list[ContentModality | str] | Unset = UNSET
     annotation_aggregates: PartialExtendedWorkflowSpanRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: PartialExtendedWorkflowSpanRecordAnnotationAgreement | Unset = UNSET
     overall_annotation_agreement: float | None | Unset = UNSET
@@ -389,7 +389,11 @@ class PartialExtendedWorkflowSpanRecord:
         if not isinstance(self.file_modalities, Unset):
             file_modalities = []
             for file_modalities_item_data in self.file_modalities:
-                file_modalities_item = file_modalities_item_data.value
+                file_modalities_item: str
+                if isinstance(file_modalities_item_data, ContentModality):
+                    file_modalities_item = file_modalities_item_data.value
+                else:
+                    file_modalities_item = file_modalities_item_data
                 file_modalities.append(file_modalities_item)
 
         annotation_aggregates: dict[str, Any] | Unset = UNSET
@@ -1028,11 +1032,25 @@ class PartialExtendedWorkflowSpanRecord:
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
         _file_modalities = d.pop("file_modalities", UNSET)
-        file_modalities: list[ContentModality] | Unset = UNSET
+        file_modalities: list[ContentModality | str] | Unset = UNSET
         if _file_modalities is not UNSET:
             file_modalities = []
             for file_modalities_item_data in _file_modalities:
-                file_modalities_item = ContentModality(file_modalities_item_data)
+
+                def _parse_file_modalities_item(data: object) -> ContentModality | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        file_modalities_item_type_0 = ContentModality(data)
+
+                        return file_modalities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for file_modalities_item")
+                    return cast(ContentModality | str, data)
+
+                file_modalities_item = _parse_file_modalities_item(file_modalities_item_data)
 
                 file_modalities.append(file_modalities_item)
 

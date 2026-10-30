@@ -25,7 +25,7 @@ class AnnotationQueueExportRequest:
         record_selector (AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs): Selector to specify
             which queue records to export (either by record IDs or filter tree)
         column_ids (list[str] | None | Unset): Column IDs to include in the export. Applies only to CSV exports.
-        export_format (LLMExportFormat | Unset):
+        export_format (LLMExportFormat | str | Unset): Export format
         redact (bool | Unset): Redact sensitive data Default: True.
         file_name (None | str | Unset): Optional filename for the exported file
         export_computed_metrics_only (bool | Unset): When true, export only enabled scorer metrics with computed values
@@ -36,7 +36,7 @@ class AnnotationQueueExportRequest:
 
     record_selector: AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs
     column_ids: list[str] | None | Unset = UNSET
-    export_format: LLMExportFormat | Unset = UNSET
+    export_format: LLMExportFormat | str | Unset = UNSET
     redact: bool | Unset = True
     file_name: None | str | Unset = UNSET
     export_computed_metrics_only: bool | Unset = False
@@ -60,9 +60,13 @@ class AnnotationQueueExportRequest:
         else:
             column_ids = self.column_ids
 
-        export_format: str | Unset = UNSET
-        if not isinstance(self.export_format, Unset):
+        export_format: str | Unset
+        if isinstance(self.export_format, Unset):
+            export_format = UNSET
+        elif isinstance(self.export_format, LLMExportFormat):
             export_format = self.export_format.value
+        else:
+            export_format = self.export_format
 
         redact = self.redact
 
@@ -133,12 +137,22 @@ class AnnotationQueueExportRequest:
 
         column_ids = _parse_column_ids(d.pop("column_ids", UNSET))
 
-        _export_format = d.pop("export_format", UNSET)
-        export_format: LLMExportFormat | Unset
-        if isinstance(_export_format, Unset):
-            export_format = UNSET
-        else:
-            export_format = LLMExportFormat(_export_format)
+        def _parse_export_format(data: object) -> LLMExportFormat | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                export_format_type_0 = LLMExportFormat(data)
+
+                return export_format_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for export_format")
+            return cast(LLMExportFormat | str | Unset, data)
+
+        export_format = _parse_export_format(d.pop("export_format", UNSET))
 
         redact = d.pop("redact", UNSET)
 

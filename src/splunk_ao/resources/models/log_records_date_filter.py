@@ -18,13 +18,13 @@ class LogRecordsDateFilter:
     """
     Attributes:
         column_id (str): ID of the column to filter.
-        operator (LogRecordsDateFilterOperator):
+        operator (LogRecordsDateFilterOperator | str):
         value (datetime.datetime):
         type_ (Literal['date'] | Unset):  Default: 'date'.
     """
 
     column_id: str
-    operator: LogRecordsDateFilterOperator
+    operator: LogRecordsDateFilterOperator | str
     value: datetime.datetime
     type_: Literal["date"] | Unset = "date"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -32,7 +32,11 @@ class LogRecordsDateFilter:
     def to_dict(self) -> dict[str, Any]:
         column_id = self.column_id
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, LogRecordsDateFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value = self.value.isoformat()
 
@@ -51,7 +55,20 @@ class LogRecordsDateFilter:
         d = dict(src_dict)
         column_id = d.pop("column_id")
 
-        operator = LogRecordsDateFilterOperator(d.pop("operator"))
+        def _parse_operator(data: object) -> LogRecordsDateFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = LogRecordsDateFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(LogRecordsDateFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         value = datetime.datetime.fromisoformat(d.pop("value"))
 

@@ -16,19 +16,23 @@ class Rule:
     """
     Attributes:
         metric (str): Name of the metric.
-        operator (RuleOperator):
+        operator (RuleOperator | str): Operator to use for comparison.
         target_value (float | int | list[Any] | None | str): Value to compare with for this metric (right hand side).
     """
 
     metric: str
-    operator: RuleOperator
+    operator: RuleOperator | str
     target_value: float | int | list[Any] | None | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         metric = self.metric
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, RuleOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         target_value: float | int | list[Any] | None | str
         if isinstance(self.target_value, list):
@@ -48,7 +52,20 @@ class Rule:
         d = dict(src_dict)
         metric = d.pop("metric")
 
-        operator = RuleOperator(d.pop("operator"))
+        def _parse_operator(data: object) -> RuleOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = RuleOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(RuleOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_target_value(data: object) -> float | int | list[Any] | None | str:
             if data is None:

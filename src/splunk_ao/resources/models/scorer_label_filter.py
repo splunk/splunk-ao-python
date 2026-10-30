@@ -16,14 +16,14 @@ T = TypeVar("T", bound="ScorerLabelFilter")
 class ScorerLabelFilter:
     """
     Attributes:
-        operator (ScorerLabelFilterOperator):
+        operator (ScorerLabelFilterOperator | str):
         value (list[str] | str):
         name (Literal['label'] | Unset):  Default: 'label'.
         case_sensitive (bool | Unset):  Default: True.
         strict (bool | Unset):  Default: True.
     """
 
-    operator: ScorerLabelFilterOperator
+    operator: ScorerLabelFilterOperator | str
     value: list[str] | str
     name: Literal["label"] | Unset = "label"
     case_sensitive: bool | Unset = True
@@ -31,7 +31,11 @@ class ScorerLabelFilter:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, ScorerLabelFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: list[str] | str
         if isinstance(self.value, list):
@@ -61,7 +65,21 @@ class ScorerLabelFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = ScorerLabelFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> ScorerLabelFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ScorerLabelFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ScorerLabelFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> list[str] | str:
             try:

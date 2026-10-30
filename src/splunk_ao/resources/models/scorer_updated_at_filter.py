@@ -17,18 +17,22 @@ T = TypeVar("T", bound="ScorerUpdatedAtFilter")
 class ScorerUpdatedAtFilter:
     """
     Attributes:
-        operator (ScorerUpdatedAtFilterOperator):
+        operator (ScorerUpdatedAtFilterOperator | str):
         value (datetime.datetime):
         name (Literal['updated_at'] | Unset):  Default: 'updated_at'.
     """
 
-    operator: ScorerUpdatedAtFilterOperator
+    operator: ScorerUpdatedAtFilterOperator | str
     value: datetime.datetime
     name: Literal["updated_at"] | Unset = "updated_at"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, ScorerUpdatedAtFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value = self.value.isoformat()
 
@@ -45,7 +49,21 @@ class ScorerUpdatedAtFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = ScorerUpdatedAtFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> ScorerUpdatedAtFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ScorerUpdatedAtFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ScorerUpdatedAtFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         value = datetime.datetime.fromisoformat(d.pop("value"))
 

@@ -32,12 +32,12 @@ class BaseFinetunedScorerDB:
         lora_task_id (int):
         prompt (str):
         lora_weights_path (None | str | Unset):
-        luna_input_type (LunaInputTypeEnum | None | Unset):
-        luna_output_type (LunaOutputTypeEnum | None | Unset):
+        luna_input_type (LunaInputTypeEnum | None | str | Unset):
+        luna_output_type (LunaOutputTypeEnum | None | str | Unset):
         class_name_to_vocab_ix (BaseFinetunedScorerDBClassNameToVocabIxType0 |
             BaseFinetunedScorerDBClassNameToVocabIxType1 | None | Unset):
-        executor (CoreScorerName | None | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
-            custom galileo score pipelines.
+        executor (CoreScorerName | None | str | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can
+            run custom galileo score pipelines.
     """
 
     id: str
@@ -45,12 +45,12 @@ class BaseFinetunedScorerDB:
     lora_task_id: int
     prompt: str
     lora_weights_path: None | str | Unset = UNSET
-    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
-    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    luna_input_type: LunaInputTypeEnum | None | str | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | str | Unset = UNSET
     class_name_to_vocab_ix: (
         BaseFinetunedScorerDBClassNameToVocabIxType0 | BaseFinetunedScorerDBClassNameToVocabIxType1 | None | Unset
     ) = UNSET
-    executor: CoreScorerName | None | Unset = UNSET
+    executor: CoreScorerName | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -152,7 +152,7 @@ class BaseFinetunedScorerDB:
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -165,11 +165,13 @@ class BaseFinetunedScorerDB:
                 return luna_input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaInputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_input_type")
+            return cast(LunaInputTypeEnum | None | str | Unset, data)
 
         luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
 
-        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -182,7 +184,9 @@ class BaseFinetunedScorerDB:
                 return luna_output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaOutputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_output_type")
+            return cast(LunaOutputTypeEnum | None | str | Unset, data)
 
         luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
 
@@ -219,7 +223,7 @@ class BaseFinetunedScorerDB:
 
         class_name_to_vocab_ix = _parse_class_name_to_vocab_ix(d.pop("class_name_to_vocab_ix", UNSET))
 
-        def _parse_executor(data: object) -> CoreScorerName | None | Unset:
+        def _parse_executor(data: object) -> CoreScorerName | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -232,7 +236,9 @@ class BaseFinetunedScorerDB:
                 return executor_type_0
             except:  # noqa: E722
                 pass
-            return cast(CoreScorerName | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for executor")
+            return cast(CoreScorerName | None | str | Unset, data)
 
         executor = _parse_executor(d.pop("executor", UNSET))
 

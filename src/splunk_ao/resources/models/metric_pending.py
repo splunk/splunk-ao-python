@@ -17,12 +17,12 @@ class MetricPending:
     """
     Attributes:
         status_type (Literal['pending'] | Unset):  Default: 'pending'.
-        scorer_type (None | ScorerType | Unset):
+        scorer_type (None | ScorerType | str | Unset):
         metric_key_alias (None | str | Unset):
     """
 
     status_type: Literal["pending"] | Unset = "pending"
-    scorer_type: None | ScorerType | Unset = UNSET
+    scorer_type: None | ScorerType | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -62,7 +62,7 @@ class MetricPending:
         if status_type != "pending" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'pending', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -75,7 +75,9 @@ class MetricPending:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerType | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 

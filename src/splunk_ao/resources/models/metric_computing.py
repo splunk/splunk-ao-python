@@ -17,13 +17,13 @@ class MetricComputing:
     """
     Attributes:
         status_type (Literal['computing'] | Unset):  Default: 'computing'.
-        scorer_type (None | ScorerType | Unset):
+        scorer_type (None | ScorerType | str | Unset):
         metric_key_alias (None | str | Unset):
         message (str | Unset):  Default: 'Metric is computing.'.
     """
 
     status_type: Literal["computing"] | Unset = "computing"
-    scorer_type: None | ScorerType | Unset = UNSET
+    scorer_type: None | ScorerType | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     message: str | Unset = "Metric is computing."
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -68,7 +68,7 @@ class MetricComputing:
         if status_type != "computing" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'computing', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -81,7 +81,9 @@ class MetricComputing:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerType | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 

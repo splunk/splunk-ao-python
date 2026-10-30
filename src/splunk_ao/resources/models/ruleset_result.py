@@ -23,14 +23,14 @@ T = TypeVar("T", bound="RulesetResult")
 class RulesetResult:
     """
     Attributes:
-        status (ExecutionStatus | Unset): Status of the execution.
+        status (ExecutionStatus | str | Unset):
         rules (list[Rule] | Unset): List of rules to evaluate. Atleast 1 rule is required.
         action (OverrideAction | PassthroughAction | Unset): Action to take if all the rules are met.
         description (None | str | Unset): Description of the ruleset.
         rule_results (list[RuleResult] | Unset): Results of the rule execution.
     """
 
-    status: ExecutionStatus | Unset = UNSET
+    status: ExecutionStatus | str | Unset = UNSET
     rules: list[Rule] | Unset = UNSET
     action: OverrideAction | PassthroughAction | Unset = UNSET
     description: None | str | Unset = UNSET
@@ -40,9 +40,13 @@ class RulesetResult:
     def to_dict(self) -> dict[str, Any]:
         from ..models.override_action import OverrideAction
 
-        status: str | Unset = UNSET
-        if not isinstance(self.status, Unset):
+        status: str | Unset
+        if isinstance(self.status, Unset):
+            status = UNSET
+        elif isinstance(self.status, ExecutionStatus):
             status = self.status.value
+        else:
+            status = self.status
 
         rules: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.rules, Unset):
@@ -96,12 +100,23 @@ class RulesetResult:
         from ..models.rule_result import RuleResult
 
         d = dict(src_dict)
-        _status = d.pop("status", UNSET)
-        status: ExecutionStatus | Unset
-        if isinstance(_status, Unset):
-            status = UNSET
-        else:
-            status = ExecutionStatus(_status)
+
+        def _parse_status(data: object) -> ExecutionStatus | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = ExecutionStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(ExecutionStatus | str | Unset, data)
+
+        status = _parse_status(d.pop("status", UNSET))
 
         _rules = d.pop("rules", UNSET)
         rules: list[Rule] | Unset = UNSET

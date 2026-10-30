@@ -46,7 +46,7 @@ class Column:
     ----------
         id (str): The column identifier.
         label (str | None): The display label for the column.
-        data_type (DataType | None): The data type of the column.
+        data_type (DataType | str | None): The data type of the column, including unfamiliar server values.
         filterable (bool): Whether the column can be filtered.
         sortable (bool): Whether the column can be sorted.
         description (str | None): A description of the column.
@@ -105,7 +105,7 @@ class Column:
     def __repr__(self) -> str:
         """String representation of the column."""
         label_str = f", label='{self.label}'" if self.label else ""
-        type_str = f", type='{self.data_type.value}'" if self.data_type else ""
+        type_str = f", type='{self.data_type}'" if self.data_type else ""
         alias_str = f", metric_key_alias='{self.metric_key_alias}'" if self.metric_key_alias else ""
         return f"Column(id='{self.id}'{label_str}{type_str}{alias_str}, filterable={self.filterable}, sortable={self.sortable})"
 
@@ -139,7 +139,7 @@ class Column:
         if self.data_type not in expected_types:
             expected_str = ", ".join(dt.value for dt in expected_types)
             raise ValidationError(
-                f"Column '{self.id}' has data type '{self.data_type.value}'. "
+                f"Column '{self.id}' has data type '{self.data_type}'. "
                 f"The {operation} operation requires one of: {expected_str}"
             )
 

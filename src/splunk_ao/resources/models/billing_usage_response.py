@@ -20,14 +20,14 @@ T = TypeVar("T", bound="BillingUsageResponse")
 class BillingUsageResponse:
     """
     Attributes:
-        metric (BillingUsageMetric):
+        metric (BillingUsageMetric | str):
         total (int | Unset):  Default: 0.
         projects (list[ProjectBillingUsage] | Unset):
         available (bool | Unset):  Default: True.
         unavailable_reason (None | str | Unset):
     """
 
-    metric: BillingUsageMetric
+    metric: BillingUsageMetric | str
     total: int | Unset = 0
     projects: list[ProjectBillingUsage] | Unset = UNSET
     available: bool | Unset = True
@@ -35,7 +35,11 @@ class BillingUsageResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        metric = self.metric.value
+        metric: str
+        if isinstance(self.metric, BillingUsageMetric):
+            metric = self.metric.value
+        else:
+            metric = self.metric
 
         total = self.total
 
@@ -73,7 +77,21 @@ class BillingUsageResponse:
         from ..models.project_billing_usage import ProjectBillingUsage
 
         d = dict(src_dict)
-        metric = BillingUsageMetric(d.pop("metric"))
+
+        def _parse_metric(data: object) -> BillingUsageMetric | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                metric_type_0 = BillingUsageMetric(data)
+
+                return metric_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for metric")
+            return cast(BillingUsageMetric | str, data)
+
+        metric = _parse_metric(d.pop("metric"))
 
         total = d.pop("total", UNSET)
 

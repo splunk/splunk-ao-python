@@ -108,6 +108,8 @@ class MessagesListItem:
                 return role_type_1
             except:  # noqa: E722
                 pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
             return cast(MessagesListItemRole | str, data)
 
         role = _parse_role(d.pop("role"))

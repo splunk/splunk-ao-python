@@ -24,9 +24,9 @@ class FileMetadata:
 
         Attributes:
             file_id (str):
-            modality (ContentModality): Classification of content modality
-            source (FileSource): Source of the file data.
-            status (FileStatus): Processing status of the file.
+            modality (ContentModality | str):
+            source (FileSource | str):
+            status (FileStatus | str):
             content_type (None | str | Unset):
             url (None | str | Unset): Presigned S3 URL or external URL
             url_expires_at (datetime.datetime | None | Unset): Expiration time
@@ -35,9 +35,9 @@ class FileMetadata:
     """
 
     file_id: str
-    modality: ContentModality
-    source: FileSource
-    status: FileStatus
+    modality: ContentModality | str
+    source: FileSource | str
+    status: FileStatus | str
     content_type: None | str | Unset = UNSET
     url: None | str | Unset = UNSET
     url_expires_at: datetime.datetime | None | Unset = UNSET
@@ -48,11 +48,23 @@ class FileMetadata:
     def to_dict(self) -> dict[str, Any]:
         file_id = self.file_id
 
-        modality = self.modality.value
+        modality: str
+        if isinstance(self.modality, ContentModality):
+            modality = self.modality.value
+        else:
+            modality = self.modality
 
-        source = self.source.value
+        source: str
+        if isinstance(self.source, FileSource):
+            source = self.source.value
+        else:
+            source = self.source
 
-        status = self.status.value
+        status: str
+        if isinstance(self.status, FileStatus):
+            status = self.status.value
+        else:
+            status = self.status
 
         content_type: None | str | Unset
         if isinstance(self.content_type, Unset):
@@ -107,11 +119,50 @@ class FileMetadata:
         d = dict(src_dict)
         file_id = d.pop("file_id")
 
-        modality = ContentModality(d.pop("modality"))
+        def _parse_modality(data: object) -> ContentModality | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                modality_type_0 = ContentModality(data)
 
-        source = FileSource(d.pop("source"))
+                return modality_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for modality")
+            return cast(ContentModality | str, data)
 
-        status = FileStatus(d.pop("status"))
+        modality = _parse_modality(d.pop("modality"))
+
+        def _parse_source(data: object) -> FileSource | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                source_type_0 = FileSource(data)
+
+                return source_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for source")
+            return cast(FileSource | str, data)
+
+        source = _parse_source(d.pop("source"))
+
+        def _parse_status(data: object) -> FileStatus | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = FileStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(FileStatus | str, data)
+
+        status = _parse_status(d.pop("status"))
 
         def _parse_content_type(data: object) -> None | str | Unset:
             if data is None:

@@ -23,7 +23,7 @@ class IntegrationModelsResponse:
     Attributes:
         integration_name (str):
         integration_id (str):
-        provider (IntegrationProvider):
+        provider (IntegrationProvider | str):
         models (list[str]):
         scorer_models (list[str]):
         recommended_models (IntegrationModelsResponseRecommendedModels | Unset):
@@ -34,7 +34,7 @@ class IntegrationModelsResponse:
 
     integration_name: str
     integration_id: str
-    provider: IntegrationProvider
+    provider: IntegrationProvider | str
     models: list[str]
     scorer_models: list[str]
     recommended_models: IntegrationModelsResponseRecommendedModels | Unset = UNSET
@@ -48,7 +48,11 @@ class IntegrationModelsResponse:
 
         integration_id = self.integration_id
 
-        provider = self.provider.value
+        provider: str
+        if isinstance(self.provider, IntegrationProvider):
+            provider = self.provider.value
+        else:
+            provider = self.provider
 
         models = self.models
 
@@ -101,7 +105,20 @@ class IntegrationModelsResponse:
 
         integration_id = d.pop("integration_id")
 
-        provider = IntegrationProvider(d.pop("provider"))
+        def _parse_provider(data: object) -> IntegrationProvider | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                provider_type_0 = IntegrationProvider(data)
+
+                return provider_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for provider")
+            return cast(IntegrationProvider | str, data)
+
+        provider = _parse_provider(d.pop("provider"))
 
         models = cast(list[str], d.pop("models"))
 

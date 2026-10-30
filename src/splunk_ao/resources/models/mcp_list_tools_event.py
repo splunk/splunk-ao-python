@@ -24,7 +24,7 @@ class MCPListToolsEvent:
     Attributes:
         type_ (Literal['mcp_list_tools'] | Unset):  Default: 'mcp_list_tools'.
         id (None | str | Unset): Unique identifier for the event
-        status (EventStatus | None | Unset): Status of the event
+        status (EventStatus | None | str | Unset): Status of the event
         metadata (MCPListToolsEventMetadataType0 | None | Unset): Provider-specific metadata and additional fields
         error_message (None | str | Unset): Error message if the event failed
         server_name (None | str | Unset): Name of the MCP server
@@ -33,7 +33,7 @@ class MCPListToolsEvent:
 
     type_: Literal["mcp_list_tools"] | Unset = "mcp_list_tools"
     id: None | str | Unset = UNSET
-    status: EventStatus | None | Unset = UNSET
+    status: EventStatus | None | str | Unset = UNSET
     metadata: MCPListToolsEventMetadataType0 | None | Unset = UNSET
     error_message: None | str | Unset = UNSET
     server_name: None | str | Unset = UNSET
@@ -130,7 +130,7 @@ class MCPListToolsEvent:
 
         id = _parse_id(d.pop("id", UNSET))
 
-        def _parse_status(data: object) -> EventStatus | None | Unset:
+        def _parse_status(data: object) -> EventStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -143,7 +143,9 @@ class MCPListToolsEvent:
                 return status_type_0
             except:  # noqa: E722
                 pass
-            return cast(EventStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(EventStatus | None | str | Unset, data)
 
         status = _parse_status(d.pop("status", UNSET))
 

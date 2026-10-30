@@ -20,12 +20,12 @@ class ScorerIsGlobalFilter:
         Attributes:
             value (bool):
             name (Literal['is_global'] | Unset):  Default: 'is_global'.
-            operator (ScorerIsGlobalFilterOperator | Unset):  Default: ScorerIsGlobalFilterOperator.EQ.
+            operator (ScorerIsGlobalFilterOperator | str | Unset):  Default: ScorerIsGlobalFilterOperator.EQ.
     """
 
     value: bool
     name: Literal["is_global"] | Unset = "is_global"
-    operator: ScorerIsGlobalFilterOperator | Unset = ScorerIsGlobalFilterOperator.EQ
+    operator: ScorerIsGlobalFilterOperator | str | Unset = ScorerIsGlobalFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -33,9 +33,13 @@ class ScorerIsGlobalFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, ScorerIsGlobalFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -56,12 +60,22 @@ class ScorerIsGlobalFilter:
         if name != "is_global" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'is_global', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: ScorerIsGlobalFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = ScorerIsGlobalFilterOperator(_operator)
+        def _parse_operator(data: object) -> ScorerIsGlobalFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ScorerIsGlobalFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ScorerIsGlobalFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         scorer_is_global_filter = cls(value=value, name=name, operator=operator)
 

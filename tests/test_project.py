@@ -477,14 +477,17 @@ class TestCollaborator:
         collaborator_set = {collab1, collab2, collab3}
         assert len(collaborator_set) == 2  # collab1 and collab2 are equal
 
-    def test_collaborator_to_dict(self, reset_configuration: None, mock_collaborator: MagicMock) -> None:
+    @pytest.mark.parametrize("role", [CollaboratorRole.EDITOR, "future_role"])
+    def test_collaborator_to_dict(
+        self, reset_configuration: None, mock_collaborator: MagicMock, role: CollaboratorRole | str
+    ) -> None:
         """Test that to_dict() returns correct dictionary representation."""
         created_at = datetime(2024, 1, 1, 12, 0, 0)
         collab = Collaborator(
             id=mock_collaborator.id,
             user_id=mock_collaborator.user_id,
             project_id="project-123",
-            role=CollaboratorRole.EDITOR,
+            role=role,
             created_at=created_at,
             email="test@example.com",
             first_name="Test",
@@ -497,7 +500,7 @@ class TestCollaborator:
         assert result["id"] == mock_collaborator.id
         assert result["user_id"] == mock_collaborator.user_id
         assert result["project_id"] == "project-123"
-        assert result["role"] == CollaboratorRole.EDITOR.value
+        assert result["role"] == str(role)
         assert result["created_at"] == created_at.isoformat()
         assert result["email"] == "test@example.com"
         assert result["first_name"] == "Test"
@@ -607,6 +610,7 @@ class TestCollaborator:
             ),
         ],
     )
+    @pytest.mark.parametrize("role", [CollaboratorRole.VIEWER, "future_role"])
     def test_from_api_response_permissions_handling(
         self,
         reset_configuration: None,
@@ -614,6 +618,7 @@ class TestCollaborator:
         input_permissions: list | str,
         expected_permissions: list | None,
         description: str,
+        role: CollaboratorRole | str,
     ) -> None:
         """Test that _from_api_response handles permissions correctly.
 
@@ -635,7 +640,7 @@ class TestCollaborator:
         mock_response = MagicMock()
         mock_response.id = mock_collaborator.id
         mock_response.user_id = mock_collaborator.user_id
-        mock_response.role = CollaboratorRole.VIEWER
+        mock_response.role = role
         mock_response.email = mock_collaborator.email
         mock_response.created_at = datetime(2024, 1, 1, 12, 0, 0)
         mock_response.first_name = "Test"
@@ -645,3 +650,5 @@ class TestCollaborator:
         collab = Collaborator._from_api_response(mock_response, project_id="project-123")
 
         assert collab.permissions == expected_permissions, description
+        assert collab.role == role
+        assert collab.to_dict()["role"] == str(role)

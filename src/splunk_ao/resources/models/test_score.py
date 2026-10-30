@@ -16,16 +16,20 @@ T = TypeVar("T", bound="TestScore")
 class TestScore:
     """
     Attributes:
-        node_type (NodeType):
+        node_type (NodeType | str):
         score (bool | float | int | None | str | Unset):
     """
 
-    node_type: NodeType
+    node_type: NodeType | str
     score: bool | float | int | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        node_type = self.node_type.value
+        node_type: str
+        if isinstance(self.node_type, NodeType):
+            node_type = self.node_type.value
+        else:
+            node_type = self.node_type
 
         score: bool | float | int | None | str | Unset
         if isinstance(self.score, Unset):
@@ -44,7 +48,21 @@ class TestScore:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        node_type = NodeType(d.pop("node_type"))
+
+        def _parse_node_type(data: object) -> NodeType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                node_type_type_0 = NodeType(data)
+
+                return node_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for node_type")
+            return cast(NodeType | str, data)
+
+        node_type = _parse_node_type(d.pop("node_type"))
 
         def _parse_score(data: object) -> bool | float | int | None | str | Unset:
             if data is None:

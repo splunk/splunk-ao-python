@@ -18,12 +18,12 @@ class RunCreatedByFilter:
     Attributes:
         value (list[str] | str):
         name (Literal['created_by'] | Unset):  Default: 'created_by'.
-        operator (RunCreatedByFilterOperator | Unset):  Default: RunCreatedByFilterOperator.EQ.
+        operator (RunCreatedByFilterOperator | str | Unset):  Default: RunCreatedByFilterOperator.EQ.
     """
 
     value: list[str] | str
     name: Literal["created_by"] | Unset = "created_by"
-    operator: RunCreatedByFilterOperator | Unset = RunCreatedByFilterOperator.EQ
+    operator: RunCreatedByFilterOperator | str | Unset = RunCreatedByFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,9 +40,13 @@ class RunCreatedByFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, RunCreatedByFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -84,12 +88,22 @@ class RunCreatedByFilter:
         if name != "created_by" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'created_by', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: RunCreatedByFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = RunCreatedByFilterOperator(_operator)
+        def _parse_operator(data: object) -> RunCreatedByFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = RunCreatedByFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(RunCreatedByFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         run_created_by_filter = cls(value=value, name=name, operator=operator)
 

@@ -15,18 +15,22 @@ T = TypeVar("T", bound="FeedbackRatingInfo")
 class FeedbackRatingInfo:
     """
     Attributes:
-        feedback_type (FeedbackType):
+        feedback_type (FeedbackType | str):
         value (bool | int | list[str] | str):
         explanation (None | str):
     """
 
-    feedback_type: FeedbackType
+    feedback_type: FeedbackType | str
     value: bool | int | list[str] | str
     explanation: None | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        feedback_type = self.feedback_type.value
+        feedback_type: str
+        if isinstance(self.feedback_type, FeedbackType):
+            feedback_type = self.feedback_type.value
+        else:
+            feedback_type = self.feedback_type
 
         value: bool | int | list[str] | str
         if isinstance(self.value, list):
@@ -47,7 +51,21 @@ class FeedbackRatingInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        feedback_type = FeedbackType(d.pop("feedback_type"))
+
+        def _parse_feedback_type(data: object) -> FeedbackType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                feedback_type_type_0 = FeedbackType(data)
+
+                return feedback_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for feedback_type")
+            return cast(FeedbackType | str, data)
+
+        feedback_type = _parse_feedback_type(d.pop("feedback_type"))
 
         def _parse_value(data: object) -> bool | int | list[str] | str:
             try:

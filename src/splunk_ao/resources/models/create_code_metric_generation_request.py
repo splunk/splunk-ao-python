@@ -20,14 +20,14 @@ class CreateCodeMetricGenerationRequest:
         user_message (str): Natural language, code, or combination
         node_type (None | str | Unset): Selected scoreable node type (llm, retriever, trace, agent, workflow, tool,
             session)
-        output_type (None | OutputTypeEnum | Unset): Selected output type (boolean, percentage, count, discrete,
+        output_type (None | OutputTypeEnum | str | Unset): Selected output type (boolean, percentage, count, discrete,
             categorical, multilabel, freeform)
         model_name (None | str | Unset): Model alias to use for generation. Defaults to best available.
     """
 
     user_message: str
     node_type: None | str | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
     model_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -80,7 +80,7 @@ class CreateCodeMetricGenerationRequest:
 
         node_type = _parse_node_type(d.pop("node_type", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -93,7 +93,9 @@ class CreateCodeMetricGenerationRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 

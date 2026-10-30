@@ -22,7 +22,7 @@ class InsightSummary:
         details (str):
         suggested_action (str):
         priority (int):
-        priority_category (InsightSummaryPriorityCategoryType0 | None | Unset):
+        priority_category (InsightSummaryPriorityCategoryType0 | None | str | Unset):
     """
 
     id: str
@@ -31,7 +31,7 @@ class InsightSummary:
     details: str
     suggested_action: str
     priority: int
-    priority_category: InsightSummaryPriorityCategoryType0 | None | Unset = UNSET
+    priority_category: InsightSummaryPriorityCategoryType0 | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -87,7 +87,7 @@ class InsightSummary:
 
         priority = d.pop("priority")
 
-        def _parse_priority_category(data: object) -> InsightSummaryPriorityCategoryType0 | None | Unset:
+        def _parse_priority_category(data: object) -> InsightSummaryPriorityCategoryType0 | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -100,7 +100,9 @@ class InsightSummary:
                 return priority_category_type_0
             except:  # noqa: E722
                 pass
-            return cast(InsightSummaryPriorityCategoryType0 | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for priority_category")
+            return cast(InsightSummaryPriorityCategoryType0 | None | str | Unset, data)
 
         priority_category = _parse_priority_category(d.pop("priority_category", UNSET))
 

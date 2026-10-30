@@ -66,11 +66,20 @@ def _parse_{{ property.python_name }}(data: object) -> {{ property.get_type_stri
 
     # Fallback to standard union parsing
     {% endif %}
-    {% set ns = namespace(contains_unmodified_properties = false) %}
+    {% set ns = namespace(contains_unmodified_properties=false, has_enum=false, raw_types=[], can_check_raw=true) %}
     {% for inner_property in property.inner_properties %}
     {% import "property_templates/" + inner_property.template as inner_template %}
+        {% if inner_property.template == "enum_property.py.jinja" %}
+            {% set ns.has_enum = true %}
+        {% endif %}
         {% if not inner_template.construct %}
             {% set ns.contains_unmodified_properties = true %}
+            {% set raw_type = inner_property.get_instance_type_string() %}
+            {% if raw_type in ["str", "int", "float", "bool"] %}
+                {% set ns.raw_types = ns.raw_types + [raw_type] %}
+            {% elif raw_type not in ["None", "Unset"] %}
+                {% set ns.can_check_raw = false %}
+            {% endif %}
             {% continue %}
         {% endif %}
     {% if has_extended_records %}{# For Extended*Record unions, always wrap in try-except #}
@@ -109,6 +118,10 @@ def _parse_{{ property.python_name }}(data: object) -> {{ property.get_type_stri
     {% endif %}
     {% endfor %}
     {% if ns.contains_unmodified_properties %}
+    {% if ns.has_enum and ns.can_check_raw and ns.raw_types %}
+    if type(data) not in ({{ ns.raw_types | unique | join(", ") }},):
+        raise TypeError("Unexpected value type for {{ property.python_name }}")
+    {% endif %}
     return cast({{ property.get_type_string() }}, data)
     {% elif has_extended_records %}
     # If we reach here, none of the parsers succeeded

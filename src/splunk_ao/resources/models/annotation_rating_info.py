@@ -15,18 +15,22 @@ T = TypeVar("T", bound="AnnotationRatingInfo")
 class AnnotationRatingInfo:
     """
     Attributes:
-        annotation_type (AnnotationType):
+        annotation_type (AnnotationType | str):
         value (bool | int | list[str] | str):
         explanation (None | str):
     """
 
-    annotation_type: AnnotationType
+    annotation_type: AnnotationType | str
     value: bool | int | list[str] | str
     explanation: None | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        annotation_type = self.annotation_type.value
+        annotation_type: str
+        if isinstance(self.annotation_type, AnnotationType):
+            annotation_type = self.annotation_type.value
+        else:
+            annotation_type = self.annotation_type
 
         value: bool | int | list[str] | str
         if isinstance(self.value, list):
@@ -47,7 +51,21 @@ class AnnotationRatingInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        annotation_type = AnnotationType(d.pop("annotation_type"))
+
+        def _parse_annotation_type(data: object) -> AnnotationType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                annotation_type_type_0 = AnnotationType(data)
+
+                return annotation_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for annotation_type")
+            return cast(AnnotationType | str, data)
+
+        annotation_type = _parse_annotation_type(d.pop("annotation_type"))
 
         def _parse_value(data: object) -> bool | int | list[str] | str:
             try:

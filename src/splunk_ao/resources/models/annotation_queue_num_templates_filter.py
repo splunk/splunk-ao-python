@@ -16,18 +16,22 @@ T = TypeVar("T", bound="AnnotationQueueNumTemplatesFilter")
 class AnnotationQueueNumTemplatesFilter:
     """
     Attributes:
-        operator (AnnotationQueueNumTemplatesFilterOperator):
+        operator (AnnotationQueueNumTemplatesFilterOperator | str):
         value (float | int | list[float] | list[int]):
         name (Literal['num_templates'] | Unset):  Default: 'num_templates'.
     """
 
-    operator: AnnotationQueueNumTemplatesFilterOperator
+    operator: AnnotationQueueNumTemplatesFilterOperator | str
     value: float | int | list[float] | list[int]
     name: Literal["num_templates"] | Unset = "num_templates"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, AnnotationQueueNumTemplatesFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: float | int | list[float] | list[int]
         if isinstance(self.value, list):
@@ -52,7 +56,21 @@ class AnnotationQueueNumTemplatesFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = AnnotationQueueNumTemplatesFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> AnnotationQueueNumTemplatesFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = AnnotationQueueNumTemplatesFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(AnnotationQueueNumTemplatesFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> float | int | list[float] | list[int]:
             try:

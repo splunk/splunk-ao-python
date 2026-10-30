@@ -24,15 +24,15 @@ class BucketedMetric:
         name (str):
         buckets (BucketedMetricBuckets):
         average (float | None | Unset):
-        roll_up_method (None | RollUpMethodDisplayOptions | Unset):
-        data_type (None | OutputTypeEnum | Unset):
+        roll_up_method (None | RollUpMethodDisplayOptions | str | Unset):
+        data_type (None | OutputTypeEnum | str | Unset):
     """
 
     name: str
     buckets: BucketedMetricBuckets
     average: float | None | Unset = UNSET
-    roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
-    data_type: None | OutputTypeEnum | Unset = UNSET
+    roll_up_method: None | RollUpMethodDisplayOptions | str | Unset = UNSET
+    data_type: None | OutputTypeEnum | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -92,7 +92,7 @@ class BucketedMetric:
 
         average = _parse_average(d.pop("average", UNSET))
 
-        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | Unset:
+        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -105,11 +105,13 @@ class BucketedMetric:
                 return roll_up_method_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpMethodDisplayOptions | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_method")
+            return cast(None | RollUpMethodDisplayOptions | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 
-        def _parse_data_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_data_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -122,7 +124,9 @@ class BucketedMetric:
                 return data_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         data_type = _parse_data_type(d.pop("data_type", UNSET))
 

@@ -26,17 +26,17 @@ class Model:
     Attributes:
         name (str):
         alias (str):
-        integration (LLMIntegration | Unset):
+        integration (LLMIntegration | str | Unset):
         user_role (None | str | Unset):
         assistant_role (None | str | Unset):
         system_supported (bool | Unset):  Default: False.
-        input_modalities (list[ContentModality] | Unset): Input modalities that the model can accept.
+        input_modalities (list[ContentModality | str] | Unset): Input modalities that the model can accept.
         alternative_names (list[str] | Unset): Alternative names for the model, used for matching with various current,
             versioned or legacy names.
         input_token_limit (int | None | Unset):
         output_token_limit (int | None | Unset):
         token_limit (int | None | Unset):
-        cost_by (ModelCostBy | Unset):
+        cost_by (ModelCostBy | str | Unset):
         is_chat (bool | Unset):  Default: False.
         provides_log_probs (bool | Unset):  Default: False.
         formatting_tokens (int | Unset):  Default: 0.
@@ -54,16 +54,16 @@ class Model:
 
     name: str
     alias: str
-    integration: LLMIntegration | Unset = UNSET
+    integration: LLMIntegration | str | Unset = UNSET
     user_role: None | str | Unset = UNSET
     assistant_role: None | str | Unset = UNSET
     system_supported: bool | Unset = False
-    input_modalities: list[ContentModality] | Unset = UNSET
+    input_modalities: list[ContentModality | str] | Unset = UNSET
     alternative_names: list[str] | Unset = UNSET
     input_token_limit: int | None | Unset = UNSET
     output_token_limit: int | None | Unset = UNSET
     token_limit: int | None | Unset = UNSET
-    cost_by: ModelCostBy | Unset = UNSET
+    cost_by: ModelCostBy | str | Unset = UNSET
     is_chat: bool | Unset = False
     provides_log_probs: bool | Unset = False
     formatting_tokens: int | Unset = 0
@@ -85,9 +85,13 @@ class Model:
 
         alias = self.alias
 
-        integration: str | Unset = UNSET
-        if not isinstance(self.integration, Unset):
+        integration: str | Unset
+        if isinstance(self.integration, Unset):
+            integration = UNSET
+        elif isinstance(self.integration, LLMIntegration):
             integration = self.integration.value
+        else:
+            integration = self.integration
 
         user_role: None | str | Unset
         if isinstance(self.user_role, Unset):
@@ -107,7 +111,11 @@ class Model:
         if not isinstance(self.input_modalities, Unset):
             input_modalities = []
             for input_modalities_item_data in self.input_modalities:
-                input_modalities_item = input_modalities_item_data.value
+                input_modalities_item: str
+                if isinstance(input_modalities_item_data, ContentModality):
+                    input_modalities_item = input_modalities_item_data.value
+                else:
+                    input_modalities_item = input_modalities_item_data
                 input_modalities.append(input_modalities_item)
 
         alternative_names: list[str] | Unset = UNSET
@@ -132,9 +140,13 @@ class Model:
         else:
             token_limit = self.token_limit
 
-        cost_by: str | Unset = UNSET
-        if not isinstance(self.cost_by, Unset):
+        cost_by: str | Unset
+        if isinstance(self.cost_by, Unset):
+            cost_by = UNSET
+        elif isinstance(self.cost_by, ModelCostBy):
             cost_by = self.cost_by.value
+        else:
+            cost_by = self.cost_by
 
         is_chat = self.is_chat
 
@@ -239,12 +251,22 @@ class Model:
 
         alias = d.pop("alias")
 
-        _integration = d.pop("integration", UNSET)
-        integration: LLMIntegration | Unset
-        if isinstance(_integration, Unset):
-            integration = UNSET
-        else:
-            integration = LLMIntegration(_integration)
+        def _parse_integration(data: object) -> LLMIntegration | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                integration_type_0 = LLMIntegration(data)
+
+                return integration_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for integration")
+            return cast(LLMIntegration | str | Unset, data)
+
+        integration = _parse_integration(d.pop("integration", UNSET))
 
         def _parse_user_role(data: object) -> None | str | Unset:
             if data is None:
@@ -267,11 +289,25 @@ class Model:
         system_supported = d.pop("system_supported", UNSET)
 
         _input_modalities = d.pop("input_modalities", UNSET)
-        input_modalities: list[ContentModality] | Unset = UNSET
+        input_modalities: list[ContentModality | str] | Unset = UNSET
         if _input_modalities is not UNSET:
             input_modalities = []
             for input_modalities_item_data in _input_modalities:
-                input_modalities_item = ContentModality(input_modalities_item_data)
+
+                def _parse_input_modalities_item(data: object) -> ContentModality | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        input_modalities_item_type_0 = ContentModality(data)
+
+                        return input_modalities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for input_modalities_item")
+                    return cast(ContentModality | str, data)
+
+                input_modalities_item = _parse_input_modalities_item(input_modalities_item_data)
 
                 input_modalities.append(input_modalities_item)
 
@@ -304,12 +340,22 @@ class Model:
 
         token_limit = _parse_token_limit(d.pop("token_limit", UNSET))
 
-        _cost_by = d.pop("cost_by", UNSET)
-        cost_by: ModelCostBy | Unset
-        if isinstance(_cost_by, Unset):
-            cost_by = UNSET
-        else:
-            cost_by = ModelCostBy(_cost_by)
+        def _parse_cost_by(data: object) -> ModelCostBy | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                cost_by_type_0 = ModelCostBy(data)
+
+                return cost_by_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for cost_by")
+            return cast(ModelCostBy | str | Unset, data)
+
+        cost_by = _parse_cost_by(d.pop("cost_by", UNSET))
 
         is_chat = d.pop("is_chat", UNSET)
 

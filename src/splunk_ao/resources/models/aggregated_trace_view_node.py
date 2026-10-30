@@ -23,7 +23,7 @@ class AggregatedTraceViewNode:
     Attributes:
         id (str):
         name (None | str):
-        type_ (StepType):
+        type_ (StepType | str):
         occurrences (int):
         has_children (bool):
         metrics (AggregatedTraceViewNodeMetrics):
@@ -35,7 +35,7 @@ class AggregatedTraceViewNode:
 
     id: str
     name: None | str
-    type_: StepType
+    type_: StepType | str
     occurrences: int
     has_children: bool
     metrics: AggregatedTraceViewNodeMetrics
@@ -51,7 +51,11 @@ class AggregatedTraceViewNode:
         name: None | str
         name = self.name
 
-        type_ = self.type_.value
+        type_: str
+        if isinstance(self.type_, StepType):
+            type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         occurrences = self.occurrences
 
@@ -112,7 +116,20 @@ class AggregatedTraceViewNode:
 
         name = _parse_name(d.pop("name"))
 
-        type_ = StepType(d.pop("type"))
+        def _parse_type_(data: object) -> StepType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = StepType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(StepType | str, data)
+
+        type_ = _parse_type_(d.pop("type"))
 
         occurrences = d.pop("occurrences")
 

@@ -23,13 +23,13 @@ class Message:
     """
     Attributes:
         content (list[FileContentPart | TextContentPart] | str):
-        role (MessageRole):
+        role (MessageRole | str):
         tool_call_id (None | str | Unset):
         tool_calls (list[ToolCall] | None | Unset):
     """
 
     content: list[FileContentPart | TextContentPart] | str
-    role: MessageRole
+    role: MessageRole | str
     tool_call_id: None | str | Unset = UNSET
     tool_calls: list[ToolCall] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -52,7 +52,11 @@ class Message:
         else:
             content = self.content
 
-        role = self.role.value
+        role: str
+        if isinstance(self.role, MessageRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         tool_call_id: None | str | Unset
         if isinstance(self.tool_call_id, Unset):
@@ -124,7 +128,20 @@ class Message:
 
         content = _parse_content(d.pop("content"))
 
-        role = MessageRole(d.pop("role"))
+        def _parse_role(data: object) -> MessageRole | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = MessageRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(MessageRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         def _parse_tool_call_id(data: object) -> None | str | Unset:
             if data is None:

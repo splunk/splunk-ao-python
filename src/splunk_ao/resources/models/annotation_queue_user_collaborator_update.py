@@ -16,16 +16,20 @@ T = TypeVar("T", bound="AnnotationQueueUserCollaboratorUpdate")
 class AnnotationQueueUserCollaboratorUpdate:
     """
     Attributes:
-        role (CollaboratorRole):
+        role (CollaboratorRole | str):
         track_progress (bool | None | Unset):
     """
 
-    role: CollaboratorRole
+    role: CollaboratorRole | str
     track_progress: bool | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        role = self.role.value
+        role: str
+        if isinstance(self.role, CollaboratorRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         track_progress: bool | None | Unset
         if isinstance(self.track_progress, Unset):
@@ -44,7 +48,21 @@ class AnnotationQueueUserCollaboratorUpdate:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        role = CollaboratorRole(d.pop("role"))
+
+        def _parse_role(data: object) -> CollaboratorRole | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         def _parse_track_progress(data: object) -> bool | None | Unset:
             if data is None:

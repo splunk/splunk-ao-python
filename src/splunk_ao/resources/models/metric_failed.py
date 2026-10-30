@@ -21,7 +21,7 @@ class MetricFailed:
     """
     Attributes:
         status_type (Literal['failed'] | Unset):  Default: 'failed'.
-        scorer_type (None | ScorerType | Unset):
+        scorer_type (None | ScorerType | str | Unset):
         metric_key_alias (None | str | Unset):
         message (None | str | Unset):  Default: 'Metric failed to compute.'.
         ems_error_code (int | None | Unset): EMS error code from errors.yaml catalog for this metric failure
@@ -29,7 +29,7 @@ class MetricFailed:
     """
 
     status_type: Literal["failed"] | Unset = "failed"
-    scorer_type: None | ScorerType | Unset = UNSET
+    scorer_type: None | ScorerType | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     message: None | str | Unset = "Metric failed to compute."
     ems_error_code: int | None | Unset = UNSET
@@ -102,7 +102,7 @@ class MetricFailed:
         if status_type != "failed" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'failed', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -115,7 +115,9 @@ class MetricFailed:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerType | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 

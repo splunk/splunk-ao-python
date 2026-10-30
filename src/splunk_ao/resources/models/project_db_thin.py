@@ -29,7 +29,7 @@ class ProjectDBThin:
         updated_at (datetime.datetime):
         permissions (list[Permission] | Unset):
         name (None | str | Unset):
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
         bookmark (bool | Unset):  Default: False.
     """
 
@@ -40,7 +40,7 @@ class ProjectDBThin:
     updated_at: datetime.datetime
     permissions: list[Permission] | Unset = UNSET
     name: None | str | Unset = UNSET
-    type_: None | ProjectType | Unset = UNSET
+    type_: None | ProjectType | str | Unset = UNSET
     bookmark: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -136,7 +136,7 @@ class ProjectDBThin:
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_type_(data: object) -> None | ProjectType | Unset:
+        def _parse_type_(data: object) -> None | ProjectType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -149,7 +149,9 @@ class ProjectDBThin:
                 return type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ProjectType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(None | ProjectType | str | Unset, data)
 
         type_ = _parse_type_(d.pop("type", UNSET))
 

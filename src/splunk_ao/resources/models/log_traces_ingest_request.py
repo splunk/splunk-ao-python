@@ -25,7 +25,7 @@ class LogTracesIngestRequest:
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
-        logging_method (LoggingMethod | Unset):
+        logging_method (LoggingMethod | str | Unset):
         client_version (None | str | Unset):
         reliable (bool | Unset): Whether or not to use reliable logging.  If set to False, the method will respond
             immediately before verifying that the traces have been successfully ingested, and no error message will be
@@ -43,7 +43,7 @@ class LogTracesIngestRequest:
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
-    logging_method: LoggingMethod | Unset = UNSET
+    logging_method: LoggingMethod | str | Unset = UNSET
     client_version: None | str | Unset = UNSET
     reliable: bool | Unset = True
     session_id: None | str | Unset = UNSET
@@ -76,9 +76,13 @@ class LogTracesIngestRequest:
         else:
             metrics_testing_id = self.metrics_testing_id
 
-        logging_method: str | Unset = UNSET
-        if not isinstance(self.logging_method, Unset):
+        logging_method: str | Unset
+        if isinstance(self.logging_method, Unset):
+            logging_method = UNSET
+        elif isinstance(self.logging_method, LoggingMethod):
             logging_method = self.logging_method.value
+        else:
+            logging_method = self.logging_method
 
         client_version: None | str | Unset
         if isinstance(self.client_version, Unset):
@@ -169,12 +173,22 @@ class LogTracesIngestRequest:
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
 
-        _logging_method = d.pop("logging_method", UNSET)
-        logging_method: LoggingMethod | Unset
-        if isinstance(_logging_method, Unset):
-            logging_method = UNSET
-        else:
-            logging_method = LoggingMethod(_logging_method)
+        def _parse_logging_method(data: object) -> LoggingMethod | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                logging_method_type_0 = LoggingMethod(data)
+
+                return logging_method_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for logging_method")
+            return cast(LoggingMethod | str | Unset, data)
+
+        logging_method = _parse_logging_method(d.pop("logging_method", UNSET))
 
         def _parse_client_version(data: object) -> None | str | Unset:
             if data is None:

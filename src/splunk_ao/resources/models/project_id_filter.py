@@ -18,12 +18,12 @@ class ProjectIDFilter:
     Attributes:
         value (list[str] | str):
         name (Literal['id'] | Unset):  Default: 'id'.
-        operator (ProjectIDFilterOperator | Unset):  Default: ProjectIDFilterOperator.EQ.
+        operator (ProjectIDFilterOperator | str | Unset):  Default: ProjectIDFilterOperator.EQ.
     """
 
     value: list[str] | str
     name: Literal["id"] | Unset = "id"
-    operator: ProjectIDFilterOperator | Unset = ProjectIDFilterOperator.EQ
+    operator: ProjectIDFilterOperator | str | Unset = ProjectIDFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,9 +40,13 @@ class ProjectIDFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, ProjectIDFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -84,12 +88,22 @@ class ProjectIDFilter:
         if name != "id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'id', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: ProjectIDFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = ProjectIDFilterOperator(_operator)
+        def _parse_operator(data: object) -> ProjectIDFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ProjectIDFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ProjectIDFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         project_id_filter = cls(value=value, name=name, operator=operator)
 

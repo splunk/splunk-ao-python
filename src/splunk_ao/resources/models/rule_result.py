@@ -18,17 +18,17 @@ class RuleResult:
     """
     Attributes:
         metric (str): Name of the metric.
-        operator (RuleOperator):
+        operator (RuleOperator | str): Operator to use for comparison.
         target_value (float | int | list[Any] | None | str): Value to compare with for this metric (right hand side).
-        status (ExecutionStatus | Unset): Status of the execution.
+        status (ExecutionStatus | str | Unset):
         value (Any | None | Unset): Result of the metric computation.
         execution_time (float | None | Unset): Execution time for the rule in seconds.
     """
 
     metric: str
-    operator: RuleOperator
+    operator: RuleOperator | str
     target_value: float | int | list[Any] | None | str
-    status: ExecutionStatus | Unset = UNSET
+    status: ExecutionStatus | str | Unset = UNSET
     value: Any | None | Unset = UNSET
     execution_time: float | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -36,7 +36,11 @@ class RuleResult:
     def to_dict(self) -> dict[str, Any]:
         metric = self.metric
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, RuleOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         target_value: float | int | list[Any] | None | str
         if isinstance(self.target_value, list):
@@ -45,9 +49,13 @@ class RuleResult:
         else:
             target_value = self.target_value
 
-        status: str | Unset = UNSET
-        if not isinstance(self.status, Unset):
+        status: str | Unset
+        if isinstance(self.status, Unset):
+            status = UNSET
+        elif isinstance(self.status, ExecutionStatus):
             status = self.status.value
+        else:
+            status = self.status
 
         value: Any | None | Unset
         if isinstance(self.value, Unset):
@@ -78,7 +86,20 @@ class RuleResult:
         d = dict(src_dict)
         metric = d.pop("metric")
 
-        operator = RuleOperator(d.pop("operator"))
+        def _parse_operator(data: object) -> RuleOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = RuleOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(RuleOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_target_value(data: object) -> float | int | list[Any] | None | str:
             if data is None:
@@ -95,12 +116,22 @@ class RuleResult:
 
         target_value = _parse_target_value(d.pop("target_value"))
 
-        _status = d.pop("status", UNSET)
-        status: ExecutionStatus | Unset
-        if isinstance(_status, Unset):
-            status = UNSET
-        else:
-            status = ExecutionStatus(_status)
+        def _parse_status(data: object) -> ExecutionStatus | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = ExecutionStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(ExecutionStatus | str | Unset, data)
+
+        status = _parse_status(d.pop("status", UNSET))
 
         def _parse_value(data: object) -> Any | None | Unset:
             if data is None:

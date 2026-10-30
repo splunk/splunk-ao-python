@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,14 +15,18 @@ T = TypeVar("T", bound="CollaboratorUpdate")
 class CollaboratorUpdate:
     """
     Attributes:
-        role (CollaboratorRole):
+        role (CollaboratorRole | str):
     """
 
-    role: CollaboratorRole
+    role: CollaboratorRole | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        role = self.role.value
+        role: str
+        if isinstance(self.role, CollaboratorRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -33,7 +37,21 @@ class CollaboratorUpdate:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        role = CollaboratorRole(d.pop("role"))
+
+        def _parse_role(data: object) -> CollaboratorRole | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         collaborator_update = cls(role=role)
 

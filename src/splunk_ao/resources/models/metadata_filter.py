@@ -17,20 +17,24 @@ class MetadataFilter:
     """Filters on metadata key-value pairs in scorer jobs.
 
     Attributes:
-        operator (MetadataFilterOperator):
+        operator (MetadataFilterOperator | str):
         key (str):
         value (list[str] | str):
         name (Literal['metadata'] | Unset):  Default: 'metadata'.
     """
 
-    operator: MetadataFilterOperator
+    operator: MetadataFilterOperator | str
     key: str
     value: list[str] | str
     name: Literal["metadata"] | Unset = "metadata"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, MetadataFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         key = self.key
 
@@ -54,7 +58,21 @@ class MetadataFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = MetadataFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> MetadataFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = MetadataFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(MetadataFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         key = d.pop("key")
 

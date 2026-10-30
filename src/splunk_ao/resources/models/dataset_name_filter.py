@@ -16,20 +16,24 @@ T = TypeVar("T", bound="DatasetNameFilter")
 class DatasetNameFilter:
     """
     Attributes:
-        operator (DatasetNameFilterOperator):
+        operator (DatasetNameFilterOperator | str):
         value (list[str] | str):
         name (Literal['name'] | Unset):  Default: 'name'.
         case_sensitive (bool | Unset):  Default: True.
     """
 
-    operator: DatasetNameFilterOperator
+    operator: DatasetNameFilterOperator | str
     value: list[str] | str
     name: Literal["name"] | Unset = "name"
     case_sensitive: bool | Unset = True
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, DatasetNameFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: list[str] | str
         if isinstance(self.value, list):
@@ -55,7 +59,21 @@ class DatasetNameFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = DatasetNameFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> DatasetNameFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = DatasetNameFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(DatasetNameFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> list[str] | str:
             try:

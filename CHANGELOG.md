@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
   SAST finding. IDs for the same inputs differ from earlier releases.
+- Generated API parsers preserve unfamiliar string and integer enum values from newer servers,
+  including nested run creator roles and permission actions. Known values remain enum members.
+  Unknown values remain raw strings or integers and serialize unchanged. Generated type hints
+  include those primitive alternatives. Constants and explicitly closed enums stay strict.
+- Evaluator lookup reports unsupported scorer types explicitly instead of treating them as built-in evaluators.
 
 ## [0.6.1]
 

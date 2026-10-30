@@ -24,14 +24,14 @@ class RegisteredScorerTaskResultResponse:
         id (str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        status (TaskResultStatus):
+        status (str | TaskResultStatus):
         result (None | str | Unset | ValidateRegisteredScorerResult):
     """
 
     id: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    status: TaskResultStatus
+    status: str | TaskResultStatus
     result: None | str | Unset | ValidateRegisteredScorerResult = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -44,7 +44,11 @@ class RegisteredScorerTaskResultResponse:
 
         updated_at = self.updated_at.isoformat()
 
-        status = self.status.value
+        status: str
+        if isinstance(self.status, TaskResultStatus):
+            status = self.status.value
+        else:
+            status = self.status
 
         result: dict[str, Any] | None | str | Unset
         if isinstance(self.result, Unset):
@@ -73,7 +77,20 @@ class RegisteredScorerTaskResultResponse:
 
         updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
-        status = TaskResultStatus(d.pop("status"))
+        def _parse_status(data: object) -> str | TaskResultStatus:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = TaskResultStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(str | TaskResultStatus, data)
+
+        status = _parse_status(d.pop("status"))
 
         def _parse_result(data: object) -> None | str | Unset | ValidateRegisteredScorerResult:
             if data is None:

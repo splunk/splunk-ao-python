@@ -21,7 +21,7 @@ class MetricNotApplicable:
     """
     Attributes:
         status_type (Literal['not_applicable'] | Unset):  Default: 'not_applicable'.
-        scorer_type (None | ScorerType | Unset):
+        scorer_type (None | ScorerType | str | Unset):
         metric_key_alias (None | str | Unset):
         message (str | Unset):  Default: 'Metric not applicable.'.
         ems_error_code (int | None | Unset): EMS error code from errors.yaml catalog for this not-applicable reason
@@ -29,7 +29,7 @@ class MetricNotApplicable:
     """
 
     status_type: Literal["not_applicable"] | Unset = "not_applicable"
-    scorer_type: None | ScorerType | Unset = UNSET
+    scorer_type: None | ScorerType | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     message: str | Unset = "Metric not applicable."
     ems_error_code: int | None | Unset = UNSET
@@ -98,7 +98,7 @@ class MetricNotApplicable:
         if status_type != "not_applicable" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'not_applicable', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -111,7 +111,9 @@ class MetricNotApplicable:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerType | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 

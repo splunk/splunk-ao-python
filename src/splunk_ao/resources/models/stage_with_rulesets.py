@@ -24,7 +24,7 @@ class StageWithRulesets:
         project_id (str): ID of the project to which this stage belongs.
         prioritized_rulesets (list[Ruleset] | Unset): Rulesets to be applied to the payload.
         description (None | str | Unset): Optional human-readable description of the goals of this guardrail.
-        type_ (StageType | Unset):
+        type_ (StageType | str | Unset): Type of the stage.
         paused (bool | Unset): Whether the action is enabled. If False, the action will not be applied. Default: False.
     """
 
@@ -32,7 +32,7 @@ class StageWithRulesets:
     project_id: str
     prioritized_rulesets: list[Ruleset] | Unset = UNSET
     description: None | str | Unset = UNSET
-    type_: StageType | Unset = UNSET
+    type_: StageType | str | Unset = UNSET
     paused: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -54,9 +54,13 @@ class StageWithRulesets:
         else:
             description = self.description
 
-        type_: str | Unset = UNSET
-        if not isinstance(self.type_, Unset):
+        type_: str | Unset
+        if isinstance(self.type_, Unset):
+            type_ = UNSET
+        elif isinstance(self.type_, StageType):
             type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         paused = self.paused
 
@@ -101,12 +105,22 @@ class StageWithRulesets:
 
         description = _parse_description(d.pop("description", UNSET))
 
-        _type_ = d.pop("type", UNSET)
-        type_: StageType | Unset
-        if isinstance(_type_, Unset):
-            type_ = UNSET
-        else:
-            type_ = StageType(_type_)
+        def _parse_type_(data: object) -> StageType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = StageType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(StageType | str | Unset, data)
+
+        type_ = _parse_type_(d.pop("type", UNSET))
 
         paused = d.pop("paused", UNSET)
 

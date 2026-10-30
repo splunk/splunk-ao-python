@@ -28,20 +28,28 @@ class NumericColorConstraint:
         {"color": "yellow", "operator": "between", "value": [0.3, 0.7]}
 
         Attributes:
-            color (MetricColor): Allowed colors for metric threshold visualization in the UI.
-            operator (NumericColorConstraintOperator):
+            color (MetricColor | str):
+            operator (NumericColorConstraintOperator | str):
             value (float | list[float]):
     """
 
-    color: MetricColor
-    operator: NumericColorConstraintOperator
+    color: MetricColor | str
+    operator: NumericColorConstraintOperator | str
     value: float | list[float]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        color = self.color.value
+        color: str
+        if isinstance(self.color, MetricColor):
+            color = self.color.value
+        else:
+            color = self.color
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, NumericColorConstraintOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: float | list[float]
         if isinstance(self.value, list):
@@ -59,9 +67,36 @@ class NumericColorConstraint:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        color = MetricColor(d.pop("color"))
 
-        operator = NumericColorConstraintOperator(d.pop("operator"))
+        def _parse_color(data: object) -> MetricColor | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                color_type_0 = MetricColor(data)
+
+                return color_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for color")
+            return cast(MetricColor | str, data)
+
+        color = _parse_color(d.pop("color"))
+
+        def _parse_operator(data: object) -> NumericColorConstraintOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = NumericColorConstraintOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(NumericColorConstraintOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> float | list[float]:
             try:
