@@ -18,12 +18,12 @@ class DatasetDraftFilter:
     Attributes:
         value (bool):
         name (Literal['draft'] | Unset):  Default: 'draft'.
-        operator (DatasetDraftFilterOperator | Unset):  Default: DatasetDraftFilterOperator.EQ.
+        operator (DatasetDraftFilterOperator | str | Unset):  Default: DatasetDraftFilterOperator.EQ.
     """
 
     value: bool
     name: Literal["draft"] | Unset = "draft"
-    operator: DatasetDraftFilterOperator | Unset = DatasetDraftFilterOperator.EQ
+    operator: DatasetDraftFilterOperator | str | Unset = DatasetDraftFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,9 +31,13 @@ class DatasetDraftFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, DatasetDraftFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -54,12 +58,22 @@ class DatasetDraftFilter:
         if name != "draft" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'draft', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: DatasetDraftFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = DatasetDraftFilterOperator(_operator)
+        def _parse_operator(data: object) -> DatasetDraftFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = DatasetDraftFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(DatasetDraftFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         dataset_draft_filter = cls(value=value, name=name, operator=operator)
 

@@ -52,9 +52,9 @@ class ControlSpan:
         parent_id (None | str | Unset): Galileo ID of the parent of this span
         control_id (int | None | Unset): Identifier of the control definition that produced this span.
         agent_name (None | str | Unset): Normalized agent name associated with this control execution.
-        check_stage (ControlCheckStage | None | Unset): Execution stage where the control ran, typically 'pre' or
+        check_stage (ControlCheckStage | None | str | Unset): Execution stage where the control ran, typically 'pre' or
             'post'.
-        applies_to (ControlAppliesTo | None | Unset): Parent execution type the control applied to, for example
+        applies_to (ControlAppliesTo | None | str | Unset): Parent execution type the control applied to, for example
             'llm_call' or 'tool_call'.
         evaluator_name (None | str | Unset): Representative evaluator name for this control span. For composite
             controls, this is the primary evaluator chosen for observability identity.
@@ -84,8 +84,8 @@ class ControlSpan:
     parent_id: None | str | Unset = UNSET
     control_id: int | None | Unset = UNSET
     agent_name: None | str | Unset = UNSET
-    check_stage: ControlCheckStage | None | Unset = UNSET
-    applies_to: ControlAppliesTo | None | Unset = UNSET
+    check_stage: ControlCheckStage | None | str | Unset = UNSET
+    applies_to: ControlAppliesTo | None | str | Unset = UNSET
     evaluator_name: None | str | Unset = UNSET
     selector_path: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -614,7 +614,7 @@ class ControlSpan:
 
         agent_name = _parse_agent_name(d.pop("agent_name", UNSET))
 
-        def _parse_check_stage(data: object) -> ControlCheckStage | None | Unset:
+        def _parse_check_stage(data: object) -> ControlCheckStage | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -627,11 +627,13 @@ class ControlSpan:
                 return check_stage_type_0
             except:  # noqa: E722
                 pass
-            return cast(ControlCheckStage | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for check_stage")
+            return cast(ControlCheckStage | None | str | Unset, data)
 
         check_stage = _parse_check_stage(d.pop("check_stage", UNSET))
 
-        def _parse_applies_to(data: object) -> ControlAppliesTo | None | Unset:
+        def _parse_applies_to(data: object) -> ControlAppliesTo | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -644,7 +646,9 @@ class ControlSpan:
                 return applies_to_type_0
             except:  # noqa: E722
                 pass
-            return cast(ControlAppliesTo | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for applies_to")
+            return cast(ControlAppliesTo | None | str | Unset, data)
 
         applies_to = _parse_applies_to(d.pop("applies_to", UNSET))
 

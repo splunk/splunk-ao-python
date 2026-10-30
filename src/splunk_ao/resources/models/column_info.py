@@ -20,19 +20,19 @@ class ColumnInfo:
     """
     Attributes:
         id (str): Column id.  Must be universally unique.
-        category (ColumnCategory):
-        data_type (DataType | None): Data type of the column. This is used to determine how to format the data on the
-            UI.
+        category (ColumnCategory | str): Category of the column.
+        data_type (DataType | None | str): Data type of the column. This is used to determine how to format the data on
+            the UI.
         label (None | str | Unset): Display label of the column in the UI.
         description (None | str | Unset): Description of the column.
         group_label (None | str | Unset): Display label of the column group.
-        data_unit (DataUnit | None | Unset): Data unit of the column (optional).
+        data_unit (DataUnit | None | str | Unset): Data unit of the column (optional).
         multi_valued (bool | Unset): Whether the column is multi-valued. Default: False.
         allowed_values (list[Any] | None | Unset): Allowed values for this column.
         sortable (bool | Unset): Whether the column is sortable.
         filterable (bool | Unset): Whether the column is filterable.
         is_empty (bool | Unset): Indicates whether the column is empty and should be hidden. Default: False.
-        applicable_types (list[StepType] | Unset): List of types applicable for this column.
+        applicable_types (list[StepType | str] | Unset): List of types applicable for this column.
         is_optional (bool | Unset): Whether the column is optional. Default: False.
         roll_up_method (None | str | Unset): Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
@@ -41,18 +41,18 @@ class ColumnInfo:
     """
 
     id: str
-    category: ColumnCategory
-    data_type: DataType | None
+    category: ColumnCategory | str
+    data_type: DataType | None | str
     label: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
     group_label: None | str | Unset = UNSET
-    data_unit: DataUnit | None | Unset = UNSET
+    data_unit: DataUnit | None | str | Unset = UNSET
     multi_valued: bool | Unset = False
     allowed_values: list[Any] | None | Unset = UNSET
     sortable: bool | Unset = UNSET
     filterable: bool | Unset = UNSET
     is_empty: bool | Unset = False
-    applicable_types: list[StepType] | Unset = UNSET
+    applicable_types: list[StepType | str] | Unset = UNSET
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
@@ -61,7 +61,11 @@ class ColumnInfo:
     def to_dict(self) -> dict[str, Any]:
         id = self.id
 
-        category = self.category.value
+        category: str
+        if isinstance(self.category, ColumnCategory):
+            category = self.category.value
+        else:
+            category = self.category
 
         data_type: None | str
         if isinstance(self.data_type, DataType):
@@ -116,7 +120,11 @@ class ColumnInfo:
         if not isinstance(self.applicable_types, Unset):
             applicable_types = []
             for applicable_types_item_data in self.applicable_types:
-                applicable_types_item = applicable_types_item_data.value
+                applicable_types_item: str
+                if isinstance(applicable_types_item_data, StepType):
+                    applicable_types_item = applicable_types_item_data.value
+                else:
+                    applicable_types_item = applicable_types_item_data
                 applicable_types.append(applicable_types_item)
 
         is_optional = self.is_optional
@@ -170,9 +178,22 @@ class ColumnInfo:
         d = dict(src_dict)
         id = d.pop("id")
 
-        category = ColumnCategory(d.pop("category"))
+        def _parse_category(data: object) -> ColumnCategory | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                category_type_0 = ColumnCategory(data)
 
-        def _parse_data_type(data: object) -> DataType | None:
+                return category_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for category")
+            return cast(ColumnCategory | str, data)
+
+        category = _parse_category(d.pop("category"))
+
+        def _parse_data_type(data: object) -> DataType | None | str:
             if data is None:
                 return data
             try:
@@ -183,7 +204,9 @@ class ColumnInfo:
                 return data_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataType | None, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_type")
+            return cast(DataType | None | str, data)
 
         data_type = _parse_data_type(d.pop("data_type"))
 
@@ -214,7 +237,7 @@ class ColumnInfo:
 
         group_label = _parse_group_label(d.pop("group_label", UNSET))
 
-        def _parse_data_unit(data: object) -> DataUnit | None | Unset:
+        def _parse_data_unit(data: object) -> DataUnit | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -227,7 +250,9 @@ class ColumnInfo:
                 return data_unit_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataUnit | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_unit")
+            return cast(DataUnit | None | str | Unset, data)
 
         data_unit = _parse_data_unit(d.pop("data_unit", UNSET))
 
@@ -257,11 +282,25 @@ class ColumnInfo:
         is_empty = d.pop("is_empty", UNSET)
 
         _applicable_types = d.pop("applicable_types", UNSET)
-        applicable_types: list[StepType] | Unset = UNSET
+        applicable_types: list[StepType | str] | Unset = UNSET
         if _applicable_types is not UNSET:
             applicable_types = []
             for applicable_types_item_data in _applicable_types:
-                applicable_types_item = StepType(applicable_types_item_data)
+
+                def _parse_applicable_types_item(data: object) -> StepType | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        applicable_types_item_type_0 = StepType(data)
+
+                        return applicable_types_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for applicable_types_item")
+                    return cast(StepType | str, data)
+
+                applicable_types_item = _parse_applicable_types_item(applicable_types_item_data)
 
                 applicable_types.append(applicable_types_item)
 

@@ -24,7 +24,7 @@ class AnthropicIntegration:
     Attributes:
         multi_modal_config (MultiModalModelIntegrationConfig | None | Unset): Configuration for multi-modal (file
             upload) capabilities.
-        authentication_type (AnthropicAuthenticationType | Unset):
+        authentication_type (AnthropicAuthenticationType | str | Unset):
         endpoint (None | str | Unset): Custom base URL for the Anthropic API. Required if `proxy` is True.
         authentication_scope (None | str | Unset):
         oauth2_token_url (None | str | Unset): OAuth2 token URL for custom OAuth2 authentication
@@ -37,7 +37,7 @@ class AnthropicIntegration:
     """
 
     multi_modal_config: MultiModalModelIntegrationConfig | None | Unset = UNSET
-    authentication_type: AnthropicAuthenticationType | Unset = UNSET
+    authentication_type: AnthropicAuthenticationType | str | Unset = UNSET
     endpoint: None | str | Unset = UNSET
     authentication_scope: None | str | Unset = UNSET
     oauth2_token_url: None | str | Unset = UNSET
@@ -63,9 +63,13 @@ class AnthropicIntegration:
         else:
             multi_modal_config = self.multi_modal_config
 
-        authentication_type: str | Unset = UNSET
-        if not isinstance(self.authentication_type, Unset):
+        authentication_type: str | Unset
+        if isinstance(self.authentication_type, Unset):
+            authentication_type = UNSET
+        elif isinstance(self.authentication_type, AnthropicAuthenticationType):
             authentication_type = self.authentication_type.value
+        else:
+            authentication_type = self.authentication_type
 
         endpoint: None | str | Unset
         if isinstance(self.endpoint, Unset):
@@ -164,12 +168,22 @@ class AnthropicIntegration:
 
         multi_modal_config = _parse_multi_modal_config(d.pop("multi_modal_config", UNSET))
 
-        _authentication_type = d.pop("authentication_type", UNSET)
-        authentication_type: AnthropicAuthenticationType | Unset
-        if isinstance(_authentication_type, Unset):
-            authentication_type = UNSET
-        else:
-            authentication_type = AnthropicAuthenticationType(_authentication_type)
+        def _parse_authentication_type(data: object) -> AnthropicAuthenticationType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                authentication_type_type_0 = AnthropicAuthenticationType(data)
+
+                return authentication_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for authentication_type")
+            return cast(AnthropicAuthenticationType | str | Unset, data)
+
+        authentication_type = _parse_authentication_type(d.pop("authentication_type", UNSET))
 
         def _parse_endpoint(data: object) -> None | str | Unset:
             if data is None:

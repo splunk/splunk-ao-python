@@ -6,8 +6,15 @@ from uuid import uuid4
 import pytest
 
 from galileo_core.schemas.logging.step import StepType
+from splunk_ao.evaluator import (
+    CodeEvaluator,
+    DecisionEvaluator,
+    Evaluator,
+    LlmEvaluator,
+    LocalEvaluator,
+    SplunkAOEvaluator,
+)
 from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
-from splunk_ao.evaluator import CodeEvaluator, DecisionEvaluator, LlmEvaluator, LocalEvaluator, Evaluator
 from splunk_ao.resources.models import HTTPValidationError, OutputTypeEnum, ScorerResponse, ScorerTypes
 from splunk_ao.resources.models.invalid_result import InvalidResult
 from splunk_ao.resources.models.task_result_status import TaskResultStatus
@@ -317,6 +324,38 @@ class TestMetricCreate:
 
 class TestMetricGet:
     """Test suite for Evaluator.get() class method."""
+
+    @pytest.mark.parametrize(
+        ("scorer_type", "expected"),
+        [
+            (ScorerTypes.LLM, LlmEvaluator),
+            (ScorerTypes.CODE, CodeEvaluator),
+            (ScorerTypes.DECISION, DecisionEvaluator),
+            (ScorerTypes.LUNA, SplunkAOEvaluator),
+            (ScorerTypes.PRESET, SplunkAOEvaluator),
+        ],
+    )
+    def test_factory_keeps_known_evaluator_types(self, scorer_type: ScorerTypes, expected: type[Evaluator]) -> None:
+        # When: selecting behavior for a supported server type
+        evaluator = Evaluator._create_metric_from_type(scorer_type)
+
+        # Then: known types retain their existing evaluator class
+        assert type(evaluator) is expected
+
+    def test_get_unknown_type_reports_unsupported_evaluator(self, reset_configuration: None) -> None:
+        # Given: a valid API response for an evaluator newer than the SDK
+        with patch("splunk_ao.evaluator.Scorers") as service:
+            response = MagicMock(id="evaluator-id", scorer_type="remote_python")
+            service.return_value.list.return_value = [response]
+
+            # When: an operation requires the SDK to construct that evaluator
+            with pytest.raises(APIError) as exc:
+                Evaluator.get(id="evaluator-id")
+
+        # Then: the SDK does not classify it as a built-in evaluator
+        assert str(exc.value) == (
+            "Unsupported evaluator type: 'remote_python'. Upgrade splunk-ao to use this evaluator."
+        )
 
     @patch("splunk_ao.evaluator.Scorers")
     def test_get_by_name_returns_metric(self, mock_scorers_class: MagicMock, reset_configuration: None) -> None:

@@ -22,9 +22,9 @@ class StandardError:
     """
     Attributes:
         error_code (int):
-        error_type (ErrorType):
+        error_type (ErrorType | str):
         error_group (str):
-        severity (ErrorSeverity): Error severity levels for catalog entries.
+        severity (ErrorSeverity | str):
         message (str):
         user_action (None | str | Unset):
         documentation_link (None | str | Unset):
@@ -36,9 +36,9 @@ class StandardError:
     """
 
     error_code: int
-    error_type: ErrorType
+    error_type: ErrorType | str
     error_group: str
-    severity: ErrorSeverity
+    severity: ErrorSeverity | str
     message: str
     user_action: None | str | Unset = UNSET
     documentation_link: None | str | Unset = UNSET
@@ -52,11 +52,19 @@ class StandardError:
     def to_dict(self) -> dict[str, Any]:
         error_code = self.error_code
 
-        error_type = self.error_type.value
+        error_type: str
+        if isinstance(self.error_type, ErrorType):
+            error_type = self.error_type.value
+        else:
+            error_type = self.error_type
 
         error_group = self.error_group
 
-        severity = self.severity.value
+        severity: str
+        if isinstance(self.severity, ErrorSeverity):
+            severity = self.severity.value
+        else:
+            severity = self.severity
 
         message = self.message
 
@@ -127,11 +135,37 @@ class StandardError:
         d = dict(src_dict)
         error_code = d.pop("error_code")
 
-        error_type = ErrorType(d.pop("error_type"))
+        def _parse_error_type(data: object) -> ErrorType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                error_type_type_0 = ErrorType(data)
+
+                return error_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for error_type")
+            return cast(ErrorType | str, data)
+
+        error_type = _parse_error_type(d.pop("error_type"))
 
         error_group = d.pop("error_group")
 
-        severity = ErrorSeverity(d.pop("severity"))
+        def _parse_severity(data: object) -> ErrorSeverity | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                severity_type_0 = ErrorSeverity(data)
+
+                return severity_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for severity")
+            return cast(ErrorSeverity | str, data)
+
+        severity = _parse_severity(d.pop("severity"))
 
         message = d.pop("message")
 

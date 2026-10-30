@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,12 +18,12 @@ class DatasetContentFilter:
     Attributes:
         column_name (str):
         value (str):
-        operator (DatasetContentFilterOperator | Unset):
+        operator (DatasetContentFilterOperator | str | Unset):
     """
 
     column_name: str
     value: str
-    operator: DatasetContentFilterOperator | Unset = UNSET
+    operator: DatasetContentFilterOperator | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -31,9 +31,13 @@ class DatasetContentFilter:
 
         value = self.value
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, DatasetContentFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -50,12 +54,22 @@ class DatasetContentFilter:
 
         value = d.pop("value")
 
-        _operator = d.pop("operator", UNSET)
-        operator: DatasetContentFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = DatasetContentFilterOperator(_operator)
+        def _parse_operator(data: object) -> DatasetContentFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = DatasetContentFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(DatasetContentFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         dataset_content_filter = cls(column_name=column_name, value=value, operator=operator)
 

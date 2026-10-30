@@ -24,7 +24,7 @@ class SystemMetricInfo:
         label (str): Human-readable display name for the metric
         aggregation_type (Literal['numeric'] | Unset): Discriminator: numeric metrics aggregated via stats/histogram
             Default: 'numeric'.
-        unit (DataUnit | None | Unset): Unit of measurement, if any
+        unit (DataUnit | None | str | Unset): Unit of measurement, if any
         values (list[float] | Unset): Raw metric values used to compute statistics and histograms
         mean (float | None | Unset): Arithmetic mean of the metric values
         median (float | None | Unset): Median (50th percentile) of the metric values
@@ -40,7 +40,7 @@ class SystemMetricInfo:
     name: str
     label: str
     aggregation_type: Literal["numeric"] | Unset = "numeric"
-    unit: DataUnit | None | Unset = UNSET
+    unit: DataUnit | None | str | Unset = UNSET
     values: list[float] | Unset = UNSET
     mean: float | None | Unset = UNSET
     median: float | None | Unset = UNSET
@@ -173,7 +173,7 @@ class SystemMetricInfo:
         if aggregation_type != "numeric" and not isinstance(aggregation_type, Unset):
             raise ValueError(f"aggregation_type must match const 'numeric', got '{aggregation_type}'")
 
-        def _parse_unit(data: object) -> DataUnit | None | Unset:
+        def _parse_unit(data: object) -> DataUnit | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -186,7 +186,9 @@ class SystemMetricInfo:
                 return unit_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataUnit | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for unit")
+            return cast(DataUnit | None | str | Unset, data)
 
         unit = _parse_unit(d.pop("unit", UNSET))
 

@@ -38,9 +38,9 @@ class BaseScorerVersionDB:
             to llm/chat.
         cot_enabled (bool | None | Unset): Whether to enable chain of thought for this scorer. Defaults to False for llm
             scorers.
-        output_type (None | OutputTypeEnum | Unset): What type of output to use for model-based scorers
+        output_type (None | OutputTypeEnum | str | Unset): What type of output to use for model-based scorers
             (sessions_normalized, trace_io_only, etc.).
-        input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
+        input_type (InputTypeEnum | None | str | Unset): What type of input to use for model-based scorers
             (sessions_normalized, trace_io_only, etc.).
     """
 
@@ -55,8 +55,8 @@ class BaseScorerVersionDB:
     num_judges: int | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -298,7 +298,7 @@ class BaseScorerVersionDB:
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -311,11 +311,13 @@ class BaseScorerVersionDB:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -328,7 +330,9 @@ class BaseScorerVersionDB:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 

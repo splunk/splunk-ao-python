@@ -17,11 +17,16 @@ echo "$HOME_DIR"
 
 cd "$HOME_DIR"
 
+GENERATION_DIR=$(mktemp -d "${TMPDIR:-/tmp}/splunk-ao-open-enums.XXXXXX")
+GENERATION_SPEC="$GENERATION_DIR/openapi.json"
+trap 'rm -r "$GENERATION_DIR"' EXIT
+poetry run python "$HOME_DIR/prepare_open_enums.py" "$OPENAPI_SPEC_PATH" "$GENERATION_SPEC"
+
 # Backup the current output path
 mv "$OUTPUT_PATH"  "$OUTPUT_PATH"_backup
 
 # Run the OpenAPI Python client generator
-poetry run openapi-python-client generate --meta none  --path "$OPENAPI_SPEC_PATH" --output-path "$OUTPUT_PATH" --custom-template-path ../codegen_templates --config "$CONFIG_PATH" --overwrite
+poetry run openapi-python-client generate --meta none --path "$GENERATION_SPEC" --output-path "$OUTPUT_PATH" --custom-template-path ../codegen_templates --config "$CONFIG_PATH" --overwrite
 
 # Remove the backup directory
 rm -r "$OUTPUT_PATH"_backup

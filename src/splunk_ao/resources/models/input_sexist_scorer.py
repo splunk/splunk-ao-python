@@ -25,14 +25,14 @@ class InputSexistScorer:
         name (Literal['input_sexist'] | Unset):  Default: 'input_sexist'.
         filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset): List of filters to apply to the
             scorer.
-        type_ (InputSexistScorerType | Unset):  Default: InputSexistScorerType.LUNA.
+        type_ (InputSexistScorerType | str | Unset):  Default: InputSexistScorerType.LUNA.
         model_name (None | str | Unset): Alias of the model to use for the scorer.
         num_judges (int | None | Unset): Number of judges for the scorer.
     """
 
     name: Literal["input_sexist"] | Unset = "input_sexist"
     filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
-    type_: InputSexistScorerType | Unset = InputSexistScorerType.LUNA
+    type_: InputSexistScorerType | str | Unset = InputSexistScorerType.LUNA
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -62,9 +62,13 @@ class InputSexistScorer:
         else:
             filters = self.filters
 
-        type_: str | Unset = UNSET
-        if not isinstance(self.type_, Unset):
+        type_: str | Unset
+        if isinstance(self.type_, Unset):
+            type_ = UNSET
+        elif isinstance(self.type_, InputSexistScorerType):
             type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
@@ -151,12 +155,22 @@ class InputSexistScorer:
 
         filters = _parse_filters(d.pop("filters", UNSET))
 
-        _type_ = d.pop("type", UNSET)
-        type_: InputSexistScorerType | Unset
-        if isinstance(_type_, Unset):
-            type_ = UNSET
-        else:
-            type_ = InputSexistScorerType(_type_)
+        def _parse_type_(data: object) -> InputSexistScorerType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = InputSexistScorerType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(InputSexistScorerType | str | Unset, data)
+
+        type_ = _parse_type_(d.pop("type", UNSET))
 
         def _parse_model_name(data: object) -> None | str | Unset:
             if data is None:

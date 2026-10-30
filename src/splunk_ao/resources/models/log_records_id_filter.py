@@ -18,13 +18,13 @@ class LogRecordsIDFilter:
     Attributes:
         column_id (str): ID of the column to filter.
         value (list[str] | str):
-        operator (LogRecordsIDFilterOperator | Unset):  Default: LogRecordsIDFilterOperator.EQ.
+        operator (LogRecordsIDFilterOperator | str | Unset):  Default: LogRecordsIDFilterOperator.EQ.
         type_ (Literal['id'] | Unset):  Default: 'id'.
     """
 
     column_id: str
     value: list[str] | str
-    operator: LogRecordsIDFilterOperator | Unset = LogRecordsIDFilterOperator.EQ
+    operator: LogRecordsIDFilterOperator | str | Unset = LogRecordsIDFilterOperator.EQ
     type_: Literal["id"] | Unset = "id"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -42,9 +42,13 @@ class LogRecordsIDFilter:
         else:
             value = self.value
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, LogRecordsIDFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         type_ = self.type_
 
@@ -85,12 +89,22 @@ class LogRecordsIDFilter:
 
         value = _parse_value(d.pop("value"))
 
-        _operator = d.pop("operator", UNSET)
-        operator: LogRecordsIDFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = LogRecordsIDFilterOperator(_operator)
+        def _parse_operator(data: object) -> LogRecordsIDFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = LogRecordsIDFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(LogRecordsIDFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         type_ = cast(Literal["id"] | Unset, d.pop("type", UNSET))
         if type_ != "id" and not isinstance(type_, Unset):

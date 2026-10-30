@@ -35,7 +35,7 @@ class MetricSuccess:
             list[list[list[bool | datetime.datetime | Document | FeedbackAggregate | FeedbackRatingDB | float |
             HallucinationSegment | int | None | Segment | str | UUID]]] | None | Segment | str | UUID):
         status_type (Literal['success'] | Unset):  Default: 'success'.
-        scorer_type (None | ScorerType | Unset):
+        scorer_type (None | ScorerType | str | Unset):
         metric_key_alias (None | str | Unset):
         explanation (None | str | Unset):
         cost (float | None | Unset):
@@ -116,7 +116,7 @@ class MetricSuccess:
         | UUID
     )
     status_type: Literal["success"] | Unset = "success"
-    scorer_type: None | ScorerType | Unset = UNSET
+    scorer_type: None | ScorerType | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     explanation: None | str | Unset = UNSET
     cost: float | None | Unset = UNSET
@@ -908,7 +908,7 @@ class MetricSuccess:
         if status_type != "success" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'success', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -921,7 +921,9 @@ class MetricSuccess:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerType | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 

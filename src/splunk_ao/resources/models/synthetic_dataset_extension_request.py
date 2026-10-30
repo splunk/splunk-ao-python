@@ -27,7 +27,7 @@ class SyntheticDatasetExtensionRequest:
         instructions (None | str | Unset):
         examples (list[str] | Unset):
         source_dataset (None | SyntheticDataSourceDataset | Unset):
-        data_types (list[SyntheticDataTypes] | None | Unset):
+        data_types (list[str | SyntheticDataTypes] | None | Unset):
         count (int | Unset):  Default: 10.
         project_id (None | str | Unset):
     """
@@ -37,7 +37,7 @@ class SyntheticDatasetExtensionRequest:
     instructions: None | str | Unset = UNSET
     examples: list[str] | Unset = UNSET
     source_dataset: None | SyntheticDataSourceDataset | Unset = UNSET
-    data_types: list[SyntheticDataTypes] | None | Unset = UNSET
+    data_types: list[str | SyntheticDataTypes] | None | Unset = UNSET
     count: int | Unset = 10
     project_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -79,7 +79,11 @@ class SyntheticDatasetExtensionRequest:
         elif isinstance(self.data_types, list):
             data_types = []
             for data_types_type_0_item_data in self.data_types:
-                data_types_type_0_item = data_types_type_0_item_data.value
+                data_types_type_0_item: str
+                if isinstance(data_types_type_0_item_data, SyntheticDataTypes):
+                    data_types_type_0_item = data_types_type_0_item_data.value
+                else:
+                    data_types_type_0_item = data_types_type_0_item_data
                 data_types.append(data_types_type_0_item)
 
         else:
@@ -165,7 +169,7 @@ class SyntheticDatasetExtensionRequest:
 
         source_dataset = _parse_source_dataset(d.pop("source_dataset", UNSET))
 
-        def _parse_data_types(data: object) -> list[SyntheticDataTypes] | None | Unset:
+        def _parse_data_types(data: object) -> list[str | SyntheticDataTypes] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -176,14 +180,28 @@ class SyntheticDatasetExtensionRequest:
                 data_types_type_0 = []
                 _data_types_type_0 = data
                 for data_types_type_0_item_data in _data_types_type_0:
-                    data_types_type_0_item = SyntheticDataTypes(data_types_type_0_item_data)
+
+                    def _parse_data_types_type_0_item(data: object) -> str | SyntheticDataTypes:
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            data_types_type_0_item_type_0 = SyntheticDataTypes(data)
+
+                            return data_types_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for data_types_type_0_item")
+                        return cast(str | SyntheticDataTypes, data)
+
+                    data_types_type_0_item = _parse_data_types_type_0_item(data_types_type_0_item_data)
 
                     data_types_type_0.append(data_types_type_0_item)
 
                 return data_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[SyntheticDataTypes] | None | Unset, data)
+            return cast(list[str | SyntheticDataTypes] | None | Unset, data)
 
         data_types = _parse_data_types(d.pop("data_types", UNSET))
 

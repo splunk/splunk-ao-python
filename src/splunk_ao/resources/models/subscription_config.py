@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,12 +18,12 @@ class SubscriptionConfig:
     Attributes:
         url (str): URL to send the event to. This can be a webhook URL, a message queue URL, an event bus or a custom
             endpoint that can receive an HTTP POST request.
-        statuses (list[ExecutionStatus] | Unset): List of statuses that will cause a notification to be sent to the
-            configured URL.
+        statuses (list[ExecutionStatus | str] | Unset): List of statuses that will cause a notification to be sent to
+            the configured URL.
     """
 
     url: str
-    statuses: list[ExecutionStatus] | Unset = UNSET
+    statuses: list[ExecutionStatus | str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -33,7 +33,11 @@ class SubscriptionConfig:
         if not isinstance(self.statuses, Unset):
             statuses = []
             for statuses_item_data in self.statuses:
-                statuses_item = statuses_item_data.value
+                statuses_item: str
+                if isinstance(statuses_item_data, ExecutionStatus):
+                    statuses_item = statuses_item_data.value
+                else:
+                    statuses_item = statuses_item_data
                 statuses.append(statuses_item)
 
         field_dict: dict[str, Any] = {}
@@ -50,11 +54,25 @@ class SubscriptionConfig:
         url = d.pop("url")
 
         _statuses = d.pop("statuses", UNSET)
-        statuses: list[ExecutionStatus] | Unset = UNSET
+        statuses: list[ExecutionStatus | str] | Unset = UNSET
         if _statuses is not UNSET:
             statuses = []
             for statuses_item_data in _statuses:
-                statuses_item = ExecutionStatus(statuses_item_data)
+
+                def _parse_statuses_item(data: object) -> ExecutionStatus | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        statuses_item_type_0 = ExecutionStatus(data)
+
+                        return statuses_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for statuses_item")
+                    return cast(ExecutionStatus | str, data)
+
+                statuses_item = _parse_statuses_item(statuses_item_data)
 
                 statuses.append(statuses_item)
 

@@ -17,18 +17,22 @@ T = TypeVar("T", bound="AnnotationQueueUpdatedAtFilter")
 class AnnotationQueueUpdatedAtFilter:
     """
     Attributes:
-        operator (AnnotationQueueUpdatedAtFilterOperator):
+        operator (AnnotationQueueUpdatedAtFilterOperator | str):
         value (datetime.datetime):
         name (Literal['updated_at'] | Unset):  Default: 'updated_at'.
     """
 
-    operator: AnnotationQueueUpdatedAtFilterOperator
+    operator: AnnotationQueueUpdatedAtFilterOperator | str
     value: datetime.datetime
     name: Literal["updated_at"] | Unset = "updated_at"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, AnnotationQueueUpdatedAtFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value = self.value.isoformat()
 
@@ -45,7 +49,21 @@ class AnnotationQueueUpdatedAtFilter:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        operator = AnnotationQueueUpdatedAtFilterOperator(d.pop("operator"))
+
+        def _parse_operator(data: object) -> AnnotationQueueUpdatedAtFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = AnnotationQueueUpdatedAtFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(AnnotationQueueUpdatedAtFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         value = datetime.datetime.fromisoformat(d.pop("value"))
 

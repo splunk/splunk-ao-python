@@ -25,7 +25,7 @@ from ...types import UNSET, Response
 
 
 def _get_kwargs(
-    *, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval | str
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -37,7 +37,11 @@ def _get_kwargs(
     json_end_time = end_time.isoformat()
     params["end_time"] = json_end_time
 
-    json_interval = interval.value
+    json_interval: str
+    if isinstance(interval, CostInterval):
+        json_interval = interval.value
+    else:
+        json_interval = interval
     params["interval"] = json_interval
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
@@ -96,14 +100,14 @@ def _build_response(
 
 
 def sync_detailed(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval | str
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -121,14 +125,14 @@ def sync_detailed(
 
 
 def sync(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval | str
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -142,14 +146,14 @@ def sync(
 
 
 async def asyncio_detailed(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval | str
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -167,14 +171,14 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval | str
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

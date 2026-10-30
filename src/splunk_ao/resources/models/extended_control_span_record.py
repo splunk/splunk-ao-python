@@ -69,7 +69,7 @@ class ExtendedControlSpanRecord:
             record
         annotations (ExtendedControlSpanRecordAnnotations | Unset): Annotations keyed by template ID and annotator ID
         file_ids (list[str] | Unset): IDs of files associated with this record
-        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+        file_modalities (list[ContentModality | str] | Unset): Modalities of files associated with this record
         annotation_aggregates (ExtendedControlSpanRecordAnnotationAggregates | Unset): Annotation aggregate information
             keyed by template ID
         annotation_agreement (ExtendedControlSpanRecordAnnotationAgreement | Unset): Annotation agreement scores keyed
@@ -88,9 +88,9 @@ class ExtendedControlSpanRecord:
         step_number (int | None | Unset): Topological step number of the span.
         control_id (int | None | Unset): Identifier of the control definition that produced this span.
         agent_name (None | str | Unset): Normalized agent name associated with this control execution.
-        check_stage (ControlCheckStage | None | Unset): Execution stage where the control ran, typically 'pre' or
+        check_stage (ControlCheckStage | None | str | Unset): Execution stage where the control ran, typically 'pre' or
             'post'.
-        applies_to (ControlAppliesTo | None | Unset): Parent execution type the control applied to, for example
+        applies_to (ControlAppliesTo | None | str | Unset): Parent execution type the control applied to, for example
             'llm_call' or 'tool_call'.
         evaluator_name (None | str | Unset): Representative evaluator name for this control span. For composite
             controls, this is the primary evaluator chosen for observability identity.
@@ -126,7 +126,7 @@ class ExtendedControlSpanRecord:
     feedback_rating_info: ExtendedControlSpanRecordFeedbackRatingInfo | Unset = UNSET
     annotations: ExtendedControlSpanRecordAnnotations | Unset = UNSET
     file_ids: list[str] | Unset = UNSET
-    file_modalities: list[ContentModality] | Unset = UNSET
+    file_modalities: list[ContentModality | str] | Unset = UNSET
     annotation_aggregates: ExtendedControlSpanRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: ExtendedControlSpanRecordAnnotationAgreement | Unset = UNSET
     overall_annotation_agreement: float | None | Unset = UNSET
@@ -140,8 +140,8 @@ class ExtendedControlSpanRecord:
     step_number: int | None | Unset = UNSET
     control_id: int | None | Unset = UNSET
     agent_name: None | str | Unset = UNSET
-    check_stage: ControlCheckStage | None | Unset = UNSET
-    applies_to: ControlAppliesTo | None | Unset = UNSET
+    check_stage: ControlCheckStage | None | str | Unset = UNSET
+    applies_to: ControlAppliesTo | None | str | Unset = UNSET
     evaluator_name: None | str | Unset = UNSET
     selector_path: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -320,7 +320,11 @@ class ExtendedControlSpanRecord:
         if not isinstance(self.file_modalities, Unset):
             file_modalities = []
             for file_modalities_item_data in self.file_modalities:
-                file_modalities_item = file_modalities_item_data.value
+                file_modalities_item: str
+                if isinstance(file_modalities_item_data, ContentModality):
+                    file_modalities_item = file_modalities_item_data.value
+                else:
+                    file_modalities_item = file_modalities_item_data
                 file_modalities.append(file_modalities_item)
 
         annotation_aggregates: dict[str, Any] | Unset = UNSET
@@ -816,11 +820,25 @@ class ExtendedControlSpanRecord:
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
         _file_modalities = d.pop("file_modalities", UNSET)
-        file_modalities: list[ContentModality] | Unset = UNSET
+        file_modalities: list[ContentModality | str] | Unset = UNSET
         if _file_modalities is not UNSET:
             file_modalities = []
             for file_modalities_item_data in _file_modalities:
-                file_modalities_item = ContentModality(file_modalities_item_data)
+
+                def _parse_file_modalities_item(data: object) -> ContentModality | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        file_modalities_item_type_0 = ContentModality(data)
+
+                        return file_modalities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for file_modalities_item")
+                    return cast(ContentModality | str, data)
+
+                file_modalities_item = _parse_file_modalities_item(file_modalities_item_data)
 
                 file_modalities.append(file_modalities_item)
 
@@ -925,7 +943,7 @@ class ExtendedControlSpanRecord:
 
         agent_name = _parse_agent_name(d.pop("agent_name", UNSET))
 
-        def _parse_check_stage(data: object) -> ControlCheckStage | None | Unset:
+        def _parse_check_stage(data: object) -> ControlCheckStage | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -938,11 +956,13 @@ class ExtendedControlSpanRecord:
                 return check_stage_type_0
             except:  # noqa: E722
                 pass
-            return cast(ControlCheckStage | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for check_stage")
+            return cast(ControlCheckStage | None | str | Unset, data)
 
         check_stage = _parse_check_stage(d.pop("check_stage", UNSET))
 
-        def _parse_applies_to(data: object) -> ControlAppliesTo | None | Unset:
+        def _parse_applies_to(data: object) -> ControlAppliesTo | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -955,7 +975,9 @@ class ExtendedControlSpanRecord:
                 return applies_to_type_0
             except:  # noqa: E722
                 pass
-            return cast(ControlAppliesTo | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for applies_to")
+            return cast(ControlAppliesTo | None | str | Unset, data)
 
         applies_to = _parse_applies_to(d.pop("applies_to", UNSET))
 

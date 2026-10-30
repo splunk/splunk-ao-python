@@ -58,7 +58,7 @@ class AgentSpan:
         step_number (int | None | Unset): Topological step number of the span.
         parent_id (None | str | Unset): Galileo ID of the parent of this span
         spans (list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset): Child spans.
-        agent_type (AgentType | Unset):
+        agent_type (AgentType | str | Unset): Agent type.
     """
 
     type_: Literal["agent"] | Unset = "agent"
@@ -86,7 +86,7 @@ class AgentSpan:
     step_number: int | None | Unset = UNSET
     parent_id: None | str | Unset = UNSET
     spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
-    agent_type: AgentType | Unset = UNSET
+    agent_type: AgentType | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -296,9 +296,13 @@ class AgentSpan:
 
                 spans.append(spans_item)
 
-        agent_type: str | Unset = UNSET
-        if not isinstance(self.agent_type, Unset):
+        agent_type: str | Unset
+        if isinstance(self.agent_type, Unset):
+            agent_type = UNSET
+        elif isinstance(self.agent_type, AgentType):
             agent_type = self.agent_type.value
+        else:
+            agent_type = self.agent_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -789,12 +793,22 @@ class AgentSpan:
 
                 spans.append(spans_item)
 
-        _agent_type = d.pop("agent_type", UNSET)
-        agent_type: AgentType | Unset
-        if isinstance(_agent_type, Unset):
-            agent_type = UNSET
-        else:
-            agent_type = AgentType(_agent_type)
+        def _parse_agent_type(data: object) -> AgentType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                agent_type_type_0 = AgentType(data)
+
+                return agent_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for agent_type")
+            return cast(AgentType | str | Unset, data)
+
+        agent_type = _parse_agent_type(d.pop("agent_type", UNSET))
 
         agent_span = cls(
             type_=type_,

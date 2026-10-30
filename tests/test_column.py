@@ -93,6 +93,7 @@ class TestColumnRepresentation:
         "label,data_type,filterable,sortable,expected_parts",
         [
             ("Name", DataType.TEXT, True, True, ["id='col1'", "label='Name'", "type='text'"]),
+            ("Future", "future_type", True, True, ["id='col1'", "type='future_type'"]),
             (None, None, False, False, ["id='col1'", "filterable=False", "sortable=False"]),
         ],
     )
@@ -133,6 +134,7 @@ class TestColumnValidation:
         [
             (DataType.TEXT, (DataType.TEXT, DataType.UUID), False),
             (DataType.INTEGER, (DataType.TEXT,), True),
+            ("future_type", (DataType.TEXT,), True),
             (None, (DataType.TEXT,), True),
         ],
     )

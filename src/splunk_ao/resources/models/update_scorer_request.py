@@ -32,15 +32,15 @@ class UpdateScorerRequest:
         description (None | str | Unset):
         tags (list[str] | None | Unset):
         defaults (None | ScorerDefaults | Unset):
-        model_type (ModelType | None | Unset):
+        model_type (ModelType | None | str | Unset):
         ground_truth (bool | None | Unset):
         default_version_id (None | str | Unset):
         user_prompt (None | str | Unset):
         scoreable_node_types (list[str] | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
-        roll_up_method (None | RollUpMethodDisplayOptions | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
+        input_type (InputTypeEnum | None | str | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
+        roll_up_method (None | RollUpMethodDisplayOptions | str | Unset):
         metric_color_picker_config (MetricColorPickerBoolean | MetricColorPickerCategorical |
             MetricColorPickerMultiLabel | MetricColorPickerNumeric | None | Unset):
     """
@@ -49,15 +49,15 @@ class UpdateScorerRequest:
     description: None | str | Unset = UNSET
     tags: list[str] | None | Unset = UNSET
     defaults: None | ScorerDefaults | Unset = UNSET
-    model_type: ModelType | None | Unset = UNSET
+    model_type: ModelType | None | str | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
     default_version_id: None | str | Unset = UNSET
     user_prompt: None | str | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
-    roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
+    roll_up_method: None | RollUpMethodDisplayOptions | str | Unset = UNSET
     metric_color_picker_config: (
         MetricColorPickerBoolean
         | MetricColorPickerCategorical
@@ -161,7 +161,11 @@ class UpdateScorerRequest:
         elif isinstance(self.multimodal_capabilities, list):
             multimodal_capabilities = []
             for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities_type_0_item: str
+                if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                else:
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
                 multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
         else:
@@ -285,7 +289,7 @@ class UpdateScorerRequest:
 
         defaults = _parse_defaults(d.pop("defaults", UNSET))
 
-        def _parse_model_type(data: object) -> ModelType | None | Unset:
+        def _parse_model_type(data: object) -> ModelType | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -298,7 +302,9 @@ class UpdateScorerRequest:
                 return model_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(ModelType | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for model_type")
+            return cast(ModelType | None | str | Unset, data)
 
         model_type = _parse_model_type(d.pop("model_type", UNSET))
 
@@ -346,7 +352,7 @@ class UpdateScorerRequest:
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -359,11 +365,13 @@ class UpdateScorerRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -376,11 +384,13 @@ class UpdateScorerRequest:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -391,18 +401,34 @@ class UpdateScorerRequest:
                 multimodal_capabilities_type_0 = []
                 _multimodal_capabilities_type_0 = data
                 for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
-                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    def _parse_multimodal_capabilities_type_0_item(data: object) -> MultimodalCapability | str:
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            multimodal_capabilities_type_0_item_type_0 = MultimodalCapability(data)
+
+                            return multimodal_capabilities_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for multimodal_capabilities_type_0_item")
+                        return cast(MultimodalCapability | str, data)
+
+                    multimodal_capabilities_type_0_item = _parse_multimodal_capabilities_type_0_item(
+                        multimodal_capabilities_type_0_item_data
+                    )
 
                     multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
 
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(list[MultimodalCapability | str] | None | Unset, data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
-        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | Unset:
+        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -415,7 +441,9 @@ class UpdateScorerRequest:
                 return roll_up_method_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpMethodDisplayOptions | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_method")
+            return cast(None | RollUpMethodDisplayOptions | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 

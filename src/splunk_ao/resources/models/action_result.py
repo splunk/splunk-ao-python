@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,16 +15,20 @@ T = TypeVar("T", bound="ActionResult")
 class ActionResult:
     """
     Attributes:
-        type_ (ActionType):
+        type_ (ActionType | str): Type of action that was taken.
         value (str): Value of the action that was taken.
     """
 
-    type_: ActionType
+    type_: ActionType | str
     value: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        type_ = self.type_.value
+        type_: str
+        if isinstance(self.type_, ActionType):
+            type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         value = self.value
 
@@ -37,7 +41,21 @@ class ActionResult:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        type_ = ActionType(d.pop("type"))
+
+        def _parse_type_(data: object) -> ActionType | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = ActionType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(ActionType | str, data)
+
+        type_ = _parse_type_(d.pop("type"))
 
         value = d.pop("value")
 

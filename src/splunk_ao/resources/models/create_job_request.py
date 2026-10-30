@@ -73,7 +73,7 @@ class CreateJobRequest:
         job_name (str | Unset):  Default: 'log_stream_scorer'.
         should_retry (bool | Unset):  Default: True.
         user_id (None | str | Unset):
-        task_type (None | TaskType | Unset):
+        task_type (int | None | TaskType | Unset):
         labels (list[list[str]] | list[str] | Unset):
         ner_labels (list[str] | None | Unset):
         tasks (list[str] | None | Unset):
@@ -109,7 +109,7 @@ class CreateJobRequest:
             | Unset):
         prompt_scorer_settings (BaseScorer | None | Unset):
         scorer_config (None | ScorerConfig | Unset):
-        sub_scorers (list[ScorerName] | Unset):
+        sub_scorers (list[ScorerName | str] | Unset):
         luna_model (None | str | Unset):
         segment_filters (list[SegmentFilter] | None | Unset):
         is_session (bool | None | Unset):
@@ -129,7 +129,7 @@ class CreateJobRequest:
     job_name: str | Unset = "log_stream_scorer"
     should_retry: bool | Unset = True
     user_id: None | str | Unset = UNSET
-    task_type: None | TaskType | Unset = UNSET
+    task_type: int | None | TaskType | Unset = UNSET
     labels: list[list[str]] | list[str] | Unset = UNSET
     ner_labels: list[str] | None | Unset = UNSET
     tasks: list[str] | None | Unset = UNSET
@@ -200,7 +200,7 @@ class CreateJobRequest:
     ) = UNSET
     prompt_scorer_settings: BaseScorer | None | Unset = UNSET
     scorer_config: None | ScorerConfig | Unset = UNSET
-    sub_scorers: list[ScorerName] | Unset = UNSET
+    sub_scorers: list[ScorerName | str] | Unset = UNSET
     luna_model: None | str | Unset = UNSET
     segment_filters: list[SegmentFilter] | None | Unset = UNSET
     is_session: bool | None | Unset = UNSET
@@ -620,7 +620,11 @@ class CreateJobRequest:
         if not isinstance(self.sub_scorers, Unset):
             sub_scorers = []
             for sub_scorers_item_data in self.sub_scorers:
-                sub_scorers_item = sub_scorers_item_data.value
+                sub_scorers_item: str
+                if isinstance(sub_scorers_item_data, ScorerName):
+                    sub_scorers_item = sub_scorers_item_data.value
+                else:
+                    sub_scorers_item = sub_scorers_item_data
                 sub_scorers.append(sub_scorers_item)
 
         luna_model: None | str | Unset
@@ -850,7 +854,7 @@ class CreateJobRequest:
 
         user_id = _parse_user_id(d.pop("user_id", UNSET))
 
-        def _parse_task_type(data: object) -> None | TaskType | Unset:
+        def _parse_task_type(data: object) -> int | None | TaskType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -863,7 +867,9 @@ class CreateJobRequest:
                 return task_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | TaskType | Unset, data)
+            if type(data) not in (int,):
+                raise TypeError("Unexpected value type for task_type")
+            return cast(int | None | TaskType | Unset, data)
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 
@@ -1684,11 +1690,25 @@ class CreateJobRequest:
         scorer_config = _parse_scorer_config(d.pop("scorer_config", UNSET))
 
         _sub_scorers = d.pop("sub_scorers", UNSET)
-        sub_scorers: list[ScorerName] | Unset = UNSET
+        sub_scorers: list[ScorerName | str] | Unset = UNSET
         if _sub_scorers is not UNSET:
             sub_scorers = []
             for sub_scorers_item_data in _sub_scorers:
-                sub_scorers_item = ScorerName(sub_scorers_item_data)
+
+                def _parse_sub_scorers_item(data: object) -> ScorerName | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        sub_scorers_item_type_0 = ScorerName(data)
+
+                        return sub_scorers_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for sub_scorers_item")
+                    return cast(ScorerName | str, data)
+
+                sub_scorers_item = _parse_sub_scorers_item(sub_scorers_item_data)
 
                 sub_scorers.append(sub_scorers_item)
 

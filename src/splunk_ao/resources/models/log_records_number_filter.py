@@ -17,13 +17,13 @@ class LogRecordsNumberFilter:
     """
     Attributes:
         column_id (str): ID of the column to filter.
-        operator (LogRecordsNumberFilterOperator):
+        operator (LogRecordsNumberFilterOperator | str):
         value (float | int | list[float] | list[int]):
         type_ (Literal['number'] | Unset):  Default: 'number'.
     """
 
     column_id: str
-    operator: LogRecordsNumberFilterOperator
+    operator: LogRecordsNumberFilterOperator | str
     value: float | int | list[float] | list[int]
     type_: Literal["number"] | Unset = "number"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -31,7 +31,11 @@ class LogRecordsNumberFilter:
     def to_dict(self) -> dict[str, Any]:
         column_id = self.column_id
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, LogRecordsNumberFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: float | int | list[float] | list[int]
         if isinstance(self.value, list):
@@ -58,7 +62,20 @@ class LogRecordsNumberFilter:
         d = dict(src_dict)
         column_id = d.pop("column_id")
 
-        operator = LogRecordsNumberFilterOperator(d.pop("operator"))
+        def _parse_operator(data: object) -> LogRecordsNumberFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = LogRecordsNumberFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(LogRecordsNumberFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> float | int | list[float] | list[int]:
             try:

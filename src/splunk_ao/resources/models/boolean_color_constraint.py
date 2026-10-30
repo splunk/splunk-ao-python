@@ -24,18 +24,22 @@ class BooleanColorConstraint:
         {"color": "red", "operator": "eq", "value": false}
 
         Attributes:
-            color (MetricColor): Allowed colors for metric threshold visualization in the UI.
+            color (MetricColor | str):
             operator (Literal['eq']):
             value (bool):
     """
 
-    color: MetricColor
+    color: MetricColor | str
     operator: Literal["eq"]
     value: bool
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        color = self.color.value
+        color: str
+        if isinstance(self.color, MetricColor):
+            color = self.color.value
+        else:
+            color = self.color
 
         operator = self.operator
 
@@ -50,7 +54,21 @@ class BooleanColorConstraint:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        color = MetricColor(d.pop("color"))
+
+        def _parse_color(data: object) -> MetricColor | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                color_type_0 = MetricColor(data)
+
+                return color_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for color")
+            return cast(MetricColor | str, data)
+
+        color = _parse_color(d.pop("color"))
 
         operator = cast(Literal["eq"], d.pop("operator"))
         if operator != "eq":

@@ -31,8 +31,8 @@ class UserDB:
         permissions (list[Permission] | Unset):
         first_name (None | str | Unset):  Default: ''.
         last_name (None | str | Unset):  Default: ''.
-        auth_method (AuthMethod | Unset):
-        role (UserRole | Unset):
+        auth_method (AuthMethod | str | Unset):
+        role (str | Unset | UserRole):
         email_is_verified (bool | None | Unset):
     """
 
@@ -45,8 +45,8 @@ class UserDB:
     permissions: list[Permission] | Unset = UNSET
     first_name: None | str | Unset = ""
     last_name: None | str | Unset = ""
-    auth_method: AuthMethod | Unset = UNSET
-    role: UserRole | Unset = UNSET
+    auth_method: AuthMethod | str | Unset = UNSET
+    role: str | Unset | UserRole = UNSET
     email_is_verified: bool | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -82,13 +82,21 @@ class UserDB:
         else:
             last_name = self.last_name
 
-        auth_method: str | Unset = UNSET
-        if not isinstance(self.auth_method, Unset):
+        auth_method: str | Unset
+        if isinstance(self.auth_method, Unset):
+            auth_method = UNSET
+        elif isinstance(self.auth_method, AuthMethod):
             auth_method = self.auth_method.value
+        else:
+            auth_method = self.auth_method
 
-        role: str | Unset = UNSET
-        if not isinstance(self.role, Unset):
+        role: str | Unset
+        if isinstance(self.role, Unset):
+            role = UNSET
+        elif isinstance(self.role, UserRole):
             role = self.role.value
+        else:
+            role = self.role
 
         email_is_verified: bool | None | Unset
         if isinstance(self.email_is_verified, Unset):
@@ -167,19 +175,39 @@ class UserDB:
 
         last_name = _parse_last_name(d.pop("last_name", UNSET))
 
-        _auth_method = d.pop("auth_method", UNSET)
-        auth_method: AuthMethod | Unset
-        if isinstance(_auth_method, Unset):
-            auth_method = UNSET
-        else:
-            auth_method = AuthMethod(_auth_method)
+        def _parse_auth_method(data: object) -> AuthMethod | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                auth_method_type_0 = AuthMethod(data)
 
-        _role = d.pop("role", UNSET)
-        role: UserRole | Unset
-        if isinstance(_role, Unset):
-            role = UNSET
-        else:
-            role = UserRole(_role)
+                return auth_method_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for auth_method")
+            return cast(AuthMethod | str | Unset, data)
+
+        auth_method = _parse_auth_method(d.pop("auth_method", UNSET))
+
+        def _parse_role(data: object) -> str | Unset | UserRole:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = UserRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(str | Unset | UserRole, data)
+
+        role = _parse_role(d.pop("role", UNSET))
 
         def _parse_email_is_verified(data: object) -> bool | None | Unset:
             if data is None:

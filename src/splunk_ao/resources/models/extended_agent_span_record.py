@@ -69,7 +69,7 @@ class ExtendedAgentSpanRecord:
             record
         annotations (ExtendedAgentSpanRecordAnnotations | Unset): Annotations keyed by template ID and annotator ID
         file_ids (list[str] | Unset): IDs of files associated with this record
-        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+        file_modalities (list[ContentModality | str] | Unset): Modalities of files associated with this record
         annotation_aggregates (ExtendedAgentSpanRecordAnnotationAggregates | Unset): Annotation aggregate information
             keyed by template ID
         annotation_agreement (ExtendedAgentSpanRecordAnnotationAgreement | Unset): Annotation agreement scores keyed by
@@ -86,7 +86,7 @@ class ExtendedAgentSpanRecord:
             with this record
         is_complete (bool | Unset): Whether the parent trace is complete or not Default: True.
         step_number (int | None | Unset): Topological step number of the span.
-        agent_type (AgentType | Unset):
+        agent_type (AgentType | str | Unset): Agent type.
     """
 
     id: str
@@ -121,7 +121,7 @@ class ExtendedAgentSpanRecord:
     feedback_rating_info: ExtendedAgentSpanRecordFeedbackRatingInfo | Unset = UNSET
     annotations: ExtendedAgentSpanRecordAnnotations | Unset = UNSET
     file_ids: list[str] | Unset = UNSET
-    file_modalities: list[ContentModality] | Unset = UNSET
+    file_modalities: list[ContentModality | str] | Unset = UNSET
     annotation_aggregates: ExtendedAgentSpanRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: ExtendedAgentSpanRecordAnnotationAgreement | Unset = UNSET
     overall_annotation_agreement: float | None | Unset = UNSET
@@ -133,7 +133,7 @@ class ExtendedAgentSpanRecord:
     files: ExtendedAgentSpanRecordFilesType0 | None | Unset = UNSET
     is_complete: bool | Unset = True
     step_number: int | None | Unset = UNSET
-    agent_type: AgentType | Unset = UNSET
+    agent_type: AgentType | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -349,7 +349,11 @@ class ExtendedAgentSpanRecord:
         if not isinstance(self.file_modalities, Unset):
             file_modalities = []
             for file_modalities_item_data in self.file_modalities:
-                file_modalities_item = file_modalities_item_data.value
+                file_modalities_item: str
+                if isinstance(file_modalities_item_data, ContentModality):
+                    file_modalities_item = file_modalities_item_data.value
+                else:
+                    file_modalities_item = file_modalities_item_data
                 file_modalities.append(file_modalities_item)
 
         annotation_aggregates: dict[str, Any] | Unset = UNSET
@@ -404,9 +408,13 @@ class ExtendedAgentSpanRecord:
         else:
             step_number = self.step_number
 
-        agent_type: str | Unset = UNSET
-        if not isinstance(self.agent_type, Unset):
+        agent_type: str | Unset
+        if isinstance(self.agent_type, Unset):
+            agent_type = UNSET
+        elif isinstance(self.agent_type, AgentType):
             agent_type = self.agent_type.value
+        else:
+            agent_type = self.agent_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -906,11 +914,25 @@ class ExtendedAgentSpanRecord:
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
         _file_modalities = d.pop("file_modalities", UNSET)
-        file_modalities: list[ContentModality] | Unset = UNSET
+        file_modalities: list[ContentModality | str] | Unset = UNSET
         if _file_modalities is not UNSET:
             file_modalities = []
             for file_modalities_item_data in _file_modalities:
-                file_modalities_item = ContentModality(file_modalities_item_data)
+
+                def _parse_file_modalities_item(data: object) -> ContentModality | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        file_modalities_item_type_0 = ContentModality(data)
+
+                        return file_modalities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for file_modalities_item")
+                    return cast(ContentModality | str, data)
+
+                file_modalities_item = _parse_file_modalities_item(file_modalities_item_data)
 
                 file_modalities.append(file_modalities_item)
 
@@ -1109,12 +1131,22 @@ class ExtendedAgentSpanRecord:
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
 
-        _agent_type = d.pop("agent_type", UNSET)
-        agent_type: AgentType | Unset
-        if isinstance(_agent_type, Unset):
-            agent_type = UNSET
-        else:
-            agent_type = AgentType(_agent_type)
+        def _parse_agent_type(data: object) -> AgentType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                agent_type_type_0 = AgentType(data)
+
+                return agent_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for agent_type")
+            return cast(AgentType | str | Unset, data)
+
+        agent_type = _parse_agent_type(d.pop("agent_type", UNSET))
 
         extended_agent_span_record = cls(
             id=id,

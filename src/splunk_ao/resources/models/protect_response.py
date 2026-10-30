@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,12 +23,12 @@ class ProtectResponse:
     Attributes:
         text (str): Text from the request after processing the rules.
         trace_metadata (TraceMetadata):
-        status (ExecutionStatus | Unset): Status of the execution.
+        status (ExecutionStatus | str | Unset): Status of the request after processing the rules.
     """
 
     text: str
     trace_metadata: TraceMetadata
-    status: ExecutionStatus | Unset = UNSET
+    status: ExecutionStatus | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,9 +36,13 @@ class ProtectResponse:
 
         trace_metadata = self.trace_metadata.to_dict()
 
-        status: str | Unset = UNSET
-        if not isinstance(self.status, Unset):
+        status: str | Unset
+        if isinstance(self.status, Unset):
+            status = UNSET
+        elif isinstance(self.status, ExecutionStatus):
             status = self.status.value
+        else:
+            status = self.status
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -57,12 +61,22 @@ class ProtectResponse:
 
         trace_metadata = TraceMetadata.from_dict(d.pop("trace_metadata"))
 
-        _status = d.pop("status", UNSET)
-        status: ExecutionStatus | Unset
-        if isinstance(_status, Unset):
-            status = UNSET
-        else:
-            status = ExecutionStatus(_status)
+        def _parse_status(data: object) -> ExecutionStatus | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = ExecutionStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(ExecutionStatus | str | Unset, data)
+
+        status = _parse_status(d.pop("status", UNSET))
 
         protect_response = cls(text=text, trace_metadata=trace_metadata, status=status)
 

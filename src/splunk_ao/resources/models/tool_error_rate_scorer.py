@@ -25,13 +25,13 @@ class ToolErrorRateScorer:
         name (Literal['tool_error_rate'] | Unset):  Default: 'tool_error_rate'.
         filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset): List of filters to apply to the
             scorer.
-        type_ (ToolErrorRateScorerType | Unset):  Default: ToolErrorRateScorerType.PLUS.
+        type_ (str | ToolErrorRateScorerType | Unset):  Default: ToolErrorRateScorerType.PLUS.
         model_name (None | str | Unset): Alias of the model to use for the scorer.
     """
 
     name: Literal["tool_error_rate"] | Unset = "tool_error_rate"
     filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
-    type_: ToolErrorRateScorerType | Unset = ToolErrorRateScorerType.PLUS
+    type_: str | ToolErrorRateScorerType | Unset = ToolErrorRateScorerType.PLUS
     model_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -60,9 +60,13 @@ class ToolErrorRateScorer:
         else:
             filters = self.filters
 
-        type_: str | Unset = UNSET
-        if not isinstance(self.type_, Unset):
+        type_: str | Unset
+        if isinstance(self.type_, Unset):
+            type_ = UNSET
+        elif isinstance(self.type_, ToolErrorRateScorerType):
             type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         model_name: None | str | Unset
         if isinstance(self.model_name, Unset):
@@ -141,12 +145,22 @@ class ToolErrorRateScorer:
 
         filters = _parse_filters(d.pop("filters", UNSET))
 
-        _type_ = d.pop("type", UNSET)
-        type_: ToolErrorRateScorerType | Unset
-        if isinstance(_type_, Unset):
-            type_ = UNSET
-        else:
-            type_ = ToolErrorRateScorerType(_type_)
+        def _parse_type_(data: object) -> str | ToolErrorRateScorerType | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = ToolErrorRateScorerType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(str | ToolErrorRateScorerType | Unset, data)
+
+        type_ = _parse_type_(d.pop("type", UNSET))
 
         def _parse_model_name(data: object) -> None | str | Unset:
             if data is None:

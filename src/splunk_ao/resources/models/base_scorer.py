@@ -43,7 +43,7 @@ class BaseScorer:
         aggregates (BaseScorerAggregatesType0 | None | Unset):
         aggregate_keys (list[str] | None | Unset):
         extra (BaseScorerExtraType0 | None | Unset):
-        sub_scorers (list[ScorerName] | Unset):
+        sub_scorers (list[ScorerName | str] | Unset):
         filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset):
         metric_name (None | str | Unset):
         description (None | str | Unset):
@@ -58,21 +58,21 @@ class BaseScorer:
         scorer_version_id (None | str | Unset):
         user_code (None | str | Unset):
         can_copy_to_llm (bool | None | Unset):
-        scoreable_node_types (list[NodeType] | None | Unset):
+        scoreable_node_types (list[NodeType | str] | None | Unset):
         cot_enabled (bool | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
+        input_type (InputTypeEnum | None | str | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
         requires_tools_in_llm_span (bool | Unset):  Default: False.
         required_scorers (list[str] | None | Unset):
         required_metric_ids (list[str] | None | Unset):
-        roll_up_strategy (None | RollUpStrategy | Unset):
-        roll_up_methods (list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset):
+        roll_up_strategy (None | RollUpStrategy | str | Unset):
+        roll_up_methods (list[CategoricalRollUpMethod] | list[NumericRollUpMethod | str] | None | Unset):
         prompt (None | str | Unset):
         lora_task_id (int | None | Unset):
         lora_weights_path (None | str | Unset):
-        luna_input_type (LunaInputTypeEnum | None | Unset):
-        luna_output_type (LunaOutputTypeEnum | None | Unset):
+        luna_input_type (LunaInputTypeEnum | None | str | Unset):
+        luna_output_type (LunaOutputTypeEnum | None | str | Unset):
         class_name_to_vocab_ix (BaseScorerClassNameToVocabIxType0 | BaseScorerClassNameToVocabIxType1 | None | Unset):
         scorer_path_name (None | str | Unset):
     """
@@ -84,7 +84,7 @@ class BaseScorer:
     aggregates: BaseScorerAggregatesType0 | None | Unset = UNSET
     aggregate_keys: list[str] | None | Unset = UNSET
     extra: BaseScorerExtraType0 | None | Unset = UNSET
-    sub_scorers: list[ScorerName] | Unset = UNSET
+    sub_scorers: list[ScorerName | str] | Unset = UNSET
     filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
     metric_name: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
@@ -99,21 +99,21 @@ class BaseScorer:
     scorer_version_id: None | str | Unset = UNSET
     user_code: None | str | Unset = UNSET
     can_copy_to_llm: bool | None | Unset = UNSET
-    scoreable_node_types: list[NodeType] | None | Unset = UNSET
+    scoreable_node_types: list[NodeType | str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
     requires_tools_in_llm_span: bool | Unset = False
     required_scorers: list[str] | None | Unset = UNSET
     required_metric_ids: list[str] | None | Unset = UNSET
-    roll_up_strategy: None | RollUpStrategy | Unset = UNSET
-    roll_up_methods: list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset = UNSET
+    roll_up_strategy: None | RollUpStrategy | str | Unset = UNSET
+    roll_up_methods: list[CategoricalRollUpMethod] | list[NumericRollUpMethod | str] | None | Unset = UNSET
     prompt: None | str | Unset = UNSET
     lora_task_id: int | None | Unset = UNSET
     lora_weights_path: None | str | Unset = UNSET
-    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
-    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    luna_input_type: LunaInputTypeEnum | None | str | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | str | Unset = UNSET
     class_name_to_vocab_ix: BaseScorerClassNameToVocabIxType0 | BaseScorerClassNameToVocabIxType1 | None | Unset = UNSET
     scorer_path_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -178,7 +178,11 @@ class BaseScorer:
         if not isinstance(self.sub_scorers, Unset):
             sub_scorers = []
             for sub_scorers_item_data in self.sub_scorers:
-                sub_scorers_item = sub_scorers_item_data.value
+                sub_scorers_item: str
+                if isinstance(sub_scorers_item_data, ScorerName):
+                    sub_scorers_item = sub_scorers_item_data.value
+                else:
+                    sub_scorers_item = sub_scorers_item_data
                 sub_scorers.append(sub_scorers_item)
 
         filters: list[dict[str, Any]] | None | Unset
@@ -282,7 +286,11 @@ class BaseScorer:
         elif isinstance(self.scoreable_node_types, list):
             scoreable_node_types = []
             for scoreable_node_types_type_0_item_data in self.scoreable_node_types:
-                scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                scoreable_node_types_type_0_item: str
+                if isinstance(scoreable_node_types_type_0_item_data, NodeType):
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                else:
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data
                 scoreable_node_types.append(scoreable_node_types_type_0_item)
 
         else:
@@ -316,7 +324,11 @@ class BaseScorer:
         elif isinstance(self.multimodal_capabilities, list):
             multimodal_capabilities = []
             for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities_type_0_item: str
+                if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                else:
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
                 multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
         else:
@@ -356,7 +368,11 @@ class BaseScorer:
         elif isinstance(self.roll_up_methods, list):
             roll_up_methods = []
             for roll_up_methods_type_0_item_data in self.roll_up_methods:
-                roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                roll_up_methods_type_0_item: str
+                if isinstance(roll_up_methods_type_0_item_data, NumericRollUpMethod):
+                    roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                else:
+                    roll_up_methods_type_0_item = roll_up_methods_type_0_item_data
                 roll_up_methods.append(roll_up_methods_type_0_item)
 
         elif isinstance(self.roll_up_methods, list):
@@ -604,11 +620,25 @@ class BaseScorer:
         extra = _parse_extra(d.pop("extra", UNSET))
 
         _sub_scorers = d.pop("sub_scorers", UNSET)
-        sub_scorers: list[ScorerName] | Unset = UNSET
+        sub_scorers: list[ScorerName | str] | Unset = UNSET
         if _sub_scorers is not UNSET:
             sub_scorers = []
             for sub_scorers_item_data in _sub_scorers:
-                sub_scorers_item = ScorerName(sub_scorers_item_data)
+
+                def _parse_sub_scorers_item(data: object) -> ScorerName | str:
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        sub_scorers_item_type_0 = ScorerName(data)
+
+                        return sub_scorers_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for sub_scorers_item")
+                    return cast(ScorerName | str, data)
+
+                sub_scorers_item = _parse_sub_scorers_item(sub_scorers_item_data)
 
                 sub_scorers.append(sub_scorers_item)
 
@@ -776,7 +806,7 @@ class BaseScorer:
 
         can_copy_to_llm = _parse_can_copy_to_llm(d.pop("can_copy_to_llm", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[NodeType] | None | Unset:
+        def _parse_scoreable_node_types(data: object) -> list[NodeType | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -787,14 +817,30 @@ class BaseScorer:
                 scoreable_node_types_type_0 = []
                 _scoreable_node_types_type_0 = data
                 for scoreable_node_types_type_0_item_data in _scoreable_node_types_type_0:
-                    scoreable_node_types_type_0_item = NodeType(scoreable_node_types_type_0_item_data)
+
+                    def _parse_scoreable_node_types_type_0_item(data: object) -> NodeType | str:
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            scoreable_node_types_type_0_item_type_0 = NodeType(data)
+
+                            return scoreable_node_types_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for scoreable_node_types_type_0_item")
+                        return cast(NodeType | str, data)
+
+                    scoreable_node_types_type_0_item = _parse_scoreable_node_types_type_0_item(
+                        scoreable_node_types_type_0_item_data
+                    )
 
                     scoreable_node_types_type_0.append(scoreable_node_types_type_0_item)
 
                 return scoreable_node_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[NodeType] | None | Unset, data)
+            return cast(list[NodeType | str] | None | Unset, data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
@@ -807,7 +853,7 @@ class BaseScorer:
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -820,11 +866,13 @@ class BaseScorer:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -837,11 +885,13 @@ class BaseScorer:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -852,14 +902,30 @@ class BaseScorer:
                 multimodal_capabilities_type_0 = []
                 _multimodal_capabilities_type_0 = data
                 for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
-                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    def _parse_multimodal_capabilities_type_0_item(data: object) -> MultimodalCapability | str:
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            multimodal_capabilities_type_0_item_type_0 = MultimodalCapability(data)
+
+                            return multimodal_capabilities_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for multimodal_capabilities_type_0_item")
+                        return cast(MultimodalCapability | str, data)
+
+                    multimodal_capabilities_type_0_item = _parse_multimodal_capabilities_type_0_item(
+                        multimodal_capabilities_type_0_item_data
+                    )
 
                     multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
 
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(list[MultimodalCapability | str] | None | Unset, data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
@@ -899,7 +965,7 @@ class BaseScorer:
 
         required_metric_ids = _parse_required_metric_ids(d.pop("required_metric_ids", UNSET))
 
-        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | Unset:
+        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -912,13 +978,15 @@ class BaseScorer:
                 return roll_up_strategy_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpStrategy | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_strategy")
+            return cast(None | RollUpStrategy | str | Unset, data)
 
         roll_up_strategy = _parse_roll_up_strategy(d.pop("roll_up_strategy", UNSET))
 
         def _parse_roll_up_methods(
             data: object,
-        ) -> list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset:
+        ) -> list[CategoricalRollUpMethod] | list[NumericRollUpMethod | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -929,7 +997,21 @@ class BaseScorer:
                 roll_up_methods_type_0 = []
                 _roll_up_methods_type_0 = data
                 for roll_up_methods_type_0_item_data in _roll_up_methods_type_0:
-                    roll_up_methods_type_0_item = NumericRollUpMethod(roll_up_methods_type_0_item_data)
+
+                    def _parse_roll_up_methods_type_0_item(data: object) -> NumericRollUpMethod | str:
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            roll_up_methods_type_0_item_type_0 = NumericRollUpMethod(data)
+
+                            return roll_up_methods_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for roll_up_methods_type_0_item")
+                        return cast(NumericRollUpMethod | str, data)
+
+                    roll_up_methods_type_0_item = _parse_roll_up_methods_type_0_item(roll_up_methods_type_0_item_data)
 
                     roll_up_methods_type_0.append(roll_up_methods_type_0_item)
 
@@ -949,7 +1031,7 @@ class BaseScorer:
                 return roll_up_methods_type_1
             except:  # noqa: E722
                 pass
-            return cast(list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset, data)
+            return cast(list[CategoricalRollUpMethod] | list[NumericRollUpMethod | str] | None | Unset, data)
 
         roll_up_methods = _parse_roll_up_methods(d.pop("roll_up_methods", UNSET))
 
@@ -980,7 +1062,7 @@ class BaseScorer:
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -993,11 +1075,13 @@ class BaseScorer:
                 return luna_input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaInputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_input_type")
+            return cast(LunaInputTypeEnum | None | str | Unset, data)
 
         luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
 
-        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -1010,7 +1094,9 @@ class BaseScorer:
                 return luna_output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaOutputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_output_type")
+            return cast(LunaOutputTypeEnum | None | str | Unset, data)
 
         luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
 

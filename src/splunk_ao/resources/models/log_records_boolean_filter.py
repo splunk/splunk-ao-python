@@ -18,13 +18,13 @@ class LogRecordsBooleanFilter:
     Attributes:
         column_id (str): ID of the column to filter.
         value (bool):
-        operator (LogRecordsBooleanFilterOperator | Unset):  Default: LogRecordsBooleanFilterOperator.EQ.
+        operator (LogRecordsBooleanFilterOperator | str | Unset):  Default: LogRecordsBooleanFilterOperator.EQ.
         type_ (Literal['boolean'] | Unset):  Default: 'boolean'.
     """
 
     column_id: str
     value: bool
-    operator: LogRecordsBooleanFilterOperator | Unset = LogRecordsBooleanFilterOperator.EQ
+    operator: LogRecordsBooleanFilterOperator | str | Unset = LogRecordsBooleanFilterOperator.EQ
     type_: Literal["boolean"] | Unset = "boolean"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -33,9 +33,13 @@ class LogRecordsBooleanFilter:
 
         value = self.value
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, LogRecordsBooleanFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         type_ = self.type_
 
@@ -56,12 +60,22 @@ class LogRecordsBooleanFilter:
 
         value = d.pop("value")
 
-        _operator = d.pop("operator", UNSET)
-        operator: LogRecordsBooleanFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = LogRecordsBooleanFilterOperator(_operator)
+        def _parse_operator(data: object) -> LogRecordsBooleanFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = LogRecordsBooleanFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(LogRecordsBooleanFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         type_ = cast(Literal["boolean"] | Unset, d.pop("type", UNSET))
         if type_ != "boolean" and not isinstance(type_, Unset):

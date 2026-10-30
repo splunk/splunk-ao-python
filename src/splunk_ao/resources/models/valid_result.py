@@ -22,19 +22,19 @@ class ValidResult:
     """
     Attributes:
         score_type (str):
-        scoreable_node_types (list[NodeType]):
+        scoreable_node_types (list[NodeType | str]):
         test_scores (list[TestScore]):
         result_type (Literal['valid'] | Unset):  Default: 'valid'.
         include_llm_credentials (bool | Unset):  Default: False.
-        chain_aggregation (ChainAggregationStrategy | None | Unset):
+        chain_aggregation (ChainAggregationStrategy | None | str | Unset):
     """
 
     score_type: str
-    scoreable_node_types: list[NodeType]
+    scoreable_node_types: list[NodeType | str]
     test_scores: list[TestScore]
     result_type: Literal["valid"] | Unset = "valid"
     include_llm_credentials: bool | Unset = False
-    chain_aggregation: ChainAggregationStrategy | None | Unset = UNSET
+    chain_aggregation: ChainAggregationStrategy | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -42,7 +42,11 @@ class ValidResult:
 
         scoreable_node_types = []
         for scoreable_node_types_item_data in self.scoreable_node_types:
-            scoreable_node_types_item = scoreable_node_types_item_data.value
+            scoreable_node_types_item: str
+            if isinstance(scoreable_node_types_item_data, NodeType):
+                scoreable_node_types_item = scoreable_node_types_item_data.value
+            else:
+                scoreable_node_types_item = scoreable_node_types_item_data
             scoreable_node_types.append(scoreable_node_types_item)
 
         test_scores = []
@@ -86,7 +90,21 @@ class ValidResult:
         scoreable_node_types = []
         _scoreable_node_types = d.pop("scoreable_node_types")
         for scoreable_node_types_item_data in _scoreable_node_types:
-            scoreable_node_types_item = NodeType(scoreable_node_types_item_data)
+
+            def _parse_scoreable_node_types_item(data: object) -> NodeType | str:
+                try:
+                    if not isinstance(data, str):
+                        raise TypeError()
+                    scoreable_node_types_item_type_0 = NodeType(data)
+
+                    return scoreable_node_types_item_type_0
+                except:  # noqa: E722
+                    pass
+                if type(data) not in (str,):
+                    raise TypeError("Unexpected value type for scoreable_node_types_item")
+                return cast(NodeType | str, data)
+
+            scoreable_node_types_item = _parse_scoreable_node_types_item(scoreable_node_types_item_data)
 
             scoreable_node_types.append(scoreable_node_types_item)
 
@@ -103,7 +121,7 @@ class ValidResult:
 
         include_llm_credentials = d.pop("include_llm_credentials", UNSET)
 
-        def _parse_chain_aggregation(data: object) -> ChainAggregationStrategy | None | Unset:
+        def _parse_chain_aggregation(data: object) -> ChainAggregationStrategy | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -116,7 +134,9 @@ class ValidResult:
                 return chain_aggregation_type_0
             except:  # noqa: E722
                 pass
-            return cast(ChainAggregationStrategy | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for chain_aggregation")
+            return cast(ChainAggregationStrategy | None | str | Unset, data)
 
         chain_aggregation = _parse_chain_aggregation(d.pop("chain_aggregation", UNSET))
 

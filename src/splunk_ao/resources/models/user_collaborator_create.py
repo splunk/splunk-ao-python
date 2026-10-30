@@ -20,20 +20,24 @@ class UserCollaboratorCreate:
     they will be invited automatically.
 
         Attributes:
-            role (CollaboratorRole | Unset):
+            role (CollaboratorRole | str | Unset):
             user_id (None | str | Unset):
             user_email (None | str | Unset):
     """
 
-    role: CollaboratorRole | Unset = UNSET
+    role: CollaboratorRole | str | Unset = UNSET
     user_id: None | str | Unset = UNSET
     user_email: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        role: str | Unset = UNSET
-        if not isinstance(self.role, Unset):
+        role: str | Unset
+        if isinstance(self.role, Unset):
+            role = UNSET
+        elif isinstance(self.role, CollaboratorRole):
             role = self.role.value
+        else:
+            role = self.role
 
         user_id: None | str | Unset
         if isinstance(self.user_id, Unset):
@@ -62,12 +66,23 @@ class UserCollaboratorCreate:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        _role = d.pop("role", UNSET)
-        role: CollaboratorRole | Unset
-        if isinstance(_role, Unset):
-            role = UNSET
-        else:
-            role = CollaboratorRole(_role)
+
+        def _parse_role(data: object) -> CollaboratorRole | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str | Unset, data)
+
+        role = _parse_role(d.pop("role", UNSET))
 
         def _parse_user_id(data: object) -> None | str | Unset:
             if data is None:

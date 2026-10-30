@@ -554,7 +554,7 @@ class Project(StateManagementMixin):
         """
         return self.list_collaborators()
 
-    def add_collaborator(self, user_id: str, role: CollaboratorRole = CollaboratorRole.VIEWER) -> Collaborator:
+    def add_collaborator(self, user_id: str, role: CollaboratorRole | str = CollaboratorRole.VIEWER) -> Collaborator:
         """
         Add a collaborator to this project.
 
@@ -604,7 +604,7 @@ class Project(StateManagementMixin):
             logger.error(f"Project.add_collaborator: project_id='{self.id}', user_id='{user_id}' - failed: {e}")
             raise APIError(f"Failed to add collaborator: {e}") from e
 
-    def update_collaborator(self, user_id: str, role: CollaboratorRole) -> Collaborator:
+    def update_collaborator(self, user_id: str, role: CollaboratorRole | str) -> Collaborator:
         """
         Update a collaborator's role on this project.
 

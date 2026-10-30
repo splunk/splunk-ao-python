@@ -35,7 +35,7 @@ class RunDBThin:
         dataset_hash (None | str | Unset):
         dataset_version_id (None | str | Unset):
         prompt_template_version_id (None | str | Unset):
-        task_type (None | TaskType | Unset):
+        task_type (int | None | TaskType | Unset):
         run_tags (list[RunTagDB] | Unset):
         example_content_id (None | str | Unset):
         logged_splits (list[str] | Unset):
@@ -55,7 +55,7 @@ class RunDBThin:
     dataset_hash: None | str | Unset = UNSET
     dataset_version_id: None | str | Unset = UNSET
     prompt_template_version_id: None | str | Unset = UNSET
-    task_type: None | TaskType | Unset = UNSET
+    task_type: int | None | TaskType | Unset = UNSET
     run_tags: list[RunTagDB] | Unset = UNSET
     example_content_id: None | str | Unset = UNSET
     logged_splits: list[str] | Unset = UNSET
@@ -242,7 +242,7 @@ class RunDBThin:
 
         prompt_template_version_id = _parse_prompt_template_version_id(d.pop("prompt_template_version_id", UNSET))
 
-        def _parse_task_type(data: object) -> None | TaskType | Unset:
+        def _parse_task_type(data: object) -> int | None | TaskType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -255,7 +255,9 @@ class RunDBThin:
                 return task_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | TaskType | Unset, data)
+            if type(data) not in (int,):
+                raise TypeError("Unexpected value type for task_type")
+            return cast(int | None | TaskType | Unset, data)
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 

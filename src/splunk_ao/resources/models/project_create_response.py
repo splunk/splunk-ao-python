@@ -22,7 +22,7 @@ class ProjectCreateResponse:
         updated_at (datetime.datetime):
         name (None | str | Unset):
         created_by (None | str | Unset):
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
     """
 
     id: str
@@ -30,7 +30,7 @@ class ProjectCreateResponse:
     updated_at: datetime.datetime
     name: None | str | Unset = UNSET
     created_by: None | str | Unset = UNSET
-    type_: None | ProjectType | Unset = UNSET
+    type_: None | ProjectType | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -99,7 +99,7 @@ class ProjectCreateResponse:
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
 
-        def _parse_type_(data: object) -> None | ProjectType | Unset:
+        def _parse_type_(data: object) -> None | ProjectType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -112,7 +112,9 @@ class ProjectCreateResponse:
                 return type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ProjectType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(None | ProjectType | str | Unset, data)
 
         type_ = _parse_type_(d.pop("type", UNSET))
 

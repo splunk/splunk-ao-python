@@ -18,12 +18,12 @@ class ScorerIDFilter:
     Attributes:
         value (list[str] | str):
         name (Literal['id'] | Unset):  Default: 'id'.
-        operator (ScorerIDFilterOperator | Unset):  Default: ScorerIDFilterOperator.EQ.
+        operator (ScorerIDFilterOperator | str | Unset):  Default: ScorerIDFilterOperator.EQ.
     """
 
     value: list[str] | str
     name: Literal["id"] | Unset = "id"
-    operator: ScorerIDFilterOperator | Unset = ScorerIDFilterOperator.EQ
+    operator: ScorerIDFilterOperator | str | Unset = ScorerIDFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,9 +40,13 @@ class ScorerIDFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, ScorerIDFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -84,12 +88,22 @@ class ScorerIDFilter:
         if name != "id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'id', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: ScorerIDFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = ScorerIDFilterOperator(_operator)
+        def _parse_operator(data: object) -> ScorerIDFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ScorerIDFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ScorerIDFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         scorer_id_filter = cls(value=value, name=name, operator=operator)
 

@@ -17,14 +17,14 @@ class CreateLLMScorerAutogenRequest:
     Attributes:
         instructions (str):
         model_name (str):
-        output_type (OutputTypeEnum): Enumeration of output types.
+        output_type (OutputTypeEnum | str):
         cot_enabled (bool):
         scoreable_node_types (list[str]):
     """
 
     instructions: str
     model_name: str
-    output_type: OutputTypeEnum
+    output_type: OutputTypeEnum | str
     cot_enabled: bool
     scoreable_node_types: list[str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -34,7 +34,11 @@ class CreateLLMScorerAutogenRequest:
 
         model_name = self.model_name
 
-        output_type = self.output_type.value
+        output_type: str
+        if isinstance(self.output_type, OutputTypeEnum):
+            output_type = self.output_type.value
+        else:
+            output_type = self.output_type
 
         cot_enabled = self.cot_enabled
 
@@ -61,7 +65,20 @@ class CreateLLMScorerAutogenRequest:
 
         model_name = d.pop("model_name")
 
-        output_type = OutputTypeEnum(d.pop("output_type"))
+        def _parse_output_type(data: object) -> OutputTypeEnum | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                output_type_type_0 = OutputTypeEnum(data)
+
+                return output_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(OutputTypeEnum | str, data)
+
+        output_type = _parse_output_type(d.pop("output_type"))
 
         cot_enabled = d.pop("cot_enabled")
 

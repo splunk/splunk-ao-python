@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,7 +23,7 @@ class IntegrationDB:
     Attributes:
         id (str):
         name (str):
-        provider (IntegrationProvider):
+        provider (IntegrationProvider | str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         created_by (str):
@@ -34,7 +34,7 @@ class IntegrationDB:
 
     id: str
     name: str
-    provider: IntegrationProvider
+    provider: IntegrationProvider | str
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: str
@@ -48,7 +48,11 @@ class IntegrationDB:
 
         name = self.name
 
-        provider = self.provider.value
+        provider: str
+        if isinstance(self.provider, IntegrationProvider):
+            provider = self.provider.value
+        else:
+            provider = self.provider
 
         created_at = self.created_at.isoformat()
 
@@ -97,7 +101,20 @@ class IntegrationDB:
 
         name = d.pop("name")
 
-        provider = IntegrationProvider(d.pop("provider"))
+        def _parse_provider(data: object) -> IntegrationProvider | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                provider_type_0 = IntegrationProvider(data)
+
+                return provider_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for provider")
+            return cast(IntegrationProvider | str, data)
+
+        provider = _parse_provider(d.pop("provider"))
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 

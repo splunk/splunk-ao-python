@@ -16,7 +16,7 @@ T = TypeVar("T", bound="ControlResult")
 class ControlResult:
     """
     Attributes:
-        action (ControlAction):
+        action (ControlAction | str): Decision/action produced by the control.
         matched (bool): Whether the control matched. False covers both non-match and error cases; use error_message to
             distinguish errors.
         confidence (float | None | Unset): Confidence score reported by the control evaluation result.
@@ -24,14 +24,18 @@ class ControlResult:
             matches and non-matches.
     """
 
-    action: ControlAction
+    action: ControlAction | str
     matched: bool
     confidence: float | None | Unset = UNSET
     error_message: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        action = self.action.value
+        action: str
+        if isinstance(self.action, ControlAction):
+            action = self.action.value
+        else:
+            action = self.action
 
         matched = self.matched
 
@@ -60,7 +64,21 @@ class ControlResult:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        action = ControlAction(d.pop("action"))
+
+        def _parse_action(data: object) -> ControlAction | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                action_type_0 = ControlAction(data)
+
+                return action_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for action")
+            return cast(ControlAction | str, data)
+
+        action = _parse_action(d.pop("action"))
 
         matched = d.pop("matched")
 

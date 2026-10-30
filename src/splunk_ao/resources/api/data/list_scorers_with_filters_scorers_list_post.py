@@ -27,7 +27,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: ListScorersRequest,
-    actions: list[ScorerAction] | Unset = UNSET,
+    actions: list[ScorerAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> dict[str, Any]:
@@ -39,7 +39,11 @@ def _get_kwargs(
     if not isinstance(actions, Unset):
         json_actions = []
         for actions_item_data in actions:
-            actions_item = actions_item_data.value
+            actions_item: str
+            if isinstance(actions_item_data, ScorerAction):
+                actions_item = actions_item_data.value
+            else:
+                actions_item = actions_item_data
             json_actions.append(actions_item)
 
     params["actions"] = json_actions
@@ -112,15 +116,15 @@ def sync_detailed(
     *,
     client: ApiClient,
     body: ListScorersRequest,
-    actions: list[ScorerAction] | Unset = UNSET,
+    actions: list[ScorerAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorers.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -144,15 +148,15 @@ def sync(
     *,
     client: ApiClient,
     body: ListScorersRequest,
-    actions: list[ScorerAction] | Unset = UNSET,
+    actions: list[ScorerAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorers.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -172,15 +176,15 @@ async def asyncio_detailed(
     *,
     client: ApiClient,
     body: ListScorersRequest,
-    actions: list[ScorerAction] | Unset = UNSET,
+    actions: list[ScorerAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorers.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -204,15 +208,15 @@ async def asyncio(
     *,
     client: ApiClient,
     body: ListScorersRequest,
-    actions: list[ScorerAction] | Unset = UNSET,
+    actions: list[ScorerAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
     """List Scorers With Filters
 
     Args:
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorers.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorers.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):

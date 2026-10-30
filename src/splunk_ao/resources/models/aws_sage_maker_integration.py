@@ -22,7 +22,7 @@ T = TypeVar("T", bound="AwsSageMakerIntegration")
 class AwsSageMakerIntegration:
     """
     Attributes:
-        credential_type (AwsCredentialType | Unset):
+        credential_type (AwsCredentialType | str | Unset):
         region (str | Unset):  Default: 'us-west-2'.
         multi_modal_config (MultiModalModelIntegrationConfig | None | Unset): Configuration for multi-modal (file
             upload) capabilities.
@@ -33,7 +33,7 @@ class AwsSageMakerIntegration:
         extra (AwsSageMakerIntegrationExtraType0 | None | Unset):
     """
 
-    credential_type: AwsCredentialType | Unset = UNSET
+    credential_type: AwsCredentialType | str | Unset = UNSET
     region: str | Unset = "us-west-2"
     multi_modal_config: MultiModalModelIntegrationConfig | None | Unset = UNSET
     models: list[Model] | Unset = UNSET
@@ -47,9 +47,13 @@ class AwsSageMakerIntegration:
         from ..models.aws_sage_maker_integration_extra_type_0 import AwsSageMakerIntegrationExtraType0
         from ..models.multi_modal_model_integration_config import MultiModalModelIntegrationConfig
 
-        credential_type: str | Unset = UNSET
-        if not isinstance(self.credential_type, Unset):
+        credential_type: str | Unset
+        if isinstance(self.credential_type, Unset):
+            credential_type = UNSET
+        elif isinstance(self.credential_type, AwsCredentialType):
             credential_type = self.credential_type.value
+        else:
+            credential_type = self.credential_type
 
         region = self.region
 
@@ -115,12 +119,23 @@ class AwsSageMakerIntegration:
         from ..models.multi_modal_model_integration_config import MultiModalModelIntegrationConfig
 
         d = dict(src_dict)
-        _credential_type = d.pop("credential_type", UNSET)
-        credential_type: AwsCredentialType | Unset
-        if isinstance(_credential_type, Unset):
-            credential_type = UNSET
-        else:
-            credential_type = AwsCredentialType(_credential_type)
+
+        def _parse_credential_type(data: object) -> AwsCredentialType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                credential_type_type_0 = AwsCredentialType(data)
+
+                return credential_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for credential_type")
+            return cast(AwsCredentialType | str | Unset, data)
+
+        credential_type = _parse_credential_type(d.pop("credential_type", UNSET))
 
         region = d.pop("region", UNSET)
 

@@ -35,9 +35,7 @@ class ExperimentResponse:
     Attributes:
         id (str): Galileo ID of the experiment
         project_id (str): Galileo ID of the project associated with this experiment
-        task_type (TaskType): Valid task types for modeling.
-
-            We store these as ints instead of strings because we will be looking this up in the database frequently.
+        task_type (int | TaskType):
         created_at (datetime.datetime | Unset): Timestamp of the experiment's creation
         updated_at (datetime.datetime | None | Unset): Timestamp of the trace or span's last update
         name (str | Unset): Name of the experiment Default: ''.
@@ -74,7 +72,7 @@ class ExperimentResponse:
 
     id: str
     project_id: str
-    task_type: TaskType
+    task_type: int | TaskType
     created_at: datetime.datetime | Unset = UNSET
     updated_at: datetime.datetime | None | Unset = UNSET
     name: str | Unset = ""
@@ -117,7 +115,11 @@ class ExperimentResponse:
 
         project_id = self.project_id
 
-        task_type = self.task_type.value
+        task_type: int
+        if isinstance(self.task_type, TaskType):
+            task_type = self.task_type.value
+        else:
+            task_type = self.task_type
 
         created_at: str | Unset = UNSET
         if not isinstance(self.created_at, Unset):
@@ -352,7 +354,20 @@ class ExperimentResponse:
 
         project_id = d.pop("project_id")
 
-        task_type = TaskType(d.pop("task_type"))
+        def _parse_task_type(data: object) -> int | TaskType:
+            try:
+                if not isinstance(data, int):
+                    raise TypeError()
+                task_type_type_0 = TaskType(data)
+
+                return task_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (int,):
+                raise TypeError("Unexpected value type for task_type")
+            return cast(int | TaskType, data)
+
+        task_type = _parse_task_type(d.pop("task_type"))
 
         _created_at = d.pop("created_at", UNSET)
         created_at: datetime.datetime | Unset

@@ -22,7 +22,7 @@ class CreateUpdateRegisteredScorerResponse:
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         created_by (str):
-        data_type (DataTypeOptions | None):
+        data_type (DataTypeOptions | None | str):
         scoreable_node_types (list[str] | None):
     """
 
@@ -32,7 +32,7 @@ class CreateUpdateRegisteredScorerResponse:
     created_at: datetime.datetime
     updated_at: datetime.datetime
     created_by: str
-    data_type: DataTypeOptions | None
+    data_type: DataTypeOptions | None | str
     scoreable_node_types: list[str] | None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -100,7 +100,7 @@ class CreateUpdateRegisteredScorerResponse:
 
         created_by = d.pop("created_by")
 
-        def _parse_data_type(data: object) -> DataTypeOptions | None:
+        def _parse_data_type(data: object) -> DataTypeOptions | None | str:
             if data is None:
                 return data
             try:
@@ -111,7 +111,9 @@ class CreateUpdateRegisteredScorerResponse:
                 return data_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataTypeOptions | None, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_type")
+            return cast(DataTypeOptions | None | str, data)
 
         data_type = _parse_data_type(d.pop("data_type"))
 

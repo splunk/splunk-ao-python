@@ -17,14 +17,14 @@ class LogRecordsTextFilter:
     """
     Attributes:
         column_id (str): ID of the column to filter.
-        operator (LogRecordsTextFilterOperator):
+        operator (LogRecordsTextFilterOperator | str):
         value (list[str] | str):
         case_sensitive (bool | Unset):  Default: True.
         type_ (Literal['text'] | Unset):  Default: 'text'.
     """
 
     column_id: str
-    operator: LogRecordsTextFilterOperator
+    operator: LogRecordsTextFilterOperator | str
     value: list[str] | str
     case_sensitive: bool | Unset = True
     type_: Literal["text"] | Unset = "text"
@@ -33,7 +33,11 @@ class LogRecordsTextFilter:
     def to_dict(self) -> dict[str, Any]:
         column_id = self.column_id
 
-        operator = self.operator.value
+        operator: str
+        if isinstance(self.operator, LogRecordsTextFilterOperator):
+            operator = self.operator.value
+        else:
+            operator = self.operator
 
         value: list[str] | str
         if isinstance(self.value, list):
@@ -61,7 +65,20 @@ class LogRecordsTextFilter:
         d = dict(src_dict)
         column_id = d.pop("column_id")
 
-        operator = LogRecordsTextFilterOperator(d.pop("operator"))
+        def _parse_operator(data: object) -> LogRecordsTextFilterOperator | str:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = LogRecordsTextFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(LogRecordsTextFilterOperator | str, data)
+
+        operator = _parse_operator(d.pop("operator"))
 
         def _parse_value(data: object) -> list[str] | str:
             try:

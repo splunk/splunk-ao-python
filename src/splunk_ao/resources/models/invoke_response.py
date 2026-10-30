@@ -30,7 +30,7 @@ class InvokeResponse:
         trace_metadata (TraceMetadata):
         stage_metadata (StageMetadata):
         action_result (ActionResult):
-        status (ExecutionStatus | Unset): Status of the execution.
+        status (ExecutionStatus | str | Unset):
         api_version (str | Unset):  Default: '1.0.0'.
         ruleset_results (list[RulesetResult] | Unset): Results of the rule execution.
         metric_results (InvokeResponseMetricResults | Unset): Results of the metric computation.
@@ -44,7 +44,7 @@ class InvokeResponse:
     trace_metadata: TraceMetadata
     stage_metadata: StageMetadata
     action_result: ActionResult
-    status: ExecutionStatus | Unset = UNSET
+    status: ExecutionStatus | str | Unset = UNSET
     api_version: str | Unset = "1.0.0"
     ruleset_results: list[RulesetResult] | Unset = UNSET
     metric_results: InvokeResponseMetricResults | Unset = UNSET
@@ -64,9 +64,13 @@ class InvokeResponse:
 
         action_result = self.action_result.to_dict()
 
-        status: str | Unset = UNSET
-        if not isinstance(self.status, Unset):
+        status: str | Unset
+        if isinstance(self.status, Unset):
+            status = UNSET
+        elif isinstance(self.status, ExecutionStatus):
             status = self.status.value
+        else:
+            status = self.status
 
         api_version = self.api_version
 
@@ -141,12 +145,22 @@ class InvokeResponse:
 
         action_result = ActionResult.from_dict(d.pop("action_result"))
 
-        _status = d.pop("status", UNSET)
-        status: ExecutionStatus | Unset
-        if isinstance(_status, Unset):
-            status = UNSET
-        else:
-            status = ExecutionStatus(_status)
+        def _parse_status(data: object) -> ExecutionStatus | str | Unset:
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = ExecutionStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(ExecutionStatus | str | Unset, data)
+
+        status = _parse_status(d.pop("status", UNSET))
 
         api_version = d.pop("api_version", UNSET)
 
