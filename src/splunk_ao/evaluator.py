@@ -23,6 +23,7 @@ from splunk_ao.evaluators import (
     DecisionAnswerOptions,
     DecisionVersionOutcomeUnknownError,
     Evaluators,
+    _resolve_create_scope,
     normalize_decision_answer_options,
     resolve_decision_output_type,
     validate_decision_request,
@@ -44,6 +45,7 @@ from splunk_ao.resources.models import (
     InputTypeEnum,
     OutputTypeEnum,
     ScorerResponse,
+    ScorerScopeProjectRef,
     ScorerTypes,
     TaskResultStatus,
     UpdateScorerRequest,
@@ -119,6 +121,10 @@ class Evaluator(StateManagementMixin, ABC):
         created_at (datetime | None): When the metric was created.
         updated_at (datetime | None): When the metric was last updated.
         version (int | None): Evaluator version number.
+        is_global (bool | None): Whether the evaluator is global, as reported by the API. ``None`` until the
+            evaluator is populated from the API (after ``create()``, ``get()``, ``list()`` or ``refresh()``).
+        scope_projects (list[ScorerScopeProjectRef]): Projects the evaluator is scoped to, as reported by the
+            API. Empty until populated, and for global evaluators.
 
     Class Attributes
     ----------------
@@ -175,6 +181,14 @@ class Evaluator(StateManagementMixin, ABC):
     judges: int | None
     cot_enabled: bool | None
 
+    # Access scope reported by the API
+    is_global: bool | None
+    scope_projects: list[ScorerScopeProjectRef]
+
+    # Scope requested for create(). Class defaults because get() and list() build instances without __init__.
+    _create_project_ids: list[str] | None = None
+    _create_is_global: bool | None = None
+
     def __init__(
         self, name: str, *, description: str = "", tags: list[str] | None = None, version: int | None = None
     ) -> None:
@@ -201,6 +215,9 @@ class Evaluator(StateManagementMixin, ABC):
         self.model = None
         self.judges = None
         self.cot_enabled = None
+
+        self.is_global = None
+        self.scope_projects = []
 
         self._set_state(SyncState.LOCAL_ONLY)
 
@@ -414,6 +431,9 @@ class Evaluator(StateManagementMixin, ABC):
             # Decision scorers carry no LLM defaults; keep the model the evaluator already has.
             model = getattr(self, "model", None)
 
+        is_global = None if isinstance(scorer_response.is_global, Unset) else scorer_response.is_global
+        scope_projects = [] if isinstance(scorer_response.scope_projects, Unset) else scorer_response.scope_projects
+
         self._sync_attrs(
             id=scorer_response.id,
             name=scorer_response.name,
@@ -426,6 +446,8 @@ class Evaluator(StateManagementMixin, ABC):
             model=model,
             judges=judges,
             cot_enabled=cot_enabled,
+            is_global=is_global,
+            scope_projects=list(scope_projects),
         )
 
         # LLM-specific attributes (only set if this is an LlmEvaluator)
@@ -730,6 +752,9 @@ class LlmEvaluator(Evaluator):
         cot_enabled: bool | None = None,
         output_type: str | OutputTypeEnum | None = None,
         ground_truth: bool = False,
+        # Access scope
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
         # Common parameters
         description: str = "",
         tags: list[str] | None = None,
@@ -752,6 +777,13 @@ class LlmEvaluator(Evaluator):
             output_type: Output type ("percentage", "boolean", etc.).
             ground_truth: Whether the scorer requires ground truth (``reference_output``) from the dataset.
                 When True, the judge LLM receives the row's ground-truth value in its prompt.
+            project_ids: Projects to scope the metric to when it is created. Defaults to the current project
+                (decorator context, SPLUNK_AO_PROJECT_ID, or SPLUNK_AO_PROJECT), which must already exist. If no
+                current project is set, no scope is sent and the server creates a global metric (org admins only).
+                The decorator context is per thread and task, so pass ``project_ids`` explicitly when creating from
+                worker threads.
+            is_global: Create a global metric (org admins only). Cannot be combined with ``project_ids``.
+                ``False`` requires ``project_ids`` or a current project.
             description: Description of the metric.
             tags: Tags associated with the metric.
             version: Specific version to reference (for existing metrics).
@@ -797,6 +829,8 @@ class LlmEvaluator(Evaluator):
             self.output_type = output_type or OutputTypeEnum.BOOLEAN
 
         self.ground_truth = ground_truth
+        self._create_project_ids = project_ids
+        self._create_is_global = is_global
 
         self.scorer_type = ScorerTypes.LLM
 
@@ -810,7 +844,10 @@ class LlmEvaluator(Evaluator):
 
         Raises
         ------
-            ValidationError: If configuration is invalid.
+            ValidationError: If configuration is invalid, or the scope is invalid (``is_global=True`` with
+                ``project_ids``, an empty ``project_ids``, or ``is_global=False`` with no project). Scope errors
+                are ``ValidationError``, not ``ValueError``.
+            NotFoundError: If the current project is set but cannot be found.
             Exception: If the API call fails.
 
         Examples
@@ -839,6 +876,8 @@ class LlmEvaluator(Evaluator):
                 if isinstance(self.output_type, OutputTypeEnum)
                 else OutputTypeEnum.BOOLEAN,
                 ground_truth=self.ground_truth,
+                project_ids=self._create_project_ids,
+                is_global=self._create_is_global,
             )
 
             # Update attributes from response without triggering dirty-tracking
@@ -911,6 +950,8 @@ class DecisionEvaluator(Evaluator):
         answer_options: DecisionAnswerOptions | None = None,
         input_type: InputTypeEnum | None = None,
         ground_truth: bool = False,
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
         description: str = "",
         tags: list[str] | None = None,
         version: int | None = None,
@@ -929,6 +970,13 @@ class DecisionEvaluator(Evaluator):
                 ``DecisionLevel`` / ``{level, label, description}`` dicts for discrete.
             input_type: What the model sees. None lets the server choose a default for the node type.
             ground_truth: Whether the scorer requires ground truth (``reference_output``) from the dataset.
+            project_ids: Projects to scope the evaluator to when it is created. Defaults to the current project
+                (decorator context, SPLUNK_AO_PROJECT_ID, or SPLUNK_AO_PROJECT), which must already exist. If no
+                current project is set, no scope is sent and the server creates a global evaluator (org admins only).
+                The decorator context is per thread and task, so pass ``project_ids`` explicitly when creating from
+                worker threads.
+            is_global: Create a global evaluator (org admins only). Cannot be combined with ``project_ids``.
+                ``False`` requires ``project_ids`` or a current project.
             description: Description of the evaluator.
             tags: Tags associated with the evaluator.
             version: Specific version to reference (for existing evaluators).
@@ -955,6 +1003,8 @@ class DecisionEvaluator(Evaluator):
         self.answer_options = normalized_options
         self.input_type = input_type
         self.ground_truth = ground_truth
+        self._create_project_ids = project_ids
+        self._create_is_global = is_global
         self.scorer_type = ScorerTypes.DECISION
 
     def create(self) -> DecisionEvaluator:
@@ -967,6 +1017,10 @@ class DecisionEvaluator(Evaluator):
 
         Raises
         ------
+            ValidationError: If the scope is invalid (``is_global=True`` with ``project_ids``, an empty
+                ``project_ids``, or ``is_global=False`` with no project). Scope errors are ``ValidationError``,
+                not ``ValueError``.
+            NotFoundError: If the current project is set but cannot be found.
             ValueError: If an argument is invalid or the API answers with a validation error.
             SplunkAOAPIError: For HTTP errors. A scorer created before a clear rejection is deleted.
             DecisionVersionOutcomeUnknownError: When the outcome of the version request is unknown (timeout,
@@ -991,6 +1045,8 @@ class DecisionEvaluator(Evaluator):
                 description=self.description,
                 tags=self.tags,
                 ground_truth=self.ground_truth,
+                project_ids=self._create_project_ids,
+                is_global=self._create_is_global,
             )
 
             self._sync_attrs(
@@ -1004,6 +1060,8 @@ class DecisionEvaluator(Evaluator):
 
             logger.info(f"DecisionEvaluator.create: id='{self.id}' - completed")
             return self
+        except ValidationError:
+            raise
         except Exception as e:
             if isinstance(e, DecisionVersionOutcomeUnknownError):
                 self._sync_attrs(id=e.scorer_id)
@@ -1117,6 +1175,8 @@ class CodeEvaluator(Evaluator):
         node_level: StepType | None = None,
         output_type: str | OutputTypeEnum | None = None,
         required_metrics: list[str] | None = None,
+        project_ids: list[str] | None = None,
+        is_global: bool | None = None,
         description: str = "",
         tags: list[str] | None = None,
         version: int | None = None,
@@ -1131,6 +1191,13 @@ class CodeEvaluator(Evaluator):
             output_type: Output type for the metric ("percentage", "boolean", "categorical",
                 "count", "discrete"). Accepts string or OutputTypeEnum.
             required_metrics: List of metric names that this code metric depends on.
+            project_ids: Projects to scope the metric to when it is created. Defaults to the current project
+                (decorator context, SPLUNK_AO_PROJECT_ID, or SPLUNK_AO_PROJECT), which must already exist. If no
+                current project is set, no scope is sent and the server creates a global metric (org admins only).
+                The decorator context is per thread and task, so pass ``project_ids`` explicitly when creating from
+                worker threads.
+            is_global: Create a global metric (org admins only). Cannot be combined with ``project_ids``.
+                ``False`` requires ``project_ids`` or a current project.
             description: Description of the metric.
             tags: Tags associated with the metric.
             version: Specific version to reference (for existing metrics).
@@ -1140,6 +1207,8 @@ class CodeEvaluator(Evaluator):
         self.code = code
         self.node_level = node_level or StepType.llm
         self.required_metrics = required_metrics
+        self._create_project_ids = project_ids
+        self._create_is_global = is_global
         self.scorer_type = ScorerTypes.CODE
 
         self.output_type = Evaluator._parse_output_type(output_type)
@@ -1289,7 +1358,10 @@ class CodeEvaluator(Evaluator):
 
         Raises
         ------
-            ValidationError: If code is not set, validation fails, or configuration is invalid.
+            ValidationError: If code is not set, validation fails, or configuration is invalid, or the scope is
+                invalid (``is_global=True`` with ``project_ids``, an empty ``project_ids``, or ``is_global=False``
+                with no project). Scope errors are ``ValidationError``, not ``ValueError``.
+            NotFoundError: If the current project is set but cannot be found.
             Exception: If the API call fails.
 
         Examples
@@ -1323,6 +1395,9 @@ class CodeEvaluator(Evaluator):
             # Ensure node_level is set (should always be set in __init__, but checking for type safety)
             assert self.node_level is not None
 
+            # Resolve scope before code validation or any write, so a bad scope fails fast
+            scope_is_global, scope_project_ids = _resolve_create_scope(self._create_project_ids, self._create_is_global)
+
             # Step 1: Validate the code and get validation result
             logger.debug(f"CodeEvaluator.create: name='{self.name}' - validating code")
             validation_result = self._validate_code(config)
@@ -1337,6 +1412,8 @@ class CodeEvaluator(Evaluator):
                 scoreable_node_types=[self.node_level.value],
                 output_type=self.output_type,
                 required_scorers=self.required_metrics,
+                is_global=scope_is_global,
+                project_ids=scope_project_ids,
             )
 
             scorer_response = create_scorers_post.sync(client=config.api_client, body=scorer_request)

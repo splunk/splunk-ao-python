@@ -62,7 +62,7 @@ from galileo_core.schemas.core.user_role import UserRole
 from splunk_ao.collaborator import CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration
-from splunk_ao.decorator import _mode_context, _session_id_context
+from splunk_ao.decorator import _mode_context, _project_context, _session_id_context
 from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
 from splunk_ao.resources.models.messages_list_item import MessagesListItem
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
@@ -602,3 +602,13 @@ def mock_collaborator() -> MagicMock:
     mock_collab.last_name = "Collaborator"
     mock_collab.permissions = []
     return mock_collab
+
+
+@pytest.fixture
+def no_current_project(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    """Clear the current project from the environment and the decorator context for one test."""
+    monkeypatch.delenv("SPLUNK_AO_PROJECT", raising=False)
+    monkeypatch.delenv("SPLUNK_AO_PROJECT_ID", raising=False)
+    token = _project_context.set(None)
+    yield
+    _project_context.reset(token)
