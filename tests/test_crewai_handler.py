@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import inspect
 import sys
 import threading
@@ -989,6 +990,20 @@ def test_generate_run_id_with_source_id(crewai_callback) -> None:
 
     result = crewai_callback._generate_run_id(source, event)
     assert result == source_id
+
+
+def test_hash_to_uuid_is_sha256_v4() -> None:
+    # Given: a fixed input string
+    value = "agent_task"
+
+    # When: it is hashed to a run ID
+    result = CrewAIEventListener._hash_to_uuid(value)
+
+    # Then: the ID is the stable SHA-256-derived UUIDv4
+    assert result == uuid.UUID("6b088e07-2934-42ca-8982-7184d89520ca")
+    assert result == uuid.UUID(bytes=hashlib.sha256(value.encode()).digest()[:16], version=4)
+    assert result.version == 4
+    assert result == CrewAIEventListener._hash_to_uuid(value)
 
 
 def test_generate_run_id_with_messages(crewai_callback) -> None:

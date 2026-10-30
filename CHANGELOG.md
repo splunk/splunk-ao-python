@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
   `ProjectAction` lacked `configure_rate_limit`). Values that older servers still return, `vegas_gateway` for
   integrations and task types 7, 9 and 12, are kept so reads from those servers keep working.
+- CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
+  SAST finding. IDs for the same inputs differ from earlier releases.
 
 ## [0.6.1]
 
