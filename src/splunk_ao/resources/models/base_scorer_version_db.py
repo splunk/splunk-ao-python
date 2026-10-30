@@ -38,6 +38,8 @@ class BaseScorerVersionDB:
             scorers.
         runtime (None | str | Unset): The runtime a code metric version runs on, such as python3.14. Null for a version
             saved before runtimes were recorded, which runs on the legacy Python 3.12 runtime.
+        code_sha256 (None | str | Unset): SHA-256 of the code bytes uploaded for a code metric version. Null for a
+            version saved before digests were recorded.
     """
 
     id: str
@@ -52,6 +54,7 @@ class BaseScorerVersionDB:
     num_judges: int | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
     runtime: None | str | Unset = UNSET
+    code_sha256: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -131,6 +134,12 @@ class BaseScorerVersionDB:
         else:
             runtime = self.runtime
 
+        code_sha256: None | str | Unset
+        if isinstance(self.code_sha256, Unset):
+            code_sha256 = UNSET
+        else:
+            code_sha256 = self.code_sha256
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "version": version, "scorer_id": scorer_id})
@@ -152,6 +161,8 @@ class BaseScorerVersionDB:
             field_dict["cot_enabled"] = cot_enabled
         if runtime is not UNSET:
             field_dict["runtime"] = runtime
+        if code_sha256 is not UNSET:
+            field_dict["code_sha256"] = code_sha256
 
         return field_dict
 
@@ -291,6 +302,15 @@ class BaseScorerVersionDB:
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
 
+        def _parse_code_sha256(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        code_sha256 = _parse_code_sha256(d.pop("code_sha256", UNSET))
+
         base_scorer_version_db = cls(
             id=id,
             version=version,
@@ -304,6 +324,7 @@ class BaseScorerVersionDB:
             num_judges=num_judges,
             cot_enabled=cot_enabled,
             runtime=runtime,
+            code_sha256=code_sha256,
         )
 
         base_scorer_version_db.additional_properties = d

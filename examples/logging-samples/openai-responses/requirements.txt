@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml -o requirements.txt
 annotated-types==0.7.0
     # via pydantic
-anyio==4.12.1
+anyio==4.14.2
     # via
     #   httpx
     #   openai
@@ -10,7 +10,7 @@ attrs==25.4.0
     # via splunk-ao
 backoff==2.2.1
     # via splunk-ao
-certifi==2026.1.4
+certifi==2026.10.19
     # via
     #   httpcore
     #   httpx
@@ -51,7 +51,7 @@ pydantic-partial==0.10.1
     # via galileo-core
 pydantic-settings==2.12.0
     # via galileo-core
-pyjwt==2.13.0
+pyjwt==2.15.1
     # via
     #   splunk-ao
     #   galileo-core

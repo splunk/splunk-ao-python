@@ -1,6 +1,6 @@
 [project]
 name = "splunk-ao-a2a"
-version = "0.1.0"
+version = "0.2.0"
 description = "Splunk AO observability auto-instrumentation for A2A (Agent-to-Agent) protocol"
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
@@ -26,7 +26,7 @@ Repository = "https://github.com/splunk/splunk-ao-python"
 
 # UV-specific configuration (path for dev, ignored when installed from PyPI)
 [tool.uv]
-required-version = ">=0.9.6"
+required-version = ">=0.13.4"
 sources = { "splunk-ao" = { path = "../", editable = true } }
 
 [dependency-groups]
