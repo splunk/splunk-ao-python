@@ -21,7 +21,7 @@ T = TypeVar("T", bound="AggregatedTraceViewNode")
 class AggregatedTraceViewNode:
     """
     Attributes:
-        id (str):
+        id (str): Identifier for this grouped graph node within the current response.
         name (None | str):
         type_ (StepType):
         occurrences (int):
@@ -30,7 +30,7 @@ class AggregatedTraceViewNode:
         trace_count (int):
         weight (float):
         parent_id (None | str | Unset):
-        insights (list[InsightSummary] | Unset):
+        insights (list[InsightSummary] | Unset): Signals attached to spans represented by this node.
     """
 
     id: str

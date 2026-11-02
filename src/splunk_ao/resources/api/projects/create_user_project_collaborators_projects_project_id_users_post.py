@@ -18,12 +18,12 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
-from ...models.user_collaborator import UserCollaborator
-from ...models.user_collaborator_create import UserCollaboratorCreate
+from ...models.project_user_collaborator import ProjectUserCollaborator
+from ...models.project_user_collaborator_create import ProjectUserCollaboratorCreate
 from ...types import Response
 
 
-def _get_kwargs(project_id: str, *, body: list[UserCollaboratorCreate]) -> dict[str, Any]:
+def _get_kwargs(project_id: str, *, body: list[ProjectUserCollaboratorCreate]) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -45,12 +45,14 @@ def _get_kwargs(project_id: str, *, body: list[UserCollaboratorCreate]) -> dict[
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | list[UserCollaborator]:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> HTTPValidationError | list[ProjectUserCollaborator]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
         for response_200_item_data in _response_200:
-            response_200_item = UserCollaborator.from_dict(response_200_item_data)
+            response_200_item = ProjectUserCollaborator.from_dict(response_200_item_data)
 
             response_200.append(response_200_item)
 
@@ -81,7 +83,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | list[UserCollaborator]]:
+) -> Response[HTTPValidationError | list[ProjectUserCollaborator]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -91,22 +93,22 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
-) -> Response[HTTPValidationError | list[UserCollaborator]]:
+    project_id: str, *, client: ApiClient, body: list[ProjectUserCollaboratorCreate]
+) -> Response[HTTPValidationError | list[ProjectUserCollaborator]]:
     """Create User Project Collaborators
 
      Share a project with users.
 
     Args:
         project_id (str):
-        body (list[UserCollaboratorCreate]):
+        body (list[ProjectUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[UserCollaborator]]
+        Response[HTTPValidationError | list[ProjectUserCollaborator]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -117,44 +119,44 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
-) -> Optional[HTTPValidationError | list[UserCollaborator]]:
+    project_id: str, *, client: ApiClient, body: list[ProjectUserCollaboratorCreate]
+) -> Optional[HTTPValidationError | list[ProjectUserCollaborator]]:
     """Create User Project Collaborators
 
      Share a project with users.
 
     Args:
         project_id (str):
-        body (list[UserCollaboratorCreate]):
+        body (list[ProjectUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[UserCollaborator]
+        HTTPValidationError | list[ProjectUserCollaborator]
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
-) -> Response[HTTPValidationError | list[UserCollaborator]]:
+    project_id: str, *, client: ApiClient, body: list[ProjectUserCollaboratorCreate]
+) -> Response[HTTPValidationError | list[ProjectUserCollaborator]]:
     """Create User Project Collaborators
 
      Share a project with users.
 
     Args:
         project_id (str):
-        body (list[UserCollaboratorCreate]):
+        body (list[ProjectUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[UserCollaborator]]
+        Response[HTTPValidationError | list[ProjectUserCollaborator]]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -165,22 +167,22 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
-) -> Optional[HTTPValidationError | list[UserCollaborator]]:
+    project_id: str, *, client: ApiClient, body: list[ProjectUserCollaboratorCreate]
+) -> Optional[HTTPValidationError | list[ProjectUserCollaborator]]:
     """Create User Project Collaborators
 
      Share a project with users.
 
     Args:
         project_id (str):
-        body (list[UserCollaboratorCreate]):
+        body (list[ProjectUserCollaboratorCreate]):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[UserCollaborator]
+        HTTPValidationError | list[ProjectUserCollaborator]
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

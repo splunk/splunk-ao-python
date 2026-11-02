@@ -9,7 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
     from ..models.segment_filter import SegmentFilter
 
 
@@ -21,12 +21,12 @@ class RunScorerSettingsPatchRequest:
     """
     Attributes:
         run_id (str): ID of the run.
-        scorers (list[ScorerConfig] | None | Unset): List of Galileo scorers to enable.
+        scorers (list[RuntimeScorerConfig] | None | Unset): List of Galileo scorers to enable.
         segment_filters (list[SegmentFilter] | None | Unset): List of segment filters to apply to the run.
     """
 
     run_id: str
-    scorers: list[ScorerConfig] | None | Unset = UNSET
+    scorers: list[RuntimeScorerConfig] | None | Unset = UNSET
     segment_filters: list[SegmentFilter] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -69,13 +69,13 @@ class RunScorerSettingsPatchRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
         from ..models.segment_filter import SegmentFilter
 
         d = dict(src_dict)
         run_id = d.pop("run_id")
 
-        def _parse_scorers(data: object) -> list[ScorerConfig] | None | Unset:
+        def _parse_scorers(data: object) -> list[RuntimeScorerConfig] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -86,14 +86,14 @@ class RunScorerSettingsPatchRequest:
                 scorers_type_0 = []
                 _scorers_type_0 = data
                 for scorers_type_0_item_data in _scorers_type_0:
-                    scorers_type_0_item = ScorerConfig.from_dict(scorers_type_0_item_data)
+                    scorers_type_0_item = RuntimeScorerConfig.from_dict(scorers_type_0_item_data)
 
                     scorers_type_0.append(scorers_type_0_item)
 
                 return scorers_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[ScorerConfig] | None | Unset, data)
+            return cast(list[RuntimeScorerConfig] | None | Unset, data)
 
         scorers = _parse_scorers(d.pop("scorers", UNSET))
 

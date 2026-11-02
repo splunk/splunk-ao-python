@@ -7,8 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
+  spec. Code that imports generated symbols directly may need updating:
+  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`
+    optional. The field order changed, so a positional `ScorerConfig(id, scorer_type)` call must become
+    `RuntimeScorerConfig(id=..., scorer_type=...)`. Keyword construction now also sends the defaults
+    `ground_truth=False`, `threshold=0.5` and `requires_tools_in_llm_span=False`; building one from a scorer
+    with `from_dict` takes `ground_truth` from the scorer and leaves the other two unset. The server keeps an
+    explicit `ground_truth`, so a keyword-built config for a ground-truth scorer turns ground truth off; build it
+    from the scorer with `from_dict` or pass `ground_truth=True`.
+    `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or return
+    `RuntimeScorerConfig`.
+  - `CoreScorerName` is renamed to `ScorerName`. The old `ScorerName`, whose members were internal
+    underscore-prefixed values (for example `ScorerName.VALUE_1 = "_context_adherence_luna"`), is gone; use the
+    public names such as `ScorerName.CONTEXT_ADHERENCE`.
+  - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
+    (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
+    (`/integrations/vegas_gateway`).
+  - Removed models: the `Customized*GPTScorer` and `*Template` scorer families, `ChunkAttributionUtilizationScorer`,
+    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `MetricCritiqueColumnar`,
+    `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
+    `ExtendedReadSessionRecordWithChildren`), `VegasGatewayIntegration` and `VegasGatewayIntegrationCreate`.
+  - Removed fields:
+    - `BaseScorerVersionResponse.input_type` (returned by `create_custom_llm_evaluator()` and the other evaluator
+      create functions), and `input_type`, `output_type` and `scoreable_node_types` on `BaseScorerVersionDB`.
+    - `BaseScorer.sub_scorers` and `ProjectCreate.create_example_templates`.
+    - `scorer_type` on `MetricComputing`, `MetricError`, `MetricFailed`, `MetricNotApplicable`, `MetricNotComputed`,
+      `MetricPending`, `MetricRollUp` and `MetricSuccess`, and `critique` on `MetricRollUp` and `MetricSuccess`.
+    - `prompt_scorers_configuration`, `prompt_customized_scorers_configuration`,
+      `prompt_finetuned_scorers_configuration`, `prompt_registered_scorers_configuration`, `sub_scorers`,
+      `store_metric_ids`, `stream_metrics` and `xray` on `CreateJobRequest` and `CreateJobResponse`.
+  - Removed enum members: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`.
+
 ### Fixed
 
+- The API client now knows the permission and enum values that current servers return, so reading projects and
+  other resources no longer fails on them. For example, `Projects().get(id=...)` raised
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
+  `ProjectAction` lacked `configure_rate_limit`). Values that older servers still return, `vegas_gateway` for
+  integrations and task types 7, 9 and 12, are kept so reads from those servers keep working.
 - CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
   SAST finding. IDs for the same inputs differ from earlier releases.
 

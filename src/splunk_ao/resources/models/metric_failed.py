@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.scorer_type import ScorerType
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -21,7 +20,6 @@ class MetricFailed:
     """
     Attributes:
         status_type (Literal['failed'] | Unset):  Default: 'failed'.
-        scorer_type (None | ScorerType | Unset):
         metric_key_alias (None | str | Unset):
         message (None | str | Unset):  Default: 'Metric failed to compute.'.
         ems_error_code (int | None | Unset): EMS error code from errors.yaml catalog for this metric failure
@@ -29,7 +27,6 @@ class MetricFailed:
     """
 
     status_type: Literal["failed"] | Unset = "failed"
-    scorer_type: None | ScorerType | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     message: None | str | Unset = "Metric failed to compute."
     ems_error_code: int | None | Unset = UNSET
@@ -40,14 +37,6 @@ class MetricFailed:
         from ..models.standard_error import StandardError
 
         status_type = self.status_type
-
-        scorer_type: None | str | Unset
-        if isinstance(self.scorer_type, Unset):
-            scorer_type = UNSET
-        elif isinstance(self.scorer_type, ScorerType):
-            scorer_type = self.scorer_type.value
-        else:
-            scorer_type = self.scorer_type
 
         metric_key_alias: None | str | Unset
         if isinstance(self.metric_key_alias, Unset):
@@ -80,8 +69,6 @@ class MetricFailed:
         field_dict.update({})
         if status_type is not UNSET:
             field_dict["status_type"] = status_type
-        if scorer_type is not UNSET:
-            field_dict["scorer_type"] = scorer_type
         if metric_key_alias is not UNSET:
             field_dict["metric_key_alias"] = metric_key_alias
         if message is not UNSET:
@@ -101,23 +88,6 @@ class MetricFailed:
         status_type = cast(Literal["failed"] | Unset, d.pop("status_type", UNSET))
         if status_type != "failed" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'failed', got '{status_type}'")
-
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                scorer_type_type_0 = ScorerType(data)
-
-                return scorer_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(None | ScorerType | Unset, data)
-
-        scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 
         def _parse_metric_key_alias(data: object) -> None | str | Unset:
             if data is None:
@@ -165,7 +135,6 @@ class MetricFailed:
 
         metric_failed = cls(
             status_type=status_type,
-            scorer_type=scorer_type,
             metric_key_alias=metric_key_alias,
             message=message,
             ems_error_code=ems_error_code,

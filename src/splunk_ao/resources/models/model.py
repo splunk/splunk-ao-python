@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -9,6 +10,7 @@ from attrs import field as _attrs_field
 from ..models.content_modality import ContentModality
 from ..models.llm_integration import LLMIntegration
 from ..models.model_cost_by import ModelCostBy
+from ..models.model_lifecycle_state import ModelLifecycleState
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -24,8 +26,14 @@ T = TypeVar("T", bound="Model")
 class Model:
     """
     Attributes:
-        name (str):
-        alias (str):
+        name (str): Provider model identifier used to match the model to its configured provider deployment or profile.
+        alias (str): Galileo model identifier used in settings and API requests to select this model.
+        lifecycle_state (ModelLifecycleState | Unset):
+        replacement_alias (None | str | Unset):
+        deprecation_date (datetime.date | None | Unset):
+        retirement_date (datetime.date | None | Unset):
+        display_name (str | Unset): Human-readable model name shown in the UI. Defaults to the alias for legacy
+            registrations. Default: ''.
         integration (LLMIntegration | Unset):
         user_role (None | str | Unset):
         assistant_role (None | str | Unset):
@@ -44,6 +52,7 @@ class Model:
         api_version (None | str | Unset):
         legacy_mistral_prompt_format (bool | Unset):  Default: False.
         requires_max_tokens (bool | Unset):  Default: False.
+        supports_structured_output (bool | Unset):  Default: False.
         max_top_p (float | None | Unset):
         params_map (RunParamsMap | Unset): Maps the internal settings parameters (left) to the serialized parameters
             (right) we want to send in the API
@@ -54,6 +63,11 @@ class Model:
 
     name: str
     alias: str
+    lifecycle_state: ModelLifecycleState | Unset = UNSET
+    replacement_alias: None | str | Unset = UNSET
+    deprecation_date: datetime.date | None | Unset = UNSET
+    retirement_date: datetime.date | None | Unset = UNSET
+    display_name: str | Unset = ""
     integration: LLMIntegration | Unset = UNSET
     user_role: None | str | Unset = UNSET
     assistant_role: None | str | Unset = UNSET
@@ -71,6 +85,7 @@ class Model:
     api_version: None | str | Unset = UNSET
     legacy_mistral_prompt_format: bool | Unset = False
     requires_max_tokens: bool | Unset = False
+    supports_structured_output: bool | Unset = False
     max_top_p: float | None | Unset = UNSET
     params_map: RunParamsMap | Unset = UNSET
     output_map: None | OutputMap | Unset = UNSET
@@ -84,6 +99,34 @@ class Model:
         name = self.name
 
         alias = self.alias
+
+        lifecycle_state: str | Unset = UNSET
+        if not isinstance(self.lifecycle_state, Unset):
+            lifecycle_state = self.lifecycle_state.value
+
+        replacement_alias: None | str | Unset
+        if isinstance(self.replacement_alias, Unset):
+            replacement_alias = UNSET
+        else:
+            replacement_alias = self.replacement_alias
+
+        deprecation_date: None | str | Unset
+        if isinstance(self.deprecation_date, Unset):
+            deprecation_date = UNSET
+        elif isinstance(self.deprecation_date, datetime.date):
+            deprecation_date = self.deprecation_date.isoformat()
+        else:
+            deprecation_date = self.deprecation_date
+
+        retirement_date: None | str | Unset
+        if isinstance(self.retirement_date, Unset):
+            retirement_date = UNSET
+        elif isinstance(self.retirement_date, datetime.date):
+            retirement_date = self.retirement_date.isoformat()
+        else:
+            retirement_date = self.retirement_date
+
+        display_name = self.display_name
 
         integration: str | Unset = UNSET
         if not isinstance(self.integration, Unset):
@@ -154,6 +197,8 @@ class Model:
 
         requires_max_tokens = self.requires_max_tokens
 
+        supports_structured_output = self.supports_structured_output
+
         max_top_p: float | None | Unset
         if isinstance(self.max_top_p, Unset):
             max_top_p = UNSET
@@ -183,6 +228,16 @@ class Model:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"name": name, "alias": alias})
+        if lifecycle_state is not UNSET:
+            field_dict["lifecycle_state"] = lifecycle_state
+        if replacement_alias is not UNSET:
+            field_dict["replacement_alias"] = replacement_alias
+        if deprecation_date is not UNSET:
+            field_dict["deprecation_date"] = deprecation_date
+        if retirement_date is not UNSET:
+            field_dict["retirement_date"] = retirement_date
+        if display_name is not UNSET:
+            field_dict["display_name"] = display_name
         if integration is not UNSET:
             field_dict["integration"] = integration
         if user_role is not UNSET:
@@ -217,6 +272,8 @@ class Model:
             field_dict["legacy_mistral_prompt_format"] = legacy_mistral_prompt_format
         if requires_max_tokens is not UNSET:
             field_dict["requires_max_tokens"] = requires_max_tokens
+        if supports_structured_output is not UNSET:
+            field_dict["supports_structured_output"] = supports_structured_output
         if max_top_p is not UNSET:
             field_dict["max_top_p"] = max_top_p
         if params_map is not UNSET:
@@ -238,6 +295,58 @@ class Model:
         name = d.pop("name")
 
         alias = d.pop("alias")
+
+        _lifecycle_state = d.pop("lifecycle_state", UNSET)
+        lifecycle_state: ModelLifecycleState | Unset
+        if isinstance(_lifecycle_state, Unset):
+            lifecycle_state = UNSET
+        else:
+            lifecycle_state = ModelLifecycleState(_lifecycle_state)
+
+        def _parse_replacement_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        replacement_alias = _parse_replacement_alias(d.pop("replacement_alias", UNSET))
+
+        def _parse_deprecation_date(data: object) -> datetime.date | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                deprecation_date_type_0 = datetime.date.fromisoformat(data)
+
+                return deprecation_date_type_0
+            except:  # noqa: E722
+                pass
+            return cast(datetime.date | None | Unset, data)
+
+        deprecation_date = _parse_deprecation_date(d.pop("deprecation_date", UNSET))
+
+        def _parse_retirement_date(data: object) -> datetime.date | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                retirement_date_type_0 = datetime.date.fromisoformat(data)
+
+                return retirement_date_type_0
+            except:  # noqa: E722
+                pass
+            return cast(datetime.date | None | Unset, data)
+
+        retirement_date = _parse_retirement_date(d.pop("retirement_date", UNSET))
+
+        display_name = d.pop("display_name", UNSET)
 
         _integration = d.pop("integration", UNSET)
         integration: LLMIntegration | Unset
@@ -332,6 +441,8 @@ class Model:
 
         requires_max_tokens = d.pop("requires_max_tokens", UNSET)
 
+        supports_structured_output = d.pop("supports_structured_output", UNSET)
+
         def _parse_max_top_p(data: object) -> float | None | Unset:
             if data is None:
                 return data
@@ -385,6 +496,11 @@ class Model:
         model = cls(
             name=name,
             alias=alias,
+            lifecycle_state=lifecycle_state,
+            replacement_alias=replacement_alias,
+            deprecation_date=deprecation_date,
+            retirement_date=retirement_date,
+            display_name=display_name,
             integration=integration,
             user_role=user_role,
             assistant_role=assistant_role,
@@ -402,6 +518,7 @@ class Model:
             api_version=api_version,
             legacy_mistral_prompt_format=legacy_mistral_prompt_format,
             requires_max_tokens=requires_max_tokens,
+            supports_structured_output=supports_structured_output,
             max_top_p=max_top_p,
             params_map=params_map,
             output_map=output_map,

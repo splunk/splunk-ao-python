@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
     from ..models.permission import Permission
     from ..models.scorer_defaults import ScorerDefaults
+    from ..models.scorer_invocation_config import ScorerInvocationConfig
     from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
 
 
@@ -39,7 +40,10 @@ class ScorerResponse:
         scorer_type (ScorerTypes):
         tags (list[str]):
         permissions (list[Permission] | Unset):
+        label (None | str | Unset):  Default: ''.
         defaults (None | ScorerDefaults | Unset):
+        invocation (None | ScorerInvocationConfig | Unset): Intrinsic metadata for invoking this scorer directly with
+            query and response inputs.
         latest_version (BaseScorerVersionDB | None | Unset):
         model_type (ModelType | None | Unset):
         ground_truth (bool | None | Unset):
@@ -55,7 +59,6 @@ class ScorerResponse:
         deprecated (bool | None | Unset):
         roll_up_method (None | RollUpMethodDisplayOptions | Unset):
         roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
-        label (None | str | Unset):  Default: ''.
         included_fields (list[str] | Unset): Fields that can be used in the scorer to configure it. i.e. model,
             num_judges, etc. This enables the ui to know which fields a user can configure when they're setting a scorer
         description (None | str | Unset):
@@ -68,6 +71,7 @@ class ScorerResponse:
         metric_name (None | str | Unset):
         is_global (bool | Unset):  Default: False.
         scope_projects (list[ScorerScopeProjectRef] | Unset):
+        projects_used (list[ScorerScopeProjectRef] | Unset):
     """
 
     id: str
@@ -75,7 +79,9 @@ class ScorerResponse:
     scorer_type: ScorerTypes
     tags: list[str]
     permissions: list[Permission] | Unset = UNSET
+    label: None | str | Unset = ""
     defaults: None | ScorerDefaults | Unset = UNSET
+    invocation: None | ScorerInvocationConfig | Unset = UNSET
     latest_version: BaseScorerVersionDB | None | Unset = UNSET
     model_type: ModelType | None | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
@@ -91,7 +97,6 @@ class ScorerResponse:
     deprecated: bool | None | Unset = UNSET
     roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
-    label: None | str | Unset = ""
     included_fields: list[str] | Unset = UNSET
     description: None | str | Unset = UNSET
     created_by: None | str | Unset = UNSET
@@ -109,6 +114,7 @@ class ScorerResponse:
     metric_name: None | str | Unset = UNSET
     is_global: bool | Unset = False
     scope_projects: list[ScorerScopeProjectRef] | Unset = UNSET
+    projects_used: list[ScorerScopeProjectRef] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -119,6 +125,7 @@ class ScorerResponse:
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
 
         id = self.id
 
@@ -135,6 +142,12 @@ class ScorerResponse:
                 permissions_item = permissions_item_data.to_dict()
                 permissions.append(permissions_item)
 
+        label: None | str | Unset
+        if isinstance(self.label, Unset):
+            label = UNSET
+        else:
+            label = self.label
+
         defaults: dict[str, Any] | None | Unset
         if isinstance(self.defaults, Unset):
             defaults = UNSET
@@ -142,6 +155,14 @@ class ScorerResponse:
             defaults = self.defaults.to_dict()
         else:
             defaults = self.defaults
+
+        invocation: dict[str, Any] | None | Unset
+        if isinstance(self.invocation, Unset):
+            invocation = UNSET
+        elif isinstance(self.invocation, ScorerInvocationConfig):
+            invocation = self.invocation.to_dict()
+        else:
+            invocation = self.invocation
 
         latest_version: dict[str, Any] | None | Unset
         if isinstance(self.latest_version, Unset):
@@ -262,12 +283,6 @@ class ScorerResponse:
         else:
             roll_up_config = self.roll_up_config
 
-        label: None | str | Unset
-        if isinstance(self.label, Unset):
-            label = UNSET
-        else:
-            label = self.label
-
         included_fields: list[str] | Unset = UNSET
         if not isinstance(self.included_fields, Unset):
             included_fields = self.included_fields
@@ -337,13 +352,24 @@ class ScorerResponse:
                 scope_projects_item = scope_projects_item_data.to_dict()
                 scope_projects.append(scope_projects_item)
 
+        projects_used: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.projects_used, Unset):
+            projects_used = []
+            for projects_used_item_data in self.projects_used:
+                projects_used_item = projects_used_item_data.to_dict()
+                projects_used.append(projects_used_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "name": name, "scorer_type": scorer_type, "tags": tags})
         if permissions is not UNSET:
             field_dict["permissions"] = permissions
+        if label is not UNSET:
+            field_dict["label"] = label
         if defaults is not UNSET:
             field_dict["defaults"] = defaults
+        if invocation is not UNSET:
+            field_dict["invocation"] = invocation
         if latest_version is not UNSET:
             field_dict["latest_version"] = latest_version
         if model_type is not UNSET:
@@ -374,8 +400,6 @@ class ScorerResponse:
             field_dict["roll_up_method"] = roll_up_method
         if roll_up_config is not UNSET:
             field_dict["roll_up_config"] = roll_up_config
-        if label is not UNSET:
-            field_dict["label"] = label
         if included_fields is not UNSET:
             field_dict["included_fields"] = included_fields
         if description is not UNSET:
@@ -396,6 +420,8 @@ class ScorerResponse:
             field_dict["is_global"] = is_global
         if scope_projects is not UNSET:
             field_dict["scope_projects"] = scope_projects
+        if projects_used is not UNSET:
+            field_dict["projects_used"] = projects_used
 
         return field_dict
 
@@ -409,6 +435,7 @@ class ScorerResponse:
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.permission import Permission
         from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_invocation_config import ScorerInvocationConfig
         from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
 
         d = dict(src_dict)
@@ -429,6 +456,15 @@ class ScorerResponse:
 
                 permissions.append(permissions_item)
 
+        def _parse_label(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        label = _parse_label(d.pop("label", UNSET))
+
         def _parse_defaults(data: object) -> None | ScorerDefaults | Unset:
             if data is None:
                 return data
@@ -445,6 +481,23 @@ class ScorerResponse:
             return cast(None | ScorerDefaults | Unset, data)
 
         defaults = _parse_defaults(d.pop("defaults", UNSET))
+
+        def _parse_invocation(data: object) -> None | ScorerInvocationConfig | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                invocation_type_0 = ScorerInvocationConfig.from_dict(data)
+
+                return invocation_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerInvocationConfig | Unset, data)
+
+        invocation = _parse_invocation(d.pop("invocation", UNSET))
 
         def _parse_latest_version(data: object) -> BaseScorerVersionDB | None | Unset:
             if data is None:
@@ -674,15 +727,6 @@ class ScorerResponse:
 
         roll_up_config = _parse_roll_up_config(d.pop("roll_up_config", UNSET))
 
-        def _parse_label(data: object) -> None | str | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(None | str | Unset, data)
-
-        label = _parse_label(d.pop("label", UNSET))
-
         included_fields = cast(list[str], d.pop("included_fields", UNSET))
 
         def _parse_description(data: object) -> None | str | Unset:
@@ -832,13 +876,24 @@ class ScorerResponse:
 
                 scope_projects.append(scope_projects_item)
 
+        _projects_used = d.pop("projects_used", UNSET)
+        projects_used: list[ScorerScopeProjectRef] | Unset = UNSET
+        if _projects_used is not UNSET:
+            projects_used = []
+            for projects_used_item_data in _projects_used:
+                projects_used_item = ScorerScopeProjectRef.from_dict(projects_used_item_data)
+
+                projects_used.append(projects_used_item)
+
         scorer_response = cls(
             id=id,
             name=name,
             scorer_type=scorer_type,
             tags=tags,
             permissions=permissions,
+            label=label,
             defaults=defaults,
+            invocation=invocation,
             latest_version=latest_version,
             model_type=model_type,
             ground_truth=ground_truth,
@@ -854,7 +909,6 @@ class ScorerResponse:
             deprecated=deprecated,
             roll_up_method=roll_up_method,
             roll_up_config=roll_up_config,
-            label=label,
             included_fields=included_fields,
             description=description,
             created_by=created_by,
@@ -865,6 +919,7 @@ class ScorerResponse:
             metric_name=metric_name,
             is_global=is_global,
             scope_projects=scope_projects,
+            projects_used=projects_used,
         )
 
         scorer_response.additional_properties = d

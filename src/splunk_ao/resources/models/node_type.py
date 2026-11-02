@@ -5,6 +5,7 @@ class NodeType(str, Enum):
     AGENT = "agent"
     CHAIN = "chain"
     CHAT = "chat"
+    HTTP = "http"
     LLM = "llm"
     RETRIEVER = "retriever"
     SESSION = "session"

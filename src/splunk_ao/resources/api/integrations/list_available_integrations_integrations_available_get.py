@@ -18,6 +18,7 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.available_integrations import AvailableIntegrations
+from ...models.http_validation_error import HTTPValidationError
 from ...types import Response
 
 
@@ -36,11 +37,16 @@ def _get_kwargs() -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> AvailableIntegrations:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> AvailableIntegrations | HTTPValidationError:
     if response.status_code == 200:
         response_200 = AvailableIntegrations.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 422:
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -60,7 +66,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> Available
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[AvailableIntegrations]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[AvailableIntegrations | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -69,17 +77,20 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(*, client: ApiClient) -> Response[AvailableIntegrations]:
+def sync_detailed(*, client: ApiClient) -> Response[AvailableIntegrations | HTTPValidationError]:
     """List Available Integrations
 
-     List all of the available integrations to be created in Galileo.
+     List the integration providers that can be created in Galileo.
+
+    Returns:
+        Every supported LLM provider name, plus the decision-only providers the client can decode.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AvailableIntegrations]
+        Response[AvailableIntegrations | HTTPValidationError]
     """
 
     kwargs = _get_kwargs()
@@ -89,33 +100,39 @@ def sync_detailed(*, client: ApiClient) -> Response[AvailableIntegrations]:
     return _build_response(client=client, response=response)
 
 
-def sync(*, client: ApiClient) -> Optional[AvailableIntegrations]:
+def sync(*, client: ApiClient) -> Optional[AvailableIntegrations | HTTPValidationError]:
     """List Available Integrations
 
-     List all of the available integrations to be created in Galileo.
+     List the integration providers that can be created in Galileo.
+
+    Returns:
+        Every supported LLM provider name, plus the decision-only providers the client can decode.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AvailableIntegrations
+        AvailableIntegrations | HTTPValidationError
     """
 
     return sync_detailed(client=client).parsed
 
 
-async def asyncio_detailed(*, client: ApiClient) -> Response[AvailableIntegrations]:
+async def asyncio_detailed(*, client: ApiClient) -> Response[AvailableIntegrations | HTTPValidationError]:
     """List Available Integrations
 
-     List all of the available integrations to be created in Galileo.
+     List the integration providers that can be created in Galileo.
+
+    Returns:
+        Every supported LLM provider name, plus the decision-only providers the client can decode.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AvailableIntegrations]
+        Response[AvailableIntegrations | HTTPValidationError]
     """
 
     kwargs = _get_kwargs()
@@ -125,17 +142,20 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[AvailableIntegratio
     return _build_response(client=client, response=response)
 
 
-async def asyncio(*, client: ApiClient) -> Optional[AvailableIntegrations]:
+async def asyncio(*, client: ApiClient) -> Optional[AvailableIntegrations | HTTPValidationError]:
     """List Available Integrations
 
-     List all of the available integrations to be created in Galileo.
+     List the integration providers that can be created in Galileo.
+
+    Returns:
+        Every supported LLM provider name, plus the decision-only providers the client can decode.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AvailableIntegrations
+        AvailableIntegrations | HTTPValidationError
     """
 
     return (await asyncio_detailed(client=client)).parsed

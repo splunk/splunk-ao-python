@@ -25,8 +25,11 @@ class LogTraceUpdateRequest:
         client_version (None | str | Unset):
         reliable (bool | Unset): Whether or not to use reliable logging.  If set to False, the method will respond
             immediately before verifying that the traces have been successfully ingested, and no error message will be
-            returned if ingestion fails.  If set to True, the method will wait for the traces to be successfully ingested or
-            return an error message if there is an ingestion failure. Default: True.
+            returned if ingestion fails.  If set to True, the method will wait for the traces to be durably accepted or
+            return an error message if there is an ingestion failure. On the streaming write path (kafka_metrics_pipeline)
+            accepted means acknowledged by Kafka; the records become readable after the data-writer flush, about
+            GALILEO_STREAMING_EXPECTED_LAG_SECONDS (default 2.5 s) later, so a read issued immediately after the response
+            can miss them. Default: True.
         input_ (None | str | Unset): Input of the trace. Overwrites previous value if present.
         output (None | str | Unset): Output of the trace. Overwrites previous value if present.
         status_code (int | None | Unset): Status code of the trace. Overwrites previous value if present.

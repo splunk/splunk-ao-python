@@ -1,0 +1,593 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+
+from attrs import define as _attrs_define
+from attrs import field as _attrs_field
+
+from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.and_node_log_records_filter import AndNodeLogRecordsFilter
+    from ..models.decision_boolean_criteria import DecisionBooleanCriteria
+    from ..models.decision_choice import DecisionChoice
+    from ..models.decision_level import DecisionLevel
+    from ..models.decision_scorer_test_configuration import DecisionScorerTestConfiguration
+    from ..models.filter_leaf_log_records_filter import FilterLeafLogRecordsFilter
+    from ..models.log_records_boolean_filter import LogRecordsBooleanFilter
+    from ..models.log_records_collection_filter import LogRecordsCollectionFilter
+    from ..models.log_records_date_filter import LogRecordsDateFilter
+    from ..models.log_records_fully_annotated_filter import LogRecordsFullyAnnotatedFilter
+    from ..models.log_records_id_filter import LogRecordsIDFilter
+    from ..models.log_records_number_filter import LogRecordsNumberFilter
+    from ..models.log_records_sort_clause import LogRecordsSortClause
+    from ..models.log_records_text_filter import LogRecordsTextFilter
+    from ..models.not_node_log_records_filter import NotNodeLogRecordsFilter
+    from ..models.or_node_log_records_filter import OrNodeLogRecordsFilter
+
+
+T = TypeVar("T", bound="ValidateDecisionScorerLogRecordRequest")
+
+
+@_attrs_define
+class ValidateDecisionScorerLogRecordRequest:
+    """Test a decision evaluator on log records. The query selects the records.
+
+    Attributes:
+        model_name (str):
+        question (str):
+        scorer_configuration (DecisionScorerTestConfiguration): The evaluator settings of a decision Test request, the
+            same place as the LLM scorer_configuration.
+
+            scoreable_node_types holds exactly one node type. input_type defaults to the decision default
+            for it (get_decision_input_type).
+        starting_token (int | Unset):  Default: 0.
+        limit (int | Unset): Records per page, at most 1000. Page through larger result sets with starting_token or
+            previous_last_row_id. Default: 100.
+        previous_last_row_id (None | str | Unset):
+        log_stream_id (None | str | Unset): Log stream id associated with the traces.
+        experiment_id (None | str | Unset): Experiment id associated with the traces.
+        metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
+        filters (list[LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
+            LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter] | Unset):
+        filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
+            OrNodeLogRecordsFilter | Unset):
+        sort (LogRecordsSortClause | None | Unset): Sort for the query.  Defaults to native sort (created_at, id
+            descending).
+        truncate_fields (bool | Unset):  Default: False.
+        include_counts (bool | Unset): If True, include computed child counts (e.g., num_traces for sessions, num_spans
+            for traces). Default: False.
+        include_code_metric_metadata (bool | Unset): If True, include per-row scorer metadata (the dict returned
+            alongside the score by code-based scorers via the (score, metadata) tuple-return contract) on each MetricSuccess
+            in the response. Off by default to keep payloads small for callers that don't need it. Default: False.
+        answer_options (DecisionBooleanCriteria | list[DecisionChoice] | list[DecisionLevel] | list[str] | None |
+            Unset):
+    """
+
+    model_name: str
+    question: str
+    scorer_configuration: DecisionScorerTestConfiguration
+    starting_token: int | Unset = 0
+    limit: int | Unset = 100
+    previous_last_row_id: None | str | Unset = UNSET
+    log_stream_id: None | str | Unset = UNSET
+    experiment_id: None | str | Unset = UNSET
+    metrics_testing_id: None | str | Unset = UNSET
+    filters: (
+        list[
+            LogRecordsBooleanFilter
+            | LogRecordsCollectionFilter
+            | LogRecordsDateFilter
+            | LogRecordsFullyAnnotatedFilter
+            | LogRecordsIDFilter
+            | LogRecordsNumberFilter
+            | LogRecordsTextFilter
+        ]
+        | Unset
+    ) = UNSET
+    filter_tree: (
+        AndNodeLogRecordsFilter
+        | FilterLeafLogRecordsFilter
+        | None
+        | NotNodeLogRecordsFilter
+        | OrNodeLogRecordsFilter
+        | Unset
+    ) = UNSET
+    sort: LogRecordsSortClause | None | Unset = UNSET
+    truncate_fields: bool | Unset = False
+    include_counts: bool | Unset = False
+    include_code_metric_metadata: bool | Unset = False
+    answer_options: DecisionBooleanCriteria | list[DecisionChoice] | list[DecisionLevel] | list[str] | None | Unset = (
+        UNSET
+    )
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        from ..models.and_node_log_records_filter import AndNodeLogRecordsFilter
+        from ..models.decision_boolean_criteria import DecisionBooleanCriteria
+        from ..models.filter_leaf_log_records_filter import FilterLeafLogRecordsFilter
+        from ..models.log_records_boolean_filter import LogRecordsBooleanFilter
+        from ..models.log_records_collection_filter import LogRecordsCollectionFilter
+        from ..models.log_records_date_filter import LogRecordsDateFilter
+        from ..models.log_records_id_filter import LogRecordsIDFilter
+        from ..models.log_records_number_filter import LogRecordsNumberFilter
+        from ..models.log_records_sort_clause import LogRecordsSortClause
+        from ..models.log_records_text_filter import LogRecordsTextFilter
+        from ..models.not_node_log_records_filter import NotNodeLogRecordsFilter
+        from ..models.or_node_log_records_filter import OrNodeLogRecordsFilter
+
+        model_name = self.model_name
+
+        question = self.question
+
+        scorer_configuration = self.scorer_configuration.to_dict()
+
+        starting_token = self.starting_token
+
+        limit = self.limit
+
+        previous_last_row_id: None | str | Unset
+        if isinstance(self.previous_last_row_id, Unset):
+            previous_last_row_id = UNSET
+        else:
+            previous_last_row_id = self.previous_last_row_id
+
+        log_stream_id: None | str | Unset
+        if isinstance(self.log_stream_id, Unset):
+            log_stream_id = UNSET
+        else:
+            log_stream_id = self.log_stream_id
+
+        experiment_id: None | str | Unset
+        if isinstance(self.experiment_id, Unset):
+            experiment_id = UNSET
+        else:
+            experiment_id = self.experiment_id
+
+        metrics_testing_id: None | str | Unset
+        if isinstance(self.metrics_testing_id, Unset):
+            metrics_testing_id = UNSET
+        else:
+            metrics_testing_id = self.metrics_testing_id
+
+        filters: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.filters, Unset):
+            filters = []
+            for filters_item_data in self.filters:
+                filters_item: dict[str, Any]
+                if isinstance(filters_item_data, LogRecordsIDFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, LogRecordsDateFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, LogRecordsNumberFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, LogRecordsBooleanFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, LogRecordsCollectionFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, LogRecordsTextFilter):
+                    filters_item = filters_item_data.to_dict()
+                else:
+                    filters_item = filters_item_data.to_dict()
+
+                filters.append(filters_item)
+
+        filter_tree: dict[str, Any] | None | Unset
+        if isinstance(self.filter_tree, Unset):
+            filter_tree = UNSET
+        elif isinstance(self.filter_tree, FilterLeafLogRecordsFilter):
+            filter_tree = self.filter_tree.to_dict()
+        elif isinstance(self.filter_tree, AndNodeLogRecordsFilter):
+            filter_tree = self.filter_tree.to_dict()
+        elif isinstance(self.filter_tree, OrNodeLogRecordsFilter):
+            filter_tree = self.filter_tree.to_dict()
+        elif isinstance(self.filter_tree, NotNodeLogRecordsFilter):
+            filter_tree = self.filter_tree.to_dict()
+        else:
+            filter_tree = self.filter_tree
+
+        sort: dict[str, Any] | None | Unset
+        if isinstance(self.sort, Unset):
+            sort = UNSET
+        elif isinstance(self.sort, LogRecordsSortClause):
+            sort = self.sort.to_dict()
+        else:
+            sort = self.sort
+
+        truncate_fields = self.truncate_fields
+
+        include_counts = self.include_counts
+
+        include_code_metric_metadata = self.include_code_metric_metadata
+
+        answer_options: dict[str, Any] | list[dict[str, Any]] | list[str] | None | Unset
+        if isinstance(self.answer_options, Unset):
+            answer_options = UNSET
+        elif isinstance(self.answer_options, list):
+            answer_options = self.answer_options
+
+        elif isinstance(self.answer_options, list):
+            answer_options = []
+            for answer_options_type_1_item_data in self.answer_options:
+                answer_options_type_1_item = answer_options_type_1_item_data.to_dict()
+                answer_options.append(answer_options_type_1_item)
+
+        elif isinstance(self.answer_options, list):
+            answer_options = []
+            for answer_options_type_2_item_data in self.answer_options:
+                answer_options_type_2_item = answer_options_type_2_item_data.to_dict()
+                answer_options.append(answer_options_type_2_item)
+
+        elif isinstance(self.answer_options, DecisionBooleanCriteria):
+            answer_options = self.answer_options.to_dict()
+        else:
+            answer_options = self.answer_options
+
+        field_dict: dict[str, Any] = {}
+        field_dict.update(self.additional_properties)
+        field_dict.update(
+            {"model_name": model_name, "question": question, "scorer_configuration": scorer_configuration}
+        )
+        if starting_token is not UNSET:
+            field_dict["starting_token"] = starting_token
+        if limit is not UNSET:
+            field_dict["limit"] = limit
+        if previous_last_row_id is not UNSET:
+            field_dict["previous_last_row_id"] = previous_last_row_id
+        if log_stream_id is not UNSET:
+            field_dict["log_stream_id"] = log_stream_id
+        if experiment_id is not UNSET:
+            field_dict["experiment_id"] = experiment_id
+        if metrics_testing_id is not UNSET:
+            field_dict["metrics_testing_id"] = metrics_testing_id
+        if filters is not UNSET:
+            field_dict["filters"] = filters
+        if filter_tree is not UNSET:
+            field_dict["filter_tree"] = filter_tree
+        if sort is not UNSET:
+            field_dict["sort"] = sort
+        if truncate_fields is not UNSET:
+            field_dict["truncate_fields"] = truncate_fields
+        if include_counts is not UNSET:
+            field_dict["include_counts"] = include_counts
+        if include_code_metric_metadata is not UNSET:
+            field_dict["include_code_metric_metadata"] = include_code_metric_metadata
+        if answer_options is not UNSET:
+            field_dict["answer_options"] = answer_options
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.and_node_log_records_filter import AndNodeLogRecordsFilter
+        from ..models.decision_boolean_criteria import DecisionBooleanCriteria
+        from ..models.decision_choice import DecisionChoice
+        from ..models.decision_level import DecisionLevel
+        from ..models.decision_scorer_test_configuration import DecisionScorerTestConfiguration
+        from ..models.filter_leaf_log_records_filter import FilterLeafLogRecordsFilter
+        from ..models.log_records_boolean_filter import LogRecordsBooleanFilter
+        from ..models.log_records_collection_filter import LogRecordsCollectionFilter
+        from ..models.log_records_date_filter import LogRecordsDateFilter
+        from ..models.log_records_fully_annotated_filter import LogRecordsFullyAnnotatedFilter
+        from ..models.log_records_id_filter import LogRecordsIDFilter
+        from ..models.log_records_number_filter import LogRecordsNumberFilter
+        from ..models.log_records_sort_clause import LogRecordsSortClause
+        from ..models.log_records_text_filter import LogRecordsTextFilter
+        from ..models.not_node_log_records_filter import NotNodeLogRecordsFilter
+        from ..models.or_node_log_records_filter import OrNodeLogRecordsFilter
+
+        d = dict(src_dict)
+        model_name = d.pop("model_name")
+
+        question = d.pop("question")
+
+        scorer_configuration = DecisionScorerTestConfiguration.from_dict(d.pop("scorer_configuration"))
+
+        starting_token = d.pop("starting_token", UNSET)
+
+        limit = d.pop("limit", UNSET)
+
+        def _parse_previous_last_row_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        previous_last_row_id = _parse_previous_last_row_id(d.pop("previous_last_row_id", UNSET))
+
+        def _parse_log_stream_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
+
+        def _parse_experiment_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
+
+        def _parse_metrics_testing_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
+
+        _filters = d.pop("filters", UNSET)
+        filters: (
+            list[
+                LogRecordsBooleanFilter
+                | LogRecordsCollectionFilter
+                | LogRecordsDateFilter
+                | LogRecordsFullyAnnotatedFilter
+                | LogRecordsIDFilter
+                | LogRecordsNumberFilter
+                | LogRecordsTextFilter
+            ]
+            | Unset
+        ) = UNSET
+        if _filters is not UNSET:
+            filters = []
+            for filters_item_data in _filters:
+
+                def _parse_filters_item(
+                    data: object,
+                ) -> (
+                    LogRecordsBooleanFilter
+                    | LogRecordsCollectionFilter
+                    | LogRecordsDateFilter
+                    | LogRecordsFullyAnnotatedFilter
+                    | LogRecordsIDFilter
+                    | LogRecordsNumberFilter
+                    | LogRecordsTextFilter
+                ):
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_0 = LogRecordsIDFilter.from_dict(data)
+
+                        return filters_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_1 = LogRecordsDateFilter.from_dict(data)
+
+                        return filters_item_type_1
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_2 = LogRecordsNumberFilter.from_dict(data)
+
+                        return filters_item_type_2
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_3 = LogRecordsBooleanFilter.from_dict(data)
+
+                        return filters_item_type_3
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_4 = LogRecordsCollectionFilter.from_dict(data)
+
+                        return filters_item_type_4
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_5 = LogRecordsTextFilter.from_dict(data)
+
+                        return filters_item_type_5
+                    except:  # noqa: E722
+                        pass
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    filters_item_type_6 = LogRecordsFullyAnnotatedFilter.from_dict(data)
+
+                    return filters_item_type_6
+
+                filters_item = _parse_filters_item(filters_item_data)
+
+                filters.append(filters_item)
+
+        def _parse_filter_tree(
+            data: object,
+        ) -> (
+            AndNodeLogRecordsFilter
+            | FilterLeafLogRecordsFilter
+            | None
+            | NotNodeLogRecordsFilter
+            | OrNodeLogRecordsFilter
+            | Unset
+        ):
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_0 = FilterLeafLogRecordsFilter.from_dict(
+                    data
+                )
+
+                return componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_0
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_1 = AndNodeLogRecordsFilter.from_dict(
+                    data
+                )
+
+                return componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_2 = OrNodeLogRecordsFilter.from_dict(
+                    data
+                )
+
+                return componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_2
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_3 = NotNodeLogRecordsFilter.from_dict(
+                    data
+                )
+
+                return componentsschemas_filter_expression_annotated_union_log_records_id_filter_log_records_date_filter_log_records_number_filter_log_records_boolean_filter_log_records_collection_filter_log_records_text_filter_log_records_fully_annotated_filter_field_info_annotation_none_type_required_true_discriminator_type_type_3
+            except:  # noqa: E722
+                pass
+            return cast(
+                AndNodeLogRecordsFilter
+                | FilterLeafLogRecordsFilter
+                | None
+                | NotNodeLogRecordsFilter
+                | OrNodeLogRecordsFilter
+                | Unset,
+                data,
+            )
+
+        filter_tree = _parse_filter_tree(d.pop("filter_tree", UNSET))
+
+        def _parse_sort(data: object) -> LogRecordsSortClause | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                sort_type_0 = LogRecordsSortClause.from_dict(data)
+
+                return sort_type_0
+            except:  # noqa: E722
+                pass
+            return cast(LogRecordsSortClause | None | Unset, data)
+
+        sort = _parse_sort(d.pop("sort", UNSET))
+
+        truncate_fields = d.pop("truncate_fields", UNSET)
+
+        include_counts = d.pop("include_counts", UNSET)
+
+        include_code_metric_metadata = d.pop("include_code_metric_metadata", UNSET)
+
+        def _parse_answer_options(
+            data: object,
+        ) -> DecisionBooleanCriteria | list[DecisionChoice] | list[DecisionLevel] | list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                answer_options_type_0 = cast(list[str], data)
+
+                return answer_options_type_0
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                answer_options_type_1 = []
+                _answer_options_type_1 = data
+                for answer_options_type_1_item_data in _answer_options_type_1:
+                    answer_options_type_1_item = DecisionChoice.from_dict(answer_options_type_1_item_data)
+
+                    answer_options_type_1.append(answer_options_type_1_item)
+
+                return answer_options_type_1
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                answer_options_type_2 = []
+                _answer_options_type_2 = data
+                for answer_options_type_2_item_data in _answer_options_type_2:
+                    answer_options_type_2_item = DecisionLevel.from_dict(answer_options_type_2_item_data)
+
+                    answer_options_type_2.append(answer_options_type_2_item)
+
+                return answer_options_type_2
+            except:  # noqa: E722
+                pass
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                answer_options_type_3 = DecisionBooleanCriteria.from_dict(data)
+
+                return answer_options_type_3
+            except:  # noqa: E722
+                pass
+            return cast(
+                DecisionBooleanCriteria | list[DecisionChoice] | list[DecisionLevel] | list[str] | None | Unset, data
+            )
+
+        answer_options = _parse_answer_options(d.pop("answer_options", UNSET))
+
+        validate_decision_scorer_log_record_request = cls(
+            model_name=model_name,
+            question=question,
+            scorer_configuration=scorer_configuration,
+            starting_token=starting_token,
+            limit=limit,
+            previous_last_row_id=previous_last_row_id,
+            log_stream_id=log_stream_id,
+            experiment_id=experiment_id,
+            metrics_testing_id=metrics_testing_id,
+            filters=filters,
+            filter_tree=filter_tree,
+            sort=sort,
+            truncate_fields=truncate_fields,
+            include_counts=include_counts,
+            include_code_metric_metadata=include_code_metric_metadata,
+            answer_options=answer_options,
+        )
+
+        validate_decision_scorer_log_record_request.additional_properties = d
+        return validate_decision_scorer_log_record_request
+
+    @property
+    def additional_keys(self) -> list[str]:
+        return list(self.additional_properties.keys())
+
+    def __getitem__(self, key: str) -> Any:
+        return self.additional_properties[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.additional_properties[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.additional_properties[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.additional_properties

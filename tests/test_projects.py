@@ -1,10 +1,13 @@
+import json
 import os
 from unittest.mock import ANY, Mock, patch
 
 import httpx
 import pytest
+from respx import MockRouter
 
 from splunk_ao.projects import Projects, ProjectsAPIException, delete_project
+from splunk_ao.resources.models.project_action import ProjectAction
 from splunk_ao.resources.models.project_type import ProjectType
 
 
@@ -12,6 +15,20 @@ from splunk_ao.resources.models.project_type import ProjectType
 def reset_env_vars() -> None:
     os.environ.pop("SPLUNK_AO_PROJECT", None)
     os.environ.pop("SPLUNK_AO_PROJECT_ID", None)
+
+
+@pytest.fixture
+def project_response() -> dict:
+    return {
+        "id": "00000000-0000-0000-0000-000000000123",
+        "name": "my_project",
+        "type": "gen_ai",
+        "created_by": "user-id-123",
+        "created_by_user": {"id": "user-id-123", "email": "test@test.com"},
+        "runs": [],
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+    }
 
 
 class TestProjects:
@@ -91,6 +108,49 @@ class TestProjects:
             result = Projects().get_with_env_fallbacks()
             get_project_projects_project_id_get.assert_called_once_with(project_id="123", client=ANY)
             assert result is None
+
+    def test_get_project_by_id_parses_configure_rate_limit_permission(
+        self, respx_mock: MockRouter, project_response: dict
+    ) -> None:
+        # Given: a project whose permissions include configure_rate_limit
+        project_id = project_response["id"]
+        project_response["permissions"] = [
+            {"action": "delete", "allowed": True},
+            {"action": "configure_rate_limit", "allowed": True},
+        ]
+        route = respx_mock.get(f"http://fake.test:8088/projects/{project_id}").mock(
+            return_value=httpx.Response(200, json=project_response)
+        )
+
+        # When: the project is fetched by id
+        project = Projects().get(id=project_id)
+
+        # Then: the generated parser maps every action to ProjectAction
+        assert route.called
+        assert project is not None
+        assert project.id == project_id
+        assert project.permissions is not None
+        assert [p.action for p in project.permissions] == [ProjectAction.DELETE, ProjectAction.CONFIGURE_RATE_LIMIT]
+
+    def test_create_project_posts_body_without_example_templates(
+        self, respx_mock: MockRouter, project_response: dict
+    ) -> None:
+        # Given: a server that accepts project creation
+        route = respx_mock.post("http://fake.test:8088/projects").mock(
+            return_value=httpx.Response(200, json=project_response)
+        )
+
+        # When: a project is created
+        project = Projects().create(name="my_project")
+
+        # Then: the request body no longer carries create_example_templates
+        assert route.called
+        assert json.loads(route.calls.last.request.content) == {
+            "name": "my_project",
+            "type": "gen_ai",
+            "created_by": None,
+        }
+        assert project.name == "my_project"
 
     @patch("splunk_ao.projects.get_projects_projects_get.sync_detailed")
     def test_get_project_with_name_gets_project_by_name(self, get_projects_projects_get: Mock) -> None:
@@ -278,7 +338,7 @@ class TestProjects:
         # Mock the get method to return a non-GEN_AI project
         mock_project = Mock()
         mock_project.id = "123"
-        mock_project.type = ProjectType.LLM_MONITOR  # Not GEN_AI
+        mock_project.type = ProjectType.PROTECT
         mock_project.name = "test_project"
 
         get_mock.return_value = mock_project

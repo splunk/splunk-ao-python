@@ -287,7 +287,7 @@ class Projects:
             If the request takes longer than Client.timeout.
 
         """
-        body = ProjectCreate(name=name, type_=ProjectType.GEN_AI, create_example_templates=False, created_by=None)
+        body = ProjectCreate(name=name, type_=ProjectType.GEN_AI, created_by=None)
 
         detailed_response = create_project_projects_post.sync_detailed(client=self.config.api_client, body=body)
 
