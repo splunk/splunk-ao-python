@@ -93,7 +93,7 @@ from splunk_ao.tracing import extract_tracing_context, get_tracing_headers
 from splunk_ao.types import MetricSpec
 from splunk_ao.utils.log_config import enable_console_logging
 
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
 __all__ = [
     # Stable / unchanged
