@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0]
 
+### Added
+
+- The low-level API client (`splunk_ao.resources`) gains the stage rulesets
+  (`GET /projects/{project_id}/stages/{stage_id}/rulesets`) and paginated stages
+  (`GET /projects/{project_id}/stages/paginated`) endpoints, the decision-scorer validation endpoints (dataset,
+  log record and plain), and the optional `code_sha256`, `request_id` and `validation_task_id` fields on scorer
+  version responses.
+
 ### Changed
 
 - **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
