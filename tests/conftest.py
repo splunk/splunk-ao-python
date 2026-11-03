@@ -174,7 +174,7 @@ def set_validated_config(
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
     SplunkAOLoggerSingleton().reset_all()
-    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"):
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN", "SPLUNK_AO_O11Y_API_URL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
     monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")

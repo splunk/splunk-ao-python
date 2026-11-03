@@ -171,7 +171,7 @@ modes. It also requires attention to when exporters/configuration singletons are
 
 | Mode | CRUD auth | Telemetry auth/endpoints |
 |---|---|---|
-| O11y Cloud | `SPLUNK_AO_O11Y_TOKEN` when permitted, or a dedicated `SPLUNK_AO_O11Y_API_TOKEN` | realm-derived endpoint plus `SPLUNK_AO_O11Y_TOKEN` |
+| O11y Cloud | `SPLUNK_AO_O11Y_TOKEN` when permitted, or a dedicated `SPLUNK_AO_O11Y_API_TOKEN`; host `api.<realm>`, overridable via `SPLUNK_AO_O11Y_API_URL` | realm-derived endpoint plus `SPLUNK_AO_O11Y_TOKEN` |
 | Standalone | `SPLUNK_AO_API_KEY` | console/API configuration and deployment-derived OTLP endpoint |
 
 O11y also requires `SPLUNK_AO_REALM`; standalone requires `SPLUNK_AO_CONSOLE_URL`. The primary O11y token can authorize

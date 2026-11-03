@@ -263,7 +263,8 @@ class SplunkAOConfig(GalileoConfig):
         realm = os.environ.get("SPLUNK_AO_REALM")
         o11y_token = os.environ.get("SPLUNK_AO_O11Y_TOKEN")
         o11y_api_token = os.environ.get("SPLUNK_AO_O11Y_API_TOKEN")
-        if realm or o11y_token or o11y_api_token:
+        o11y_api_url = os.environ.get("SPLUNK_AO_O11Y_API_URL")
+        if realm or o11y_token or o11y_api_token or o11y_api_url:
             if not realm:
                 return "O11y authentication requires SPLUNK_AO_REALM to be set."
             if not o11y_token and not o11y_api_token:
