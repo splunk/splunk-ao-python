@@ -76,6 +76,7 @@ export SPLUNK_AO_CONSOLE_URL="https://console.subdomain.yourcompany.com"
 | `SPLUNK_AO_REALM` | Splunk Observability Cloud realm (Required) |
 | `SPLUNK_AO_O11Y_TOKEN` | O11y ingest token used for OTLP export (Required for telemetry) |
 | `SPLUNK_AO_O11Y_API_TOKEN` | Dedicated O11y API token used for CRUD operations (Optional) |
+| `SPLUNK_AO_O11Y_API_URL` | Override the CRUD API origin, e.g. a private or custom endpoint (Optional; origin only, no path) |
 
 For telemetry export, set your realm and O11y ingest token:
 
@@ -100,8 +101,8 @@ When both tokens are set, `SPLUNK_AO_O11Y_API_TOKEN` is preferred for CRUD and
 required until the application exports telemetry. Attempting to construct an
 OTLP exporter without `SPLUNK_AO_O11Y_TOKEN` raises a configuration error.
 
-The SDK derives the console, API and OTLP ingest endpoints from the
-realm. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
+The SDK derives the console, API (`api.<realm>`) and OTLP ingest endpoints from the
+realm. `SPLUNK_AO_O11Y_API_URL` overrides only the CRUD API origin. Do not set `SPLUNK_AO_CONSOLE_URL` or `SPLUNK_AO_API_URL` for O11y
 Cloud.
 
 #### Routing

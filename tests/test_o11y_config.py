@@ -21,6 +21,7 @@ _CONFIG_ENV_VARS = (
     "SPLUNK_AO_REALM",
     "SPLUNK_AO_O11Y_TOKEN",
     "SPLUNK_AO_O11Y_API_TOKEN",
+    "SPLUNK_AO_O11Y_API_URL",
     "SPLUNK_AO_API_KEY",
     "SPLUNK_AO_API_URL",
     "SPLUNK_AO_CONSOLE_URL",
@@ -57,7 +58,7 @@ def config_env(**overrides: str) -> Iterator[None]:
 
 def _o11y_client(token: str = "tok") -> O11yApiClient:
     client = O11yApiClient(
-        host="https://app.lab0.observability.splunkcloud.com", o11y_token=SecretStr(token), jwt_token=SecretStr("")
+        host="https://api.lab0.observability.splunkcloud.com", o11y_token=SecretStr(token), jwt_token=SecretStr("")
     )
     client.thread_local.client = None
     return client
@@ -99,7 +100,7 @@ def test_o11y_api_client_sync_request_preserves_prefix_and_header(monkeypatch: p
 
     assert captured == {
         "method": RequestMethod.GET,
-        "url": "https://app.lab0.observability.splunkcloud.com/ao/api/projects",
+        "url": "https://api.lab0.observability.splunkcloud.com/ao/api/projects",
         "headers": {"accept": "application/json", "Content-Type": "application/json", "X-SF-Token": "tok"},
         "instrumentation_enabled": False,
     }
@@ -119,7 +120,7 @@ async def test_o11y_api_client_async_request_preserves_existing_prefix(monkeypat
     monkeypatch.setattr(ApiClient, "make_request", staticmethod(fake_make_request))
     await _o11y_client().arequest(RequestMethod.GET, "/ao/api/projects", {"X-Custom": "value"})
 
-    assert captured["url"] == "https://app.lab0.observability.splunkcloud.com/ao/api/projects"
+    assert captured["url"] == "https://api.lab0.observability.splunkcloud.com/ao/api/projects"
     assert captured["headers"] == {"X-Custom": "value", "X-SF-Token": "tok"}
 
 
@@ -158,6 +159,11 @@ def test_o11y_get_with_api_token_but_no_realm_fails_clearly(monkeypatch: pytest.
     with config_env(SPLUNK_AO_O11Y_API_TOKEN="tok"):
         with pytest.raises(MissingConfigurationError, match="SPLUNK_AO_REALM"):
             SplunkAOConfig.get()
+
+
+def test_o11y_auth_guard_reports_missing_realm_when_only_api_url_set() -> None:
+    with config_env(SPLUNK_AO_O11Y_API_URL="https://api.lab0.signalfx.com"):
+        assert "SPLUNK_AO_REALM" in (SplunkAOConfig._check_auth_config({}) or "")
 
 
 def test_o11y_auth_guard_requires_at_least_one_token() -> None:
@@ -227,9 +233,9 @@ def test_o11y_get_builds_realm_config_without_jwt_calls(
 
         assert cfg.jwt_token is None
         assert str(cfg.console_url) == "https://app.lab0.observability.splunkcloud.com/"
-        assert str(cfg.api_url) == "https://app.lab0.observability.splunkcloud.com/ao/api/"
+        assert str(cfg.api_url) == "https://api.lab0.observability.splunkcloud.com/ao/api/"
         assert isinstance(client, O11yApiClient)
-        assert str(client.host) == "https://app.lab0.observability.splunkcloud.com/"
+        assert str(client.host) == "https://api.lab0.observability.splunkcloud.com/"
         assert client.auth_header == {"X-SF-Token": expected_token}
         assert client.ssl_context is False
 
@@ -253,6 +259,27 @@ def test_o11y_get_supports_crud_only_api_token(monkeypatch: pytest.MonkeyPatch) 
     assert cfg.jwt_token is None
     assert isinstance(client, O11yApiClient)
     assert client.auth_header == {"X-SF-Token": "api-token"}
+
+
+def test_o11y_get_uses_api_url_override_for_crud_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise AssertionError("o11y configuration must not use standalone validation")
+
+    monkeypatch.setattr(SplunkAOConfig, "_instance", None)
+    monkeypatch.setattr(GalileoConfig, "get_jwt_token", staticmethod(fail))
+
+    # Given: an explicit API origin override
+    with config_env(
+        SPLUNK_AO_REALM="lab0", SPLUNK_AO_O11Y_TOKEN="tok", SPLUNK_AO_O11Y_API_URL="https://api.lab0.signalfx.com/"
+    ):
+        cfg = SplunkAOConfig.get(ssl_context=False)
+        client = cfg.api_client
+
+        # Then: CRUD follows the override while the console link stays realm-derived
+        assert str(cfg.api_url) == "https://api.lab0.signalfx.com/ao/api/"
+        assert isinstance(client, O11yApiClient)
+        assert str(client.host) == "https://api.lab0.signalfx.com/"
+        assert str(cfg.console_url) == "https://app.lab0.observability.splunkcloud.com/"
 
 
 def test_ambiguous_environment_fails_before_config_construction(monkeypatch: pytest.MonkeyPatch) -> None:

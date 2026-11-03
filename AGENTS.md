@@ -118,7 +118,7 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
 | Deployment | Required authentication |
 |---|---|
-| O11y Cloud | `SPLUNK_AO_REALM` plus at least one token: `SPLUNK_AO_O11Y_TOKEN` for telemetry and, when permitted, CRUD; and/or `SPLUNK_AO_O11Y_API_TOKEN` for CRUD-only or dedicated CRUD authentication |
+| O11y Cloud | `SPLUNK_AO_REALM` plus at least one token: `SPLUNK_AO_O11Y_TOKEN` for telemetry and, when permitted, CRUD; and/or `SPLUNK_AO_O11Y_API_TOKEN` for CRUD-only or dedicated CRUD authentication. CRUD uses `api.<realm>`; optional `SPLUNK_AO_O11Y_API_URL` overrides the CRUD API origin only (never OTLP ingest) |
 | Standalone | `SPLUNK_AO_API_KEY` plus `SPLUNK_AO_CONSOLE_URL`; `SPLUNK_AO_API_URL` is optional |
 
 - Detection lives in `deployment.py::resolve_deployment()`. Never mix O11y and standalone variable sets.
