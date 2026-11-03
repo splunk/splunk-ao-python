@@ -469,10 +469,22 @@ def _matching_child_finish_reason(span: WorkflowSpan | AgentSpan, output_message
     return None
 
 
+def _current_turn_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return the messages from the last user message onward, or all of them when there is no user message."""
+    for index in range(len(messages) - 1, -1, -1):
+        if messages[index].get("role") == "user":
+            return messages[index:]
+    return messages
+
+
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
-    input_messages, _ = _orchestration_messages(span.input, "user")
+    input_messages, input_full_history = _orchestration_messages(span.input, "user")
     if input_messages is not None:
-        attrs["gen_ai.input.messages"] = _json_string(input_messages)
+        # An app that re-sends the whole conversation as graph state would otherwise repeat every earlier
+        # turn in each new span's input. Export only the current turn; the untrimmed input_messages stay
+        # available below for the output history dedup.
+        exported_input = _current_turn_messages(input_messages) if input_full_history else input_messages
+        attrs["gen_ai.input.messages"] = _json_string(exported_input)
 
     if span.output is None:
         return

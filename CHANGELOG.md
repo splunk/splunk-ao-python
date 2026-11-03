@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Agent and workflow spans no longer repeat earlier conversation turns in `gen_ai.input.messages`. When an app
+  re-sends the whole conversation as the graph state (for example a LangGraph `{"messages": [...]}` state), the
+  exported input now starts at the current user message, so continuous conversations no longer grow each trace's
+  input with previous inputs and outputs (SAO-19572). Tool-call and tool-response messages of the current turn are
+  kept. LLM span inputs still carry the full prompt sent to the model.
+
 ## [0.7.0]
 
 ### Added
