@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import inspect
+import json
 import sys
 import threading
 import uuid
@@ -2152,3 +2153,65 @@ def test_tool_lifecycle_previous_event_id_with_error(crewai_callback) -> None:
         start_run_id = mock_start.call_args[1]["run_id"]
         end_run_id = mock_end.call_args[1]["run_id"]
         assert start_run_id == end_run_id
+
+
+def _exported_message_texts(span: ReadableSpan) -> list[tuple[str, str]]:
+    messages = json.loads(span.attributes["gen_ai.input.messages"])
+    return [
+        (m["role"], " ".join(p.get("content", "") for p in m["parts"] if p.get("type") == "text")) for m in messages
+    ]
+
+
+def test_crewai_root_input_stays_current_turn_when_kickoff_inputs_resend_history(crewai_bus) -> None:
+    # Given: a chat-style crew kicked off 3 times, each time with the whole conversation as its inputs
+    _listener, _logger, sink, events, deliver = crewai_bus
+    crew = MockCrew()
+    agent = MockAgent(crew=crew)
+    task = MockTask(agent=agent)
+    questions = ["Name one AI benefit in healthcare", "Name a second benefit", "Summarize the two benefits"]
+    history: list[dict[str, str]] = []
+
+    async def run() -> None:
+        for turn, question in enumerate(questions):
+            history.append({"role": "user", "content": question})
+            call_id = f"call-{turn}"
+            # When: the turn runs with the full conversation as the kickoff inputs and the model prompt
+            await deliver(
+                [
+                    (crew, events["CrewKickoffStartedEvent"](crew_name="Crew", inputs={"messages": list(history)})),
+                    (task, events["TaskStartedEvent"](task=task)),
+                    (agent, events["AgentExecutionStartedEvent"](agent=agent, task=task, task_prompt=question)),
+                    (
+                        MockSource(),
+                        events["LLMCallStartedEvent"](
+                            call_id=call_id,
+                            model="local-model",
+                            agent_id=str(agent.id),
+                            task_id=str(task.id),
+                            messages=list(history),
+                        ),
+                    ),
+                    (
+                        MockSource(),
+                        events["LLMCallCompletedEvent"](
+                            call_id=call_id, agent_id=str(agent.id), task_id=str(task.id), response=f"Reply {turn}"
+                        ),
+                    ),
+                    (agent, events["AgentExecutionCompletedEvent"](agent=agent, task=task, output=f"Reply {turn}")),
+                    (task, events["TaskCompletedEvent"](task=task, output=MockOutput(f"Reply {turn}"))),
+                    (crew, events["CrewKickoffCompletedEvent"](output=MockOutput(f"Reply {turn}"))),
+                ]
+            )
+            history.append({"role": "assistant", "content": f"Reply {turn}"})
+
+    asyncio.run(run())
+
+    # Then: each crew root exports only the current question, whatever the turn
+    for turn, question in enumerate(questions):
+        spans = sink.spans[turn * 4 : turn * 4 + 4]
+        chat = next(s for s in spans if s.attributes["gen_ai.operation.name"] == "chat")
+        root = [s for s in spans if s.attributes["gen_ai.operation.name"] == "invoke_workflow"][-1]
+        assert _exported_message_texts(root) == [("user", question)]
+        # And: the chat span keeps the full prompt the model received, including every earlier question
+        prompt = " ".join(text for _role, text in _exported_message_texts(chat))
+        assert all(earlier in prompt for earlier in questions[: turn + 1])

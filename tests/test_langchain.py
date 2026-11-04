@@ -1,3 +1,4 @@
+import json
 import time
 import uuid
 from collections.abc import Generator
@@ -1810,3 +1811,58 @@ class TestSplunkAOCallbackIngestionHookWithoutCredentials:
 
         # Then: the callback is created successfully and the hook is attached
         assert callback._handler._splunk_ao_logger._ingestion_hook is mock_hook
+
+
+def _exported_message_texts(span: ReadableSpan, attribute: str = "gen_ai.input.messages") -> list[tuple[str, str]]:
+    messages = json.loads((span.attributes or {})[attribute])
+    return [
+        (m["role"], " ".join(p.get("content", "") for p in m["parts"] if p.get("type") == "text")) for m in messages
+    ]
+
+
+def test_langgraph_root_input_stays_current_turn_when_state_resends_history() -> None:
+    # Given: a LangGraph-style root, a node, and a chat model call, over 3 turns whose state re-sends the whole history
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = SplunkAOCallback(splunk_ao_logger=logger, flush_on_chain_end=False)
+    questions = ["Look up patient P001", "What is the dosage of Lisinopril?", "Look up patient P001 again"]
+    history: list[Any] = []
+    try:
+        for turn, question in enumerate(questions, start=1):
+            history.append(HumanMessage(content=question))
+            root_id, node_id, llm_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+            reply = AIMessage(content=f"Reply {turn}")
+
+            # When: the turn runs with the full conversation as the graph state
+            callback.on_chain_start(
+                serialized={"name": "LangGraph"}, inputs={"messages": list(history)}, run_id=root_id
+            )
+            callback.on_chain_start(
+                serialized={"name": "chatbot"},
+                inputs={"messages": list(history)},
+                run_id=node_id,
+                parent_run_id=root_id,
+            )
+            callback.on_chat_model_start(
+                serialized={"name": "gpt"}, messages=[list(history)], run_id=llm_id, parent_run_id=node_id
+            )
+            callback.on_llm_end(
+                LLMResult(generations=[[ChatGeneration(message=reply)]], llm_output=None),
+                run_id=llm_id,
+                parent_run_id=node_id,
+            )
+            callback.on_chain_end(outputs={"messages": [reply]}, run_id=node_id, parent_run_id=root_id)
+            callback.on_chain_end(outputs={"messages": [*history, reply]}, run_id=root_id)
+            history.append(reply)
+
+        # Then: the root agent and the node export only the current question, whatever the turn
+        operations = [(span.attributes or {})["gen_ai.operation.name"] for span in sink.spans]
+        assert operations == ["chat", "invoke_workflow", "invoke_agent"] * 3
+        for turn, question in enumerate(questions):
+            chat, node, root = sink.spans[turn * 3 : turn * 3 + 3]
+            assert _exported_message_texts(root) == [("user", question)]
+            assert _exported_message_texts(node) == [("user", question)]
+            # And: the chat span keeps the full prompt the model received (1, 3 and 5 messages)
+            assert len(_exported_message_texts(chat)) == 2 * turn + 1
+    finally:
+        logger.terminate()

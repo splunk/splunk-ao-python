@@ -525,3 +525,55 @@ class TestIngestionHook:
         middleware.after_agent(cast(AgentState, MockAgentState(messages=[AIMessage(content="response")])), rt)
 
         mock_hook.assert_called_once()
+
+
+class _RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[Any] = []
+
+    def emit(self, span: Any) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def _exported_message_texts(span: Any) -> list[tuple[str, str]]:
+    messages = json.loads((span.attributes or {})["gen_ai.input.messages"])
+    return [
+        (m["role"], " ".join(p.get("content", "") for p in m["parts"] if p.get("type") == "text")) for m in messages
+    ]
+
+
+def test_middleware_root_input_stays_current_turn_when_state_resends_history() -> None:
+    # Given: a create_agent-style run over 3 turns whose state re-sends the whole conversation each time
+    sink = _RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    middleware = SplunkAOMiddleware(splunk_ao_logger=logger, flush_on_chain_end=False)
+    runtime = cast("Runtime", MockRuntime())
+    questions = ["What is the weather in Paris?", "And the AAPL stock price?", "Remind me of the Paris weather"]
+    history: list[Any] = []
+    try:
+        for turn, question in enumerate(questions, start=1):
+            history.append(HumanMessage(content=question))
+            state = cast(AgentState, MockAgentState(messages=list(history)))
+            reply = AIMessage(content=f"Reply {turn}")
+
+            # When: the turn runs (agent start, one model call, agent end)
+            middleware.before_agent(state, runtime)
+            request = MockRequest(state=state, messages=list(history), model=MockModel("gpt"))
+            middleware.wrap_model_call(cast(Any, request), lambda _request, reply=reply: MockResponse(result=[reply]))
+            history.append(reply)
+            middleware.after_agent(cast(AgentState, MockAgentState(messages=list(history))), runtime)
+
+        # Then: each root agent span exports only the current question, whatever the turn
+        roots = [s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_agent"]
+        assert [_exported_message_texts(root) for root in roots] == [[("user", question)] for question in questions]
+        # And: the chat span keeps the full prompt the model received (1, 3 and 5 messages)
+        chats = [s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat"]
+        assert [len(_exported_message_texts(chat)) for chat in chats] == [1, 3, 5]
+    finally:
+        logger.terminate()

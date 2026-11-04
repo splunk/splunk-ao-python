@@ -1145,3 +1145,41 @@ def test_workflow_input_falls_back_when_generation_input_is_set_after_start() ->
     finally:
         set_trace_processors([])
         logger.terminate()
+
+
+def test_openai_agents_workflow_input_stays_current_turn_when_history_is_resent() -> None:
+    # Given: 3 turns, each a trace whose model call re-sends the whole conversation (as Runner.run with to_input_list)
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    questions = ["Find activities in Paris", "Now find activities in Tokyo", "Which activities did you list for Paris?"]
+    history: list[dict[str, str]] = [{"role": "system", "content": "You are a concise travel agent."}]
+    try:
+        for turn, question in enumerate(questions, start=1):
+            history.append({"role": "user", "content": question})
+            reply = {"role": "assistant", "content": f"Reply {turn}"}
+
+            # When: the turn is traced
+            with agents_tracing.trace("Agent trace", trace_id=f"trace_multi_turn_{turn}") as openai_trace:
+                with agent_span("TravelAgent", span_id=f"span_agent_{turn}", parent=openai_trace) as root_span:
+                    with generation_span(
+                        input=list(history), output=[reply], model="gpt-4", span_id=f"span_llm_{turn}", parent=root_span
+                    ):
+                        pass
+            history.append(reply)
+
+        # Then: each workflow span exports only the current question, whatever the turn
+        def messages(span: ReadableSpan) -> list[dict[str, Any]]:
+            return json.loads((span.attributes or {})["gen_ai.input.messages"])
+
+        def by_operation(operation: str) -> list[ReadableSpan]:
+            return [s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == operation]
+
+        workflows = by_operation("invoke_workflow")
+        assert [[m["parts"][0]["content"] for m in messages(w)] for w in workflows] == [[q] for q in questions]
+        # And: the chat span keeps the full prompt the model received (system + 1, 3 and 5 turns)
+        assert [len(messages(chat)) for chat in by_operation("chat")] == [2, 4, 6]
+    finally:
+        set_trace_processors([])
+        logger.terminate()
