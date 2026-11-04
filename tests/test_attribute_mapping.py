@@ -572,6 +572,75 @@ def test_orchestration_input_partial_update_container_is_unchanged() -> None:
 
 
 @pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_bare_message_list_input_keeps_only_current_turn(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: an agent whose input is the conversation as a bare message list (the LangChain agent middleware shape)
+    user1 = {"role": "user", "content": "What is the weather in Paris?"}
+    ai1 = {"role": "assistant", "content": "It is 72 degrees."}
+    user2 = {"role": "user", "content": "And the AAPL stock price?"}
+    ai2 = {"role": "assistant", "content": "It is 178.50 USD."}
+    user3 = {"role": "user", "content": "Remind me of the Paris weather"}
+    span = _orchestration_span(span_type, input=json.dumps([user1, ai1, user2, ai2, user3]))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: only the current user turn is exported as input
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "Remind me of the Paris weather")]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_bare_message_list_input_keeps_tool_loop_of_current_turn(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: a bare message list holding an earlier turn plus the current turn's tool call and tool response
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "Look up patient P001"}
+    tool_call = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "call-1", "function": {"name": "get_patient_info", "arguments": '{"id":"P001"}'}}],
+    }
+    tool_response = {"role": "tool", "content": "George Rivera", "tool_call_id": "call-1"}
+    span = _orchestration_span(span_type, input=json.dumps([user1, ai1, user2, tool_call, tool_response]))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: the input starts at the current user turn and keeps its tool call and tool response
+    input_messages = json.loads(attrs["gen_ai.input.messages"])
+    assert [message["role"] for message in input_messages] == ["user", "assistant", "tool"]
+    assert input_messages[0] == _text_message("user", "Look up patient P001")
+
+
+@pytest.mark.parametrize(
+    "messages",
+    [
+        pytest.param([{"role": "user", "content": "Only question"}], id="single_user_turn"),
+        pytest.param(
+            [{"role": "assistant", "content": "Earlier reply"}, {"role": "tool", "content": "r", "tool_call_id": "c"}],
+            id="no_user_message",
+        ),
+    ],
+)
+def test_orchestration_bare_message_list_input_without_earlier_turns_is_unchanged(
+    messages: list[dict[str, Any]],
+) -> None:
+    # Given: a bare message list with a single user turn, or with no user message to anchor the current turn on
+    span = AgentSpan(name="Agent", agent_type=AgentType.default, input=json.dumps(messages))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: nothing is dropped from the input
+    assert [message["role"] for message in json.loads(attrs["gen_ai.input.messages"])] == [
+        message["role"] for message in messages
+    ]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
 def test_orchestration_full_history_keeps_last_terminal_message(
     span_type: type[WorkflowSpan] | type[AgentSpan],
 ) -> None:

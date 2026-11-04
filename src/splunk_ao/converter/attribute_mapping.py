@@ -477,13 +477,25 @@ def _current_turn_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any
     return messages
 
 
+def _is_bare_message_list(value: Any) -> bool:
+    """Return True when the value is a non-empty list of role-tagged messages, not a state or update container."""
+    parsed = _parse_json_string(value)
+    return (
+        isinstance(parsed, Sequence)
+        and not isinstance(parsed, str | bytes | bytearray)
+        and _is_message_sequence(parsed)
+    )
+
+
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
     input_messages, input_full_history = _orchestration_messages(span.input, "user")
     if input_messages is not None:
-        # An app that re-sends the whole conversation as graph state would otherwise repeat every earlier
-        # turn in each new span's input. Export only the current turn; the untrimmed input_messages stay
-        # available below for the output history dedup.
-        exported_input = _current_turn_messages(input_messages) if input_full_history else input_messages
+        # An app that re-sends the whole conversation, either as graph state ({"messages": [...]}) or as a
+        # bare message list (for example the LangChain agent middleware), would otherwise repeat every
+        # earlier turn in each new span's input. Export only the current turn; the untrimmed input_messages
+        # stay available below for the output history dedup.
+        trim_input = input_full_history or _is_bare_message_list(span.input)
+        exported_input = _current_turn_messages(input_messages) if trim_input else input_messages
         attrs["gen_ai.input.messages"] = _json_string(exported_input)
 
     if span.output is None:
