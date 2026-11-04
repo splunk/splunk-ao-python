@@ -457,6 +457,189 @@ def test_orchestration_output_omits_repeated_input_history() -> None:
     ]
 
 
+def _orchestration_span(span_type: type[WorkflowSpan] | type[AgentSpan], **kwargs: Any) -> WorkflowSpan | AgentSpan:
+    span_kwargs: dict[str, Any] = {"name": "chatbot", **kwargs}
+    if span_type is AgentSpan:
+        span_kwargs["agent_type"] = AgentType.default
+    return span_type(**span_kwargs)
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_input_keeps_only_current_turn_of_full_history(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: an app that re-sends the whole conversation (3 user turns) as the graph state on every request
+    user1 = {"role": "user", "content": "Look up patient P001"}
+    ai1 = {"role": "assistant", "content": "Patient P001 is George Rivera."}
+    user2 = {"role": "user", "content": "What is the dosage of Lisinopril?"}
+    ai2 = {"role": "assistant", "content": "10-40 mg once daily."}
+    user3 = {"role": "user", "content": "Look up patient P001 again"}
+    span = _orchestration_span(
+        span_type,
+        input=json.dumps({"messages": [user1, ai1, user2, ai2, user3]}),
+        output=json.dumps({"messages": [{"role": "assistant", "content": "Patient P001 is George Rivera."}]}),
+    )
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: only the current user turn is exported as input, not the earlier questions and replies
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "Look up patient P001 again")]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_input_keeps_tool_loop_messages_of_current_turn(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: a graph node revisited mid-turn, whose state holds an earlier turn plus the current tool loop
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "Look up patient P001"}
+    tool_call = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "call-1", "function": {"name": "get_patient_info", "arguments": '{"id":"P001"}'}}],
+    }
+    tool_response = {"role": "tool", "content": "George Rivera", "tool_call_id": "call-1"}
+    span = _orchestration_span(
+        span_type,
+        input=json.dumps({"messages": [user1, ai1, user2, tool_call, tool_response]}),
+        output=json.dumps({"messages": [{"role": "assistant", "content": "Patient P001 is George Rivera."}]}),
+    )
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: the input starts at the current user turn and keeps its tool call and tool response
+    input_messages = json.loads(attrs["gen_ai.input.messages"])
+    assert [message["role"] for message in input_messages] == ["user", "assistant", "tool"]
+    assert input_messages[0] == _text_message("user", "Look up patient P001")
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_input_without_user_message_is_unchanged(span_type: type[WorkflowSpan] | type[AgentSpan]) -> None:
+    # Given: a state container with no user message to anchor the current turn on
+    ai = {"role": "assistant", "content": "Earlier reply"}
+    tool_response = {"role": "tool", "content": "result", "tool_call_id": "call-1"}
+    span = _orchestration_span(span_type, input=json.dumps({"messages": [ai, tool_response]}))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: nothing is dropped from the input
+    assert [message["role"] for message in json.loads(attrs["gen_ai.input.messages"])] == ["assistant", "tool"]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_input_trim_keeps_output_history_dedup(span_type: type[WorkflowSpan] | type[AgentSpan]) -> None:
+    # Given: a multi-turn input and an output that echoes the full input history before the new reply
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "What is Lisinopril?"}
+    final = {"role": "assistant", "content": "A blood pressure medication."}
+    span = _orchestration_span(
+        span_type,
+        input=json.dumps({"messages": [user1, ai1, user2]}),
+        output=json.dumps({"messages": [user1, ai1, user2, final]}),
+    )
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: the input is trimmed to the current turn and the output still removes the full echoed history
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "What is Lisinopril?")]
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "A blood pressure medication.", finish_reason="unknown")
+    ]
+
+
+def test_orchestration_input_partial_update_container_is_unchanged() -> None:
+    # Given: a LangGraph partial update (not the full state), which only carries newly produced messages
+    user1 = {"role": "user", "content": "Hello"}
+    user2 = {"role": "user", "content": "Second question"}
+    span = AgentSpan(
+        name="Agent", agent_type=AgentType.default, input=json.dumps({"update": {"messages": [user1, user2]}})
+    )
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: the update is exported as is
+    assert json.loads(attrs["gen_ai.input.messages"]) == [
+        _text_message("user", "Hello"),
+        _text_message("user", "Second question"),
+    ]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_bare_message_list_input_keeps_only_current_turn(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: an agent whose input is the conversation as a bare message list (the LangChain agent middleware shape)
+    user1 = {"role": "user", "content": "What is the weather in Paris?"}
+    ai1 = {"role": "assistant", "content": "It is 72 degrees."}
+    user2 = {"role": "user", "content": "And the AAPL stock price?"}
+    ai2 = {"role": "assistant", "content": "It is 178.50 USD."}
+    user3 = {"role": "user", "content": "Remind me of the Paris weather"}
+    span = _orchestration_span(span_type, input=json.dumps([user1, ai1, user2, ai2, user3]))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: only the current user turn is exported as input
+    assert json.loads(attrs["gen_ai.input.messages"]) == [_text_message("user", "Remind me of the Paris weather")]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_bare_message_list_input_keeps_tool_loop_of_current_turn(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: a bare message list holding an earlier turn plus the current turn's tool call and tool response
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "Look up patient P001"}
+    tool_call = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "call-1", "function": {"name": "get_patient_info", "arguments": '{"id":"P001"}'}}],
+    }
+    tool_response = {"role": "tool", "content": "George Rivera", "tool_call_id": "call-1"}
+    span = _orchestration_span(span_type, input=json.dumps([user1, ai1, user2, tool_call, tool_response]))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: the input starts at the current user turn and keeps its tool call and tool response
+    input_messages = json.loads(attrs["gen_ai.input.messages"])
+    assert [message["role"] for message in input_messages] == ["user", "assistant", "tool"]
+    assert input_messages[0] == _text_message("user", "Look up patient P001")
+
+
+@pytest.mark.parametrize(
+    "messages",
+    [
+        pytest.param([{"role": "user", "content": "Only question"}], id="single_user_turn"),
+        pytest.param(
+            [{"role": "assistant", "content": "Earlier reply"}, {"role": "tool", "content": "r", "tool_call_id": "c"}],
+            id="no_user_message",
+        ),
+    ],
+)
+def test_orchestration_bare_message_list_input_without_earlier_turns_is_unchanged(
+    messages: list[dict[str, Any]],
+) -> None:
+    # Given: a bare message list with a single user turn, or with no user message to anchor the current turn on
+    span = AgentSpan(name="Agent", agent_type=AgentType.default, input=json.dumps(messages))
+
+    # When: the orchestration content is converted
+    attrs = build_span_attributes(span)
+
+    # Then: nothing is dropped from the input
+    assert [message["role"] for message in json.loads(attrs["gen_ai.input.messages"])] == [
+        message["role"] for message in messages
+    ]
+
+
 @pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
 def test_orchestration_full_history_keeps_last_terminal_message(
     span_type: type[WorkflowSpan] | type[AgentSpan],
