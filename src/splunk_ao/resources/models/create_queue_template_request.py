@@ -72,6 +72,7 @@ class CreateQueueTemplateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -89,6 +90,7 @@ class CreateQueueTemplateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         copy_from_queue_id = _parse_copy_from_queue_id(d.pop("copy_from_queue_id", UNSET))

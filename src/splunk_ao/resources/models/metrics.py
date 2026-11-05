@@ -23,6 +23,7 @@ class Metrics:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         duration_ns: int | None | Unset
         if isinstance(self.duration_ns, Unset):
             duration_ns = UNSET
@@ -46,6 +47,7 @@ class Metrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         duration_ns = _parse_duration_ns(d.pop("duration_ns", UNSET))

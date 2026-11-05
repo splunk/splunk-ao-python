@@ -24,6 +24,7 @@ class ProjectUpdate:
     description: None | str | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
+
         name: None | str | Unset
         if isinstance(self.name, Unset):
             name = UNSET
@@ -66,6 +67,7 @@ class ProjectUpdate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
@@ -75,6 +77,7 @@ class ProjectUpdate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -92,6 +95,7 @@ class ProjectUpdate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))

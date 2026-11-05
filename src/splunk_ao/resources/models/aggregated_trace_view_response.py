@@ -91,6 +91,7 @@ class AggregatedTraceViewResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -108,6 +109,7 @@ class AggregatedTraceViewResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()

@@ -39,6 +39,7 @@ class LlmMetrics:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         duration_ns: int | None | Unset
         if isinstance(self.duration_ns, Unset):
             duration_ns = UNSET
@@ -126,6 +127,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         duration_ns = _parse_duration_ns(d.pop("duration_ns", UNSET))
@@ -135,6 +137,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_input_tokens = _parse_num_input_tokens(d.pop("num_input_tokens", UNSET))
@@ -144,6 +147,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_output_tokens = _parse_num_output_tokens(d.pop("num_output_tokens", UNSET))
@@ -153,6 +157,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_total_tokens = _parse_num_total_tokens(d.pop("num_total_tokens", UNSET))
@@ -162,6 +167,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         time_to_first_token_ns = _parse_time_to_first_token_ns(d.pop("time_to_first_token_ns", UNSET))
@@ -171,6 +177,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_image_input_tokens = _parse_num_image_input_tokens(d.pop("num_image_input_tokens", UNSET))
@@ -180,6 +187,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_audio_input_tokens = _parse_num_audio_input_tokens(d.pop("num_audio_input_tokens", UNSET))
@@ -189,6 +197,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_audio_output_tokens = _parse_num_audio_output_tokens(d.pop("num_audio_output_tokens", UNSET))
@@ -198,6 +207,7 @@ class LlmMetrics:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_image_output_tokens = _parse_num_image_output_tokens(d.pop("num_image_output_tokens", UNSET))

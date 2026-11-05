@@ -85,6 +85,7 @@ class DatasetCopyRecordData:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
@@ -94,6 +95,7 @@ class DatasetCopyRecordData:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         queue_id = _parse_queue_id(d.pop("queue_id", UNSET))

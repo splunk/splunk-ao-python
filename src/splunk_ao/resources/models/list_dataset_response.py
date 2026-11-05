@@ -85,6 +85,7 @@ class ListDatasetResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

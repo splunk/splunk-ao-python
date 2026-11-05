@@ -57,6 +57,7 @@ class Segment:
         end = d.pop("end")
 
         def _parse_value(data: object) -> float | int | str:
+
             return cast(float | int | str, data)
 
         value = _parse_value(d.pop("value"))
@@ -66,6 +67,7 @@ class Segment:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         prob = _parse_prob(d.pop("prob", UNSET))

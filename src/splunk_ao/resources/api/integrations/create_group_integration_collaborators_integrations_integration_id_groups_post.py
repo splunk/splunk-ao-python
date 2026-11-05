@@ -49,6 +49,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
+
         for response_200_item_data in _response_200:
             response_200_item = GroupCollaborator.from_dict(response_200_item_data)
 

@@ -44,6 +44,7 @@ class AggregatedTraceViewNodeMetrics:
         for prop_name, prop_dict in d.items():
 
             def _parse_additional_property(data: object) -> CategoricalMetricInfo | SystemMetricInfo:
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

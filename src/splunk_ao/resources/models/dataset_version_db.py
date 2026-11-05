@@ -109,6 +109,7 @@ class DatasetVersionDB:
         def _parse_name(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         name = _parse_name(d.pop("name"))
@@ -118,6 +119,7 @@ class DatasetVersionDB:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

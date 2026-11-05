@@ -24,7 +24,7 @@ class SystemMetricInfo:
         label (str): Human-readable display name for the metric
         aggregation_type (Literal['numeric'] | Unset): Discriminator: numeric metrics aggregated via stats/histogram
             Default: 'numeric'.
-        unit (DataUnit | None | Unset): Unit of measurement, if any
+        unit (DataUnit | None | str | Unset): Unit of measurement, if any
         values (list[float] | Unset): Raw metric values used to compute statistics and histograms
         mean (float | None | Unset): Arithmetic mean of the metric values
         median (float | None | Unset): Median (50th percentile) of the metric values
@@ -40,7 +40,7 @@ class SystemMetricInfo:
     name: str
     label: str
     aggregation_type: Literal["numeric"] | Unset = "numeric"
-    unit: DataUnit | None | Unset = UNSET
+    unit: DataUnit | None | str | Unset = UNSET
     values: list[float] | Unset = UNSET
     mean: float | None | Unset = UNSET
     median: float | None | Unset = UNSET
@@ -173,11 +173,12 @@ class SystemMetricInfo:
         if aggregation_type != "numeric" and not isinstance(aggregation_type, Unset):
             raise ValueError(f"aggregation_type must match const 'numeric', got '{aggregation_type}'")
 
-        def _parse_unit(data: object) -> DataUnit | None | Unset:
+        def _parse_unit(data: object) -> DataUnit | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -186,7 +187,9 @@ class SystemMetricInfo:
                 return unit_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataUnit | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for unit")
+            return cast(DataUnit | None | str | Unset, data)
 
         unit = _parse_unit(d.pop("unit", UNSET))
 
@@ -197,6 +200,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         mean = _parse_mean(d.pop("mean", UNSET))
@@ -206,6 +210,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         median = _parse_median(d.pop("median", UNSET))
@@ -215,6 +220,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p5 = _parse_p5(d.pop("p5", UNSET))
@@ -224,6 +230,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p25 = _parse_p25(d.pop("p25", UNSET))
@@ -233,6 +240,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p75 = _parse_p75(d.pop("p75", UNSET))
@@ -242,6 +250,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p95 = _parse_p95(d.pop("p95", UNSET))
@@ -251,6 +260,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         min_ = _parse_min_(d.pop("min", UNSET))
@@ -260,6 +270,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         max_ = _parse_max_(d.pop("max", UNSET))
@@ -269,6 +280,7 @@ class SystemMetricInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

@@ -22,23 +22,23 @@ class ModelProperties:
         alias (str): Galileo model identifier used in settings and API requests to select this model.
         name (str): Provider model identifier used to match the model to its configured provider deployment or profile.
         display_name (str): Human-readable model name shown in the UI.
-        input_modalities (list[ContentModality]):
-        lifecycle_state (ModelLifecycleState | Unset):
+        input_modalities (list[ContentModality | str]):
+        lifecycle_state (ModelLifecycleState | str | Unset):
         replacement_alias (None | str | Unset):
         deprecation_date (datetime.date | None | Unset):
         retirement_date (datetime.date | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | Unset):
     """
 
     alias: str
     name: str
     display_name: str
-    input_modalities: list[ContentModality]
-    lifecycle_state: ModelLifecycleState | Unset = UNSET
+    input_modalities: list[ContentModality | str]
+    lifecycle_state: ModelLifecycleState | str | Unset = UNSET
     replacement_alias: None | str | Unset = UNSET
     deprecation_date: datetime.date | None | Unset = UNSET
     retirement_date: datetime.date | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,14 +48,25 @@ class ModelProperties:
 
         display_name = self.display_name
 
+        if not isinstance(self.input_modalities, list):
+            raise TypeError("Unexpected value type for input_modalities")
+
         input_modalities = []
         for input_modalities_item_data in self.input_modalities:
-            input_modalities_item = input_modalities_item_data.value
+            input_modalities_item: str
+            if isinstance(input_modalities_item_data, ContentModality):
+                input_modalities_item = input_modalities_item_data.value
+            else:
+                input_modalities_item = input_modalities_item_data
             input_modalities.append(input_modalities_item)
 
-        lifecycle_state: str | Unset = UNSET
-        if not isinstance(self.lifecycle_state, Unset):
+        lifecycle_state: str | Unset
+        if isinstance(self.lifecycle_state, Unset):
+            lifecycle_state = UNSET
+        elif isinstance(self.lifecycle_state, ModelLifecycleState):
             lifecycle_state = self.lifecycle_state.value
+        else:
+            lifecycle_state = self.lifecycle_state
 
         replacement_alias: None | str | Unset
         if isinstance(self.replacement_alias, Unset):
@@ -81,9 +92,16 @@ class ModelProperties:
 
         multimodal_capabilities: list[str] | Unset = UNSET
         if not isinstance(self.multimodal_capabilities, Unset):
+            if not isinstance(self.multimodal_capabilities, list):
+                raise TypeError("Unexpected value type for multimodal_capabilities")
+
             multimodal_capabilities = []
             for multimodal_capabilities_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_item = multimodal_capabilities_item_data.value
+                multimodal_capabilities_item: str
+                if isinstance(multimodal_capabilities_item_data, MultimodalCapability):
+                    multimodal_capabilities_item = multimodal_capabilities_item_data.value
+                else:
+                    multimodal_capabilities_item = multimodal_capabilities_item_data
                 multimodal_capabilities.append(multimodal_capabilities_item)
 
         field_dict: dict[str, Any] = {}
@@ -115,23 +133,53 @@ class ModelProperties:
 
         input_modalities = []
         _input_modalities = d.pop("input_modalities")
+        if not isinstance(_input_modalities, list):
+            raise TypeError("Unexpected value type for input_modalities")
+
         for input_modalities_item_data in _input_modalities:
-            input_modalities_item = ContentModality(input_modalities_item_data)
+
+            def _parse_input_modalities_item(data: object) -> ContentModality | str:
+
+                try:
+                    if not isinstance(data, str):
+                        raise TypeError()
+                    input_modalities_item_type_0 = ContentModality(data)
+
+                    return input_modalities_item_type_0
+                except:  # noqa: E722
+                    pass
+                if type(data) not in (str,):
+                    raise TypeError("Unexpected value type for input_modalities_item")
+                return cast(ContentModality | str, data)
+
+            input_modalities_item = _parse_input_modalities_item(input_modalities_item_data)
 
             input_modalities.append(input_modalities_item)
 
-        _lifecycle_state = d.pop("lifecycle_state", UNSET)
-        lifecycle_state: ModelLifecycleState | Unset
-        if isinstance(_lifecycle_state, Unset):
-            lifecycle_state = UNSET
-        else:
-            lifecycle_state = ModelLifecycleState(_lifecycle_state)
+        def _parse_lifecycle_state(data: object) -> ModelLifecycleState | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                lifecycle_state_type_0 = ModelLifecycleState(data)
+
+                return lifecycle_state_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for lifecycle_state")
+            return cast(ModelLifecycleState | str | Unset, data)
+
+        lifecycle_state = _parse_lifecycle_state(d.pop("lifecycle_state", UNSET))
 
         def _parse_replacement_alias(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         replacement_alias = _parse_replacement_alias(d.pop("replacement_alias", UNSET))
@@ -141,6 +189,7 @@ class ModelProperties:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -158,6 +207,7 @@ class ModelProperties:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -171,11 +221,29 @@ class ModelProperties:
         retirement_date = _parse_retirement_date(d.pop("retirement_date", UNSET))
 
         _multimodal_capabilities = d.pop("multimodal_capabilities", UNSET)
-        multimodal_capabilities: list[MultimodalCapability] | Unset = UNSET
+        multimodal_capabilities: list[MultimodalCapability | str] | Unset = UNSET
         if _multimodal_capabilities is not UNSET:
+            if not isinstance(_multimodal_capabilities, list):
+                raise TypeError("Unexpected value type for multimodal_capabilities")
+
             multimodal_capabilities = []
             for multimodal_capabilities_item_data in _multimodal_capabilities:
-                multimodal_capabilities_item = MultimodalCapability(multimodal_capabilities_item_data)
+
+                def _parse_multimodal_capabilities_item(data: object) -> MultimodalCapability | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        multimodal_capabilities_item_type_0 = MultimodalCapability(data)
+
+                        return multimodal_capabilities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for multimodal_capabilities_item")
+                    return cast(MultimodalCapability | str, data)
+
+                multimodal_capabilities_item = _parse_multimodal_capabilities_item(multimodal_capabilities_item_data)
 
                 multimodal_capabilities.append(multimodal_capabilities_item)
 

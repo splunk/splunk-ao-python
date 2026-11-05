@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,22 +18,34 @@ class ScorerInvocationConfig:
     """How the direct scorer-invoke API validates and serializes inputs.
 
     Attributes:
-        payload_format (ScorerInvocationPayloadFormat):
-        required_inputs (list[ScorerInvocationConfigRequiredInputsItem] | Unset):
+        payload_format (ScorerInvocationPayloadFormat | str):
+        required_inputs (list[ScorerInvocationConfigRequiredInputsItem | str] | Unset):
     """
 
-    payload_format: ScorerInvocationPayloadFormat
-    required_inputs: list[ScorerInvocationConfigRequiredInputsItem] | Unset = UNSET
+    payload_format: ScorerInvocationPayloadFormat | str
+    required_inputs: list[ScorerInvocationConfigRequiredInputsItem | str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        payload_format = self.payload_format.value
+
+        payload_format: str
+        if isinstance(self.payload_format, ScorerInvocationPayloadFormat):
+            payload_format = self.payload_format.value
+        else:
+            payload_format = self.payload_format
 
         required_inputs: list[str] | Unset = UNSET
         if not isinstance(self.required_inputs, Unset):
+            if not isinstance(self.required_inputs, list):
+                raise TypeError("Unexpected value type for required_inputs")
+
             required_inputs = []
             for required_inputs_item_data in self.required_inputs:
-                required_inputs_item = required_inputs_item_data.value
+                required_inputs_item: str
+                if isinstance(required_inputs_item_data, ScorerInvocationConfigRequiredInputsItem):
+                    required_inputs_item = required_inputs_item_data.value
+                else:
+                    required_inputs_item = required_inputs_item_data
                 required_inputs.append(required_inputs_item)
 
         field_dict: dict[str, Any] = {}
@@ -47,14 +59,47 @@ class ScorerInvocationConfig:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        payload_format = ScorerInvocationPayloadFormat(d.pop("payload_format"))
+
+        def _parse_payload_format(data: object) -> ScorerInvocationPayloadFormat | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                payload_format_type_0 = ScorerInvocationPayloadFormat(data)
+
+                return payload_format_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for payload_format")
+            return cast(ScorerInvocationPayloadFormat | str, data)
+
+        payload_format = _parse_payload_format(d.pop("payload_format"))
 
         _required_inputs = d.pop("required_inputs", UNSET)
-        required_inputs: list[ScorerInvocationConfigRequiredInputsItem] | Unset = UNSET
+        required_inputs: list[ScorerInvocationConfigRequiredInputsItem | str] | Unset = UNSET
         if _required_inputs is not UNSET:
+            if not isinstance(_required_inputs, list):
+                raise TypeError("Unexpected value type for required_inputs")
+
             required_inputs = []
             for required_inputs_item_data in _required_inputs:
-                required_inputs_item = ScorerInvocationConfigRequiredInputsItem(required_inputs_item_data)
+
+                def _parse_required_inputs_item(data: object) -> ScorerInvocationConfigRequiredInputsItem | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        required_inputs_item_required_inputs_item = ScorerInvocationConfigRequiredInputsItem(data)
+
+                        return required_inputs_item_required_inputs_item
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for required_inputs_item")
+                    return cast(ScorerInvocationConfigRequiredInputsItem | str, data)
+
+                required_inputs_item = _parse_required_inputs_item(required_inputs_item_data)
 
                 required_inputs.append(required_inputs_item)
 

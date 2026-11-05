@@ -79,6 +79,7 @@ class DatasetProject:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

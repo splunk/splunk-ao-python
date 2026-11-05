@@ -24,6 +24,7 @@ class ExperimentPlayground:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         playground_id: None | str | Unset
         if isinstance(self.playground_id, Unset):
             playground_id = UNSET
@@ -55,6 +56,7 @@ class ExperimentPlayground:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         playground_id = _parse_playground_id(d.pop("playground_id", UNSET))
@@ -64,6 +66,7 @@ class ExperimentPlayground:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))

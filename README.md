@@ -690,6 +690,17 @@ with splunk_ao_context(
     ...
 ```
 
+### API enum compatibility
+
+API enum fields can contain values added after your SDK version was released. Known values remain enum members.
+Unfamiliar values remain strings or integers, and generated type hints include those alternatives. Reading and
+serializing these values preserves them exactly. You can also send new enum values as their raw strings or integers
+for the service to validate. Enums with one known value remain extensible. Constants, discriminator fields, and
+explicitly closed enums retain their fixed alternatives. Array fields still require arrays.
+
+SDK operations that need a specific implementation can still reject an unsupported value. For example, evaluator
+lookup reports an unsupported scorer type and asks you to upgrade instead of guessing its implementation.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines and

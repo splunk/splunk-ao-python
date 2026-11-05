@@ -55,6 +55,7 @@ class PreviewDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

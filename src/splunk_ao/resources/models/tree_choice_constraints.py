@@ -74,11 +74,13 @@ class TreeChoiceConstraints:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 choices_tree_type_0 = []
                 _choices_tree_type_0 = data
+
                 for choices_tree_type_0_item_data in _choices_tree_type_0:
                     choices_tree_type_0_item = TreeChoiceNode.from_dict(choices_tree_type_0_item_data)
 
@@ -96,6 +98,7 @@ class TreeChoiceConstraints:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         choices_tree_yaml = _parse_choices_tree_yaml(d.pop("choices_tree_yaml", UNSET))

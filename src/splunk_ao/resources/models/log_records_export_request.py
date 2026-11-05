@@ -29,12 +29,9 @@ class LogRecordsExportRequest:
     """Request schema for exporting log records (sessions, traces, spans).
 
     Attributes:
-        root_type (RootType): The root-level type of a logged step hierarchy.
-
-            Maps fine-grained StepType values to the three top-level categories
-            used throughout the platform: session, trace, and span.
+        root_type (RootType | str):
         column_ids (list[str] | None | Unset): Column IDs to include in the export. Applies only to CSV exports.
-        export_format (LLMExportFormat | Unset):
+        export_format (LLMExportFormat | str | Unset): Export format
         redact (bool | Unset): Redact sensitive data Default: True.
         file_name (None | str | Unset): Optional filename for the exported file
         export_computed_metrics_only (bool | Unset): When true, export only enabled scorer metrics with computed values
@@ -54,9 +51,9 @@ class LogRecordsExportRequest:
             in the export. Off by default to keep payloads small for callers that don't need it. Default: False.
     """
 
-    root_type: RootType
+    root_type: RootType | str
     column_ids: list[str] | None | Unset = UNSET
-    export_format: LLMExportFormat | Unset = UNSET
+    export_format: LLMExportFormat | str | Unset = UNSET
     redact: bool | Unset = True
     file_name: None | str | Unset = UNSET
     export_computed_metrics_only: bool | Unset = False
@@ -88,7 +85,11 @@ class LogRecordsExportRequest:
         from ..models.log_records_sort_clause import LogRecordsSortClause
         from ..models.log_records_text_filter import LogRecordsTextFilter
 
-        root_type = self.root_type.value
+        root_type: str
+        if isinstance(self.root_type, RootType):
+            root_type = self.root_type.value
+        else:
+            root_type = self.root_type
 
         column_ids: list[str] | None | Unset
         if isinstance(self.column_ids, Unset):
@@ -99,9 +100,13 @@ class LogRecordsExportRequest:
         else:
             column_ids = self.column_ids
 
-        export_format: str | Unset = UNSET
-        if not isinstance(self.export_format, Unset):
+        export_format: str | Unset
+        if isinstance(self.export_format, Unset):
+            export_format = UNSET
+        elif isinstance(self.export_format, LLMExportFormat):
             export_format = self.export_format.value
+        else:
+            export_format = self.export_format
 
         redact = self.redact
 
@@ -203,13 +208,29 @@ class LogRecordsExportRequest:
         from ..models.log_records_text_filter import LogRecordsTextFilter
 
         d = dict(src_dict)
-        root_type = RootType(d.pop("root_type"))
+
+        def _parse_root_type(data: object) -> RootType | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                root_type_type_0 = RootType(data)
+
+                return root_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for root_type")
+            return cast(RootType | str, data)
+
+        root_type = _parse_root_type(d.pop("root_type"))
 
         def _parse_column_ids(data: object) -> list[str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -222,12 +243,23 @@ class LogRecordsExportRequest:
 
         column_ids = _parse_column_ids(d.pop("column_ids", UNSET))
 
-        _export_format = d.pop("export_format", UNSET)
-        export_format: LLMExportFormat | Unset
-        if isinstance(_export_format, Unset):
-            export_format = UNSET
-        else:
-            export_format = LLMExportFormat(_export_format)
+        def _parse_export_format(data: object) -> LLMExportFormat | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                export_format_type_0 = LLMExportFormat(data)
+
+                return export_format_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for export_format")
+            return cast(LLMExportFormat | str | Unset, data)
+
+        export_format = _parse_export_format(d.pop("export_format", UNSET))
 
         redact = d.pop("redact", UNSET)
 
@@ -236,6 +268,7 @@ class LogRecordsExportRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         file_name = _parse_file_name(d.pop("file_name", UNSET))
@@ -247,6 +280,7 @@ class LogRecordsExportRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -256,6 +290,7 @@ class LogRecordsExportRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -265,6 +300,7 @@ class LogRecordsExportRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
@@ -297,6 +333,7 @@ class LogRecordsExportRequest:
                     | LogRecordsNumberFilter
                     | LogRecordsTextFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -360,6 +397,7 @@ class LogRecordsExportRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

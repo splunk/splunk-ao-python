@@ -371,11 +371,13 @@ class WorkflowSpan:
         def _parse_input_(data: object) -> list[FileContentPart | TextContentPart] | list[Message] | str | Unset:
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 input_type_1 = []
                 _input_type_1 = data
+
                 for input_type_1_item_data in _input_type_1:
                     input_type_1_item = Message.from_dict(input_type_1_item_data)
 
@@ -389,9 +391,11 @@ class WorkflowSpan:
                     raise TypeError()
                 input_type_2 = []
                 _input_type_2 = data
+
                 for input_type_2_item_data in _input_type_2:
 
                     def _parse_input_type_2_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -424,11 +428,13 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 redacted_input_type_1 = []
                 _redacted_input_type_1 = data
+
                 for redacted_input_type_1_item_data in _redacted_input_type_1:
                     redacted_input_type_1_item = Message.from_dict(redacted_input_type_1_item_data)
 
@@ -442,9 +448,11 @@ class WorkflowSpan:
                     raise TypeError()
                 redacted_input_type_2 = []
                 _redacted_input_type_2 = data
+
                 for redacted_input_type_2_item_data in _redacted_input_type_2:
 
                     def _parse_redacted_input_type_2_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -477,6 +485,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -490,6 +499,7 @@ class WorkflowSpan:
                     raise TypeError()
                 output_type_2 = []
                 _output_type_2 = data
+
                 for output_type_2_item_data in _output_type_2:
                     output_type_2_item = Document.from_dict(output_type_2_item_data)
 
@@ -503,9 +513,11 @@ class WorkflowSpan:
                     raise TypeError()
                 output_type_3 = []
                 _output_type_3 = data
+
                 for output_type_3_item_data in _output_type_3:
 
                     def _parse_output_type_3_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -549,6 +561,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -562,6 +575,7 @@ class WorkflowSpan:
                     raise TypeError()
                 redacted_output_type_2 = []
                 _redacted_output_type_2 = data
+
                 for redacted_output_type_2_item_data in _redacted_output_type_2:
                     redacted_output_type_2_item = Document.from_dict(redacted_output_type_2_item_data)
 
@@ -575,9 +589,11 @@ class WorkflowSpan:
                     raise TypeError()
                 redacted_output_type_3 = []
                 _redacted_output_type_3 = data
+
                 for redacted_output_type_3_item_data in _redacted_output_type_3:
 
                     def _parse_redacted_output_type_3_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -637,6 +653,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
@@ -653,6 +670,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
@@ -662,6 +680,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
@@ -671,6 +690,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
@@ -687,6 +707,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
@@ -696,6 +717,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))
@@ -705,6 +727,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         trace_id = _parse_trace_id(d.pop("trace_id", UNSET))
@@ -714,6 +737,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
@@ -723,6 +747,7 @@ class WorkflowSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
@@ -738,6 +763,7 @@ class WorkflowSpan:
                 def _parse_spans_item(
                     data: object,
                 ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()

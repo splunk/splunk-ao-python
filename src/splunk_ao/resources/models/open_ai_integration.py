@@ -87,6 +87,7 @@ class OpenAIIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         organization_id = _parse_organization_id(d.pop("organization_id", UNSET))
@@ -96,6 +97,7 @@ class OpenAIIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
@@ -113,6 +115,7 @@ class OpenAIIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

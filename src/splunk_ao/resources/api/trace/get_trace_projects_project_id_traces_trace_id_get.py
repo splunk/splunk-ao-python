@@ -51,6 +51,7 @@ def _parse_response(
     if response.status_code == 200:
 
         def _parse_response_200(data: object) -> ExtendedTraceRecordWithChildren | StubTraceRecord:
+
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")

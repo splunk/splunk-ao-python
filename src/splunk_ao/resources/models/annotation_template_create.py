@@ -114,6 +114,7 @@ class AnnotationTemplateCreate:
             | TextConstraints
             | TreeChoiceConstraints
         ):
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -177,6 +178,7 @@ class AnnotationTemplateCreate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         criteria = _parse_criteria(d.pop("criteria", UNSET))

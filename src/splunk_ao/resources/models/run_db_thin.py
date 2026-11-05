@@ -35,7 +35,7 @@ class RunDBThin:
         dataset_hash (None | str | Unset):
         dataset_version_id (None | str | Unset):
         prompt_template_version_id (None | str | Unset):
-        task_type (None | TaskType | Unset):
+        task_type (int | None | TaskType | Unset):
         run_tags (list[RunTagDB] | Unset):
         example_content_id (None | str | Unset):
         logged_splits (list[str] | Unset):
@@ -55,7 +55,7 @@ class RunDBThin:
     dataset_hash: None | str | Unset = UNSET
     dataset_version_id: None | str | Unset = UNSET
     prompt_template_version_id: None | str | Unset = UNSET
-    task_type: None | TaskType | Unset = UNSET
+    task_type: int | None | TaskType | Unset = UNSET
     run_tags: list[RunTagDB] | Unset = UNSET
     example_content_id: None | str | Unset = UNSET
     logged_splits: list[str] | Unset = UNSET
@@ -202,6 +202,7 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
@@ -211,6 +212,7 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
@@ -220,6 +222,7 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_hash = _parse_dataset_hash(d.pop("dataset_hash", UNSET))
@@ -229,6 +232,7 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_version_id = _parse_dataset_version_id(d.pop("dataset_version_id", UNSET))
@@ -238,15 +242,17 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt_template_version_id = _parse_prompt_template_version_id(d.pop("prompt_template_version_id", UNSET))
 
-        def _parse_task_type(data: object) -> None | TaskType | Unset:
+        def _parse_task_type(data: object) -> int | None | TaskType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, int):
                     raise TypeError()
@@ -255,7 +261,9 @@ class RunDBThin:
                 return task_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | TaskType | Unset, data)
+            if type(data) not in (int,):
+                raise TypeError("Unexpected value type for task_type")
+            return cast(int | None | TaskType | Unset, data)
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 
@@ -273,6 +281,7 @@ class RunDBThin:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         example_content_id = _parse_example_content_id(d.pop("example_content_id", UNSET))

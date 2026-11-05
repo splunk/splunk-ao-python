@@ -50,6 +50,7 @@ class MetricRollUpRollUpMetrics:
         for prop_name, prop_dict in d.items():
 
             def _parse_additional_property(data: object) -> float | MetricRollUpRollUpMetricsAdditionalPropertyType1:
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

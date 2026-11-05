@@ -46,9 +46,9 @@ class RuntimeScorerConfig:
             scorer_version_id (None | str | Unset):
             filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset): List of filters to apply to the
                 scorer.
-            roll_up_method (None | RollUpMethodDisplayOptions | Unset):
+            roll_up_method (None | RollUpMethodDisplayOptions | str | Unset):
             name (None | str | Unset):
-            scorer_type (None | ScorerTypes | Unset):
+            scorer_type (None | ScorerTypes | str | Unset):
             model_name (None | str | Unset):
             num_judges (int | None | Unset):
             scorer_version (BaseScorerVersionDB | None | Unset): ScorerVersion to use for this scorer. If not provided, the
@@ -57,15 +57,15 @@ class RuntimeScorerConfig:
                 to llm/chat.
             cot_enabled (bool | None | Unset): Whether to enable chain of thought for this scorer. Defaults to False for llm
                 scorers.
-            output_type (None | OutputTypeEnum | Unset): What type of output to use for model-based scorers (boolean,
+            output_type (None | OutputTypeEnum | str | Unset): What type of output to use for model-based scorers (boolean,
                 categorical, etc.).
-            input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
+            input_type (InputTypeEnum | None | str | Unset): What type of input to use for model-based scorers
                 (sessions_normalized, trace_io_only, etc..).
-            multimodal_capabilities (list[MultimodalCapability] | None | Unset): Multimodal capabilities which this scorer
-                can utilize in its evaluation.
+            multimodal_capabilities (list[MultimodalCapability | str] | None | Unset): Multimodal capabilities which this
+                scorer can utilize in its evaluation.
             roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
             score_type (None | str | Unset): Return type of code scorers (e.g., 'bool', 'int', 'float', 'str').
-            model_type (ModelType | None | Unset):
+            model_type (ModelType | None | str | Unset):
             invocation (None | ScorerInvocationConfig | Unset): Trusted intrinsic input requirements for synchronous direct
                 invocation.
             chainpoll_template (ChainPollTemplate | None | Unset):
@@ -77,7 +77,7 @@ class RuntimeScorerConfig:
             ground_truth (bool | Unset):  Default: False.
             requires_tools_in_llm_span (bool | Unset):  Default: False.
             default_model_alias (None | str | Unset):
-            roll_up_strategy (None | RollUpStrategy | Unset):
+            roll_up_strategy (None | RollUpStrategy | str | Unset):
             required_scorers (list[str] | None | Unset):
             required_metric_ids (list[str] | None | Unset):
             instruction (None | str | Unset):
@@ -86,8 +86,8 @@ class RuntimeScorerConfig:
             prompt (None | str | Unset):
             lora_task_id (int | None | Unset):
             lora_weights_path (None | str | Unset):
-            luna_input_type (LunaInputTypeEnum | None | Unset):
-            luna_output_type (LunaOutputTypeEnum | None | Unset):
+            luna_input_type (LunaInputTypeEnum | None | str | Unset):
+            luna_output_type (LunaOutputTypeEnum | None | str | Unset):
             class_name_to_vocab_ix (None | RuntimeScorerConfigClassNameToVocabIxType0 |
                 RuntimeScorerConfigClassNameToVocabIxType1 | Unset):
             decision_question (None | str | Unset):
@@ -98,20 +98,20 @@ class RuntimeScorerConfig:
     id: str
     scorer_version_id: None | str | Unset = UNSET
     filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
-    roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
+    roll_up_method: None | RollUpMethodDisplayOptions | str | Unset = UNSET
     name: None | str | Unset = UNSET
-    scorer_type: None | ScorerTypes | Unset = UNSET
+    scorer_type: None | ScorerTypes | str | Unset = UNSET
     model_name: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
     scorer_version: BaseScorerVersionDB | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
     score_type: None | str | Unset = UNSET
-    model_type: ModelType | None | Unset = UNSET
+    model_type: ModelType | None | str | Unset = UNSET
     invocation: None | ScorerInvocationConfig | Unset = UNSET
     chainpoll_template: ChainPollTemplate | None | Unset = UNSET
     metric_name: None | str | Unset = UNSET
@@ -122,7 +122,7 @@ class RuntimeScorerConfig:
     ground_truth: bool | Unset = False
     requires_tools_in_llm_span: bool | Unset = False
     default_model_alias: None | str | Unset = UNSET
-    roll_up_strategy: None | RollUpStrategy | Unset = UNSET
+    roll_up_strategy: None | RollUpStrategy | str | Unset = UNSET
     required_scorers: list[str] | None | Unset = UNSET
     required_metric_ids: list[str] | None | Unset = UNSET
     instruction: None | str | Unset = UNSET
@@ -131,8 +131,8 @@ class RuntimeScorerConfig:
     prompt: None | str | Unset = UNSET
     lora_task_id: int | None | Unset = UNSET
     lora_weights_path: None | str | Unset = UNSET
-    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
-    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    luna_input_type: LunaInputTypeEnum | None | str | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | str | Unset = UNSET
     class_name_to_vocab_ix: (
         None | RuntimeScorerConfigClassNameToVocabIxType0 | RuntimeScorerConfigClassNameToVocabIxType1 | Unset
     ) = UNSET
@@ -257,13 +257,27 @@ class RuntimeScorerConfig:
         else:
             input_type = self.input_type
 
+        if (
+            not isinstance(self.multimodal_capabilities, list)
+            and self.multimodal_capabilities is not None
+            and not isinstance(self.multimodal_capabilities, Unset)
+        ):
+            raise TypeError("Unexpected value type for multimodal_capabilities")
+
         multimodal_capabilities: list[str] | None | Unset
         if isinstance(self.multimodal_capabilities, Unset):
             multimodal_capabilities = UNSET
         elif isinstance(self.multimodal_capabilities, list):
+            if not isinstance(self.multimodal_capabilities, list):
+                raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
             multimodal_capabilities = []
             for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities_type_0_item: str
+                if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                else:
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
                 multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
         else:
@@ -573,6 +587,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_version_id = _parse_scorer_version_id(d.pop("scorer_version_id", UNSET))
@@ -582,14 +597,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 filters_type_0 = []
                 _filters_type_0 = data
+
                 for filters_type_0_item_data in _filters_type_0:
 
                     def _parse_filters_type_0_item(data: object) -> MetadataFilter | ModalityFilter | NodeNameFilter:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -623,11 +641,12 @@ class RuntimeScorerConfig:
 
         filters = _parse_filters(d.pop("filters", UNSET))
 
-        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | Unset:
+        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -636,7 +655,9 @@ class RuntimeScorerConfig:
                 return roll_up_method_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpMethodDisplayOptions | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_method")
+            return cast(None | RollUpMethodDisplayOptions | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 
@@ -645,15 +666,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_scorer_type(data: object) -> None | ScorerTypes | Unset:
+        def _parse_scorer_type(data: object) -> None | ScorerTypes | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -662,7 +685,9 @@ class RuntimeScorerConfig:
                 return scorer_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerTypes | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(None | ScorerTypes | str | Unset, data)
 
         scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
 
@@ -671,6 +696,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
@@ -680,6 +706,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -689,6 +716,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -706,6 +734,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -723,15 +752,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -740,15 +771,18 @@ class RuntimeScorerConfig:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -757,29 +791,54 @@ class RuntimeScorerConfig:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+            if not isinstance(data, list) and data is not None and not isinstance(data, Unset):
+                raise TypeError("Unexpected value type for multimodal_capabilities")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 multimodal_capabilities_type_0 = []
                 _multimodal_capabilities_type_0 = data
+                if not isinstance(_multimodal_capabilities_type_0, list):
+                    raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
                 for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
-                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    def _parse_multimodal_capabilities_type_0_item(data: object) -> MultimodalCapability | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            multimodal_capabilities_type_0_item_type_0 = MultimodalCapability(data)
+
+                            return multimodal_capabilities_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for multimodal_capabilities_type_0_item")
+                        return cast(MultimodalCapability | str, data)
+
+                    multimodal_capabilities_type_0_item = _parse_multimodal_capabilities_type_0_item(
+                        multimodal_capabilities_type_0_item_data
+                    )
 
                     multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
 
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(list[MultimodalCapability | str] | None | Unset, data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
@@ -788,6 +847,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -805,15 +865,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         score_type = _parse_score_type(d.pop("score_type", UNSET))
 
-        def _parse_model_type(data: object) -> ModelType | None | Unset:
+        def _parse_model_type(data: object) -> ModelType | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -822,7 +884,9 @@ class RuntimeScorerConfig:
                 return model_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(ModelType | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for model_type")
+            return cast(ModelType | None | str | Unset, data)
 
         model_type = _parse_model_type(d.pop("model_type", UNSET))
 
@@ -831,6 +895,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -848,6 +913,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -865,6 +931,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_name = _parse_metric_name(d.pop("metric_name", UNSET))
@@ -874,6 +941,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_path_name = _parse_scorer_path_name(d.pop("scorer_path_name", UNSET))
@@ -883,6 +951,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_code = _parse_user_code(d.pop("user_code", UNSET))
@@ -892,6 +961,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         registered_scorer_id = _parse_registered_scorer_id(d.pop("registered_scorer_id", UNSET))
@@ -901,6 +971,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_alias = _parse_model_alias(d.pop("model_alias", UNSET))
@@ -914,15 +985,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         default_model_alias = _parse_default_model_alias(d.pop("default_model_alias", UNSET))
 
-        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | Unset:
+        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -931,7 +1004,9 @@ class RuntimeScorerConfig:
                 return roll_up_strategy_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpStrategy | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_strategy")
+            return cast(None | RollUpStrategy | str | Unset, data)
 
         roll_up_strategy = _parse_roll_up_strategy(d.pop("roll_up_strategy", UNSET))
 
@@ -940,6 +1015,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -957,6 +1033,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -974,6 +1051,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         instruction = _parse_instruction(d.pop("instruction", UNSET))
@@ -983,6 +1061,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         adapter = _parse_adapter(d.pop("adapter", UNSET))
@@ -994,6 +1073,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt = _parse_prompt(d.pop("prompt", UNSET))
@@ -1003,6 +1083,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         lora_task_id = _parse_lora_task_id(d.pop("lora_task_id", UNSET))
@@ -1012,15 +1093,17 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -1029,15 +1112,18 @@ class RuntimeScorerConfig:
                 return luna_input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaInputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_input_type")
+            return cast(LunaInputTypeEnum | None | str | Unset, data)
 
         luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
 
-        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -1046,7 +1132,9 @@ class RuntimeScorerConfig:
                 return luna_output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaOutputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_output_type")
+            return cast(LunaOutputTypeEnum | None | str | Unset, data)
 
         luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
 
@@ -1057,6 +1145,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -1085,6 +1174,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         decision_question = _parse_decision_question(d.pop("decision_question", UNSET))
@@ -1096,6 +1186,7 @@ class RuntimeScorerConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -1109,6 +1200,7 @@ class RuntimeScorerConfig:
                     raise TypeError()
                 decision_answer_options_type_1 = []
                 _decision_answer_options_type_1 = data
+
                 for decision_answer_options_type_1_item_data in _decision_answer_options_type_1:
                     decision_answer_options_type_1_item = DecisionChoice.from_dict(
                         decision_answer_options_type_1_item_data
@@ -1124,6 +1216,7 @@ class RuntimeScorerConfig:
                     raise TypeError()
                 decision_answer_options_type_2 = []
                 _decision_answer_options_type_2 = data
+
                 for decision_answer_options_type_2_item_data in _decision_answer_options_type_2:
                     decision_answer_options_type_2_item = DecisionLevel.from_dict(
                         decision_answer_options_type_2_item_data

@@ -32,6 +32,7 @@ class DocumentMetadata:
         for prop_name, prop_dict in d.items():
 
             def _parse_additional_property(data: object) -> bool | float | int | str:
+
                 return cast(bool | float | int | str, data)
 
             additional_property = _parse_additional_property(prop_dict)

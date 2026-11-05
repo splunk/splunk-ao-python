@@ -34,7 +34,7 @@ class ProjectItem:
         num_experiments (int | None | Unset): Count of runs with task_type=16
         created_by_user (None | Unset | UserInfo):
         description (None | str | Unset):
-        labels (list[ProjectLabels] | Unset): List of labels associated with the project.
+        labels (list[ProjectLabels | str] | Unset): List of labels associated with the project.
         log_streams (list[LogStreamInfo] | None | Unset): Log streams for this project. Only populated when
             include_logstreams=True.
     """
@@ -49,7 +49,7 @@ class ProjectItem:
     num_experiments: int | None | Unset = UNSET
     created_by_user: None | Unset | UserInfo = UNSET
     description: None | str | Unset = UNSET
-    labels: list[ProjectLabels] | Unset = UNSET
+    labels: list[ProjectLabels | str] | Unset = UNSET
     log_streams: list[LogStreamInfo] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -101,9 +101,16 @@ class ProjectItem:
 
         labels: list[str] | Unset = UNSET
         if not isinstance(self.labels, Unset):
+            if not isinstance(self.labels, list):
+                raise TypeError("Unexpected value type for labels")
+
             labels = []
             for labels_item_data in self.labels:
-                labels_item = labels_item_data.value
+                labels_item: str
+                if isinstance(labels_item_data, ProjectLabels):
+                    labels_item = labels_item_data.value
+                else:
+                    labels_item = labels_item_data
                 labels.append(labels_item)
 
         log_streams: list[dict[str, Any]] | None | Unset
@@ -171,6 +178,7 @@ class ProjectItem:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_logstreams = _parse_num_logstreams(d.pop("num_logstreams", UNSET))
@@ -180,6 +188,7 @@ class ProjectItem:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_experiments = _parse_num_experiments(d.pop("num_experiments", UNSET))
@@ -189,6 +198,7 @@ class ProjectItem:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -206,16 +216,35 @@ class ProjectItem:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
 
         _labels = d.pop("labels", UNSET)
-        labels: list[ProjectLabels] | Unset = UNSET
+        labels: list[ProjectLabels | str] | Unset = UNSET
         if _labels is not UNSET:
+            if not isinstance(_labels, list):
+                raise TypeError("Unexpected value type for labels")
+
             labels = []
             for labels_item_data in _labels:
-                labels_item = ProjectLabels(labels_item_data)
+
+                def _parse_labels_item(data: object) -> ProjectLabels | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        labels_item_type_0 = ProjectLabels(data)
+
+                        return labels_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for labels_item")
+                    return cast(ProjectLabels | str, data)
+
+                labels_item = _parse_labels_item(labels_item_data)
 
                 labels.append(labels_item)
 
@@ -224,11 +253,13 @@ class ProjectItem:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 log_streams_type_0 = []
                 _log_streams_type_0 = data
+
                 for log_streams_type_0_item_data in _log_streams_type_0:
                     log_streams_type_0_item = LogStreamInfo.from_dict(log_streams_type_0_item_data)
 

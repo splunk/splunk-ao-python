@@ -98,6 +98,7 @@ class UpdateDatasetContentRequest:
         d = dict(src_dict)
         edits = []
         _edits = d.pop("edits")
+
         for edits_item_data in _edits:
 
             def _parse_edits_item(
@@ -112,6 +113,7 @@ class UpdateDatasetContentRequest:
                 | DatasetRenameColumn
                 | DatasetUpdateRow
             ):
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

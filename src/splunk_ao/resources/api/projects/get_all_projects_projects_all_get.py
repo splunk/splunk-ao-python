@@ -23,7 +23,7 @@ from ...models.project_type import ProjectType
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(*, type_: None | ProjectType | Unset = UNSET) -> dict[str, Any]:
+def _get_kwargs(*, type_: None | ProjectType | str | Unset = UNSET) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
@@ -56,6 +56,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
+
         for response_200_item_data in _response_200:
             response_200_item = ProjectDBThin.from_dict(response_200_item_data)
 
@@ -98,7 +99,7 @@ def _build_response(
 
 
 def sync_detailed(
-    *, client: ApiClient, type_: None | ProjectType | Unset = UNSET
+    *, client: ApiClient, type_: None | ProjectType | str | Unset = UNSET
 ) -> Response[HTTPValidationError | list[ProjectDBThin]]:
     """Get All Projects
 
@@ -109,7 +110,7 @@ def sync_detailed(
     DEPRECATED in favor of `get_projects_paginated`.
 
     Args:
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -127,7 +128,7 @@ def sync_detailed(
 
 
 def sync(
-    *, client: ApiClient, type_: None | ProjectType | Unset = UNSET
+    *, client: ApiClient, type_: None | ProjectType | str | Unset = UNSET
 ) -> Optional[HTTPValidationError | list[ProjectDBThin]]:
     """Get All Projects
 
@@ -138,7 +139,7 @@ def sync(
     DEPRECATED in favor of `get_projects_paginated`.
 
     Args:
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +153,7 @@ def sync(
 
 
 async def asyncio_detailed(
-    *, client: ApiClient, type_: None | ProjectType | Unset = UNSET
+    *, client: ApiClient, type_: None | ProjectType | str | Unset = UNSET
 ) -> Response[HTTPValidationError | list[ProjectDBThin]]:
     """Get All Projects
 
@@ -163,7 +164,7 @@ async def asyncio_detailed(
     DEPRECATED in favor of `get_projects_paginated`.
 
     Args:
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -181,7 +182,7 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    *, client: ApiClient, type_: None | ProjectType | Unset = UNSET
+    *, client: ApiClient, type_: None | ProjectType | str | Unset = UNSET
 ) -> Optional[HTTPValidationError | list[ProjectDBThin]]:
     """Get All Projects
 
@@ -192,7 +193,7 @@ async def asyncio(
     DEPRECATED in favor of `get_projects_paginated`.
 
     Args:
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

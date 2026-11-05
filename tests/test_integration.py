@@ -28,12 +28,12 @@ INTEGRATION_TYPES = [
 
 
 def create_mock_integration(
-    provider: IntegrationProvider, is_selected: bool = False, name: str | None = None
+    provider: IntegrationProvider | str, is_selected: bool = False, name: str | None = None
 ) -> IntegrationDB:
     """Create a mock integration DB response."""
     mock = MagicMock(spec=IntegrationDB)
     mock.id = str(uuid4())
-    mock.name = name or provider.value
+    mock.name = name or str(provider)
     mock.provider = provider
     mock.created_at = datetime.now()
     mock.updated_at = datetime.now()
@@ -263,14 +263,15 @@ class TestIntegrationToProvider:
         assert provider.id == str(mock_integration.id)
         assert provider.is_synced()
 
-    def test_creates_generic_provider_for_unknown_type(self):
+    @pytest.mark.parametrize("provider_name", [IntegrationProvider.MISTRAL, "future_provider"])
+    def test_creates_generic_provider_for_unknown_type(self, provider_name):
         """_to_provider() creates GenericProvider for unsupported types."""
-        mock_integration = create_mock_integration(IntegrationProvider.MISTRAL)
+        mock_integration = create_mock_integration(provider_name)
 
         provider = Integration._to_provider(mock_integration)
 
         assert isinstance(provider, Provider)
-        assert provider.name == "mistral"
+        assert provider.name == str(provider_name)
         assert provider.is_synced()
 
 
@@ -375,10 +376,11 @@ class TestProviderModels:
 
     @patch("splunk_ao.provider.SplunkAOConfig.get")
     @patch("splunk_ao.provider.get_available_models_llm_integrations_llm_integration_models_get")
-    def test_models_returns_model_list(self, mock_get_models, mock_config):
+    @pytest.mark.parametrize("provider_name", [IntegrationProvider.OPENAI, "future_provider"])
+    def test_models_returns_model_list(self, mock_get_models, mock_config, provider_name):
         """models property returns list of Model objects."""
         # Create a synced provider
-        mock_integration = create_mock_integration(IntegrationProvider.OPENAI)
+        mock_integration = create_mock_integration(provider_name)
         provider = Integration._to_provider(mock_integration)
 
         # Mock API response with model names
@@ -394,7 +396,8 @@ class TestProviderModels:
         assert all(hasattr(model, "provider_name") for model in models)
         assert models[0].name == "gpt-4o"
         assert models[0].alias == "gpt-4o"
-        assert models[0].provider_name == "openai"
+        assert models[0].provider_name == str(provider_name)
+        assert mock_get_models.sync.call_args.kwargs["llm_integration"] == str(provider_name)
         assert str(models[0]) == "gpt-4o"
 
     @patch("splunk_ao.provider.SplunkAOConfig.get")

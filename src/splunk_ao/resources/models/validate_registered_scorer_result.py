@@ -69,6 +69,7 @@ class ValidateRegisteredScorerResult:
         d = dict(src_dict)
 
         def _parse_result(data: object) -> InvalidResult | ValidResult:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -90,6 +91,7 @@ class ValidateRegisteredScorerResult:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         task_id = _parse_task_id(d.pop("task_id", UNSET))
@@ -99,6 +101,7 @@ class ValidateRegisteredScorerResult:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_sha256 = _parse_scorer_sha256(d.pop("scorer_sha256", UNSET))

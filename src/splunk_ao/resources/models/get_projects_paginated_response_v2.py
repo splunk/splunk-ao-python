@@ -37,6 +37,7 @@ class GetProjectsPaginatedResponseV2:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         projects = []
         for projects_item_data in self.projects:
             projects_item = projects_item_data.to_dict()
@@ -77,6 +78,7 @@ class GetProjectsPaginatedResponseV2:
         d = dict(src_dict)
         projects = []
         _projects = d.pop("projects")
+
         for projects_item_data in _projects:
             projects_item = ProjectItem.from_dict(projects_item_data)
 
@@ -95,6 +97,7 @@ class GetProjectsPaginatedResponseV2:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

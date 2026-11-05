@@ -109,6 +109,7 @@ class ChainPollTemplate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_system_prompt = _parse_metric_system_prompt(d.pop("metric_system_prompt", UNSET))
@@ -118,6 +119,7 @@ class ChainPollTemplate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_description = _parse_metric_description(d.pop("metric_description", UNSET))
@@ -140,6 +142,7 @@ class ChainPollTemplate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

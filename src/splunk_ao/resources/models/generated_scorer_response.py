@@ -29,7 +29,7 @@ class GeneratedScorerResponse:
         created_by (str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        scoreable_node_types (list[NodeType] | None):
+        scoreable_node_types (list[NodeType | str] | None):
         scorer_configuration (GeneratedScorerConfiguration):
         instructions (None | str | Unset):
         user_prompt (None | str | Unset):
@@ -41,7 +41,7 @@ class GeneratedScorerResponse:
     created_by: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    scoreable_node_types: list[NodeType] | None
+    scoreable_node_types: list[NodeType | str] | None
     scorer_configuration: GeneratedScorerConfiguration
     instructions: None | str | Unset = UNSET
     user_prompt: None | str | Unset = UNSET
@@ -60,11 +60,21 @@ class GeneratedScorerResponse:
 
         updated_at = self.updated_at.isoformat()
 
+        if not isinstance(self.scoreable_node_types, list) and self.scoreable_node_types is not None:
+            raise TypeError("Unexpected value type for scoreable_node_types")
+
         scoreable_node_types: list[str] | None
         if isinstance(self.scoreable_node_types, list):
+            if not isinstance(self.scoreable_node_types, list):
+                raise TypeError("Unexpected value type for scoreable_node_types_type_0")
+
             scoreable_node_types = []
             for scoreable_node_types_type_0_item_data in self.scoreable_node_types:
-                scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                scoreable_node_types_type_0_item: str
+                if isinstance(scoreable_node_types_type_0_item_data, NodeType):
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                else:
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data
                 scoreable_node_types.append(scoreable_node_types_type_0_item)
 
         else:
@@ -123,23 +133,46 @@ class GeneratedScorerResponse:
 
         updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
-        def _parse_scoreable_node_types(data: object) -> list[NodeType] | None:
+        def _parse_scoreable_node_types(data: object) -> list[NodeType | str] | None:
             if data is None:
                 return data
+            if not isinstance(data, list) and data is not None:
+                raise TypeError("Unexpected value type for scoreable_node_types")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 scoreable_node_types_type_0 = []
                 _scoreable_node_types_type_0 = data
+                if not isinstance(_scoreable_node_types_type_0, list):
+                    raise TypeError("Unexpected value type for scoreable_node_types_type_0")
+
                 for scoreable_node_types_type_0_item_data in _scoreable_node_types_type_0:
-                    scoreable_node_types_type_0_item = NodeType(scoreable_node_types_type_0_item_data)
+
+                    def _parse_scoreable_node_types_type_0_item(data: object) -> NodeType | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            scoreable_node_types_type_0_item_type_0 = NodeType(data)
+
+                            return scoreable_node_types_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for scoreable_node_types_type_0_item")
+                        return cast(NodeType | str, data)
+
+                    scoreable_node_types_type_0_item = _parse_scoreable_node_types_type_0_item(
+                        scoreable_node_types_type_0_item_data
+                    )
 
                     scoreable_node_types_type_0.append(scoreable_node_types_type_0_item)
 
                 return scoreable_node_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[NodeType] | None, data)
+            return cast(list[NodeType | str] | None, data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types"))
 
@@ -150,6 +183,7 @@ class GeneratedScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         instructions = _parse_instructions(d.pop("instructions", UNSET))
@@ -159,6 +193,7 @@ class GeneratedScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_prompt = _parse_user_prompt(d.pop("user_prompt", UNSET))

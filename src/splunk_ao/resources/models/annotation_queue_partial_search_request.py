@@ -146,6 +146,7 @@ class AnnotationQueuePartialSearchRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         previous_last_row_id = _parse_previous_last_row_id(d.pop("previous_last_row_id", UNSET))
@@ -164,6 +165,7 @@ class AnnotationQueuePartialSearchRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -221,6 +223,7 @@ class AnnotationQueuePartialSearchRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

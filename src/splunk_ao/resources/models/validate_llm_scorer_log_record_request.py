@@ -302,6 +302,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         previous_last_row_id = _parse_previous_last_row_id(d.pop("previous_last_row_id", UNSET))
@@ -311,6 +312,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -320,6 +322,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -329,6 +332,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
@@ -361,6 +365,7 @@ class ValidateLLMScorerLogRecordRequest:
                     | LogRecordsNumberFilter
                     | LogRecordsTextFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -433,6 +438,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -490,6 +496,7 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -513,14 +520,17 @@ class ValidateLLMScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 normalized_input_type_0 = []
                 _normalized_input_type_0 = data
+
                 for normalized_input_type_0_item_data in _normalized_input_type_0:
 
                     def _parse_normalized_input_type_0_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()

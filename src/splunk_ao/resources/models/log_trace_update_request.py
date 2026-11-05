@@ -21,7 +21,7 @@ class LogTraceUpdateRequest:
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
-        logging_method (LoggingMethod | Unset):
+        logging_method (LoggingMethod | str | Unset):
         client_version (None | str | Unset):
         reliable (bool | Unset): Whether or not to use reliable logging.  If set to False, the method will respond
             immediately before verifying that the traces have been successfully ingested, and no error message will be
@@ -42,7 +42,7 @@ class LogTraceUpdateRequest:
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
-    logging_method: LoggingMethod | Unset = UNSET
+    logging_method: LoggingMethod | str | Unset = UNSET
     client_version: None | str | Unset = UNSET
     reliable: bool | Unset = True
     input_: None | str | Unset = UNSET
@@ -74,9 +74,13 @@ class LogTraceUpdateRequest:
         else:
             metrics_testing_id = self.metrics_testing_id
 
-        logging_method: str | Unset = UNSET
-        if not isinstance(self.logging_method, Unset):
+        logging_method: str | Unset
+        if isinstance(self.logging_method, Unset):
+            logging_method = UNSET
+        elif isinstance(self.logging_method, LoggingMethod):
             logging_method = self.logging_method.value
+        else:
+            logging_method = self.logging_method
 
         client_version: None | str | Unset
         if isinstance(self.client_version, Unset):
@@ -165,6 +169,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -174,6 +179,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -183,22 +189,35 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
 
-        _logging_method = d.pop("logging_method", UNSET)
-        logging_method: LoggingMethod | Unset
-        if isinstance(_logging_method, Unset):
-            logging_method = UNSET
-        else:
-            logging_method = LoggingMethod(_logging_method)
+        def _parse_logging_method(data: object) -> LoggingMethod | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                logging_method_type_0 = LoggingMethod(data)
+
+                return logging_method_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for logging_method")
+            return cast(LoggingMethod | str | Unset, data)
+
+        logging_method = _parse_logging_method(d.pop("logging_method", UNSET))
 
         def _parse_client_version(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         client_version = _parse_client_version(d.pop("client_version", UNSET))
@@ -210,6 +229,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         input_ = _parse_input_(d.pop("input", UNSET))
@@ -219,6 +239,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         output = _parse_output(d.pop("output", UNSET))
@@ -228,6 +249,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
@@ -237,6 +259,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -254,6 +277,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         is_complete = _parse_is_complete(d.pop("is_complete", UNSET))
@@ -263,6 +287,7 @@ class LogTraceUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         duration_ns = _parse_duration_ns(d.pop("duration_ns", UNSET))

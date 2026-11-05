@@ -119,6 +119,7 @@ class DecisionScorerDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
@@ -130,6 +131,7 @@ class DecisionScorerDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -143,6 +145,7 @@ class DecisionScorerDB:
                     raise TypeError()
                 answer_options_type_1 = []
                 _answer_options_type_1 = data
+
                 for answer_options_type_1_item_data in _answer_options_type_1:
                     answer_options_type_1_item = DecisionChoice.from_dict(answer_options_type_1_item_data)
 
@@ -156,6 +159,7 @@ class DecisionScorerDB:
                     raise TypeError()
                 answer_options_type_2 = []
                 _answer_options_type_2 = data
+
                 for answer_options_type_2_item_data in _answer_options_type_2:
                     answer_options_type_2_item = DecisionLevel.from_dict(answer_options_type_2_item_data)
 

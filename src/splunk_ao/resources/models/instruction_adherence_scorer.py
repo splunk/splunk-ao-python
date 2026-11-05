@@ -107,14 +107,17 @@ class InstructionAdherenceScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 filters_type_0 = []
                 _filters_type_0 = data
+
                 for filters_type_0_item_data in _filters_type_0:
 
                     def _parse_filters_type_0_item(data: object) -> MetadataFilter | ModalityFilter | NodeNameFilter:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -157,6 +160,7 @@ class InstructionAdherenceScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
@@ -166,6 +170,7 @@ class InstructionAdherenceScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))

@@ -34,6 +34,7 @@ class ValidationError:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         loc = []
         for loc_item_data in self.loc:
             loc_item: int | str
@@ -67,9 +68,11 @@ class ValidationError:
         d = dict(src_dict)
         loc = []
         _loc = d.pop("loc")
+
         for loc_item_data in _loc:
 
             def _parse_loc_item(data: object) -> int | str:
+
                 return cast(int | str, data)
 
             loc_item = _parse_loc_item(loc_item_data)

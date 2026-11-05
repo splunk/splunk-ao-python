@@ -45,6 +45,7 @@ def _parse_response(
     if response.status_code == 200:
 
         def _parse_response_200(data: object) -> InvokeResponse | ProtectResponse:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

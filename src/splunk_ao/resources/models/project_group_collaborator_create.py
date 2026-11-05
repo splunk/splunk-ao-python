@@ -17,21 +17,25 @@ class ProjectGroupCollaboratorCreate:
     """
     Attributes:
         group_id (str):
-        role (CollaboratorRole | Unset):
+        role (CollaboratorRole | str | Unset):
         custom_access_level_id (None | str | Unset):
     """
 
     group_id: str
-    role: CollaboratorRole | Unset = UNSET
+    role: CollaboratorRole | str | Unset = UNSET
     custom_access_level_id: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         group_id = self.group_id
 
-        role: str | Unset = UNSET
-        if not isinstance(self.role, Unset):
+        role: str | Unset
+        if isinstance(self.role, Unset):
+            role = UNSET
+        elif isinstance(self.role, CollaboratorRole):
             role = self.role.value
+        else:
+            role = self.role
 
         custom_access_level_id: None | str | Unset
         if isinstance(self.custom_access_level_id, Unset):
@@ -54,18 +58,30 @@ class ProjectGroupCollaboratorCreate:
         d = dict(src_dict)
         group_id = d.pop("group_id")
 
-        _role = d.pop("role", UNSET)
-        role: CollaboratorRole | Unset
-        if isinstance(_role, Unset):
-            role = UNSET
-        else:
-            role = CollaboratorRole(_role)
+        def _parse_role(data: object) -> CollaboratorRole | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str | Unset, data)
+
+        role = _parse_role(d.pop("role", UNSET))
 
         def _parse_custom_access_level_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         custom_access_level_id = _parse_custom_access_level_id(d.pop("custom_access_level_id", UNSET))

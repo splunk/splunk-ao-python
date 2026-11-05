@@ -82,6 +82,7 @@ class BodyLoginEmailLoginPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         grant_type = _parse_grant_type(d.pop("grant_type", UNSET))
@@ -93,6 +94,7 @@ class BodyLoginEmailLoginPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         client_id = _parse_client_id(d.pop("client_id", UNSET))
@@ -102,6 +104,7 @@ class BodyLoginEmailLoginPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         client_secret = _parse_client_secret(d.pop("client_secret", UNSET))

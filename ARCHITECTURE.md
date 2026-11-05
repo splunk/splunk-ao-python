@@ -238,6 +238,13 @@ change the source contract, template, or post-processing step and regenerate onl
 The generated client is not a deployment-aware public facade. Public operations should select deployment/auth through
 SDK configuration, then call the appropriate generated transport internally.
 
+Before generation, `scripts/prepare_open_enums.py` expands enum uses to a union of the existing enum and its primitive
+type in a temporary copy of the spec. Known values remain enum members. Unfamiliar values remain strings or integers
+and serialize unchanged. The checked-in spec and enum class names stay unchanged. Singleton data enums remain open;
+constants, discriminator fields, and enums marked `x-ms-enum.modelAsString: false` remain closed. Compatible arrays of
+enum alternatives share an item union so every known enum is tried before accepting an unfamiliar value. The templates
+check array containers and primitive types. SDK operations that select behavior must handle unsupported values explicitly.
+
 ## Test Architecture
 
 Root pytest configuration enables xdist, disables non-local sockets, injects fake credentials, and sets timeouts.

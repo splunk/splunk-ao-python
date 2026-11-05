@@ -71,7 +71,7 @@ class PartialExtendedTraceRecord:
             record
         annotations (PartialExtendedTraceRecordAnnotations | Unset): Annotations keyed by template ID and annotator ID
         file_ids (list[str] | Unset): IDs of files associated with this record
-        file_modalities (list[ContentModality] | Unset): Modalities of files associated with this record
+        file_modalities (list[ContentModality | str] | Unset): Modalities of files associated with this record
         annotation_aggregates (PartialExtendedTraceRecordAnnotationAggregates | Unset): Annotation aggregate information
             keyed by template ID
         annotation_agreement (PartialExtendedTraceRecordAnnotationAgreement | Unset): Annotation agreement scores keyed
@@ -80,7 +80,7 @@ class PartialExtendedTraceRecord:
             queue
         annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
         fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
-        annotation_status (AnnotationStatus | None | Unset): Annotation review status of the record
+        annotation_status (AnnotationStatus | None | str | Unset): Annotation review status of the record
         annotated_members (list[str] | None | Unset): Emails of tracked queue members who rated the record
         progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
         error_message (str | Unset): Runner error text written directly to CH span Default: ''.
@@ -120,13 +120,13 @@ class PartialExtendedTraceRecord:
     feedback_rating_info: PartialExtendedTraceRecordFeedbackRatingInfo | Unset = UNSET
     annotations: PartialExtendedTraceRecordAnnotations | Unset = UNSET
     file_ids: list[str] | Unset = UNSET
-    file_modalities: list[ContentModality] | Unset = UNSET
+    file_modalities: list[ContentModality | str] | Unset = UNSET
     annotation_aggregates: PartialExtendedTraceRecordAnnotationAggregates | Unset = UNSET
     annotation_agreement: PartialExtendedTraceRecordAnnotationAgreement | Unset = UNSET
     overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
     fully_annotated: bool | None | Unset = UNSET
-    annotation_status: AnnotationStatus | None | Unset = UNSET
+    annotation_status: AnnotationStatus | None | str | Unset = UNSET
     annotated_members: list[str] | None | Unset = UNSET
     progress_message: str | Unset = ""
     error_message: str | Unset = ""
@@ -338,9 +338,16 @@ class PartialExtendedTraceRecord:
 
         file_modalities: list[str] | Unset = UNSET
         if not isinstance(self.file_modalities, Unset):
+            if not isinstance(self.file_modalities, list):
+                raise TypeError("Unexpected value type for file_modalities")
+
             file_modalities = []
             for file_modalities_item_data in self.file_modalities:
-                file_modalities_item = file_modalities_item_data.value
+                file_modalities_item: str
+                if isinstance(file_modalities_item_data, ContentModality):
+                    file_modalities_item = file_modalities_item_data.value
+                else:
+                    file_modalities_item = file_modalities_item_data
                 file_modalities.append(file_modalities_item)
 
         annotation_aggregates: dict[str, Any] | Unset = UNSET
@@ -536,14 +543,17 @@ class PartialExtendedTraceRecord:
         def _parse_input_(data: object) -> list[FileContentPart | TextContentPart] | str | Unset:
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 input_type_1 = []
                 _input_type_1 = data
+
                 for input_type_1_item_data in _input_type_1:
 
                     def _parse_input_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -574,14 +584,17 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 redacted_input_type_1 = []
                 _redacted_input_type_1 = data
+
                 for redacted_input_type_1_item_data in _redacted_input_type_1:
 
                     def _parse_redacted_input_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -612,14 +625,17 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 output_type_1 = []
                 _output_type_1 = data
+
                 for output_type_1_item_data in _output_type_1:
 
                     def _parse_output_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -650,14 +666,17 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 redacted_output_type_1 = []
                 _redacted_output_type_1 = data
+
                 for redacted_output_type_1_item_data in _redacted_output_type_1:
 
                     def _parse_redacted_output_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -706,6 +725,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
@@ -722,6 +742,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
@@ -731,6 +752,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
@@ -740,6 +762,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
@@ -756,6 +779,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -773,6 +797,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -790,6 +815,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -807,6 +833,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -824,6 +851,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -841,6 +869,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -858,6 +887,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         has_children = _parse_has_children(d.pop("has_children", UNSET))
@@ -867,6 +897,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_batch_id = _parse_metrics_batch_id(d.pop("metrics_batch_id", UNSET))
@@ -876,6 +907,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_batch_id = _parse_session_batch_id(d.pop("session_batch_id", UNSET))
@@ -897,11 +929,29 @@ class PartialExtendedTraceRecord:
         file_ids = cast(list[str], d.pop("file_ids", UNSET))
 
         _file_modalities = d.pop("file_modalities", UNSET)
-        file_modalities: list[ContentModality] | Unset = UNSET
+        file_modalities: list[ContentModality | str] | Unset = UNSET
         if _file_modalities is not UNSET:
+            if not isinstance(_file_modalities, list):
+                raise TypeError("Unexpected value type for file_modalities")
+
             file_modalities = []
             for file_modalities_item_data in _file_modalities:
-                file_modalities_item = ContentModality(file_modalities_item_data)
+
+                def _parse_file_modalities_item(data: object) -> ContentModality | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        file_modalities_item_type_0 = ContentModality(data)
+
+                        return file_modalities_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for file_modalities_item")
+                    return cast(ContentModality | str, data)
+
+                file_modalities_item = _parse_file_modalities_item(file_modalities_item_data)
 
                 file_modalities.append(file_modalities_item)
 
@@ -924,6 +974,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         overall_annotation_agreement = _parse_overall_annotation_agreement(d.pop("overall_annotation_agreement", UNSET))
@@ -935,15 +986,17 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
 
-        def _parse_annotation_status(data: object) -> AnnotationStatus | None | Unset:
+        def _parse_annotation_status(data: object) -> AnnotationStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -952,7 +1005,9 @@ class PartialExtendedTraceRecord:
                 return annotation_status_type_0
             except:  # noqa: E722
                 pass
-            return cast(AnnotationStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for annotation_status")
+            return cast(AnnotationStatus | None | str | Unset, data)
 
         annotation_status = _parse_annotation_status(d.pop("annotation_status", UNSET))
 
@@ -961,6 +1016,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -982,6 +1038,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")
@@ -1055,6 +1112,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")
@@ -1128,6 +1186,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_generated_output = _parse_dataset_generated_output(d.pop("dataset_generated_output", UNSET))
@@ -1139,6 +1198,7 @@ class PartialExtendedTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_spans = _parse_num_spans(d.pop("num_spans", UNSET))

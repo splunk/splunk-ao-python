@@ -123,6 +123,7 @@ class LogStreamResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
@@ -132,6 +133,7 @@ class LogStreamResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -149,6 +151,7 @@ class LogStreamResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_spans = _parse_num_spans(d.pop("num_spans", UNSET))
@@ -158,6 +161,7 @@ class LogStreamResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_traces = _parse_num_traces(d.pop("num_traces", UNSET))

@@ -144,11 +144,13 @@ class BasePromptTemplateVersionResponse:
         d = dict(src_dict)
 
         def _parse_template(data: object) -> list[MessagesListItem] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 template_type_1 = []
                 _template_type_1 = data
+
                 for componentsschemas_messages_item_data in _template_type_1:
                     componentsschemas_messages_item = MessagesListItem.from_dict(componentsschemas_messages_item_data)
 
@@ -180,6 +182,7 @@ class BasePromptTemplateVersionResponse:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -199,6 +202,7 @@ class BasePromptTemplateVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))

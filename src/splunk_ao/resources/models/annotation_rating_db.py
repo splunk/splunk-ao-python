@@ -97,6 +97,7 @@ class AnnotationRatingDB:
         def _parse_rating(
             data: object,
         ) -> ChoiceRating | LikeDislikeRating | ScoreRating | StarRating | TagsRating | TextRating | TreeChoiceRating:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -158,6 +159,7 @@ class AnnotationRatingDB:
         def _parse_created_by(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         created_by = _parse_created_by(d.pop("created_by"))
@@ -167,6 +169,7 @@ class AnnotationRatingDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         explanation = _parse_explanation(d.pop("explanation", UNSET))

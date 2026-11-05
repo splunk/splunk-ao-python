@@ -25,6 +25,7 @@ class MultiModalModelIntegrationConfig:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         max_files: int | None | Unset
         if isinstance(self.max_files, Unset):
             max_files = UNSET
@@ -56,6 +57,7 @@ class MultiModalModelIntegrationConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         max_files = _parse_max_files(d.pop("max_files", UNSET))
@@ -65,6 +67,7 @@ class MultiModalModelIntegrationConfig:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         max_file_size_bytes = _parse_max_file_size_bytes(d.pop("max_file_size_bytes", UNSET))

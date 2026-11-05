@@ -25,16 +25,22 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *, body: BodyCreateDatasetDatasetsPost | Unset, format_: DatasetFormat | Unset = UNSET, hidden: bool | Unset = False
+    *,
+    body: BodyCreateDatasetDatasetsPost | Unset,
+    format_: DatasetFormat | str | Unset = UNSET,
+    hidden: bool | Unset = False,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
-    json_format_: str | Unset = UNSET
-    if not isinstance(format_, Unset):
+    json_format_: str | Unset
+    if isinstance(format_, Unset):
+        json_format_ = UNSET
+    elif isinstance(format_, DatasetFormat):
         json_format_ = format_.value
-
+    else:
+        json_format_ = format_
     params["format"] = json_format_
 
     params["hidden"] = hidden
@@ -99,7 +105,7 @@ def sync_detailed(
     *,
     client: ApiClient,
     body: BodyCreateDatasetDatasetsPost | Unset,
-    format_: DatasetFormat | Unset = UNSET,
+    format_: DatasetFormat | str | Unset = UNSET,
     hidden: bool | Unset = False,
 ) -> Response[DatasetDB | HTTPValidationError]:
     """Create Dataset
@@ -107,7 +113,7 @@ def sync_detailed(
      Creates a standalone dataset.
 
     Args:
-        format_ (DatasetFormat | Unset):
+        format_ (DatasetFormat | str | Unset):
         hidden (bool | Unset):  Default: False.
         body (BodyCreateDatasetDatasetsPost | Unset):
 
@@ -130,7 +136,7 @@ def sync(
     *,
     client: ApiClient,
     body: BodyCreateDatasetDatasetsPost | Unset,
-    format_: DatasetFormat | Unset = UNSET,
+    format_: DatasetFormat | str | Unset = UNSET,
     hidden: bool | Unset = False,
 ) -> Optional[DatasetDB | HTTPValidationError]:
     """Create Dataset
@@ -138,7 +144,7 @@ def sync(
      Creates a standalone dataset.
 
     Args:
-        format_ (DatasetFormat | Unset):
+        format_ (DatasetFormat | str | Unset):
         hidden (bool | Unset):  Default: False.
         body (BodyCreateDatasetDatasetsPost | Unset):
 
@@ -157,7 +163,7 @@ async def asyncio_detailed(
     *,
     client: ApiClient,
     body: BodyCreateDatasetDatasetsPost | Unset,
-    format_: DatasetFormat | Unset = UNSET,
+    format_: DatasetFormat | str | Unset = UNSET,
     hidden: bool | Unset = False,
 ) -> Response[DatasetDB | HTTPValidationError]:
     """Create Dataset
@@ -165,7 +171,7 @@ async def asyncio_detailed(
      Creates a standalone dataset.
 
     Args:
-        format_ (DatasetFormat | Unset):
+        format_ (DatasetFormat | str | Unset):
         hidden (bool | Unset):  Default: False.
         body (BodyCreateDatasetDatasetsPost | Unset):
 
@@ -188,7 +194,7 @@ async def asyncio(
     *,
     client: ApiClient,
     body: BodyCreateDatasetDatasetsPost | Unset,
-    format_: DatasetFormat | Unset = UNSET,
+    format_: DatasetFormat | str | Unset = UNSET,
     hidden: bool | Unset = False,
 ) -> Optional[DatasetDB | HTTPValidationError]:
     """Create Dataset
@@ -196,7 +202,7 @@ async def asyncio(
      Creates a standalone dataset.
 
     Args:
-        format_ (DatasetFormat | Unset):
+        format_ (DatasetFormat | str | Unset):
         hidden (bool | Unset):  Default: False.
         body (BodyCreateDatasetDatasetsPost | Unset):
 

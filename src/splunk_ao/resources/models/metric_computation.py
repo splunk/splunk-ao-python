@@ -22,13 +22,13 @@ class MetricComputation:
     Attributes:
         value (float | int | list[float | int | None | str] | MetricComputationValueType4 | None | str | Unset):
         execution_time (float | None | Unset):
-        status (MetricComputationStatus | None | Unset):
+        status (MetricComputationStatus | None | str | Unset):
         error_message (None | str | Unset):
     """
 
     value: float | int | list[float | int | None | str] | MetricComputationValueType4 | None | str | Unset = UNSET
     execution_time: float | None | Unset = UNSET
-    status: MetricComputationStatus | None | Unset = UNSET
+    status: MetricComputationStatus | None | str | Unset = UNSET
     error_message: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -97,16 +97,19 @@ class MetricComputation:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 value_type_3 = []
                 _value_type_3 = data
+
                 for value_type_3_item_data in _value_type_3:
 
                     def _parse_value_type_3_item(data: object) -> float | int | None | str:
                         if data is None:
                             return data
+
                         return cast(float | int | None | str, data)
 
                     value_type_3_item = _parse_value_type_3_item(value_type_3_item_data)
@@ -135,15 +138,17 @@ class MetricComputation:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         execution_time = _parse_execution_time(d.pop("execution_time", UNSET))
 
-        def _parse_status(data: object) -> MetricComputationStatus | None | Unset:
+        def _parse_status(data: object) -> MetricComputationStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -152,7 +157,9 @@ class MetricComputation:
                 return status_type_0
             except:  # noqa: E722
                 pass
-            return cast(MetricComputationStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(MetricComputationStatus | None | str | Unset, data)
 
         status = _parse_status(d.pop("status", UNSET))
 
@@ -161,6 +168,7 @@ class MetricComputation:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         error_message = _parse_error_message(d.pop("error_message", UNSET))

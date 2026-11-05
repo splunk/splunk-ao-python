@@ -160,6 +160,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_name = _parse_project_name(d.pop("project_name", UNSET))
@@ -169,6 +170,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
@@ -178,6 +180,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         stage_name = _parse_stage_name(d.pop("stage_name", UNSET))
@@ -187,6 +190,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         stage_id = _parse_stage_id(d.pop("stage_id", UNSET))
@@ -196,6 +200,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         stage_version = _parse_stage_version(d.pop("stage_version", UNSET))
@@ -207,6 +212,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -224,6 +230,7 @@ class ProtectRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

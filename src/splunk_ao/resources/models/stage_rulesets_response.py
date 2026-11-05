@@ -21,7 +21,7 @@ class StageRulesetsResponse:
 
     Attributes:
         stage_id (str):
-        stage_type (StageType):
+        stage_type (StageType | str):
         version (int | None): The stage version the rulesets come from. None for a local stage that no invoke has
             reached yet.
         rulesets (list[Ruleset]): The rulesets of the version. Protect stores no ruleset order, so the list order is not
@@ -29,7 +29,7 @@ class StageRulesetsResponse:
     """
 
     stage_id: str
-    stage_type: StageType
+    stage_type: StageType | str
     version: int | None
     rulesets: list[Ruleset]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -37,7 +37,11 @@ class StageRulesetsResponse:
     def to_dict(self) -> dict[str, Any]:
         stage_id = self.stage_id
 
-        stage_type = self.stage_type.value
+        stage_type: str
+        if isinstance(self.stage_type, StageType):
+            stage_type = self.stage_type.value
+        else:
+            stage_type = self.stage_type
 
         version: int | None
         version = self.version
@@ -60,17 +64,33 @@ class StageRulesetsResponse:
         d = dict(src_dict)
         stage_id = d.pop("stage_id")
 
-        stage_type = StageType(d.pop("stage_type"))
+        def _parse_stage_type(data: object) -> StageType | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                stage_type_type_0 = StageType(data)
+
+                return stage_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for stage_type")
+            return cast(StageType | str, data)
+
+        stage_type = _parse_stage_type(d.pop("stage_type"))
 
         def _parse_version(data: object) -> int | None:
             if data is None:
                 return data
+
             return cast(int | None, data)
 
         version = _parse_version(d.pop("version"))
 
         rulesets = []
         _rulesets = d.pop("rulesets")
+
         for rulesets_item_data in _rulesets:
             rulesets_item = Ruleset.from_dict(rulesets_item_data)
 

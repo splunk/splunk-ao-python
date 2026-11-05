@@ -24,7 +24,7 @@ class ImageGenerationEvent:
     Attributes:
         type_ (Literal['image_generation'] | Unset):  Default: 'image_generation'.
         id (None | str | Unset): Unique identifier for the event
-        status (EventStatus | None | Unset): Status of the event
+        status (EventStatus | None | str | Unset): Status of the event
         metadata (ImageGenerationEventMetadataType0 | None | Unset): Provider-specific metadata and additional fields
         error_message (None | str | Unset): Error message if the event failed
         prompt (None | str | Unset): The prompt used for image generation
@@ -34,7 +34,7 @@ class ImageGenerationEvent:
 
     type_: Literal["image_generation"] | Unset = "image_generation"
     id: None | str | Unset = UNSET
-    status: EventStatus | None | Unset = UNSET
+    status: EventStatus | None | str | Unset = UNSET
     metadata: ImageGenerationEventMetadataType0 | None | Unset = UNSET
     error_message: None | str | Unset = UNSET
     prompt: None | str | Unset = UNSET
@@ -136,15 +136,17 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
 
-        def _parse_status(data: object) -> EventStatus | None | Unset:
+        def _parse_status(data: object) -> EventStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -153,7 +155,9 @@ class ImageGenerationEvent:
                 return status_type_0
             except:  # noqa: E722
                 pass
-            return cast(EventStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(EventStatus | None | str | Unset, data)
 
         status = _parse_status(d.pop("status", UNSET))
 
@@ -162,6 +166,7 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -179,6 +184,7 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         error_message = _parse_error_message(d.pop("error_message", UNSET))
@@ -188,6 +194,7 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt = _parse_prompt(d.pop("prompt", UNSET))
@@ -197,11 +204,13 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 images_type_0 = []
                 _images_type_0 = data
+
                 for images_type_0_item_data in _images_type_0:
                     images_type_0_item = ImageGenerationEventImagesType0Item.from_dict(images_type_0_item_data)
 
@@ -219,6 +228,7 @@ class ImageGenerationEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model = _parse_model(d.pop("model", UNSET))

@@ -51,6 +51,7 @@ class UpsertDatasetContentRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         version_index = _parse_version_index(d.pop("version_index", UNSET))

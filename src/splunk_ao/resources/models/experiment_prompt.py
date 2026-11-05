@@ -28,6 +28,7 @@ class ExperimentPrompt:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         prompt_template_id: None | str | Unset
         if isinstance(self.prompt_template_id, Unset):
             prompt_template_id = UNSET
@@ -75,6 +76,7 @@ class ExperimentPrompt:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt_template_id = _parse_prompt_template_id(d.pop("prompt_template_id", UNSET))
@@ -84,6 +86,7 @@ class ExperimentPrompt:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         version_index = _parse_version_index(d.pop("version_index", UNSET))
@@ -93,6 +96,7 @@ class ExperimentPrompt:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
@@ -102,6 +106,7 @@ class ExperimentPrompt:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         content = _parse_content(d.pop("content", UNSET))

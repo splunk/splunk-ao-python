@@ -32,10 +32,10 @@ class ProjectDB:
         updated_at (datetime.datetime):
         permissions (list[Permission] | Unset):
         name (None | str | Unset):
-        type_ (None | ProjectType | Unset):
+        type_ (None | ProjectType | str | Unset):
         bookmark (bool | Unset):  Default: False.
         description (None | str | Unset):
-        labels (list[ProjectLabels] | Unset):
+        labels (list[ProjectLabels | str] | Unset):
     """
 
     id: str
@@ -46,10 +46,10 @@ class ProjectDB:
     updated_at: datetime.datetime
     permissions: list[Permission] | Unset = UNSET
     name: None | str | Unset = UNSET
-    type_: None | ProjectType | Unset = UNSET
+    type_: None | ProjectType | str | Unset = UNSET
     bookmark: bool | Unset = False
     description: None | str | Unset = UNSET
-    labels: list[ProjectLabels] | Unset = UNSET
+    labels: list[ProjectLabels | str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -99,9 +99,16 @@ class ProjectDB:
 
         labels: list[str] | Unset = UNSET
         if not isinstance(self.labels, Unset):
+            if not isinstance(self.labels, list):
+                raise TypeError("Unexpected value type for labels")
+
             labels = []
             for labels_item_data in self.labels:
-                labels_item = labels_item_data.value
+                labels_item: str
+                if isinstance(labels_item_data, ProjectLabels):
+                    labels_item = labels_item_data.value
+                else:
+                    labels_item = labels_item_data
                 labels.append(labels_item)
 
         field_dict: dict[str, Any] = {}
@@ -146,6 +153,7 @@ class ProjectDB:
 
         runs = []
         _runs = d.pop("runs")
+
         for runs_item_data in _runs:
             runs_item = RunDB.from_dict(runs_item_data)
 
@@ -169,15 +177,17 @@ class ProjectDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
 
-        def _parse_type_(data: object) -> None | ProjectType | Unset:
+        def _parse_type_(data: object) -> None | ProjectType | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -186,7 +196,9 @@ class ProjectDB:
                 return type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ProjectType | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(None | ProjectType | str | Unset, data)
 
         type_ = _parse_type_(d.pop("type", UNSET))
 
@@ -197,16 +209,35 @@ class ProjectDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
 
         _labels = d.pop("labels", UNSET)
-        labels: list[ProjectLabels] | Unset = UNSET
+        labels: list[ProjectLabels | str] | Unset = UNSET
         if _labels is not UNSET:
+            if not isinstance(_labels, list):
+                raise TypeError("Unexpected value type for labels")
+
             labels = []
             for labels_item_data in _labels:
-                labels_item = ProjectLabels(labels_item_data)
+
+                def _parse_labels_item(data: object) -> ProjectLabels | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        labels_item_type_0 = ProjectLabels(data)
+
+                        return labels_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for labels_item")
+                    return cast(ProjectLabels | str, data)
+
+                labels_item = _parse_labels_item(labels_item_data)
 
                 labels.append(labels_item)
 

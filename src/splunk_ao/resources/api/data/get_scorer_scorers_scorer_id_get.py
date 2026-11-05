@@ -23,16 +23,23 @@ from ...models.scorer_response import ScorerResponse
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(scorer_id: str, *, actions: list[ScorerAction] | Unset = UNSET) -> dict[str, Any]:
+def _get_kwargs(scorer_id: str, *, actions: list[ScorerAction | str] | Unset = UNSET) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
     json_actions: list[str] | Unset = UNSET
     if not isinstance(actions, Unset):
+        if not isinstance(actions, list):
+            raise TypeError("Unexpected value type for actions")
+
         json_actions = []
         for actions_item_data in actions:
-            actions_item = actions_item_data.value
+            actions_item: str
+            if isinstance(actions_item_data, ScorerAction):
+                actions_item = actions_item_data.value
+            else:
+                actions_item = actions_item_data
             json_actions.append(actions_item)
 
     params["actions"] = json_actions
@@ -92,14 +99,14 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 
 
 def sync_detailed(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction | str] | Unset = UNSET
 ) -> Response[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -117,14 +124,14 @@ def sync_detailed(
 
 
 def sync(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction | str] | Unset = UNSET
 ) -> Optional[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -138,14 +145,14 @@ def sync(
 
 
 async def asyncio_detailed(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction | str] | Unset = UNSET
 ) -> Response[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -163,14 +170,14 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction] | Unset = UNSET
+    scorer_id: str, *, client: ApiClient, actions: list[ScorerAction | str] | Unset = UNSET
 ) -> Optional[HTTPValidationError | ScorerResponse]:
     """Get Scorer
 
     Args:
         scorer_id (str):
-        actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
-            scorer.
+        actions (list[ScorerAction | str] | Unset): Actions to include in the 'permissions' field
+            of the scorer.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

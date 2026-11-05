@@ -51,7 +51,7 @@ class CreateJobRequest:
         job_name (str | Unset):  Default: 'log_stream_scorer'.
         should_retry (bool | Unset):  Default: True.
         user_id (None | str | Unset):
-        task_type (None | TaskType | Unset):
+        task_type (int | None | TaskType | Unset):
         labels (list[list[str]] | list[str] | Unset):
         ner_labels (list[str] | None | Unset):
         tasks (list[str] | None | Unset):
@@ -93,7 +93,7 @@ class CreateJobRequest:
     job_name: str | Unset = "log_stream_scorer"
     should_retry: bool | Unset = True
     user_id: None | str | Unset = UNSET
-    task_type: None | TaskType | Unset = UNSET
+    task_type: int | None | TaskType | Unset = UNSET
     labels: list[list[str]] | list[str] | Unset = UNSET
     ner_labels: list[str] | None | Unset = UNSET
     tasks: list[str] | None | Unset = UNSET
@@ -543,6 +543,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -560,6 +561,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         job_id = _parse_job_id(d.pop("job_id", UNSET))
@@ -573,15 +575,17 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_id = _parse_user_id(d.pop("user_id", UNSET))
 
-        def _parse_task_type(data: object) -> None | TaskType | Unset:
+        def _parse_task_type(data: object) -> int | None | TaskType | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, int):
                     raise TypeError()
@@ -590,18 +594,22 @@ class CreateJobRequest:
                 return task_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | TaskType | Unset, data)
+            if type(data) not in (int,):
+                raise TypeError("Unexpected value type for task_type")
+            return cast(int | None | TaskType | Unset, data)
 
         task_type = _parse_task_type(d.pop("task_type", UNSET))
 
         def _parse_labels(data: object) -> list[list[str]] | list[str] | Unset:
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 labels_type_0 = []
                 _labels_type_0 = data
+
                 for labels_type_0_item_data in _labels_type_0:
                     labels_type_0_item = cast(list[str], labels_type_0_item_data)
 
@@ -623,6 +631,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -640,6 +649,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -659,6 +669,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         migration_name = _parse_migration_name(d.pop("migration_name", UNSET))
@@ -670,6 +681,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -687,6 +699,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt_dataset_id = _parse_prompt_dataset_id(d.pop("prompt_dataset_id", UNSET))
@@ -696,6 +709,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_id = _parse_dataset_id(d.pop("dataset_id", UNSET))
@@ -705,6 +719,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         dataset_version_index = _parse_dataset_version_index(d.pop("dataset_version_index", UNSET))
@@ -714,6 +729,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt_template_version_id = _parse_prompt_template_version_id(d.pop("prompt_template_version_id", UNSET))
@@ -723,6 +739,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         monitor_batch_id = _parse_monitor_batch_id(d.pop("monitor_batch_id", UNSET))
@@ -732,6 +749,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         protect_trace_id = _parse_protect_trace_id(d.pop("protect_trace_id", UNSET))
@@ -741,6 +759,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         protect_scorer_payload = _parse_protect_scorer_payload(d.pop("protect_scorer_payload", UNSET))
@@ -750,6 +769,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -794,11 +814,13 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 scorers_type_0 = []
                 _scorers_type_0 = data
+
                 for scorers_type_0_item_data in _scorers_type_0:
                     scorers_type_0_item = RuntimeScorerConfig.from_dict(scorers_type_0_item_data)
 
@@ -812,6 +834,7 @@ class CreateJobRequest:
                     raise TypeError()
                 scorers_type_1 = []
                 _scorers_type_1 = data
+
                 for scorers_type_1_item_data in _scorers_type_1:
 
                     def _parse_scorers_type_1_item(
@@ -837,6 +860,7 @@ class CreateJobRequest:
                         | ToolErrorRateScorer
                         | ToolSelectionQualityScorer
                     ):
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -1029,6 +1053,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -1048,6 +1073,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -1065,6 +1091,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -1082,6 +1109,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         luna_model = _parse_luna_model(d.pop("luna_model", UNSET))
@@ -1091,11 +1119,13 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 segment_filters_type_0 = []
                 _segment_filters_type_0 = data
+
                 for segment_filters_type_0_item_data in _segment_filters_type_0:
                     segment_filters_type_0_item = SegmentFilter.from_dict(segment_filters_type_0_item_data)
 
@@ -1113,6 +1143,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         is_session = _parse_is_session(d.pop("is_session", UNSET))
@@ -1122,6 +1153,7 @@ class CreateJobRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

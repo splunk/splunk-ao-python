@@ -34,6 +34,7 @@ class ListAnnotationQueueCollaboratorsResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         collaborators = []
         for collaborators_item_data in self.collaborators:
             collaborators_item = collaborators_item_data.to_dict()
@@ -72,6 +73,7 @@ class ListAnnotationQueueCollaboratorsResponse:
         d = dict(src_dict)
         collaborators = []
         _collaborators = d.pop("collaborators")
+
         for collaborators_item_data in _collaborators:
             collaborators_item = UserAnnotationQueueCollaborator.from_dict(collaborators_item_data)
 
@@ -88,6 +90,7 @@ class ListAnnotationQueueCollaboratorsResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

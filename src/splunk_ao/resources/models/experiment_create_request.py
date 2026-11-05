@@ -152,6 +152,7 @@ class ExperimentCreateRequest:
         def _parse_task_type(data: object) -> Literal[16] | Literal[17] | Unset:
             if isinstance(data, Unset):
                 return data
+
             task_type_type_0 = cast(Literal[16], data)
             if task_type_type_0 != 16:
                 raise ValueError(f"task_type_type_0 must match const 16, got '{task_type_type_0}'")
@@ -168,6 +169,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         playground_id = _parse_playground_id(d.pop("playground_id", UNSET))
@@ -177,6 +179,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt_template_version_id = _parse_prompt_template_version_id(d.pop("prompt_template_version_id", UNSET))
@@ -186,6 +189,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -203,6 +207,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         playground_prompt_id = _parse_playground_prompt_id(d.pop("playground_prompt_id", UNSET))
@@ -212,6 +217,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -240,6 +246,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_group_id = _parse_experiment_group_id(d.pop("experiment_group_id", UNSET))
@@ -249,6 +256,7 @@ class ExperimentCreateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_group_name = _parse_experiment_group_name(d.pop("experiment_group_name", UNSET))

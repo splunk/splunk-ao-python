@@ -34,6 +34,7 @@ class ListLogStreamResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         log_streams = []
         for log_streams_item_data in self.log_streams:
             log_streams_item = log_streams_item_data.to_dict()
@@ -72,6 +73,7 @@ class ListLogStreamResponse:
         d = dict(src_dict)
         log_streams = []
         _log_streams = d.pop("log_streams")
+
         for log_streams_item_data in _log_streams:
             log_streams_item = LogStreamResponse.from_dict(log_streams_item_data)
 
@@ -88,6 +90,7 @@ class ListLogStreamResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

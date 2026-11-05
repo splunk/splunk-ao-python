@@ -71,6 +71,7 @@ class SessionCreateResponse:
         def _parse_name(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         name = _parse_name(d.pop("name"))
@@ -84,6 +85,7 @@ class SessionCreateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         previous_session_id = _parse_previous_session_id(d.pop("previous_session_id", UNSET))
@@ -93,6 +95,7 @@ class SessionCreateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))

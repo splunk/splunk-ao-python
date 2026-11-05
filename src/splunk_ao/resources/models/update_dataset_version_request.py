@@ -22,6 +22,7 @@ class UpdateDatasetVersionRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         name: None | str | Unset
         if isinstance(self.name, Unset):
             name = UNSET
@@ -45,6 +46,7 @@ class UpdateDatasetVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))

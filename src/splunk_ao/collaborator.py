@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -28,7 +29,7 @@ class Collaborator:
         id (str): The unique identifier of this collaboration (UserProject ID).
         user_id (str): The ID of the user who has access to the project.
         project_id (str): The ID of the project this collaboration belongs to.
-        role (CollaboratorRole): The role assigned to the user (OWNER, EDITOR, VIEWER, ANNOTATOR).
+        role (CollaboratorRole | str): The collaboration role, including unfamiliar server values.
         created_at (datetime | None): When this collaboration was created.
         email (str | None): The user's email address.
         first_name (str | None): The user's first name.
@@ -65,7 +66,7 @@ class Collaborator:
     _id: str
     _user_id: str
     _project_id: str
-    _role: CollaboratorRole
+    _role: CollaboratorRole | str
     _created_at: datetime | None
     _email: str | None
     _first_name: str | None
@@ -78,7 +79,7 @@ class Collaborator:
         id: str,
         user_id: str,
         project_id: str,
-        role: CollaboratorRole,
+        role: CollaboratorRole | str,
         created_at: datetime | None = None,
         email: str | None = None,
         first_name: str | None = None,
@@ -95,7 +96,7 @@ class Collaborator:
             id: The collaboration record ID.
             user_id: The user's ID.
             project_id: The project's ID.
-            role: The collaboration role (CollaboratorRole enum).
+            role: The collaboration role as an enum or raw server value.
             created_at: When the collaboration was created.
             email: The user's email address.
             first_name: The user's first name.
@@ -130,7 +131,7 @@ class Collaborator:
         return self._project_id
 
     @property
-    def role(self) -> CollaboratorRole:
+    def role(self) -> CollaboratorRole | str:
         """Get the collaboration role."""
         return self._role
 
@@ -232,7 +233,7 @@ class Collaborator:
             "id": self._id,
             "user_id": self._user_id,
             "project_id": self._project_id,
-            "role": self._role.value,  # Convert enum to string value
+            "role": str(self._role),
             "created_at": self._created_at.isoformat() if self._created_at else None,
             "email": self._email,
             "first_name": self._first_name,
@@ -240,7 +241,7 @@ class Collaborator:
             "permissions": self._permissions,
         }
 
-    def update(self, role: CollaboratorRole) -> Collaborator:
+    def update(self, role: CollaboratorRole | str) -> Collaborator:
         """
         Update this collaborator's role.
 
@@ -248,7 +249,7 @@ class Collaborator:
         instance remains unchanged (immutability is preserved).
 
         Args:
-            role: The new role to assign (CollaboratorRole enum).
+            role: The new role as an enum or raw value for the service to validate.
 
         Returns
         -------
@@ -330,10 +331,10 @@ class Collaborator:
                 for p in response.permissions
             ]
 
-        # Handle role - it should already be a CollaboratorRole enum from the API
         role = response.role if hasattr(response, "role") else CollaboratorRole.VIEWER
         if isinstance(role, str):
-            role = CollaboratorRole(role)
+            with suppress(ValueError):
+                role = CollaboratorRole(role)
 
         return cls(
             id=str(response.id),

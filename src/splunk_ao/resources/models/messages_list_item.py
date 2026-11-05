@@ -66,14 +66,17 @@ class MessagesListItem:
         d = dict(src_dict)
 
         def _parse_content(data: object) -> list[FileContentPart | TextContentPart] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 content_type_1 = []
                 _content_type_1 = data
+
                 for content_type_1_item_data in _content_type_1:
 
                     def _parse_content_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -100,6 +103,7 @@ class MessagesListItem:
         content = _parse_content(d.pop("content"))
 
         def _parse_role(data: object) -> MessagesListItemRole | str:
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -108,6 +112,8 @@ class MessagesListItem:
                 return role_type_1
             except:  # noqa: E722
                 pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
             return cast(MessagesListItemRole | str, data)
 
         role = _parse_role(d.pop("role"))

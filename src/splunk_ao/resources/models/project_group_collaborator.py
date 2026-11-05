@@ -23,7 +23,7 @@ class ProjectGroupCollaborator:
     """
     Attributes:
         id (str):
-        role (CollaboratorRole):
+        role (CollaboratorRole | str):
         created_at (datetime.datetime):
         group_id (str):
         group_name (str):
@@ -33,7 +33,7 @@ class ProjectGroupCollaborator:
     """
 
     id: str
-    role: CollaboratorRole
+    role: CollaboratorRole | str
     created_at: datetime.datetime
     group_id: str
     group_name: str
@@ -47,7 +47,11 @@ class ProjectGroupCollaborator:
 
         id = self.id
 
-        role = self.role.value
+        role: str
+        if isinstance(self.role, CollaboratorRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         created_at = self.created_at.isoformat()
 
@@ -98,7 +102,21 @@ class ProjectGroupCollaborator:
         d = dict(src_dict)
         id = d.pop("id")
 
-        role = CollaboratorRole(d.pop("role"))
+        def _parse_role(data: object) -> CollaboratorRole | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
@@ -120,6 +138,7 @@ class ProjectGroupCollaborator:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         custom_access_level_id = _parse_custom_access_level_id(d.pop("custom_access_level_id", UNSET))
@@ -129,6 +148,7 @@ class ProjectGroupCollaborator:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
