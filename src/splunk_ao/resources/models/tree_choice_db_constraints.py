@@ -56,6 +56,7 @@ class TreeChoiceDBConstraints:
 
         choices_tree = []
         _choices_tree = d.pop("choices_tree")
+
         for choices_tree_item_data in _choices_tree:
             choices_tree_item = TreeChoiceNode.from_dict(choices_tree_item_data)
 

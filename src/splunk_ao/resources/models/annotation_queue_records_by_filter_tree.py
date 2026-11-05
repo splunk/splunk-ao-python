@@ -68,6 +68,7 @@ class AnnotationQueueRecordsByFilterTree:
         def _parse_filter_tree(
             data: object,
         ) -> AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

@@ -57,6 +57,7 @@ class DecisionLevel:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))

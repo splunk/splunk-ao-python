@@ -22,7 +22,7 @@ from ...models.llm_integration import LLMIntegration
 from ...types import Response
 
 
-def _get_kwargs(llm_integration: LLMIntegration) -> dict[str, Any]:
+def _get_kwargs(llm_integration: LLMIntegration | str) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -75,13 +75,15 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
     )
 
 
-def sync_detailed(llm_integration: LLMIntegration, *, client: ApiClient) -> Response[HTTPValidationError | list[str]]:
+def sync_detailed(
+    llm_integration: LLMIntegration | str, *, client: ApiClient
+) -> Response[HTTPValidationError | list[str]]:
     """Get Available Models
 
      Get the list of supported models for the LLM integration.
 
     Args:
-        llm_integration (LLMIntegration):
+        llm_integration (LLMIntegration | str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -98,13 +100,13 @@ def sync_detailed(llm_integration: LLMIntegration, *, client: ApiClient) -> Resp
     return _build_response(client=client, response=response)
 
 
-def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[HTTPValidationError | list[str]]:
+def sync(llm_integration: LLMIntegration | str, *, client: ApiClient) -> Optional[HTTPValidationError | list[str]]:
     """Get Available Models
 
      Get the list of supported models for the LLM integration.
 
     Args:
-        llm_integration (LLMIntegration):
+        llm_integration (LLMIntegration | str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -118,14 +120,14 @@ def sync(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[HTTP
 
 
 async def asyncio_detailed(
-    llm_integration: LLMIntegration, *, client: ApiClient
+    llm_integration: LLMIntegration | str, *, client: ApiClient
 ) -> Response[HTTPValidationError | list[str]]:
     """Get Available Models
 
      Get the list of supported models for the LLM integration.
 
     Args:
-        llm_integration (LLMIntegration):
+        llm_integration (LLMIntegration | str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -142,13 +144,15 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(llm_integration: LLMIntegration, *, client: ApiClient) -> Optional[HTTPValidationError | list[str]]:
+async def asyncio(
+    llm_integration: LLMIntegration | str, *, client: ApiClient
+) -> Optional[HTTPValidationError | list[str]]:
     """Get Available Models
 
      Get the list of supported models for the LLM integration.
 
     Args:
-        llm_integration (LLMIntegration):
+        llm_integration (LLMIntegration | str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

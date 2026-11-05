@@ -120,6 +120,7 @@ class ExperimentMetricsRequest:
                     | LogRecordsNumberFilter
                     | LogRecordsTextFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()

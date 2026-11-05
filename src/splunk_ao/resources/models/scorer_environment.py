@@ -26,19 +26,14 @@ class ScorerEnvironment:
     runner has somewhere to persist them, not as an input to the save.
 
         Attributes:
-            tier (EnvironmentTier): Which execution environment serves a scorer version.
-
-                ``standard`` is the platform-curated set baked into the executor image, so
-                it has no ``environments`` row -- but it does have a hash, the digest of
-                the pin list the image was built from. ``custom`` is resolved on demand and
-                gets a content-addressed row plus a warm parent of its own.
+            tier (EnvironmentTier | str):
             env_hash (str):
             runtime (None | str | Unset):
             lockfile (None | str | Unset):
             includes_standard (bool | Unset):  Default: True.
     """
 
-    tier: EnvironmentTier
+    tier: EnvironmentTier | str
     env_hash: str
     runtime: None | str | Unset = UNSET
     lockfile: None | str | Unset = UNSET
@@ -46,7 +41,12 @@ class ScorerEnvironment:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        tier = self.tier.value
+
+        tier: str
+        if isinstance(self.tier, EnvironmentTier):
+            tier = self.tier.value
+        else:
+            tier = self.tier
 
         env_hash = self.env_hash
 
@@ -79,7 +79,22 @@ class ScorerEnvironment:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        tier = EnvironmentTier(d.pop("tier"))
+
+        def _parse_tier(data: object) -> EnvironmentTier | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                tier_type_0 = EnvironmentTier(data)
+
+                return tier_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for tier")
+            return cast(EnvironmentTier | str, data)
+
+        tier = _parse_tier(d.pop("tier"))
 
         env_hash = d.pop("env_hash")
 
@@ -88,6 +103,7 @@ class ScorerEnvironment:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
@@ -97,6 +113,7 @@ class ScorerEnvironment:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         lockfile = _parse_lockfile(d.pop("lockfile", UNSET))

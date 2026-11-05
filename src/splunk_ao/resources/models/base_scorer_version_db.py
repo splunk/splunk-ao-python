@@ -186,6 +186,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -203,6 +204,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -220,6 +222,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -237,6 +240,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -254,6 +258,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -271,6 +276,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
@@ -280,6 +286,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -289,6 +296,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
@@ -298,6 +306,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
@@ -307,6 +316,7 @@ class BaseScorerVersionDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         code_sha256 = _parse_code_sha256(d.pop("code_sha256", UNSET))

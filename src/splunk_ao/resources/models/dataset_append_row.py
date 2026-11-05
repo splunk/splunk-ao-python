@@ -66,6 +66,7 @@ class DatasetAppendRow:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         row_id = _parse_row_id(d.pop("row_id", UNSET))

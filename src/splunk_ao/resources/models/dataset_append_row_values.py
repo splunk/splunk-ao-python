@@ -54,6 +54,7 @@ class DatasetAppendRowValues:
             ) -> DatasetAppendRowValuesAdditionalPropertyType3 | float | int | None | str:
                 if data is None:
                     return data
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

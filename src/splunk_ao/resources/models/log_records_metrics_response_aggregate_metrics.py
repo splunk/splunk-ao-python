@@ -52,6 +52,7 @@ class LogRecordsMetricsResponseAggregateMetrics:
             def _parse_additional_property(
                 data: object,
             ) -> float | int | LogRecordsMetricsResponseAggregateMetricsAdditionalPropertyType2:
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

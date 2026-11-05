@@ -23,8 +23,8 @@ class InsightSummary:
         details (str):
         suggested_action (str):
         priority (int):
-        priority_category (InsightSummaryPriorityCategoryType0 | None | Unset):
-        label (InsightSummaryLabelType0 | None | Unset):
+        priority_category (InsightSummaryPriorityCategoryType0 | None | str | Unset):
+        label (InsightSummaryLabelType0 | None | str | Unset):
     """
 
     id: str
@@ -33,8 +33,8 @@ class InsightSummary:
     details: str
     suggested_action: str
     priority: int
-    priority_category: InsightSummaryPriorityCategoryType0 | None | Unset = UNSET
-    label: InsightSummaryLabelType0 | None | Unset = UNSET
+    priority_category: InsightSummaryPriorityCategoryType0 | None | str | Unset = UNSET
+    label: InsightSummaryLabelType0 | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -100,37 +100,43 @@ class InsightSummary:
 
         priority = d.pop("priority")
 
-        def _parse_priority_category(data: object) -> InsightSummaryPriorityCategoryType0 | None | Unset:
+        def _parse_priority_category(data: object) -> InsightSummaryPriorityCategoryType0 | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                priority_category_type_0 = InsightSummaryPriorityCategoryType0(data)
+                priority_category_priority_category_type_0 = InsightSummaryPriorityCategoryType0(data)
 
-                return priority_category_type_0
+                return priority_category_priority_category_type_0
             except:  # noqa: E722
                 pass
-            return cast(InsightSummaryPriorityCategoryType0 | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for priority_category")
+            return cast(InsightSummaryPriorityCategoryType0 | None | str | Unset, data)
 
         priority_category = _parse_priority_category(d.pop("priority_category", UNSET))
 
-        def _parse_label(data: object) -> InsightSummaryLabelType0 | None | Unset:
+        def _parse_label(data: object) -> InsightSummaryLabelType0 | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                label_type_0 = InsightSummaryLabelType0(data)
+                label_label_type_0 = InsightSummaryLabelType0(data)
 
-                return label_type_0
+                return label_label_type_0
             except:  # noqa: E722
                 pass
-            return cast(InsightSummaryLabelType0 | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for label")
+            return cast(InsightSummaryLabelType0 | None | str | Unset, data)
 
         label = _parse_label(d.pop("label", UNSET))
 

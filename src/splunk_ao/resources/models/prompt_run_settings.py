@@ -218,6 +218,7 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         deployment_name = _parse_deployment_name(d.pop("deployment_name", UNSET))
@@ -229,6 +230,7 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         temperature = _parse_temperature(d.pop("temperature", UNSET))
@@ -240,6 +242,7 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -265,11 +268,13 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 tools_type_0 = []
                 _tools_type_0 = data
+
                 for tools_type_0_item_data in _tools_type_0:
                     tools_type_0_item = PromptRunSettingsToolsType0Item.from_dict(tools_type_0_item_data)
 
@@ -287,6 +292,7 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -304,6 +310,7 @@ class PromptRunSettings:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

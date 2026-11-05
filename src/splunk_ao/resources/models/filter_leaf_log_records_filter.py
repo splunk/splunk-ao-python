@@ -91,6 +91,7 @@ class FilterLeafLogRecordsFilter:
             | LogRecordsNumberFilter
             | LogRecordsTextFilter
         ):
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

@@ -45,6 +45,7 @@ class AnnotationAgreementBucket:
         def _parse_max_exclusive(data: object) -> float | None:
             if data is None:
                 return data
+
             return cast(float | None, data)
 
         max_exclusive = _parse_max_exclusive(d.pop("max_exclusive"))

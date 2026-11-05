@@ -91,6 +91,7 @@ class FeedbackAggregate:
             | TextAggregate
             | TreeChoiceAggregate
         ):
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

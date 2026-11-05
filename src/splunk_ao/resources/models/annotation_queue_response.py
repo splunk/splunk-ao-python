@@ -179,6 +179,7 @@ class AnnotationQueueResponse:
         def _parse_description(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         description = _parse_description(d.pop("description"))
@@ -190,6 +191,7 @@ class AnnotationQueueResponse:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -224,6 +226,7 @@ class AnnotationQueueResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -241,6 +244,7 @@ class AnnotationQueueResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -258,6 +262,7 @@ class AnnotationQueueResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         overall_progress = _parse_overall_progress(d.pop("overall_progress", UNSET))

@@ -60,6 +60,7 @@ class MetricComputing:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))

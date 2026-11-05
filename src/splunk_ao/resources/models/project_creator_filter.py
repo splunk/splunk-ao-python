@@ -18,15 +18,16 @@ class ProjectCreatorFilter:
     Attributes:
         value (list[str] | str):
         name (Literal['creator'] | Unset):  Default: 'creator'.
-        operator (ProjectCreatorFilterOperator | Unset):  Default: ProjectCreatorFilterOperator.EQ.
+        operator (ProjectCreatorFilterOperator | str | Unset):  Default: ProjectCreatorFilterOperator.EQ.
     """
 
     value: list[str] | str
     name: Literal["creator"] | Unset = "creator"
-    operator: ProjectCreatorFilterOperator | Unset = ProjectCreatorFilterOperator.EQ
+    operator: ProjectCreatorFilterOperator | str | Unset = ProjectCreatorFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         value: list[str] | str
         if isinstance(self.value, list):
             value = []
@@ -40,9 +41,13 @@ class ProjectCreatorFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, ProjectCreatorFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -59,14 +64,17 @@ class ProjectCreatorFilter:
         d = dict(src_dict)
 
         def _parse_value(data: object) -> list[str] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 value_type_1 = []
                 _value_type_1 = data
+
                 for value_type_1_item_data in _value_type_1:
 
                     def _parse_value_type_1_item(data: object) -> str:
+
                         return cast(str, data)
 
                     value_type_1_item = _parse_value_type_1_item(value_type_1_item_data)
@@ -84,12 +92,23 @@ class ProjectCreatorFilter:
         if name != "creator" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'creator', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: ProjectCreatorFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = ProjectCreatorFilterOperator(_operator)
+        def _parse_operator(data: object) -> ProjectCreatorFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = ProjectCreatorFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(ProjectCreatorFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         project_creator_filter = cls(value=value, name=name, operator=operator)
 

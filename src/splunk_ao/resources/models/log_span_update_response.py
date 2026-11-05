@@ -100,6 +100,7 @@ class LogSpanUpdateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -109,6 +110,7 @@ class LogSpanUpdateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -118,6 +120,7 @@ class LogSpanUpdateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
@@ -127,6 +130,7 @@ class LogSpanUpdateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))

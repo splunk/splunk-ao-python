@@ -18,12 +18,12 @@ class ProjectCreate:
     Attributes:
         name (str):
         created_by (None | str | Unset):
-        type_ (ProjectType | Unset):
+        type_ (ProjectType | str | Unset):
     """
 
     name: str
     created_by: None | str | Unset = UNSET
-    type_: ProjectType | Unset = UNSET
+    type_: ProjectType | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -35,9 +35,13 @@ class ProjectCreate:
         else:
             created_by = self.created_by
 
-        type_: str | Unset = UNSET
-        if not isinstance(self.type_, Unset):
+        type_: str | Unset
+        if isinstance(self.type_, Unset):
+            type_ = UNSET
+        elif isinstance(self.type_, ProjectType):
             type_ = self.type_.value
+        else:
+            type_ = self.type_
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -59,16 +63,28 @@ class ProjectCreate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
 
-        _type_ = d.pop("type", UNSET)
-        type_: ProjectType | Unset
-        if isinstance(_type_, Unset):
-            type_ = UNSET
-        else:
-            type_ = ProjectType(_type_)
+        def _parse_type_(data: object) -> ProjectType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                type_type_0 = ProjectType(data)
+
+                return type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for type_")
+            return cast(ProjectType | str | Unset, data)
+
+        type_ = _parse_type_(d.pop("type", UNSET))
 
         project_create = cls(name=name, created_by=created_by, type_=type_)
 

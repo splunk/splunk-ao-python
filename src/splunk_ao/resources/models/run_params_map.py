@@ -60,6 +60,7 @@ class RunParamsMap:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         model: None | str | Unset
         if isinstance(self.model, Unset):
             model = UNSET
@@ -227,6 +228,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model = _parse_model(d.pop("model", UNSET))
@@ -236,6 +238,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         temperature = _parse_temperature(d.pop("temperature", UNSET))
@@ -245,6 +248,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         max_tokens = _parse_max_tokens(d.pop("max_tokens", UNSET))
@@ -254,6 +258,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         stop_sequences = _parse_stop_sequences(d.pop("stop_sequences", UNSET))
@@ -263,6 +268,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         top_p = _parse_top_p(d.pop("top_p", UNSET))
@@ -272,6 +278,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         top_k = _parse_top_k(d.pop("top_k", UNSET))
@@ -281,6 +288,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         frequency_penalty = _parse_frequency_penalty(d.pop("frequency_penalty", UNSET))
@@ -290,6 +298,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         presence_penalty = _parse_presence_penalty(d.pop("presence_penalty", UNSET))
@@ -299,6 +308,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         echo = _parse_echo(d.pop("echo", UNSET))
@@ -308,6 +318,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         logprobs = _parse_logprobs(d.pop("logprobs", UNSET))
@@ -317,6 +328,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         top_logprobs = _parse_top_logprobs(d.pop("top_logprobs", UNSET))
@@ -326,6 +338,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         n = _parse_n(d.pop("n", UNSET))
@@ -335,6 +348,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         api_version = _parse_api_version(d.pop("api_version", UNSET))
@@ -344,6 +358,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         tools = _parse_tools(d.pop("tools", UNSET))
@@ -353,6 +368,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         tool_choice = _parse_tool_choice(d.pop("tool_choice", UNSET))
@@ -362,6 +378,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         response_format = _parse_response_format(d.pop("response_format", UNSET))
@@ -371,6 +388,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         reasoning_effort = _parse_reasoning_effort(d.pop("reasoning_effort", UNSET))
@@ -380,6 +398,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         verbosity = _parse_verbosity(d.pop("verbosity", UNSET))
@@ -389,6 +408,7 @@ class RunParamsMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         deployment_name = _parse_deployment_name(d.pop("deployment_name", UNSET))

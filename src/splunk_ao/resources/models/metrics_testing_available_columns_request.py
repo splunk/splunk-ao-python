@@ -21,7 +21,7 @@ class MetricsTestingAvailableColumnsRequest:
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
-        output_type (None | OutputTypeEnum | Unset): Output type of the scorer. Required when metric_key is
+        output_type (None | OutputTypeEnum | str | Unset): Output type of the scorer. Required when metric_key is
             REGISTERED_SCORER_VALIDATION or DECISION_SCORER_VALIDATION; used to determine the data_type for validation
             columns.
         cot_enabled (bool | Unset): Whether the metrics testing table is using chain of thought (CoT) enabled scorers.
@@ -38,7 +38,7 @@ class MetricsTestingAvailableColumnsRequest:
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
     cot_enabled: bool | Unset = False
     metric_key: str | Unset = "generated_scorer_validation"
     required_scorers: list[str] | None | Unset = UNSET
@@ -125,6 +125,7 @@ class MetricsTestingAvailableColumnsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -134,6 +135,7 @@ class MetricsTestingAvailableColumnsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -143,15 +145,17 @@ class MetricsTestingAvailableColumnsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -160,7 +164,9 @@ class MetricsTestingAvailableColumnsRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
@@ -173,6 +179,7 @@ class MetricsTestingAvailableColumnsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -190,6 +197,7 @@ class MetricsTestingAvailableColumnsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         score_type = _parse_score_type(d.pop("score_type", UNSET))

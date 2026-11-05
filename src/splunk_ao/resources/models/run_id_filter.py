@@ -18,15 +18,16 @@ class RunIDFilter:
     Attributes:
         value (list[str] | str):
         name (Literal['id'] | Unset):  Default: 'id'.
-        operator (RunIDFilterOperator | Unset):  Default: RunIDFilterOperator.EQ.
+        operator (RunIDFilterOperator | str | Unset):  Default: RunIDFilterOperator.EQ.
     """
 
     value: list[str] | str
     name: Literal["id"] | Unset = "id"
-    operator: RunIDFilterOperator | Unset = RunIDFilterOperator.EQ
+    operator: RunIDFilterOperator | str | Unset = RunIDFilterOperator.EQ
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         value: list[str] | str
         if isinstance(self.value, list):
             value = []
@@ -40,9 +41,13 @@ class RunIDFilter:
 
         name = self.name
 
-        operator: str | Unset = UNSET
-        if not isinstance(self.operator, Unset):
+        operator: str | Unset
+        if isinstance(self.operator, Unset):
+            operator = UNSET
+        elif isinstance(self.operator, RunIDFilterOperator):
             operator = self.operator.value
+        else:
+            operator = self.operator
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -59,14 +64,17 @@ class RunIDFilter:
         d = dict(src_dict)
 
         def _parse_value(data: object) -> list[str] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 value_type_1 = []
                 _value_type_1 = data
+
                 for value_type_1_item_data in _value_type_1:
 
                     def _parse_value_type_1_item(data: object) -> str:
+
                         return cast(str, data)
 
                     value_type_1_item = _parse_value_type_1_item(value_type_1_item_data)
@@ -84,12 +92,23 @@ class RunIDFilter:
         if name != "id" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'id', got '{name}'")
 
-        _operator = d.pop("operator", UNSET)
-        operator: RunIDFilterOperator | Unset
-        if isinstance(_operator, Unset):
-            operator = UNSET
-        else:
-            operator = RunIDFilterOperator(_operator)
+        def _parse_operator(data: object) -> RunIDFilterOperator | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                operator_type_0 = RunIDFilterOperator(data)
+
+                return operator_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for operator")
+            return cast(RunIDFilterOperator | str | Unset, data)
+
+        operator = _parse_operator(d.pop("operator", UNSET))
 
         run_id_filter = cls(value=value, name=name, operator=operator)
 

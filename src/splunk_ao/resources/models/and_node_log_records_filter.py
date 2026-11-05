@@ -59,6 +59,7 @@ class AndNodeLogRecordsFilter:
         d = dict(src_dict)
         and_ = []
         _and_ = d.pop("and")
+
         for and_item_data in _and_:
 
             def _parse_and_item(
@@ -66,6 +67,7 @@ class AndNodeLogRecordsFilter:
             ) -> (
                 AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter
             ):
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

@@ -51,6 +51,7 @@ class RemoveRecordsFromQueueRequest:
         def _parse_record_selector(
             data: object,
         ) -> AnnotationQueueRecordsByFilterTree | AnnotationQueueRecordsByRecordIDs:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

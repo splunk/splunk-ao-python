@@ -79,11 +79,13 @@ class DatasetRow:
 
         values = []
         _values = d.pop("values")
+
         for values_item_data in _values:
 
             def _parse_values_item(data: object) -> DatasetRowValuesItemType3 | float | int | None | str:
                 if data is None:
                     return data
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -103,6 +105,7 @@ class DatasetRow:
         def _parse_metadata(data: object) -> DatasetRowMetadata | None:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

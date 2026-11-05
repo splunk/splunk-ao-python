@@ -159,6 +159,7 @@ class ValidateLLMScorerDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         dataset_version_index = _parse_dataset_version_index(d.pop("dataset_version_index", UNSET))
@@ -170,6 +171,7 @@ class ValidateLLMScorerDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         starting_token = _parse_starting_token(d.pop("starting_token", UNSET))
@@ -179,14 +181,17 @@ class ValidateLLMScorerDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 normalized_input_type_0 = []
                 _normalized_input_type_0 = data
+
                 for normalized_input_type_0_item_data in _normalized_input_type_0:
 
                     def _parse_normalized_input_type_0_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -219,6 +224,7 @@ class ValidateLLMScorerDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

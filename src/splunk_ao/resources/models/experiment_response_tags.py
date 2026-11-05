@@ -41,6 +41,7 @@ class ExperimentResponseTags:
         for prop_name, prop_dict in d.items():
             additional_property = []
             _additional_property = prop_dict
+
             for additional_property_item_data in _additional_property:
                 additional_property_item = RunTagDB.from_dict(additional_property_item_data)
 

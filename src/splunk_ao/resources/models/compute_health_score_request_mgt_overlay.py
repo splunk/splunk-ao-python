@@ -34,6 +34,7 @@ class ComputeHealthScoreRequestMgtOverlay:
             def _parse_additional_property(data: object) -> None | str:
                 if data is None:
                     return data
+
                 return cast(None | str, data)
 
             additional_property = _parse_additional_property(prop_dict)

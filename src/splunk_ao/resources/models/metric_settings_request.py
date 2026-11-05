@@ -29,6 +29,7 @@ class MetricSettingsRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         scorers: list[dict[str, Any]] | None | Unset
         if isinstance(self.scorers, Unset):
             scorers = UNSET
@@ -75,11 +76,13 @@ class MetricSettingsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 scorers_type_0 = []
                 _scorers_type_0 = data
+
                 for scorers_type_0_item_data in _scorers_type_0:
                     scorers_type_0_item = RuntimeScorerConfig.from_dict(scorers_type_0_item_data)
 
@@ -97,11 +100,13 @@ class MetricSettingsRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 segment_filters_type_0 = []
                 _segment_filters_type_0 = data
+
                 for segment_filters_type_0_item_data in _segment_filters_type_0:
                     segment_filters_type_0_item = SegmentFilter.from_dict(segment_filters_type_0_item_data)
 

@@ -440,6 +440,7 @@ class MetricRollUp:
         ):
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -501,6 +502,7 @@ class MetricRollUp:
                     raise TypeError()
                 value_type_11 = []
                 _value_type_11 = data
+
                 for value_type_11_item_data in _value_type_11:
 
                     def _parse_value_type_11_item(
@@ -521,6 +523,7 @@ class MetricRollUp:
                     ):
                         if data is None:
                             return data
+
                         try:
                             if not isinstance(data, str):
                                 raise TypeError()
@@ -605,9 +608,11 @@ class MetricRollUp:
                     raise TypeError()
                 value_type_12 = []
                 _value_type_12 = data
+
                 for value_type_12_item_data in _value_type_12:
                     value_type_12_item = []
                     _value_type_12_item = value_type_12_item_data
+
                     for value_type_12_item_item_data in _value_type_12_item:
 
                         def _parse_value_type_12_item_item(
@@ -628,6 +633,7 @@ class MetricRollUp:
                         ):
                             if data is None:
                                 return data
+
                             try:
                                 if not isinstance(data, str):
                                     raise TypeError()
@@ -714,12 +720,15 @@ class MetricRollUp:
                     raise TypeError()
                 value_type_13 = []
                 _value_type_13 = data
+
                 for value_type_13_item_data in _value_type_13:
                     value_type_13_item = []
                     _value_type_13_item = value_type_13_item_data
+
                     for value_type_13_item_item_data in _value_type_13_item:
                         value_type_13_item_item = []
                         _value_type_13_item_item = value_type_13_item_item_data
+
                         for value_type_13_item_item_item_data in _value_type_13_item_item:
 
                             def _parse_value_type_13_item_item_item(
@@ -740,6 +749,7 @@ class MetricRollUp:
                             ):
                                 if data is None:
                                     return data
+
                                 try:
                                     if not isinstance(data, str):
                                         raise TypeError()
@@ -900,6 +910,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
@@ -909,6 +920,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         explanation = _parse_explanation(d.pop("explanation", UNSET))
@@ -918,6 +930,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         cost = _parse_cost(d.pop("cost", UNSET))
@@ -927,6 +940,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_alias = _parse_model_alias(d.pop("model_alias", UNSET))
@@ -936,6 +950,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -945,6 +960,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         multijudge_average = _parse_multijudge_average(d.pop("multijudge_average", UNSET))
@@ -954,6 +970,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         boolean_from_prob = _parse_boolean_from_prob(d.pop("boolean_from_prob", UNSET))
@@ -963,6 +980,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         input_tokens = _parse_input_tokens(d.pop("input_tokens", UNSET))
@@ -972,6 +990,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         output_tokens = _parse_output_tokens(d.pop("output_tokens", UNSET))
@@ -981,6 +1000,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         total_tokens = _parse_total_tokens(d.pop("total_tokens", UNSET))
@@ -990,6 +1010,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         batch_size = _parse_batch_size(d.pop("batch_size", UNSET))
@@ -999,6 +1020,7 @@ class MetricRollUp:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

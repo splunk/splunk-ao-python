@@ -52,6 +52,7 @@ class RenderTemplateRequest:
         template = d.pop("template")
 
         def _parse_data(data: object) -> DatasetData | StringData:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

@@ -68,6 +68,7 @@ class ExperimentUpdateRequest:
         def _parse_task_type(data: object) -> Literal[16] | Literal[17] | Unset:
             if isinstance(data, Unset):
                 return data
+
             task_type_type_0 = cast(Literal[16], data)
             if task_type_type_0 != 16:
                 raise ValueError(f"task_type_type_0 must match const 16, got '{task_type_type_0}'")
@@ -84,6 +85,7 @@ class ExperimentUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_group_id = _parse_experiment_group_id(d.pop("experiment_group_id", UNSET))
@@ -93,6 +95,7 @@ class ExperimentUpdateRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_group_name = _parse_experiment_group_name(d.pop("experiment_group_name", UNSET))

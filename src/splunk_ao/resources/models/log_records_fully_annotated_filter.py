@@ -70,6 +70,7 @@ class LogRecordsFullyAnnotatedFilter:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()

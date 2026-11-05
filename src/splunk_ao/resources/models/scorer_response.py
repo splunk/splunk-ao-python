@@ -37,7 +37,7 @@ class ScorerResponse:
     Attributes:
         id (str):
         name (str):
-        scorer_type (ScorerTypes):
+        scorer_type (ScorerTypes | str):
         tags (list[str]):
         permissions (list[Permission] | Unset):
         label (None | str | Unset):  Default: ''.
@@ -45,19 +45,19 @@ class ScorerResponse:
         invocation (None | ScorerInvocationConfig | Unset): Intrinsic metadata for invoking this scorer directly with
             query and response inputs.
         latest_version (BaseScorerVersionDB | None | Unset):
-        model_type (ModelType | None | Unset):
+        model_type (ModelType | None | str | Unset):
         ground_truth (bool | None | Unset):
         default_version_id (None | str | Unset):
         default_version (BaseScorerVersionDB | None | Unset):
         user_prompt (None | str | Unset):
         scoreable_node_types (list[str] | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
+        input_type (InputTypeEnum | None | str | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
         required_scorers (list[str] | None | Unset):
         required_metric_ids (list[str] | None | Unset):
         deprecated (bool | None | Unset):
-        roll_up_method (None | RollUpMethodDisplayOptions | Unset):
+        roll_up_method (None | RollUpMethodDisplayOptions | str | Unset):
         roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
         included_fields (list[str] | Unset): Fields that can be used in the scorer to configure it. i.e. model,
             num_judges, etc. This enables the ui to know which fields a user can configure when they're setting a scorer
@@ -76,26 +76,26 @@ class ScorerResponse:
 
     id: str
     name: str
-    scorer_type: ScorerTypes
+    scorer_type: ScorerTypes | str
     tags: list[str]
     permissions: list[Permission] | Unset = UNSET
     label: None | str | Unset = ""
     defaults: None | ScorerDefaults | Unset = UNSET
     invocation: None | ScorerInvocationConfig | Unset = UNSET
     latest_version: BaseScorerVersionDB | None | Unset = UNSET
-    model_type: ModelType | None | Unset = UNSET
+    model_type: ModelType | None | str | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
     default_version_id: None | str | Unset = UNSET
     default_version: BaseScorerVersionDB | None | Unset = UNSET
     user_prompt: None | str | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
     required_scorers: list[str] | None | Unset = UNSET
     required_metric_ids: list[str] | None | Unset = UNSET
     deprecated: bool | None | Unset = UNSET
-    roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
+    roll_up_method: None | RollUpMethodDisplayOptions | str | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
     included_fields: list[str] | Unset = UNSET
     description: None | str | Unset = UNSET
@@ -131,7 +131,11 @@ class ScorerResponse:
 
         name = self.name
 
-        scorer_type = self.scorer_type.value
+        scorer_type: str
+        if isinstance(self.scorer_type, ScorerTypes):
+            scorer_type = self.scorer_type.value
+        else:
+            scorer_type = self.scorer_type
 
         tags = self.tags
 
@@ -231,13 +235,27 @@ class ScorerResponse:
         else:
             input_type = self.input_type
 
+        if (
+            not isinstance(self.multimodal_capabilities, list)
+            and self.multimodal_capabilities is not None
+            and not isinstance(self.multimodal_capabilities, Unset)
+        ):
+            raise TypeError("Unexpected value type for multimodal_capabilities")
+
         multimodal_capabilities: list[str] | None | Unset
         if isinstance(self.multimodal_capabilities, Unset):
             multimodal_capabilities = UNSET
         elif isinstance(self.multimodal_capabilities, list):
+            if not isinstance(self.multimodal_capabilities, list):
+                raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
             multimodal_capabilities = []
             for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities_type_0_item: str
+                if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                else:
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
                 multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
         else:
@@ -443,7 +461,21 @@ class ScorerResponse:
 
         name = d.pop("name")
 
-        scorer_type = ScorerTypes(d.pop("scorer_type"))
+        def _parse_scorer_type(data: object) -> ScorerTypes | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                scorer_type_type_0 = ScorerTypes(data)
+
+                return scorer_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for scorer_type")
+            return cast(ScorerTypes | str, data)
+
+        scorer_type = _parse_scorer_type(d.pop("scorer_type"))
 
         tags = cast(list[str], d.pop("tags"))
 
@@ -461,6 +493,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         label = _parse_label(d.pop("label", UNSET))
@@ -470,6 +503,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -487,6 +521,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -504,6 +539,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -516,11 +552,12 @@ class ScorerResponse:
 
         latest_version = _parse_latest_version(d.pop("latest_version", UNSET))
 
-        def _parse_model_type(data: object) -> ModelType | None | Unset:
+        def _parse_model_type(data: object) -> ModelType | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -529,7 +566,9 @@ class ScorerResponse:
                 return model_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(ModelType | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for model_type")
+            return cast(ModelType | None | str | Unset, data)
 
         model_type = _parse_model_type(d.pop("model_type", UNSET))
 
@@ -538,6 +577,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         ground_truth = _parse_ground_truth(d.pop("ground_truth", UNSET))
@@ -547,6 +587,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         default_version_id = _parse_default_version_id(d.pop("default_version_id", UNSET))
@@ -556,6 +597,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -573,6 +615,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_prompt = _parse_user_prompt(d.pop("user_prompt", UNSET))
@@ -582,6 +625,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -594,11 +638,12 @@ class ScorerResponse:
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -607,15 +652,18 @@ class ScorerResponse:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -624,29 +672,54 @@ class ScorerResponse:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+            if not isinstance(data, list) and data is not None and not isinstance(data, Unset):
+                raise TypeError("Unexpected value type for multimodal_capabilities")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 multimodal_capabilities_type_0 = []
                 _multimodal_capabilities_type_0 = data
+                if not isinstance(_multimodal_capabilities_type_0, list):
+                    raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
                 for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
-                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    def _parse_multimodal_capabilities_type_0_item(data: object) -> MultimodalCapability | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            multimodal_capabilities_type_0_item_type_0 = MultimodalCapability(data)
+
+                            return multimodal_capabilities_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for multimodal_capabilities_type_0_item")
+                        return cast(MultimodalCapability | str, data)
+
+                    multimodal_capabilities_type_0_item = _parse_multimodal_capabilities_type_0_item(
+                        multimodal_capabilities_type_0_item_data
+                    )
 
                     multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
 
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(list[MultimodalCapability | str] | None | Unset, data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
@@ -655,6 +728,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -672,6 +746,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -689,15 +764,17 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         deprecated = _parse_deprecated(d.pop("deprecated", UNSET))
 
-        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | Unset:
+        def _parse_roll_up_method(data: object) -> None | RollUpMethodDisplayOptions | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -706,7 +783,9 @@ class ScorerResponse:
                 return roll_up_method_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpMethodDisplayOptions | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_method")
+            return cast(None | RollUpMethodDisplayOptions | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
 
@@ -715,6 +794,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -734,6 +814,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
@@ -743,6 +824,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
@@ -752,6 +834,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -769,6 +852,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -795,6 +879,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -844,6 +929,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -861,6 +947,7 @@ class ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_name = _parse_metric_name(d.pop("metric_name", UNSET))

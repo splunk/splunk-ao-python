@@ -160,6 +160,7 @@ class ListDatasetParams:
                     | DatasetNotInProjectFilter
                     | DatasetUsedInProjectFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -219,6 +220,7 @@ class ListDatasetParams:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

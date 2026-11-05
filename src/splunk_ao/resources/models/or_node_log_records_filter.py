@@ -59,6 +59,7 @@ class OrNodeLogRecordsFilter:
         d = dict(src_dict)
         or_ = []
         _or_ = d.pop("or")
+
         for or_item_data in _or_:
 
             def _parse_or_item(
@@ -66,6 +67,7 @@ class OrNodeLogRecordsFilter:
             ) -> (
                 AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter
             ):
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

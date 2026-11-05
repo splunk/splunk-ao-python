@@ -25,8 +25,8 @@ class CreateLLMScorerVersionRequest:
         num_judges (int | None | Unset):
         scoreable_node_types (list[str] | None | Unset):
         cot_enabled (bool | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
+        input_type (InputTypeEnum | None | str | Unset):
         instructions (None | str | Unset):
         chain_poll_template (ChainPollTemplate | None | Unset):
         user_prompt (None | str | Unset):
@@ -36,8 +36,8 @@ class CreateLLMScorerVersionRequest:
     num_judges: int | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
     instructions: None | str | Unset = UNSET
     chain_poll_template: ChainPollTemplate | None | Unset = UNSET
     user_prompt: None | str | Unset = UNSET
@@ -144,6 +144,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
@@ -153,6 +154,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -162,6 +164,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -179,15 +182,17 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -196,15 +201,18 @@ class CreateLLMScorerVersionRequest:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -213,7 +221,9 @@ class CreateLLMScorerVersionRequest:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
@@ -222,6 +232,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         instructions = _parse_instructions(d.pop("instructions", UNSET))
@@ -231,6 +242,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -248,6 +260,7 @@ class CreateLLMScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_prompt = _parse_user_prompt(d.pop("user_prompt", UNSET))

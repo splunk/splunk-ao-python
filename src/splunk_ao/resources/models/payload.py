@@ -24,6 +24,7 @@ class Payload:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         input_: None | str | Unset
         if isinstance(self.input_, Unset):
             input_ = UNSET
@@ -55,6 +56,7 @@ class Payload:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         input_ = _parse_input_(d.pop("input", UNSET))
@@ -64,6 +66,7 @@ class Payload:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         output = _parse_output(d.pop("output", UNSET))

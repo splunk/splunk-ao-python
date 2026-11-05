@@ -95,6 +95,7 @@ class ExtendedRetrieverSpanRecordWithChildrenMetricInfoType0:
                 | MetricRollUp
                 | MetricSuccess
             ):
+
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()

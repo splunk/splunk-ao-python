@@ -80,6 +80,7 @@ class OutputMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         token_count = _parse_token_count(d.pop("token_count", UNSET))
@@ -89,6 +90,7 @@ class OutputMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         input_token_count = _parse_input_token_count(d.pop("input_token_count", UNSET))
@@ -98,6 +100,7 @@ class OutputMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         output_token_count = _parse_output_token_count(d.pop("output_token_count", UNSET))
@@ -107,6 +110,7 @@ class OutputMap:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         completion_reason = _parse_completion_reason(d.pop("completion_reason", UNSET))

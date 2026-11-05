@@ -71,6 +71,7 @@ class MetricThreshold:
             for buckets_item_data in _buckets:
 
                 def _parse_buckets_item(data: object) -> float | int:
+
                     return cast(float | int, data)
 
                 buckets_item = _parse_buckets_item(buckets_item_data)

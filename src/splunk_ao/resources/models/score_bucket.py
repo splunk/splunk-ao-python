@@ -45,6 +45,7 @@ class ScoreBucket:
         def _parse_max_exclusive(data: object) -> int | None:
             if data is None:
                 return data
+
             return cast(int | None, data)
 
         max_exclusive = _parse_max_exclusive(d.pop("max_exclusive"))

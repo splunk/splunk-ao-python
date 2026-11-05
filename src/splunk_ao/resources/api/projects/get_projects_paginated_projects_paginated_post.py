@@ -27,7 +27,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: ProjectCollectionParams | Unset,
-    actions: list[Literal["update"] | ProjectAction] | Unset = UNSET,
+    actions: list[Literal["update"] | ProjectAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> dict[str, Any]:
@@ -37,6 +37,9 @@ def _get_kwargs(
 
     json_actions: list[Literal["update"] | str] | Unset = UNSET
     if not isinstance(actions, Unset):
+        if not isinstance(actions, list):
+            raise TypeError("Unexpected value type for actions")
+
         json_actions = []
         for actions_item_data in actions:
             actions_item: Literal["update"] | str
@@ -119,7 +122,7 @@ def sync_detailed(
     *,
     client: ApiClient,
     body: ProjectCollectionParams | Unset,
-    actions: list[Literal["update"] | ProjectAction] | Unset = UNSET,
+    actions: list[Literal["update"] | ProjectAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[GetProjectsPaginatedResponse | HTTPValidationError]:
@@ -130,7 +133,7 @@ def sync_detailed(
     If provided, filters on project_name and project_type.
 
     Args:
-        actions (list[Literal['update'] | ProjectAction] | Unset): Actions to include in
+        actions (list[Literal['update'] | ProjectAction | str] | Unset): Actions to include in
             'permissions'. Deprecated 'update' and log access actions are ignored.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
@@ -155,7 +158,7 @@ def sync(
     *,
     client: ApiClient,
     body: ProjectCollectionParams | Unset,
-    actions: list[Literal["update"] | ProjectAction] | Unset = UNSET,
+    actions: list[Literal["update"] | ProjectAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[GetProjectsPaginatedResponse | HTTPValidationError]:
@@ -166,7 +169,7 @@ def sync(
     If provided, filters on project_name and project_type.
 
     Args:
-        actions (list[Literal['update'] | ProjectAction] | Unset): Actions to include in
+        actions (list[Literal['update'] | ProjectAction | str] | Unset): Actions to include in
             'permissions'. Deprecated 'update' and log access actions are ignored.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
@@ -187,7 +190,7 @@ async def asyncio_detailed(
     *,
     client: ApiClient,
     body: ProjectCollectionParams | Unset,
-    actions: list[Literal["update"] | ProjectAction] | Unset = UNSET,
+    actions: list[Literal["update"] | ProjectAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[GetProjectsPaginatedResponse | HTTPValidationError]:
@@ -198,7 +201,7 @@ async def asyncio_detailed(
     If provided, filters on project_name and project_type.
 
     Args:
-        actions (list[Literal['update'] | ProjectAction] | Unset): Actions to include in
+        actions (list[Literal['update'] | ProjectAction | str] | Unset): Actions to include in
             'permissions'. Deprecated 'update' and log access actions are ignored.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
@@ -223,7 +226,7 @@ async def asyncio(
     *,
     client: ApiClient,
     body: ProjectCollectionParams | Unset,
-    actions: list[Literal["update"] | ProjectAction] | Unset = UNSET,
+    actions: list[Literal["update"] | ProjectAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[GetProjectsPaginatedResponse | HTTPValidationError]:
@@ -234,7 +237,7 @@ async def asyncio(
     If provided, filters on project_name and project_type.
 
     Args:
-        actions (list[Literal['update'] | ProjectAction] | Unset): Actions to include in
+        actions (list[Literal['update'] | ProjectAction | str] | Unset): Actions to include in
             'permissions'. Deprecated 'update' and log access actions are ignored.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.

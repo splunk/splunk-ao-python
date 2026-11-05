@@ -80,6 +80,7 @@ class UpdateDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -97,6 +98,7 @@ class UpdateDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -114,6 +116,7 @@ class UpdateDatasetRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         draft = _parse_draft(d.pop("draft", UNSET))

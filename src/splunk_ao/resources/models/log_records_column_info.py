@@ -28,19 +28,19 @@ class LogRecordsColumnInfo:
     """
     Attributes:
         id (str): Column id.  Must be universally unique.
-        category (ColumnCategory):
-        data_type (DataType | None): Data type of the column. This is used to determine how to format the data on the
-            UI.
+        category (ColumnCategory | str): Category of the column.
+        data_type (DataType | None | str): Data type of the column. This is used to determine how to format the data on
+            the UI.
         label (None | str | Unset): Display label of the column in the UI.
         description (None | str | Unset): Description of the column.
         group_label (None | str | Unset): Display label of the column group.
-        data_unit (DataUnit | None | Unset): Data unit of the column (optional).
+        data_unit (DataUnit | None | str | Unset): Data unit of the column (optional).
         multi_valued (bool | Unset): Whether the column is multi-valued. Default: False.
         allowed_values (list[Any] | None | Unset): Allowed values for this column.
         sortable (bool | Unset): Whether the column is sortable.
         filterable (bool | Unset): Whether the column is filterable.
         is_empty (bool | Unset): Indicates whether the column is empty and should be hidden. Default: False.
-        applicable_types (list[StepType] | Unset): List of types applicable for this column.
+        applicable_types (list[StepType | str] | Unset): List of types applicable for this column.
         is_optional (bool | Unset): Whether the column is optional. Default: False.
         roll_up_method (None | str | Unset): Default roll-up aggregation method for this metric (e.g., 'sum',
             'average').
@@ -51,34 +51,34 @@ class LogRecordsColumnInfo:
             metric.
         scorer_id (None | str | Unset): For metric columns only: Scorer id that produced the metric. This is deprecated
             and will be removed in future versions.
-        insight_type (InsightType | None | Unset): Insight type.
-        filter_type (LogRecordsFilterType | None | Unset): Filter type.
-        label_color (LogRecordsColumnInfoLabelColorType0 | None | Unset): Type of label color for the column, if this is
-            a multilabel metric column.
+        insight_type (InsightType | None | str | Unset): Insight type.
+        filter_type (LogRecordsFilterType | None | str | Unset): Filter type.
+        label_color (LogRecordsColumnInfoLabelColorType0 | None | str | Unset): Type of label color for the column, if
+            this is a multilabel metric column.
     """
 
     id: str
-    category: ColumnCategory
-    data_type: DataType | None
+    category: ColumnCategory | str
+    data_type: DataType | None | str
     label: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
     group_label: None | str | Unset = UNSET
-    data_unit: DataUnit | None | Unset = UNSET
+    data_unit: DataUnit | None | str | Unset = UNSET
     multi_valued: bool | Unset = False
     allowed_values: list[Any] | None | Unset = UNSET
     sortable: bool | Unset = UNSET
     filterable: bool | Unset = UNSET
     is_empty: bool | Unset = False
-    applicable_types: list[StepType] | Unset = UNSET
+    applicable_types: list[StepType | str] | Unset = UNSET
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     threshold: MetricThreshold | None | Unset = UNSET
     scorer_config: None | RuntimeScorerConfig | Unset = UNSET
     scorer_id: None | str | Unset = UNSET
-    insight_type: InsightType | None | Unset = UNSET
-    filter_type: LogRecordsFilterType | None | Unset = UNSET
-    label_color: LogRecordsColumnInfoLabelColorType0 | None | Unset = UNSET
+    insight_type: InsightType | None | str | Unset = UNSET
+    filter_type: LogRecordsFilterType | None | str | Unset = UNSET
+    label_color: LogRecordsColumnInfoLabelColorType0 | None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -87,7 +87,11 @@ class LogRecordsColumnInfo:
 
         id = self.id
 
-        category = self.category.value
+        category: str
+        if isinstance(self.category, ColumnCategory):
+            category = self.category.value
+        else:
+            category = self.category
 
         data_type: None | str
         if isinstance(self.data_type, DataType):
@@ -140,9 +144,16 @@ class LogRecordsColumnInfo:
 
         applicable_types: list[str] | Unset = UNSET
         if not isinstance(self.applicable_types, Unset):
+            if not isinstance(self.applicable_types, list):
+                raise TypeError("Unexpected value type for applicable_types")
+
             applicable_types = []
             for applicable_types_item_data in self.applicable_types:
-                applicable_types_item = applicable_types_item_data.value
+                applicable_types_item: str
+                if isinstance(applicable_types_item_data, StepType):
+                    applicable_types_item = applicable_types_item_data.value
+                else:
+                    applicable_types_item = applicable_types_item_data
                 applicable_types.append(applicable_types_item)
 
         is_optional = self.is_optional
@@ -257,11 +268,26 @@ class LogRecordsColumnInfo:
         d = dict(src_dict)
         id = d.pop("id")
 
-        category = ColumnCategory(d.pop("category"))
+        def _parse_category(data: object) -> ColumnCategory | str:
 
-        def _parse_data_type(data: object) -> DataType | None:
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                category_type_0 = ColumnCategory(data)
+
+                return category_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for category")
+            return cast(ColumnCategory | str, data)
+
+        category = _parse_category(d.pop("category"))
+
+        def _parse_data_type(data: object) -> DataType | None | str:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -270,7 +296,9 @@ class LogRecordsColumnInfo:
                 return data_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataType | None, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_type")
+            return cast(DataType | None | str, data)
 
         data_type = _parse_data_type(d.pop("data_type"))
 
@@ -279,6 +307,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         label = _parse_label(d.pop("label", UNSET))
@@ -288,6 +317,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
@@ -297,15 +327,17 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         group_label = _parse_group_label(d.pop("group_label", UNSET))
 
-        def _parse_data_unit(data: object) -> DataUnit | None | Unset:
+        def _parse_data_unit(data: object) -> DataUnit | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -314,7 +346,9 @@ class LogRecordsColumnInfo:
                 return data_unit_type_0
             except:  # noqa: E722
                 pass
-            return cast(DataUnit | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for data_unit")
+            return cast(DataUnit | None | str | Unset, data)
 
         data_unit = _parse_data_unit(d.pop("data_unit", UNSET))
 
@@ -325,6 +359,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -344,11 +379,29 @@ class LogRecordsColumnInfo:
         is_empty = d.pop("is_empty", UNSET)
 
         _applicable_types = d.pop("applicable_types", UNSET)
-        applicable_types: list[StepType] | Unset = UNSET
+        applicable_types: list[StepType | str] | Unset = UNSET
         if _applicable_types is not UNSET:
+            if not isinstance(_applicable_types, list):
+                raise TypeError("Unexpected value type for applicable_types")
+
             applicable_types = []
             for applicable_types_item_data in _applicable_types:
-                applicable_types_item = StepType(applicable_types_item_data)
+
+                def _parse_applicable_types_item(data: object) -> StepType | str:
+
+                    try:
+                        if not isinstance(data, str):
+                            raise TypeError()
+                        applicable_types_item_type_0 = StepType(data)
+
+                        return applicable_types_item_type_0
+                    except:  # noqa: E722
+                        pass
+                    if type(data) not in (str,):
+                        raise TypeError("Unexpected value type for applicable_types_item")
+                    return cast(StepType | str, data)
+
+                applicable_types_item = _parse_applicable_types_item(applicable_types_item_data)
 
                 applicable_types.append(applicable_types_item)
 
@@ -359,6 +412,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         roll_up_method = _parse_roll_up_method(d.pop("roll_up_method", UNSET))
@@ -368,6 +422,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
@@ -377,6 +432,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -394,6 +450,7 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -411,15 +468,17 @@ class LogRecordsColumnInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_id = _parse_scorer_id(d.pop("scorer_id", UNSET))
 
-        def _parse_insight_type(data: object) -> InsightType | None | Unset:
+        def _parse_insight_type(data: object) -> InsightType | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -428,15 +487,18 @@ class LogRecordsColumnInfo:
                 return insight_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InsightType | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for insight_type")
+            return cast(InsightType | None | str | Unset, data)
 
         insight_type = _parse_insight_type(d.pop("insight_type", UNSET))
 
-        def _parse_filter_type(data: object) -> LogRecordsFilterType | None | Unset:
+        def _parse_filter_type(data: object) -> LogRecordsFilterType | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -445,24 +507,29 @@ class LogRecordsColumnInfo:
                 return filter_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LogRecordsFilterType | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for filter_type")
+            return cast(LogRecordsFilterType | None | str | Unset, data)
 
         filter_type = _parse_filter_type(d.pop("filter_type", UNSET))
 
-        def _parse_label_color(data: object) -> LogRecordsColumnInfoLabelColorType0 | None | Unset:
+        def _parse_label_color(data: object) -> LogRecordsColumnInfoLabelColorType0 | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                label_color_type_0 = LogRecordsColumnInfoLabelColorType0(data)
+                label_color_label_color_type_0 = LogRecordsColumnInfoLabelColorType0(data)
 
-                return label_color_type_0
+                return label_color_label_color_type_0
             except:  # noqa: E722
                 pass
-            return cast(LogRecordsColumnInfoLabelColorType0 | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for label_color")
+            return cast(LogRecordsColumnInfoLabelColorType0 | None | str | Unset, data)
 
         label_color = _parse_label_color(d.pop("label_color", UNSET))
 

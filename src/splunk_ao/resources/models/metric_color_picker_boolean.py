@@ -40,6 +40,7 @@ class MetricColorPickerBoolean:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         constraints = []
         for constraints_item_data in self.constraints:
             constraints_item = constraints_item_data.to_dict()
@@ -62,6 +63,7 @@ class MetricColorPickerBoolean:
         d = dict(src_dict)
         constraints = []
         _constraints = d.pop("constraints")
+
         for constraints_item_data in _constraints:
             constraints_item = BooleanColorConstraint.from_dict(constraints_item_data)
 

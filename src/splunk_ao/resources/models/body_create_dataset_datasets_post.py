@@ -186,6 +186,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         name = _parse_name(d.pop("name", UNSET))
@@ -197,6 +198,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, bytes):
                     raise TypeError()
@@ -214,6 +216,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         copy_from_dataset_id = _parse_copy_from_dataset_id(d.pop("copy_from_dataset_id", UNSET))
@@ -223,6 +226,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         copy_from_dataset_version_index = _parse_copy_from_dataset_version_index(
@@ -234,6 +238,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
@@ -243,6 +248,7 @@ class BodyCreateDatasetDatasetsPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         column_mapping = _parse_column_mapping(d.pop("column_mapping", UNSET))

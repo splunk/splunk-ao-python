@@ -56,21 +56,21 @@ class BaseScorer:
         scorer_version_id (None | str | Unset):
         user_code (None | str | Unset):
         can_copy_to_llm (bool | None | Unset):
-        scoreable_node_types (list[NodeType] | None | Unset):
+        scoreable_node_types (list[NodeType | str] | None | Unset):
         cot_enabled (bool | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
-        input_type (InputTypeEnum | None | Unset):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
+        input_type (InputTypeEnum | None | str | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
         requires_tools_in_llm_span (bool | Unset):  Default: False.
         required_scorers (list[str] | None | Unset):
         required_metric_ids (list[str] | None | Unset):
-        roll_up_strategy (None | RollUpStrategy | Unset):
-        roll_up_methods (list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset):
+        roll_up_strategy (None | RollUpStrategy | str | Unset):
+        roll_up_methods (list[CategoricalRollUpMethod | NumericRollUpMethod | str] | None | Unset):
         prompt (None | str | Unset):
         lora_task_id (int | None | Unset):
         lora_weights_path (None | str | Unset):
-        luna_input_type (LunaInputTypeEnum | None | Unset):
-        luna_output_type (LunaOutputTypeEnum | None | Unset):
+        luna_input_type (LunaInputTypeEnum | None | str | Unset):
+        luna_output_type (LunaOutputTypeEnum | None | str | Unset):
         class_name_to_vocab_ix (BaseScorerClassNameToVocabIxType0 | BaseScorerClassNameToVocabIxType1 | None | Unset):
         scorer_path_name (None | str | Unset):
     """
@@ -96,21 +96,21 @@ class BaseScorer:
     scorer_version_id: None | str | Unset = UNSET
     user_code: None | str | Unset = UNSET
     can_copy_to_llm: bool | None | Unset = UNSET
-    scoreable_node_types: list[NodeType] | None | Unset = UNSET
+    scoreable_node_types: list[NodeType | str] | None | Unset = UNSET
     cot_enabled: bool | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
-    input_type: InputTypeEnum | None | Unset = UNSET
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
+    input_type: InputTypeEnum | None | str | Unset = UNSET
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
     requires_tools_in_llm_span: bool | Unset = False
     required_scorers: list[str] | None | Unset = UNSET
     required_metric_ids: list[str] | None | Unset = UNSET
-    roll_up_strategy: None | RollUpStrategy | Unset = UNSET
-    roll_up_methods: list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset = UNSET
+    roll_up_strategy: None | RollUpStrategy | str | Unset = UNSET
+    roll_up_methods: list[CategoricalRollUpMethod | NumericRollUpMethod | str] | None | Unset = UNSET
     prompt: None | str | Unset = UNSET
     lora_task_id: int | None | Unset = UNSET
     lora_weights_path: None | str | Unset = UNSET
-    luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
-    luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
+    luna_input_type: LunaInputTypeEnum | None | str | Unset = UNSET
+    luna_output_type: LunaOutputTypeEnum | None | str | Unset = UNSET
     class_name_to_vocab_ix: BaseScorerClassNameToVocabIxType0 | BaseScorerClassNameToVocabIxType1 | None | Unset = UNSET
     scorer_path_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -266,13 +266,27 @@ class BaseScorer:
         else:
             can_copy_to_llm = self.can_copy_to_llm
 
+        if (
+            not isinstance(self.scoreable_node_types, list)
+            and self.scoreable_node_types is not None
+            and not isinstance(self.scoreable_node_types, Unset)
+        ):
+            raise TypeError("Unexpected value type for scoreable_node_types")
+
         scoreable_node_types: list[str] | None | Unset
         if isinstance(self.scoreable_node_types, Unset):
             scoreable_node_types = UNSET
         elif isinstance(self.scoreable_node_types, list):
+            if not isinstance(self.scoreable_node_types, list):
+                raise TypeError("Unexpected value type for scoreable_node_types_type_0")
+
             scoreable_node_types = []
             for scoreable_node_types_type_0_item_data in self.scoreable_node_types:
-                scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                scoreable_node_types_type_0_item: str
+                if isinstance(scoreable_node_types_type_0_item_data, NodeType):
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data.value
+                else:
+                    scoreable_node_types_type_0_item = scoreable_node_types_type_0_item_data
                 scoreable_node_types.append(scoreable_node_types_type_0_item)
 
         else:
@@ -300,13 +314,27 @@ class BaseScorer:
         else:
             input_type = self.input_type
 
+        if (
+            not isinstance(self.multimodal_capabilities, list)
+            and self.multimodal_capabilities is not None
+            and not isinstance(self.multimodal_capabilities, Unset)
+        ):
+            raise TypeError("Unexpected value type for multimodal_capabilities")
+
         multimodal_capabilities: list[str] | None | Unset
         if isinstance(self.multimodal_capabilities, Unset):
             multimodal_capabilities = UNSET
         elif isinstance(self.multimodal_capabilities, list):
+            if not isinstance(self.multimodal_capabilities, list):
+                raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
             multimodal_capabilities = []
             for multimodal_capabilities_type_0_item_data in self.multimodal_capabilities:
-                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                multimodal_capabilities_type_0_item: str
+                if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+                else:
+                    multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
                 multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
         else:
@@ -340,20 +368,30 @@ class BaseScorer:
         else:
             roll_up_strategy = self.roll_up_strategy
 
+        if (
+            not isinstance(self.roll_up_methods, list)
+            and self.roll_up_methods is not None
+            and not isinstance(self.roll_up_methods, Unset)
+        ):
+            raise TypeError("Unexpected value type for roll_up_methods")
+
         roll_up_methods: list[str] | None | Unset
         if isinstance(self.roll_up_methods, Unset):
             roll_up_methods = UNSET
         elif isinstance(self.roll_up_methods, list):
+            if not isinstance(self.roll_up_methods, list):
+                raise TypeError("Unexpected value type for roll_up_methods_type_0")
+
             roll_up_methods = []
             for roll_up_methods_type_0_item_data in self.roll_up_methods:
-                roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                roll_up_methods_type_0_item: str
+                if isinstance(roll_up_methods_type_0_item_data, NumericRollUpMethod):
+                    roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                elif isinstance(roll_up_methods_type_0_item_data, CategoricalRollUpMethod):
+                    roll_up_methods_type_0_item = roll_up_methods_type_0_item_data.value
+                else:
+                    roll_up_methods_type_0_item = roll_up_methods_type_0_item_data
                 roll_up_methods.append(roll_up_methods_type_0_item)
-
-        elif isinstance(self.roll_up_methods, list):
-            roll_up_methods = []
-            for roll_up_methods_type_1_item_data in self.roll_up_methods:
-                roll_up_methods_type_1_item = roll_up_methods_type_1_item_data.value
-                roll_up_methods.append(roll_up_methods_type_1_item)
 
         else:
             roll_up_methods = self.roll_up_methods
@@ -511,6 +549,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -528,6 +567,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -545,6 +585,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -562,6 +603,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -579,6 +621,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -596,14 +639,17 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 filters_type_0 = []
                 _filters_type_0 = data
+
                 for filters_type_0_item_data in _filters_type_0:
 
                     def _parse_filters_type_0_item(data: object) -> MetadataFilter | ModalityFilter | NodeNameFilter:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -642,6 +688,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_name = _parse_metric_name(d.pop("metric_name", UNSET))
@@ -651,6 +698,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
@@ -660,6 +708,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -677,6 +726,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_alias = _parse_model_alias(d.pop("model_alias", UNSET))
@@ -686,6 +736,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -695,6 +746,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         default_model_alias = _parse_default_model_alias(d.pop("default_model_alias", UNSET))
@@ -704,6 +756,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         ground_truth = _parse_ground_truth(d.pop("ground_truth", UNSET))
@@ -715,6 +768,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         registered_scorer_id = _parse_registered_scorer_id(d.pop("registered_scorer_id", UNSET))
@@ -724,6 +778,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         generated_scorer_id = _parse_generated_scorer_id(d.pop("generated_scorer_id", UNSET))
@@ -733,6 +788,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_version_id = _parse_scorer_version_id(d.pop("scorer_version_id", UNSET))
@@ -742,6 +798,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         user_code = _parse_user_code(d.pop("user_code", UNSET))
@@ -751,29 +808,53 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         can_copy_to_llm = _parse_can_copy_to_llm(d.pop("can_copy_to_llm", UNSET))
 
-        def _parse_scoreable_node_types(data: object) -> list[NodeType] | None | Unset:
+        def _parse_scoreable_node_types(data: object) -> list[NodeType | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+            if not isinstance(data, list) and data is not None and not isinstance(data, Unset):
+                raise TypeError("Unexpected value type for scoreable_node_types")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 scoreable_node_types_type_0 = []
                 _scoreable_node_types_type_0 = data
+                if not isinstance(_scoreable_node_types_type_0, list):
+                    raise TypeError("Unexpected value type for scoreable_node_types_type_0")
+
                 for scoreable_node_types_type_0_item_data in _scoreable_node_types_type_0:
-                    scoreable_node_types_type_0_item = NodeType(scoreable_node_types_type_0_item_data)
+
+                    def _parse_scoreable_node_types_type_0_item(data: object) -> NodeType | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            scoreable_node_types_type_0_item_type_0 = NodeType(data)
+
+                            return scoreable_node_types_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for scoreable_node_types_type_0_item")
+                        return cast(NodeType | str, data)
+
+                    scoreable_node_types_type_0_item = _parse_scoreable_node_types_type_0_item(
+                        scoreable_node_types_type_0_item_data
+                    )
 
                     scoreable_node_types_type_0.append(scoreable_node_types_type_0_item)
 
                 return scoreable_node_types_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[NodeType] | None | Unset, data)
+            return cast(list[NodeType | str] | None | Unset, data)
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
@@ -782,15 +863,17 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -799,15 +882,18 @@ class BaseScorer:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -816,29 +902,54 @@ class BaseScorer:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 
-        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
+        def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+            if not isinstance(data, list) and data is not None and not isinstance(data, Unset):
+                raise TypeError("Unexpected value type for multimodal_capabilities")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 multimodal_capabilities_type_0 = []
                 _multimodal_capabilities_type_0 = data
+                if not isinstance(_multimodal_capabilities_type_0, list):
+                    raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
                 for multimodal_capabilities_type_0_item_data in _multimodal_capabilities_type_0:
-                    multimodal_capabilities_type_0_item = MultimodalCapability(multimodal_capabilities_type_0_item_data)
+
+                    def _parse_multimodal_capabilities_type_0_item(data: object) -> MultimodalCapability | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            multimodal_capabilities_type_0_item_type_0 = MultimodalCapability(data)
+
+                            return multimodal_capabilities_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for multimodal_capabilities_type_0_item")
+                        return cast(MultimodalCapability | str, data)
+
+                    multimodal_capabilities_type_0_item = _parse_multimodal_capabilities_type_0_item(
+                        multimodal_capabilities_type_0_item_data
+                    )
 
                     multimodal_capabilities_type_0.append(multimodal_capabilities_type_0_item)
 
                 return multimodal_capabilities_type_0
             except:  # noqa: E722
                 pass
-            return cast(list[MultimodalCapability] | None | Unset, data)
+            return cast(list[MultimodalCapability | str] | None | Unset, data)
 
         multimodal_capabilities = _parse_multimodal_capabilities(d.pop("multimodal_capabilities", UNSET))
 
@@ -849,6 +960,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -866,6 +978,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -878,11 +991,12 @@ class BaseScorer:
 
         required_metric_ids = _parse_required_metric_ids(d.pop("required_metric_ids", UNSET))
 
-        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | Unset:
+        def _parse_roll_up_strategy(data: object) -> None | RollUpStrategy | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -891,44 +1005,64 @@ class BaseScorer:
                 return roll_up_strategy_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | RollUpStrategy | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for roll_up_strategy")
+            return cast(None | RollUpStrategy | str | Unset, data)
 
         roll_up_strategy = _parse_roll_up_strategy(d.pop("roll_up_strategy", UNSET))
 
         def _parse_roll_up_methods(
             data: object,
-        ) -> list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset:
+        ) -> list[CategoricalRollUpMethod | NumericRollUpMethod | str] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+            if not isinstance(data, list) and data is not None and not isinstance(data, Unset):
+                raise TypeError("Unexpected value type for roll_up_methods")
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 roll_up_methods_type_0 = []
                 _roll_up_methods_type_0 = data
+                if not isinstance(_roll_up_methods_type_0, list):
+                    raise TypeError("Unexpected value type for roll_up_methods_type_0")
+
                 for roll_up_methods_type_0_item_data in _roll_up_methods_type_0:
-                    roll_up_methods_type_0_item = NumericRollUpMethod(roll_up_methods_type_0_item_data)
+
+                    def _parse_roll_up_methods_type_0_item(
+                        data: object,
+                    ) -> CategoricalRollUpMethod | NumericRollUpMethod | str:
+
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            roll_up_methods_type_0_item_type_0 = NumericRollUpMethod(data)
+
+                            return roll_up_methods_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        try:
+                            if not isinstance(data, str):
+                                raise TypeError()
+                            roll_up_methods_type_0_item_type_1 = CategoricalRollUpMethod(data)
+
+                            return roll_up_methods_type_0_item_type_1
+                        except:  # noqa: E722
+                            pass
+                        if type(data) not in (str,):
+                            raise TypeError("Unexpected value type for roll_up_methods_type_0_item")
+                        return cast(CategoricalRollUpMethod | NumericRollUpMethod | str, data)
+
+                    roll_up_methods_type_0_item = _parse_roll_up_methods_type_0_item(roll_up_methods_type_0_item_data)
 
                     roll_up_methods_type_0.append(roll_up_methods_type_0_item)
 
                 return roll_up_methods_type_0
             except:  # noqa: E722
                 pass
-            try:
-                if not isinstance(data, list):
-                    raise TypeError()
-                roll_up_methods_type_1 = []
-                _roll_up_methods_type_1 = data
-                for roll_up_methods_type_1_item_data in _roll_up_methods_type_1:
-                    roll_up_methods_type_1_item = CategoricalRollUpMethod(roll_up_methods_type_1_item_data)
-
-                    roll_up_methods_type_1.append(roll_up_methods_type_1_item)
-
-                return roll_up_methods_type_1
-            except:  # noqa: E722
-                pass
-            return cast(list[CategoricalRollUpMethod] | list[NumericRollUpMethod] | None | Unset, data)
+            return cast(list[CategoricalRollUpMethod | NumericRollUpMethod | str] | None | Unset, data)
 
         roll_up_methods = _parse_roll_up_methods(d.pop("roll_up_methods", UNSET))
 
@@ -937,6 +1071,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         prompt = _parse_prompt(d.pop("prompt", UNSET))
@@ -946,6 +1081,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         lora_task_id = _parse_lora_task_id(d.pop("lora_task_id", UNSET))
@@ -955,15 +1091,17 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | Unset:
+        def _parse_luna_input_type(data: object) -> LunaInputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -972,15 +1110,18 @@ class BaseScorer:
                 return luna_input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaInputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_input_type")
+            return cast(LunaInputTypeEnum | None | str | Unset, data)
 
         luna_input_type = _parse_luna_input_type(d.pop("luna_input_type", UNSET))
 
-        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | Unset:
+        def _parse_luna_output_type(data: object) -> LunaOutputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -989,7 +1130,9 @@ class BaseScorer:
                 return luna_output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(LunaOutputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for luna_output_type")
+            return cast(LunaOutputTypeEnum | None | str | Unset, data)
 
         luna_output_type = _parse_luna_output_type(d.pop("luna_output_type", UNSET))
 
@@ -1000,6 +1143,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -1025,6 +1169,7 @@ class BaseScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         scorer_path_name = _parse_scorer_path_name(d.pop("scorer_path_name", UNSET))

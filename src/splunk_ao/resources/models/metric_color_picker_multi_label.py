@@ -41,6 +41,7 @@ class MetricColorPickerMultiLabel:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         constraints = []
         for constraints_item_data in self.constraints:
             constraints_item = constraints_item_data.to_dict()
@@ -63,6 +64,7 @@ class MetricColorPickerMultiLabel:
         d = dict(src_dict)
         constraints = []
         _constraints = d.pop("constraints")
+
         for constraints_item_data in _constraints:
             constraints_item = CategoricalColorConstraint.from_dict(constraints_item_data)
 

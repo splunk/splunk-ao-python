@@ -56,6 +56,7 @@ class BaseRegisteredScorerDB:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         score_type = _parse_score_type(d.pop("score_type", UNSET))

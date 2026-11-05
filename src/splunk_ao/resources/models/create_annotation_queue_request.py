@@ -75,6 +75,7 @@ class CreateAnnotationQueueRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
@@ -86,6 +87,7 @@ class CreateAnnotationQueueRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         copy_templates_from_queue_id = _parse_copy_templates_from_queue_id(d.pop("copy_templates_from_queue_id", UNSET))

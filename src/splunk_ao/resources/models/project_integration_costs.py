@@ -79,6 +79,7 @@ class ProjectIntegrationCosts:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         run_id = _parse_run_id(d.pop("run_id", UNSET))

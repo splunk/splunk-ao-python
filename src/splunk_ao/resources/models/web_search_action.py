@@ -63,6 +63,7 @@ class WebSearchAction:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         query = _parse_query(d.pop("query", UNSET))
@@ -72,6 +73,7 @@ class WebSearchAction:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(Any | None | Unset, data)
 
         sources = _parse_sources(d.pop("sources", UNSET))

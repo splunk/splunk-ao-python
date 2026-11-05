@@ -18,13 +18,13 @@ class CodeMetricGenerationStatusResponse:
 
     Attributes:
         id (str):
-        status (CodeMetricGenerationStatus):
+        status (CodeMetricGenerationStatus | str):
         generated_code (None | str | Unset):
         error_message (None | str | Unset):
     """
 
     id: str
-    status: CodeMetricGenerationStatus
+    status: CodeMetricGenerationStatus | str
     generated_code: None | str | Unset = UNSET
     error_message: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -32,7 +32,11 @@ class CodeMetricGenerationStatusResponse:
     def to_dict(self) -> dict[str, Any]:
         id = self.id
 
-        status = self.status.value
+        status: str
+        if isinstance(self.status, CodeMetricGenerationStatus):
+            status = self.status.value
+        else:
+            status = self.status
 
         generated_code: None | str | Unset
         if isinstance(self.generated_code, Unset):
@@ -61,13 +65,28 @@ class CodeMetricGenerationStatusResponse:
         d = dict(src_dict)
         id = d.pop("id")
 
-        status = CodeMetricGenerationStatus(d.pop("status"))
+        def _parse_status(data: object) -> CodeMetricGenerationStatus | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                status_type_0 = CodeMetricGenerationStatus(data)
+
+                return status_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(CodeMetricGenerationStatus | str, data)
+
+        status = _parse_status(d.pop("status"))
 
         def _parse_generated_code(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         generated_code = _parse_generated_code(d.pop("generated_code", UNSET))
@@ -77,6 +96,7 @@ class CodeMetricGenerationStatusResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         error_message = _parse_error_message(d.pop("error_message", UNSET))

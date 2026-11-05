@@ -155,6 +155,7 @@ class LogRecordsPartialQueryResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))
@@ -164,6 +165,7 @@ class LogRecordsPartialQueryResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         last_row_id = _parse_last_row_id(d.pop("last_row_id", UNSET))
@@ -200,6 +202,7 @@ class LogRecordsPartialQueryResponse:
                     | PartialExtendedTraceRecord
                     | PartialExtendedWorkflowSpanRecord
                 ):
+
                     # Discriminator-aware parsing for Extended*Record types
                     if isinstance(data, dict) and "type" in data:
                         type_value = data.get("type")

@@ -31,7 +31,7 @@ class Permission:
     Attributes:
         action (AnnotationQueueAction | ApiKeyAction | ControlResourceAction | DatasetAction | FineTunedScorerAction |
             GeneratedScorerAction | GroupAction | GroupMemberAction | IntegrationAction | OrganizationAction | ProjectAction
-            | RegisteredScorerAction | ScorerAction | UserAction):
+            | RegisteredScorerAction | ScorerAction | str | UserAction):
         allowed (bool):
         message (None | str | Unset):
     """
@@ -50,6 +50,7 @@ class Permission:
         | ProjectAction
         | RegisteredScorerAction
         | ScorerAction
+        | str
         | UserAction
     )
     allowed: bool
@@ -57,6 +58,7 @@ class Permission:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         action: str
         if isinstance(self.action, UserAction):
             action = self.action.value
@@ -84,8 +86,10 @@ class Permission:
             action = self.action.value
         elif isinstance(self.action, AnnotationQueueAction):
             action = self.action.value
-        else:
+        elif isinstance(self.action, ControlResourceAction):
             action = self.action.value
+        else:
+            action = self.action
 
         allowed = self.allowed
 
@@ -123,8 +127,10 @@ class Permission:
             | ProjectAction
             | RegisteredScorerAction
             | ScorerAction
+            | str
             | UserAction
         ):
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -229,11 +235,34 @@ class Permission:
                 return action_type_12
             except:  # noqa: E722
                 pass
-            if not isinstance(data, str):
-                raise TypeError()
-            action_type_13 = ControlResourceAction(data)
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                action_type_13 = ControlResourceAction(data)
 
-            return action_type_13
+                return action_type_13
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for action")
+            return cast(
+                AnnotationQueueAction
+                | ApiKeyAction
+                | ControlResourceAction
+                | DatasetAction
+                | FineTunedScorerAction
+                | GeneratedScorerAction
+                | GroupAction
+                | GroupMemberAction
+                | IntegrationAction
+                | OrganizationAction
+                | ProjectAction
+                | RegisteredScorerAction
+                | ScorerAction
+                | str
+                | UserAction,
+                data,
+            )
 
         action = _parse_action(d.pop("action"))
 
@@ -244,6 +273,7 @@ class Permission:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         message = _parse_message(d.pop("message", UNSET))
