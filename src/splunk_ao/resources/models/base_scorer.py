@@ -15,7 +15,6 @@ from ..models.node_type import NodeType
 from ..models.numeric_roll_up_method import NumericRollUpMethod
 from ..models.output_type_enum import OutputTypeEnum
 from ..models.roll_up_strategy import RollUpStrategy
-from ..models.scorer_name import ScorerName
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -43,7 +42,6 @@ class BaseScorer:
         aggregates (BaseScorerAggregatesType0 | None | Unset):
         aggregate_keys (list[str] | None | Unset):
         extra (BaseScorerExtraType0 | None | Unset):
-        sub_scorers (list[ScorerName] | Unset):
         filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset):
         metric_name (None | str | Unset):
         description (None | str | Unset):
@@ -84,7 +82,6 @@ class BaseScorer:
     aggregates: BaseScorerAggregatesType0 | None | Unset = UNSET
     aggregate_keys: list[str] | None | Unset = UNSET
     extra: BaseScorerExtraType0 | None | Unset = UNSET
-    sub_scorers: list[ScorerName] | Unset = UNSET
     filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
     metric_name: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
@@ -173,13 +170,6 @@ class BaseScorer:
             extra = self.extra.to_dict()
         else:
             extra = self.extra
-
-        sub_scorers: list[str] | Unset = UNSET
-        if not isinstance(self.sub_scorers, Unset):
-            sub_scorers = []
-            for sub_scorers_item_data in self.sub_scorers:
-                sub_scorers_item = sub_scorers_item_data.value
-                sub_scorers.append(sub_scorers_item)
 
         filters: list[dict[str, Any]] | None | Unset
         if isinstance(self.filters, Unset):
@@ -435,8 +425,6 @@ class BaseScorer:
             field_dict["aggregate_keys"] = aggregate_keys
         if extra is not UNSET:
             field_dict["extra"] = extra
-        if sub_scorers is not UNSET:
-            field_dict["sub_scorers"] = sub_scorers
         if filters is not UNSET:
             field_dict["filters"] = filters
         if metric_name is not UNSET:
@@ -602,15 +590,6 @@ class BaseScorer:
             return cast(BaseScorerExtraType0 | None | Unset, data)
 
         extra = _parse_extra(d.pop("extra", UNSET))
-
-        _sub_scorers = d.pop("sub_scorers", UNSET)
-        sub_scorers: list[ScorerName] | Unset = UNSET
-        if _sub_scorers is not UNSET:
-            sub_scorers = []
-            for sub_scorers_item_data in _sub_scorers:
-                sub_scorers_item = ScorerName(sub_scorers_item_data)
-
-                sub_scorers.append(sub_scorers_item)
 
         def _parse_filters(data: object) -> list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset:
             if data is None:
@@ -1058,7 +1037,6 @@ class BaseScorer:
             aggregates=aggregates,
             aggregate_keys=aggregate_keys,
             extra=extra,
-            sub_scorers=sub_scorers,
             filters=filters,
             metric_name=metric_name,
             description=description,

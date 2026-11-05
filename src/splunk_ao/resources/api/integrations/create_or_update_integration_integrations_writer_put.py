@@ -79,7 +79,14 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(*, client: ApiClient, body: WriterIntegrationCreate) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Writer integration
 
-     Create or update a Writer integration for a user.
+     Create or update a Writer integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (WriterIntegrationCreate):
@@ -102,7 +109,14 @@ def sync_detailed(*, client: ApiClient, body: WriterIntegrationCreate) -> Respon
 def sync(*, client: ApiClient, body: WriterIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Writer integration
 
-     Create or update a Writer integration for a user.
+     Create or update a Writer integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (WriterIntegrationCreate):
@@ -123,7 +137,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Writer integration
 
-     Create or update a Writer integration for a user.
+     Create or update a Writer integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (WriterIntegrationCreate):
@@ -146,7 +167,14 @@ async def asyncio_detailed(
 async def asyncio(*, client: ApiClient, body: WriterIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Writer integration
 
-     Create or update a Writer integration for a user.
+     Create or update a Writer integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (WriterIntegrationCreate):

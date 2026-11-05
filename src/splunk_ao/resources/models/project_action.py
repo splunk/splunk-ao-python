@@ -4,6 +4,7 @@ from enum import Enum
 class ProjectAction(str, Enum):
     CONFIGURE_CROWN_LOGIC = "configure_crown_logic"
     CONFIGURE_HUMAN_FEEDBACK = "configure_human_feedback"
+    CONFIGURE_RATE_LIMIT = "configure_rate_limit"
     CREATE_RUN = "create_run"
     CREATE_STAGE = "create_stage"
     DELETE = "delete"
@@ -18,13 +19,14 @@ class ProjectAction(str, Enum):
     EXPORT_DATA = "export_data"
     LOG_DATA = "log_data"
     MOVE_RUN = "move_run"
+    READ_ALL_LOGS = "read_all_logs"
+    READ_FILTERED_LOGS = "read_filtered_logs"
     RECORD_HUMAN_FEEDBACK = "record_human_feedback"
     RENAME = "rename"
     RENAME_RUN = "rename_run"
     SET_METRIC = "set_metric"
     SHARE = "share"
     TOGGLE_METRIC = "toggle_metric"
-    UPDATE = "update"
     UPDATE_CONTROL_BINDINGS = "update_control_bindings"
     USE_CONTROL_RUNTIME = "use_control_runtime"
 

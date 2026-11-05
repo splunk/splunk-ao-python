@@ -68,8 +68,7 @@ def sync_detailed(*, client: ApiClient) -> Response[Any]:
 
      Return the full JSON definition of the custom integration, including decrypted secrets.
 
-    Only users with edit permission on the integration (its creator and admins)
-    are authorized to call this endpoint.
+    Access is controlled by the integration read-secrets policy.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -91,8 +90,7 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[Any]:
 
      Return the full JSON definition of the custom integration, including decrypted secrets.
 
-    Only users with edit permission on the integration (its creator and admins)
-    are authorized to call this endpoint.
+    Access is controlled by the integration read-secrets policy.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

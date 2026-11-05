@@ -89,7 +89,17 @@ def sync_detailed(
 ) -> Response[GroupCollaborator | HTTPValidationError]:
     """Update Group Integration Collaborator
 
-     Update the sharing permissions of a group on an integration.
+     Change a group's role on a shared integration.
+
+    Args:
+        collaborator_update: New role for the group.
+        integration: Integration resolved from the URL.
+        group_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
 
     Args:
         integration_id (str):
@@ -116,7 +126,17 @@ def sync(
 ) -> Optional[GroupCollaborator | HTTPValidationError]:
     """Update Group Integration Collaborator
 
-     Update the sharing permissions of a group on an integration.
+     Change a group's role on a shared integration.
+
+    Args:
+        collaborator_update: New role for the group.
+        integration: Integration resolved from the URL.
+        group_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
 
     Args:
         integration_id (str):
@@ -139,7 +159,17 @@ async def asyncio_detailed(
 ) -> Response[GroupCollaborator | HTTPValidationError]:
     """Update Group Integration Collaborator
 
-     Update the sharing permissions of a group on an integration.
+     Change a group's role on a shared integration.
+
+    Args:
+        collaborator_update: New role for the group.
+        integration: Integration resolved from the URL.
+        group_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
 
     Args:
         integration_id (str):
@@ -166,7 +196,17 @@ async def asyncio(
 ) -> Optional[GroupCollaborator | HTTPValidationError]:
     """Update Group Integration Collaborator
 
-     Update the sharing permissions of a group on an integration.
+     Change a group's role on a shared integration.
+
+    Args:
+        collaborator_update: New role for the group.
+        integration: Integration resolved from the URL.
+        group_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
 
     Args:
         integration_id (str):

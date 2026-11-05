@@ -133,6 +133,8 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
 - Handler/decorator/OpenAI/ADK telemetry uses the internal logged-step path and converts completed steps to immutable
   OTel spans. The internal trace envelope is never exported as a span.
+- Explicit `conclude()` outputs on direct operations under declared envelopes travel as span-local trace attributes.
+  Never replay completed spans or change the frozen declaration to carry those outputs to siblings.
 - Manual `start_trace()` freezes supplied fields privately; only direct real operation children carry `splunk_ao.trace.*`.
   Keep operation input separate. Internal integrations use unmarked `_start_trace_envelope()` bookkeeping; low-level
   `add_trace()` remains unmarked. Public `created_at`, `duration_ns`, and `external_id` are deprecated and ignored.

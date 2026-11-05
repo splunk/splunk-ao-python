@@ -73,6 +73,11 @@ snapshot, excluded from legacy hook model dumps. Actual operations directly pare
 changing operation input, IDs, timing, parentage, or sampling. Snapshots are released with their envelope.
 Backend trace projection requires compatible new Go OTel ingestion; no trace CRUD request is added.
 
+Explicit `conclude()` output and redacted output are serialized as a span-local `splunk_ao.trace.*` overlay when the
+finishing operation is directly parented by a declared envelope. They do not change the frozen start declaration,
+later siblings, or operation content. Nested operations and implicit child-output fallback do not declare trace output.
+Envelope-only conclusion cannot update already exported spans, and no span is replayed or delayed for that purpose.
+
 Internal integration envelopes use `_start_trace_envelope()` without a declaration. The low-level `add_trace()` and
 single-LLM convenience path remain unmarked. Deprecated public `start_trace()` timing and external-ID arguments are
 ignored; private integration timing and actual operation timing remain supported.

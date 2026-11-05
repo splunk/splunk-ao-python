@@ -9,6 +9,7 @@ from galileo_core.schemas.shared.document import Document
 from galileo_core.schemas.shared.multimodal import ContentModality
 from splunk_ao import Message, MessageRole, extract_tracing_context, log, splunk_ao_context
 from splunk_ao.schema.content_blocks import DataContentBlock, TextContentBlock
+from splunk_ao.schema.trace import SPAN_TYPE
 from splunk_ao.tracing import get_tracing_headers
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 
@@ -43,10 +44,11 @@ def init_logger():
     return splunk_ao_context.get_logger_instance()
 
 
-def test_decorator_get_tracing_headers(reset_context: None, distributed_clients: Mock) -> None:
+@pytest.mark.parametrize("span_type", ["workflow", "tool"])
+def test_decorator_get_tracing_headers(reset_context: None, distributed_clients: Mock, span_type: SPAN_TYPE) -> None:
     logger = init_logger()
 
-    @log(span_type="workflow")
+    @log(span_type=span_type)
     def orchestrator(query: str) -> dict:
         return {"result": query, "headers": get_tracing_headers()}
 
@@ -62,12 +64,15 @@ def test_decorator_get_tracing_headers(reset_context: None, distributed_clients:
     assert logger.current_parent() is None
 
 
-def test_decorator_respects_incoming_distributed_context(reset_context: None, distributed_clients: Mock) -> None:
+@pytest.mark.parametrize("span_type, operation", [("workflow", "invoke_workflow"), ("tool", "execute_tool")])
+def test_decorator_respects_incoming_distributed_context(
+    reset_context: None, distributed_clients: Mock, span_type: SPAN_TYPE, operation: str
+) -> None:
     trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
     parent_id = "00f067aa0ba902b7"
     logger = init_logger()
 
-    @log(span_type="workflow")
+    @log(span_type=span_type)
     def downstream_service(query: str) -> str:
         return f"processed: {query}"
 
@@ -81,7 +86,7 @@ def test_decorator_respects_incoming_distributed_context(reset_context: None, di
     exported = logger._sink.spans[-1]
     assert exported.context.trace_id == int(trace_id, 16)
     assert exported.parent.span_id == int(parent_id, 16)
-    assert (exported.attributes or {})["gen_ai.operation.name"] == "invoke_workflow"
+    assert (exported.attributes or {})["gen_ai.operation.name"] == operation
 
 
 def test_completed_workflow_is_enqueued_and_flush_does_not_change_ownership(

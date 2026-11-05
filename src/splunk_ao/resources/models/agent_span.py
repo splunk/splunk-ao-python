@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from ..models.control_span import ControlSpan
     from ..models.document import Document
     from ..models.file_content_part import FileContentPart
+    from ..models.http_span import HttpSpan
     from ..models.llm_span import LlmSpan
     from ..models.message import Message
     from ..models.metrics import Metrics
@@ -57,8 +58,10 @@ class AgentSpan:
         trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
         step_number (int | None | Unset): Topological step number of the span.
         parent_id (None | str | Unset): Galileo ID of the parent of this span
-        spans (list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset): Child spans.
+        spans (list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset):
+            Child spans.
         agent_type (AgentType | Unset):
+        agent_name (None | str | Unset): Name of the agent.
     """
 
     type_: Literal["agent"] | Unset = "agent"
@@ -85,12 +88,14 @@ class AgentSpan:
     trace_id: None | str | Unset = UNSET
     step_number: int | None | Unset = UNSET
     parent_id: None | str | Unset = UNSET
-    spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+    spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
     agent_type: AgentType | Unset = UNSET
+    agent_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.control_result import ControlResult
+        from ..models.control_span import ControlSpan
         from ..models.llm_span import LlmSpan
         from ..models.message import Message
         from ..models.retriever_span import RetrieverSpan
@@ -291,6 +296,8 @@ class AgentSpan:
                     spans_item = spans_item_data.to_dict()
                 elif isinstance(spans_item_data, ToolSpan):
                     spans_item = spans_item_data.to_dict()
+                elif isinstance(spans_item_data, ControlSpan):
+                    spans_item = spans_item_data.to_dict()
                 else:
                     spans_item = spans_item_data.to_dict()
 
@@ -299,6 +306,12 @@ class AgentSpan:
         agent_type: str | Unset = UNSET
         if not isinstance(self.agent_type, Unset):
             agent_type = self.agent_type.value
+
+        agent_name: None | str | Unset
+        if isinstance(self.agent_name, Unset):
+            agent_name = UNSET
+        else:
+            agent_name = self.agent_name
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -347,6 +360,8 @@ class AgentSpan:
             field_dict["spans"] = spans
         if agent_type is not UNSET:
             field_dict["agent_type"] = agent_type
+        if agent_name is not UNSET:
+            field_dict["agent_name"] = agent_name
 
         return field_dict
 
@@ -358,6 +373,7 @@ class AgentSpan:
         from ..models.control_span import ControlSpan
         from ..models.document import Document
         from ..models.file_content_part import FileContentPart
+        from ..models.http_span import HttpSpan
         from ..models.llm_span import LlmSpan
         from ..models.message import Message
         from ..models.metrics import Metrics
@@ -731,14 +747,16 @@ class AgentSpan:
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
 
         _spans = d.pop("spans", UNSET)
-        spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+        spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = (
+            UNSET
+        )
         if _spans is not UNSET:
             spans = []
             for spans_item_data in _spans:
 
                 def _parse_spans_item(
                     data: object,
-                ) -> AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+                ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -779,11 +797,19 @@ class AgentSpan:
                         return spans_item_type_4
                     except:  # noqa: E722
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        spans_item_type_5 = ControlSpan.from_dict(data)
+
+                        return spans_item_type_5
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    spans_item_type_5 = ControlSpan.from_dict(data)
+                    spans_item_type_6 = HttpSpan.from_dict(data)
 
-                    return spans_item_type_5
+                    return spans_item_type_6
 
                 spans_item = _parse_spans_item(spans_item_data)
 
@@ -795,6 +821,15 @@ class AgentSpan:
             agent_type = UNSET
         else:
             agent_type = AgentType(_agent_type)
+
+        def _parse_agent_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        agent_name = _parse_agent_name(d.pop("agent_name", UNSET))
 
         agent_span = cls(
             type_=type_,
@@ -819,6 +854,7 @@ class AgentSpan:
             parent_id=parent_id,
             spans=spans,
             agent_type=agent_type,
+            agent_name=agent_name,
         )
 
         agent_span.additional_properties = d

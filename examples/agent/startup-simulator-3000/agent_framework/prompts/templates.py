@@ -9,6 +9,7 @@ class PromptTemplate:
     def __init__(self, template_path: str):
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
+            autoescape=jinja2.select_autoescape(["html", "xml"]),
             trim_blocks=True,
             lstrip_blocks=True,
         )

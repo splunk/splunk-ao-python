@@ -78,7 +78,15 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
     """Create Or Update Integration Selection
 
-     Create or update an integration selection for this user from Galileo.
+     Make an integration the caller's selection for its provider.
+
+    Args:
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the selection is recorded for.
+
+    Returns:
+        The selected integration, marked as selected and carrying the caller's permissions.
 
     Args:
         integration_id (str):
@@ -101,7 +109,15 @@ def sync_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPVal
 def sync(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create Or Update Integration Selection
 
-     Create or update an integration selection for this user from Galileo.
+     Make an integration the caller's selection for its provider.
+
+    Args:
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the selection is recorded for.
+
+    Returns:
+        The selected integration, marked as selected and carrying the caller's permissions.
 
     Args:
         integration_id (str):
@@ -120,7 +136,15 @@ def sync(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationEr
 async def asyncio_detailed(integration_id: str, *, client: ApiClient) -> Response[HTTPValidationError | IntegrationDB]:
     """Create Or Update Integration Selection
 
-     Create or update an integration selection for this user from Galileo.
+     Make an integration the caller's selection for its provider.
+
+    Args:
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the selection is recorded for.
+
+    Returns:
+        The selected integration, marked as selected and carrying the caller's permissions.
 
     Args:
         integration_id (str):
@@ -143,7 +167,15 @@ async def asyncio_detailed(integration_id: str, *, client: ApiClient) -> Respons
 async def asyncio(integration_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create Or Update Integration Selection
 
-     Create or update an integration selection for this user from Galileo.
+     Make an integration the caller's selection for its provider.
+
+    Args:
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the selection is recorded for.
+
+    Returns:
+        The selected integration, marked as selected and carrying the caller's permissions.
 
     Args:
         integration_id (str):

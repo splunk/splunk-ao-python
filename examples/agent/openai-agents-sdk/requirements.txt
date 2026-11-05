@@ -1,0 +1,5 @@
+splunk-ao[openai]>=0.5.0
+python-dotenv
+
+# Only needed for INSTRUMENTATION=otel:
+# opentelemetry-instrumentation-genai-openai-agents

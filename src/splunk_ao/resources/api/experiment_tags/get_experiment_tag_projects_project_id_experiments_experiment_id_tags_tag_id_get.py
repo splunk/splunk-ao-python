@@ -82,7 +82,13 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Get Experiment Tag
 
-     Gets a tag for a given project_id/experiment_id.
+     Get a tag by ID for an experiment.
+
+    Args:
+        tag: The tag to return, resolved from the URL.
+
+    Returns:
+        The tag.
 
     Args:
         project_id (str):
@@ -109,7 +115,13 @@ def sync(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Get Experiment Tag
 
-     Gets a tag for a given project_id/experiment_id.
+     Get a tag by ID for an experiment.
+
+    Args:
+        tag: The tag to return, resolved from the URL.
+
+    Returns:
+        The tag.
 
     Args:
         project_id (str):
@@ -132,7 +144,13 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Get Experiment Tag
 
-     Gets a tag for a given project_id/experiment_id.
+     Get a tag by ID for an experiment.
+
+    Args:
+        tag: The tag to return, resolved from the URL.
+
+    Returns:
+        The tag.
 
     Args:
         project_id (str):
@@ -159,7 +177,13 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Get Experiment Tag
 
-     Gets a tag for a given project_id/experiment_id.
+     Get a tag by ID for an experiment.
+
+    Args:
+        tag: The tag to return, resolved from the URL.
+
+    Returns:
+        The tag.
 
     Args:
         project_id (str):

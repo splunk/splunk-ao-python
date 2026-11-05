@@ -11,6 +11,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.partial_extended_agent_span_record import PartialExtendedAgentSpanRecord
     from ..models.partial_extended_control_span_record import PartialExtendedControlSpanRecord
+    from ..models.partial_extended_http_span_record import PartialExtendedHttpSpanRecord
     from ..models.partial_extended_llm_span_record import PartialExtendedLlmSpanRecord
     from ..models.partial_extended_retriever_span_record import PartialExtendedRetrieverSpanRecord
     from ..models.partial_extended_session_record import PartialExtendedSessionRecord
@@ -31,9 +32,10 @@ class LogRecordsPartialQueryResponse:
         paginated (bool | Unset):  Default: False.
         next_starting_token (int | None | Unset):
         last_row_id (None | str | Unset):
-        records (list[PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedLlmSpanRecord |
-            PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord | PartialExtendedToolSpanRecord |
-            PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord] | Unset): records matching the query
+        records (list[PartialExtendedAgentSpanRecord | PartialExtendedControlSpanRecord | PartialExtendedHttpSpanRecord
+            | PartialExtendedLlmSpanRecord | PartialExtendedRetrieverSpanRecord | PartialExtendedSessionRecord |
+            PartialExtendedToolSpanRecord | PartialExtendedTraceRecord | PartialExtendedWorkflowSpanRecord] | Unset):
+            records matching the query
     """
 
     starting_token: int | Unset = 0
@@ -45,6 +47,7 @@ class LogRecordsPartialQueryResponse:
         list[
             PartialExtendedAgentSpanRecord
             | PartialExtendedControlSpanRecord
+            | PartialExtendedHttpSpanRecord
             | PartialExtendedLlmSpanRecord
             | PartialExtendedRetrieverSpanRecord
             | PartialExtendedSessionRecord
@@ -59,6 +62,7 @@ class LogRecordsPartialQueryResponse:
     def to_dict(self) -> dict[str, Any]:
         from ..models.partial_extended_agent_span_record import PartialExtendedAgentSpanRecord
         from ..models.partial_extended_control_span_record import PartialExtendedControlSpanRecord
+        from ..models.partial_extended_http_span_record import PartialExtendedHttpSpanRecord
         from ..models.partial_extended_llm_span_record import PartialExtendedLlmSpanRecord
         from ..models.partial_extended_retriever_span_record import PartialExtendedRetrieverSpanRecord
         from ..models.partial_extended_tool_span_record import PartialExtendedToolSpanRecord
@@ -102,6 +106,8 @@ class LogRecordsPartialQueryResponse:
                     records_item = records_item_data.to_dict()
                 elif isinstance(records_item_data, PartialExtendedControlSpanRecord):
                     records_item = records_item_data.to_dict()
+                elif isinstance(records_item_data, PartialExtendedHttpSpanRecord):
+                    records_item = records_item_data.to_dict()
                 else:
                     records_item = records_item_data.to_dict()
 
@@ -129,6 +135,7 @@ class LogRecordsPartialQueryResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.partial_extended_agent_span_record import PartialExtendedAgentSpanRecord
         from ..models.partial_extended_control_span_record import PartialExtendedControlSpanRecord
+        from ..models.partial_extended_http_span_record import PartialExtendedHttpSpanRecord
         from ..models.partial_extended_llm_span_record import PartialExtendedLlmSpanRecord
         from ..models.partial_extended_retriever_span_record import PartialExtendedRetrieverSpanRecord
         from ..models.partial_extended_session_record import PartialExtendedSessionRecord
@@ -166,6 +173,7 @@ class LogRecordsPartialQueryResponse:
             list[
                 PartialExtendedAgentSpanRecord
                 | PartialExtendedControlSpanRecord
+                | PartialExtendedHttpSpanRecord
                 | PartialExtendedLlmSpanRecord
                 | PartialExtendedRetrieverSpanRecord
                 | PartialExtendedSessionRecord
@@ -184,6 +192,7 @@ class LogRecordsPartialQueryResponse:
                 ) -> (
                     PartialExtendedAgentSpanRecord
                     | PartialExtendedControlSpanRecord
+                    | PartialExtendedHttpSpanRecord
                     | PartialExtendedLlmSpanRecord
                     | PartialExtendedRetrieverSpanRecord
                     | PartialExtendedSessionRecord
@@ -306,9 +315,17 @@ class LogRecordsPartialQueryResponse:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        records_item_type_7 = PartialExtendedSessionRecord.from_dict(data)
+                        records_item_type_7 = PartialExtendedHttpSpanRecord.from_dict(data)
 
                         return records_item_type_7
+                    except:  # noqa: E722
+                        pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        records_item_type_8 = PartialExtendedSessionRecord.from_dict(data)
+
+                        return records_item_type_8
                     except:  # noqa: E722
                         pass
                     # If we reach here, none of the parsers succeeded

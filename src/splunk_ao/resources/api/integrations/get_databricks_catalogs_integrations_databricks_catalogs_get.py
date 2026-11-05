@@ -71,6 +71,14 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(*, client: ApiClient) -> Response[list[str]]:
     """Get Databricks Catalogs
 
+     List the catalogs reachable through the caller's Databricks integration.
+
+    Args:
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The catalog names.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -89,6 +97,14 @@ def sync_detailed(*, client: ApiClient) -> Response[list[str]]:
 def sync(*, client: ApiClient) -> Optional[list[str]]:
     """Get Databricks Catalogs
 
+     List the catalogs reachable through the caller's Databricks integration.
+
+    Args:
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The catalog names.
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -102,6 +118,14 @@ def sync(*, client: ApiClient) -> Optional[list[str]]:
 
 async def asyncio_detailed(*, client: ApiClient) -> Response[list[str]]:
     """Get Databricks Catalogs
+
+     List the catalogs reachable through the caller's Databricks integration.
+
+    Args:
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The catalog names.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -120,6 +144,14 @@ async def asyncio_detailed(*, client: ApiClient) -> Response[list[str]]:
 
 async def asyncio(*, client: ApiClient) -> Optional[list[str]]:
     """Get Databricks Catalogs
+
+     List the catalogs reachable through the caller's Databricks integration.
+
+    Args:
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The catalog names.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

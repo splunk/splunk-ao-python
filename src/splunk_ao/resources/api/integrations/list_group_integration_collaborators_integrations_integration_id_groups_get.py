@@ -93,7 +93,16 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | ListGroupCollaboratorsResponse]:
     """List Group Integration Collaborators
 
-     List the groups with which the integration has been shared.
+     List the groups the integration has been shared with.
+
+    Args:
+        integration: Integration resolved from the URL.
+        pagination: Page window to return.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The requested page of group collaborators.
 
     Args:
         integration_id (str):
@@ -120,7 +129,16 @@ def sync(
 ) -> Optional[HTTPValidationError | ListGroupCollaboratorsResponse]:
     """List Group Integration Collaborators
 
-     List the groups with which the integration has been shared.
+     List the groups the integration has been shared with.
+
+    Args:
+        integration: Integration resolved from the URL.
+        pagination: Page window to return.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The requested page of group collaborators.
 
     Args:
         integration_id (str):
@@ -145,7 +163,16 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | ListGroupCollaboratorsResponse]:
     """List Group Integration Collaborators
 
-     List the groups with which the integration has been shared.
+     List the groups the integration has been shared with.
+
+    Args:
+        integration: Integration resolved from the URL.
+        pagination: Page window to return.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The requested page of group collaborators.
 
     Args:
         integration_id (str):
@@ -172,7 +199,16 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | ListGroupCollaboratorsResponse]:
     """List Group Integration Collaborators
 
-     List the groups with which the integration has been shared.
+     List the groups the integration has been shared with.
+
+    Args:
+        integration: Integration resolved from the URL.
+        pagination: Page window to return.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The requested page of group collaborators.
 
     Args:
         integration_id (str):

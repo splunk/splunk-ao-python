@@ -116,13 +116,86 @@ def test_trace_declaration_is_frozen_and_repeated_only_on_direct_siblings(
         "splunk_ao.trace.dataset.output": "reference",
         "splunk_ao.trace.dataset.metadata": json.dumps({"row": "1"}),
     }
-    assert trace_attributes(first) == trace_attributes(workflow) == expected
+    assert trace_attributes(first) == expected
+    assert trace_attributes(workflow) == {**expected, "splunk_ao.trace.output": json.dumps("done")}
     assert envelope._trace_attributes == ()
     assert trace_attributes(nested) == {}
     assert json.loads(first.attributes["gen_ai.input.messages"])[0]["parts"][0]["content"] == "actual prompt"
     assert workflow.name == "invoke_workflow workflow"
     assert workflow.parent is first.parent is None
     assert nested.parent == workflow.context
+
+
+@pytest.mark.parametrize("span_type", ["workflow", "agent"])
+@pytest.mark.parametrize("output,redacted_output", [("answer", "safe"), ("", ""), (None, "safe"), ("answer", None)])
+def test_conclude_carries_explicit_outputs_only_on_the_finishing_direct_operation(
+    otlp_logger: SplunkAOLogger,
+    recording_sink: RecordingSink,
+    span_type: str,
+    output: str | None,
+    redacted_output: str | None,
+) -> None:
+    # Given: a declared trace with an earlier completed sibling and an active operation
+    envelope = otlp_logger.start_trace(input="trace input")
+    otlp_logger.add_llm_span(input="earlier", output="earlier answer", model="model")
+    add_span = otlp_logger.add_agent_span if span_type == "agent" else otlp_logger.add_workflow_span
+    add_span(input="operation input", name="operation")
+    snapshot = envelope._trace_attributes
+
+    # When: the active operation concludes with explicit outputs, followed by another sibling
+    otlp_logger.conclude(output=output, redacted_output=redacted_output)
+    otlp_logger.add_llm_span(input="later", output="later answer", model="model")
+    otlp_logger.conclude(output="envelope only", redacted_output="envelope redacted")
+
+    # Then: only the concluded operation carries the supplied trace outputs
+    earlier, operation, later = recording_sink.spans
+    for field, value in (("output", output), ("redacted_output", redacted_output)):
+        key = f"splunk_ao.trace.{field}"
+        assert key not in earlier.attributes
+        assert key not in later.attributes
+        if value is None:
+            assert key not in operation.attributes
+        else:
+            assert json.loads(operation.attributes[key]) == value
+    assert trace_attributes(earlier) == trace_attributes(later) == dict(snapshot)
+    assert json.loads(operation.attributes["gen_ai.input.messages"])[0]["parts"][0]["content"] == "operation input"
+    if output is not None:
+        assert json.loads(operation.attributes["gen_ai.output.messages"])[0]["parts"][0]["content"] == output
+
+
+@pytest.mark.parametrize("declared", [False, True])
+def test_conclude_does_not_promote_nested_or_unmarked_operation_outputs(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, declared: bool
+) -> None:
+    # Given: either a declared or an integration-owned envelope with nested operations
+    start_trace = otlp_logger.start_trace if declared else otlp_logger._start_trace_envelope
+    start_trace(input="trace input")
+    otlp_logger.add_workflow_span(input="outer")
+    otlp_logger.add_agent_span(input="inner")
+    # When: a nested operation ends, followed by a parent without explicit output
+    otlp_logger.conclude(output="nested result", redacted_output="nested redacted")
+    otlp_logger.conclude()
+    otlp_logger.conclude()
+    # Then: child output fallback never becomes an explicit trace-output declaration
+    assert len(recording_sink.spans) == 2
+    for span in recording_sink.spans:
+        assert "splunk_ao.trace.output" not in span.attributes
+        assert "splunk_ao.trace.redacted_output" not in span.attributes
+
+
+def test_conclude_freezes_multimodal_trace_output(otlp_logger: SplunkAOLogger, recording_sink: RecordingSink) -> None:
+    # Given: an active real operation under a declaration
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_workflow_span(input="operation")
+    block = TextContentBlock(text="original")
+    # When: explicit content blocks are supplied, then mutated after conclusion
+    otlp_logger.conclude(output=[block], redacted_output=[TextContentBlock(text="safe")])
+    block.text = "edited"
+    # Then: trace outputs are frozen JSON content blocks and survive export normalization
+    [span] = recording_sink.spans
+    attributes = copy_span_for_export(span, normalize_attributes=True).attributes
+    assert json.loads(attributes["splunk_ao.trace.output"]) == [{"type": "text", "text": "original"}]
+    assert json.loads(attributes["splunk_ao.trace.redacted_output"]) == [{"type": "text", "text": "safe"}]
 
 
 @pytest.mark.parametrize("explicit_empty", [False, True])
@@ -251,14 +324,15 @@ def test_independent_traces_and_execution_contexts_do_not_share_declarations(rec
     assert [span.attributes["splunk_ao.trace.name"] for span in recording_sink.spans] == ["first", "second", "third"]
 
 
+@pytest.mark.parametrize("span_type", ["workflow", "agent"])
 def test_decorator_continuation_does_not_redeclare_or_replay(
-    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, span_type: str
 ) -> None:
     # Given: independent decorator calls within one upstream request
     upstream = trace.SpanContext(0x2468, 0x1357, True, trace.TraceFlags(1), trace.TraceState())
     token = context.attach(trace.set_span_in_context(trace.NonRecordingSpan(upstream)))
 
-    @log(span_type="workflow", params={"metadata": lambda _: {"source": "decorator"}, "tags": lambda _: []})
+    @log(span_type=span_type, params={"metadata": lambda _: {"source": "decorator"}, "tags": lambda _: ["operation"]})
     def operation() -> str:
         return "answer"
 
@@ -270,8 +344,11 @@ def test_decorator_continuation_does_not_redeclare_or_replay(
         # Then: both real operations exist, only the origin carries a declaration
         first, continuation = recording_sink.spans
         assert json.loads(first.attributes["splunk_ao.trace.metadata"]) == {"source": "decorator"}
-        assert first.attributes["splunk_ao.trace.tags"] == ()
+        assert first.attributes["splunk_ao.trace.tags"] == ("operation",)
         assert trace_attributes(continuation) == {}
+        for span in (first, continuation):
+            assert json.loads(span.attributes["splunk_ao.metadata"])["source"] == "decorator"
+            assert span.attributes["splunk_ao.tags"] == ("operation",)
         assert first.parent == continuation.parent == upstream
     finally:
         context.detach(token)
@@ -370,6 +447,7 @@ def test_agent_inherits_last_llm_output_and_finish_reason(
         output = json.loads(span.attributes["gen_ai.output.messages"])
         assert output[0]["parts"] == [{"type": "text", "content": "answer"}]
         assert output[0]["finish_reason"] == "stop"
+        assert "splunk_ao.trace.output" not in span.attributes
     assert recording_sink.spans[0].attributes["gen_ai.response.finish_reasons"] == ("stop",)
 
 
@@ -514,6 +592,8 @@ def test_conclude_all_emits_each_open_parent_once(otlp_logger: SplunkAOLogger, r
     assert llm_span.parent == workflow_span.context
     assert workflow_span.parent is None
     assert all(span.context != envelope_context and span.parent != envelope_context for span in recording_sink.spans)
+    assert workflow_span.attributes["splunk_ao.trace.output"] == json.dumps("done")
+    assert "splunk_ao.trace.output" not in llm_span.attributes
     assert otlp_logger._otel_ids == {}
 
 

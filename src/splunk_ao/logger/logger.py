@@ -7,7 +7,7 @@ import logging
 import time
 import uuid
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from datetime import datetime
@@ -17,6 +17,7 @@ from opentelemetry import context as otel_context
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
 from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags, TraceState
+from opentelemetry.util.types import Attributes, AttributeValue
 from pydantic import PrivateAttr
 
 from galileo_core.helpers.execution import async_run
@@ -102,7 +103,7 @@ _logger = logging.getLogger("splunk_ao.logger")
 _otel_id_generator = RandomIdGenerator()
 
 
-@dataclass(frozen=True)
+@dataclass
 class OtelIds:
     """Stable OTel identity and parentage for one proprietary logger step."""
 
@@ -110,6 +111,68 @@ class OtelIds:
     parent_span_context: SpanContext | None
     exportable: bool
     session_id: str | None
+    completed: bool = False
+
+
+class _ActiveSpan(otel_trace.Span):
+    """Resolve completed SDK activations to their caller, including in copied contexts.
+
+    Only this internal context view changes on completion; span identities and
+    exported ReadableSpans remain immutable. Copies of an execution context share
+    the operation's completion flag, unlike ContextVar assignments and tokens.
+    """
+
+    def __init__(self, ids: OtelIds, previous: otel_trace.Span) -> None:
+        self._span = NonRecordingSpan(ids.span_context)
+        self._ids = ids
+        # Copied-task completion can leave stale activations in the caller's context.
+        while isinstance(previous, _ActiveSpan) and previous._ids.completed:
+            previous = previous._previous
+        self._previous = previous
+
+    def _resolve(self) -> otel_trace.Span:
+        span: otel_trace.Span = self
+        while isinstance(span, _ActiveSpan):
+            if not span._ids.completed:
+                return span._span
+            span = span._previous
+        return span
+
+    def get_span_context(self) -> SpanContext:
+        return self._resolve().get_span_context()
+
+    def is_recording(self) -> bool:
+        return self._resolve().is_recording()
+
+    def set_attribute(self, key: str, value: AttributeValue) -> None:
+        self._resolve().set_attribute(key, value)
+
+    def set_attributes(self, attributes: Mapping[str, AttributeValue]) -> None:
+        self._resolve().set_attributes(attributes)
+
+    def add_event(self, name: str, attributes: Attributes = None, timestamp: int | None = None) -> None:
+        self._resolve().add_event(name, attributes, timestamp)
+
+    def add_link(self, context: SpanContext, attributes: Attributes = None) -> None:
+        self._resolve().add_link(context, attributes)
+
+    def update_name(self, name: str) -> None:
+        self._resolve().update_name(name)
+
+    def set_status(self, status: otel_trace.Status | otel_trace.StatusCode, description: str | None = None) -> None:
+        self._resolve().set_status(status, description)
+
+    def record_exception(
+        self,
+        exception: BaseException,
+        attributes: Attributes = None,
+        timestamp: int | None = None,
+        escaped: bool = False,
+    ) -> None:
+        self._resolve().record_exception(exception, attributes, timestamp, escaped)
+
+    def end(self, end_time: int | None = None) -> None:
+        self._resolve().end(end_time)
 
 
 @dataclass(frozen=True)
@@ -121,6 +184,7 @@ class ActiveOtelContext:
     span_context: SpanContext
     exportable: bool
     token: Token
+    ids: OtelIds
 
 
 @dataclass(frozen=True)
@@ -153,10 +217,10 @@ def _has_active_exportable_span_context() -> bool:
     if state is None or not state.active_contexts:
         return True
 
-    active = state.active_contexts[-1]
-    if active.span_context != current:
-        return True
-    return active.exportable
+    for active in reversed(state.active_contexts):
+        if active.span_context == current and not active.ids.completed:
+            return active.exportable
+    return True
 
 
 class SplunkAOLogger(TracesLogger):
@@ -372,6 +436,30 @@ class SplunkAOLogger(TracesLogger):
         super()._set_current_parent(parent)
         self._sync_otel_context(parent)
 
+    def current_parent(self) -> StepWithChildSpans | None:
+        """Skip operations completed in another execution context."""
+        parent = super().current_parent()
+        original = parent
+        state = _otel_context_state.get()
+        if parent is not None and state is not None:
+            completed = {
+                active.step_id
+                for active in state.active_contexts
+                if active.logger_id == id(self) and active.ids.completed
+            }
+            while parent is not None and parent.id in completed:
+                parent = parent._parent
+            if parent is not original:
+                # A caller may already have started unrelated native OTel work
+                # above a completed SDK activation. Keep that caller's context.
+                caller_context = (
+                    otel_context.get_current() if not isinstance(otel_trace.get_current_span(), _ActiveSpan) else None
+                )
+                self._set_current_parent(parent)
+                if caller_context is not None:
+                    otel_context.attach(caller_context)
+        return parent
+
     def reset_parent_tracking(self) -> None:
         """Clear proprietary and OTel tracking for the current request context."""
         current_parent = self.current_parent()
@@ -477,17 +565,12 @@ class SplunkAOLogger(TracesLogger):
                 return
 
         base_context = state.base_context if state is not None else otel_context.get_current()
-        remaining_contexts = tuple(active for active in active_contexts if active.logger_id != logger_id)
-        desired_contexts = tuple(
-            (logger_id, step_id, self._otel_ids[step_id].span_context, self._otel_ids[step_id].exportable)
-            for step_id in desired_step_ids
+        remaining_contexts = tuple(
+            active for active in active_contexts if active.logger_id != logger_id and not active.ids.completed
         )
+        desired_contexts = tuple((logger_id, step_id, self._otel_ids[step_id]) for step_id in desired_step_ids)
         contexts_to_restore = (
-            tuple(
-                (active.logger_id, active.step_id, active.span_context, active.exportable)
-                for active in remaining_contexts
-            )
-            + desired_contexts
+            tuple((active.logger_id, active.step_id, active.ids) for active in remaining_contexts) + desired_contexts
         )
 
         detach_failed = False
@@ -503,15 +586,16 @@ class SplunkAOLogger(TracesLogger):
             otel_context.attach(base_context)
 
         rebuilt_contexts: list[ActiveOtelContext] = []
-        for owner_id, step_id, span_context, exportable in contexts_to_restore:
-            ctx = otel_trace.set_span_in_context(NonRecordingSpan(span_context))
+        for owner_id, step_id, ids in contexts_to_restore:
+            ctx = otel_trace.set_span_in_context(_ActiveSpan(ids, otel_trace.get_current_span()))
             rebuilt_contexts.append(
                 ActiveOtelContext(
                     logger_id=owner_id,
                     step_id=step_id,
-                    span_context=span_context,
-                    exportable=exportable,
+                    span_context=ids.span_context,
+                    exportable=ids.exportable,
                     token=otel_context.attach(ctx),
+                    ids=ids,
                 )
             )
 
@@ -531,6 +615,8 @@ class SplunkAOLogger(TracesLogger):
         ids = self._otel_ids.pop(step_id, None)
         if ids is None:
             return
+
+        ids.completed = True
 
         child_ids = tuple(
             child_id
@@ -566,7 +652,13 @@ class SplunkAOLogger(TracesLogger):
         )
         return None
 
-    def _emit_and_release(self, finished_step: BaseStep) -> None:
+    def _emit_and_release(
+        self,
+        finished_step: BaseStep,
+        *,
+        trace_output: IngestOutputType | None = None,
+        trace_redacted_output: IngestOutputType | None = None,
+    ) -> None:
         """Convert and enqueue one completed step, then release its stable identity."""
         ids = self._otel_ids.get(finished_step.id)
         if ids is None:
@@ -579,6 +671,18 @@ class SplunkAOLogger(TracesLogger):
             if not bool(ids.span_context.trace_flags & TraceFlags.SAMPLED):
                 return
 
+            trace_attributes = None
+            if isinstance(finished_step._parent, LoggedTrace) and finished_step._parent._trace_attributes:
+                trace_attributes = dict(finished_step._parent._trace_attributes)
+                trace_attributes.update(
+                    capture_trace_attributes(
+                        output=self._coerce_output(trace_output) if trace_output is not None else None,
+                        redacted_output=(
+                            self._coerce_output(trace_redacted_output) if trace_redacted_output is not None else None
+                        ),
+                    )
+                )
+
             self._sink.emit(
                 self._converter.convert_span(
                     span=finished_step,
@@ -586,16 +690,13 @@ class SplunkAOLogger(TracesLogger):
                     parent_span_context=self._export_parent_context(finished_step, ids),
                     session_id=ids.session_id,
                     resource=self._resource,
-                    trace_attributes=(
-                        dict(finished_step._parent._trace_attributes)
-                        if isinstance(finished_step._parent, LoggedTrace)
-                        else None
-                    ),
+                    trace_attributes=trace_attributes,
                 )
             )
         except Exception:
             self._logger.warning("Failed to emit completed step %s.", finished_step.id, exc_info=True)
         finally:
+            ids.completed = True
             self._pending_otel_steps.discard(finished_step.id)
             self._otel_ids.pop(finished_step.id, None)
 
@@ -609,7 +710,13 @@ class SplunkAOLogger(TracesLogger):
             if child.id in self._pending_otel_steps:
                 self._emit_and_release(child)
 
-    def _complete_step(self, finished_step: BaseStep) -> None:
+    def _complete_step(
+        self,
+        finished_step: BaseStep,
+        *,
+        trace_output: IngestOutputType | None = None,
+        trace_redacted_output: IngestOutputType | None = None,
+    ) -> None:
         """Coordinate completion for hook or OTLP egress without double dispatch."""
         if self._ingestion_hook:
             self._release_otel_context(finished_step)
@@ -618,7 +725,7 @@ class SplunkAOLogger(TracesLogger):
             return
 
         self._emit_pending_descendants(finished_step)
-        self._emit_and_release(finished_step)
+        self._emit_and_release(finished_step, trace_output=trace_output, trace_redacted_output=trace_redacted_output)
         if isinstance(finished_step, Trace):
             if isinstance(finished_step, LoggedTrace):
                 finished_step._trace_attributes = ()
@@ -657,7 +764,7 @@ class SplunkAOLogger(TracesLogger):
         if ids is None:
             return None
         prior_context = otel_context.get_current()
-        active_context = otel_trace.set_span_in_context(NonRecordingSpan(ids.span_context), prior_context)
+        active_context = otel_trace.set_span_in_context(_ActiveSpan(ids, otel_trace.get_current_span()), prior_context)
         return HandlerStepContext(
             prior_context=prior_context, token=otel_context.attach(active_context), span_context=ids.span_context
         )
@@ -2002,6 +2109,8 @@ class SplunkAOLogger(TracesLogger):
             For workflow/agent spans, all IngestOutputType variants are accepted as-is.
         redacted_output: Optional[IngestOutputType]
             Output that removes any sensitive information (redacted output of the node).
+            Explicit output fields also become trace output attributes when concluding a direct operation under
+            a declared trace. Concluding only the internal envelope cannot update already exported spans.
         duration_ns: Optional[int]
             Duration of the node in nanoseconds.
         status_code: Optional[int]
@@ -2018,14 +2127,14 @@ class SplunkAOLogger(TracesLogger):
             finished_step, current_parent = self._conclude(
                 output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
             )
-            self._complete_step(finished_step)
+            self._complete_step(finished_step, trace_output=output, trace_redacted_output=redacted_output)
         else:
             current_parent = None
             while self.current_parent() is not None:
                 finished_step, current_parent = self._conclude(
                     output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
                 )
-                self._complete_step(finished_step)
+                self._complete_step(finished_step, trace_output=output, trace_redacted_output=redacted_output)
 
         return current_parent
 

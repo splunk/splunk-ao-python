@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from ..models.scorer_enabled_in_playground_sort import ScorerEnabledInPlaygroundSort
     from ..models.scorer_enabled_in_run_sort import ScorerEnabledInRunSort
     from ..models.scorer_exclude_multimodal_scorers_filter import ScorerExcludeMultimodalScorersFilter
+    from ..models.scorer_exclude_non_o11y_slm_scorers_filter import ScorerExcludeNonO11YSlmScorersFilter
     from ..models.scorer_exclude_slm_scorers_filter import ScorerExcludeSlmScorersFilter
     from ..models.scorer_id_filter import ScorerIDFilter
     from ..models.scorer_is_global_filter import ScorerIsGlobalFilter
@@ -38,9 +39,10 @@ class ListScorersRequest:
     """
     Attributes:
         filters (list[ScorerCreatedAtFilter | ScorerCreatorFilter | ScorerExcludeMultimodalScorersFilter |
-            ScorerExcludeSlmScorersFilter | ScorerIDFilter | ScorerIsGlobalFilter | ScorerLabelFilter |
-            ScorerModelTypeFilter | ScorerMultimodalCapabilitiesFilter | ScorerNameFilter | ScorerScopeProjectsFilter |
-            ScorerScoreableNodeTypesFilter | ScorerTagsFilter | ScorerTypeFilter | ScorerUpdatedAtFilter] | Unset):
+            ScorerExcludeNonO11YSlmScorersFilter | ScorerExcludeSlmScorersFilter | ScorerIDFilter | ScorerIsGlobalFilter |
+            ScorerLabelFilter | ScorerModelTypeFilter | ScorerMultimodalCapabilitiesFilter | ScorerNameFilter |
+            ScorerScopeProjectsFilter | ScorerScoreableNodeTypesFilter | ScorerTagsFilter | ScorerTypeFilter |
+            ScorerUpdatedAtFilter] | Unset):
         sort (None | ScorerEnabledInPlaygroundSort | ScorerEnabledInRunSort | ScorerNameSort | ScorerUpdatedAtSort |
             Unset):
     """
@@ -50,6 +52,7 @@ class ListScorersRequest:
             ScorerCreatedAtFilter
             | ScorerCreatorFilter
             | ScorerExcludeMultimodalScorersFilter
+            | ScorerExcludeNonO11YSlmScorersFilter
             | ScorerExcludeSlmScorersFilter
             | ScorerIDFilter
             | ScorerIsGlobalFilter
@@ -76,6 +79,7 @@ class ListScorersRequest:
         from ..models.scorer_enabled_in_playground_sort import ScorerEnabledInPlaygroundSort
         from ..models.scorer_enabled_in_run_sort import ScorerEnabledInRunSort
         from ..models.scorer_exclude_multimodal_scorers_filter import ScorerExcludeMultimodalScorersFilter
+        from ..models.scorer_exclude_non_o11y_slm_scorers_filter import ScorerExcludeNonO11YSlmScorersFilter
         from ..models.scorer_exclude_slm_scorers_filter import ScorerExcludeSlmScorersFilter
         from ..models.scorer_id_filter import ScorerIDFilter
         from ..models.scorer_is_global_filter import ScorerIsGlobalFilter
@@ -102,6 +106,8 @@ class ListScorersRequest:
                 elif isinstance(filters_item_data, ScorerModelTypeFilter):
                     filters_item = filters_item_data.to_dict()
                 elif isinstance(filters_item_data, ScorerExcludeSlmScorersFilter):
+                    filters_item = filters_item_data.to_dict()
+                elif isinstance(filters_item_data, ScorerExcludeNonO11YSlmScorersFilter):
                     filters_item = filters_item_data.to_dict()
                 elif isinstance(filters_item_data, ScorerExcludeMultimodalScorersFilter):
                     filters_item = filters_item_data.to_dict()
@@ -159,6 +165,7 @@ class ListScorersRequest:
         from ..models.scorer_enabled_in_playground_sort import ScorerEnabledInPlaygroundSort
         from ..models.scorer_enabled_in_run_sort import ScorerEnabledInRunSort
         from ..models.scorer_exclude_multimodal_scorers_filter import ScorerExcludeMultimodalScorersFilter
+        from ..models.scorer_exclude_non_o11y_slm_scorers_filter import ScorerExcludeNonO11YSlmScorersFilter
         from ..models.scorer_exclude_slm_scorers_filter import ScorerExcludeSlmScorersFilter
         from ..models.scorer_id_filter import ScorerIDFilter
         from ..models.scorer_is_global_filter import ScorerIsGlobalFilter
@@ -181,6 +188,7 @@ class ListScorersRequest:
                 ScorerCreatedAtFilter
                 | ScorerCreatorFilter
                 | ScorerExcludeMultimodalScorersFilter
+                | ScorerExcludeNonO11YSlmScorersFilter
                 | ScorerExcludeSlmScorersFilter
                 | ScorerIDFilter
                 | ScorerIsGlobalFilter
@@ -206,6 +214,7 @@ class ListScorersRequest:
                     ScorerCreatedAtFilter
                     | ScorerCreatorFilter
                     | ScorerExcludeMultimodalScorersFilter
+                    | ScorerExcludeNonO11YSlmScorersFilter
                     | ScorerExcludeSlmScorersFilter
                     | ScorerIDFilter
                     | ScorerIsGlobalFilter
@@ -254,7 +263,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_4 = ScorerExcludeMultimodalScorersFilter.from_dict(data)
+                        filters_item_type_4 = ScorerExcludeNonO11YSlmScorersFilter.from_dict(data)
 
                         return filters_item_type_4
                     except:  # noqa: E722
@@ -262,7 +271,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_5 = ScorerTagsFilter.from_dict(data)
+                        filters_item_type_5 = ScorerExcludeMultimodalScorersFilter.from_dict(data)
 
                         return filters_item_type_5
                     except:  # noqa: E722
@@ -270,7 +279,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_6 = ScorerCreatorFilter.from_dict(data)
+                        filters_item_type_6 = ScorerTagsFilter.from_dict(data)
 
                         return filters_item_type_6
                     except:  # noqa: E722
@@ -278,7 +287,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_7 = ScorerCreatedAtFilter.from_dict(data)
+                        filters_item_type_7 = ScorerCreatorFilter.from_dict(data)
 
                         return filters_item_type_7
                     except:  # noqa: E722
@@ -286,7 +295,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_8 = ScorerUpdatedAtFilter.from_dict(data)
+                        filters_item_type_8 = ScorerCreatedAtFilter.from_dict(data)
 
                         return filters_item_type_8
                     except:  # noqa: E722
@@ -294,7 +303,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_9 = ScorerLabelFilter.from_dict(data)
+                        filters_item_type_9 = ScorerUpdatedAtFilter.from_dict(data)
 
                         return filters_item_type_9
                     except:  # noqa: E722
@@ -302,7 +311,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_10 = ScorerScoreableNodeTypesFilter.from_dict(data)
+                        filters_item_type_10 = ScorerLabelFilter.from_dict(data)
 
                         return filters_item_type_10
                     except:  # noqa: E722
@@ -310,7 +319,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_11 = ScorerMultimodalCapabilitiesFilter.from_dict(data)
+                        filters_item_type_11 = ScorerScoreableNodeTypesFilter.from_dict(data)
 
                         return filters_item_type_11
                     except:  # noqa: E722
@@ -318,7 +327,7 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_12 = ScorerIDFilter.from_dict(data)
+                        filters_item_type_12 = ScorerMultimodalCapabilitiesFilter.from_dict(data)
 
                         return filters_item_type_12
                     except:  # noqa: E722
@@ -326,16 +335,24 @@ class ListScorersRequest:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
-                        filters_item_type_13 = ScorerIsGlobalFilter.from_dict(data)
+                        filters_item_type_13 = ScorerIDFilter.from_dict(data)
 
                         return filters_item_type_13
                     except:  # noqa: E722
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        filters_item_type_14 = ScorerIsGlobalFilter.from_dict(data)
+
+                        return filters_item_type_14
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    filters_item_type_14 = ScorerScopeProjectsFilter.from_dict(data)
+                    filters_item_type_15 = ScorerScopeProjectsFilter.from_dict(data)
 
-                    return filters_item_type_14
+                    return filters_item_type_15
 
                 filters_item = _parse_filters_item(filters_item_data)
 

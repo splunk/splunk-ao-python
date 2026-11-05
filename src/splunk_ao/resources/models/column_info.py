@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -11,6 +11,10 @@ from ..models.data_type import DataType
 from ..models.data_unit import DataUnit
 from ..models.step_type import StepType
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.metric_threshold import MetricThreshold
+
 
 T = TypeVar("T", bound="ColumnInfo")
 
@@ -38,6 +42,7 @@ class ColumnInfo:
             'average').
         metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
             column IDs, this holds the legacy metric_name string for dual-key ClickHouse query fallback.
+        threshold (MetricThreshold | None | Unset): Thresholds for the column, if this is a metrics column.
     """
 
     id: str
@@ -56,9 +61,12 @@ class ColumnInfo:
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
+    threshold: MetricThreshold | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.metric_threshold import MetricThreshold
+
         id = self.id
 
         category = self.category.value
@@ -133,6 +141,14 @@ class ColumnInfo:
         else:
             metric_key_alias = self.metric_key_alias
 
+        threshold: dict[str, Any] | None | Unset
+        if isinstance(self.threshold, Unset):
+            threshold = UNSET
+        elif isinstance(self.threshold, MetricThreshold):
+            threshold = self.threshold.to_dict()
+        else:
+            threshold = self.threshold
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "category": category, "data_type": data_type})
@@ -162,11 +178,15 @@ class ColumnInfo:
             field_dict["roll_up_method"] = roll_up_method
         if metric_key_alias is not UNSET:
             field_dict["metric_key_alias"] = metric_key_alias
+        if threshold is not UNSET:
+            field_dict["threshold"] = threshold
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.metric_threshold import MetricThreshold
+
         d = dict(src_dict)
         id = d.pop("id")
 
@@ -285,6 +305,23 @@ class ColumnInfo:
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
+        def _parse_threshold(data: object) -> MetricThreshold | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                threshold_type_0 = MetricThreshold.from_dict(data)
+
+                return threshold_type_0
+            except:  # noqa: E722
+                pass
+            return cast(MetricThreshold | None | Unset, data)
+
+        threshold = _parse_threshold(d.pop("threshold", UNSET))
+
         column_info = cls(
             id=id,
             category=category,
@@ -302,6 +339,7 @@ class ColumnInfo:
             is_optional=is_optional,
             roll_up_method=roll_up_method,
             metric_key_alias=metric_key_alias,
+            threshold=threshold,
         )
 
         column_info.additional_properties = d

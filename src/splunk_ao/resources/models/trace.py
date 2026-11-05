@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..models.agent_span import AgentSpan
     from ..models.control_span import ControlSpan
     from ..models.file_content_part import FileContentPart
+    from ..models.http_span import HttpSpan
     from ..models.llm_span import LlmSpan
     from ..models.metrics import Metrics
     from ..models.retriever_span import RetrieverSpan
@@ -52,7 +53,9 @@ class Trace:
         trace_id (None | str | Unset): Galileo ID of the trace containing the span (or the same value as id for a trace)
         step_number (int | None | Unset): Topological step number of the span.
         parent_id (None | str | Unset): Galileo ID of the parent of this span
-        spans (list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset): Child spans.
+        spans (list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset):
+            Child spans.
+        dataset_generated_output (None | str | Unset): Generated output from the dataset associated with this trace
     """
 
     type_: Literal["trace"] | Unset = "trace"
@@ -75,11 +78,13 @@ class Trace:
     trace_id: None | str | Unset = UNSET
     step_number: int | None | Unset = UNSET
     parent_id: None | str | Unset = UNSET
-    spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+    spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+    dataset_generated_output: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_span import AgentSpan
+        from ..models.control_span import ControlSpan
         from ..models.llm_span import LlmSpan
         from ..models.retriever_span import RetrieverSpan
         from ..models.text_content_part import TextContentPart
@@ -247,10 +252,18 @@ class Trace:
                     spans_item = spans_item_data.to_dict()
                 elif isinstance(spans_item_data, ToolSpan):
                     spans_item = spans_item_data.to_dict()
+                elif isinstance(spans_item_data, ControlSpan):
+                    spans_item = spans_item_data.to_dict()
                 else:
                     spans_item = spans_item_data.to_dict()
 
                 spans.append(spans_item)
+
+        dataset_generated_output: None | str | Unset
+        if isinstance(self.dataset_generated_output, Unset):
+            dataset_generated_output = UNSET
+        else:
+            dataset_generated_output = self.dataset_generated_output
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -297,6 +310,8 @@ class Trace:
             field_dict["parent_id"] = parent_id
         if spans is not UNSET:
             field_dict["spans"] = spans
+        if dataset_generated_output is not UNSET:
+            field_dict["dataset_generated_output"] = dataset_generated_output
 
         return field_dict
 
@@ -305,6 +320,7 @@ class Trace:
         from ..models.agent_span import AgentSpan
         from ..models.control_span import ControlSpan
         from ..models.file_content_part import FileContentPart
+        from ..models.http_span import HttpSpan
         from ..models.llm_span import LlmSpan
         from ..models.metrics import Metrics
         from ..models.retriever_span import RetrieverSpan
@@ -583,14 +599,16 @@ class Trace:
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
 
         _spans = d.pop("spans", UNSET)
-        spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
+        spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = (
+            UNSET
+        )
         if _spans is not UNSET:
             spans = []
             for spans_item_data in _spans:
 
                 def _parse_spans_item(
                     data: object,
-                ) -> AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+                ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -631,15 +649,32 @@ class Trace:
                         return spans_item_type_4
                     except:  # noqa: E722
                         pass
+                    try:
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        spans_item_type_5 = ControlSpan.from_dict(data)
+
+                        return spans_item_type_5
+                    except:  # noqa: E722
+                        pass
                     if not isinstance(data, dict):
                         raise TypeError()
-                    spans_item_type_5 = ControlSpan.from_dict(data)
+                    spans_item_type_6 = HttpSpan.from_dict(data)
 
-                    return spans_item_type_5
+                    return spans_item_type_6
 
                 spans_item = _parse_spans_item(spans_item_data)
 
                 spans.append(spans_item)
+
+        def _parse_dataset_generated_output(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        dataset_generated_output = _parse_dataset_generated_output(d.pop("dataset_generated_output", UNSET))
 
         trace = cls(
             type_=type_,
@@ -663,6 +698,7 @@ class Trace:
             step_number=step_number,
             parent_id=parent_id,
             spans=spans,
+            dataset_generated_output=dataset_generated_output,
         )
 
         trace.additional_properties = d

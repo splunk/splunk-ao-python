@@ -292,6 +292,11 @@ values are preserved; later edits to supplied collections do not change the
 declaration. Backend trace-field projection requires compatible new Go-based
 OTel ingestion support; older ingestion routes are not supported for this feature.
 
+When `conclude(output=..., redacted_output=...)` ends a real operation directly below a declared envelope, explicitly
+supplied outputs also travel as `splunk_ao.trace.output` and `splunk_ao.trace.redacted_output` on that operation.
+Nested operations and inherited child outputs do not declare trace output. Concluding only the envelope cannot deliver
+new output fields after its operation spans have been exported. These attributes require compatible backend ingestion.
+
 Declare fields once in the originating application. A duplicate active call,
 or a redeclaration of the same OTel trace known to the local execution context,
 raises `ValueError`. `conclude()` ends local bookkeeping, not a distributed

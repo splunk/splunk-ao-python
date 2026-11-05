@@ -29,7 +29,7 @@ def capture_trace_attributes(**values: Any) -> TraceAttributes:
     for field, value in values.items():
         if value is None:
             continue
-        if field in ("input", "redacted_input", "metadata", "dataset.metadata"):
+        if field in ("input", "redacted_input", "output", "redacted_output", "metadata", "dataset.metadata"):
             if isinstance(value, list):
                 value = [block.model_dump(mode="json", exclude_none=True) for block in value]
             value = json.dumps(value)

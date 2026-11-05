@@ -13,14 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   operation spans, separate from operation input. Requires compatible new Go OTel ingestion for backend projection.
   Top-level decorators include mapped metadata/tags. Known local same-trace redeclarations are rejected; automatic
   integration/decorator continuation envelopes remain unmarked. No artificial span or CRUD request is introduced.
-
-- `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
-  read decision-model evaluators: one typed question per evaluator, answered with probabilities. Supports
-  `boolean_probability`, `categorical` and `discrete` output types; when `output_type` is omitted it is inferred
-  from `answer_options`. If the version request is clearly rejected (400, 403, 404, 422) the new scorer is
-  deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
-- Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
-  `decision`, so decision scorers appear in list and get responses and decode.
+- Explicit `conclude()` output and redacted output are carried as trace attributes when a direct real operation
+  under a declared envelope concludes. Envelope-only conclusion cannot update previously exported spans.
 
 ### Deprecated
 
@@ -30,6 +24,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Workflow and agent decorators preserve mapped metadata and tags on their operation spans, including continuations.
+
+## [0.7.0]
+
+### Added
+
+- The low-level API client (`splunk_ao.resources`) gains the stage rulesets
+  (`GET /projects/{project_id}/stages/{stage_id}/rulesets`) and paginated stages
+  (`GET /projects/{project_id}/stages/paginated`) endpoints, the decision-scorer validation endpoints (dataset,
+  log record and plain), and the optional `code_sha256`, `request_id` and `validation_task_id` fields on scorer
+  version responses.
+
+### Changed
+
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
+  spec. Code that imports generated symbols directly may need updating:
+  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`
+    optional. The field order changed, so a positional `ScorerConfig(id, scorer_type)` call must become
+    `RuntimeScorerConfig(id=..., scorer_type=...)`. Keyword construction now also sends the defaults
+    `ground_truth=False`, `threshold=0.5` and `requires_tools_in_llm_span=False`; building one from a scorer
+    with `from_dict` takes `ground_truth` from the scorer and leaves the other two unset. The server keeps an
+    explicit `ground_truth`, so a keyword-built config for a ground-truth scorer turns ground truth off; build it
+    from the scorer with `from_dict` or pass `ground_truth=True`.
+    `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or return
+    `RuntimeScorerConfig`.
+  - `CoreScorerName` is renamed to `ScorerName`. The old `ScorerName`, whose members were internal
+    underscore-prefixed values (for example `ScorerName.VALUE_1 = "_context_adherence_luna"`), is gone; use the
+    public names such as `ScorerName.CONTEXT_ADHERENCE`.
+  - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
+    (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
+    (`/integrations/vegas_gateway`).
+  - Removed models: the `Customized*GPTScorer` and `*Template` scorer families, `ChunkAttributionUtilizationScorer`,
+    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `MetricCritiqueColumnar`,
+    `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
+    `ExtendedReadSessionRecordWithChildren`), `VegasGatewayIntegration` and `VegasGatewayIntegrationCreate`.
+  - Removed fields:
+    - `BaseScorerVersionResponse.input_type` (returned by `create_custom_llm_evaluator()` and the other evaluator
+      create functions), and `input_type`, `output_type` and `scoreable_node_types` on `BaseScorerVersionDB`.
+    - `BaseScorer.sub_scorers` and `ProjectCreate.create_example_templates`.
+    - `scorer_type` on `MetricComputing`, `MetricError`, `MetricFailed`, `MetricNotApplicable`, `MetricNotComputed`,
+      `MetricPending`, `MetricRollUp` and `MetricSuccess`, and `critique` on `MetricRollUp` and `MetricSuccess`.
+    - `prompt_scorers_configuration`, `prompt_customized_scorers_configuration`,
+      `prompt_finetuned_scorers_configuration`, `prompt_registered_scorers_configuration`, `sub_scorers`,
+      `store_metric_ids`, `stream_metrics` and `xray` on `CreateJobRequest` and `CreateJobResponse`.
+  - Removed enum members: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`.
+
+### Fixed
+
+- The API client now knows the permission and enum values that current servers return, so reading projects and
+  other resources no longer fails on them. For example, `Projects().get(id=...)` raised
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
+  `ProjectAction` lacked `configure_rate_limit`). Values that older servers still return, `vegas_gateway` for
+  integrations and task types 7, 9 and 12, are kept so reads from those servers keep working.
+- CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
+  SAST finding. IDs for the same inputs differ from earlier releases.
+
+## [0.6.1]
+
+### Fixed
+
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
+  usage, child callback errors do not end healthy crews, and spans use original event timestamps.
+- CrewAI OTLP completion flushes run outside the shared event loop when explicitly enabled. Legacy ingestion-hook
+  flushes wait for active runs to finish and remain synchronous to preserve their whole-trace batches.
+- Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
+  preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
+- LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
+  without modifying graph state or reducing nested tool-node outputs. Turns without a response do not reuse earlier replies.
+- Nested `@log(span_type="tool")` calls now retain the calling tool as their parent and expose their own active
+  tracing context during execution. Tool, workflow, and agent generators restore the consumer context between
+  yields and keep their own outputs when interleaved.
+
+## [0.6.0]
+
+### Added
+
+- `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
+  read decision-model evaluators: one typed question per evaluator, answered with probabilities. Supports
+  `boolean_probability`, `categorical` and `discrete` output types; when `output_type` is omitted it is inferred
+  from `answer_options`. If the version request is clearly rejected (400, 403, 404, 422) the new scorer is
+  deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
+- Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
+  `decision`, so decision scorers appear in list and get responses and decode.
+
+### Fixed
+
+- Require `certifi>=2026.10.19` and `uv>=0.13.4` (where used) to remove trust in the compromised
+  eMudhra certificate authorities (CVE-2026-111943). Update CI tooling and example certificate bundle pins.
 - `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
   default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
   `user` message, the output is a single assistant message, and workflow/agent spans show the
@@ -238,6 +321,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.7.0]: https://pypi.org/project/splunk-ao/0.7.0/
+[0.6.1]: https://pypi.org/project/splunk-ao/0.6.1/
+[0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
 [0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
 [0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
 [0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/

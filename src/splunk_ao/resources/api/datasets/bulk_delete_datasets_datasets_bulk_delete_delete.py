@@ -97,7 +97,7 @@ def sync_detailed(
     ----------
     delete_request : BulkDeleteDatasetsRequest
         Request containing list of dataset IDs to delete (max 100)
-    ctx : Context
+    ctx : AsyncContext
         Request context including authentication information
 
     Returns
@@ -141,7 +141,7 @@ def sync(
     ----------
     delete_request : BulkDeleteDatasetsRequest
         Request containing list of dataset IDs to delete (max 100)
-    ctx : Context
+    ctx : AsyncContext
         Request context including authentication information
 
     Returns
@@ -181,7 +181,7 @@ async def asyncio_detailed(
     ----------
     delete_request : BulkDeleteDatasetsRequest
         Request containing list of dataset IDs to delete (max 100)
-    ctx : Context
+    ctx : AsyncContext
         Request context including authentication information
 
     Returns
@@ -225,7 +225,7 @@ async def asyncio(
     ----------
     delete_request : BulkDeleteDatasetsRequest
         Request containing list of dataset IDs to delete (max 100)
-    ctx : Context
+    ctx : AsyncContext
         Request context including authentication information
 
     Returns

@@ -17,13 +17,13 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
-from ...models.collaborator_update import CollaboratorUpdate
-from ...models.group_collaborator import GroupCollaborator
 from ...models.http_validation_error import HTTPValidationError
+from ...models.project_collaborator_update import ProjectCollaboratorUpdate
+from ...models.project_group_collaborator import ProjectGroupCollaborator
 from ...types import Response
 
 
-def _get_kwargs(project_id: str, group_id: str, *, body: CollaboratorUpdate) -> dict[str, Any]:
+def _get_kwargs(project_id: str, group_id: str, *, body: ProjectCollaboratorUpdate) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
@@ -42,9 +42,9 @@ def _get_kwargs(project_id: str, group_id: str, *, body: CollaboratorUpdate) -> 
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> GroupCollaborator | HTTPValidationError:
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | ProjectGroupCollaborator:
     if response.status_code == 200:
-        response_200 = GroupCollaborator.from_dict(response.json())
+        response_200 = ProjectGroupCollaborator.from_dict(response.json())
 
         return response_200
 
@@ -73,7 +73,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> GroupColl
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[GroupCollaborator | HTTPValidationError]:
+) -> Response[HTTPValidationError | ProjectGroupCollaborator]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,8 +83,8 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[GroupCollaborator | HTTPValidationError]:
+    project_id: str, group_id: str, *, client: ApiClient, body: ProjectCollaboratorUpdate
+) -> Response[HTTPValidationError | ProjectGroupCollaborator]:
     """Update Group Project Collaborator
 
      Update the sharing permissions of a group on a project.
@@ -92,14 +92,14 @@ def sync_detailed(
     Args:
         project_id (str):
         group_id (str):
-        body (CollaboratorUpdate):
+        body (ProjectCollaboratorUpdate):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GroupCollaborator | HTTPValidationError]
+        Response[HTTPValidationError | ProjectGroupCollaborator]
     """
 
     kwargs = _get_kwargs(project_id=project_id, group_id=group_id, body=body)
@@ -110,8 +110,8 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[GroupCollaborator | HTTPValidationError]:
+    project_id: str, group_id: str, *, client: ApiClient, body: ProjectCollaboratorUpdate
+) -> Optional[HTTPValidationError | ProjectGroupCollaborator]:
     """Update Group Project Collaborator
 
      Update the sharing permissions of a group on a project.
@@ -119,22 +119,22 @@ def sync(
     Args:
         project_id (str):
         group_id (str):
-        body (CollaboratorUpdate):
+        body (ProjectCollaboratorUpdate):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GroupCollaborator | HTTPValidationError
+        HTTPValidationError | ProjectGroupCollaborator
     """
 
     return sync_detailed(project_id=project_id, group_id=group_id, client=client, body=body).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Response[GroupCollaborator | HTTPValidationError]:
+    project_id: str, group_id: str, *, client: ApiClient, body: ProjectCollaboratorUpdate
+) -> Response[HTTPValidationError | ProjectGroupCollaborator]:
     """Update Group Project Collaborator
 
      Update the sharing permissions of a group on a project.
@@ -142,14 +142,14 @@ async def asyncio_detailed(
     Args:
         project_id (str):
         group_id (str):
-        body (CollaboratorUpdate):
+        body (ProjectCollaboratorUpdate):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GroupCollaborator | HTTPValidationError]
+        Response[HTTPValidationError | ProjectGroupCollaborator]
     """
 
     kwargs = _get_kwargs(project_id=project_id, group_id=group_id, body=body)
@@ -160,8 +160,8 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, group_id: str, *, client: ApiClient, body: CollaboratorUpdate
-) -> Optional[GroupCollaborator | HTTPValidationError]:
+    project_id: str, group_id: str, *, client: ApiClient, body: ProjectCollaboratorUpdate
+) -> Optional[HTTPValidationError | ProjectGroupCollaborator]:
     """Update Group Project Collaborator
 
      Update the sharing permissions of a group on a project.
@@ -169,14 +169,14 @@ async def asyncio(
     Args:
         project_id (str):
         group_id (str):
-        body (CollaboratorUpdate):
+        body (ProjectCollaboratorUpdate):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GroupCollaborator | HTTPValidationError
+        HTTPValidationError | ProjectGroupCollaborator
     """
 
     return (await asyncio_detailed(project_id=project_id, group_id=group_id, client=client, body=body)).parsed

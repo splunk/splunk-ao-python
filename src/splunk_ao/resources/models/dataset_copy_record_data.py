@@ -21,8 +21,9 @@ class DatasetCopyRecordData:
         project_id (None | str | Unset):
         queue_id (None | str | Unset):
         prepend (bool | Unset): A flag to control appending vs prepending Default: True.
-        use_generated_output_column (bool | Unset): If True, write trace output to generated_output column; if False,
-            write to output column (backward compatible) Default: False.
+        use_generated_output_column (bool | Unset): DEPRECATED and ignored. Record copies always map the record's output
+            to the generated_output column and dataset_output to the output (ground truth) column. Retained so requests from
+            older clients still validate; will be removed. Default: False.
     """
 
     ids: list[str]

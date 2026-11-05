@@ -87,7 +87,16 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Update Tag For Experiment
 
-     Sets or updates a tag for an experiment.
+     Set or update a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created or updated tag.
 
     Args:
         project_id (str):
@@ -115,7 +124,16 @@ def sync(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Update Tag For Experiment
 
-     Sets or updates a tag for an experiment.
+     Set or update a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created or updated tag.
 
     Args:
         project_id (str):
@@ -141,7 +159,16 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | RunTagDB]:
     """Update Tag For Experiment
 
-     Sets or updates a tag for an experiment.
+     Set or update a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created or updated tag.
 
     Args:
         project_id (str):
@@ -169,7 +196,16 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | RunTagDB]:
     """Update Tag For Experiment
 
-     Sets or updates a tag for an experiment.
+     Set or update a tag for an experiment.
+
+    Args:
+        project_id: Project the experiment belongs to, resolved from the URL.
+        run: The experiment to tag, resolved from the URL.
+        tag_create: The tag's key, value, and type.
+        ctx: Async request context.
+
+    Returns:
+        The created or updated tag.
 
     Args:
         project_id (str):

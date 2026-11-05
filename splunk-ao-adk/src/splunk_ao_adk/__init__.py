@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from splunk_ao_adk.callback import SplunkAOADKCallback
 from splunk_ao_adk.decorator import splunk_ao_retriever
