@@ -225,7 +225,7 @@ class Evaluator(StateManagementMixin, ABC):
         return _map.get(output_type.lower(), default)
 
     @classmethod
-    def _create_metric_from_type(cls, scorer_type: ScorerTypes) -> Evaluator:
+    def _create_metric_from_type(cls, scorer_type: ScorerTypes | str) -> Evaluator:
         """
         Create the appropriate Evaluator subclass instance based on scorer_type.
 
@@ -251,8 +251,9 @@ class Evaluator(StateManagementMixin, ABC):
             return CodeEvaluator.__new__(CodeEvaluator)
         if scorer_type == ScorerTypes.DECISION:
             return DecisionEvaluator.__new__(DecisionEvaluator)
-        # Default to SplunkAOEvaluator for built-in scorers (LUNA, PRESET, etc.)
-        return SplunkAOEvaluator.__new__(SplunkAOEvaluator)
+        if scorer_type in (ScorerTypes.LUNA, ScorerTypes.PRESET):
+            return SplunkAOEvaluator.__new__(SplunkAOEvaluator)
+        raise APIError(f"Unsupported evaluator type: {scorer_type!r}. Upgrade splunk-ao to use this evaluator.")
 
     @classmethod
     def get(cls, *, id: str | None = None, name: str | None = None) -> Evaluator | None:
