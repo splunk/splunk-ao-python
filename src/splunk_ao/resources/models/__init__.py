@@ -159,8 +159,14 @@ from .body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post imp
 from .body_validate_code_scorer_dataset_scorers_code_validate_dataset_post import (
     BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost,
 )
+from .body_validate_code_scorer_dataset_scorers_code_validate_dataset_post_score_type_type_0 import (
+    BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0,
+)
 from .body_validate_code_scorer_log_record_scorers_code_validate_log_record_post import (
     BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost,
+)
+from .body_validate_code_scorer_log_record_scorers_code_validate_log_record_post_score_type_type_0 import (
+    BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0,
 )
 from .body_validate_code_scorer_scorers_code_validate_post import BodyValidateCodeScorerScorersCodeValidatePost
 from .boolean_color_constraint import BooleanColorConstraint
@@ -1210,6 +1216,7 @@ from .user_db import UserDB
 from .user_info import UserInfo
 from .user_role import UserRole
 from .valid_result import ValidResult
+from .valid_result_score_type import ValidResultScoreType
 from .validate_code_scorer_dataset_response import ValidateCodeScorerDatasetResponse
 from .validate_code_scorer_response import ValidateCodeScorerResponse
 from .validate_decision_scorer_dataset_request import ValidateDecisionScorerDatasetRequest
@@ -1387,7 +1394,9 @@ __all__ = (
     "BodyLoginEmailLoginPost",
     "BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost",
     "BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost",
+    "BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0",
     "BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost",
+    "BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0",
     "BodyValidateCodeScorerScorersCodeValidatePost",
     "BooleanColorConstraint",
     "BucketedMetric",
@@ -2308,6 +2317,7 @@ __all__ = (
     "ValidationError",
     "ValidationErrorContext",
     "ValidResult",
+    "ValidResultScoreType",
     "VertexAIGCSConfig",
     "VertexAIGCSConfigResponse",
     "VertexAIIntegration",

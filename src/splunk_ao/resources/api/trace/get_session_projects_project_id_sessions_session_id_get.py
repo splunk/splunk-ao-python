@@ -27,6 +27,7 @@ def _get_kwargs(
     session_id: str,
     *,
     include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -34,6 +35,13 @@ def _get_kwargs(
     params: dict[str, Any] = {}
 
     params["include_presigned_urls"] = include_presigned_urls
+
+    json_access_view_id: None | str | Unset
+    if isinstance(access_view_id, Unset):
+        json_access_view_id = UNSET
+    else:
+        json_access_view_id = access_view_id
+    params["access_view_id"] = json_access_view_id
 
     params["include_redacted_io"] = include_redacted_io
 
@@ -100,6 +108,7 @@ def sync_detailed(
     *,
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
 ) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
@@ -108,6 +117,7 @@ def sync_detailed(
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
         include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
             `redacted_output` fields from the response. When redaction is active these hold the same
             text already returned in `input`/`output`, so clients that do not read them can halve the
@@ -125,6 +135,7 @@ def sync_detailed(
         project_id=project_id,
         session_id=session_id,
         include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
         include_redacted_io=include_redacted_io,
     )
 
@@ -139,6 +150,7 @@ def sync(
     *,
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
 ) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
@@ -147,6 +159,7 @@ def sync(
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
         include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
             `redacted_output` fields from the response. When redaction is active these hold the same
             text already returned in `input`/`output`, so clients that do not read them can halve the
@@ -165,6 +178,7 @@ def sync(
         session_id=session_id,
         client=client,
         include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
         include_redacted_io=include_redacted_io,
     ).parsed
 
@@ -175,6 +189,7 @@ async def asyncio_detailed(
     *,
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
 ) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
@@ -183,6 +198,7 @@ async def asyncio_detailed(
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
         include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
             `redacted_output` fields from the response. When redaction is active these hold the same
             text already returned in `input`/`output`, so clients that do not read them can halve the
@@ -200,6 +216,7 @@ async def asyncio_detailed(
         project_id=project_id,
         session_id=session_id,
         include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
         include_redacted_io=include_redacted_io,
     )
 
@@ -214,6 +231,7 @@ async def asyncio(
     *,
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
 ) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
     """Get Session
@@ -222,6 +240,7 @@ async def asyncio(
         project_id (str):
         session_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
         include_redacted_io (bool | Unset): If False, omit the `redacted_input` and
             `redacted_output` fields from the response. When redaction is active these hold the same
             text already returned in `input`/`output`, so clients that do not read them can halve the
@@ -241,6 +260,7 @@ async def asyncio(
             session_id=session_id,
             client=client,
             include_presigned_urls=include_presigned_urls,
+            access_view_id=access_view_id,
             include_redacted_io=include_redacted_io,
         )
     ).parsed
