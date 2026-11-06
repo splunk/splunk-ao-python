@@ -100,7 +100,8 @@ def sync_detailed(
      Share an annotation queue with users by granting them specific roles.
 
     Users can be specified by user_id or email. If using email and the user doesn't exist
-    in the organization, they will be invited automatically with the 'user' role.
+    in the organization, annotators are invited with the organization annotator role when enabled.
+    Other invitations use the 'user' role.
 
     Roles: owner, annotator
 
@@ -131,7 +132,8 @@ def sync(
      Share an annotation queue with users by granting them specific roles.
 
     Users can be specified by user_id or email. If using email and the user doesn't exist
-    in the organization, they will be invited automatically with the 'user' role.
+    in the organization, annotators are invited with the organization annotator role when enabled.
+    Other invitations use the 'user' role.
 
     Roles: owner, annotator
 
@@ -158,7 +160,8 @@ async def asyncio_detailed(
      Share an annotation queue with users by granting them specific roles.
 
     Users can be specified by user_id or email. If using email and the user doesn't exist
-    in the organization, they will be invited automatically with the 'user' role.
+    in the organization, annotators are invited with the organization annotator role when enabled.
+    Other invitations use the 'user' role.
 
     Roles: owner, annotator
 
@@ -189,7 +192,8 @@ async def asyncio(
      Share an annotation queue with users by granting them specific roles.
 
     Users can be specified by user_id or email. If using email and the user doesn't exist
-    in the organization, they will be invited automatically with the 'user' role.
+    in the organization, annotators are invited with the organization annotator role when enabled.
+    Other invitations use the 'user' role.
 
     Roles: owner, annotator
 

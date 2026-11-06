@@ -5586,6 +5586,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
       responses:
         '200':
           description: Successful Response
@@ -5685,6 +5694,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
       responses:
         '200':
           description: Successful Response
@@ -6440,6 +6458,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
         - name: include_redacted_io
           in: query
           required: false
@@ -9282,8 +9309,10 @@ paths:
         Users can be specified by user_id or email. If using email and the user doesn''t
         exist
 
-        in the organization, they will be invited automatically with the ''user''
-        role.
+        in the organization, annotators are invited with the organization annotator
+        role when enabled.
+
+        Other invitations use the ''user'' role.
 
 
         Roles: owner, annotator'
@@ -11283,6 +11312,13 @@ components:
       title: AggregatedTraceViewNode
     AggregatedTraceViewRequest:
       properties:
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         log_stream_id:
           type: string
           format: uuid4
@@ -13940,20 +13976,20 @@ components:
       title: BillingUsageResponse
     Body_create_code_scorer_version_scorers__scorer_id__version_code_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         validation_result:
           type: string
           title: Validation Result
           description: 'The result from the validate endpoint, as a JSON string. Only
             its task_id is read: the version is built from the result stored for that
             validation task.'
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
-        - file
         - validation_result
+        - file
       title: Body_create_code_scorer_version_scorers__scorer_id__version_code_post
     Body_create_dataset_datasets_post:
       properties:
@@ -14065,10 +14101,6 @@ components:
       title: Body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post
     Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         dataset_id:
           type: string
           format: uuid
@@ -14106,19 +14138,24 @@ components:
         score_type:
           anyOf:
             - type: string
+              enum:
+                - bool
+                - int
+                - float
+                - str
             - type: 'null'
           title: Score Type
-      type: object
-      required:
-        - file
-        - dataset_id
-      title: Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post
-    Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post:
-      properties:
         file:
           type: string
           title: File
           format: binary
+      type: object
+      required:
+        - dataset_id
+        - file
+      title: Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post
+    Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post:
+      properties:
         log_stream_id:
           anyOf:
             - type: string
@@ -14168,16 +14205,26 @@ components:
               type: array
             - type: 'null'
           title: Scoreable Node Types
+        score_type:
+          anyOf:
+            - type: string
+              enum:
+                - bool
+                - int
+                - float
+                - str
+            - type: 'null'
+          title: Score Type
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
         - file
       title: Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post
     Body_validate_code_scorer_scorers_code_validate_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         test_input:
           anyOf:
             - type: string
@@ -14204,6 +14251,10 @@ components:
               type: array
             - type: 'null'
           title: Scoreable Node Types
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
         - file
@@ -15604,10 +15655,6 @@ components:
           type: boolean
           title: Upload Data In Separate Task
           default: true
-        log_metric_computing_records:
-          type: boolean
-          title: Log Metric Computing Records
-          default: true
         multijudge_average_boolean_metrics:
           type: boolean
           title: Multijudge Average Boolean Metrics
@@ -15846,10 +15893,6 @@ components:
         upload_data_in_separate_task:
           type: boolean
           title: Upload Data In Separate Task
-          default: true
-        log_metric_computing_records:
-          type: boolean
-          title: Log Metric Computing Records
           default: true
         multijudge_average_boolean_metrics:
           type: boolean
@@ -26979,15 +27022,15 @@ components:
       examples:
         - columns:
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Input to the trace or span.
@@ -27001,15 +27044,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Output of the trace or span.
@@ -27023,15 +27066,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Name of the trace, span or session.
@@ -27045,15 +27088,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: timestamp
               description: Timestamp of the trace or span's creation.
@@ -27067,14 +27110,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: string_list
               description: Tags associated with this trace or span.
@@ -27088,14 +27131,14 @@ components:
               multi_valued: true
               sortable: false
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: integer
               description: Status code of the trace or span. Used for logging failure
@@ -27110,15 +27153,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: A user-provided session, trace or span ID.
@@ -27132,14 +27175,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Input to the dataset associated with this trace
@@ -27153,14 +27196,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Output from the dataset associated with this trace
@@ -27174,15 +27217,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: uuid
               description: Galileo ID of the session, trace or span
@@ -27196,14 +27239,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: uuid
               description: Galileo ID of the session containing the trace (or the
@@ -27218,14 +27261,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: uuid
               description: Galileo ID of the project associated with this trace or
@@ -27240,14 +27283,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: uuid
               description: Galileo ID of the run (log stream or experiment) associated
@@ -27262,14 +27305,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: timestamp
               description: Timestamp of the session or trace or span's last update
@@ -27283,14 +27326,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: boolean
               description: Whether or not this trace or span has child spans
@@ -27304,15 +27347,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Runner progress text written directly to CH span
@@ -27326,15 +27369,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
+                - session
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: text
               description: Runner error text written directly to CH span
@@ -27363,14 +27406,14 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
+                - trace
                 - workflow
+                - tool
                 - control
                 - llm
-                - tool
                 - retriever
-                - trace
               category: standard
               data_type: boolean
               description: Whether the parent trace is complete or not
@@ -27384,23 +27427,23 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - session
                 - http
                 - agent
-                - workflow
-                - control
-                - retriever
-                - llm
                 - trace
-                - tool
-              applicable_types:
-                - http
-                - agent
                 - workflow
-                - control
-                - retriever
-                - llm
                 - tool
+                - session
+                - control
+                - llm
+                - retriever
+              applicable_types:
+                - agent
+                - http
+                - workflow
+                - tool
+                - control
+                - llm
+                - retriever
               category: standard
               data_type: text
               description: Type of the trace, span or session.
@@ -27414,13 +27457,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
                 - workflow
-                - control
-                - retriever
-                - llm
                 - tool
+                - control
+                - llm
+                - retriever
               category: standard
               data_type: uuid
               description: Galileo ID of the trace containing the span (or the same
@@ -27435,13 +27478,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
                 - workflow
-                - control
-                - retriever
-                - llm
                 - tool
+                - control
+                - llm
+                - retriever
               category: standard
               data_type: uuid
               description: Galileo ID of the parent of this span
@@ -27455,13 +27498,13 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - http
                 - agent
+                - http
                 - workflow
-                - control
-                - retriever
-                - llm
                 - tool
+                - control
+                - llm
+                - retriever
               category: standard
               data_type: integer
               description: Topological step number of the span.
@@ -27475,12 +27518,12 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - judge
-                - planner
-                - reflection
-                - router
-                - supervisor
                 - default
+                - supervisor
+                - reflection
+                - planner
+                - judge
+                - router
                 - react
                 - classifier
               applicable_types:
@@ -27498,8 +27541,8 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - control
                 - agent
+                - control
               category: standard
               data_type: text
               description: Normalized agent name associated with this control execution.
@@ -27612,8 +27655,8 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - pre
                 - post
+                - pre
               applicable_types:
                 - control
               category: standard
@@ -27630,11 +27673,11 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - llm_call
-                - retriever_call
                 - tool_call
-                - trace_call
+                - retriever_call
                 - session_call
+                - llm_call
+                - trace_call
               applicable_types:
                 - control
               category: standard
@@ -27906,6 +27949,16 @@ components:
       title: LogRecordsColumnInfo
     LogRecordsCustomMetricsQueryRequest:
       properties:
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+          description: Include traces from this time onward.
+        end_time:
+          type: string
+          format: date-time
+          title: End Time
+          description: Include traces up to this time.
         log_stream_id:
           anyOf:
             - type: string
@@ -27927,21 +27980,18 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filter_tree:
           anyOf:
             - $ref: '#/components/schemas/FilterExpression_Annotated_Union_LogRecordsIDFilter__LogRecordsDateFilter__LogRecordsNumberFilter__LogRecordsBooleanFilter__LogRecordsCollectionFilter__LogRecordsTextFilter__LogRecordsFullyAnnotatedFilter___FieldInfo_annotation_NoneType__required_True__discriminator__type____'
             - type: 'null'
           description: Filter expression tree for complex filtering
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-          description: Include traces from this time onward.
-        end_time:
-          type: string
-          format: date-time
-          title: End Time
-          description: Include traces up to this time.
         interval_minutes:
           type: integer
           title: Interval Minutes
@@ -28143,6 +28193,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28285,6 +28342,16 @@ components:
       title: LogRecordsIDFilter
     LogRecordsMetricsQueryRequest:
       properties:
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+          description: Include traces from this time onward.
+        end_time:
+          type: string
+          format: date-time
+          title: End Time
+          description: Include traces up to this time.
         log_stream_id:
           anyOf:
             - type: string
@@ -28306,6 +28373,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28328,16 +28402,6 @@ components:
                 text: '#/components/schemas/LogRecordsTextFilter'
           type: array
           title: Filters
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-          description: Include traces from this time onward.
-        end_time:
-          type: string
-          format: date-time
-          title: End Time
-          description: Include traces up to this time.
         interval:
           type: integer
           title: Interval
@@ -28489,6 +28553,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28669,7 +28740,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.046189Z'
+              created_at: '2026-11-05T15:24:38.535782Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28688,7 +28759,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.046327Z'
+              created_at: '2026-11-05T15:24:38.535986Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28731,6 +28802,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28818,6 +28896,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28974,7 +29059,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.043448Z'
+              created_at: '2026-11-05T15:24:38.532863Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28999,7 +29084,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.043599Z'
+              created_at: '2026-11-05T15:24:38.533024Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -29342,14 +29427,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           parent_id: 11000011-0000-0000-0000-110000110000
           spans:
-            - created_at: '2026-10-29T16:41:53.025896Z'
+            - created_at: '2026-11-05T15:24:38.513062Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.014436Z'
+                - created_at: '2026-11-05T15:24:38.499549Z'
                   dataset_metadata: {}
                   id: 22222222-2222-4222-a222-222222222222
                   input:
@@ -30004,14 +30089,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           session_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-10-29T16:41:53.010661Z'
+            - created_at: '2026-11-05T15:24:38.495660Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.010623Z'
+                - created_at: '2026-11-05T15:24:38.495615Z'
                   dataset_metadata: {}
                   input:
                     - content: 'Question: who is a smart LLM?'
@@ -30029,14 +30114,14 @@ components:
               user_metadata: {}
         - experiment_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-10-29T16:41:53.011122Z'
+            - created_at: '2026-11-05T15:24:38.496243Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.011089Z'
+                - created_at: '2026-11-05T15:24:38.496204Z'
                   dataset_metadata: {}
                   id: 11111111-1111-4111-a111-111111111111
                   input:
@@ -36850,6 +36935,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -38366,6 +38458,12 @@ components:
           type: boolean
           title: Includes Standard
           default: true
+        hashed_lockfile:
+          anyOf:
+            - type: string
+              maxLength: 786432
+            - type: 'null'
+          title: Hashed Lockfile
       type: object
       required:
         - tier
@@ -40976,6 +41074,7 @@ components:
         - change_role_to_manager
         - change_role_to_user
         - change_role_to_read_only
+        - change_role_to_org_annotator
         - change_role_to_capability_based
       title: UserAction
     UserAnnotationQueueCollaborator:
@@ -41203,6 +41302,7 @@ components:
         - manager
         - user
         - read_only
+        - org_annotator
         - capability_based
       title: UserRole
     ValidResult:
@@ -41214,6 +41314,11 @@ components:
           default: valid
         score_type:
           type: string
+          enum:
+            - bool
+            - int
+            - float
+            - str
           title: Score Type
         scoreable_node_types:
           items:
@@ -41372,6 +41477,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -41680,6 +41792,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
