@@ -223,13 +223,14 @@ def test_agent_control_cleanup_restores_previous_provider_across_loggers(
 
     fake_agent_control_modules["trace_context"].set_trace_context_provider(external_provider)
 
+    # Internal envelopes exercise bridge ownership without redeclaring the active OTel trace.
     logger_a = SplunkAOLogger(project="project_a", agent_stream="stream_a")
-    logger_a.start_trace(input="trace a")
+    logger_a._start_trace_envelope(input="trace a")
     logger_a.add_workflow_span(input="workflow a", name="workflow_a")
     bridge_a = setup_agent_control_bridge(logger_a)
 
     logger_b = SplunkAOLogger(project="project_b", agent_stream="stream_b")
-    logger_b.start_trace(input="trace b")
+    logger_b._start_trace_envelope(input="trace b")
     workflow_b = logger_b.add_workflow_span(input="workflow b", name="workflow_b")
     bridge_b = setup_agent_control_bridge(logger_b)
 

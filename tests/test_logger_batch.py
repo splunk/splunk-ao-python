@@ -151,7 +151,7 @@ def test_single_span_trace_to_galileo(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    created_at = datetime.datetime.now()
+    created_at = datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC)
     metadata = {"key": "value"}
     logger = _legacy_logger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(
@@ -179,11 +179,12 @@ def test_single_span_trace_to_galileo(
     assert trace.input == "input"
     assert trace.output == "output"
     assert trace.name == "test-trace"
-    assert trace.created_at == created_at
+    assert trace.created_at != created_at
+    assert span.created_at == created_at
     assert trace.user_metadata == metadata
     assert trace.status_code == 200
     assert trace.spans == [span]
-    assert trace.metrics == Metrics(duration_ns=1000000)
+    assert trace.metrics == Metrics()
     assert logger.traces == []
     assert logger._parent_stack == deque()
 
@@ -326,7 +327,7 @@ def test_single_span_trace_to_galileo_experiment_id(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_experiments_client(mock_experiments_client)
 
-    created_at = datetime.datetime.now()
+    created_at = datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC)
     metadata = {"key": "value"}
     logger = _legacy_logger(project="my_project", experiment_id="6c4e3f7e-4a9a-4e7e-8c1f-3a9a3a9a3a9a")
     logger.start_trace(
@@ -342,11 +343,11 @@ def test_single_span_trace_to_galileo_experiment_id(
     assert trace.input == "input"
     assert trace.output == "output"
     assert trace.name == "test-trace"
-    assert trace.created_at == created_at
+    assert trace.created_at != created_at
     assert trace.user_metadata == metadata
     assert trace.status_code == 200
     assert trace.spans == []
-    assert trace.metrics == Metrics(duration_ns=1000000)
+    assert trace.metrics == Metrics()
     assert logger.traces == []
     assert logger._parent_stack == deque()
 
@@ -392,11 +393,7 @@ def test_nested_span_trace_to_galileo(
 
     mock_traces_client_instance.ingest_traces.assert_called_once()
     payload = mock_traces_client_instance.ingest_traces.call_args.args[0]
-    expected_payload = TracesIngestRequest(
-        agent_stream_id=None,
-        experiment_id=None,
-        traces=[trace],
-    )
+    expected_payload = TracesIngestRequest(agent_stream_id=None, experiment_id=None, traces=[trace])
     assert payload == expected_payload
     assert logger.traces == []
     assert logger._parent_stack == deque()
@@ -442,7 +439,7 @@ def test_multi_span_trace_to_galileo(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    created_at = datetime.datetime.now()
+    created_at = datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC)
     metadata = {"key": "value"}
     logger = _legacy_logger(project="my_project", agent_stream="my_log_stream")
     logger.start_trace(
@@ -490,7 +487,9 @@ def test_multi_span_trace_to_galileo(
     assert trace.input == "input"
     assert trace.output == "response2"
     assert trace.name == "test-trace"
-    assert trace.created_at == created_at
+    assert trace.created_at != created_at
+    assert workflow_span.created_at == created_at
+    assert second_span.created_at == created_at
     assert trace.user_metadata == metadata
     assert trace.status_code == 200
     assert trace.spans == [workflow_span, second_span]
@@ -510,7 +509,7 @@ async def test_single_span_trace_to_galileo_with_async(
     setup_mock_projects_client(mock_projects_client)
     setup_mock_logstreams_client(mock_logstreams_client)
 
-    created_at = datetime.datetime.now()
+    created_at = datetime.datetime(2000, 1, 1, tzinfo=datetime.UTC)
     metadata = {"key": "value"}
 
     def local_scorer(step: Trace | Span) -> int:
@@ -548,11 +547,12 @@ async def test_single_span_trace_to_galileo_with_async(
     assert trace.input == "input"
     assert trace.output == "output"
     assert trace.name == "test-trace"
-    assert trace.created_at == created_at
+    assert trace.created_at != created_at
+    assert span.created_at == created_at
     assert trace.user_metadata == metadata
     assert trace.status_code == 200
     assert trace.spans == [span]
-    assert trace.metrics == Metrics(duration_ns=1000000)
+    assert trace.metrics == Metrics()
     assert logger.traces == []
     assert logger._parent_stack == deque()
 
@@ -2082,13 +2082,13 @@ class TestMultipleLoggerInstanceIsolation:
         assert logger_a.has_active_trace() is False
         assert logger_b.has_active_trace() is False
 
-        # Both loggers build concurrent hierarchies
-        logger_a.start_trace(input="Trace A", name="trace_a")
+        # Internal envelopes test bookkeeping isolation without redeclaring the active OTel trace.
+        logger_a._start_trace_envelope(input="Trace A", name="trace_a")
         logger_a.add_workflow_span(input="Workflow A", name="workflow_a")
         assert logger_a.has_active_trace() is True
         assert logger_b.has_active_trace() is False
 
-        logger_b.start_trace(input="Trace B", name="trace_b")
+        logger_b._start_trace_envelope(input="Trace B", name="trace_b")
         logger_b.add_workflow_span(input="Workflow B", name="workflow_b")
 
         # Each logger sees its own current parent
@@ -2134,8 +2134,9 @@ class TestMultipleLoggerInstanceIsolation:
         logger_a = _legacy_logger(project="project_a", agent_stream="stream_a")
         logger_b = _legacy_logger(project="project_b", agent_stream="stream_b")
 
-        logger_a.start_trace(input="Trace A", name="trace_a")
-        logger_b.start_trace(input="Trace B", name="trace_b")
+        # Internal envelopes test bookkeeping isolation without redeclaring the active OTel trace.
+        logger_a._start_trace_envelope(input="Trace A", name="trace_a")
+        logger_b._start_trace_envelope(input="Trace B", name="trace_b")
         logger_b.add_workflow_span(input="Workflow B", name="workflow_b")
 
         # Reset logger_a's parent tracking - logger_b unaffected
