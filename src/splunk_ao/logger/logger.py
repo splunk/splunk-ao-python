@@ -6,6 +6,7 @@ import json
 import logging
 import time
 import uuid
+import warnings
 from collections.abc import Callable, Mapping
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
@@ -50,6 +51,7 @@ from splunk_ao.exporter import (
 )
 from splunk_ao.exporter.diagnostics import get_export_health
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult
+from splunk_ao.logger.trace_metadata import capture_trace_attributes, claim_trace, has_trace_declaration
 from splunk_ao.projects import Projects
 from splunk_ao.schema.content_blocks import (
     DataContentBlock,
@@ -650,7 +652,13 @@ class SplunkAOLogger(TracesLogger):
         )
         return None
 
-    def _emit_and_release(self, finished_step: BaseStep) -> None:
+    def _emit_and_release(
+        self,
+        finished_step: BaseStep,
+        *,
+        trace_output: IngestOutputType | None = None,
+        trace_redacted_output: IngestOutputType | None = None,
+    ) -> None:
         """Convert and enqueue one completed step, then release its stable identity."""
         ids = self._otel_ids.get(finished_step.id)
         if ids is None:
@@ -663,6 +671,18 @@ class SplunkAOLogger(TracesLogger):
             if not bool(ids.span_context.trace_flags & TraceFlags.SAMPLED):
                 return
 
+            trace_attributes = None
+            if isinstance(finished_step._parent, LoggedTrace) and finished_step._parent._trace_attributes:
+                trace_attributes = dict(finished_step._parent._trace_attributes)
+                trace_attributes.update(
+                    capture_trace_attributes(
+                        output=self._coerce_output(trace_output) if trace_output is not None else None,
+                        redacted_output=(
+                            self._coerce_output(trace_redacted_output) if trace_redacted_output is not None else None
+                        ),
+                    )
+                )
+
             self._sink.emit(
                 self._converter.convert_span(
                     span=finished_step,
@@ -670,6 +690,7 @@ class SplunkAOLogger(TracesLogger):
                     parent_span_context=self._export_parent_context(finished_step, ids),
                     session_id=ids.session_id,
                     resource=self._resource,
+                    trace_attributes=trace_attributes,
                 )
             )
         except Exception:
@@ -689,15 +710,25 @@ class SplunkAOLogger(TracesLogger):
             if child.id in self._pending_otel_steps:
                 self._emit_and_release(child)
 
-    def _complete_step(self, finished_step: BaseStep) -> None:
+    def _complete_step(
+        self,
+        finished_step: BaseStep,
+        *,
+        trace_output: IngestOutputType | None = None,
+        trace_redacted_output: IngestOutputType | None = None,
+    ) -> None:
         """Coordinate completion for hook or OTLP egress without double dispatch."""
         if self._ingestion_hook:
             self._release_otel_context(finished_step)
+            if isinstance(finished_step, LoggedTrace):
+                finished_step._trace_attributes = ()
             return
 
         self._emit_pending_descendants(finished_step)
-        self._emit_and_release(finished_step)
+        self._emit_and_release(finished_step, trace_output=trace_output, trace_redacted_output=trace_redacted_output)
         if isinstance(finished_step, Trace):
+            if isinstance(finished_step, LoggedTrace):
+                finished_step._trace_attributes = ()
             self.traces = [trace for trace in getattr(self, "traces", []) if trace is not finished_step]
 
     def _add_completed_leaf(self, span: StepT, parent: BaseStep | None = None) -> StepT:
@@ -1093,8 +1124,13 @@ class SplunkAOLogger(TracesLogger):
         external_id: str | None = None,
     ) -> LoggedTrace:
         """
-        Create a new trace and add it to the list of traces.
-        Once this trace is complete, you can close it out by calling conclude().
+        Declare trace fields and open an internal instrumentation envelope.
+
+        No span or backend resource is created by this call alone. Completed real
+        operations directly below this envelope carry a frozen declaration using
+        ``splunk_ao.trace.*`` attributes, separate from their operation input.
+        Call once at the originating application, then close the local envelope
+        with ``conclude()``. Distributed continuations must not redeclare fields.
 
         Parameters
         ----------
@@ -1115,9 +1151,9 @@ class SplunkAOLogger(TracesLogger):
             Name of the trace.
             Example: "weather_query_trace", "customer_support_session"
         duration_ns: Optional[int]
-            Duration of the trace in nanoseconds.
+            Deprecated and ignored. Actual operations supply their own duration.
         created_at: Optional[datetime]
-            Timestamp of the trace's creation.
+            Deprecated and ignored. Actual operations supply their own timestamps.
         metadata: Optional[dict[str, MetadataValue]]
             Metadata associated with this trace.
             Expected format: `{"key1": "value1", "enabled": True, "count": 42}`
@@ -1135,25 +1171,77 @@ class SplunkAOLogger(TracesLogger):
             Expected format: `{"key1": "value1", "enabled": True, "count": 42}`
             Accepted value types: str, bool, int, float, None (auto-converted to strings).
         external_id: Optional[str]
-            External ID for this trace to connect to external systems.
-            Expected format: Unique identifier string.
+            Deprecated and ignored. The backend correlates using the OTel trace ID.
+            Put business identifiers in metadata instead.
 
         Returns
         -------
         LoggedTrace
             The created trace.
         """
-        # Validate and normalize input types (dict→JSON, list[dict]→JSON or content blocks)
+        for argument, value in (("created_at", created_at), ("duration_ns", duration_ns), ("external_id", external_id)):
+            if value is not None:
+                warnings.warn(f"start_trace() {argument} is deprecated and ignored.", DeprecationWarning, stacklevel=4)
+        return self._start_trace_envelope(
+            input=input,
+            redacted_input=redacted_input,
+            name=name,
+            metadata=metadata,
+            tags=tags,
+            dataset_input=dataset_input,
+            dataset_output=dataset_output,
+            dataset_metadata=dataset_metadata,
+            _declare=True,
+        )
+
+    @nop_sync
+    @warn_catch_exception()
+    def _start_trace_envelope(
+        self,
+        input: str | TextOrContentBlocks | dict | list[dict[str, Any]],
+        redacted_input: str | TextOrContentBlocks | dict | list[dict[str, Any]] | None = None,
+        name: str | None = None,
+        duration_ns: int | None = None,
+        created_at: datetime | None = None,
+        metadata: dict[str, MetadataValue] | None = None,
+        tags: list[str] | None = None,
+        dataset_input: str | None = None,
+        dataset_output: str | None = None,
+        dataset_metadata: dict[str, MetadataValue] | None = None,
+        *,
+        _declare: bool = False,
+    ) -> LoggedTrace:
+        """Open bookkeeping state; only public manual/decorator calls declare fields."""
+        if self.current_parent() is not None:
+            raise ValueError("You must conclude the existing trace before adding a new one.")
+        if _declare and has_trace_declaration():
+            raise ValueError("Trace fields have already been declared in this execution context.")
         input = SplunkAOLogger._coerce_trace_input("input", input)
         redacted_input = SplunkAOLogger._coerce_trace_input("redacted_input", redacted_input)
 
         # Auto-convert non-string metadata values to strings
         # Note: Must use class name, not self, because DecorateAllMethods removes @staticmethod
-        if metadata:
+        if metadata is not None:
             metadata = {k: SplunkAOLogger._convert_metadata_value(v) for k, v in metadata.items()}
-        if dataset_metadata:
+        if dataset_metadata is not None:
             dataset_metadata = {k: SplunkAOLogger._convert_metadata_value(v) for k, v in dataset_metadata.items()}
 
+        attributes = (
+            capture_trace_attributes(
+                **{
+                    "input": input,
+                    "redacted_input": redacted_input,
+                    "name": name,
+                    "metadata": metadata,
+                    "tags": tags,
+                    "dataset.input": dataset_input,
+                    "dataset.output": dataset_output,
+                    "dataset.metadata": dataset_metadata,
+                }
+            )
+            if _declare
+            else ()
+        )
         kwargs = {
             "input": input,
             "redacted_input": redacted_input,
@@ -1165,10 +1253,14 @@ class SplunkAOLogger(TracesLogger):
             "dataset_input": dataset_input,
             "dataset_output": dataset_output,
             "dataset_metadata": dataset_metadata,
-            "external_id": external_id,
             "id": uuid.uuid4(),
         }
-        return self.add_trace(**kwargs)
+        trace = self.add_trace(**kwargs)
+        trace._trace_attributes = attributes
+        ids = self._otel_ids.get(trace.id)
+        if _declare and ids is not None:
+            claim_trace(ids.span_context.trace_id)
+        return trace
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -2017,6 +2109,8 @@ class SplunkAOLogger(TracesLogger):
             For workflow/agent spans, all IngestOutputType variants are accepted as-is.
         redacted_output: Optional[IngestOutputType]
             Output that removes any sensitive information (redacted output of the node).
+            Explicit output fields also become trace output attributes when concluding a direct operation under
+            a declared trace. Concluding only the internal envelope cannot update already exported spans.
         duration_ns: Optional[int]
             Duration of the node in nanoseconds.
         status_code: Optional[int]
@@ -2033,14 +2127,14 @@ class SplunkAOLogger(TracesLogger):
             finished_step, current_parent = self._conclude(
                 output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
             )
-            self._complete_step(finished_step)
+            self._complete_step(finished_step, trace_output=output, trace_redacted_output=redacted_output)
         else:
             current_parent = None
             while self.current_parent() is not None:
                 finished_step, current_parent = self._conclude(
                     output=output, redacted_output=redacted_output, duration_ns=duration_ns, status_code=status_code
                 )
-                self._complete_step(finished_step)
+                self._complete_step(finished_step, trace_output=output, trace_redacted_output=redacted_output)
 
         return current_parent
 
@@ -2197,6 +2291,9 @@ class SplunkAOLogger(TracesLogger):
             self._set_current_parent(None)
             self._otel_ids.clear()
             self._pending_otel_steps.clear()
+            for trace in self.traces:
+                if isinstance(trace, LoggedTrace):
+                    trace._trace_attributes = ()
             self.traces = []
 
             try:

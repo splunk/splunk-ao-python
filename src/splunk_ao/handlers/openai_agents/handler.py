@@ -108,7 +108,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             self._trace_states[trace_id] = state
             if state.caller_parent is None:
                 try:
-                    state.owned_trace = self._splunk_ao_logger.start_trace(
+                    state.owned_trace = self._splunk_ao_logger._start_trace_envelope(
                         input="Agent Workflow",
                         name="Trace",
                         created_at=datetime.fromisoformat(node.span_params["start_time_iso"]),

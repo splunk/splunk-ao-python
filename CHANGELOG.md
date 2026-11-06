@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Manual `start_trace()` fields are frozen and carried as dedicated `splunk_ao.trace.*` attributes on direct real
+  operation spans, separate from operation input. Requires compatible new Go OTel ingestion for backend projection.
+  Top-level decorators include mapped metadata/tags. Known local same-trace redeclarations are rejected; automatic
+  integration/decorator continuation envelopes remain unmarked. No artificial span or CRUD request is introduced.
+- Explicit `conclude()` output and redacted output are carried as trace attributes when a direct real operation
+  under a declared envelope concludes. Envelope-only conclusion cannot update previously exported spans.
+
+### Deprecated
+
+- Public `start_trace(created_at=..., duration_ns=..., external_id=...)` accepts but ignores these values and emits
+  `DeprecationWarning`, including hook-backed callers. Actual operation timing APIs are unchanged; use metadata for
+  business identifiers. Declare trace fields only at the origin, not again in downstream distributed services.
+
+### Fixed
+
+- Workflow and agent decorators preserve mapped metadata and tags on their operation spans, including continuations.
+
 ## [0.7.0]
 
 ### Added

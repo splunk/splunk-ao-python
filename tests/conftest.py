@@ -63,6 +63,7 @@ from splunk_ao.collaborator import CollaboratorRole
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.configuration import _CONFIGURATION_KEYS, Configuration
 from splunk_ao.decorator import _mode_context, _session_id_context
+from splunk_ao.logger.trace_metadata import _declared_trace_id
 from splunk_ao.resources.models import DatasetContent, DatasetRow, DatasetRowValuesDict
 from splunk_ao.resources.models.messages_list_item import MessagesListItem
 from splunk_ao.utils.singleton import SplunkAOLoggerSingleton
@@ -157,11 +158,13 @@ def _clear_otel_test_context() -> None:
 
 @pytest.fixture(autouse=True)
 def reset_otel_test_context() -> Generator[None, None, None]:
+    claim_token = _declared_trace_id.set(None)
     _clear_otel_test_context()
     _session_id_context.set(None)
     yield
     _clear_otel_test_context()
     _session_id_context.set(None)
+    _declared_trace_id.reset(claim_token)
 
 
 @pytest.fixture(autouse=True)

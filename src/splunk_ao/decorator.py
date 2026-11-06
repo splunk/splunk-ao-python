@@ -63,6 +63,7 @@ from galileo_core.schemas.logging.trace import Trace
 from splunk_ao.constants import LoggerModeType
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.logger import _otel_context_state
+from splunk_ao.logger.trace_metadata import has_trace_declaration
 from splunk_ao.schema.content_blocks import is_content_block_list
 from splunk_ao.schema.datasets import DatasetRecord
 from splunk_ao.schema.metrics import LocalMetricConfig
@@ -817,9 +818,16 @@ class SplunkAODecorator:
                 if not isinstance(trace, Trace):
                     raise RuntimeError("Active Splunk AO operation does not have a trace root")
             else:
-                trace = client_instance.start_trace(
+                # Independent calls declare once; known distributed continuations
+                # need only local bookkeeping, never a second trace declaration.
+                start_trace = (
+                    client_instance._start_trace_envelope if has_trace_declaration() else client_instance.start_trace
+                )
+                trace = start_trace(
                     input=input_,
                     name=name,
+                    metadata=span_params.get("metadata"),
+                    tags=span_params.get("tags"),
                     # TODO: add dataset_row_id
                     dataset_input=dataset_record.input if dataset_record else None,
                     dataset_output=dataset_record.output if dataset_record else None,
@@ -847,10 +855,21 @@ class SplunkAODecorator:
                 if span_type == "agent":
                     agent_type = span_params.get("agent_type")
                     span = client_instance.add_agent_span(
-                        input=input_, name=name, agent_type=agent_type, created_at=created_at
+                        input=input_,
+                        name=name,
+                        agent_type=agent_type,
+                        created_at=created_at,
+                        metadata=span_params.get("metadata"),
+                        tags=span_params.get("tags"),
                     )
                 else:
-                    span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)
+                    span = client_instance.add_workflow_span(
+                        input=input_,
+                        name=name,
+                        created_at=created_at,
+                        metadata=span_params.get("metadata"),
+                        tags=span_params.get("tags"),
+                    )
                 _get_or_init_list(_span_stack_context).append(span)
             elif span_type == "tool":
                 # A tool must be active while its function runs so nested calls inherit it.

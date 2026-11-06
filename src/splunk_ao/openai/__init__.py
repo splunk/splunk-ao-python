@@ -152,7 +152,7 @@ def _wrap(
 
         # Serialize with "messages" wrapper for UI compatibility
         trace_input = {"messages": [msg.model_dump(exclude_none=True) for msg in trace_input_messages]}
-        splunk_ao_logger.start_trace(input=serialize_to_str(trace_input), name=input_data.name)
+        splunk_ao_logger._start_trace_envelope(input=serialize_to_str(trace_input), name=input_data.name)
         should_complete_trace = True
 
     try:
