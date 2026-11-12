@@ -160,8 +160,12 @@ def set_validated_config(
     mock_projects: None,
     mock_log_streams: None,
     mock_sessions: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[None, None, None]:
     """Automatically set up validated config for tests."""
+    # Keep ambient O11y settings from selecting the O11y deployment for these standalone-credential tests.
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN", "SPLUNK_AO_O11Y_API_URL"):
+        monkeypatch.delenv(name, raising=False)
     # Reset any existing config state
     if SplunkAOConfig._instance is not None:
         SplunkAOConfig._instance.reset()
