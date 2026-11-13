@@ -421,6 +421,17 @@ from `galileo-python`, it can be deleted at leisure or simply ignored.
 
 The directory can be overridden via `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
 
+### 5.4 `flush()` No Longer Required
+
+In `galileo`, `logger.flush()` uploaded the accumulated traces and was required
+before the process exited. In `splunk-ao`, `conclude()` enqueues the span with the
+batch processor and an `atexit` hook exports at interpreter exit, so an explicit
+call is no longer needed.
+
+`flush()` still exists and still exports — call it to push spans out immediately
+rather than waiting for the batch timer. For deterministic shutdown, call
+`terminate()`, which drains and then shuts down the exporter.
+
 ---
 
 ## 6. HTTP Tracing Headers
@@ -472,6 +483,7 @@ logger = GalileoLogger(project="my-project", log_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg
+logger.flush()      # uploads traces
 ```
 
 ### After (splunk-ao)
@@ -498,6 +510,7 @@ logger = SplunkAOLogger(project="my-project", agent_stream="production")
 logger.start_session(name="my-session")
 logger.add_llm_span(input="Hello", output="Hi", model="gpt-4")
 logger.conclude()   # closes current span; no flush kwarg
+# no explicit flush() required — see 5.4
 ```
 
 ---
