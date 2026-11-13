@@ -1786,6 +1786,53 @@ paths:
         '423':
           description: Resource lock could not be acquired; another update may be
             in progress
+    head:
+      tags:
+        - datasets
+      summary: Head Dataset Content
+      description: Return the authoritative content revision without transferring
+        dataset rows.
+      operationId: head_dataset_content_datasets__dataset_id__content_head
+      security:
+        - APIKeyHeader: []
+        - ClassicAPIKeyHeader: []
+        - OAuth2PasswordBearer: []
+        - HTTPBasic: []
+      parameters:
+        - name: dataset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid4
+            title: Dataset Id
+      responses:
+        '200':
+          description: Dataset response
+          content:
+            application/json:
+              schema: {}
+          headers:
+            ETag:
+              description: Dataset content revision, when available
+              schema:
+                type: string
+        '412':
+          description: Content is missing, unreadable, or changed throughout bounded
+            revision discovery.
+          content: {}
+        '413':
+          description: Dataset metadata exceeds the bounded revision inspection limit.
+          content: {}
+        '503':
+          description: Revision storage is temporarily unavailable.
+          content: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     get:
       tags:
         - datasets
@@ -1820,11 +1867,16 @@ paths:
             title: Limit
       responses:
         '200':
-          description: Successful Response
+          description: Dataset response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DatasetContent'
+          headers:
+            ETag:
+              description: Dataset content revision, when available
+              schema:
+                type: string
         '422':
           description: Validation Error
           content:
@@ -1861,7 +1913,12 @@ paths:
               title: Body
       responses:
         '204':
-          description: Dataset content upserted successfully
+          description: Dataset content updated successfully
+          headers:
+            ETag:
+              description: New version identifier for the dataset
+              schema:
+                type: string
         '404':
           description: Dataset not found
         '422':
@@ -1923,6 +1980,26 @@ paths:
             type: string
             format: uuid4
             title: Dataset Id
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            minLength: 1
+            maxLength: 2048
+            title: Cursor
+        - name: limit
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Defaults to 10 for semantic mappings and 100 for legacy column_mapping.
+            title: Limit
+          description: Defaults to 10 for semantic mappings and 100 for legacy column_mapping.
         - name: starting_token
           in: query
           required: false
@@ -1930,32 +2007,155 @@ paths:
             type: integer
             default: 0
             title: Starting Token
-        - name: limit
-          in: query
+        - name: If-Match
+          in: header
           required: false
           schema:
-            type: integer
-            default: 100
-            title: Limit
+            anyOf:
+              - type: string
+              - type: 'null'
+            title: If-Match
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreviewDatasetRequest'
+              anyOf:
+                - $ref: '#/components/schemas/PreviewDatasetRequest'
+                - $ref: '#/components/schemas/LunaDatasetPreviewRequest'
+              title: Preview Request
+      responses:
+        '200':
+          description: Dataset response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/DatasetContent'
+                  - $ref: '#/components/schemas/LunaDatasetPreview'
+                title: Response Preview Dataset Datasets  Dataset Id  Preview Post
+          headers:
+            ETag:
+              description: Dataset content revision, when available
+              schema:
+                type: string
+        '404':
+          description: Dataset or immutable version unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '412':
+          description: Draft revision conflict or unavailable revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '422':
+          description: Invalid preview request, mapping or pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '428':
+          description: If-Match is required for draft preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '503':
+          description: Preview storage is temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+  /datasets/{dataset_id}/versions/{version_index}/preview:
+    post:
+      tags:
+        - datasets
+      summary: Preview Dataset Version
+      operationId: preview_dataset_version_datasets__dataset_id__versions__version_index__preview_post
+      security:
+        - APIKeyHeader: []
+        - ClassicAPIKeyHeader: []
+        - OAuth2PasswordBearer: []
+        - HTTPBasic: []
+      parameters:
+        - name: dataset_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid4
+            title: Dataset Id
+        - name: version_index
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: Version Index
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            title: Limit
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            minLength: 1
+            maxLength: 2048
+            title: Cursor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LunaDatasetPreviewRequest'
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DatasetContent'
-        '422':
-          description: Validation Error
+                $ref: '#/components/schemas/LunaDatasetPreview'
+        '404':
+          description: Dataset or immutable version unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '412':
+          description: Draft revision conflict or unavailable revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '422':
+          description: Invalid preview request, mapping or pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '428':
+          description: If-Match is required for draft preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
+        '503':
+          description: Preview storage is temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LunaDatasetPreviewErrorResponse'
   /datasets/{dataset_id}/variable_preview:
     get:
       tags:
@@ -2036,11 +2236,16 @@ paths:
                 filters: []
       responses:
         '200':
-          description: Successful Response
+          description: Dataset response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DatasetContent'
+          headers:
+            ETag:
+              description: Dataset content revision, when available
+              schema:
+                type: string
         '422':
           description: Validation Error
           content:
@@ -2490,11 +2695,16 @@ paths:
             title: Limit
       responses:
         '200':
-          description: Successful Response
+          description: Dataset response
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DatasetContent'
+          headers:
+            ETag:
+              description: Dataset content revision, when available
+              schema:
+                type: string
         '422':
           description: Validation Error
           content:
@@ -5586,6 +5796,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
       responses:
         '200':
           description: Successful Response
@@ -5685,6 +5904,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
       responses:
         '200':
           description: Successful Response
@@ -6440,6 +6668,15 @@ paths:
             type: boolean
             default: false
             title: Include Presigned Urls
+        - name: access_view_id
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: uuid4
+              - type: 'null'
+            title: Access View Id
         - name: include_redacted_io
           in: query
           required: false
@@ -9282,8 +9519,10 @@ paths:
         Users can be specified by user_id or email. If using email and the user doesn''t
         exist
 
-        in the organization, they will be invited automatically with the ''user''
+        in the organization, annotators are invited with the organization annotator
         role.
+
+        Other invitations use the ''user'' role.
 
 
         Roles: owner, annotator'
@@ -11283,6 +11522,13 @@ components:
       title: AggregatedTraceViewNode
     AggregatedTraceViewRequest:
       properties:
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         log_stream_id:
           type: string
           format: uuid4
@@ -13880,6 +14126,13 @@ components:
             - type: string
             - type: 'null'
           title: Request Id
+        luna_validation_contract:
+          anyOf:
+            - additionalProperties:
+                $ref: '#/components/schemas/pydantic__types__JsonValue'
+              type: object
+            - type: 'null'
+          title: Luna Validation Contract
       type: object
       required:
         - id
@@ -13940,20 +14193,20 @@ components:
       title: BillingUsageResponse
     Body_create_code_scorer_version_scorers__scorer_id__version_code_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         validation_result:
           type: string
           title: Validation Result
           description: 'The result from the validate endpoint, as a JSON string. Only
             its task_id is read: the version is built from the result stored for that
             validation task.'
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
-        - file
         - validation_result
+        - file
       title: Body_create_code_scorer_version_scorers__scorer_id__version_code_post
     Body_create_dataset_datasets_post:
       properties:
@@ -14065,10 +14318,6 @@ components:
       title: Body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post
     Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         dataset_id:
           type: string
           format: uuid
@@ -14106,19 +14355,24 @@ components:
         score_type:
           anyOf:
             - type: string
+              enum:
+                - bool
+                - int
+                - float
+                - str
             - type: 'null'
           title: Score Type
-      type: object
-      required:
-        - file
-        - dataset_id
-      title: Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post
-    Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post:
-      properties:
         file:
           type: string
           title: File
           format: binary
+      type: object
+      required:
+        - dataset_id
+        - file
+      title: Body_validate_code_scorer_dataset_scorers_code_validate_dataset_post
+    Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post:
+      properties:
         log_stream_id:
           anyOf:
             - type: string
@@ -14168,16 +14422,26 @@ components:
               type: array
             - type: 'null'
           title: Scoreable Node Types
+        score_type:
+          anyOf:
+            - type: string
+              enum:
+                - bool
+                - int
+                - float
+                - str
+            - type: 'null'
+          title: Score Type
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
         - file
       title: Body_validate_code_scorer_log_record_scorers_code_validate_log_record_post
     Body_validate_code_scorer_scorers_code_validate_post:
       properties:
-        file:
-          type: string
-          title: File
-          format: binary
         test_input:
           anyOf:
             - type: string
@@ -14204,6 +14468,10 @@ components:
               type: array
             - type: 'null'
           title: Scoreable Node Types
+        file:
+          type: string
+          title: File
+          format: binary
       type: object
       required:
         - file
@@ -14723,6 +14991,38 @@ components:
               type: array
             - type: 'null'
           title: Metadata
+        label:
+          anyOf:
+            - $ref: '#/components/schemas/ColumnMappingConfig'
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Label
+        evaluator_ground_truth:
+          anyOf:
+            - $ref: '#/components/schemas/ColumnMappingConfig'
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Evaluator Ground Truth
+        tools:
+          anyOf:
+            - $ref: '#/components/schemas/ColumnMappingConfig'
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Tools
+        documents:
+          anyOf:
+            - $ref: '#/components/schemas/ColumnMappingConfig'
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Documents
         mgt:
           anyOf:
             - additionalProperties:
@@ -15604,10 +15904,6 @@ components:
           type: boolean
           title: Upload Data In Separate Task
           default: true
-        log_metric_computing_records:
-          type: boolean
-          title: Log Metric Computing Records
-          default: true
         multijudge_average_boolean_metrics:
           type: boolean
           title: Multijudge Average Boolean Metrics
@@ -15846,10 +16142,6 @@ components:
         upload_data_in_separate_task:
           type: boolean
           title: Upload Data In Separate Task
-          default: true
-        log_metric_computing_records:
-          type: boolean
-          title: Log Metric Computing Records
           default: true
         multijudge_average_boolean_metrics:
           type: boolean
@@ -16989,6 +17281,11 @@ components:
         draft:
           type: boolean
           title: Draft
+        draft_revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Draft Revision
       type: object
       required:
         - id
@@ -17120,7 +17417,7 @@ components:
           title: Key
         values:
           items:
-            $ref: '#/components/schemas/JsonValue'
+            $ref: '#/components/schemas/api__schemas__content__dataset__JsonValue'
           type: array
           title: Values
       type: object
@@ -25523,6 +25820,7 @@ components:
         - trace_output_only
         - agent_spans
         - workflow_spans
+        - trace_selected_spans
       title: InputTypeEnum
       description: Enumeration of input types.
     InsightSummary:
@@ -25955,15 +26253,6 @@ components:
         - type: number
         - type: boolean
         - type: 'null'
-    JsonValue:
-      anyOf:
-        - $ref: '#/components/schemas/JsonPrimitive'
-        - items:
-            $ref: '#/components/schemas/JsonValue'
-          type: array
-        - additionalProperties:
-            $ref: '#/components/schemas/JsonValue'
-          type: object
     LLMExportFormat:
       type: string
       enum:
@@ -26537,7 +26826,7 @@ components:
           title: Next Starting Token
         versions:
           items:
-            $ref: '#/components/schemas/BaseScorerVersionResponse'
+            $ref: '#/components/schemas/ScorerVersionListItem'
           type: array
           title: Versions
       type: object
@@ -26979,15 +27268,15 @@ components:
       examples:
         - columns:
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Input to the trace or span.
@@ -27001,15 +27290,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Output of the trace or span.
@@ -27023,15 +27312,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Name of the trace, span or session.
@@ -27045,15 +27334,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: timestamp
               description: Timestamp of the trace or span's creation.
@@ -27068,13 +27357,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: string_list
               description: Tags associated with this trace or span.
@@ -27089,13 +27378,13 @@ components:
               sortable: false
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: integer
               description: Status code of the trace or span. Used for logging failure
@@ -27110,15 +27399,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: A user-provided session, trace or span ID.
@@ -27133,13 +27422,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Input to the dataset associated with this trace
@@ -27154,13 +27443,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Output from the dataset associated with this trace
@@ -27174,15 +27463,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the session, trace or span
@@ -27197,13 +27486,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the session containing the trace (or the
@@ -27219,13 +27508,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the project associated with this trace or
@@ -27241,13 +27530,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the run (log stream or experiment) associated
@@ -27263,13 +27552,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: timestamp
               description: Timestamp of the session or trace or span's last update
@@ -27284,13 +27573,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: boolean
               description: Whether or not this trace or span has child spans
@@ -27304,15 +27593,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Runner progress text written directly to CH span
@@ -27326,15 +27615,15 @@ components:
               multi_valued: false
               sortable: true
             - applicable_types:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Runner error text written directly to CH span
@@ -27364,13 +27653,13 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - retriever
                 - llm
                 - tool
-                - retriever
-                - trace
+                - agent
+                - workflow
               category: standard
               data_type: boolean
               description: Whether the parent trace is complete or not
@@ -27384,23 +27673,23 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - session
                 - http
-                - agent
-                - workflow
                 - control
+                - trace
+                - session
                 - retriever
                 - llm
-                - trace
                 - tool
+                - agent
+                - workflow
               applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
                 - retriever
                 - llm
                 - tool
+                - agent
+                - workflow
               category: standard
               data_type: text
               description: Type of the trace, span or session.
@@ -27415,12 +27704,12 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
                 - retriever
                 - llm
                 - tool
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the trace containing the span (or the same
@@ -27436,12 +27725,12 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
                 - retriever
                 - llm
                 - tool
+                - agent
+                - workflow
               category: standard
               data_type: uuid
               description: Galileo ID of the parent of this span
@@ -27456,12 +27745,12 @@ components:
               sortable: true
             - applicable_types:
                 - http
-                - agent
-                - workflow
                 - control
                 - retriever
                 - llm
                 - tool
+                - agent
+                - workflow
               category: standard
               data_type: integer
               description: Topological step number of the span.
@@ -27475,14 +27764,14 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - judge
-                - planner
-                - reflection
-                - router
-                - supervisor
                 - default
-                - react
+                - planner
+                - supervisor
+                - reflection
                 - classifier
+                - react
+                - judge
+                - router
               applicable_types:
                 - agent
               category: standard
@@ -27630,10 +27919,10 @@ components:
               multi_valued: false
               sortable: true
             - allowed_values:
-                - llm_call
-                - retriever_call
                 - tool_call
+                - retriever_call
                 - trace_call
+                - llm_call
                 - session_call
               applicable_types:
                 - control
@@ -27906,6 +28195,16 @@ components:
       title: LogRecordsColumnInfo
     LogRecordsCustomMetricsQueryRequest:
       properties:
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+          description: Include traces from this time onward.
+        end_time:
+          type: string
+          format: date-time
+          title: End Time
+          description: Include traces up to this time.
         log_stream_id:
           anyOf:
             - type: string
@@ -27927,21 +28226,18 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filter_tree:
           anyOf:
             - $ref: '#/components/schemas/FilterExpression_Annotated_Union_LogRecordsIDFilter__LogRecordsDateFilter__LogRecordsNumberFilter__LogRecordsBooleanFilter__LogRecordsCollectionFilter__LogRecordsTextFilter__LogRecordsFullyAnnotatedFilter___FieldInfo_annotation_NoneType__required_True__discriminator__type____'
             - type: 'null'
           description: Filter expression tree for complex filtering
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-          description: Include traces from this time onward.
-        end_time:
-          type: string
-          format: date-time
-          title: End Time
-          description: Include traces up to this time.
         interval_minutes:
           type: integer
           title: Interval Minutes
@@ -28143,6 +28439,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28285,6 +28588,16 @@ components:
       title: LogRecordsIDFilter
     LogRecordsMetricsQueryRequest:
       properties:
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+          description: Include traces from this time onward.
+        end_time:
+          type: string
+          format: date-time
+          title: End Time
+          description: Include traces up to this time.
         log_stream_id:
           anyOf:
             - type: string
@@ -28306,6 +28619,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28328,16 +28648,6 @@ components:
                 text: '#/components/schemas/LogRecordsTextFilter'
           type: array
           title: Filters
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-          description: Include traces from this time onward.
-        end_time:
-          type: string
-          format: date-time
-          title: End Time
-          description: Include traces up to this time.
         interval:
           type: integer
           title: Interval
@@ -28489,6 +28799,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28669,7 +28986,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.046189Z'
+              created_at: '2026-11-11T20:14:01.306741Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28688,7 +29005,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.046327Z'
+              created_at: '2026-11-11T20:14:01.306876Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28731,6 +29048,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28818,6 +29142,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -28974,7 +29305,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.043448Z'
+              created_at: '2026-11-11T20:14:01.303575Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -28999,7 +29330,7 @@ components:
               annotation_agreement: {}
               annotation_queue_ids: []
               annotations: {}
-              created_at: '2026-10-29T16:41:53.043599Z'
+              created_at: '2026-11-11T20:14:01.303735Z'
               dataset_metadata: {}
               error_message: ''
               feedback_rating_info: {}
@@ -29342,14 +29673,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           parent_id: 11000011-0000-0000-0000-110000110000
           spans:
-            - created_at: '2026-10-29T16:41:53.025896Z'
+            - created_at: '2026-11-11T20:14:01.285559Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.014436Z'
+                - created_at: '2026-11-11T20:14:01.275275Z'
                   dataset_metadata: {}
                   id: 22222222-2222-4222-a222-222222222222
                   input:
@@ -30004,14 +30335,14 @@ components:
         - log_stream_id: 00000000-0000-0000-0000-000000000000
           session_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-10-29T16:41:53.010661Z'
+            - created_at: '2026-11-11T20:14:01.271552Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.010623Z'
+                - created_at: '2026-11-11T20:14:01.271501Z'
                   dataset_metadata: {}
                   input:
                     - content: 'Question: who is a smart LLM?'
@@ -30029,14 +30360,14 @@ components:
               user_metadata: {}
         - experiment_id: 00000000-0000-0000-0000-000000000000
           traces:
-            - created_at: '2026-10-29T16:41:53.011122Z'
+            - created_at: '2026-11-11T20:14:01.272033Z'
               dataset_metadata: {}
               input: who is a smart LLM?
               metrics: {}
               name: ''
               output: I am!
               spans:
-                - created_at: '2026-10-29T16:41:53.011089Z'
+                - created_at: '2026-11-11T20:14:01.271999Z'
                   dataset_metadata: {}
                   id: 11111111-1111-4111-a111-111111111111
                   input:
@@ -30189,6 +30520,253 @@ components:
         - created_at
         - updated_at
       title: Luna3ScorerResponse
+    LunaDatasetMappings:
+      properties:
+        input:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        output:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        label:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        evaluator_ground_truth:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        metadata:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        tools:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        documents:
+          anyOf:
+            - $ref: '#/components/schemas/LunaMappingConfig'
+            - type: 'null'
+        mgt:
+          additionalProperties:
+            $ref: '#/components/schemas/LunaMappingConfig'
+          propertyNames:
+            format: uuid4
+          type: object
+          maxProperties: 32
+          title: Mgt
+      additionalProperties: false
+      type: object
+      title: LunaDatasetMappings
+      description: Semantic mappings shared by preview, validation, and dataset finalization.
+    LunaDatasetPreview:
+      properties:
+        dataset:
+          oneOf:
+            - $ref: '#/components/schemas/LunaPreviewDraftRef'
+            - $ref: '#/components/schemas/LunaPreviewVersionRef'
+          title: Dataset
+          discriminator:
+            propertyName: kind
+            mapping:
+              draft: '#/components/schemas/LunaPreviewDraftRef'
+              version: '#/components/schemas/LunaPreviewVersionRef'
+        columns:
+          items:
+            $ref: '#/components/schemas/LunaDatasetPreviewColumn'
+          type: array
+          title: Columns
+        rows:
+          items:
+            $ref: '#/components/schemas/LunaDatasetPreviewRow'
+          type: array
+          title: Rows
+        total_row_count:
+          type: integer
+          title: Total Row Count
+        column_count:
+          type: integer
+          title: Column Count
+        next_cursor:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Next Cursor
+      type: object
+      required:
+        - dataset
+        - columns
+        - rows
+        - total_row_count
+        - column_count
+      title: LunaDatasetPreview
+    LunaDatasetPreviewColumn:
+      properties:
+        key:
+          type: string
+          title: Key
+        label:
+          type: string
+          title: Label
+        source_columns:
+          items:
+            type: string
+          type: array
+          title: Source Columns
+        source_column:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Source Column
+        samples:
+          items:
+            $ref: '#/components/schemas/pydantic__types__JsonValue'
+          type: array
+          title: Samples
+        group:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Group
+        scorer_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Scorer Id
+      type: object
+      required:
+        - key
+        - label
+        - source_columns
+      title: LunaDatasetPreviewColumn
+    LunaDatasetPreviewErrorDetail:
+      properties:
+        code:
+          type: string
+          title: Code
+        message:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Message
+        current_revision:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Current Revision
+        field_errors:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/LunaDatasetPreviewFieldError'
+              type: array
+            - type: 'null'
+          title: Field Errors
+      type: object
+      required:
+        - code
+      title: LunaDatasetPreviewErrorDetail
+    LunaDatasetPreviewErrorResponse:
+      properties:
+        detail:
+          anyOf:
+            - type: string
+            - $ref: '#/components/schemas/LunaDatasetPreviewErrorDetail'
+            - items:
+                $ref: '#/components/schemas/LunaDatasetPreviewRequestValidationError'
+              type: array
+          title: Detail
+        standard_error:
+          anyOf:
+            - $ref: '#/components/schemas/StandardError'
+            - type: 'null'
+      type: object
+      required:
+        - detail
+      title: LunaDatasetPreviewErrorResponse
+      description: Catalog failures and ordinary request-validation failures returned
+        by preview routes.
+    LunaDatasetPreviewFieldError:
+      properties:
+        field:
+          type: string
+          title: Field
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+        - field
+        - message
+      title: LunaDatasetPreviewFieldError
+    LunaDatasetPreviewRequest:
+      properties:
+        mappings:
+          anyOf:
+            - $ref: '#/components/schemas/LunaDatasetMappings'
+            - items:
+                $ref: '#/components/schemas/LunaSemanticMapping'
+              type: array
+      additionalProperties: false
+      type: object
+      required:
+        - mappings
+      title: LunaDatasetPreviewRequest
+    LunaDatasetPreviewRequestValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Loc
+        msg:
+          type: string
+          title: Msg
+        type:
+          type: string
+          title: Type
+        input:
+          anyOf:
+            - $ref: '#/components/schemas/pydantic__types__JsonValue'
+            - type: 'null'
+        ctx:
+          anyOf:
+            - additionalProperties:
+                $ref: '#/components/schemas/pydantic__types__JsonValue'
+              type: object
+            - type: 'null'
+          title: Ctx
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: LunaDatasetPreviewRequestValidationError
+    LunaDatasetPreviewRow:
+      properties:
+        row_ref:
+          type: string
+          title: Row Ref
+        values:
+          additionalProperties:
+            $ref: '#/components/schemas/pydantic__types__JsonValue'
+          type: object
+          title: Values
+        truncated_columns:
+          items:
+            type: string
+          type: array
+          title: Truncated Columns
+      type: object
+      required:
+        - row_ref
+        - values
+      title: LunaDatasetPreviewRow
     LunaInputTypeEnum:
       type: string
       enum:
@@ -30196,6 +30774,26 @@ components:
         - trace_object
         - trace_input_output_only
       title: LunaInputTypeEnum
+    LunaMappingConfig:
+      properties:
+        columns:
+          items:
+            type: string
+            maxLength: 256
+            minLength: 1
+          type: array
+          maxItems: 32
+          minItems: 1
+          title: Columns
+        flatten:
+          type: boolean
+          title: Flatten
+          default: true
+      additionalProperties: false
+      type: object
+      required:
+        - columns
+      title: LunaMappingConfig
     LunaOutputTypeEnum:
       type: string
       enum:
@@ -30204,6 +30802,71 @@ components:
         - string_list
         - bool_list
       title: LunaOutputTypeEnum
+    LunaPreviewDraftRef:
+      properties:
+        kind:
+          type: string
+          const: draft
+          title: Kind
+          default: draft
+        dataset_id:
+          type: string
+          format: uuid4
+          title: Dataset Id
+        draft_revision:
+          type: string
+          title: Draft Revision
+      type: object
+      required:
+        - dataset_id
+        - draft_revision
+      title: LunaPreviewDraftRef
+    LunaPreviewVersionRef:
+      properties:
+        kind:
+          type: string
+          const: version
+          title: Kind
+          default: version
+        dataset_id:
+          type: string
+          format: uuid4
+          title: Dataset Id
+        version_index:
+          type: integer
+          minimum: 1.0
+          title: Version Index
+      type: object
+      required:
+        - dataset_id
+        - version_index
+      title: LunaPreviewVersionRef
+    LunaSemanticMapping:
+      properties:
+        source_column:
+          type: string
+          maxLength: 256
+          minLength: 1
+          title: Source Column
+        target_field:
+          type: string
+          enum:
+            - input
+            - output
+            - label
+            - evaluator_ground_truth
+            - metadata
+            - tools
+            - documents
+            - generated_output
+            - ground_truth
+          title: Target Field
+      additionalProperties: false
+      type: object
+      required:
+        - source_column
+        - target_field
+      title: LunaSemanticMapping
     MCPApprovalRequestEvent:
       properties:
         type:
@@ -36850,6 +37513,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -38366,6 +39036,12 @@ components:
           type: boolean
           title: Includes Standard
           default: true
+        hashed_lockfile:
+          anyOf:
+            - type: string
+              maxLength: 786432
+            - type: 'null'
+          title: Hashed Lockfile
       type: object
       required:
         - tier
@@ -39234,6 +39910,122 @@ components:
         - secondary
         - computed_at
       title: ScorerVersionHealthScoreEntry
+    ScorerVersionListItem:
+      properties:
+        id:
+          type: string
+          format: uuid4
+          title: Id
+        version:
+          type: integer
+          title: Version
+        scorer_id:
+          type: string
+          format: uuid4
+          title: Scorer Id
+        generated_scorer:
+          anyOf:
+            - $ref: '#/components/schemas/GeneratedScorerResponse'
+            - type: 'null'
+        registered_scorer:
+          anyOf:
+            - $ref: '#/components/schemas/CreateUpdateRegisteredScorerResponse'
+            - type: 'null'
+        finetuned_scorer:
+          anyOf:
+            - $ref: '#/components/schemas/FineTunedScorerResponse'
+            - type: 'null'
+        luna3_scorer:
+          anyOf:
+            - $ref: '#/components/schemas/Luna3ScorerResponse'
+            - type: 'null'
+        decision_scorer:
+          anyOf:
+            - $ref: '#/components/schemas/DecisionScorerDB'
+            - type: 'null'
+        model_name:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Model Name
+        num_judges:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Num Judges
+        cot_enabled:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Cot Enabled
+        runtime:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Runtime
+          description: The runtime a code metric version runs on, such as python3.14.
+            Null for a version saved before runtimes were recorded, which runs on
+            the legacy Python 3.12 runtime.
+        code_sha256:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Code Sha256
+          description: SHA-256 of the code bytes uploaded for a code metric version.
+            Null for a version saved before digests were recorded.
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        chain_poll_template:
+          anyOf:
+            - $ref: '#/components/schemas/ChainPollTemplate'
+            - type: 'null'
+        scoreable_node_types:
+          anyOf:
+            - items:
+                type: string
+              type: array
+            - type: 'null'
+          title: Scoreable Node Types
+        output_type:
+          anyOf:
+            - $ref: '#/components/schemas/OutputTypeEnum'
+            - type: 'null'
+        allowed_model:
+          anyOf:
+            - type: boolean
+            - type: 'null'
+          title: Allowed Model
+        created_by:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Created By
+        validation_task_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Validation Task Id
+        request_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Request Id
+      type: object
+      required:
+        - id
+        - version
+        - scorer_id
+        - created_at
+        - updated_at
+      title: ScorerVersionListItem
     Segment:
       properties:
         start:
@@ -40049,11 +40841,7 @@ components:
         - 18
         - 19
       title: TaskType
-      description: 'Valid task types for modeling.
-
-
-        We store these as ints instead of strings because we will be looking this
-        up in the database frequently.'
+      description: Keep the existing integer values used by stored runs.
     TemplateStubRequest:
       properties:
         templates:
@@ -40976,6 +41764,7 @@ components:
         - change_role_to_manager
         - change_role_to_user
         - change_role_to_read_only
+        - change_role_to_org_annotator
         - change_role_to_capability_based
       title: UserAction
     UserAnnotationQueueCollaborator:
@@ -41203,6 +41992,7 @@ components:
         - manager
         - user
         - read_only
+        - org_annotator
         - capability_based
       title: UserRole
     ValidResult:
@@ -41214,6 +42004,11 @@ components:
           default: valid
         score_type:
           type: string
+          enum:
+            - bool
+            - int
+            - float
+            - str
           title: Score Type
         scoreable_node_types:
           items:
@@ -41372,6 +42167,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -41680,6 +42482,13 @@ components:
             - type: 'null'
           title: Metrics Testing Id
           description: Metrics testing id associated with the traces.
+        access_view_id:
+          anyOf:
+            - type: string
+              format: uuid4
+            - type: 'null'
+          title: Access View Id
+          description: Assigned log view for restricted access.
         filters:
           items:
             oneOf:
@@ -42449,6 +43258,15 @@ components:
         - reason
       title: BulkDeleteFailure
       description: Details about a failed deletion.
+    api__schemas__content__dataset__JsonValue:
+      anyOf:
+        - $ref: '#/components/schemas/JsonPrimitive'
+        - items:
+            $ref: '#/components/schemas/api__schemas__content__dataset__JsonValue'
+          type: array
+        - additionalProperties:
+            $ref: '#/components/schemas/api__schemas__content__dataset__JsonValue'
+          type: object
     api__schemas__content__prompt__BulkDeleteFailure:
       properties:
         template_id:
@@ -42820,6 +43638,7 @@ components:
         \                          Mutually exclusive with ``based_on``.\n    supports_json_schema:\
         \ Whether the endpoint supports an OpenAI-style ``json_schema``\n        \
         \                  ``response_format`` for this model. Defaults to False."
+    pydantic__types__JsonValue: {}
   securitySchemes:
     OAuth2PasswordBearer:
       type: oauth2

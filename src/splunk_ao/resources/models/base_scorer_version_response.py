@@ -11,6 +11,9 @@ from ..models.output_type_enum import OutputTypeEnum
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.base_scorer_version_response_luna_validation_contract_type_0 import (
+        BaseScorerVersionResponseLunaValidationContractType0,
+    )
     from ..models.chain_poll_template import ChainPollTemplate
     from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
     from ..models.decision_scorer_db import DecisionScorerDB
@@ -50,6 +53,7 @@ class BaseScorerVersionResponse:
         created_by (None | str | Unset):
         validation_task_id (None | str | Unset):
         request_id (None | str | Unset):
+        luna_validation_contract (BaseScorerVersionResponseLunaValidationContractType0 | None | Unset):
     """
 
     id: str
@@ -74,9 +78,13 @@ class BaseScorerVersionResponse:
     created_by: None | str | Unset = UNSET
     validation_task_id: None | str | Unset = UNSET
     request_id: None | str | Unset = UNSET
+    luna_validation_contract: BaseScorerVersionResponseLunaValidationContractType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.base_scorer_version_response_luna_validation_contract_type_0 import (
+            BaseScorerVersionResponseLunaValidationContractType0,
+        )
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
         from ..models.decision_scorer_db import DecisionScorerDB
@@ -213,6 +221,14 @@ class BaseScorerVersionResponse:
         else:
             request_id = self.request_id
 
+        luna_validation_contract: dict[str, Any] | None | Unset
+        if isinstance(self.luna_validation_contract, Unset):
+            luna_validation_contract = UNSET
+        elif isinstance(self.luna_validation_contract, BaseScorerVersionResponseLunaValidationContractType0):
+            luna_validation_contract = self.luna_validation_contract.to_dict()
+        else:
+            luna_validation_contract = self.luna_validation_contract
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -252,11 +268,16 @@ class BaseScorerVersionResponse:
             field_dict["validation_task_id"] = validation_task_id
         if request_id is not UNSET:
             field_dict["request_id"] = request_id
+        if luna_validation_contract is not UNSET:
+            field_dict["luna_validation_contract"] = luna_validation_contract
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.base_scorer_version_response_luna_validation_contract_type_0 import (
+            BaseScorerVersionResponseLunaValidationContractType0,
+        )
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.create_update_registered_scorer_response import CreateUpdateRegisteredScorerResponse
         from ..models.decision_scorer_db import DecisionScorerDB
@@ -492,6 +513,25 @@ class BaseScorerVersionResponse:
 
         request_id = _parse_request_id(d.pop("request_id", UNSET))
 
+        def _parse_luna_validation_contract(
+            data: object,
+        ) -> BaseScorerVersionResponseLunaValidationContractType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                luna_validation_contract_type_0 = BaseScorerVersionResponseLunaValidationContractType0.from_dict(data)
+
+                return luna_validation_contract_type_0
+            except:  # noqa: E722
+                pass
+            return cast(BaseScorerVersionResponseLunaValidationContractType0 | None | Unset, data)
+
+        luna_validation_contract = _parse_luna_validation_contract(d.pop("luna_validation_contract", UNSET))
+
         base_scorer_version_response = cls(
             id=id,
             version=version,
@@ -515,6 +555,7 @@ class BaseScorerVersionResponse:
             created_by=created_by,
             validation_task_id=validation_task_id,
             request_id=request_id,
+            luna_validation_contract=luna_validation_contract,
         )
 
         base_scorer_version_response.additional_properties = d

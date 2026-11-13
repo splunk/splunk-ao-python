@@ -83,7 +83,6 @@ class CreateJobResponse:
         is_session (bool | None | Unset):
         validation_config (CreateJobResponseValidationConfigType0 | None | Unset):
         upload_data_in_separate_task (bool | Unset):  Default: True.
-        log_metric_computing_records (bool | Unset):  Default: True.
         multijudge_average_boolean_metrics (bool | Unset):  Default: False.
         trace_ids (list[str] | Unset):
     """
@@ -147,7 +146,6 @@ class CreateJobResponse:
     is_session: bool | None | Unset = UNSET
     validation_config: CreateJobResponseValidationConfigType0 | None | Unset = UNSET
     upload_data_in_separate_task: bool | Unset = True
-    log_metric_computing_records: bool | Unset = True
     multijudge_average_boolean_metrics: bool | Unset = False
     trace_ids: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -433,8 +431,6 @@ class CreateJobResponse:
 
         upload_data_in_separate_task = self.upload_data_in_separate_task
 
-        log_metric_computing_records = self.log_metric_computing_records
-
         multijudge_average_boolean_metrics = self.multijudge_average_boolean_metrics
 
         trace_ids: list[str] | Unset = UNSET
@@ -504,8 +500,6 @@ class CreateJobResponse:
             field_dict["validation_config"] = validation_config
         if upload_data_in_separate_task is not UNSET:
             field_dict["upload_data_in_separate_task"] = upload_data_in_separate_task
-        if log_metric_computing_records is not UNSET:
-            field_dict["log_metric_computing_records"] = log_metric_computing_records
         if multijudge_average_boolean_metrics is not UNSET:
             field_dict["multijudge_average_boolean_metrics"] = multijudge_average_boolean_metrics
         if trace_ids is not UNSET:
@@ -1148,8 +1142,6 @@ class CreateJobResponse:
 
         upload_data_in_separate_task = d.pop("upload_data_in_separate_task", UNSET)
 
-        log_metric_computing_records = d.pop("log_metric_computing_records", UNSET)
-
         multijudge_average_boolean_metrics = d.pop("multijudge_average_boolean_metrics", UNSET)
 
         trace_ids = cast(list[str], d.pop("trace_ids", UNSET))
@@ -1189,7 +1181,6 @@ class CreateJobResponse:
             is_session=is_session,
             validation_config=validation_config,
             upload_data_in_separate_task=upload_data_in_separate_task,
-            log_metric_computing_records=log_metric_computing_records,
             multijudge_average_boolean_metrics=multijudge_average_boolean_metrics,
             trace_ids=trace_ids,
         )
