@@ -35,9 +35,7 @@ class ExperimentResponse:
     Attributes:
         id (str): Galileo ID of the experiment
         project_id (str): Galileo ID of the project associated with this experiment
-        task_type (TaskType): Valid task types for modeling.
-
-            We store these as ints instead of strings because we will be looking this up in the database frequently.
+        task_type (TaskType): Keep the existing integer values used by stored runs.
         created_at (datetime.datetime | Unset): Timestamp of the experiment's creation
         updated_at (datetime.datetime | None | Unset): Timestamp of the trace or span's last update
         name (str | Unset): Name of the experiment Default: ''.

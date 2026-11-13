@@ -13,6 +13,7 @@ class InputTypeEnum(str, Enum):
     TRACE_IO_ONLY = "trace_io_only"
     TRACE_NORMALIZED = "trace_normalized"
     TRACE_OUTPUT_ONLY = "trace_output_only"
+    TRACE_SELECTED_SPANS = "trace_selected_spans"
     WORKFLOW_SPANS = "workflow_spans"
 
     def __str__(self) -> str:

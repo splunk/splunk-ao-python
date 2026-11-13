@@ -8,6 +8,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
+from ..models.body_validate_code_scorer_log_record_scorers_code_validate_log_record_post_score_type_type_0 import (
+    BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0,
+)
 from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost")
@@ -26,6 +29,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
         sort (None | str | Unset): JSON string of LogRecordsSortClause
         required_scorers (list[str] | None | str | Unset):
         scoreable_node_types (list[str] | None | str | Unset):
+        score_type (BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0 | None | Unset):
     """
 
     file: File
@@ -37,6 +41,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
     sort: None | str | Unset = UNSET
     required_scorers: list[str] | None | str | Unset = UNSET
     scoreable_node_types: list[str] | None | str | Unset = UNSET
+    score_type: BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -92,6 +97,14 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
         else:
             scoreable_node_types = self.scoreable_node_types
 
+        score_type: None | str | Unset
+        if isinstance(self.score_type, Unset):
+            score_type = UNSET
+        elif isinstance(self.score_type, BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0):
+            score_type = self.score_type.value
+        else:
+            score_type = self.score_type
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"file": file})
@@ -111,6 +124,8 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
             field_dict["required_scorers"] = required_scorers
         if scoreable_node_types is not UNSET:
             field_dict["scoreable_node_types"] = scoreable_node_types
+        if score_type is not UNSET:
+            field_dict["score_type"] = score_type
 
         return field_dict
 
@@ -176,6 +191,14 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
                     )
             else:
                 files.append(("scoreable_node_types", (None, str(self.scoreable_node_types).encode(), "text/plain")))
+
+        if not isinstance(self.score_type, Unset):
+            if isinstance(
+                self.score_type, BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0
+            ):
+                files.append(("score_type", (None, str(self.score_type.value).encode(), "text/plain")))
+            else:
+                files.append(("score_type", (None, str(self.score_type).encode(), "text/plain")))
 
         for prop_name, prop in self.additional_properties.items():
             files.append((prop_name, (None, str(prop).encode(), "text/plain")))
@@ -268,6 +291,27 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
+        def _parse_score_type(
+            data: object,
+        ) -> BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                score_type_type_0 = BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0(data)
+
+                return score_type_type_0
+            except:  # noqa: E722
+                pass
+            return cast(
+                BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0 | None | Unset, data
+            )
+
+        score_type = _parse_score_type(d.pop("score_type", UNSET))
+
         body_validate_code_scorer_log_record_scorers_code_validate_log_record_post = cls(
             file=file,
             log_stream_id=log_stream_id,
@@ -278,6 +322,7 @@ class BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost:
             sort=sort,
             required_scorers=required_scorers,
             scoreable_node_types=scoreable_node_types,
+            score_type=score_type,
         )
 
         body_validate_code_scorer_log_record_scorers_code_validate_log_record_post.additional_properties = d

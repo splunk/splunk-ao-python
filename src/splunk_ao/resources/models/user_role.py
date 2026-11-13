@@ -5,6 +5,7 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     CAPABILITY_BASED = "capability_based"
     MANAGER = "manager"
+    ORG_ANNOTATOR = "org_annotator"
     READ_ONLY = "read_only"
     USER = "user"
 

@@ -18,21 +18,43 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.dataset_content import DatasetContent
-from ...models.http_validation_error import HTTPValidationError
+from ...models.luna_dataset_preview import LunaDatasetPreview
+from ...models.luna_dataset_preview_error_response import LunaDatasetPreviewErrorResponse
+from ...models.luna_dataset_preview_request import LunaDatasetPreviewRequest
 from ...models.preview_dataset_request import PreviewDatasetRequest
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    dataset_id: str, *, body: PreviewDatasetRequest, starting_token: int | Unset = 0, limit: int | Unset = 100
+    dataset_id: str,
+    *,
+    body: LunaDatasetPreviewRequest | PreviewDatasetRequest,
+    cursor: None | str | Unset = UNSET,
+    limit: int | None | Unset = UNSET,
+    starting_token: int | Unset = 0,
+    if_match: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(if_match, Unset):
+        headers["If-Match"] = if_match
 
     params: dict[str, Any] = {}
 
-    params["starting_token"] = starting_token
+    json_cursor: None | str | Unset
+    if isinstance(cursor, Unset):
+        json_cursor = UNSET
+    else:
+        json_cursor = cursor
+    params["cursor"] = json_cursor
 
-    params["limit"] = limit
+    json_limit: int | None | Unset
+    if isinstance(limit, Unset):
+        json_limit = UNSET
+    else:
+        json_limit = limit
+    params["limit"] = json_limit
+
+    params["starting_token"] = starting_token
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -43,7 +65,11 @@ def _get_kwargs(
         "params": params,
     }
 
-    _kwargs["json"] = body.to_dict()
+    _kwargs["json"]: dict[str, Any]
+    if isinstance(body, PreviewDatasetRequest):
+        _kwargs["json"] = body.to_dict()
+    else:
+        _kwargs["json"] = body.to_dict()
 
     headers["Content-Type"] = "application/json"
 
@@ -53,16 +79,54 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetContent | HTTPValidationError:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse:
     if response.status_code == 200:
-        response_200 = DatasetContent.from_dict(response.json())
+
+        def _parse_response_200(data: object) -> DatasetContent | LunaDatasetPreview:
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_0 = DatasetContent.from_dict(data)
+
+                return response_200_type_0
+            except:  # noqa: E722
+                pass
+            if not isinstance(data, dict):
+                raise TypeError()
+            response_200_type_1 = LunaDatasetPreview.from_dict(data)
+
+            return response_200_type_1
+
+        response_200 = _parse_response_200(response.json())
 
         return response_200
 
+    if response.status_code == 404:
+        response_404 = LunaDatasetPreviewErrorResponse.from_dict(response.json())
+
+        return response_404
+
+    if response.status_code == 412:
+        response_412 = LunaDatasetPreviewErrorResponse.from_dict(response.json())
+
+        return response_412
+
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = LunaDatasetPreviewErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 428:
+        response_428 = LunaDatasetPreviewErrorResponse.from_dict(response.json())
+
+        return response_428
+
+    if response.status_code == 503:
+        response_503 = LunaDatasetPreviewErrorResponse.from_dict(response.json())
+
+        return response_503
 
     # Handle common HTTP errors with actionable messages
     if response.status_code == 400:
@@ -82,7 +146,9 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> DatasetCo
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[DatasetContent | HTTPValidationError]:
+def _build_response(
+    *, client: ApiClient, response: httpx.Response
+) -> Response[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -95,27 +161,34 @@ def sync_detailed(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: PreviewDatasetRequest,
+    body: LunaDatasetPreviewRequest | PreviewDatasetRequest,
+    cursor: None | str | Unset = UNSET,
+    limit: int | None | Unset = UNSET,
     starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
-) -> Response[DatasetContent | HTTPValidationError]:
+    if_match: None | str | Unset = UNSET,
+) -> Response[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]:
     """Preview Dataset
 
     Args:
         dataset_id (str):
+        cursor (None | str | Unset):
+        limit (int | None | Unset): Defaults to 10 for semantic mappings and 100 for legacy
+            column_mapping.
         starting_token (int | Unset):  Default: 0.
-        limit (int | Unset):  Default: 100.
-        body (PreviewDatasetRequest):
+        if_match (None | str | Unset):
+        body (LunaDatasetPreviewRequest | PreviewDatasetRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DatasetContent | HTTPValidationError]
+        Response[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]
     """
 
-    kwargs = _get_kwargs(dataset_id=dataset_id, body=body, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(
+        dataset_id=dataset_id, body=body, cursor=cursor, limit=limit, starting_token=starting_token, if_match=if_match
+    )
 
     response = client.request(**kwargs)
 
@@ -126,28 +199,39 @@ def sync(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: PreviewDatasetRequest,
+    body: LunaDatasetPreviewRequest | PreviewDatasetRequest,
+    cursor: None | str | Unset = UNSET,
+    limit: int | None | Unset = UNSET,
     starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
-) -> Optional[DatasetContent | HTTPValidationError]:
+    if_match: None | str | Unset = UNSET,
+) -> Optional[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]:
     """Preview Dataset
 
     Args:
         dataset_id (str):
+        cursor (None | str | Unset):
+        limit (int | None | Unset): Defaults to 10 for semantic mappings and 100 for legacy
+            column_mapping.
         starting_token (int | Unset):  Default: 0.
-        limit (int | Unset):  Default: 100.
-        body (PreviewDatasetRequest):
+        if_match (None | str | Unset):
+        body (LunaDatasetPreviewRequest | PreviewDatasetRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DatasetContent | HTTPValidationError
+        DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse
     """
 
     return sync_detailed(
-        dataset_id=dataset_id, client=client, body=body, starting_token=starting_token, limit=limit
+        dataset_id=dataset_id,
+        client=client,
+        body=body,
+        cursor=cursor,
+        limit=limit,
+        starting_token=starting_token,
+        if_match=if_match,
     ).parsed
 
 
@@ -155,27 +239,34 @@ async def asyncio_detailed(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: PreviewDatasetRequest,
+    body: LunaDatasetPreviewRequest | PreviewDatasetRequest,
+    cursor: None | str | Unset = UNSET,
+    limit: int | None | Unset = UNSET,
     starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
-) -> Response[DatasetContent | HTTPValidationError]:
+    if_match: None | str | Unset = UNSET,
+) -> Response[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]:
     """Preview Dataset
 
     Args:
         dataset_id (str):
+        cursor (None | str | Unset):
+        limit (int | None | Unset): Defaults to 10 for semantic mappings and 100 for legacy
+            column_mapping.
         starting_token (int | Unset):  Default: 0.
-        limit (int | Unset):  Default: 100.
-        body (PreviewDatasetRequest):
+        if_match (None | str | Unset):
+        body (LunaDatasetPreviewRequest | PreviewDatasetRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DatasetContent | HTTPValidationError]
+        Response[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]
     """
 
-    kwargs = _get_kwargs(dataset_id=dataset_id, body=body, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(
+        dataset_id=dataset_id, body=body, cursor=cursor, limit=limit, starting_token=starting_token, if_match=if_match
+    )
 
     response = await client.arequest(**kwargs)
 
@@ -186,28 +277,39 @@ async def asyncio(
     dataset_id: str,
     *,
     client: ApiClient,
-    body: PreviewDatasetRequest,
+    body: LunaDatasetPreviewRequest | PreviewDatasetRequest,
+    cursor: None | str | Unset = UNSET,
+    limit: int | None | Unset = UNSET,
     starting_token: int | Unset = 0,
-    limit: int | Unset = 100,
-) -> Optional[DatasetContent | HTTPValidationError]:
+    if_match: None | str | Unset = UNSET,
+) -> Optional[DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse]:
     """Preview Dataset
 
     Args:
         dataset_id (str):
+        cursor (None | str | Unset):
+        limit (int | None | Unset): Defaults to 10 for semantic mappings and 100 for legacy
+            column_mapping.
         starting_token (int | Unset):  Default: 0.
-        limit (int | Unset):  Default: 100.
-        body (PreviewDatasetRequest):
+        if_match (None | str | Unset):
+        body (LunaDatasetPreviewRequest | PreviewDatasetRequest):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DatasetContent | HTTPValidationError
+        DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse
     """
 
     return (
         await asyncio_detailed(
-            dataset_id=dataset_id, client=client, body=body, starting_token=starting_token, limit=limit
+            dataset_id=dataset_id,
+            client=client,
+            body=body,
+            cursor=cursor,
+            limit=limit,
+            starting_token=starting_token,
+            if_match=if_match,
         )
     ).parsed

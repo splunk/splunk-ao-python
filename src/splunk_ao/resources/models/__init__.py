@@ -145,6 +145,9 @@ from .base_scorer_class_name_to_vocab_ix_type_1 import BaseScorerClassNameToVoca
 from .base_scorer_extra_type_0 import BaseScorerExtraType0
 from .base_scorer_version_db import BaseScorerVersionDB
 from .base_scorer_version_response import BaseScorerVersionResponse
+from .base_scorer_version_response_luna_validation_contract_type_0 import (
+    BaseScorerVersionResponseLunaValidationContractType0,
+)
 from .billing_usage_data_point import BillingUsageDataPoint
 from .billing_usage_metric import BillingUsageMetric
 from .billing_usage_response import BillingUsageResponse
@@ -159,8 +162,14 @@ from .body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post imp
 from .body_validate_code_scorer_dataset_scorers_code_validate_dataset_post import (
     BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost,
 )
+from .body_validate_code_scorer_dataset_scorers_code_validate_dataset_post_score_type_type_0 import (
+    BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0,
+)
 from .body_validate_code_scorer_log_record_scorers_code_validate_log_record_post import (
     BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost,
+)
+from .body_validate_code_scorer_log_record_scorers_code_validate_log_record_post_score_type_type_0 import (
+    BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0,
 )
 from .body_validate_code_scorer_scorers_code_validate_post import BodyValidateCodeScorerScorersCodeValidatePost
 from .boolean_color_constraint import BooleanColorConstraint
@@ -742,8 +751,25 @@ from .log_traces_ingest_response import LogTracesIngestResponse
 from .logging_method import LoggingMethod
 from .luna_3_scorer_response import Luna3ScorerResponse
 from .luna_3_scorer_response_class_name_to_vocab_ix import Luna3ScorerResponseClassNameToVocabIx
+from .luna_dataset_mappings import LunaDatasetMappings
+from .luna_dataset_mappings_mgt import LunaDatasetMappingsMgt
+from .luna_dataset_preview import LunaDatasetPreview
+from .luna_dataset_preview_column import LunaDatasetPreviewColumn
+from .luna_dataset_preview_error_detail import LunaDatasetPreviewErrorDetail
+from .luna_dataset_preview_error_response import LunaDatasetPreviewErrorResponse
+from .luna_dataset_preview_field_error import LunaDatasetPreviewFieldError
+from .luna_dataset_preview_request import LunaDatasetPreviewRequest
+from .luna_dataset_preview_request_validation_error import LunaDatasetPreviewRequestValidationError
+from .luna_dataset_preview_request_validation_error_ctx_type_0 import LunaDatasetPreviewRequestValidationErrorCtxType0
+from .luna_dataset_preview_row import LunaDatasetPreviewRow
+from .luna_dataset_preview_row_values import LunaDatasetPreviewRowValues
 from .luna_input_type_enum import LunaInputTypeEnum
+from .luna_mapping_config import LunaMappingConfig
 from .luna_output_type_enum import LunaOutputTypeEnum
+from .luna_preview_draft_ref import LunaPreviewDraftRef
+from .luna_preview_version_ref import LunaPreviewVersionRef
+from .luna_semantic_mapping import LunaSemanticMapping
+from .luna_semantic_mapping_target_field import LunaSemanticMappingTargetField
 from .mcp_approval_request_event import MCPApprovalRequestEvent
 from .mcp_approval_request_event_metadata_type_0 import MCPApprovalRequestEventMetadataType0
 from .mcp_approval_request_event_tool_invocation_type_0 import MCPApprovalRequestEventToolInvocationType0
@@ -1132,6 +1158,7 @@ from .scorer_updated_at_filter_operator import ScorerUpdatedAtFilterOperator
 from .scorer_updated_at_sort import ScorerUpdatedAtSort
 from .scorer_version_health_score_entry import ScorerVersionHealthScoreEntry
 from .scorer_version_health_score_entry_secondary_type_0 import ScorerVersionHealthScoreEntrySecondaryType0
+from .scorer_version_list_item import ScorerVersionListItem
 from .segment import Segment
 from .segment_filter import SegmentFilter
 from .select_columns import SelectColumns
@@ -1210,6 +1237,7 @@ from .user_db import UserDB
 from .user_info import UserInfo
 from .user_role import UserRole
 from .valid_result import ValidResult
+from .valid_result_score_type import ValidResultScoreType
 from .validate_code_scorer_dataset_response import ValidateCodeScorerDatasetResponse
 from .validate_code_scorer_response import ValidateCodeScorerResponse
 from .validate_decision_scorer_dataset_request import ValidateDecisionScorerDatasetRequest
@@ -1379,6 +1407,7 @@ __all__ = (
     "BaseScorerExtraType0",
     "BaseScorerVersionDB",
     "BaseScorerVersionResponse",
+    "BaseScorerVersionResponseLunaValidationContractType0",
     "BillingUsageDataPoint",
     "BillingUsageMetric",
     "BillingUsageResponse",
@@ -1387,7 +1416,9 @@ __all__ = (
     "BodyLoginEmailLoginPost",
     "BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost",
     "BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost",
+    "BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0",
     "BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPost",
+    "BodyValidateCodeScorerLogRecordScorersCodeValidateLogRecordPostScoreTypeType0",
     "BodyValidateCodeScorerScorersCodeValidatePost",
     "BooleanColorConstraint",
     "BucketedMetric",
@@ -1866,8 +1897,25 @@ __all__ = (
     "LogTraceUpdateResponse",
     "Luna3ScorerResponse",
     "Luna3ScorerResponseClassNameToVocabIx",
+    "LunaDatasetMappings",
+    "LunaDatasetMappingsMgt",
+    "LunaDatasetPreview",
+    "LunaDatasetPreviewColumn",
+    "LunaDatasetPreviewErrorDetail",
+    "LunaDatasetPreviewErrorResponse",
+    "LunaDatasetPreviewFieldError",
+    "LunaDatasetPreviewRequest",
+    "LunaDatasetPreviewRequestValidationError",
+    "LunaDatasetPreviewRequestValidationErrorCtxType0",
+    "LunaDatasetPreviewRow",
+    "LunaDatasetPreviewRowValues",
     "LunaInputTypeEnum",
+    "LunaMappingConfig",
     "LunaOutputTypeEnum",
+    "LunaPreviewDraftRef",
+    "LunaPreviewVersionRef",
+    "LunaSemanticMapping",
+    "LunaSemanticMappingTargetField",
     "MCPApprovalRequestEvent",
     "MCPApprovalRequestEventMetadataType0",
     "MCPApprovalRequestEventToolInvocationType0",
@@ -2216,6 +2264,7 @@ __all__ = (
     "ScorerUpdatedAtSort",
     "ScorerVersionHealthScoreEntry",
     "ScorerVersionHealthScoreEntrySecondaryType0",
+    "ScorerVersionListItem",
     "Segment",
     "SegmentFilter",
     "SelectColumns",
@@ -2308,6 +2357,7 @@ __all__ = (
     "ValidationError",
     "ValidationErrorContext",
     "ValidResult",
+    "ValidResultScoreType",
     "VertexAIGCSConfig",
     "VertexAIGCSConfigResponse",
     "VertexAIIntegration",
