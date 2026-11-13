@@ -22,7 +22,7 @@ def observer() -> SplunkAOObserver:
 @pytest.mark.asyncio
 async def test_observer_completion_in_copied_task_restores_caller_context(monkeypatch: pytest.MonkeyPatch) -> None:
     # Given: ADK's normal exporter path uses the shared base handler and logger.
-    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN"):
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN", "SPLUNK_AO_O11Y_API_URL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
     monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")

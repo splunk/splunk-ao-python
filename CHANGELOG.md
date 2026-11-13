@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- O11y CRUD requests now target `https://api.{realm}.observability.splunkcloud.com` instead of
+  `https://app.{realm}.observability.splunkcloud.com`. The OTLP ingest endpoint and the console URL are unchanged.
+
+### Added
+
+- `SPLUNK_AO_O11Y_API_URL` optionally overrides the O11y CRUD API origin (for example a private or custom endpoint).
+  It must be an `https://` origin without a path. OTLP ingest is not affected.
+
 ## [0.7.0]
 
 ### Added

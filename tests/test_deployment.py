@@ -7,13 +7,14 @@ from collections.abc import Iterator
 import pytest
 
 from splunk_ao.config import SplunkAOConfig
-from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
-from splunk_ao.shared.exceptions import AmbiguousConfigurationError, MissingConfigurationError
+from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig, resolve_deployment
+from splunk_ao.shared.exceptions import AmbiguousConfigurationError, ConfigurationError, MissingConfigurationError
 
 _DETECTION_ENV_VARS = (
     "SPLUNK_AO_REALM",
     "SPLUNK_AO_O11Y_TOKEN",
     "SPLUNK_AO_O11Y_API_TOKEN",
+    "SPLUNK_AO_O11Y_API_URL",
     "SPLUNK_AO_API_KEY",
     "SPLUNK_AO_CONSOLE_URL",
     "SPLUNK_AO_API_URL",
@@ -176,14 +177,79 @@ def test_require_ingest_token_rejects_crud_only_config() -> None:
 
 def test_api_root_derives_from_realm() -> None:
     cfg = O11yConfig(realm="lab0", o11y_token="tok")
-    assert cfg.api_root == "https://app.lab0.observability.splunkcloud.com"
+    assert cfg.api_root == "https://api.lab0.observability.splunkcloud.com"
 
 
 def test_require_api_url_derives_from_realm() -> None:
     cfg = O11yConfig(realm="lab0", o11y_token="tok")
-    assert cfg.require_api_url() == "https://app.lab0.observability.splunkcloud.com/ao/api/"
+    assert cfg.require_api_url() == "https://api.lab0.observability.splunkcloud.com/ao/api/"
     assert cfg.require_api_url() == f"{cfg.api_root}/ao/api/"
-    assert cfg.require_api_url() == f"{cfg.require_console_url()}ao/api/"
+
+
+def test_api_url_override_replaces_api_root_only() -> None:
+    # Given: an explicit API origin override
+    cfg = O11yConfig(realm="lab0", o11y_token="tok", api_url="https://api.example.com/")
+    # Then: CRUD uses the override while ingest and console stay realm-derived
+    assert cfg.api_root == "https://api.example.com"
+    assert cfg.require_api_url() == "https://api.example.com/ao/api/"
+    assert cfg.otlp_endpoint == "https://ingest.lab0.observability.splunkcloud.com/v2/trace/otlp"
+    assert cfg.require_console_url() == "https://app.lab0.observability.splunkcloud.com/"
+
+
+def test_api_url_override_read_from_env() -> None:
+    with env(
+        SPLUNK_AO_REALM="lab0", SPLUNK_AO_O11Y_TOKEN="tok", SPLUNK_AO_O11Y_API_URL="https://api.lab0.signalfx.com"
+    ):
+        assert O11yConfig.from_env().api_root == "https://api.lab0.signalfx.com"
+
+
+def test_empty_api_url_override_uses_realm_default() -> None:
+    cfg = O11yConfig(realm="lab0", o11y_token="tok", api_url="")
+    assert cfg.api_root == "https://api.lab0.observability.splunkcloud.com"
+
+
+def test_api_url_override_counts_as_o11y_and_conflicts_with_standalone() -> None:
+    with env(SPLUNK_AO_O11Y_API_URL="https://api.lab0.signalfx.com"):
+        assert resolve_deployment() == DeploymentMode.O11Y
+    with env(SPLUNK_AO_O11Y_API_URL="https://api.lab0.signalfx.com", SPLUNK_AO_API_KEY="key"):
+        with pytest.raises(AmbiguousConfigurationError):
+            resolve_deployment()
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "http://api.lab0.signalfx.com",
+        "http://localhost:8080",
+        "api.lab0.signalfx.com",
+        "https://user:secret@api.lab0.signalfx.com",
+        "https://api.lab0.signalfx.com/ao/api/",
+        "https://api.lab0.signalfx.com?x=1",
+        "https://api.lab0.signalfx.com#frag",
+        "https://[::1",
+        "https://@api.lab0.signalfx.com",
+        "https://api.lab0.signalfx.com:abc",
+        "https://api.lab0.signalfx.com:99999",
+        "https://api.lab0 .signalfx.com",
+    ],
+)
+def test_api_url_override_rejects_invalid_values(value: str) -> None:
+    with pytest.raises(ConfigurationError) as exc_info:
+        O11yConfig(realm="lab0", o11y_token="tok", api_url=value)
+    assert "secret" not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("https://api.lab0.signalfx.com:", "https://api.lab0.signalfx.com"),
+        ("https://api.lab0.signalfx.com:8443/", "https://api.lab0.signalfx.com:8443"),
+        ("  https://API.lab0.signalfx.com  ", "https://api.lab0.signalfx.com"),
+        ("https://[::1]:8443", "https://[::1]:8443"),
+    ],
+)
+def test_api_url_override_is_rebuilt_from_host_and_port(value: str, expected: str) -> None:
+    assert O11yConfig(realm="lab0", o11y_token="tok", api_url=value).api_root == expected
 
 
 def test_require_console_url_derives_from_realm() -> None:
