@@ -60,7 +60,7 @@ class AgentSpan:
         parent_id (None | str | Unset): Galileo ID of the parent of this span
         spans (list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset):
             Child spans.
-        agent_type (AgentType | Unset):
+        agent_type (AgentType | str | Unset): Agent type.
         agent_name (None | str | Unset): Name of the agent.
     """
 
@@ -89,7 +89,7 @@ class AgentSpan:
     step_number: int | None | Unset = UNSET
     parent_id: None | str | Unset = UNSET
     spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan] | Unset = UNSET
-    agent_type: AgentType | Unset = UNSET
+    agent_type: AgentType | str | Unset = UNSET
     agent_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -303,9 +303,13 @@ class AgentSpan:
 
                 spans.append(spans_item)
 
-        agent_type: str | Unset = UNSET
-        if not isinstance(self.agent_type, Unset):
+        agent_type: str | Unset
+        if isinstance(self.agent_type, Unset):
+            agent_type = UNSET
+        elif isinstance(self.agent_type, AgentType):
             agent_type = self.agent_type.value
+        else:
+            agent_type = self.agent_type
 
         agent_name: None | str | Unset
         if isinstance(self.agent_name, Unset):
@@ -390,11 +394,13 @@ class AgentSpan:
         def _parse_input_(data: object) -> list[FileContentPart | TextContentPart] | list[Message] | str | Unset:
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 input_type_1 = []
                 _input_type_1 = data
+
                 for input_type_1_item_data in _input_type_1:
                     input_type_1_item = Message.from_dict(input_type_1_item_data)
 
@@ -408,9 +414,11 @@ class AgentSpan:
                     raise TypeError()
                 input_type_2 = []
                 _input_type_2 = data
+
                 for input_type_2_item_data in _input_type_2:
 
                     def _parse_input_type_2_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -443,11 +451,13 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 redacted_input_type_1 = []
                 _redacted_input_type_1 = data
+
                 for redacted_input_type_1_item_data in _redacted_input_type_1:
                     redacted_input_type_1_item = Message.from_dict(redacted_input_type_1_item_data)
 
@@ -461,9 +471,11 @@ class AgentSpan:
                     raise TypeError()
                 redacted_input_type_2 = []
                 _redacted_input_type_2 = data
+
                 for redacted_input_type_2_item_data in _redacted_input_type_2:
 
                     def _parse_redacted_input_type_2_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -496,6 +508,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -509,6 +522,7 @@ class AgentSpan:
                     raise TypeError()
                 output_type_2 = []
                 _output_type_2 = data
+
                 for output_type_2_item_data in _output_type_2:
                     output_type_2_item = Document.from_dict(output_type_2_item_data)
 
@@ -522,9 +536,11 @@ class AgentSpan:
                     raise TypeError()
                 output_type_3 = []
                 _output_type_3 = data
+
                 for output_type_3_item_data in _output_type_3:
 
                     def _parse_output_type_3_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -568,6 +584,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -581,6 +598,7 @@ class AgentSpan:
                     raise TypeError()
                 redacted_output_type_2 = []
                 _redacted_output_type_2 = data
+
                 for redacted_output_type_2_item_data in _redacted_output_type_2:
                     redacted_output_type_2_item = Document.from_dict(redacted_output_type_2_item_data)
 
@@ -594,9 +612,11 @@ class AgentSpan:
                     raise TypeError()
                 redacted_output_type_3 = []
                 _redacted_output_type_3 = data
+
                 for redacted_output_type_3_item_data in _redacted_output_type_3:
 
                     def _parse_redacted_output_type_3_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -656,6 +676,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
@@ -672,6 +693,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
@@ -681,6 +703,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
@@ -690,6 +713,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
@@ -706,6 +730,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
@@ -715,6 +740,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))
@@ -724,6 +750,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         trace_id = _parse_trace_id(d.pop("trace_id", UNSET))
@@ -733,6 +760,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
@@ -742,6 +770,7 @@ class AgentSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
@@ -757,6 +786,7 @@ class AgentSpan:
                 def _parse_spans_item(
                     data: object,
                 ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -815,18 +845,30 @@ class AgentSpan:
 
                 spans.append(spans_item)
 
-        _agent_type = d.pop("agent_type", UNSET)
-        agent_type: AgentType | Unset
-        if isinstance(_agent_type, Unset):
-            agent_type = UNSET
-        else:
-            agent_type = AgentType(_agent_type)
+        def _parse_agent_type(data: object) -> AgentType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                agent_type_type_0 = AgentType(data)
+
+                return agent_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for agent_type")
+            return cast(AgentType | str | Unset, data)
+
+        agent_type = _parse_agent_type(d.pop("agent_type", UNSET))
 
         def _parse_agent_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         agent_name = _parse_agent_name(d.pop("agent_name", UNSET))

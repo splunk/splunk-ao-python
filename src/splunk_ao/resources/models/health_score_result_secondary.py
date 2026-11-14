@@ -34,6 +34,7 @@ class HealthScoreResultSecondary:
             def _parse_additional_property(data: object) -> float | None:
                 if data is None:
                     return data
+
                 return cast(float | None, data)
 
             additional_property = _parse_additional_property(prop_dict)

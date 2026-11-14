@@ -169,6 +169,7 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         dataset_version_index = _parse_dataset_version_index(d.pop("dataset_version_index", UNSET))
@@ -180,6 +181,7 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         starting_token = _parse_starting_token(d.pop("starting_token", UNSET))
@@ -189,6 +191,7 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -206,6 +209,7 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -223,6 +227,7 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         score_type = _parse_score_type(d.pop("score_type", UNSET))

@@ -35,6 +35,7 @@ class BasePromptTemplateVersion:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         template: list[dict[str, Any]] | str
         if isinstance(self.template, list):
             template = []
@@ -85,11 +86,13 @@ class BasePromptTemplateVersion:
         d = dict(src_dict)
 
         def _parse_template(data: object) -> list[MessagesListItem] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 template_type_1 = []
                 _template_type_1 = data
+
                 for componentsschemas_messages_item_data in _template_type_1:
                     componentsschemas_messages_item = MessagesListItem.from_dict(componentsschemas_messages_item_data)
 
@@ -109,6 +112,7 @@ class BasePromptTemplateVersion:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         version = _parse_version(d.pop("version", UNSET))
@@ -125,6 +129,7 @@ class BasePromptTemplateVersion:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))

@@ -72,6 +72,7 @@ class AnnotationLikeDislikeAggregate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         tie_count = _parse_tie_count(d.pop("tie_count", UNSET))

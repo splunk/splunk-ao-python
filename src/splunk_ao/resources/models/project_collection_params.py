@@ -178,6 +178,7 @@ class ProjectCollectionParams:
                     | ProjectTypeFilter
                     | ProjectUpdatedAtFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -260,6 +261,7 @@ class ProjectCollectionParams:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

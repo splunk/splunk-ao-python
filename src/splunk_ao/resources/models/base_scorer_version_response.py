@@ -45,7 +45,7 @@ class BaseScorerVersionResponse:
             version saved before digests were recorded.
         chain_poll_template (ChainPollTemplate | None | Unset):
         scoreable_node_types (list[str] | None | Unset):
-        output_type (None | OutputTypeEnum | Unset):
+        output_type (None | OutputTypeEnum | str | Unset):
         allowed_model (bool | None | Unset):
         created_by (None | str | Unset):
         validation_task_id (None | str | Unset):
@@ -69,7 +69,7 @@ class BaseScorerVersionResponse:
     code_sha256: None | str | Unset = UNSET
     chain_poll_template: ChainPollTemplate | None | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
-    output_type: None | OutputTypeEnum | Unset = UNSET
+    output_type: None | OutputTypeEnum | str | Unset = UNSET
     allowed_model: bool | None | Unset = UNSET
     created_by: None | str | Unset = UNSET
     validation_task_id: None | str | Unset = UNSET
@@ -280,6 +280,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -297,6 +298,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -314,6 +316,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -331,6 +334,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -348,6 +352,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -365,6 +370,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model_name = _parse_model_name(d.pop("model_name", UNSET))
@@ -374,6 +380,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         num_judges = _parse_num_judges(d.pop("num_judges", UNSET))
@@ -383,6 +390,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         cot_enabled = _parse_cot_enabled(d.pop("cot_enabled", UNSET))
@@ -392,6 +400,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
@@ -401,6 +410,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         code_sha256 = _parse_code_sha256(d.pop("code_sha256", UNSET))
@@ -410,6 +420,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -427,6 +438,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -439,11 +451,12 @@ class BaseScorerVersionResponse:
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_output_type(data: object) -> None | OutputTypeEnum | Unset:
+        def _parse_output_type(data: object) -> None | OutputTypeEnum | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -452,7 +465,9 @@ class BaseScorerVersionResponse:
                 return output_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | OutputTypeEnum | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(None | OutputTypeEnum | str | Unset, data)
 
         output_type = _parse_output_type(d.pop("output_type", UNSET))
 
@@ -461,6 +476,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(bool | None | Unset, data)
 
         allowed_model = _parse_allowed_model(d.pop("allowed_model", UNSET))
@@ -470,6 +486,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))
@@ -479,6 +496,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         validation_task_id = _parse_validation_task_id(d.pop("validation_task_id", UNSET))
@@ -488,6 +506,7 @@ class BaseScorerVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         request_id = _parse_request_id(d.pop("request_id", UNSET))

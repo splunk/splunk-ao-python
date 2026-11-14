@@ -34,6 +34,7 @@ class RenderTemplateResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         rendered_templates = []
         for rendered_templates_item_data in self.rendered_templates:
             rendered_templates_item = rendered_templates_item_data.to_dict()
@@ -72,6 +73,7 @@ class RenderTemplateResponse:
         d = dict(src_dict)
         rendered_templates = []
         _rendered_templates = d.pop("rendered_templates")
+
         for rendered_templates_item_data in _rendered_templates:
             rendered_templates_item = RenderedTemplate.from_dict(rendered_templates_item_data)
 
@@ -88,6 +90,7 @@ class RenderTemplateResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

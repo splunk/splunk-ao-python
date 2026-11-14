@@ -293,6 +293,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         previous_last_row_id = _parse_previous_last_row_id(d.pop("previous_last_row_id", UNSET))
@@ -302,6 +303,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         log_stream_id = _parse_log_stream_id(d.pop("log_stream_id", UNSET))
@@ -311,6 +313,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         experiment_id = _parse_experiment_id(d.pop("experiment_id", UNSET))
@@ -320,6 +323,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
@@ -352,6 +356,7 @@ class ValidateDecisionScorerLogRecordRequest:
                     | LogRecordsNumberFilter
                     | LogRecordsTextFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()
@@ -424,6 +429,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -481,6 +487,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -506,6 +513,7 @@ class ValidateDecisionScorerLogRecordRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -519,6 +527,7 @@ class ValidateDecisionScorerLogRecordRequest:
                     raise TypeError()
                 answer_options_type_1 = []
                 _answer_options_type_1 = data
+
                 for answer_options_type_1_item_data in _answer_options_type_1:
                     answer_options_type_1_item = DecisionChoice.from_dict(answer_options_type_1_item_data)
 
@@ -532,6 +541,7 @@ class ValidateDecisionScorerLogRecordRequest:
                     raise TypeError()
                 answer_options_type_2 = []
                 _answer_options_type_2 = data
+
                 for answer_options_type_2_item_data in _answer_options_type_2:
                     answer_options_type_2_item = DecisionLevel.from_dict(answer_options_type_2_item_data)
 

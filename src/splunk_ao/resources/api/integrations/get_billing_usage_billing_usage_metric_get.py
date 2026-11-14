@@ -27,11 +27,11 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    metric: BillingUsageMetric,
+    metric: BillingUsageMetric | str,
     *,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | Unset | UUID = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -44,7 +44,11 @@ def _get_kwargs(
     json_end_time = end_time.isoformat()
     params["end_time"] = json_end_time
 
-    json_interval = interval.value
+    json_interval: str
+    if isinstance(interval, CostInterval):
+        json_interval = interval.value
+    else:
+        json_interval = interval
     params["interval"] = json_interval
 
     json_project_id: None | str | Unset
@@ -112,21 +116,21 @@ def _build_response(
 
 
 def sync_detailed(
-    metric: BillingUsageMetric,
+    metric: BillingUsageMetric | str,
     *,
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | Unset | UUID = UNSET,
 ) -> Response[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
-        metric (BillingUsageMetric):
+        metric (BillingUsageMetric | str):
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | Unset | UUID): Optional project filter
 
     Raises:
@@ -147,21 +151,21 @@ def sync_detailed(
 
 
 def sync(
-    metric: BillingUsageMetric,
+    metric: BillingUsageMetric | str,
     *,
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | Unset | UUID = UNSET,
 ) -> Optional[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
-        metric (BillingUsageMetric):
+        metric (BillingUsageMetric | str):
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | Unset | UUID): Optional project filter
 
     Raises:
@@ -178,21 +182,21 @@ def sync(
 
 
 async def asyncio_detailed(
-    metric: BillingUsageMetric,
+    metric: BillingUsageMetric | str,
     *,
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | Unset | UUID = UNSET,
 ) -> Response[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
-        metric (BillingUsageMetric):
+        metric (BillingUsageMetric | str):
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | Unset | UUID): Optional project filter
 
     Raises:
@@ -213,21 +217,21 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    metric: BillingUsageMetric,
+    metric: BillingUsageMetric | str,
     *,
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | Unset | UUID = UNSET,
 ) -> Optional[BillingUsageResponse | HTTPValidationError]:
     """Get Billing Usage
 
     Args:
-        metric (BillingUsageMetric):
+        metric (BillingUsageMetric | str):
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | Unset | UUID): Optional project filter
 
     Raises:

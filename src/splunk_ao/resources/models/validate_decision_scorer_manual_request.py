@@ -137,6 +137,7 @@ class ValidateDecisionScorerManualRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -150,6 +151,7 @@ class ValidateDecisionScorerManualRequest:
                     raise TypeError()
                 answer_options_type_1 = []
                 _answer_options_type_1 = data
+
                 for answer_options_type_1_item_data in _answer_options_type_1:
                     answer_options_type_1_item = DecisionChoice.from_dict(answer_options_type_1_item_data)
 
@@ -163,6 +165,7 @@ class ValidateDecisionScorerManualRequest:
                     raise TypeError()
                 answer_options_type_2 = []
                 _answer_options_type_2 = data
+
                 for answer_options_type_2_item_data in _answer_options_type_2:
                     answer_options_type_2_item = DecisionLevel.from_dict(answer_options_type_2_item_data)
 
@@ -190,6 +193,7 @@ class ValidateDecisionScorerManualRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         reference_output = _parse_reference_output(d.pop("reference_output", UNSET))

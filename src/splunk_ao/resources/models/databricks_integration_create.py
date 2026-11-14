@@ -78,6 +78,7 @@ class DatabricksIntegrationCreate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         default_catalog_name = _parse_default_catalog_name(d.pop("default_catalog_name", UNSET))
@@ -87,6 +88,7 @@ class DatabricksIntegrationCreate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         path = _parse_path(d.pop("path", UNSET))

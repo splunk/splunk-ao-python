@@ -135,6 +135,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         test_input = _parse_test_input(d.pop("test_input", UNSET))
@@ -144,6 +145,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         test_output = _parse_test_output(d.pop("test_output", UNSET))
@@ -153,6 +155,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -170,6 +173,7 @@ class BodyValidateCodeScorerScorersCodeValidatePost:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()

@@ -67,6 +67,7 @@ class UserInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         first_name = _parse_first_name(d.pop("first_name", UNSET))
@@ -76,6 +77,7 @@ class UserInfo:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         last_name = _parse_last_name(d.pop("last_name", UNSET))

@@ -137,6 +137,7 @@ class BasePromptTemplateResponse:
         id = d.pop("id")
 
         def _parse_name(data: object) -> Name | str:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -168,6 +169,7 @@ class BasePromptTemplateResponse:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

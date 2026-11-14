@@ -23,13 +23,13 @@ class Message:
     """
     Attributes:
         content (list[FileContentPart | TextContentPart] | str):
-        role (MessageRole):
+        role (MessageRole | str):
         tool_call_id (None | str | Unset):
         tool_calls (list[ToolCall] | None | Unset):
     """
 
     content: list[FileContentPart | TextContentPart] | str
-    role: MessageRole
+    role: MessageRole | str
     tool_call_id: None | str | Unset = UNSET
     tool_calls: list[ToolCall] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -52,7 +52,11 @@ class Message:
         else:
             content = self.content
 
-        role = self.role.value
+        role: str
+        if isinstance(self.role, MessageRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         tool_call_id: None | str | Unset
         if isinstance(self.tool_call_id, Unset):
@@ -91,14 +95,17 @@ class Message:
         d = dict(src_dict)
 
         def _parse_content(data: object) -> list[FileContentPart | TextContentPart] | str:
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 content_type_1 = []
                 _content_type_1 = data
+
                 for content_type_1_item_data in _content_type_1:
 
                     def _parse_content_type_1_item(data: object) -> FileContentPart | TextContentPart:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -124,13 +131,28 @@ class Message:
 
         content = _parse_content(d.pop("content"))
 
-        role = MessageRole(d.pop("role"))
+        def _parse_role(data: object) -> MessageRole | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = MessageRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(MessageRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         def _parse_tool_call_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         tool_call_id = _parse_tool_call_id(d.pop("tool_call_id", UNSET))
@@ -140,11 +162,13 @@ class Message:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 tool_calls_type_0 = []
                 _tool_calls_type_0 = data
+
                 for tool_calls_type_0_item_data in _tool_calls_type_0:
                     tool_calls_type_0_item = ToolCall.from_dict(tool_calls_type_0_item_data)
 

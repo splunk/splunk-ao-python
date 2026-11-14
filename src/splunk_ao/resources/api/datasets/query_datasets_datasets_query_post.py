@@ -27,7 +27,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: ListDatasetParams | Unset,
-    actions: list[DatasetAction] | Unset = UNSET,
+    actions: list[DatasetAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> dict[str, Any]:
@@ -37,9 +37,16 @@ def _get_kwargs(
 
     json_actions: list[str] | Unset = UNSET
     if not isinstance(actions, Unset):
+        if not isinstance(actions, list):
+            raise TypeError("Unexpected value type for actions")
+
         json_actions = []
         for actions_item_data in actions:
-            actions_item = actions_item_data.value
+            actions_item: str
+            if isinstance(actions_item_data, DatasetAction):
+                actions_item = actions_item_data.value
+            else:
+                actions_item = actions_item_data
             json_actions.append(actions_item)
 
     params["actions"] = json_actions
@@ -113,14 +120,15 @@ def sync_detailed(
     *,
     client: ApiClient,
     body: ListDatasetParams | Unset,
-    actions: list[DatasetAction] | Unset = UNSET,
+    actions: list[DatasetAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListDatasetResponse]:
     """Query Datasets
 
     Args:
-        actions (list[DatasetAction] | Unset): Actions to include in the 'permissions' field.
+        actions (list[DatasetAction | str] | Unset): Actions to include in the 'permissions'
+            field.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListDatasetParams | Unset):
@@ -144,14 +152,15 @@ def sync(
     *,
     client: ApiClient,
     body: ListDatasetParams | Unset,
-    actions: list[DatasetAction] | Unset = UNSET,
+    actions: list[DatasetAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListDatasetResponse]:
     """Query Datasets
 
     Args:
-        actions (list[DatasetAction] | Unset): Actions to include in the 'permissions' field.
+        actions (list[DatasetAction | str] | Unset): Actions to include in the 'permissions'
+            field.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListDatasetParams | Unset):
@@ -171,14 +180,15 @@ async def asyncio_detailed(
     *,
     client: ApiClient,
     body: ListDatasetParams | Unset,
-    actions: list[DatasetAction] | Unset = UNSET,
+    actions: list[DatasetAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListDatasetResponse]:
     """Query Datasets
 
     Args:
-        actions (list[DatasetAction] | Unset): Actions to include in the 'permissions' field.
+        actions (list[DatasetAction | str] | Unset): Actions to include in the 'permissions'
+            field.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListDatasetParams | Unset):
@@ -202,14 +212,15 @@ async def asyncio(
     *,
     client: ApiClient,
     body: ListDatasetParams | Unset,
-    actions: list[DatasetAction] | Unset = UNSET,
+    actions: list[DatasetAction | str] | Unset = UNSET,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListDatasetResponse]:
     """Query Datasets
 
     Args:
-        actions (list[DatasetAction] | Unset): Actions to include in the 'permissions' field.
+        actions (list[DatasetAction | str] | Unset): Actions to include in the 'permissions'
+            field.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListDatasetParams | Unset):

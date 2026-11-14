@@ -23,10 +23,10 @@ class MessageEvent:
     """An output message from the model.
 
     Attributes:
-        role (MessageRole):
+        role (MessageRole | str): Role of the message sender
         type_ (Literal['message'] | Unset):  Default: 'message'.
         id (None | str | Unset): Unique identifier for the event
-        status (EventStatus | None | Unset): Status of the event
+        status (EventStatus | None | str | Unset): Status of the event
         metadata (MessageEventMetadataType0 | None | Unset): Provider-specific metadata and additional fields
         error_message (None | str | Unset): Error message if the event failed
         content (None | str | Unset): Text content of the message
@@ -34,10 +34,10 @@ class MessageEvent:
             images, etc.)
     """
 
-    role: MessageRole
+    role: MessageRole | str
     type_: Literal["message"] | Unset = "message"
     id: None | str | Unset = UNSET
-    status: EventStatus | None | Unset = UNSET
+    status: EventStatus | None | str | Unset = UNSET
     metadata: MessageEventMetadataType0 | None | Unset = UNSET
     error_message: None | str | Unset = UNSET
     content: None | str | Unset = UNSET
@@ -47,7 +47,11 @@ class MessageEvent:
     def to_dict(self) -> dict[str, Any]:
         from ..models.message_event_metadata_type_0 import MessageEventMetadataType0
 
-        role = self.role.value
+        role: str
+        if isinstance(self.role, MessageRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         type_ = self.type_
 
@@ -123,7 +127,22 @@ class MessageEvent:
         from ..models.message_event_metadata_type_0 import MessageEventMetadataType0
 
         d = dict(src_dict)
-        role = MessageRole(d.pop("role"))
+
+        def _parse_role(data: object) -> MessageRole | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = MessageRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(MessageRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         type_ = cast(Literal["message"] | Unset, d.pop("type", UNSET))
         if type_ != "message" and not isinstance(type_, Unset):
@@ -134,15 +153,17 @@ class MessageEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
 
-        def _parse_status(data: object) -> EventStatus | None | Unset:
+        def _parse_status(data: object) -> EventStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -151,7 +172,9 @@ class MessageEvent:
                 return status_type_0
             except:  # noqa: E722
                 pass
-            return cast(EventStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(EventStatus | None | str | Unset, data)
 
         status = _parse_status(d.pop("status", UNSET))
 
@@ -160,6 +183,7 @@ class MessageEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -177,6 +201,7 @@ class MessageEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         error_message = _parse_error_message(d.pop("error_message", UNSET))
@@ -186,6 +211,7 @@ class MessageEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         content = _parse_content(d.pop("content", UNSET))
@@ -195,11 +221,13 @@ class MessageEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 content_parts_type_0 = []
                 _content_parts_type_0 = data
+
                 for content_parts_type_0_item_data in _content_parts_type_0:
                     content_parts_type_0_item = MessageEventContentPartsType0Item.from_dict(
                         content_parts_type_0_item_data

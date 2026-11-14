@@ -69,6 +69,7 @@ class AggregatedTraceViewGraph:
         d = dict(src_dict)
         nodes = []
         _nodes = d.pop("nodes")
+
         for nodes_item_data in _nodes:
             nodes_item = AggregatedTraceViewNode.from_dict(nodes_item_data)
 
@@ -76,6 +77,7 @@ class AggregatedTraceViewGraph:
 
         edges = []
         _edges = d.pop("edges")
+
         for edges_item_data in _edges:
             edges_item = AggregatedTraceViewEdge.from_dict(edges_item_data)
 
@@ -86,6 +88,7 @@ class AggregatedTraceViewGraph:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

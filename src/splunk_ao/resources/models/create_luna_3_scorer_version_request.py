@@ -77,6 +77,7 @@ class CreateLuna3ScorerVersionRequest:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         threshold = _parse_threshold(d.pop("threshold", UNSET))

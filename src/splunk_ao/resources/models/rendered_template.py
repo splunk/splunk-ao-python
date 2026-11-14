@@ -50,6 +50,7 @@ class RenderedTemplate:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         warning = _parse_warning(d.pop("warning", UNSET))

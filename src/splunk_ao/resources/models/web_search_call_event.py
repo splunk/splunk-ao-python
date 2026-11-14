@@ -25,7 +25,7 @@ class WebSearchCallEvent:
         action (WebSearchAction): Action payload for a web search call event.
         type_ (Literal['web_search_call'] | Unset):  Default: 'web_search_call'.
         id (None | str | Unset): Unique identifier for the event
-        status (EventStatus | None | Unset): Status of the event
+        status (EventStatus | None | str | Unset): Status of the event
         metadata (None | Unset | WebSearchCallEventMetadataType0): Provider-specific metadata and additional fields
         error_message (None | str | Unset): Error message if the event failed
     """
@@ -33,7 +33,7 @@ class WebSearchCallEvent:
     action: WebSearchAction
     type_: Literal["web_search_call"] | Unset = "web_search_call"
     id: None | str | Unset = UNSET
-    status: EventStatus | None | Unset = UNSET
+    status: EventStatus | None | str | Unset = UNSET
     metadata: None | Unset | WebSearchCallEventMetadataType0 = UNSET
     error_message: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -106,15 +106,17 @@ class WebSearchCallEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
 
-        def _parse_status(data: object) -> EventStatus | None | Unset:
+        def _parse_status(data: object) -> EventStatus | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -123,7 +125,9 @@ class WebSearchCallEvent:
                 return status_type_0
             except:  # noqa: E722
                 pass
-            return cast(EventStatus | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for status")
+            return cast(EventStatus | None | str | Unset, data)
 
         status = _parse_status(d.pop("status", UNSET))
 
@@ -132,6 +136,7 @@ class WebSearchCallEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -149,6 +154,7 @@ class WebSearchCallEvent:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         error_message = _parse_error_message(d.pop("error_message", UNSET))

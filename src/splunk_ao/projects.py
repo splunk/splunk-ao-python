@@ -306,7 +306,7 @@ class Projects:
         return Project(project=response)
 
     def share_project_with_user(
-        self, project_id: str, user_id: str, role: CollaboratorRole = CollaboratorRole.VIEWER
+        self, project_id: str, user_id: str, role: CollaboratorRole | str = CollaboratorRole.VIEWER
     ) -> UserCollaborator:
         body = [UserCollaboratorCreate(user_id=user_id, role=role)]
         response = create_user_project_collaborators_projects_project_id_users_post.sync(
@@ -350,7 +350,7 @@ class Projects:
         return all_collaborators
 
     def update_user_project_collaborator(
-        self, project_id: str, user_id: str, role: CollaboratorRole = CollaboratorRole.VIEWER
+        self, project_id: str, user_id: str, role: CollaboratorRole | str = CollaboratorRole.VIEWER
     ) -> UserCollaborator:
         body = CollaboratorUpdate(role=role)
         response = update_user_project_collaborator_projects_project_id_users_user_id_patch.sync(
@@ -487,7 +487,7 @@ def create_project(name: str) -> Project:
 
 
 def share_project_with_user(
-    project_id: str, user_id: str, role: CollaboratorRole = CollaboratorRole.VIEWER
+    project_id: str, user_id: str, role: CollaboratorRole | str = CollaboratorRole.VIEWER
 ) -> UserCollaborator:
     """
     Share a project with a user.
@@ -541,7 +541,7 @@ def list_user_project_collaborators(project_id: str) -> list[UserCollaborator]:
 
 
 def update_user_project_collaborator(
-    project_id: str, user_id: str, role: CollaboratorRole = CollaboratorRole.VIEWER
+    project_id: str, user_id: str, role: CollaboratorRole | str = CollaboratorRole.VIEWER
 ) -> UserCollaborator:
     """
     Update a user's role for a project.

@@ -176,6 +176,7 @@ class StubTraceRecord:
                     | ExtendedToolSpanRecordWithChildren
                     | ExtendedWorkflowSpanRecordWithChildren
                 ):
+
                     # Discriminator-aware parsing for Extended*Record types
                     if isinstance(data, dict) and "type" in data:
                         type_value = data.get("type")
@@ -307,6 +308,7 @@ class StubTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         project_id = _parse_project_id(d.pop("project_id", UNSET))
@@ -316,6 +318,7 @@ class StubTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         run_id = _parse_run_id(d.pop("run_id", UNSET))
@@ -325,6 +328,7 @@ class StubTraceRecord:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))

@@ -81,14 +81,17 @@ class ContextRelevanceScorer:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 filters_type_0 = []
                 _filters_type_0 = data
+
                 for filters_type_0_item_data in _filters_type_0:
 
                     def _parse_filters_type_0_item(data: object) -> MetadataFilter | ModalityFilter | NodeNameFilter:
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()

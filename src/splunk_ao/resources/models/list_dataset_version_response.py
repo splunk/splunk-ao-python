@@ -34,6 +34,7 @@ class ListDatasetVersionResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         versions = []
         for versions_item_data in self.versions:
             versions_item = versions_item_data.to_dict()
@@ -72,6 +73,7 @@ class ListDatasetVersionResponse:
         d = dict(src_dict)
         versions = []
         _versions = d.pop("versions")
+
         for versions_item_data in _versions:
             versions_item = DatasetVersionDB.from_dict(versions_item_data)
 
@@ -88,6 +90,7 @@ class ListDatasetVersionResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))

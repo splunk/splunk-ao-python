@@ -22,24 +22,36 @@ class DecisionScorerTestConfiguration:
     for it (get_decision_input_type).
 
         Attributes:
-            output_type (OutputTypeEnum): Enumeration of output types.
-            scoreable_node_types (list[StepType]):
-            input_type (InputTypeEnum | None | Unset):
+            output_type (OutputTypeEnum | str): One of boolean_probability, categorical, discrete.
+            scoreable_node_types (list[StepType | str]):
+            input_type (InputTypeEnum | None | str | Unset):
             ground_truth (bool | Unset):  Default: False.
     """
 
-    output_type: OutputTypeEnum
-    scoreable_node_types: list[StepType]
-    input_type: InputTypeEnum | None | Unset = UNSET
+    output_type: OutputTypeEnum | str
+    scoreable_node_types: list[StepType | str]
+    input_type: InputTypeEnum | None | str | Unset = UNSET
     ground_truth: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        output_type = self.output_type.value
+
+        output_type: str
+        if isinstance(self.output_type, OutputTypeEnum):
+            output_type = self.output_type.value
+        else:
+            output_type = self.output_type
+
+        if not isinstance(self.scoreable_node_types, list):
+            raise TypeError("Unexpected value type for scoreable_node_types")
 
         scoreable_node_types = []
         for scoreable_node_types_item_data in self.scoreable_node_types:
-            scoreable_node_types_item = scoreable_node_types_item_data.value
+            scoreable_node_types_item: str
+            if isinstance(scoreable_node_types_item_data, StepType):
+                scoreable_node_types_item = scoreable_node_types_item_data.value
+            else:
+                scoreable_node_types_item = scoreable_node_types_item_data
             scoreable_node_types.append(scoreable_node_types_item)
 
         input_type: None | str | Unset
@@ -65,20 +77,54 @@ class DecisionScorerTestConfiguration:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        output_type = OutputTypeEnum(d.pop("output_type"))
+
+        def _parse_output_type(data: object) -> OutputTypeEnum | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                output_type_type_0 = OutputTypeEnum(data)
+
+                return output_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for output_type")
+            return cast(OutputTypeEnum | str, data)
+
+        output_type = _parse_output_type(d.pop("output_type"))
 
         scoreable_node_types = []
         _scoreable_node_types = d.pop("scoreable_node_types")
+        if not isinstance(_scoreable_node_types, list):
+            raise TypeError("Unexpected value type for scoreable_node_types")
+
         for scoreable_node_types_item_data in _scoreable_node_types:
-            scoreable_node_types_item = StepType(scoreable_node_types_item_data)
+
+            def _parse_scoreable_node_types_item(data: object) -> StepType | str:
+
+                try:
+                    if not isinstance(data, str):
+                        raise TypeError()
+                    scoreable_node_types_item_type_0 = StepType(data)
+
+                    return scoreable_node_types_item_type_0
+                except:  # noqa: E722
+                    pass
+                if type(data) not in (str,):
+                    raise TypeError("Unexpected value type for scoreable_node_types_item")
+                return cast(StepType | str, data)
+
+            scoreable_node_types_item = _parse_scoreable_node_types_item(scoreable_node_types_item_data)
 
             scoreable_node_types.append(scoreable_node_types_item)
 
-        def _parse_input_type(data: object) -> InputTypeEnum | None | Unset:
+        def _parse_input_type(data: object) -> InputTypeEnum | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -87,7 +133,9 @@ class DecisionScorerTestConfiguration:
                 return input_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(InputTypeEnum | None | Unset, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for input_type")
+            return cast(InputTypeEnum | None | str | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
 

@@ -74,6 +74,7 @@ def _parse_response(
             | PartialExtendedTraceRecord
             | PartialExtendedWorkflowSpanRecord
         ):
+
             # Discriminator-aware parsing for Extended*Record types
             if isinstance(data, dict) and "type" in data:
                 type_value = data.get("type")

@@ -21,7 +21,6 @@ from splunk_ao.resources.models import (
     BaseAwsIntegrationCreate,
     HTTPValidationError,
     IntegrationProvider,
-    LLMIntegration,
     OpenAIIntegrationCreate,
 )
 from splunk_ao.resources.types import Unset
@@ -84,8 +83,8 @@ class Provider(StateManagementMixin, ABC):
         return f"{self.__class__.__name__}(name='{self.name}', id='{self.id}', is_selected={self.is_selected})"
 
     @abstractmethod
-    def _get_integration_provider(self) -> IntegrationProvider:
-        """Get the IntegrationProvider enum for this provider."""
+    def _get_integration_provider(self) -> IntegrationProvider | str:
+        """Get the provider identifier, including unfamiliar server values."""
         raise NotImplementedError
 
     def refresh(self) -> None:
@@ -211,7 +210,7 @@ class Provider(StateManagementMixin, ABC):
 
             # Get models from API
             response = get_available_models_llm_integrations_llm_integration_models_get.sync(
-                llm_integration=LLMIntegration(integration_provider.value), client=config.api_client
+                llm_integration=str(integration_provider), client=config.api_client
             )
 
             if response is None or isinstance(response, HTTPValidationError):
@@ -834,9 +833,9 @@ class GenericProvider(Provider):
     It does not support creation or updates through the SDK.
     """
 
-    _integration_provider: IntegrationProvider
+    _integration_provider: IntegrationProvider | str
 
-    def _get_integration_provider(self) -> IntegrationProvider:
+    def _get_integration_provider(self) -> IntegrationProvider | str:
         return self._integration_provider
 
 

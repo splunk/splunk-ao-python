@@ -26,19 +26,33 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    project_id: str, run_id: str, *, multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
+    project_id: str, run_id: str, *, multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
+    if (
+        not isinstance(multimodal_capabilities, list)
+        and multimodal_capabilities is not None
+        and not isinstance(multimodal_capabilities, Unset)
+    ):
+        raise TypeError("Unexpected value type for multimodal_capabilities")
+
     json_multimodal_capabilities: list[str] | None | Unset
     if isinstance(multimodal_capabilities, Unset):
         json_multimodal_capabilities = UNSET
     elif isinstance(multimodal_capabilities, list):
+        if not isinstance(multimodal_capabilities, list):
+            raise TypeError("Unexpected value type for multimodal_capabilities_type_0")
+
         json_multimodal_capabilities = []
         for multimodal_capabilities_type_0_item_data in multimodal_capabilities:
-            multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+            multimodal_capabilities_type_0_item: str
+            if isinstance(multimodal_capabilities_type_0_item_data, MultimodalCapability):
+                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data.value
+            else:
+                multimodal_capabilities_type_0_item = multimodal_capabilities_type_0_item_data
             json_multimodal_capabilities.append(multimodal_capabilities_type_0_item)
 
     else:
@@ -115,7 +129,7 @@ def sync_detailed(
     run_id: str,
     *,
     client: ApiClient,
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET,
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET,
 ) -> Response[
     GetIntegrationsAndModelInfoForRunLlmIntegrationsProjectsProjectIdRunsRunIdGetGetRunIntegrationsResponse
     | HTTPValidationError
@@ -127,7 +141,7 @@ def sync_detailed(
     Args:
         project_id (str):
         run_id (str):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -149,7 +163,7 @@ def sync(
     run_id: str,
     *,
     client: ApiClient,
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET,
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET,
 ) -> Optional[
     GetIntegrationsAndModelInfoForRunLlmIntegrationsProjectsProjectIdRunsRunIdGetGetRunIntegrationsResponse
     | HTTPValidationError
@@ -161,7 +175,7 @@ def sync(
     Args:
         project_id (str):
         run_id (str):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -181,7 +195,7 @@ async def asyncio_detailed(
     run_id: str,
     *,
     client: ApiClient,
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET,
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET,
 ) -> Response[
     GetIntegrationsAndModelInfoForRunLlmIntegrationsProjectsProjectIdRunsRunIdGetGetRunIntegrationsResponse
     | HTTPValidationError
@@ -193,7 +207,7 @@ async def asyncio_detailed(
     Args:
         project_id (str):
         run_id (str):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -215,7 +229,7 @@ async def asyncio(
     run_id: str,
     *,
     client: ApiClient,
-    multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET,
+    multimodal_capabilities: list[MultimodalCapability | str] | None | Unset = UNSET,
 ) -> Optional[
     GetIntegrationsAndModelInfoForRunLlmIntegrationsProjectsProjectIdRunsRunIdGetGetRunIntegrationsResponse
     | HTTPValidationError
@@ -227,7 +241,7 @@ async def asyncio(
     Args:
         project_id (str):
         run_id (str):
-        multimodal_capabilities (list[MultimodalCapability] | None | Unset):
+        multimodal_capabilities (list[MultimodalCapability | str] | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

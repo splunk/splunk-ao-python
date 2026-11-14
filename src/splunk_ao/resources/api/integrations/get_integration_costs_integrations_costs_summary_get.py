@@ -28,7 +28,7 @@ def _get_kwargs(
     *,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | str | Unset = UNSET,
     run_id: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
@@ -42,7 +42,11 @@ def _get_kwargs(
     json_end_time = end_time.isoformat()
     params["end_time"] = json_end_time
 
-    json_interval = interval.value
+    json_interval: str
+    if isinstance(interval, CostInterval):
+        json_interval = interval.value
+    else:
+        json_interval = interval
     params["interval"] = json_interval
 
     json_project_id: None | str | Unset
@@ -119,7 +123,7 @@ def sync_detailed(
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | str | Unset = UNSET,
     run_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
@@ -128,7 +132,7 @@ def sync_detailed(
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | str | Unset): Optional project filter
         run_id (None | str | Unset): Optional run / agent stream filter
 
@@ -154,7 +158,7 @@ def sync(
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | str | Unset = UNSET,
     run_id: None | str | Unset = UNSET,
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
@@ -163,7 +167,7 @@ def sync(
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | str | Unset): Optional project filter
         run_id (None | str | Unset): Optional run / agent stream filter
 
@@ -185,7 +189,7 @@ async def asyncio_detailed(
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | str | Unset = UNSET,
     run_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
@@ -194,7 +198,7 @@ async def asyncio_detailed(
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | str | Unset): Optional project filter
         run_id (None | str | Unset): Optional run / agent stream filter
 
@@ -220,7 +224,7 @@ async def asyncio(
     client: ApiClient,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
-    interval: CostInterval,
+    interval: CostInterval | str,
     project_id: None | str | Unset = UNSET,
     run_id: None | str | Unset = UNSET,
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
@@ -229,7 +233,7 @@ async def asyncio(
     Args:
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
-        interval (CostInterval):
+        interval (CostInterval | str): Aggregation interval
         project_id (None | str | Unset): Optional project filter
         run_id (None | str | Unset): Optional run / agent stream filter
 

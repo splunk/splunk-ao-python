@@ -127,6 +127,7 @@ class AggregatedTraceViewRequest:
                     | LogRecordsNumberFilter
                     | LogRecordsTextFilter
                 ):
+
                     try:
                         if not isinstance(data, dict):
                             raise TypeError()

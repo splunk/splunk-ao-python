@@ -380,11 +380,13 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 redacted_input_type_0 = []
                 _redacted_input_type_0 = data
+
                 for redacted_input_type_0_item_data in _redacted_input_type_0:
                     redacted_input_type_0_item = Message.from_dict(redacted_input_type_0_item_data)
 
@@ -409,6 +411,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -444,6 +447,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         status_code = _parse_status_code(d.pop("status_code", UNSET))
@@ -460,6 +464,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         external_id = _parse_external_id(d.pop("external_id", UNSET))
@@ -469,6 +474,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_input = _parse_dataset_input(d.pop("dataset_input", UNSET))
@@ -478,6 +484,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         dataset_output = _parse_dataset_output(d.pop("dataset_output", UNSET))
@@ -494,6 +501,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
@@ -503,6 +511,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         session_id = _parse_session_id(d.pop("session_id", UNSET))
@@ -512,6 +521,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         trace_id = _parse_trace_id(d.pop("trace_id", UNSET))
@@ -521,6 +531,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         step_number = _parse_step_number(d.pop("step_number", UNSET))
@@ -530,6 +541,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         parent_id = _parse_parent_id(d.pop("parent_id", UNSET))
@@ -539,11 +551,13 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 tools_type_0 = []
                 _tools_type_0 = data
+
                 for tools_type_0_item_data in _tools_type_0:
                     tools_type_0_item = LlmSpanToolsType0Item.from_dict(tools_type_0_item_data)
 
@@ -576,11 +590,13 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 events_type_0 = []
                 _events_type_0 = data
+
                 for events_type_0_item_data in _events_type_0:
 
                     def _parse_events_type_0_item(
@@ -595,6 +611,7 @@ class LlmSpan:
                         | ReasoningEvent
                         | WebSearchCallEvent
                     ):
+
                         try:
                             if not isinstance(data, dict):
                                 raise TypeError()
@@ -687,6 +704,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         model = _parse_model(d.pop("model", UNSET))
@@ -696,6 +714,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         provider = _parse_provider(d.pop("provider", UNSET))
@@ -705,6 +724,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         temperature = _parse_temperature(d.pop("temperature", UNSET))
@@ -714,6 +734,7 @@ class LlmSpan:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         finish_reason = _parse_finish_reason(d.pop("finish_reason", UNSET))

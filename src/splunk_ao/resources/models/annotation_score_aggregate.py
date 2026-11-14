@@ -32,6 +32,7 @@ class AnnotationScoreAggregate:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         buckets = []
         for buckets_item_data in self.buckets:
             buckets_item = buckets_item_data.to_dict()
@@ -58,6 +59,7 @@ class AnnotationScoreAggregate:
         d = dict(src_dict)
         buckets = []
         _buckets = d.pop("buckets")
+
         for buckets_item_data in _buckets:
             buckets_item = ScoreBucket.from_dict(buckets_item_data)
 

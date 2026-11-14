@@ -31,7 +31,7 @@ class AzureIntegration:
         proxy (bool | Unset):  Default: False.
         api_version (str | Unset):  Default: '2025-03-01-preview'.
         azure_deployment (None | str | Unset):
-        authentication_type (AzureAuthenticationType | Unset):
+        authentication_type (AzureAuthenticationType | str | Unset):
         authentication_scope (None | str | Unset):
         default_headers (AzureIntegrationDefaultHeadersType0 | None | Unset):
         deployments (AzureIntegrationDeployments | Unset):
@@ -51,7 +51,7 @@ class AzureIntegration:
     proxy: bool | Unset = False
     api_version: str | Unset = "2025-03-01-preview"
     azure_deployment: None | str | Unset = UNSET
-    authentication_type: AzureAuthenticationType | Unset = UNSET
+    authentication_type: AzureAuthenticationType | str | Unset = UNSET
     authentication_scope: None | str | Unset = UNSET
     default_headers: AzureIntegrationDefaultHeadersType0 | None | Unset = UNSET
     deployments: AzureIntegrationDeployments | Unset = UNSET
@@ -90,9 +90,13 @@ class AzureIntegration:
         else:
             azure_deployment = self.azure_deployment
 
-        authentication_type: str | Unset = UNSET
-        if not isinstance(self.authentication_type, Unset):
+        authentication_type: str | Unset
+        if isinstance(self.authentication_type, Unset):
+            authentication_type = UNSET
+        elif isinstance(self.authentication_type, AzureAuthenticationType):
             authentication_type = self.authentication_type.value
+        else:
+            authentication_type = self.authentication_type
 
         authentication_scope: None | str | Unset
         if isinstance(self.authentication_scope, Unset):
@@ -209,6 +213,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -230,22 +235,35 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         azure_deployment = _parse_azure_deployment(d.pop("azure_deployment", UNSET))
 
-        _authentication_type = d.pop("authentication_type", UNSET)
-        authentication_type: AzureAuthenticationType | Unset
-        if isinstance(_authentication_type, Unset):
-            authentication_type = UNSET
-        else:
-            authentication_type = AzureAuthenticationType(_authentication_type)
+        def _parse_authentication_type(data: object) -> AzureAuthenticationType | str | Unset:
+            if isinstance(data, Unset):
+                return data
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                authentication_type_type_0 = AzureAuthenticationType(data)
+
+                return authentication_type_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for authentication_type")
+            return cast(AzureAuthenticationType | str | Unset, data)
+
+        authentication_type = _parse_authentication_type(d.pop("authentication_type", UNSET))
 
         def _parse_authentication_scope(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         authentication_scope = _parse_authentication_scope(d.pop("authentication_scope", UNSET))
@@ -255,6 +273,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -279,6 +298,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         oauth2_token_url = _parse_oauth2_token_url(d.pop("oauth2_token_url", UNSET))
@@ -288,6 +308,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -305,11 +326,13 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
                 available_deployments_type_0 = []
                 _available_deployments_type_0 = data
+
                 for available_deployments_type_0_item_data in _available_deployments_type_0:
                     available_deployments_type_0_item = AzureModelDeployment.from_dict(
                         available_deployments_type_0_item_data
@@ -329,6 +352,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         id = _parse_id(d.pop("id", UNSET))
@@ -346,6 +370,7 @@ class AzureIntegration:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

@@ -41,6 +41,7 @@ class AnnotationTemplateUpdate:
         def _parse_criteria(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         criteria = _parse_criteria(d.pop("criteria"))

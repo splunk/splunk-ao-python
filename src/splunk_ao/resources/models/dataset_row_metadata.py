@@ -84,6 +84,7 @@ class DatasetRowMetadata:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -103,6 +104,7 @@ class DatasetRowMetadata:
         def _parse_updated_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

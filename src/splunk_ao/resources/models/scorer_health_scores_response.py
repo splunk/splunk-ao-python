@@ -24,6 +24,7 @@ class ScorerHealthScoresResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         scores = []
         for scores_item_data in self.scores:
             scores_item = scores_item_data.to_dict()
@@ -42,6 +43,7 @@ class ScorerHealthScoresResponse:
         d = dict(src_dict)
         scores = []
         _scores = d.pop("scores")
+
         for scores_item_data in _scores:
             scores_item = ScorerVersionHealthScoreEntry.from_dict(scores_item_data)
 

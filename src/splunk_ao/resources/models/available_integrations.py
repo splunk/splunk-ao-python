@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -15,16 +15,23 @@ T = TypeVar("T", bound="AvailableIntegrations")
 class AvailableIntegrations:
     """
     Attributes:
-        integrations (list[IntegrationProvider]):
+        integrations (list[IntegrationProvider | str]):
     """
 
-    integrations: list[IntegrationProvider]
+    integrations: list[IntegrationProvider | str]
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        if not isinstance(self.integrations, list):
+            raise TypeError("Unexpected value type for integrations")
+
         integrations = []
         for integrations_item_data in self.integrations:
-            integrations_item = integrations_item_data.value
+            integrations_item: str
+            if isinstance(integrations_item_data, IntegrationProvider):
+                integrations_item = integrations_item_data.value
+            else:
+                integrations_item = integrations_item_data
             integrations.append(integrations_item)
 
         field_dict: dict[str, Any] = {}
@@ -38,8 +45,26 @@ class AvailableIntegrations:
         d = dict(src_dict)
         integrations = []
         _integrations = d.pop("integrations")
+        if not isinstance(_integrations, list):
+            raise TypeError("Unexpected value type for integrations")
+
         for integrations_item_data in _integrations:
-            integrations_item = IntegrationProvider(integrations_item_data)
+
+            def _parse_integrations_item(data: object) -> IntegrationProvider | str:
+
+                try:
+                    if not isinstance(data, str):
+                        raise TypeError()
+                    integrations_item_type_0 = IntegrationProvider(data)
+
+                    return integrations_item_type_0
+                except:  # noqa: E722
+                    pass
+                if type(data) not in (str,):
+                    raise TypeError("Unexpected value type for integrations_item")
+                return cast(IntegrationProvider | str, data)
+
+            integrations_item = _parse_integrations_item(integrations_item_data)
 
             integrations.append(integrations_item)
 

@@ -19,7 +19,7 @@ T = TypeVar("T", bound="HealthScoreResult")
 class HealthScoreResult:
     """
     Attributes:
-        health_score_type (HealthScoreType | None):
+        health_score_type (HealthScoreType | None | str):
         value (float | None): Primary health score metric value, or None if no valid rows.
         skipped_rows (int): Rows excluded because MGT or score could not be parsed.
         secondary (HealthScoreResultSecondary): Secondary metrics (MAE, RMSE, R², per-class F1, etc.).
@@ -28,7 +28,7 @@ class HealthScoreResult:
         joined_rows (int): Rows with both a score and a MGT value (used for computation).
     """
 
-    health_score_type: HealthScoreType | None
+    health_score_type: HealthScoreType | None | str
     value: float | None
     skipped_rows: int
     secondary: HealthScoreResultSecondary
@@ -38,6 +38,7 @@ class HealthScoreResult:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         health_score_type: None | str
         if isinstance(self.health_score_type, HealthScoreType):
             health_score_type = self.health_score_type.value
@@ -79,9 +80,10 @@ class HealthScoreResult:
 
         d = dict(src_dict)
 
-        def _parse_health_score_type(data: object) -> HealthScoreType | None:
+        def _parse_health_score_type(data: object) -> HealthScoreType | None | str:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, str):
                     raise TypeError()
@@ -90,13 +92,16 @@ class HealthScoreResult:
                 return health_score_type_type_0
             except:  # noqa: E722
                 pass
-            return cast(HealthScoreType | None, data)
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for health_score_type")
+            return cast(HealthScoreType | None | str, data)
 
         health_score_type = _parse_health_score_type(d.pop("health_score_type"))
 
         def _parse_value(data: object) -> float | None:
             if data is None:
                 return data
+
             return cast(float | None, data)
 
         value = _parse_value(d.pop("value"))

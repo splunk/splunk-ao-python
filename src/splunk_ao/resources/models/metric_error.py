@@ -94,6 +94,7 @@ class MetricError:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
@@ -103,6 +104,7 @@ class MetricError:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         message = _parse_message(d.pop("message", UNSET))
@@ -112,6 +114,7 @@ class MetricError:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         ems_error_code = _parse_ems_error_code(d.pop("ems_error_code", UNSET))
@@ -121,6 +124,7 @@ class MetricError:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

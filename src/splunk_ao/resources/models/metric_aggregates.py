@@ -158,6 +158,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         avg = _parse_avg(d.pop("avg", UNSET))
@@ -167,6 +168,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         sum_ = _parse_sum_(d.pop("sum", UNSET))
@@ -176,6 +178,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         min_ = _parse_min_(d.pop("min", UNSET))
@@ -185,6 +188,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         max_ = _parse_max_(d.pop("max", UNSET))
@@ -194,6 +198,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         count = _parse_count(d.pop("count", UNSET))
@@ -203,6 +208,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         pct = _parse_pct(d.pop("pct", UNSET))
@@ -212,6 +218,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p50 = _parse_p50(d.pop("p50", UNSET))
@@ -221,6 +228,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p90 = _parse_p90(d.pop("p90", UNSET))
@@ -230,6 +238,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p95 = _parse_p95(d.pop("p95", UNSET))
@@ -239,6 +248,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         p99 = _parse_p99(d.pop("p99", UNSET))
@@ -248,6 +258,7 @@ class MetricAggregates:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

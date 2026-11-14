@@ -86,6 +86,7 @@ class Ruleset:
         def _parse_action(data: object) -> OverrideAction | PassthroughAction | Unset:
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
@@ -107,6 +108,7 @@ class Ruleset:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))

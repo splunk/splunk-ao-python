@@ -113,6 +113,7 @@ class Luna3ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(float | None | Unset, data)
 
         threshold = _parse_threshold(d.pop("threshold", UNSET))
@@ -122,6 +123,7 @@ class Luna3ScorerResponse:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         created_by = _parse_created_by(d.pop("created_by", UNSET))

@@ -127,6 +127,7 @@ class DatasetDB:
         def _parse_num_rows(data: object) -> int | None:
             if data is None:
                 return data
+
             return cast(int | None, data)
 
         num_rows = _parse_num_rows(d.pop("num_rows"))
@@ -134,6 +135,7 @@ class DatasetDB:
         def _parse_column_names(data: object) -> list[str] | None:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, list):
                     raise TypeError()
@@ -149,6 +151,7 @@ class DatasetDB:
         def _parse_created_by_user(data: object) -> None | UserInfo:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

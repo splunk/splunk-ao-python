@@ -34,6 +34,7 @@ class MetricComputationValueType4:
             def _parse_additional_property(data: object) -> float | int | None | str:
                 if data is None:
                     return data
+
                 return cast(float | int | None | str, data)
 
             additional_property = _parse_additional_property(prop_dict)

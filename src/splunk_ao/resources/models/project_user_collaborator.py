@@ -23,7 +23,7 @@ class ProjectUserCollaborator:
     """
     Attributes:
         id (str):
-        role (CollaboratorRole):
+        role (CollaboratorRole | str):
         created_at (datetime.datetime):
         user_id (str):
         first_name (None | str):
@@ -35,7 +35,7 @@ class ProjectUserCollaborator:
     """
 
     id: str
-    role: CollaboratorRole
+    role: CollaboratorRole | str
     created_at: datetime.datetime
     user_id: str
     first_name: None | str
@@ -51,7 +51,11 @@ class ProjectUserCollaborator:
 
         id = self.id
 
-        role = self.role.value
+        role: str
+        if isinstance(self.role, CollaboratorRole):
+            role = self.role.value
+        else:
+            role = self.role
 
         created_at = self.created_at.isoformat()
 
@@ -116,7 +120,21 @@ class ProjectUserCollaborator:
         d = dict(src_dict)
         id = d.pop("id")
 
-        role = CollaboratorRole(d.pop("role"))
+        def _parse_role(data: object) -> CollaboratorRole | str:
+
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                role_type_0 = CollaboratorRole(data)
+
+                return role_type_0
+            except:  # noqa: E722
+                pass
+            if type(data) not in (str,):
+                raise TypeError("Unexpected value type for role")
+            return cast(CollaboratorRole | str, data)
+
+        role = _parse_role(d.pop("role"))
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
@@ -125,6 +143,7 @@ class ProjectUserCollaborator:
         def _parse_first_name(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         first_name = _parse_first_name(d.pop("first_name"))
@@ -132,6 +151,7 @@ class ProjectUserCollaborator:
         def _parse_last_name(data: object) -> None | str:
             if data is None:
                 return data
+
             return cast(None | str, data)
 
         last_name = _parse_last_name(d.pop("last_name"))
@@ -152,6 +172,7 @@ class ProjectUserCollaborator:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         custom_access_level_id = _parse_custom_access_level_id(d.pop("custom_access_level_id", UNSET))
@@ -161,6 +182,7 @@ class ProjectUserCollaborator:
                 return data
             if isinstance(data, Unset):
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

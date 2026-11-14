@@ -26,6 +26,7 @@ class JobProgress:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+
         progress_message: None | str | Unset
         if isinstance(self.progress_message, Unset):
             progress_message = UNSET
@@ -65,6 +66,7 @@ class JobProgress:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(None | str | Unset, data)
 
         progress_message = _parse_progress_message(d.pop("progress_message", UNSET))
@@ -74,6 +76,7 @@ class JobProgress:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         steps_completed = _parse_steps_completed(d.pop("steps_completed", UNSET))
@@ -83,6 +86,7 @@ class JobProgress:
                 return data
             if isinstance(data, Unset):
                 return data
+
             return cast(int | None | Unset, data)
 
         steps_total = _parse_steps_total(d.pop("steps_total", UNSET))

@@ -57,6 +57,7 @@ class NotNodeLogRecordsFilter:
         def _parse_not_(
             data: object,
         ) -> AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | NotNodeLogRecordsFilter | OrNodeLogRecordsFilter:
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()

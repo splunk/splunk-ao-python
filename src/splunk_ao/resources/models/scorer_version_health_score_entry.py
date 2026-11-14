@@ -102,6 +102,7 @@ class ScorerVersionHealthScoreEntry:
         def _parse_secondary(data: object) -> None | ScorerVersionHealthScoreEntrySecondaryType0:
             if data is None:
                 return data
+
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
