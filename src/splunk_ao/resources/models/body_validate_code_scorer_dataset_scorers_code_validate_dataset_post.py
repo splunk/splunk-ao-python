@@ -9,6 +9,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
+from ..models.body_validate_code_scorer_dataset_scorers_code_validate_dataset_post_score_type_type_0 import (
+    BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0,
+)
 from ..types import UNSET, File, Unset
 
 T = TypeVar("T", bound="BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost")
@@ -18,30 +21,30 @@ T = TypeVar("T", bound="BodyValidateCodeScorerDatasetScorersCodeValidateDatasetP
 class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
     """
     Attributes:
-        file (File):
         dataset_id (UUID):
+        file (File):
         dataset_version_index (int | None | Unset):
         limit (int | Unset):  Default: 100.
         starting_token (int | None | Unset):
         required_scorers (list[str] | None | str | Unset):
         scoreable_node_types (list[str] | None | str | Unset):
-        score_type (None | str | Unset):
+        score_type (BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0 | None | Unset):
     """
 
-    file: File
     dataset_id: UUID
+    file: File
     dataset_version_index: int | None | Unset = UNSET
     limit: int | Unset = 100
     starting_token: int | None | Unset = UNSET
     required_scorers: list[str] | None | str | Unset = UNSET
     scoreable_node_types: list[str] | None | str | Unset = UNSET
-    score_type: None | str | Unset = UNSET
+    score_type: BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        file = self.file.to_tuple()
-
         dataset_id = str(self.dataset_id)
+
+        file = self.file.to_tuple()
 
         dataset_version_index: int | None | Unset
         if isinstance(self.dataset_version_index, Unset):
@@ -78,12 +81,14 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
         score_type: None | str | Unset
         if isinstance(self.score_type, Unset):
             score_type = UNSET
+        elif isinstance(self.score_type, BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0):
+            score_type = self.score_type.value
         else:
             score_type = self.score_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({"file": file, "dataset_id": dataset_id})
+        field_dict.update({"dataset_id": dataset_id, "file": file})
         if dataset_version_index is not UNSET:
             field_dict["dataset_version_index"] = dataset_version_index
         if limit is not UNSET:
@@ -102,9 +107,9 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
     def to_multipart(self) -> types.RequestFiles:
         files: types.RequestFiles = []
 
-        files.append(("file", self.file.to_tuple()))
-
         files.append(("dataset_id", (None, str(self.dataset_id), "text/plain")))
+
+        files.append(("file", self.file.to_tuple()))
 
         if not isinstance(self.dataset_version_index, Unset):
             if isinstance(self.dataset_version_index, int):
@@ -147,8 +152,8 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
                 files.append(("scoreable_node_types", (None, str(self.scoreable_node_types).encode(), "text/plain")))
 
         if not isinstance(self.score_type, Unset):
-            if isinstance(self.score_type, str):
-                files.append(("score_type", (None, str(self.score_type).encode(), "text/plain")))
+            if isinstance(self.score_type, BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0):
+                files.append(("score_type", (None, str(self.score_type.value).encode(), "text/plain")))
             else:
                 files.append(("score_type", (None, str(self.score_type).encode(), "text/plain")))
 
@@ -160,9 +165,9 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        file = File(payload=BytesIO(d.pop("file")))
-
         dataset_id = UUID(d.pop("dataset_id"))
+
+        file = File(payload=BytesIO(d.pop("file")))
 
         def _parse_dataset_version_index(data: object) -> int | None | Unset:
             if data is None:
@@ -218,18 +223,28 @@ class BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPost:
 
         scoreable_node_types = _parse_scoreable_node_types(d.pop("scoreable_node_types", UNSET))
 
-        def _parse_score_type(data: object) -> None | str | Unset:
+        def _parse_score_type(
+            data: object,
+        ) -> BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(None | str | Unset, data)
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                score_type_type_0 = BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0(data)
+
+                return score_type_type_0
+            except:  # noqa: E722
+                pass
+            return cast(BodyValidateCodeScorerDatasetScorersCodeValidateDatasetPostScoreTypeType0 | None | Unset, data)
 
         score_type = _parse_score_type(d.pop("score_type", UNSET))
 
         body_validate_code_scorer_dataset_scorers_code_validate_dataset_post = cls(
-            file=file,
             dataset_id=dataset_id,
+            file=file,
             dataset_version_index=dataset_version_index,
             limit=limit,
             starting_token=starting_token,

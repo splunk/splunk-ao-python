@@ -32,6 +32,7 @@ class DatasetDB:
         current_version_index (int):
         draft (bool):
         permissions (list[Permission] | Unset):
+        draft_revision (None | str | Unset):
     """
 
     id: str
@@ -45,6 +46,7 @@ class DatasetDB:
     current_version_index: int
     draft: bool
     permissions: list[Permission] | Unset = UNSET
+    draft_revision: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -87,6 +89,12 @@ class DatasetDB:
                 permissions_item = permissions_item_data.to_dict()
                 permissions.append(permissions_item)
 
+        draft_revision: None | str | Unset
+        if isinstance(self.draft_revision, Unset):
+            draft_revision = UNSET
+        else:
+            draft_revision = self.draft_revision
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -105,6 +113,8 @@ class DatasetDB:
         )
         if permissions is not UNSET:
             field_dict["permissions"] = permissions
+        if draft_revision is not UNSET:
+            field_dict["draft_revision"] = draft_revision
 
         return field_dict
 
@@ -174,6 +184,15 @@ class DatasetDB:
 
                 permissions.append(permissions_item)
 
+        def _parse_draft_revision(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        draft_revision = _parse_draft_revision(d.pop("draft_revision", UNSET))
+
         dataset_db = cls(
             id=id,
             name=name,
@@ -186,6 +205,7 @@ class DatasetDB:
             current_version_index=current_version_index,
             draft=draft,
             permissions=permissions,
+            draft_revision=draft_revision,
         )
 
         dataset_db.additional_properties = d
