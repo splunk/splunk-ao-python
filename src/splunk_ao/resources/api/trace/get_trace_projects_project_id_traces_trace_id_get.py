@@ -23,12 +23,25 @@ from ...models.stub_trace_record import StubTraceRecord
 from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs(project_id: str, trace_id: str, *, include_presigned_urls: bool | Unset = False) -> dict[str, Any]:
+def _get_kwargs(
+    project_id: str,
+    trace_id: str,
+    *,
+    include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
+) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     params: dict[str, Any] = {}
 
     params["include_presigned_urls"] = include_presigned_urls
+
+    json_access_view_id: None | str | Unset
+    if isinstance(access_view_id, Unset):
+        json_access_view_id = UNSET
+    else:
+        json_access_view_id = access_view_id
+    params["access_view_id"] = json_access_view_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -166,7 +179,12 @@ def _build_response(
 
 
 def sync_detailed(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
+    project_id: str,
+    trace_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
 ) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -174,6 +192,7 @@ def sync_detailed(
         project_id (str):
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -183,7 +202,12 @@ def sync_detailed(
         Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
+    kwargs = _get_kwargs(
+        project_id=project_id,
+        trace_id=trace_id,
+        include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
+    )
 
     response = client.request(**kwargs)
 
@@ -191,7 +215,12 @@ def sync_detailed(
 
 
 def sync(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
+    project_id: str,
+    trace_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
 ) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -199,6 +228,7 @@ def sync(
         project_id (str):
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -209,12 +239,21 @@ def sync(
     """
 
     return sync_detailed(
-        project_id=project_id, trace_id=trace_id, client=client, include_presigned_urls=include_presigned_urls
+        project_id=project_id,
+        trace_id=trace_id,
+        client=client,
+        include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
     ).parsed
 
 
 async def asyncio_detailed(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
+    project_id: str,
+    trace_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
 ) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -222,6 +261,7 @@ async def asyncio_detailed(
         project_id (str):
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -231,7 +271,12 @@ async def asyncio_detailed(
         Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(project_id=project_id, trace_id=trace_id, include_presigned_urls=include_presigned_urls)
+    kwargs = _get_kwargs(
+        project_id=project_id,
+        trace_id=trace_id,
+        include_presigned_urls=include_presigned_urls,
+        access_view_id=access_view_id,
+    )
 
     response = await client.arequest(**kwargs)
 
@@ -239,7 +284,12 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    project_id: str, trace_id: str, *, client: ApiClient, include_presigned_urls: bool | Unset = False
+    project_id: str,
+    trace_id: str,
+    *,
+    client: ApiClient,
+    include_presigned_urls: bool | Unset = False,
+    access_view_id: None | str | Unset = UNSET,
 ) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -247,6 +297,7 @@ async def asyncio(
         project_id (str):
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
+        access_view_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -258,6 +309,10 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            project_id=project_id, trace_id=trace_id, client=client, include_presigned_urls=include_presigned_urls
+            project_id=project_id,
+            trace_id=trace_id,
+            client=client,
+            include_presigned_urls=include_presigned_urls,
+            access_view_id=access_view_id,
         )
     ).parsed

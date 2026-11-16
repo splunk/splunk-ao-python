@@ -9,7 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.base_scorer_version_response import BaseScorerVersionResponse
+    from ..models.scorer_version_list_item import ScorerVersionListItem
 
 
 T = TypeVar("T", bound="ListScorerVersionsResponse")
@@ -23,14 +23,14 @@ class ListScorerVersionsResponse:
         limit (int | Unset):  Default: 100.
         paginated (bool | Unset):  Default: False.
         next_starting_token (int | None | Unset):
-        versions (list[BaseScorerVersionResponse] | Unset):
+        versions (list[ScorerVersionListItem] | Unset):
     """
 
     starting_token: int | Unset = 0
     limit: int | Unset = 100
     paginated: bool | Unset = False
     next_starting_token: int | None | Unset = UNSET
-    versions: list[BaseScorerVersionResponse] | Unset = UNSET
+    versions: list[ScorerVersionListItem] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,7 +71,7 @@ class ListScorerVersionsResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.base_scorer_version_response import BaseScorerVersionResponse
+        from ..models.scorer_version_list_item import ScorerVersionListItem
 
         d = dict(src_dict)
         starting_token = d.pop("starting_token", UNSET)
@@ -90,11 +90,11 @@ class ListScorerVersionsResponse:
         next_starting_token = _parse_next_starting_token(d.pop("next_starting_token", UNSET))
 
         _versions = d.pop("versions", UNSET)
-        versions: list[BaseScorerVersionResponse] | Unset = UNSET
+        versions: list[ScorerVersionListItem] | Unset = UNSET
         if _versions is not UNSET:
             versions = []
             for versions_item_data in _versions:
-                versions_item = BaseScorerVersionResponse.from_dict(versions_item_data)
+                versions_item = ScorerVersionListItem.from_dict(versions_item_data)
 
                 versions.append(versions_item)
 

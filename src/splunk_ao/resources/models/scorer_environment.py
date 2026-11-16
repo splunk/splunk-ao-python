@@ -36,6 +36,7 @@ class ScorerEnvironment:
             runtime (None | str | Unset):
             lockfile (None | str | Unset):
             includes_standard (bool | Unset):  Default: True.
+            hashed_lockfile (None | str | Unset):
     """
 
     tier: EnvironmentTier
@@ -43,6 +44,7 @@ class ScorerEnvironment:
     runtime: None | str | Unset = UNSET
     lockfile: None | str | Unset = UNSET
     includes_standard: bool | Unset = True
+    hashed_lockfile: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -64,6 +66,12 @@ class ScorerEnvironment:
 
         includes_standard = self.includes_standard
 
+        hashed_lockfile: None | str | Unset
+        if isinstance(self.hashed_lockfile, Unset):
+            hashed_lockfile = UNSET
+        else:
+            hashed_lockfile = self.hashed_lockfile
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"tier": tier, "env_hash": env_hash})
@@ -73,6 +81,8 @@ class ScorerEnvironment:
             field_dict["lockfile"] = lockfile
         if includes_standard is not UNSET:
             field_dict["includes_standard"] = includes_standard
+        if hashed_lockfile is not UNSET:
+            field_dict["hashed_lockfile"] = hashed_lockfile
 
         return field_dict
 
@@ -103,8 +113,22 @@ class ScorerEnvironment:
 
         includes_standard = d.pop("includes_standard", UNSET)
 
+        def _parse_hashed_lockfile(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        hashed_lockfile = _parse_hashed_lockfile(d.pop("hashed_lockfile", UNSET))
+
         scorer_environment = cls(
-            tier=tier, env_hash=env_hash, runtime=runtime, lockfile=lockfile, includes_standard=includes_standard
+            tier=tier,
+            env_hash=env_hash,
+            runtime=runtime,
+            lockfile=lockfile,
+            includes_standard=includes_standard,
+            hashed_lockfile=hashed_lockfile,
         )
 
         scorer_environment.additional_properties = d
