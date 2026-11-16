@@ -7,15 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- O11y CRUD requests now target `https://api.{realm}.observability.splunkcloud.com` instead of
-  `https://app.{realm}.observability.splunkcloud.com`. The OTLP ingest endpoint and the console URL are unchanged.
+## [0.8.0]
 
 ### Added
 
 - `SPLUNK_AO_O11Y_API_URL` optionally overrides the O11y CRUD API origin (for example a private or custom endpoint).
   It must be an `https://` origin without a path. OTLP ingest is not affected.
+- The low-level API client (`splunk_ao.resources`) gains `HEAD /datasets/{dataset_id}/content`,
+  `POST /datasets/{dataset_id}/versions/{version_index}/preview` and the Luna dataset preview models.
+
+### Changed
+
+- O11y CRUD requests now target `https://api.{realm}.observability.splunkcloud.com` instead of
+  `https://app.{realm}.observability.splunkcloud.com`. The OTLP ingest endpoint and the console URL are unchanged.
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec:
+  - The dataset preview endpoint accepts `LunaDatasetPreviewRequest | PreviewDatasetRequest`, returns
+    `DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse` (no `HTTPValidationError`), and
+    `limit` now defaults to unset instead of `100`.
+  - `CreateJobRequest` and `CreateJobResponse` no longer have `log_metric_computing_records`.
+  - `ListScorerVersionsResponse.versions` holds `ScorerVersionListItem` instead of `BaseScorerVersionResponse`.
+  - `ValidResult.score_type` is a `ValidResultScoreType` enum instead of `str`.
 
 ## [0.7.0]
 
@@ -312,6 +323,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.8.0]: https://pypi.org/project/splunk-ao/0.8.0/
 [0.7.0]: https://pypi.org/project/splunk-ao/0.7.0/
 [0.6.1]: https://pypi.org/project/splunk-ao/0.6.1/
 [0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
