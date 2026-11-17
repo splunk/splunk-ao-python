@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Export acknowledgement diagnostics now capture OTLP responses through the OpenTelemetry 1.45 HTTP transport instead of the removed private `_export` hook; behavior is unchanged. Transport errors now surface as a failed export result instead of an exception, matching the standard exporter.
+
 ### Security
 
+- Require OpenTelemetry API, SDK, and OTLP HTTP exporter `>=1.45.1` (and move the optional HTTP instrumentation extras to the matching `0.66b2` release) to pick up the TLS-verification and `tracestate` parsing fixes (SAO-20688).
 - Raised minimum `aiohttp` (3.14.4), `mcp` (1.30.0), and `filelock` (4.2.1) and refreshed the lock file for `pillow` 13.0.0, `oauthlib` 4.0.1, `pyasn1` 0.6.5, and `langgraph` 1.2.22 to pick up published vulnerability fixes (SAO-20688).
 
 ## [0.8.0]

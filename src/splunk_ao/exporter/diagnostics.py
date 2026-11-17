@@ -13,11 +13,11 @@ from typing import Any, Literal
 from urllib.parse import urlsplit
 
 from google.protobuf.message import DecodeError
+from opentelemetry.exporter.http.transport._base import BaseHTTPResult, BaseHTTPTransport
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceResponse
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExportResult
-from requests import Response
 
 from splunk_ao.deployment import DeploymentMode
 
@@ -164,6 +164,7 @@ class DiagnosticOTLPSpanExporter(OTLPSpanExporter):
         configured_endpoint = str(kwargs.get("endpoint", ""))
         super().__init__(*args, **kwargs)
         self._attempt_local = threading.local()
+        self._install_response_capture()
         self._health_tracker = _ExportHealthTracker(deployment, getattr(self, "_endpoint", configured_endpoint))
 
     @property
@@ -193,10 +194,52 @@ class DiagnosticOTLPSpanExporter(OTLPSpanExporter):
         finally:
             self._attempt_local.response = None
 
-    def _export(self, serialized_data: bytes, timeout_sec: float | None = None) -> Response:
-        response = super()._export(serialized_data, timeout_sec)
-        self._attempt_local.response = _snapshot_response(response) if 200 <= response.status_code < 300 else None
-        return response
+    def _install_response_capture(self) -> None:
+        """Wrap the exporter transport so successful acknowledgements can be inspected.
+
+        OpenTelemetry 1.45 moved HTTP delivery behind ``BaseHTTPTransport``. Without the wrapper the health tracker
+        stays at its unknown state; export itself is unaffected.
+        """
+        client = getattr(self, "_client", None)
+        transport = getattr(client, "_transport", None)
+        if client is None or not isinstance(transport, BaseHTTPTransport):
+            _logger.debug("OTLP transport not available; acknowledgement diagnostics are disabled.")
+            return
+        client._transport = _ResponseCapturingTransport(transport, self._attempt_local)
+
+
+class _ResponseCapturingTransport(BaseHTTPTransport):
+    """Delegating transport that snapshots HTTP 2xx responses for the current export attempt."""
+
+    def __init__(self, inner: BaseHTTPTransport, attempt_local: threading.local) -> None:
+        self._inner = inner
+        self._attempt_local = attempt_local
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        timeout: float | None = None,
+        data: bytes | None = None,
+    ) -> BaseHTTPResult:
+        result = self._inner.request(method, url, headers=headers, timeout=timeout, data=data)
+        status_code = result.status_code
+        snapshot = None
+        if status_code is not None and 200 <= status_code < 300:
+            try:
+                snapshot = _snapshot_response(result)
+            except Exception:  # diagnostics must never break delivery
+                snapshot = None
+        self._attempt_local.response = snapshot
+        return result
+
+    def close(self) -> None:
+        self._inner.close()
+
+    def is_connection_error(self, exception: Exception | None) -> bool:
+        return self._inner.is_connection_error(exception)
 
 
 def get_export_health(owner: object) -> ExportHealth:
@@ -205,10 +248,12 @@ def get_export_health(owner: object) -> ExportHealth:
     return health if isinstance(health, ExportHealth) else UNKNOWN_EXPORT_HEALTH
 
 
-def _snapshot_response(response: Response) -> _ResponseSnapshot:
-    content_type = response.headers.get("Content-Type", "").partition(";")[0].strip().lower()
+def _snapshot_response(response: BaseHTTPResult) -> _ResponseSnapshot:
+    content_type = response.headers().get("Content-Type", "").partition(";")[0].strip().lower()
     return _ResponseSnapshot(
-        status_code=response.status_code, content_type=content_type, body=bytes(response.content[:_MAX_RESPONSE_BYTES])
+        status_code=response.status_code or 0,
+        content_type=content_type,
+        body=bytes(response.content()[:_MAX_RESPONSE_BYTES]),
     )
 
 

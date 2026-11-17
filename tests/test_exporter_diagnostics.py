@@ -35,7 +35,7 @@ class FakeSession:
         self.responses = list(responses)
         self.post_calls = 0
 
-    def post(self, **_: Any) -> Response:
+    def request(self, **_: Any) -> Response:
         outcome = self.responses[min(self.post_calls, len(self.responses) - 1)]
         self.post_calls += 1
         if isinstance(outcome, Exception):
@@ -169,8 +169,8 @@ def test_transport_exception_is_unchanged_and_clears_response_snapshot() -> None
     exporter = diagnostic_exporter(FakeSession(Timeout("standard exporter failure")))
     exporter._attempt_local.response = object()
 
-    with pytest.raises(Timeout, match="standard exporter failure"):
-        exporter.export(())
+    # OpenTelemetry 1.45 transports return errors as a failed result instead of raising.
+    assert exporter.export(()) == SpanExportResult.FAILURE
 
     assert exporter.export_health.healthy is None
     assert exporter._attempt_local.response is None
