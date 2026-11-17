@@ -91,7 +91,7 @@ not the main API documentation contract.
 
 | Area | Stack and responsibility |
 |---|---|
-| `src/splunk_ao/` | Python 3.11–3.14, Pydantic v2, OpenTelemetry 1.38, `galileo-core` 4.x; public SDK |
+| `src/splunk_ao/` | Python 3.11–3.14, Pydantic v2, OpenTelemetry 1.45, `galileo-core` 4.x; public SDK |
 | `tests/` | pytest 9, xdist, respx, socket blocking, timeout and coverage plugins |
 | `splunk-ao-a2a/` | Independently released native-OTel A2A instrumentation; uv/Hatch |
 | `splunk-ao-adk/` | Independently released Google ADK handler integration; uv/Hatch |
