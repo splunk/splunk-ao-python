@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Security
+
+- Require `google-adk>=1.39.1`, which scopes `FileArtifactService` storage by
+  application name (CVE-2026-115522, SAO-20688).
+
 ## 0.2.0
 
 ### Added
