@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Raised minimum `aiohttp` (3.14.4), `mcp` (1.30.0), and `filelock` (4.2.1) and refreshed the lock file for `pillow` 13.0.0, `oauthlib` 4.0.1, `pyasn1` 0.6.5, and `langgraph` 1.2.22 to pick up published vulnerability fixes (SAO-20688).
+
 ## [0.8.0]
 
 ### Added
