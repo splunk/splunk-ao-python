@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Relaxed the `wrapt` dependency from `>=1.14,<2.0` to `>=1.14,<3.0` so `splunk-ao` can be installed alongside
+  `splunk-opentelemetry`, which requires `wrapt>=2.2.2`.
+
 ## [0.8.0]
 
 ### Added
