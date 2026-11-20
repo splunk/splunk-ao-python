@@ -140,6 +140,8 @@ class ResponseGeneratorSync:
                     status_code=self.status_code,
                     tools=self.input_data.tools,
                     usage=usage,
+                    name=self.input_data.name,
+                    name_is_explicit=self.input_data.name_is_explicit,
                 )
             else:
                 # Fallback: create basic span if no output items
@@ -149,6 +151,7 @@ class ResponseGeneratorSync:
                     output=span_output,
                     tools=self.input_data.tools,
                     name=self.input_data.name,
+                    _name_is_explicit=self.input_data.name_is_explicit,
                     model=model,
                     temperature=self.input_data.temperature,
                     duration_ns=duration_ns,
@@ -170,6 +173,7 @@ class ResponseGeneratorSync:
                 output=span_output,
                 tools=self.input_data.tools,
                 name=self.input_data.name,
+                _name_is_explicit=self.input_data.name_is_explicit,
                 model=model,
                 temperature=self.input_data.temperature,
                 duration_ns=duration_ns,

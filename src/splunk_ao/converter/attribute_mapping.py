@@ -21,60 +21,6 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep, StepType
 from splunk_ao.logger.control import ControlSpan
 
-SPLUNK_AO_SYSTEM = "splunk_ao.system"
-SPLUNK_AO_SYSTEM_VALUE = "splunk_ao_python"
-
-CONTENT_ALIAS_BY_GEN_AI: Mapping[str, str] = {
-    "gen_ai.input.messages": "splunk_ao.input.messages",
-    "gen_ai.system_instructions": "splunk_ao.system_instructions",
-    "gen_ai.output.messages": "splunk_ao.output.messages",
-    "gen_ai.tool.call.arguments": "splunk_ao.tool.call.arguments",
-    "gen_ai.tool.call.result": "splunk_ao.tool.call.result",
-    "gen_ai.retrieval.documents": "splunk_ao.retrieval.documents",
-    "gen_ai.tool.definitions": "splunk_ao.tool.definitions",
-}
-
-SPLUNK_ALIAS_BY_GEN_AI: Mapping[str, str] = {
-    "gen_ai.operation.name": "splunk_ao.operation.name",
-    "gen_ai.conversation.id": "splunk_ao.session.id",
-    "gen_ai.workflow.name": "splunk_ao.workflow.name",
-    "gen_ai.agent.name": "splunk_ao.agent.name",
-    "gen_ai.agent.id": "splunk_ao.agent.id",
-    "gen_ai.agent.description": "splunk_ao.agent.description",
-    "gen_ai.agent.version": "splunk_ao.agent.version",
-    "gen_ai.provider.name": "splunk_ao.provider.name",
-    "gen_ai.request.model": "splunk_ao.request.model",
-    "gen_ai.request.temperature": "splunk_ao.request.temperature",
-    "gen_ai.request.top_p": "splunk_ao.request.top_p",
-    "gen_ai.request.top_k": "splunk_ao.request.top_k",
-    "gen_ai.request.max_tokens": "splunk_ao.request.max_tokens",
-    "gen_ai.request.stop_sequences": "splunk_ao.request.stop_sequences",
-    "gen_ai.request.frequency_penalty": "splunk_ao.request.frequency_penalty",
-    "gen_ai.request.presence_penalty": "splunk_ao.request.presence_penalty",
-    "gen_ai.request.seed": "splunk_ao.request.seed",
-    "gen_ai.response.finish_reasons": "splunk_ao.response.finish_reasons",
-    "gen_ai.response.model": "splunk_ao.response.model",
-    "gen_ai.response.id": "splunk_ao.response.id",
-    "gen_ai.output.type": "splunk_ao.output.type",
-    "gen_ai.tool.call.id": "splunk_ao.tool.call.id",
-    "gen_ai.tool.name": "splunk_ao.tool.name",
-    "gen_ai.tool.description": "splunk_ao.tool.description",
-    "gen_ai.tool.type": "splunk_ao.tool.type",
-    "gen_ai.retrieval.top_k": "splunk_ao.retrieval.top_k",
-    "gen_ai.retrieval.query.text": "splunk_ao.retrieval.query.text",
-    "gen_ai.usage.input_tokens": "splunk_ao.llm.usage.input_tokens",
-    "gen_ai.usage.output_tokens": "splunk_ao.llm.usage.output_tokens",
-    "gen_ai.usage.cache_creation.input_tokens": "splunk_ao.llm.usage.cache_creation.input_tokens",
-    "gen_ai.usage.cache_read.input_tokens": "splunk_ao.llm.usage.cache_read.input_tokens",
-    "gen_ai.usage.reasoning.output_tokens": "splunk_ao.llm.usage.reasoning.output_tokens",
-    "gen_ai.usage.image.input_tokens": "splunk_ao.llm.usage.image.input_tokens",
-    "gen_ai.usage.audio.input_tokens": "splunk_ao.llm.usage.audio.input_tokens",
-    "gen_ai.usage.image.output_tokens": "splunk_ao.llm.usage.image.output_tokens",
-    "gen_ai.usage.audio.output_tokens": "splunk_ao.llm.usage.audio.output_tokens",
-    "gen_ai.response.time_to_first_chunk": "splunk_ao.llm.time_to_first_token_ns",
-    **CONTENT_ALIAS_BY_GEN_AI,
-}
-
 _OPERATION_BY_STEP_TYPE = {
     StepType.llm: "chat",
     StepType.retriever: "retrieval",
@@ -407,7 +353,6 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
     _set_if_present(attrs, "splunk_ao.llm.usage.total_tokens", metrics.num_total_tokens)
     if metrics.time_to_first_token_ns is not None:
         attrs["gen_ai.response.time_to_first_chunk"] = metrics.time_to_first_token_ns / 1_000_000_000
-        attrs["splunk_ao.llm.time_to_first_token_ns"] = metrics.time_to_first_token_ns
 
     for field_name, attribute_name in (
         ("input_cost", "splunk_ao.llm.cost.input_usd"),
@@ -573,33 +518,3 @@ def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict
         raise TypeError(f"Unsupported span type: {type(span).__name__}")
 
     return attrs
-
-
-def _alias_value(source_key: str, value: AttributeValue) -> AttributeValue:
-    if source_key == "gen_ai.response.time_to_first_chunk":
-        try:
-            return int(float(value) * 1_000_000_000)
-        except (TypeError, ValueError):
-            return value
-    return value
-
-
-def normalize_attributes_for_export(
-    attrs: Mapping[str, AttributeValue], *, enabled: bool = True
-) -> dict[str, AttributeValue]:
-    """Return final wire attributes without mutating the source mapping."""
-    result = dict(attrs)
-    result[SPLUNK_AO_SYSTEM] = SPLUNK_AO_SYSTEM_VALUE
-    if not enabled:
-        return result
-
-    for source_key, destination_key in SPLUNK_ALIAS_BY_GEN_AI.items():
-        if source_key in attrs:
-            if destination_key == "splunk_ao.llm.time_to_first_token_ns" and destination_key in attrs:
-                continue
-            result[destination_key] = _alias_value(source_key, attrs[source_key])
-
-    for source_key in CONTENT_ALIAS_BY_GEN_AI:
-        result.pop(source_key, None)
-
-    return result

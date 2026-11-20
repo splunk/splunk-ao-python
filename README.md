@@ -203,6 +203,9 @@ splunk_ao_context.init(
 make_nested_call()
 ```
 
+Pass `@log(name="Checkout")` or a `name` to a Logger span method to set the
+display name in Splunk AO. Exported OpenTelemetry spans retain their GenAI names.
+
 If a decorated function, synchronous generator, or asynchronous generator
 raises, the SDK finalizes its telemetry and re-raises the original exception.
 

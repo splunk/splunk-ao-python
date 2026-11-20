@@ -61,6 +61,9 @@ def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> Non
 
         child, root = sink.spans
         assert child.parent == root.context
+        assert child.name == "execute_tool search"
+        assert child.attributes["splunk_ao.span.name"] == "search"
+        assert "splunk_ao.span.name" not in root.attributes
         assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
             "execute_tool",
             "invoke_workflow",

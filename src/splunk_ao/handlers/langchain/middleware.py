@@ -263,7 +263,14 @@ class SplunkAOMiddleware(AgentMiddleware):
         root_run_id = self._ensure_root_node(getattr(request, "state", None))
         run_id = uuid4()
         tool_name, tool_input = self._prepare_tool_call_params(request)
-        self._handler.start_node("tool", root_run_id, run_id, name=tool_name, input=tool_input)
+        self._handler.start_node(
+            "tool",
+            root_run_id,
+            run_id,
+            name=tool_name,
+            input=tool_input,
+            _otel_display_name=(getattr(request, "tool_call", None) or {}).get("name"),
+        )
 
         response = handler(request)
         self._handler.end_node(run_id, **self._serialize_tool_response(response))
@@ -273,7 +280,14 @@ class SplunkAOMiddleware(AgentMiddleware):
         root_run_id = await self._ensure_async_root_node(getattr(request, "state", None))
         run_id = uuid4()
         tool_name, tool_input = self._prepare_tool_call_params(request)
-        await self._async_handler.async_start_node("tool", root_run_id, run_id, name=tool_name, input=tool_input)
+        await self._async_handler.async_start_node(
+            "tool",
+            root_run_id,
+            run_id,
+            name=tool_name,
+            input=tool_input,
+            _otel_display_name=(getattr(request, "tool_call", None) or {}).get("name"),
+        )
 
         response = await handler(request)
         await self._async_handler.async_end_node(run_id, **self._serialize_tool_response(response))

@@ -66,6 +66,7 @@ Path 3: external OTel/OpenInference + A2A
 `SplunkAOLogger`, `@log`, LangChain, CrewAI, OpenAI Agents, the drop-in OpenAI wrapper, and ADK build the established
 internal trace/step model. Stable OTel context is associated with actual operations. Completed steps are converted to
 OTel spans; the `LoggedTrace` envelope remains an internal lifecycle container and must not become a wire span.
+An explicit display name is carried as `splunk_ao.span.name`. The converter keeps the existing GenAI `Span.name`.
 
 Do not bypass this path when extending an existing handler. It centralizes lifecycle behavior, content conversion,
 session handling, and compatibility hooks. Conversion changes must cover workflow, agent, LLM, tool, retriever, and
@@ -110,9 +111,8 @@ execute inside OTel HTTP-instrumentation suppression. This boundary is scoped to
 caller's context afterward; application traffic to the same host must remain instrumentable. Apply suppression at the
 shared configuration/API-client boundary, never by excluding deployment URLs globally.
 
-An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`. Export normalization
-may derive the local compatibility attribute `splunk_ao.session.id`, but that attribute is not propagated as a second
-baggage member. The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
+An explicit SDK session propagates as the standard W3C baggage member `gen_ai.conversation.id`.
+The SDK must not propagate authentication, deployment, Project, Agent Stream/log stream, experiment,
 endpoint, model, workflow, or agent identity in baggage.
 
 Explicit session selection is ambient within the current thread or async execution context and is shared by logger
@@ -153,6 +153,7 @@ never change private span fields in place. This protects concurrent exporters an
 
 Standard GenAI attributes and structured content are the interoperability contract. Preserve upstream `gen_ai.*`
 values unless a documented SDK rule fills or sanitizes them. SDK-specific wire attributes belong under `splunk_ao.*`.
+Export does not create SDK aliases for standard GenAI attributes.
 
 Routing is transport metadata, not an ordinary per-span override:
 
