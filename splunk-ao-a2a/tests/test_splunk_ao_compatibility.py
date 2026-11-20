@@ -76,7 +76,7 @@ def test_a2a_native_span_uses_user_wired_deployment_aware_processor(monkeypatch:
     exported = delegate.spans[0]
     assert exported.instrumentation_scope.name == INSTRUMENTOR_NAME
     assert "gen_ai.system" not in exported.attributes
-    assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
+    assert "splunk_ao.system" not in exported.attributes
     assert exported.attributes["a2a.rpc.method"] == "SendMessage"
     assert "splunk_ao.a2a.rpc.method" not in exported.attributes
     assert exported.attributes["gen_ai.conversation.id"] == "context-id"

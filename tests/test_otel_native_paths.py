@@ -304,7 +304,7 @@ def test_exporter_preserves_every_unaffected_span_field() -> None:
     assert exported.attributes["gen_ai.provider.name"] == "openai"
     assert "splunk_ao.provider.name" not in exported.attributes
     assert exported.attributes["gen_ai.system"] == "legacy-upstream-provider"
-    assert exported.attributes["splunk_ao.system"] == "splunk_ao_python"
+    assert "splunk_ao.system" not in exported.attributes
     assert exported.attributes["custom.attribute"] == "preserved"
     exporter.shutdown()
 

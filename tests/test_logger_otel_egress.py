@@ -115,10 +115,9 @@ def test_explicit_llm_name_keeps_the_genai_span_name(
     otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5", name="Answer customer")
 
     [span] = recording_sink.spans
-    for normalize in (False, True):
-        exported = copy_span_for_export(span, normalize_attributes=normalize)
-        assert exported.name == "chat gpt-5"
-        assert exported.attributes["splunk_ao.span.name"] == "Answer customer"
+    exported = copy_span_for_export(span)
+    assert exported.name == "chat gpt-5"
+    assert exported.attributes["splunk_ao.span.name"] == "Answer customer"
 
 
 @pytest.mark.parametrize("decorator_name", [None, "Answer customer"])
@@ -255,7 +254,7 @@ def test_llm_span_per_modality_tokens_reach_exported_attributes(
     )
 
     # When: the completed span is copied for export
-    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    exported = copy_span_for_export(recording_sink.spans[0])
 
     # Then: every modality count is on the wire under its token-details attribute
     attributes = exported.attributes or {}
@@ -341,7 +340,7 @@ def test_top_level_span_inherits_external_upstream_parent(recording_sink: Record
         context.detach(token)
 
 
-def test_final_normalization_preserves_non_empty_schema_valid_content(
+def test_export_preserves_non_empty_schema_valid_genai_content(
     otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
 ) -> None:
     otlp_logger.start_trace(input="question")
@@ -354,17 +353,11 @@ def test_final_normalization_preserves_non_empty_schema_valid_content(
     ]
     assert source_output_messages == expected_output_messages
 
-    passthrough = copy_span_for_export(recording_sink.spans[0], normalize_attributes=False)
-    passthrough_attributes = passthrough.attributes or {}
-    assert json.loads(passthrough_attributes["gen_ai.output.messages"]) == expected_output_messages
-    assert "splunk_ao.output.messages" not in passthrough_attributes
-
-    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    exported = copy_span_for_export(recording_sink.spans[0])
     attributes = exported.attributes or {}
-    output_messages = json.loads(attributes["splunk_ao.output.messages"])
 
-    assert "gen_ai.output.messages" not in attributes
-    assert output_messages == expected_output_messages
+    assert json.loads(attributes["gen_ai.output.messages"]) == expected_output_messages
+    assert "splunk_ao.output.messages" not in attributes
 
 
 def test_conversion_failure_releases_leaf_and_restores_parent(
