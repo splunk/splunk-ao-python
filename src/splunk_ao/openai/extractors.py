@@ -323,7 +323,7 @@ def _extract_chat_response(kwargs: dict) -> dict:
 def extract_input_data_from_kwargs(
     resource: OpenAiModuleDefinition, start_time: datetime, kwargs: dict[str, Any]
 ) -> OpenAiInputData:
-    name: str = kwargs.get("name", "openai-client-generation")
+    name: str | None = kwargs.get("name", "openai-client-generation")
 
     if name is not None and not isinstance(name, str):
         raise TypeError("name must be a string")
@@ -432,6 +432,7 @@ def extract_input_data_from_kwargs(
         model=model or None,
         temperature=parsed_temperature,
         tools=parsed_tools,
+        name_is_explicit="name" in kwargs and bool(name and name.strip()),
     )
 
 
@@ -526,11 +527,13 @@ def process_function_call_outputs(input_items: list, splunk_ao_logger: SplunkAOL
                 indent=2,
             )
             tool_output = json.dumps(output) if isinstance(output, dict) else str(output)
+            tool_name = function_call.get("name")
 
             splunk_ao_logger.add_tool_span(
                 input=tool_input,
                 output=tool_output,
-                name=function_call.get("name") or "function_call",
+                name=tool_name or "function_call",
+                _name_is_explicit=bool(tool_name),
                 metadata={"tool_id": call_id, "tool_type": "function_call"},
             )
 
@@ -544,6 +547,9 @@ def process_output_items(
     status_code: int = 200,
     tools: list | None = None,
     usage: dict | None = None,
+    *,
+    name: str | None = None,
+    name_is_explicit: bool = False,
 ) -> list:
     """
     The responses API returns an array of output items. This function processes output items sequentially,
@@ -630,7 +636,8 @@ def process_output_items(
             input=conversation_context,
             output=consolidated_output,
             model=model,
-            name="response",
+            name=name if name_is_explicit else "response",
+            _name_is_explicit=name_is_explicit,
             tools=tools,
             status_code=status_code,
             num_input_tokens=usage.get("input_tokens", 0) if usage else 0,
@@ -667,6 +674,7 @@ def process_output_items(
                 input=tool_input,
                 output=tool_output,
                 name=item.type,
+                _name_is_explicit=False,
                 metadata={
                     "tool_id": tool_id,
                     "tool_type": item.type,

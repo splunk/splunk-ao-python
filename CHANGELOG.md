@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Preserve explicitly supplied span names as display names in Splunk AO while continuing to export GenAI span names.
+
 ### Changed
 
 - Relaxed the `wrapt` dependency from `>=1.14,<2.0` to `>=1.14,<3.0` so `splunk-ao` can be installed alongside

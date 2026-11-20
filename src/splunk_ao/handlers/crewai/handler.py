@@ -559,6 +559,7 @@ class CrewAIEventListener:
             parent_run_id=None,  # Root node
             run_id=run_id,
             name=crew_name,
+            _otel_display_name=getattr(event, "crew_name", None),
             input=serialize_to_str(input) if input else "-",
             metadata=metadata,
         )
@@ -634,6 +635,7 @@ class CrewAIEventListener:
             parent_run_id=parent_run_id,
             run_id=run_id,
             name=role,
+            _otel_display_name=metadata.get("agent_role"),
             input=serialize_to_str(getattr(event, "task_prompt", "-")),
             metadata=metadata,
         )
@@ -684,6 +686,7 @@ class CrewAIEventListener:
             parent_run_id=parent_run_id,
             run_id=run_id,
             name=task_name,
+            _otel_display_name=getattr(task, "name", None),
             input=serialize_to_str(input) if input else "-",
             metadata=metadata,
         )
@@ -734,6 +737,7 @@ class CrewAIEventListener:
             parent_run_id=parent_run_id,
             run_id=run_id,
             name=tool_name,
+            _otel_display_name=getattr(event, "tool_name", None),
             input=serialize_to_str(input) if input else "-",
             metadata=metadata,
         )

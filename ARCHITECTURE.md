@@ -66,6 +66,7 @@ Path 3: external OTel/OpenInference + A2A
 `SplunkAOLogger`, `@log`, LangChain, CrewAI, OpenAI Agents, the drop-in OpenAI wrapper, and ADK build the established
 internal trace/step model. Stable OTel context is associated with actual operations. Completed steps are converted to
 OTel spans; the `LoggedTrace` envelope remains an internal lifecycle container and must not become a wire span.
+An explicit display name is carried as `splunk_ao.span.name`. The converter keeps the existing GenAI `Span.name`.
 
 Do not bypass this path when extending an existing handler. It centralizes lifecycle behavior, content conversion,
 session handling, and compatibility hooks. Conversion changes must cover workflow, agent, LLM, tool, retriever, and

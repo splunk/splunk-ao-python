@@ -110,6 +110,7 @@ class OtelIds:
     exportable: bool
     session_id: str | None
     completed: bool = False
+    display_name: str | None = None
 
 
 class _ActiveSpan(otel_trace.Span):
@@ -480,7 +481,12 @@ class SplunkAOLogger(TracesLogger):
         )
 
     def _record_otel_ids(
-        self, step: BaseStep, parent_step: BaseStep | None = None, parent_span_context: SpanContext | None = None
+        self,
+        step: BaseStep,
+        parent_step: BaseStep | None = None,
+        parent_span_context: SpanContext | None = None,
+        *,
+        display_name: str | None = None,
     ) -> OtelIds | None:
         """Assign stable OTel identity without disrupting proprietary logging."""
         try:
@@ -507,6 +513,7 @@ class SplunkAOLogger(TracesLogger):
                 parent_span_context=parent_span_context,
                 exportable=not isinstance(step, Trace),
                 session_id=get_effective_session_id(self.session_id),
+                display_name=display_name,
             )
             self._otel_ids[step.id] = ids
             return ids
@@ -670,6 +677,7 @@ class SplunkAOLogger(TracesLogger):
                     parent_span_context=self._export_parent_context(finished_step, ids),
                     session_id=ids.session_id,
                     resource=self._resource,
+                    display_name=ids.display_name,
                 )
             )
         except Exception:
@@ -700,13 +708,15 @@ class SplunkAOLogger(TracesLogger):
         if isinstance(finished_step, Trace):
             self.traces = [trace for trace in getattr(self, "traces", []) if trace is not finished_step]
 
-    def _add_completed_leaf(self, span: StepT, parent: BaseStep | None = None) -> StepT:
+    def _add_completed_leaf(
+        self, span: StepT, parent: BaseStep | None = None, *, display_name: str | None = None
+    ) -> StepT:
         """Attach a complete leaf and route it through the shared completion coordinator."""
         if parent is None:
             parent = self.current_parent()
         span._parent = parent
         self.add_child_span_to_parent(span)
-        self._record_otel_ids(span, parent_step=parent)
+        self._record_otel_ids(span, parent_step=parent, display_name=display_name)
         if not self._ingestion_hook:
             self._emit_and_release(span)
         return span
@@ -716,7 +726,9 @@ class SplunkAOLogger(TracesLogger):
         if not self._ingestion_hook and span.id in self._otel_ids:
             self._pending_otel_steps.add(span.id)
 
-    def _register_handler_step(self, step: BaseStep, parent: StepWithChildSpans) -> None:
+    def _register_handler_step(
+        self, step: BaseStep, parent: StepWithChildSpans, *, display_name: str | None = None
+    ) -> None:
         """Register a callback-owned step under an explicit proprietary parent."""
         step._parent = parent
         step.dataset_input = parent.dataset_input
@@ -725,7 +737,7 @@ class SplunkAOLogger(TracesLogger):
         parent.add_child_span(step)
         if isinstance(step, LoggedWorkflowSpan | LoggedAgentSpan) and isinstance(parent, LoggedTrace):
             step.conversation_root = True
-        self._record_otel_ids(step, parent_step=parent)
+        self._record_otel_ids(step, parent_step=parent, display_name=display_name)
 
     def _activate_handler_step(self, step: BaseStep) -> HandlerStepContext | None:
         """Make a callback-owned stable identity current for transport propagation."""
@@ -737,6 +749,10 @@ class SplunkAOLogger(TracesLogger):
         return HandlerStepContext(
             prior_context=prior_context, token=otel_context.attach(active_context), span_context=ids.span_context
         )
+
+    def _set_otel_display_name(self, step: BaseStep, name: object) -> None:
+        if (ids := self._otel_ids.get(step.id)) is not None:
+            ids.display_name = name if isinstance(name, str) else None
 
     def _restore_handler_step_context(self, activation: HandlerStepContext | None) -> None:
         """Restore context owned by one callback without disturbing caller state."""
@@ -1355,7 +1371,7 @@ class SplunkAOLogger(TracesLogger):
         trace.add_child_span(llm_span)
         self.traces.append(trace)
         self._record_otel_ids(trace)
-        self._record_otel_ids(trace.spans[0], parent_step=trace)
+        self._record_otel_ids(trace.spans[0], parent_step=trace, display_name=name)
         self._set_current_parent(None)
 
         if self._ingestion_hook:
@@ -1394,6 +1410,8 @@ class SplunkAOLogger(TracesLogger):
         step_number: int | None = None,
         events: list[Event] | None = None,
         finish_reason: str | None = None,
+        *,
+        _name_is_explicit: bool = True,
     ) -> LlmSpan:
         """
         Add a new llm span to the current parent.
@@ -1517,7 +1535,7 @@ class SplunkAOLogger(TracesLogger):
             step_number=step_number,
             finish_reason=finish_reason,
         )
-        return self._add_completed_leaf(span, parent=parent)
+        return self._add_completed_leaf(span, parent=parent, display_name=name if _name_is_explicit else None)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -1534,6 +1552,8 @@ class SplunkAOLogger(TracesLogger):
         tags: list[str] | None = None,
         status_code: int | None = None,
         step_number: int | None = None,
+        *,
+        _name_is_explicit: bool = True,
     ) -> RetrieverSpan:
         """
         Add a new retriever span to the current parent.
@@ -1597,7 +1617,7 @@ class SplunkAOLogger(TracesLogger):
         parent = self.current_parent()
         span = super().add_retriever_span(**kwargs)
         span._parent = parent
-        self._record_otel_ids(span, parent_step=parent)
+        self._record_otel_ids(span, parent_step=parent, display_name=name if _name_is_explicit else None)
         self._mark_potentially_parentable(span)
 
         return span
@@ -1618,6 +1638,8 @@ class SplunkAOLogger(TracesLogger):
         status_code: int | None = None,
         tool_call_id: str | None = None,
         step_number: int | None = None,
+        *,
+        _name_is_explicit: bool = True,
     ) -> ToolSpan:
         """
         Add a new tool span to the current parent.
@@ -1687,16 +1709,18 @@ class SplunkAOLogger(TracesLogger):
         parent = self.current_parent()
         span = super().add_tool_span(**kwargs)
         span._parent = parent
-        self._record_otel_ids(span, parent_step=parent)
+        self._record_otel_ids(span, parent_step=parent, display_name=name if _name_is_explicit else None)
         self._mark_potentially_parentable(span)
 
         return span
 
-    def _attach_parentable_span(self, span: StepWithChildSpans, status_code: int | None = None) -> StepWithChildSpans:
+    def _attach_parentable_span(
+        self, span: StepWithChildSpans, status_code: int | None = None, *, display_name: str | None = None
+    ) -> StepWithChildSpans:
         parent = self.current_parent()
         span._parent = parent
         self.add_child_span_to_parent(span)
-        self._record_otel_ids(span, parent_step=parent)
+        self._record_otel_ids(span, parent_step=parent, display_name=display_name)
         self._set_current_parent(span)
         if status_code is not None:
             span.status_code = status_code
@@ -1780,7 +1804,7 @@ class SplunkAOLogger(TracesLogger):
             step_number=step_number,
         )
         self._mark_conversation_root(span)
-        return self._attach_parentable_span(span, status_code)
+        return self._attach_parentable_span(span, status_code, display_name=name)
 
     @nop_sync
     @warn_catch_exception(exceptions=(Exception,))
@@ -1864,7 +1888,7 @@ class SplunkAOLogger(TracesLogger):
             step_number=step_number,
         )
         self._mark_conversation_root(span)
-        return self._attach_parentable_span(span, status_code)
+        return self._attach_parentable_span(span, status_code, display_name=name)
 
     def _mark_conversation_root(self, span: LoggedWorkflowSpan | LoggedAgentSpan) -> None:
         """Mark eligible native trace children and add the interim metadata bridge."""
@@ -1951,7 +1975,7 @@ class SplunkAOLogger(TracesLogger):
             span_kwargs["name"] = name
 
         span = LoggedControlSpan(**span_kwargs)
-        return self._add_completed_leaf(span, parent=current_parent)
+        return self._add_completed_leaf(span, parent=current_parent, display_name=name)
 
     @warn_catch_exception(exceptions=(Exception,))
     def _conclude(

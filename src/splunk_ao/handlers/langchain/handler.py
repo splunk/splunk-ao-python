@@ -65,6 +65,23 @@ class SplunkAOCallback(BaseCallbackHandler):
         )
 
     @staticmethod
+    def _get_display_name(
+        node_type: LANGCHAIN_NODE_TYPE, serialized: dict[str, Any] | None, kwargs: dict[str, Any]
+    ) -> str | None:
+        options = serialized if isinstance(serialized, dict) else {}
+        metadata = kwargs.get("metadata")
+        configured_name = metadata.get("name") if isinstance(metadata, dict) else None
+        if isinstance(configured_name, str) and configured_name.strip():
+            return configured_name
+        callback_name = kwargs.get("name")
+        class_reference = options.get("id")
+        if isinstance(class_reference, list) and class_reference and callback_name == class_reference[-1]:
+            callback_name = None
+        if node_type == "tool" and not callback_name:
+            callback_name = options.get("name")
+        return callback_name if isinstance(callback_name, str) else None
+
+    @staticmethod
     def _get_node_name(
         node_type: LANGCHAIN_NODE_TYPE, serialized: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None
     ) -> str:
@@ -125,6 +142,7 @@ class SplunkAOCallback(BaseCallbackHandler):
         update_root_to_agent(
             parent_run_id, kwargs.get("metadata", {}), self._handler.get_node(parent_run_id) if parent_run_id else None
         )
+        kwargs["_otel_display_name"] = self._get_display_name("chain", serialized, kwargs)
         kwargs["name"] = node_name
         self._handler.start_node(node_type, parent_run_id, run_id, input=serialize_to_str(inputs), tags=tags, **kwargs)
 
@@ -174,6 +192,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
             input=[{"content": p, "role": "user"} for p in prompts],
             tags=tags,
             model=model,
@@ -242,6 +261,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
             input=serialized_messages,
             tools=json.loads(json.dumps(tools, cls=EventSerializer)) if tools else None,
             tags=tags,
@@ -295,6 +315,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
             input=input_str,
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,
@@ -378,6 +399,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
             input=serialize_to_str(query),
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,

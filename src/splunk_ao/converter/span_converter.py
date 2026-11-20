@@ -85,17 +85,21 @@ class SpanConverter:
         session_id: str | None,
         resource: Resource,
         end_time_ns: int | None = None,
+        display_name: str | None = None,
     ) -> ReadableSpan:
         """Build a readable span using the supplied identity and resource."""
         step_type = _step_type(span)
         start_time_ns = _to_unix_ns(span.created_at)
+        attributes = build_span_attributes(span, session_id)
+        if isinstance(display_name, str) and display_name.strip():
+            attributes["splunk_ao.span.name"] = display_name
 
         return ReadableSpan(
             name=_span_name(span, step_type),
             context=span_context,
             parent=parent_span_context,
             resource=resource,
-            attributes=build_span_attributes(span, session_id),
+            attributes=attributes,
             events=(),
             links=(),
             kind=_KIND_BY_STEP_TYPE[step_type],

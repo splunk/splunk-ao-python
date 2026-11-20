@@ -224,6 +224,8 @@ def _wrap(
                 status_code=status_code,
                 tools=input_data.tools,
                 usage=usage,
+                name=input_data.name,
+                name_is_explicit=input_data.name_is_explicit,
             )
         else:
             # For non-Responses API (chat or completion), create the main span as before
@@ -235,6 +237,7 @@ def _wrap(
                 output=span_output,
                 tools=input_data.tools,
                 name=input_data.name,
+                _name_is_explicit=input_data.name_is_explicit,
                 model=model,
                 temperature=input_data.temperature,
                 duration_ns=duration_ns,
