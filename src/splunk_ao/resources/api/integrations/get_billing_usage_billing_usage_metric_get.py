@@ -20,9 +20,10 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.billing_usage_metric import BillingUsageMetric
-from ...models.billing_usage_response import BillingUsageResponse
 from ...models.cost_interval import CostInterval
 from ...models.http_validation_error import HTTPValidationError
+from ...models.luna_billing_usage_response import LunaBillingUsageResponse
+from ...models.non_luna_billing_usage_response import NonLunaBillingUsageResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -71,9 +72,27 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> BillingUsageResponse | HTTPValidationError:
+def _parse_response(
+    *, client: ApiClient, response: httpx.Response
+) -> HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse:
     if response.status_code == 200:
-        response_200 = BillingUsageResponse.from_dict(response.json())
+
+        def _parse_response_200(data: object) -> LunaBillingUsageResponse | NonLunaBillingUsageResponse:
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                response_200_type_0 = NonLunaBillingUsageResponse.from_dict(data)
+
+                return response_200_type_0
+            except:  # noqa: E722
+                pass
+            if not isinstance(data, dict):
+                raise TypeError()
+            response_200_type_1 = LunaBillingUsageResponse.from_dict(data)
+
+            return response_200_type_1
+
+        response_200 = _parse_response_200(response.json())
 
         return response_200
 
@@ -102,7 +121,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> BillingUs
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[BillingUsageResponse | HTTPValidationError]:
+) -> Response[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -119,7 +138,7 @@ def sync_detailed(
     end_time: datetime.datetime,
     interval: CostInterval,
     project_id: None | Unset | UUID = UNSET,
-) -> Response[BillingUsageResponse | HTTPValidationError]:
+) -> Response[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]:
     """Get Billing Usage
 
     Args:
@@ -134,7 +153,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BillingUsageResponse | HTTPValidationError]
+        Response[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]
     """
 
     kwargs = _get_kwargs(
@@ -154,7 +173,7 @@ def sync(
     end_time: datetime.datetime,
     interval: CostInterval,
     project_id: None | Unset | UUID = UNSET,
-) -> Optional[BillingUsageResponse | HTTPValidationError]:
+) -> Optional[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]:
     """Get Billing Usage
 
     Args:
@@ -169,7 +188,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BillingUsageResponse | HTTPValidationError
+        HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse
     """
 
     return sync_detailed(
@@ -185,7 +204,7 @@ async def asyncio_detailed(
     end_time: datetime.datetime,
     interval: CostInterval,
     project_id: None | Unset | UUID = UNSET,
-) -> Response[BillingUsageResponse | HTTPValidationError]:
+) -> Response[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]:
     """Get Billing Usage
 
     Args:
@@ -200,7 +219,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BillingUsageResponse | HTTPValidationError]
+        Response[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]
     """
 
     kwargs = _get_kwargs(
@@ -220,7 +239,7 @@ async def asyncio(
     end_time: datetime.datetime,
     interval: CostInterval,
     project_id: None | Unset | UUID = UNSET,
-) -> Optional[BillingUsageResponse | HTTPValidationError]:
+) -> Optional[HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse]:
     """Get Billing Usage
 
     Args:
@@ -235,7 +254,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BillingUsageResponse | HTTPValidationError
+        HTTPValidationError | LunaBillingUsageResponse | NonLunaBillingUsageResponse
     """
 
     return (

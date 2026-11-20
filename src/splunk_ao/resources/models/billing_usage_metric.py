@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class BillingUsageMetric(str, Enum):
+    LUNA_DECISION_INPUT_TOKENS = "luna_decision_input_tokens"
     LUNA_FINE_TUNING_RUNS = "luna_fine_tuning_runs"
     LUNA_TOKENS = "luna_tokens"
     MONTHLY_ACTIVE_USERS = "monthly_active_users"

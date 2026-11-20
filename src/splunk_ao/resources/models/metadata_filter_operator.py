@@ -6,6 +6,7 @@ class MetadataFilterOperator(str, Enum):
     NE = "ne"
     NOT_IN = "not_in"
     ONE_OF = "one_of"
+    REGEX = "regex"
 
     def __str__(self) -> str:
         return str(self.value)

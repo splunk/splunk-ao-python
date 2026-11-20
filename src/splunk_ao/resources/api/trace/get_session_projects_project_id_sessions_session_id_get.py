@@ -17,7 +17,6 @@ from splunk_ao.exceptions import (
 from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
-from ...models.extended_read_session_record_with_children import ExtendedReadSessionRecordWithChildren
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
@@ -60,14 +59,7 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(
-    *, client: ApiClient, response: httpx.Response
-) -> ExtendedReadSessionRecordWithChildren | HTTPValidationError:
-    if response.status_code == 200:
-        response_200 = ExtendedReadSessionRecordWithChildren.from_dict(response.json())
-
-        return response_200
-
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError:
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
@@ -91,9 +83,7 @@ def _parse_response(
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -110,7 +100,7 @@ def sync_detailed(
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
-) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[HTTPValidationError]:
     """Get Session
 
     Args:
@@ -128,7 +118,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
+        Response[HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -152,7 +142,7 @@ def sync(
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
-) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
+) -> Optional[HTTPValidationError]:
     """Get Session
 
     Args:
@@ -170,7 +160,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedReadSessionRecordWithChildren | HTTPValidationError
+        HTTPValidationError
     """
 
     return sync_detailed(
@@ -191,7 +181,7 @@ async def asyncio_detailed(
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
-) -> Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
+) -> Response[HTTPValidationError]:
     """Get Session
 
     Args:
@@ -209,7 +199,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExtendedReadSessionRecordWithChildren | HTTPValidationError]
+        Response[HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -233,7 +223,7 @@ async def asyncio(
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
     include_redacted_io: bool | Unset = True,
-) -> Optional[ExtendedReadSessionRecordWithChildren | HTTPValidationError]:
+) -> Optional[HTTPValidationError]:
     """Get Session
 
     Args:
@@ -251,7 +241,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExtendedReadSessionRecordWithChildren | HTTPValidationError
+        HTTPValidationError
     """
 
     return (

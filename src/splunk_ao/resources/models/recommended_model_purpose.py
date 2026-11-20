@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class RecommendedModelPurpose(str, Enum):
+    AGENT_INTENT = "agent_intent"
     AI_ASSISTANT = "ai_assistant"
     AUTOTUNE = "autotune"
     CUSTOM_METRIC_AUTOGEN = "custom_metric_autogen"
