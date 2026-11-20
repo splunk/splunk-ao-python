@@ -18,6 +18,7 @@ class ProjectAction(str, Enum):
     EDIT_STAGE = "edit_stage"
     EXPORT_DATA = "export_data"
     LOG_DATA = "log_data"
+    MANAGE_LOG_VIEWS = "manage_log_views"
     MOVE_RUN = "move_run"
     READ_ALL_LOGS = "read_all_logs"
     READ_FILTERED_LOGS = "read_filtered_logs"

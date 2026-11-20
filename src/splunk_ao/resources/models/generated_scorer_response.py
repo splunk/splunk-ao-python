@@ -26,7 +26,7 @@ class GeneratedScorerResponse:
         name (str):
         chain_poll_template (ChainPollTemplate): Template for a chainpoll metric prompt,
             containing all the info necessary to send a chainpoll prompt.
-        created_by (str):
+        created_by (None | str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         scoreable_node_types (list[NodeType] | None):
@@ -38,7 +38,7 @@ class GeneratedScorerResponse:
     id: str
     name: str
     chain_poll_template: ChainPollTemplate
-    created_by: str
+    created_by: None | str
     created_at: datetime.datetime
     updated_at: datetime.datetime
     scoreable_node_types: list[NodeType] | None
@@ -54,6 +54,7 @@ class GeneratedScorerResponse:
 
         chain_poll_template = self.chain_poll_template.to_dict()
 
+        created_by: None | str
         created_by = self.created_by
 
         created_at = self.created_at.isoformat()
@@ -117,7 +118,12 @@ class GeneratedScorerResponse:
 
         chain_poll_template = ChainPollTemplate.from_dict(d.pop("chain_poll_template"))
 
-        created_by = d.pop("created_by")
+        def _parse_created_by(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        created_by = _parse_created_by(d.pop("created_by"))
 
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 

@@ -19,7 +19,6 @@ from splunk_ao.utils.headers_data import get_sdk_header
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
 from ...models.log_records_query_request import LogRecordsQueryRequest
-from ...models.log_records_query_response import LogRecordsQueryResponse
 from ...types import Response
 
 
@@ -42,12 +41,7 @@ def _get_kwargs(project_id: str, *, body: LogRecordsQueryRequest) -> dict[str, A
     return _kwargs
 
 
-def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError | LogRecordsQueryResponse:
-    if response.status_code == 200:
-        response_200 = LogRecordsQueryResponse.from_dict(response.json())
-
-        return response_200
-
+def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValidationError:
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
@@ -71,9 +65,7 @@ def _parse_response(*, client: ApiClient, response: httpx.Response) -> HTTPValid
     raise errors.UnexpectedStatus(response.status_code, response.content)
 
 
-def _build_response(
-    *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | LogRecordsQueryResponse]:
+def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,9 +74,7 @@ def _build_response(
     )
 
 
-def sync_detailed(
-    project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest
-) -> Response[HTTPValidationError | LogRecordsQueryResponse]:
+def sync_detailed(project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest) -> Response[HTTPValidationError]:
     """Query Spans
 
     Args:
@@ -96,7 +86,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsQueryResponse]
+        Response[HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -106,9 +96,7 @@ def sync_detailed(
     return _build_response(client=client, response=response)
 
 
-def sync(
-    project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest
-) -> Optional[HTTPValidationError | LogRecordsQueryResponse]:
+def sync(project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest) -> Optional[HTTPValidationError]:
     """Query Spans
 
     Args:
@@ -120,7 +108,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsQueryResponse
+        HTTPValidationError
     """
 
     return sync_detailed(project_id=project_id, client=client, body=body).parsed
@@ -128,7 +116,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest
-) -> Response[HTTPValidationError | LogRecordsQueryResponse]:
+) -> Response[HTTPValidationError]:
     """Query Spans
 
     Args:
@@ -140,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | LogRecordsQueryResponse]
+        Response[HTTPValidationError]
     """
 
     kwargs = _get_kwargs(project_id=project_id, body=body)
@@ -150,9 +138,7 @@ async def asyncio_detailed(
     return _build_response(client=client, response=response)
 
 
-async def asyncio(
-    project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest
-) -> Optional[HTTPValidationError | LogRecordsQueryResponse]:
+async def asyncio(project_id: str, *, client: ApiClient, body: LogRecordsQueryRequest) -> Optional[HTTPValidationError]:
     """Query Spans
 
     Args:
@@ -164,7 +150,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | LogRecordsQueryResponse
+        HTTPValidationError
     """
 
     return (await asyncio_detailed(project_id=project_id, client=client, body=body)).parsed

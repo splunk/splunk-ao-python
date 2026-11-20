@@ -28,6 +28,7 @@ def _get_kwargs(
     *,
     body: ListScorersRequest,
     actions: list[ScorerAction] | Unset = UNSET,
+    include_luna_validation_contract: bool | Unset = False,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> dict[str, Any]:
@@ -43,6 +44,8 @@ def _get_kwargs(
             json_actions.append(actions_item)
 
     params["actions"] = json_actions
+
+    params["include_luna_validation_contract"] = include_luna_validation_contract
 
     params["starting_token"] = starting_token
 
@@ -113,6 +116,7 @@ def sync_detailed(
     client: ApiClient,
     body: ListScorersRequest,
     actions: list[ScorerAction] | Unset = UNSET,
+    include_luna_validation_contract: bool | Unset = False,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
@@ -121,6 +125,8 @@ def sync_detailed(
     Args:
         actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
             scorers.
+        include_luna_validation_contract (bool | Unset): Include exact training contracts on
+            default and latest versions for Luna eligibility. Default: False.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -133,7 +139,13 @@ def sync_detailed(
         Response[HTTPValidationError | ListScorersResponse]
     """
 
-    kwargs = _get_kwargs(body=body, actions=actions, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(
+        body=body,
+        actions=actions,
+        include_luna_validation_contract=include_luna_validation_contract,
+        starting_token=starting_token,
+        limit=limit,
+    )
 
     response = client.request(**kwargs)
 
@@ -145,6 +157,7 @@ def sync(
     client: ApiClient,
     body: ListScorersRequest,
     actions: list[ScorerAction] | Unset = UNSET,
+    include_luna_validation_contract: bool | Unset = False,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
@@ -153,6 +166,8 @@ def sync(
     Args:
         actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
             scorers.
+        include_luna_validation_contract (bool | Unset): Include exact training contracts on
+            default and latest versions for Luna eligibility. Default: False.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -165,7 +180,14 @@ def sync(
         HTTPValidationError | ListScorersResponse
     """
 
-    return sync_detailed(client=client, body=body, actions=actions, starting_token=starting_token, limit=limit).parsed
+    return sync_detailed(
+        client=client,
+        body=body,
+        actions=actions,
+        include_luna_validation_contract=include_luna_validation_contract,
+        starting_token=starting_token,
+        limit=limit,
+    ).parsed
 
 
 async def asyncio_detailed(
@@ -173,6 +195,7 @@ async def asyncio_detailed(
     client: ApiClient,
     body: ListScorersRequest,
     actions: list[ScorerAction] | Unset = UNSET,
+    include_luna_validation_contract: bool | Unset = False,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Response[HTTPValidationError | ListScorersResponse]:
@@ -181,6 +204,8 @@ async def asyncio_detailed(
     Args:
         actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
             scorers.
+        include_luna_validation_contract (bool | Unset): Include exact training contracts on
+            default and latest versions for Luna eligibility. Default: False.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -193,7 +218,13 @@ async def asyncio_detailed(
         Response[HTTPValidationError | ListScorersResponse]
     """
 
-    kwargs = _get_kwargs(body=body, actions=actions, starting_token=starting_token, limit=limit)
+    kwargs = _get_kwargs(
+        body=body,
+        actions=actions,
+        include_luna_validation_contract=include_luna_validation_contract,
+        starting_token=starting_token,
+        limit=limit,
+    )
 
     response = await client.arequest(**kwargs)
 
@@ -205,6 +236,7 @@ async def asyncio(
     client: ApiClient,
     body: ListScorersRequest,
     actions: list[ScorerAction] | Unset = UNSET,
+    include_luna_validation_contract: bool | Unset = False,
     starting_token: int | Unset = 0,
     limit: int | Unset = 100,
 ) -> Optional[HTTPValidationError | ListScorersResponse]:
@@ -213,6 +245,8 @@ async def asyncio(
     Args:
         actions (list[ScorerAction] | Unset): Actions to include in the 'permissions' field of the
             scorers.
+        include_luna_validation_contract (bool | Unset): Include exact training contracts on
+            default and latest versions for Luna eligibility. Default: False.
         starting_token (int | Unset):  Default: 0.
         limit (int | Unset):  Default: 100.
         body (ListScorersRequest):
@@ -226,5 +260,12 @@ async def asyncio(
     """
 
     return (
-        await asyncio_detailed(client=client, body=body, actions=actions, starting_token=starting_token, limit=limit)
+        await asyncio_detailed(
+            client=client,
+            body=body,
+            actions=actions,
+            include_luna_validation_contract=include_luna_validation_contract,
+            starting_token=starting_token,
+            limit=limit,
+        )
     ).parsed
