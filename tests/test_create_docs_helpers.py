@@ -180,6 +180,15 @@ class TestStripDoctestPrompts:
         """A prompt with no code becomes an empty line."""
         assert _strip_doctest_prompts(">>> a\n...\n>>> b") == "a\n\nb"
 
+    def test_indented_ellipsis_placeholder_preserved(self):
+        """An indented bare ``...`` (a Python placeholder body) is code, not a prompt."""
+        code = "def f():\n    ...\n\nclass A: ..."
+        assert _strip_doctest_prompts(code) == code
+
+    def test_indented_prompts_keep_indentation(self):
+        """Prompts inside an indented RST block are stripped without losing the indent."""
+        assert _strip_doctest_prompts("    >>> a = 1\n    ... b = 2") == "    a = 1\n    b = 2"
+
     def test_bare_code_unchanged(self):
         """Code without prompts is returned as-is."""
         assert _strip_doctest_prompts("x = 1\ny = 2") == "x = 1\ny = 2"
@@ -285,6 +294,15 @@ class TestRstLiteralBlockExamples:
         assert "::" not in out
         assert "while agg(x) is None:\n    cfg = {'a': 1}\n```" in out
         assert out.count("```python") == 1
+
+    def test_doctest_prompts_inside_rst_block_are_stripped(self):
+        """``>>>`` / ``...`` prompts inside a ``::`` block do not leak into the fenced code."""
+        parts: list[str] = []
+        _render_examples(parts, [{"code": "Call it::\n\n    >>> a = 1\n    ... b = 2\n"}])
+        out = "\n".join(parts)
+        assert ">>>" not in out
+        assert "a = 1" in out
+        assert "b = 2" in out
 
     def test_note_with_rst_block_is_fenced_and_braces_kept(self):
         """A ``::`` block inside a note is converted to a fence so its braces stay literal."""

@@ -98,8 +98,8 @@ class NotFoundError(SplunkAOAPIError):
 
     Examples
     --------
-    >>> NotFoundError(404, b"{\\"detail\\": ...}")  # HTTP response path
-    >>> NotFoundError("Project \\"foo\\" not found.")  # SDK lookup path
+    >>> NotFoundError(404, b'{"detail": ...}')  # HTTP response path
+    >>> NotFoundError('Project "foo" not found.')  # SDK lookup path
     """
 
     @overload

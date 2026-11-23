@@ -563,16 +563,19 @@ def _sanitize_description(text: str) -> str:
     return text
 
 
+# ``>>>`` may be bare or indented; ``... code`` needs content. A bare or indented ``...`` is a Python placeholder body.
+_PROMPT_RE = re.compile(r"^(\s*)(?:>>>(?: (.*))?|\.\.\. (.*)|(\.\.\.))$")
+
+
 def _strip_doctest_prompts(code: str) -> str:
-    """Remove doctest ``>>> `` / ``... `` prompts from every line of an example."""
+    """Remove doctest ``>>> `` / ``... `` prompts from every line of an example, keeping indentation."""
     lines = []
     for line in code.split("\n"):
-        if line.startswith((">>> ", "... ")):
-            lines.append(line[4:])
-        elif line.rstrip() in (">>>", "..."):
-            lines.append("")
+        m = _PROMPT_RE.match(line.rstrip())
+        if not m or (m.group(4) and m.group(1)):
+            lines.append(line)  # not a prompt, or an indented bare ``...`` placeholder
         else:
-            lines.append(line)
+            lines.append(f"{m.group(1)}{m.group(2) or m.group(3) or ''}".rstrip())
     return "\n".join(lines)
 
 
@@ -605,7 +608,7 @@ def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
             continue
         if any(line.rstrip().endswith("::") for line in code.split("\n")):
             # RST literal block with a prose lead-in: fence only the indented code, keep the prose as prose.
-            parts.append(_sanitize_description(code))
+            parts.append(_sanitize_description(_strip_doctest_prompts(code)))
             parts.append("")
             continue
         if _is_prose_bullet_list(code):
