@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
@@ -158,7 +158,9 @@ class SplunkAOMiddleware(AgentMiddleware):
 
     def _prepare_tool_call_params(self, request: "AgentState") -> dict[str, Any]:
         """Extract tool name and serialized args from request."""
-        tool_call = getattr(request, "tool_call", {}) or {}
+        tool_call = getattr(request, "tool_call", None)
+        if not isinstance(tool_call, Mapping):
+            tool_call = {}
         name = tool_call.get("name")
         return {
             "name": name if name is not None else "tool",

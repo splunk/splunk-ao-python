@@ -547,6 +547,10 @@ class CrewAIEventListener:
         """Handle crew execution start."""
         run_id = self._generate_run_id(source, event)
         crew_name = event.crew_name if hasattr(event, "crew_name") else "Crew"
+        display_name = getattr(event, "crew_name", None)
+        fields_set = getattr(source, "model_fields_set", None)
+        if fields_set is not None and "name" not in fields_set:
+            display_name = None
 
         metadata = self._extract_metadata(event)
         metadata["crew_name"] = crew_name
@@ -559,7 +563,7 @@ class CrewAIEventListener:
             parent_run_id=None,  # Root node
             run_id=run_id,
             name=crew_name,
-            _otel_display_name=getattr(event, "crew_name", None),
+            _otel_display_name=display_name,
             input=serialize_to_str(input) if input else "-",
             metadata=metadata,
         )

@@ -1,6 +1,7 @@
 import asyncio
 import json
 from collections.abc import Generator
+from typing import Literal
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -120,20 +121,49 @@ def test_explicit_llm_name_keeps_the_genai_span_name(
     assert exported.attributes["splunk_ao.span.name"] == "Answer customer"
 
 
-@pytest.mark.parametrize("decorator_name", [None, "Answer customer"])
-def test_decorator_exports_only_a_supplied_display_name(
-    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, decorator_name: str | None
+@pytest.mark.parametrize("method", ["add_agent_span", "add_tool_span", "add_retriever_span", "add_control_span"])
+@pytest.mark.parametrize("name", [None, "Answer customer"])
+def test_logger_exports_only_a_supplied_display_name(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, method: str, name: str | None
 ) -> None:
-    @log(name=decorator_name)
+    otlp_logger.start_trace(input="question")
+    kwargs = {"output": "answer"} if method == "add_retriever_span" else {}
+    if name is not None:
+        kwargs["name"] = name
+    getattr(otlp_logger, method)(input="prompt", **kwargs)
+    otlp_logger.conclude(conclude_all=True)
+
+    [span] = recording_sink.spans
+    assert span.attributes.get("splunk_ao.span.name") == name
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("span_type", ["workflow", "tool", "retriever", "llm", "agent"])
+@pytest.mark.parametrize("decorator_name", [None, "Answer customer"])
+async def test_decorator_exports_only_a_supplied_display_name(
+    otlp_logger: SplunkAOLogger,
+    recording_sink: RecordingSink,
+    decorator_name: str | None,
+    span_type: Literal["workflow", "tool", "retriever", "llm", "agent"],
+) -> None:
+    @log(name=decorator_name, span_type=span_type)
     def answer() -> str:
+        return "answer"
+
+    @log(name=decorator_name, span_type=span_type)
+    async def async_answer() -> str:
         return "answer"
 
     with patch.object(splunk_ao_context, "get_logger_instance", return_value=otlp_logger):
         assert answer() == "answer"
+        assert await async_answer() == "answer"
 
-    [span] = recording_sink.spans
-    assert span.name == f"invoke_workflow {decorator_name or 'answer'}"
-    assert span.attributes.get("splunk_ao.span.name") == decorator_name
+    sync_span, async_span = recording_sink.spans
+    assert sync_span.attributes.get("splunk_ao.span.name") == decorator_name
+    assert async_span.attributes.get("splunk_ao.span.name") == decorator_name
+    if span_type == "workflow":
+        assert sync_span.name == f"invoke_workflow {decorator_name or 'answer'}"
+        assert async_span.name == f"invoke_workflow {decorator_name or 'async_answer'}"
 
 
 def test_decorator_does_not_export_a_default_function_argument_as_a_display_name(
