@@ -62,7 +62,7 @@ def test_llm_mapping_covers_content_request_response_usage_and_units() -> None:
     assert attrs["gen_ai.usage.output_tokens"] == 8
     assert attrs["splunk_ao.llm.usage.total_tokens"] == 20
     assert attrs["gen_ai.response.time_to_first_chunk"] == 0.25
-    assert "splunk_ao.llm.time_to_first_token_ns" not in attrs
+    assert attrs["splunk_ao.llm.time_to_first_token_ns"] == 250_000_000
     assert attrs["splunk_ao.llm.cost.total_usd"] == 0.03
     assert attrs["gen_ai.usage.cache_read.input_tokens"] == 4
     assert json.loads(attrs["gen_ai.tool.definitions"])[0]["name"] == "search"

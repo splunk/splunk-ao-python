@@ -66,20 +66,21 @@ class SplunkAOCallback(BaseCallbackHandler):
 
     @staticmethod
     def _get_display_name(
-        node_type: LANGCHAIN_NODE_TYPE, serialized: dict[str, Any] | None, kwargs: dict[str, Any]
+        node_type: LANGCHAIN_NODE_TYPE,
+        serialized: dict[str, Any] | None,
+        metadata: dict[str, Any] | None,
+        parent_run_id: UUID | None,
     ) -> str | None:
-        options = serialized if isinstance(serialized, dict) else {}
-        metadata = kwargs.get("metadata")
-        configured_name = metadata.get("name") if isinstance(metadata, dict) else None
-        if isinstance(configured_name, str) and configured_name.strip():
-            return configured_name
-        callback_name = kwargs.get("name")
-        class_reference = options.get("id")
-        if isinstance(class_reference, list) and class_reference and callback_name == class_reference[-1]:
-            callback_name = None
-        if node_type == "tool" and not callback_name:
-            callback_name = options.get("name")
-        return callback_name if isinstance(callback_name, str) else None
+        # LangChain inherits metadata and uses the same callback name for configured and inferred names.
+        if parent_run_id is None and isinstance(metadata, dict):
+            configured_name = metadata.get("name")
+            if isinstance(configured_name, str) and configured_name.strip():
+                return configured_name
+        if node_type == "tool" and isinstance(serialized, dict):
+            tool_name = serialized.get("name")
+            if isinstance(tool_name, str) and tool_name.strip():
+                return tool_name
+        return None
 
     @staticmethod
     def _get_node_name(
@@ -142,7 +143,9 @@ class SplunkAOCallback(BaseCallbackHandler):
         update_root_to_agent(
             parent_run_id, kwargs.get("metadata", {}), self._handler.get_node(parent_run_id) if parent_run_id else None
         )
-        kwargs["_otel_display_name"] = self._get_display_name("chain", serialized, kwargs)
+        kwargs["_otel_display_name"] = self._get_display_name(
+            "chain", serialized, kwargs.get("metadata"), parent_run_id
+        )
         kwargs["name"] = node_name
         self._handler.start_node(node_type, parent_run_id, run_id, input=serialize_to_str(inputs), tags=tags, **kwargs)
 
@@ -192,7 +195,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
+            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
             input=[{"content": p, "role": "user"} for p in prompts],
             tags=tags,
             model=model,
@@ -261,7 +264,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
+            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
             input=serialized_messages,
             tools=json.loads(json.dumps(tools, cls=EventSerializer)) if tools else None,
             tags=tags,
@@ -315,7 +318,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
+            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
             input=input_str,
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,
@@ -399,7 +402,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, kwargs),
+            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
             input=serialize_to_str(query),
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,

@@ -11,6 +11,8 @@ from langchain_core.callbacks.manager import AsyncCallbackManager
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.runnables import RunnableLambda
+from langchain_core.tools import tool
 from opentelemetry.sdk.trace import ReadableSpan
 
 from galileo_core.schemas.shared.document import Document as GalileoDocument
@@ -69,6 +71,40 @@ def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> Non
             "invoke_workflow",
         ]
         assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback], ids=["sync", "async"])
+@pytest.mark.parametrize("display_name", [None, "Checkout"])
+async def test_langchain_runnable_display_name_is_root_only(
+    callback_type: type[SplunkAOCallback] | type[SplunkAOAsyncCallback], display_name: str | None
+) -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    callback = callback_type(splunk_ao_logger=logger, flush_on_chain_end=False)
+
+    def format_query(query: str) -> str:
+        return query
+
+    @tool("search")
+    def search(query: str) -> str:
+        """Search for the query."""
+        return "result"
+
+    workflow = RunnableLambda(format_query) | search
+    metadata = {"name": display_name} if display_name else {}
+    try:
+        assert await workflow.ainvoke("query", config={"callbacks": [callback], "metadata": metadata}) == "result"
+
+        assert len(sink.spans) == 3
+        root = next(span for span in sink.spans if span.parent is None)
+        tool_span = next(span for span in sink.spans if span.attributes["gen_ai.operation.name"] == "execute_tool")
+        child = next(span for span in sink.spans if span is not root and span is not tool_span)
+        assert root.attributes.get("splunk_ao.span.name") == display_name
+        assert tool_span.attributes["splunk_ao.span.name"] == "search"
+        assert "splunk_ao.span.name" not in child.attributes
     finally:
         logger.terminate()
 

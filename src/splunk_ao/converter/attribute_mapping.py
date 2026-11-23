@@ -352,6 +352,7 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
     _set_if_present(attrs, "gen_ai.usage.output_tokens", metrics.num_output_tokens)
     _set_if_present(attrs, "splunk_ao.llm.usage.total_tokens", metrics.num_total_tokens)
     if metrics.time_to_first_token_ns is not None:
+        attrs["splunk_ao.llm.time_to_first_token_ns"] = metrics.time_to_first_token_ns
         attrs["gen_ai.response.time_to_first_chunk"] = metrics.time_to_first_token_ns / 1_000_000_000
 
     for field_name, attribute_name in (

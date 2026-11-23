@@ -210,6 +210,9 @@ With `start_new_trace=True`, a handler owns and concludes its local envelope and
 W3C parent. With `start_new_trace=False`, it attaches below caller-owned active state, emits only its subtree, and leaves
 the caller open.
 
+The LangChain callbacks take display overrides from root run metadata or the tool definition's name.
+LangChain supplies both configured and inferred run names through the same callback argument.
+
 ### OpenAI wrapper
 
 `src/splunk_ao/openai/` is a drop-in wrapper. Preserve the upstream caller experience and sync/async response semantics.
