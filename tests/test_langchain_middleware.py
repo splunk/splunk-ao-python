@@ -298,14 +298,17 @@ class TestParamPreparation:
         """Test _prepare_tool_call_params extracts tool info."""
         # With tool_call
         request = cast(AgentState, MockRequest(tool_call={"name": "calc", "args": {"x": 5}}))
-        name, input_str = middleware._prepare_tool_call_params(request)
-        assert name == "calc"
-        assert json.loads(input_str) == {"x": 5}
+        params = middleware._prepare_tool_call_params(request)
+        assert params["name"] == params["_otel_display_name"] == "calc"
+        assert json.loads(params["input"]) == {"x": 5}
 
         # Without tool_call
         request = cast(AgentState, MockRequest(tool_call=None))
-        name, input_str = middleware._prepare_tool_call_params(request)
-        assert name == "tool" and input_str == "{}"
+        assert middleware._prepare_tool_call_params(request) == {
+            "name": "tool",
+            "input": "{}",
+            "_otel_display_name": None,
+        }
 
 
 class TestRootNodeManagement:
