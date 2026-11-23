@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-import pytest
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
@@ -24,8 +23,7 @@ class RecordingExporter(SpanExporter):
         pass
 
 
-def test_a2a_native_span_uses_user_wired_deployment_aware_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION", raising=False)
+def test_a2a_native_span_uses_user_wired_deployment_aware_processor() -> None:
     delegate = RecordingExporter()
     captured_config: dict[str, object] = {}
 
