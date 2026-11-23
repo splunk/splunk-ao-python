@@ -265,3 +265,36 @@ class TestWriteModuleExamples:
         out = "\n".join(parts)
         assert "**Examples**" in out
         assert "```python\nimport x\nx.run({'a': 1})\n```" in out
+
+
+class TestRstLiteralBlockExamples:
+    """RST ``::`` lead-in examples fence only the code, not the prose."""
+
+    RST = (
+        "Poll until a specific metric is computed, then assert::\n\n"
+        "    while agg(x) is None:\n"
+        "        cfg = {'a': 1}\n"
+    )
+
+    def test_prose_stays_outside_fence_and_marker_removed(self):
+        """The lead-in sentence is prose, the ``::`` marker is dropped, and only the code is fenced."""
+        parts: list[str] = []
+        _render_examples(parts, [{"code": self.RST}])
+        out = "\n".join(parts)
+        assert "Poll until a specific metric is computed, then assert\n```python" in out
+        assert "::" not in out
+        assert "while agg(x) is None:\n    cfg = {'a': 1}\n```" in out
+        assert out.count("```python") == 1
+
+    def test_note_with_rst_block_is_fenced_and_braces_kept(self):
+        """A ``::`` block inside a note is converted to a fence so its braces stay literal."""
+        from types import SimpleNamespace
+
+        doc = {"description": "d", "notes": [{"note": "Use it like so::\n\n    x = {'k': 1}\n and {prose}"}]}
+        fd = SimpleNamespace(module=SimpleNamespace(doc=doc))
+        parts: list[str] = []
+        write_module(fd, parts)
+        out = "\n".join(parts)
+        assert "```python\n" in out
+        assert "x = {'k': 1}\n```" in out
+        assert r"\{prose\}" in out

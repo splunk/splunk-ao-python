@@ -579,8 +579,9 @@ def _strip_doctest_prompts(code: str) -> str:
 def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
     """Append an **Examples** section where every example is a fenced ```python block.
 
-    Examples that already contain a code fence are emitted unchanged. Everything else
-    (bare code, doctest ``>>>`` code, or a mix) is fenced, with doctest prompts stripped.
+    Examples that already contain a code fence are emitted unchanged. Examples with an RST
+    ``::`` lead-in go through ``_sanitize_description`` so only the indented code is fenced.
+    Everything else (bare code, doctest ``>>>`` code, or a mix) is fenced, with doctest prompts stripped.
     Fenced content is left unescaped, so braces inside examples are safe for MDX.
     """
     parts.append("**Examples**\n")
@@ -590,6 +591,11 @@ def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
             continue
         if "```" in code:
             parts.append(code)
+            continue
+        if any(line.rstrip().endswith("::") for line in code.split("\n")):
+            # RST literal block with a prose lead-in: fence only the indented code, keep the prose as prose.
+            parts.append(_sanitize_description(code))
+            parts.append("")
             continue
         parts.append("```python")
         parts.append(_strip_doctest_prompts(code).rstrip())
@@ -669,7 +675,7 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
         if fdoc.get("notes"):
             parts.append("**Notes**\n")
             for note in fdoc.get("notes", []):
-                ntext = _escape_curly_braces(note.get("note") or "")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")
@@ -740,7 +746,7 @@ def write_class(parts: list[str], cls: Any) -> None:
         if cdoc.get("notes"):
             parts.append("**Notes**\n")
             for note in cdoc.get("notes", []):
-                ntext = _escape_curly_braces(note.get("note") or "")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")
@@ -814,7 +820,7 @@ def write_module(fd: FileDoc, parts: list[str]) -> None:
         if md.get("notes"):
             parts.append("**Notes**\n")
             for note in md.get("notes", []):
-                ntext = _escape_curly_braces(note.get("note") or "")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")
