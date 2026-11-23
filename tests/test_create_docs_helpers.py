@@ -298,3 +298,37 @@ class TestRstLiteralBlockExamples:
         assert "```python\n" in out
         assert "x = {'k': 1}\n```" in out
         assert r"\{prose\}" in out
+
+
+class TestProseBulletListExamples:
+    """Bullet-list examples are prose and must not be fenced as Python."""
+
+    BULLETS = (
+        '- If "my-template" doesn\'t exist \u2192 returns "my-template"\n'
+        '- If "my-template" exists \u2192 returns "my-template (1)"'
+    )
+
+    @staticmethod
+    def _render(code):
+        parts: list[str] = []
+        _render_examples(parts, [{"code": code}])
+        return "\n".join(parts)
+
+    def test_bullet_list_stays_a_list(self):
+        """A bullet-only example is emitted as a Markdown list, not a python block."""
+        out = self._render(self.BULLETS)
+        assert "```" not in out
+        assert '- If "my-template" exists' in out
+
+    def test_braces_in_bullet_list_are_escaped(self):
+        """Prose bullets still get MDX brace escaping."""
+        assert r"\{x\}" in self._render("- use {x}\n- or {y}")
+
+    def test_yaml_list_example_stays_fenced(self):
+        """A YAML-style list is code, so it keeps its python fence."""
+        out = self._render("- name: a\n- name: b")
+        assert out.count("```python") == 1
+
+    def test_mixed_bullets_and_code_stay_fenced(self):
+        """A bullet line next to code is not a pure list, so the example is fenced."""
+        assert "```python" in self._render("- note\nx = 1")

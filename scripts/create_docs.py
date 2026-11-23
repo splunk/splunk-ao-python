@@ -576,10 +576,21 @@ def _strip_doctest_prompts(code: str) -> str:
     return "\n".join(lines)
 
 
+_BULLET_RE = re.compile(r"^\s*[-*]\s+\S")
+_YAML_KEY_BULLET_RE = re.compile(r"^\s*[-*]\s+[\w.-]+:(\s|$)")
+
+
+def _is_prose_bullet_list(code: str) -> bool:
+    """Return True when every non-empty line is a Markdown bullet and none looks like a YAML ``- key: value``."""
+    lines = [line for line in code.split("\n") if line.strip()]
+    return bool(lines) and all(_BULLET_RE.match(line) and not _YAML_KEY_BULLET_RE.match(line) for line in lines)
+
+
 def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
     """Append an **Examples** section where every example is a fenced ```python block.
 
-    Examples that already contain a code fence are emitted unchanged. Examples with an RST
+    Examples that already contain a code fence are emitted unchanged. Examples that are plain Markdown bullet
+    lists stay prose. Examples with an RST
     ``::`` lead-in go through ``_sanitize_description`` so only the indented code is fenced.
     Everything else (bare code, doctest ``>>>`` code, or a mix) is fenced, with doctest prompts stripped.
     Fenced content is left unescaped, so braces inside examples are safe for MDX.
@@ -594,6 +605,11 @@ def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
             continue
         if any(line.rstrip().endswith("::") for line in code.split("\n")):
             # RST literal block with a prose lead-in: fence only the indented code, keep the prose as prose.
+            parts.append(_sanitize_description(code))
+            parts.append("")
+            continue
+        if _is_prose_bullet_list(code):
+            # Markdown bullet list used as an example (prose, not code): keep it as a list.
             parts.append(_sanitize_description(code))
             parts.append("")
             continue
