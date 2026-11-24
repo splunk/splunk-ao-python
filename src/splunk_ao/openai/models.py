@@ -19,7 +19,7 @@ class OpenAiModuleDefinition:
 
 @dataclass
 class OpenAiInputData:
-    name: str
+    name: str | None
     metadata: dict
     start_time: datetime.datetime
     input: OpenAiInputType
@@ -27,3 +27,4 @@ class OpenAiInputData:
     model: str | None
     temperature: float
     tools: list[dict] | None
+    name_is_explicit: bool = False

@@ -1,6 +1,7 @@
 import asyncio
 import json
 from collections.abc import Generator
+from typing import Literal
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -101,10 +102,85 @@ def test_single_llm_trace_emits_only_real_child(otlp_logger: SplunkAOLogger, rec
 
     [llm_span] = recording_sink.spans
     assert operation_names(recording_sink.spans) == ["chat"]
+    assert "splunk_ao.span.name" not in llm_span.attributes
     assert llm_span.context is not None
     assert llm_span.parent is None
     assert otlp_logger._otel_ids == {}
     assert otlp_logger.traces == []
+
+
+def test_explicit_llm_name_keeps_the_genai_span_name(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    otlp_logger.start_trace(input="question")
+    otlp_logger.add_llm_span(input="prompt", output="answer", model="gpt-5", name="Answer customer")
+
+    [span] = recording_sink.spans
+    exported = copy_span_for_export(span)
+    assert exported.name == "chat gpt-5"
+    assert exported.attributes["splunk_ao.span.name"] == "Answer customer"
+
+
+@pytest.mark.parametrize("method", ["add_agent_span", "add_tool_span", "add_retriever_span", "add_control_span"])
+@pytest.mark.parametrize("name", [None, "Answer customer"])
+def test_logger_exports_only_a_supplied_display_name(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink, method: str, name: str | None
+) -> None:
+    otlp_logger.start_trace(input="question")
+    kwargs = {"output": "answer"} if method == "add_retriever_span" else {}
+    if name is not None:
+        kwargs["name"] = name
+    getattr(otlp_logger, method)(input="prompt", **kwargs)
+    otlp_logger.conclude(conclude_all=True)
+
+    [span] = recording_sink.spans
+    assert span.attributes.get("splunk_ao.span.name") == name
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("span_type", ["workflow", "tool", "retriever", "llm", "agent"])
+@pytest.mark.parametrize("decorator_name", [None, "Answer customer"])
+async def test_decorator_exports_only_a_supplied_display_name(
+    otlp_logger: SplunkAOLogger,
+    recording_sink: RecordingSink,
+    decorator_name: str | None,
+    span_type: Literal["workflow", "tool", "retriever", "llm", "agent"],
+) -> None:
+    @log(name=decorator_name, span_type=span_type)
+    def answer() -> str:
+        return "answer"
+
+    @log(name=decorator_name, span_type=span_type)
+    async def async_answer() -> str:
+        return "answer"
+
+    with patch.object(splunk_ao_context, "get_logger_instance", return_value=otlp_logger):
+        assert answer() == "answer"
+        assert await async_answer() == "answer"
+
+    sync_span, async_span = recording_sink.spans
+    assert sync_span.attributes.get("splunk_ao.span.name") == decorator_name
+    assert async_span.attributes.get("splunk_ao.span.name") == decorator_name
+    if span_type == "workflow":
+        assert sync_span.name == f"invoke_workflow {decorator_name or 'answer'}"
+        assert async_span.name == f"invoke_workflow {decorator_name or 'async_answer'}"
+
+
+def test_decorator_does_not_export_a_default_function_argument_as_a_display_name(
+    otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
+) -> None:
+    @log(span_type="workflow")
+    def answer(name: str = "default name") -> str:
+        return name
+
+    with patch.object(splunk_ao_context, "get_logger_instance", return_value=otlp_logger):
+        answer()
+        answer("caller name")
+
+    default_span, caller_span = recording_sink.spans
+    assert default_span.name == "invoke_workflow default name"
+    assert "splunk_ao.span.name" not in default_span.attributes
+    assert caller_span.attributes["splunk_ao.span.name"] == "caller name"
 
 
 @pytest.mark.parametrize("nested", [False, True])
@@ -208,7 +284,7 @@ def test_llm_span_per_modality_tokens_reach_exported_attributes(
     )
 
     # When: the completed span is copied for export
-    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    exported = copy_span_for_export(recording_sink.spans[0])
 
     # Then: every modality count is on the wire under its token-details attribute
     attributes = exported.attributes or {}
@@ -294,7 +370,7 @@ def test_top_level_span_inherits_external_upstream_parent(recording_sink: Record
         context.detach(token)
 
 
-def test_final_normalization_preserves_non_empty_schema_valid_content(
+def test_export_preserves_non_empty_schema_valid_genai_content(
     otlp_logger: SplunkAOLogger, recording_sink: RecordingSink
 ) -> None:
     otlp_logger.start_trace(input="question")
@@ -307,17 +383,11 @@ def test_final_normalization_preserves_non_empty_schema_valid_content(
     ]
     assert source_output_messages == expected_output_messages
 
-    passthrough = copy_span_for_export(recording_sink.spans[0], normalize_attributes=False)
-    passthrough_attributes = passthrough.attributes or {}
-    assert json.loads(passthrough_attributes["gen_ai.output.messages"]) == expected_output_messages
-    assert "splunk_ao.output.messages" not in passthrough_attributes
-
-    exported = copy_span_for_export(recording_sink.spans[0], normalize_attributes=True)
+    exported = copy_span_for_export(recording_sink.spans[0])
     attributes = exported.attributes or {}
-    output_messages = json.loads(attributes["splunk_ao.output.messages"])
 
-    assert "gen_ai.output.messages" not in attributes
-    assert output_messages == expected_output_messages
+    assert json.loads(attributes["gen_ai.output.messages"]) == expected_output_messages
+    assert "splunk_ao.output.messages" not in attributes
 
 
 def test_conversion_failure_releases_leaf_and_restores_parent(

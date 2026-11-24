@@ -203,6 +203,9 @@ splunk_ao_context.init(
 make_nested_call()
 ```
 
+Pass `@log(name="Checkout")` or a `name` to a Logger span method to set the
+display name in Splunk AO. Exported OpenTelemetry spans retain their GenAI names.
+
 If a decorated function, synchronous generator, or asynchronous generator
 raises, the SDK finalizes its telemetry and re-raises the original exception.
 
@@ -489,6 +492,11 @@ response = llm.invoke(messages)
 
 print(response.content)
 ```
+
+Splunk AO displays the names reported by the LangChain callback. To name a child runnable, use
+`child.with_config(run_name="Normalize order ID")`. A tool uses the name from its definition.
+To override the root display name, pass `config={"metadata": {"name": "Checkout"}}` to
+`invoke` or `ainvoke`.
 
 Handlers conclude traces that they own when their framework run ends. They do
 not close a trace that was started by the caller. In short-lived jobs, ensure

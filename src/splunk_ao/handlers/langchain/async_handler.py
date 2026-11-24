@@ -100,6 +100,9 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id, kwargs.get("metadata", {}), self._handler.get_node(parent_run_id) if parent_run_id else None
         )
 
+        kwargs["_otel_display_name"] = SplunkAOCallback._get_display_name(
+            serialized, kwargs.get("metadata"), parent_run_id, kwargs
+        )
         kwargs["name"] = node_name
         await self._handler.async_start_node(
             node_type, parent_run_id, run_id, input=serialize_to_str(inputs), tags=tags, **kwargs
@@ -155,6 +158,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=[{"content": p, "role": "user"} for p in prompts],
             tags=tags,
             model=model,
@@ -214,6 +218,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialized_messages,
             tools=json.loads(json.dumps(tools, cls=EventSerializer)) if tools else None,
             tags=tags,
@@ -269,6 +274,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=input_str,
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,
@@ -321,6 +327,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialize_to_str(query),
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,

@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
@@ -156,10 +156,17 @@ class SplunkAOMiddleware(AgentMiddleware):
             "start_time": time.perf_counter_ns(),
         }
 
-    def _prepare_tool_call_params(self, request: "AgentState") -> tuple[str, str]:
+    def _prepare_tool_call_params(self, request: "AgentState") -> dict[str, Any]:
         """Extract tool name and serialized args from request."""
-        tool_call = getattr(request, "tool_call", {}) or {}
-        return tool_call.get("name", "tool"), json.dumps(tool_call.get("args", {}), cls=EventSerializer)
+        tool_call = getattr(request, "tool_call", None)
+        if not isinstance(tool_call, Mapping):
+            tool_call = {}
+        name = tool_call.get("name")
+        return {
+            "name": name if name is not None else "tool",
+            "input": json.dumps(tool_call.get("args", {}), cls=EventSerializer),
+            "_otel_display_name": name,
+        }
 
     def _serialize_tool_response(self, response: "AgentState") -> dict[str, Any]:
         """Serialize tool response to end_node kwargs."""
@@ -262,8 +269,7 @@ class SplunkAOMiddleware(AgentMiddleware):
     def wrap_tool_call(self, request: "AgentState", handler: Callable[[Any], Any]) -> Any:
         root_run_id = self._ensure_root_node(getattr(request, "state", None))
         run_id = uuid4()
-        tool_name, tool_input = self._prepare_tool_call_params(request)
-        self._handler.start_node("tool", root_run_id, run_id, name=tool_name, input=tool_input)
+        self._handler.start_node("tool", root_run_id, run_id, **self._prepare_tool_call_params(request))
 
         response = handler(request)
         self._handler.end_node(run_id, **self._serialize_tool_response(response))
@@ -272,8 +278,9 @@ class SplunkAOMiddleware(AgentMiddleware):
     async def awrap_tool_call(self, request: "AgentState", handler: Callable[[Any], Any]) -> Any:
         root_run_id = await self._ensure_async_root_node(getattr(request, "state", None))
         run_id = uuid4()
-        tool_name, tool_input = self._prepare_tool_call_params(request)
-        await self._async_handler.async_start_node("tool", root_run_id, run_id, name=tool_name, input=tool_input)
+        await self._async_handler.async_start_node(
+            "tool", root_run_id, run_id, **self._prepare_tool_call_params(request)
+        )
 
         response = await handler(request)
         await self._async_handler.async_end_node(run_id, **self._serialize_tool_response(response))

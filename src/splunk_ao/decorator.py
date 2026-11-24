@@ -400,7 +400,7 @@ class SplunkAODecorator:
 
             span_params = self._prepare_input(
                 func=func,
-                name=name or func.__name__,
+                name=name,
                 span_type=span_type,
                 params=params,
                 is_method=self._is_method(func),
@@ -458,7 +458,7 @@ class SplunkAODecorator:
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             span_params = self._prepare_input(
                 func=func,
-                name=name or func.__name__,
+                name=name,
                 span_type=span_type,
                 params=params,
                 is_method=self._is_method(func),
@@ -497,7 +497,7 @@ class SplunkAODecorator:
         def generator_wrapper(*args: Any, **kwargs: Any) -> Generator:
             span_params = self._prepare_input(
                 func=func,
-                name=name or func.__name__,
+                name=name,
                 span_type=span_type,
                 params=params,
                 is_method=self._is_method(func),
@@ -524,7 +524,7 @@ class SplunkAODecorator:
         def async_generator_wrapper(*args: Any, **kwargs: Any) -> AsyncGenerator:
             span_params = self._prepare_input(
                 func=func,
-                name=name or func.__name__,
+                name=name,
                 span_type=span_type,
                 params=params,
                 is_method=self._is_method(func),
@@ -559,7 +559,7 @@ class SplunkAODecorator:
         self,
         *,
         func: Callable,
-        name: str,
+        name: str | None,
         span_type: SPAN_TYPE | None,
         params: dict[str, str | Callable] | None = None,
         is_method: bool = False,
@@ -598,8 +598,9 @@ class SplunkAODecorator:
             start_time = _get_timestamp()
 
             # Extract function args
+            supplied: set[str] = set()
             input_ = self._merge_args_with_kwargs(
-                func=func, is_method=is_method, func_args=func_args, func_kwargs=func_kwargs
+                func=func, is_method=is_method, func_args=func_args, func_kwargs=func_kwargs, supplied=supplied
             )
 
             # Process parameter mappings supplied by the user via `params`
@@ -624,9 +625,13 @@ class SplunkAODecorator:
                 for param_name in span_param_names:
                     if param_name in input_ and param_name not in span_params:
                         span_params[param_name] = input_[param_name]
+                        if param_name == "name" and param_name not in supplied:
+                            span_params["_name_is_explicit"] = False
 
             if "name" not in span_params:
-                span_params["name"] = name
+                span_params["name"] = name or func.__name__
+                if not name:
+                    span_params["_name_is_explicit"] = False
 
             span_params["input"] = input_
 
@@ -642,7 +647,7 @@ class SplunkAODecorator:
             return None
 
     def _merge_args_with_kwargs(
-        self, *, func: Callable, is_method: bool, func_args: tuple, func_kwargs: dict
+        self, *, func: Callable, is_method: bool, func_args: tuple, func_kwargs: dict, supplied: set[str] | None = None
     ) -> dict[str, Any]:
         """
         Merge positional and keyword arguments into a single dictionary.
@@ -662,6 +667,8 @@ class SplunkAODecorator:
         -------
         Dictionary containing all arguments with their parameter names as keys
         """
+        if supplied is not None:
+            supplied.update(func_kwargs)
         try:
             # Get the actual function, handling wrapped functions
             actual_func = getattr(func, "__wrapped__", func)
@@ -678,6 +685,8 @@ class SplunkAODecorator:
             param_names = [name for name in sig.parameters if name not in ("self", "cls")]
             for param_name, value in zip(param_names, func_args[1:] if is_method else func_args, strict=False):
                 merged[param_name] = value
+                if supplied is not None:
+                    supplied.add(param_name)
 
             # Update with provided keyword arguments
             merged.update(func_kwargs)
@@ -851,6 +860,8 @@ class SplunkAODecorator:
                     )
                 else:
                     span = client_instance.add_workflow_span(input=input_, name=name, created_at=created_at)
+                if span is not None and span_params.get("_name_is_explicit") is False:
+                    client_instance._set_otel_display_name(span, None)
                 _get_or_init_list(_span_stack_context).append(span)
             elif span_type == "tool":
                 # A tool must be active while its function runs so nested calls inherit it.

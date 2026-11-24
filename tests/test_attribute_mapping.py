@@ -18,12 +18,7 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep
 from galileo_core.schemas.shared.content_parts import FileContentPart, TextContentPart
 from galileo_core.schemas.shared.document import Document
-from splunk_ao.converter.attribute_mapping import (
-    CONTENT_ALIAS_BY_GEN_AI,
-    SPLUNK_ALIAS_BY_GEN_AI,
-    build_span_attributes,
-    normalize_attributes_for_export,
-)
+from splunk_ao.converter.attribute_mapping import build_span_attributes
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
 from splunk_ao.schema import DataContentBlock, LoggedControlSpan, LoggedLlmSpan, LoggedMessage, TextContentBlock
 
@@ -88,17 +83,14 @@ def test_llm_mapping_emits_per_modality_token_details() -> None:
         ),
     )
 
-    # When: the span is mapped and normalized for export
+    # When: the span is mapped for export
     attrs = build_span_attributes(span)
-    exported = normalize_attributes_for_export(attrs)
 
-    # Then: each modality has its own token-details attribute, including an explicit zero, plus its alias
+    # Then: each modality has its own token-details attribute, including an explicit zero
     assert attrs["gen_ai.usage.image.input_tokens"] == 5
     assert attrs["gen_ai.usage.audio.input_tokens"] == 100
     assert attrs["gen_ai.usage.image.output_tokens"] == 0
     assert attrs["gen_ai.usage.audio.output_tokens"] == 20
-    assert exported["splunk_ao.llm.usage.audio.input_tokens"] == 100
-    assert exported["splunk_ao.llm.usage.image.output_tokens"] == 0
 
 
 def test_llm_mapping_omits_token_details_without_a_breakdown() -> None:
@@ -966,96 +958,8 @@ def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     assert "agent_control.confidence" not in attrs
 
 
-def test_control_operation_name_uses_standard_export_normalization() -> None:
+def test_control_operation_name_uses_genai_key() -> None:
     attrs = build_span_attributes(ControlSpan())
 
     assert attrs["gen_ai.operation.name"] == "control"
     assert "splunk_ao.operation.name" not in attrs
-
-    normalized = normalize_attributes_for_export(attrs)
-
-    assert normalized["gen_ai.operation.name"] == "control"
-    assert normalized["splunk_ao.operation.name"] == "control"
-
-
-def test_normalizer_duplicates_ordinary_attributes_and_relocates_all_content() -> None:
-    source = {
-        "gen_ai.request.model": "gpt-4o",
-        "gen_ai.usage.input_tokens": 42,
-        **{key: f"value-{index}" for index, key in enumerate(CONTENT_ALIAS_BY_GEN_AI)},
-    }
-
-    result = normalize_attributes_for_export(source)
-
-    assert result["gen_ai.request.model"] == result["splunk_ao.request.model"] == "gpt-4o"
-    assert result["gen_ai.usage.input_tokens"] == result["splunk_ao.llm.usage.input_tokens"] == 42
-    for source_key, destination_key in CONTENT_ALIAS_BY_GEN_AI.items():
-        assert source_key not in result
-        assert result[destination_key] == source[source_key]
-
-
-def test_normalizer_gen_ai_wins_collisions_and_sdk_marker_is_authoritative() -> None:
-    result = normalize_attributes_for_export(
-        {
-            "gen_ai.request.model": "canonical",
-            "splunk_ao.request.model": "stale",
-            "gen_ai.system": "legacy-provider",
-            "gen_ai.provider.name": "current-provider",
-            "splunk_ao.provider.name": "stale-provider",
-            "splunk_ao.system": "other-sdk",
-        }
-    )
-
-    assert result["splunk_ao.request.model"] == "canonical"
-    assert result["splunk_ao.provider.name"] == "current-provider"
-    assert result["splunk_ao.system"] == "splunk_ao_python"
-
-
-def test_normalizer_does_not_use_deprecated_gen_ai_system_as_provider() -> None:
-    result = normalize_attributes_for_export({"gen_ai.system": "legacy-provider"})
-
-    assert result["gen_ai.system"] == "legacy-provider"
-    assert "splunk_ao.provider.name" not in result
-
-
-def test_normalizer_converts_first_chunk_seconds_to_splunk_nanoseconds() -> None:
-    result = normalize_attributes_for_export({"gen_ai.response.time_to_first_chunk": 0.125})
-
-    assert result["gen_ai.response.time_to_first_chunk"] == 0.125
-    assert result["splunk_ao.llm.time_to_first_token_ns"] == 125_000_000
-
-
-def test_normalizer_preserves_exact_source_nanoseconds() -> None:
-    result = normalize_attributes_for_export(
-        {"gen_ai.response.time_to_first_chunk": 0.123456789, "splunk_ao.llm.time_to_first_token_ns": 123_456_789}
-    )
-
-    assert result["splunk_ao.llm.time_to_first_token_ns"] == 123_456_789
-
-
-def test_normalizer_is_idempotent() -> None:
-    source = {
-        "gen_ai.operation.name": "chat",
-        "gen_ai.input.messages": json.dumps([_text_message("user", "question")]),
-        "custom.attribute": "unchanged",
-    }
-
-    once = normalize_attributes_for_export(source)
-
-    assert normalize_attributes_for_export(once) == once
-
-
-def test_normalizer_can_be_disabled_for_developer_comparison() -> None:
-    source = {
-        "gen_ai.request.model": "gpt-4o",
-        "gen_ai.input.messages": json.dumps([_text_message("user", "question")]),
-        "splunk_ao.system": "source-value",
-    }
-
-    assert normalize_attributes_for_export(source, enabled=False) == {**source, "splunk_ao.system": "splunk_ao_python"}
-
-
-def test_every_alias_uses_an_explicit_destination_namespace() -> None:
-    assert SPLUNK_ALIAS_BY_GEN_AI
-    assert all(source.startswith("gen_ai.") for source in SPLUNK_ALIAS_BY_GEN_AI)
-    assert all(destination.startswith("splunk_ao.") for destination in SPLUNK_ALIAS_BY_GEN_AI.values())

@@ -19,7 +19,7 @@ from agents import (
     Runner,
     set_trace_processors,
 )
-from agents.tracing import ResponseSpanData, agent_span, generation_span, response_span
+from agents.tracing import ResponseSpanData, agent_span, function_span, generation_span, response_span
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan
 from pydantic import BaseModel
@@ -445,6 +445,8 @@ def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> No
     try:
         with agents_tracing.trace("Agent trace", trace_id="trace_public") as openai_trace:
             with agent_span("Research agent", span_id="span_root", parent=openai_trace) as root_span:
+                with function_span("Search", input="question", output="result", parent=root_span):
+                    pass
                 with generation_span(
                     input=[{"role": "user", "content": "question"}],
                     output=[{"role": "assistant", "content": "answer"}],
@@ -455,10 +457,15 @@ def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> No
                     pass
 
         assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "execute_tool",
             "chat",
             "invoke_workflow",
         ]
-        assert sink.spans[0].parent == sink.spans[1].context
+        tool, model, root = sink.spans
+        assert tool.parent == model.parent == root.context
+        assert tool.attributes["splunk_ao.span.name"] == "Search"
+        assert root.attributes["splunk_ao.span.name"] == "Research agent"
+        assert "splunk_ao.span.name" not in model.attributes
         assert processor._trace_states == {}
     finally:
         set_trace_processors([])

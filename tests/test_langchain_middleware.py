@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
@@ -298,14 +299,17 @@ class TestParamPreparation:
         """Test _prepare_tool_call_params extracts tool info."""
         # With tool_call
         request = cast(AgentState, MockRequest(tool_call={"name": "calc", "args": {"x": 5}}))
-        name, input_str = middleware._prepare_tool_call_params(request)
-        assert name == "calc"
-        assert json.loads(input_str) == {"x": 5}
+        params = middleware._prepare_tool_call_params(request)
+        assert params["name"] == params["_otel_display_name"] == "calc"
+        assert json.loads(params["input"]) == {"x": 5}
 
         # Without tool_call
         request = cast(AgentState, MockRequest(tool_call=None))
-        name, input_str = middleware._prepare_tool_call_params(request)
-        assert name == "tool" and input_str == "{}"
+        assert middleware._prepare_tool_call_params(request) == {
+            "name": "tool",
+            "input": "{}",
+            "_otel_display_name": None,
+        }
 
 
 class TestRootNodeManagement:
@@ -442,6 +446,36 @@ class TestWrapCalls:
 
         result = await middleware.awrap_tool_call(request, async_handler)
         assert result == expected
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize(
+    ("tool_call", "display_name"), [({"name": "calc", "args": {"x": 5}}, "calc"), (None, None), ("invalid", None)]
+)
+async def test_tool_wrappers_export_only_a_supplied_name(use_async, tool_call, display_name) -> None:
+    sink = Mock()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    middleware = SplunkAOMiddleware(splunk_ao_logger=logger, flush_on_chain_end=False)
+    request = cast(AgentState, SimpleNamespace(state=None, tool_call=tool_call))
+    response = ToolMessage(content="result", tool_call_id="123")
+
+    async def async_handler(_request):
+        return response
+
+    try:
+        if use_async:
+            result = await middleware.awrap_tool_call(request, async_handler)
+        else:
+            result = middleware.wrap_tool_call(request, lambda _: response)
+
+        assert result is response
+        sink.emit.assert_called_once()
+        span = sink.emit.call_args.args[0]
+        assert span.attributes["gen_ai.operation.name"] == "execute_tool"
+        assert span.attributes.get("splunk_ao.span.name") == display_name
+    finally:
+        logger.terminate()
 
 
 class TestEdgeCases:

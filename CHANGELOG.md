@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Export explicitly supplied display names as `splunk_ao.span.name` while keeping the GenAI OTLP span name.
+  LangChain callbacks also export framework-resolved names. Configure a child runnable with `with_config(run_name=...)`.
+  For a root display name override, pass `config={"metadata": {"name": "Checkout"}}` to `invoke` or `ainvoke`.
+
 ### Changed
 
 - Relaxed the `wrapt` dependency from `>=1.14,<2.0` to `>=1.14,<3.0` so `splunk-ao` can be installed alongside
   `splunk-opentelemetry`, which requires `wrapt>=2.2.2`.
+
+### Removed
+
+- Stop emitting the SDK-specific `splunk_ao.system` span attribute.
 
 ### Security
 

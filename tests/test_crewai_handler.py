@@ -218,6 +218,10 @@ def test_crewai_event_bus_preserves_callback_order_and_context(crewai_bus, async
             llm = by_operation["chat"]
             agent_span = by_operation["invoke_agent"]
             task_span, root = [span for span in spans if span.attributes["gen_ai.operation.name"] == "invoke_workflow"]
+            assert root.attributes["splunk_ao.span.name"] == "Crew"
+            assert agent_span.attributes["splunk_ao.span.name"] == agent.role
+            assert "splunk_ao.span.name" not in task_span.attributes
+            assert "splunk_ao.span.name" not in llm.attributes
             assert llm.parent == agent_span.context
             assert agent_span.parent == task_span.context
             assert task_span.parent == root.context
@@ -237,6 +241,26 @@ def test_crewai_event_bus_preserves_callback_order_and_context(crewai_bus, async
         assert len({span.context.trace_id for span in sink.spans}) == 3
     finally:
         logger.terminate()
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_crewai_exports_default_spelling_only_when_configured(crewai_bus, configured: bool) -> None:
+    _, _, sink, events, deliver = crewai_bus
+    crew = MockCrew(name="crew")
+    crew.model_fields_set = {"name"} if configured else set()
+
+    asyncio.run(
+        deliver(
+            [
+                (crew, events["CrewKickoffStartedEvent"](crew_name=crew.name, inputs={})),
+                (crew, events["CrewKickoffCompletedEvent"](output=MockOutput())),
+            ]
+        )
+    )
+
+    [span] = sink.spans
+    assert span.name == "invoke_workflow crew"
+    assert span.attributes.get("splunk_ao.span.name") == ("crew" if configured else None)
 
 
 def test_crewai_event_bus_isolates_overlapping_crews(crewai_bus) -> None:
@@ -678,6 +702,7 @@ def test_crewai_review_uses_original_event_times(crewai_bus, naive) -> None:
     agent = MockAgent(crew=crew)
     agent_source = MockSource()
     task = MockTask(agent=agent)
+    task.name = "Review task"
     base = datetime(2020, 1, 2, tzinfo=UTC)
     event_base = base.replace(tzinfo=None) if naive else base
 
@@ -750,6 +775,9 @@ def test_crewai_review_uses_original_event_times(crewai_bus, naive) -> None:
         "chat local-model": (4, 5),
     }
     assert len(sink.spans) == len(expected)
+    spans_by_name = {span.name: span for span in sink.spans}
+    assert spans_by_name["invoke_workflow Test task"].attributes["splunk_ao.span.name"] == task.name
+    assert spans_by_name["execute_tool lookup"].attributes["splunk_ao.span.name"] == "lookup"
     for span in sink.spans:
         start, end = expected[span.name]
         assert span.start_time == int((base + timedelta(seconds=start)).timestamp() * 1e9)

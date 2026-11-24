@@ -353,6 +353,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
             created_at=datetime.fromisoformat(node.span_params["start_time_iso"]),
         )
         if state.owned_root is not None:
+            self._splunk_ao_logger._set_otel_display_name(state.owned_root, node.span_params.get("_otel_display_name"))
             state.owned_root_node_id = str(node.run_id)
 
     def _update_owned_root(self, node: Node, state: _OpenAITraceState) -> None:
@@ -388,7 +389,9 @@ class SplunkAOTracingProcessor(TracingProcessor):
         span_state = HandlerSpanState(step=step, activation=None)
         state.active_steps[node_id] = span_state
         try:
-            self._splunk_ao_logger._register_handler_step(step, parent)
+            self._splunk_ao_logger._register_handler_step(
+                step, parent, display_name=node.span_params.get("_otel_display_name")
+            )
             span_state.activation = self._splunk_ao_logger._activate_handler_step(step)
         except Exception:
             discard_handler_step(self._splunk_ao_logger, state.active_steps, node_id)
@@ -457,6 +460,7 @@ class SplunkAOTracingProcessor(TracingProcessor):
         # Extract initial data based on type
         initial_params: dict[str, Any] = {
             "name": span_name,
+            "_otel_display_name": getattr(span.span_data, "name", None),
             "start_time_iso": span.started_at or datetime.now(UTC).isoformat(),
         }
         if splunk_ao_type in ["llm", "chat"]:

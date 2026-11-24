@@ -184,7 +184,9 @@ class SplunkAOBaseHandler:
         state = HandlerSpanState(step=step, activation=None)
         self._active_steps[node_id] = state
         try:
-            self._splunk_ao_logger._register_handler_step(step, parent)
+            self._splunk_ao_logger._register_handler_step(
+                step, parent, display_name=node.span_params.get("_otel_display_name")
+            )
             state.activation = self._splunk_ao_logger._activate_handler_step(step)
         except Exception:
             discard_handler_step(self._splunk_ao_logger, self._active_steps, node_id)
@@ -285,6 +287,10 @@ class SplunkAOBaseHandler:
             self._owned_root = self._splunk_ao_logger.add_agent_span(**root_kwargs)
         else:
             self._owned_root = self._splunk_ao_logger.add_workflow_span(**root_kwargs)
+        if self._owned_root is not None:
+            self._splunk_ao_logger._set_otel_display_name(
+                self._owned_root, root_node.span_params.get("_otel_display_name")
+            )
 
         if self._owned_root is None:
             self._conclude_owned_state_on_failure()
