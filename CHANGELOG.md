@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Export explicitly supplied display names as `splunk_ao.span.name` while keeping the GenAI OTLP span name.
-  To set a LangChain root display name, pass `config={"metadata": {"name": "Checkout"}}` to `invoke` or `ainvoke`.
+  LangChain callbacks also export framework-resolved names. Configure a child runnable with `with_config(run_name=...)`.
+  For a root display name override, pass `config={"metadata": {"name": "Checkout"}}` to `invoke` or `ainvoke`.
 
 ### Changed
 

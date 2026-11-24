@@ -210,8 +210,9 @@ With `start_new_trace=True`, a handler owns and concludes its local envelope and
 W3C parent. With `start_new_trace=False`, it attaches below caller-owned active state, emits only its subtree, and leaves
 the caller open.
 
-The LangChain callbacks take display overrides from root run metadata or the tool definition's name.
-LangChain supplies both configured and inferred run names through the same callback argument.
+The LangChain callbacks use root metadata or each run's resolved callback name as its display name.
+LangChain supplies both configured and inferred run names through the same callback argument. Child callbacks
+take their display name from their own run so inherited root metadata stays separate.
 
 ### OpenAI wrapper
 

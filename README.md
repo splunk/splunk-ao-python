@@ -493,8 +493,10 @@ response = llm.invoke(messages)
 print(response.content)
 ```
 
-To set the root display name in Splunk AO, pass `config={"metadata": {"name": "Checkout"}}` to
-`invoke` or `ainvoke`. Child runs keep their own names.
+Splunk AO displays the names reported by the LangChain callback. To name a child runnable, use
+`child.with_config(run_name="Normalize order ID")`. A tool uses the name from its definition.
+To override the root display name, pass `config={"metadata": {"name": "Checkout"}}` to
+`invoke` or `ainvoke`.
 
 Handlers conclude traces that they own when their framework run ends. They do
 not close a trace that was started by the caller. In short-lived jobs, ensure

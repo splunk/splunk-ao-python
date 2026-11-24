@@ -64,46 +64,47 @@ class SplunkAOCallback(BaseCallbackHandler):
             ingestion_hook=ingestion_hook,
         )
 
-    @staticmethod
+    @classmethod
     def _get_display_name(
-        node_type: LANGCHAIN_NODE_TYPE,
+        cls,
         serialized: dict[str, Any] | None,
         metadata: dict[str, Any] | None,
         parent_run_id: UUID | None,
+        kwargs: dict[str, Any],
     ) -> str | None:
-        # LangChain inherits metadata and uses the same callback name for configured and inferred names.
+        # Child runs inherit metadata, but their callback name belongs to the child.
         if parent_run_id is None and isinstance(metadata, dict):
             configured_name = metadata.get("name")
             if isinstance(configured_name, str) and configured_name.strip():
                 return configured_name
-        if node_type == "tool" and isinstance(serialized, dict):
-            tool_name = serialized.get("name")
-            if isinstance(tool_name, str) and tool_name.strip():
-                return tool_name
-        return None
+        name = cls._get_callback_name(serialized, kwargs)
+        return name if isinstance(name, str) and name.strip() else None
 
     @staticmethod
+    def _get_callback_name(serialized: dict[str, Any] | None, kwargs: dict[str, Any] | None) -> str | None:
+        if isinstance(serialized, dict):
+            if name := serialized.get("name"):
+                return name
+            node_class_reference = serialized.get("id")
+            if isinstance(node_class_reference, list) and node_class_reference:
+                return node_class_reference[-1]
+        if isinstance(kwargs, dict):
+            return kwargs.get("name") or None
+        return None
+
+    @classmethod
     def _get_node_name(
-        node_type: LANGCHAIN_NODE_TYPE, serialized: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None
+        cls,
+        node_type: LANGCHAIN_NODE_TYPE,
+        serialized: dict[str, Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
     ) -> str:
         try:
-            node_name = None
-            node_class_reference = None
-            # Langchain can pass None or non-dict objects as serialized
-            if serialized is not None and isinstance(serialized, dict):
-                node_name = serialized.get("name")
-                node_class_reference = serialized.get("id")
-
-            if node_name:
-                return node_name
-            if node_class_reference and isinstance(node_class_reference, list):
-                return node_class_reference[-1]
-            if isinstance(kwargs, dict):
-                if kwargs_name := kwargs.get("name"):
-                    return kwargs_name
-                if "metadata" in kwargs and isinstance(kwargs["metadata"], dict):
-                    if metadata_name := kwargs["metadata"].get("name"):
-                        return metadata_name
+            if (name := cls._get_callback_name(serialized, kwargs)) is not None:
+                return name
+            if isinstance(kwargs, dict) and isinstance(metadata := kwargs.get("metadata"), dict):
+                if metadata_name := metadata.get("name"):
+                    return metadata_name
             return node_type.capitalize()
         except Exception as e:
             _logger.error(f"Failed to get node name: {e}")
@@ -143,9 +144,7 @@ class SplunkAOCallback(BaseCallbackHandler):
         update_root_to_agent(
             parent_run_id, kwargs.get("metadata", {}), self._handler.get_node(parent_run_id) if parent_run_id else None
         )
-        kwargs["_otel_display_name"] = self._get_display_name(
-            "chain", serialized, kwargs.get("metadata"), parent_run_id
-        )
+        kwargs["_otel_display_name"] = self._get_display_name(serialized, kwargs.get("metadata"), parent_run_id, kwargs)
         kwargs["name"] = node_name
         self._handler.start_node(node_type, parent_run_id, run_id, input=serialize_to_str(inputs), tags=tags, **kwargs)
 
@@ -195,7 +194,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
+            _otel_display_name=self._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=[{"content": p, "role": "user"} for p in prompts],
             tags=tags,
             model=model,
@@ -264,7 +263,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
+            _otel_display_name=self._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialized_messages,
             tools=json.loads(json.dumps(tools, cls=EventSerializer)) if tools else None,
             tags=tags,
@@ -318,7 +317,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
+            _otel_display_name=self._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=input_str,
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,
@@ -402,7 +401,7 @@ class SplunkAOCallback(BaseCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
-            _otel_display_name=self._get_display_name(node_type, serialized, metadata, parent_run_id),
+            _otel_display_name=self._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialize_to_str(query),
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,

@@ -65,7 +65,7 @@ def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> Non
         assert child.parent == root.context
         assert child.name == "execute_tool search"
         assert child.attributes["splunk_ao.span.name"] == "search"
-        assert "splunk_ao.span.name" not in root.attributes
+        assert root.attributes["splunk_ao.span.name"] == "root"
         assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
             "execute_tool",
             "invoke_workflow",
@@ -78,8 +78,11 @@ def test_langchain_adapter_enqueues_child_at_callback_end_without_flush() -> Non
 @pytest.mark.asyncio
 @pytest.mark.parametrize("callback_type", [SplunkAOCallback, SplunkAOAsyncCallback], ids=["sync", "async"])
 @pytest.mark.parametrize("display_name", [None, "Checkout"])
-async def test_langchain_runnable_display_name_is_root_only(
-    callback_type: type[SplunkAOCallback] | type[SplunkAOAsyncCallback], display_name: str | None
+@pytest.mark.parametrize("child_run_name", [None, "Normalize order ID"])
+async def test_langchain_runnable_display_name_uses_the_run_name(
+    callback_type: type[SplunkAOCallback] | type[SplunkAOAsyncCallback],
+    display_name: str | None,
+    child_run_name: str | None,
 ) -> None:
     sink = RecordingSink()
     logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
@@ -93,20 +96,35 @@ async def test_langchain_runnable_display_name_is_root_only(
         """Search for the query."""
         return "result"
 
-    workflow = RunnableLambda(format_query) | search
+    runnable = RunnableLambda(format_query)
+    child_runnable = runnable.with_config(run_name=child_run_name) if child_run_name is not None else runnable
+    workflow = child_runnable | search
     metadata = {"name": display_name} if display_name else {}
     try:
-        assert await workflow.ainvoke("query", config={"callbacks": [callback], "metadata": metadata}) == "result"
+        assert (
+            await workflow.ainvoke(
+                "query", config={"callbacks": [callback], "metadata": metadata, "run_name": "order-flow"}
+            )
+            == "result"
+        )
 
         assert len(sink.spans) == 3
         root = next(span for span in sink.spans if span.parent is None)
         tool_span = next(span for span in sink.spans if span.attributes["gen_ai.operation.name"] == "execute_tool")
         child = next(span for span in sink.spans if span is not root and span is not tool_span)
-        assert root.attributes.get("splunk_ao.span.name") == display_name
+        assert root.name == "invoke_workflow order-flow"
+        assert root.attributes["splunk_ao.span.name"] == (display_name or "order-flow")
+        assert tool_span.name == "execute_tool search"
         assert tool_span.attributes["splunk_ao.span.name"] == "search"
-        assert "splunk_ao.span.name" not in child.attributes
+        expected_child_name = child_run_name or "format_query"
+        assert child.name == f"invoke_workflow {expected_child_name}"
+        assert child.attributes["splunk_ao.span.name"] == expected_child_name
     finally:
         logger.terminate()
+
+
+def test_langchain_child_display_name_ignores_inherited_metadata_without_a_callback_name() -> None:
+    assert SplunkAOCallback._get_display_name(None, {"name": "Checkout"}, uuid.uuid4(), {}) is None
 
 
 def test_langchain_gemini_modality_breakdown_reaches_exported_llm_span() -> None:
