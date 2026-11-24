@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1]
+
 ### Added
 
 - Export explicitly supplied display names as `splunk_ao.span.name` while keeping the GenAI OTLP span name.
@@ -342,6 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.8.1]: https://pypi.org/project/splunk-ao/0.8.1/
 [0.8.0]: https://pypi.org/project/splunk-ao/0.8.0/
 [0.7.0]: https://pypi.org/project/splunk-ao/0.7.0/
 [0.6.1]: https://pypi.org/project/splunk-ao/0.6.1/
