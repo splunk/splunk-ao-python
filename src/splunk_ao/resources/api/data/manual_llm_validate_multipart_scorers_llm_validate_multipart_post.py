@@ -14,7 +14,7 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_scorer_capabilities_header, get_sdk_header
 
 from ... import errors
 from ...models.body_manual_llm_validate_multipart_scorers_llm_validate_multipart_post import (
@@ -37,6 +37,7 @@ def _get_kwargs(*, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipa
     _kwargs["files"] = body.to_multipart()
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -89,6 +90,17 @@ def sync_detailed(
 ) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
 
@@ -112,6 +124,17 @@ def sync(
 ) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
 
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
+
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
 
@@ -130,6 +153,17 @@ async def asyncio_detailed(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
 ) -> Response[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
+
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):
@@ -153,6 +187,17 @@ async def asyncio(
     *, client: ApiClient, body: BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost
 ) -> Optional[GeneratedScorerValidationResponse | HTTPValidationError]:
     """Manual Llm Validate Multipart
+
+     Validate an LLM scorer manually, with optional query/response file uploads.
+
+    Args:
+        body: JSON-encoded GeneratedScorerValidationRequest.
+        query_files: Optional files attached to the query side of the validation.
+        response_files: Optional files attached to the response side of the validation.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        A pending task result the caller can poll for validation results.
 
     Args:
         body (BodyManualLlmValidateMultipartScorersLlmValidateMultipartPost):

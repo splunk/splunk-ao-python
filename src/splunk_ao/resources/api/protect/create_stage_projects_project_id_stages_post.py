@@ -85,6 +85,19 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | StageDB]:
     """Create Stage
 
+     Create a stage for a project, optionally seeding a first version.
+
+    Args:
+        stage_request: The stage to create, including its type and (for central stages) rulesets.
+        ctx: Async request context.
+        project: The project to create the stage in, resolved from the URL.
+
+    Returns:
+        The created stage, with its current version set if it's a central stage.
+
+    Raises:
+        HTTPException: 422 if the project isn't a protect or gen_ai project.
+
     Args:
         project_id (str):
         body (StageWithRulesets):
@@ -107,6 +120,19 @@ def sync_detailed(
 def sync(project_id: str, *, client: ApiClient, body: StageWithRulesets) -> Optional[HTTPValidationError | StageDB]:
     """Create Stage
 
+     Create a stage for a project, optionally seeding a first version.
+
+    Args:
+        stage_request: The stage to create, including its type and (for central stages) rulesets.
+        ctx: Async request context.
+        project: The project to create the stage in, resolved from the URL.
+
+    Returns:
+        The created stage, with its current version set if it's a central stage.
+
+    Raises:
+        HTTPException: 422 if the project isn't a protect or gen_ai project.
+
     Args:
         project_id (str):
         body (StageWithRulesets):
@@ -126,6 +152,19 @@ async def asyncio_detailed(
     project_id: str, *, client: ApiClient, body: StageWithRulesets
 ) -> Response[HTTPValidationError | StageDB]:
     """Create Stage
+
+     Create a stage for a project, optionally seeding a first version.
+
+    Args:
+        stage_request: The stage to create, including its type and (for central stages) rulesets.
+        ctx: Async request context.
+        project: The project to create the stage in, resolved from the URL.
+
+    Returns:
+        The created stage, with its current version set if it's a central stage.
+
+    Raises:
+        HTTPException: 422 if the project isn't a protect or gen_ai project.
 
     Args:
         project_id (str):
@@ -150,6 +189,19 @@ async def asyncio(
     project_id: str, *, client: ApiClient, body: StageWithRulesets
 ) -> Optional[HTTPValidationError | StageDB]:
     """Create Stage
+
+     Create a stage for a project, optionally seeding a first version.
+
+    Args:
+        stage_request: The stage to create, including its type and (for central stages) rulesets.
+        ctx: Async request context.
+        project: The project to create the stage in, resolved from the URL.
+
+    Returns:
+        The created stage, with its current version set if it's a central stage.
+
+    Raises:
+        HTTPException: 422 if the project isn't a protect or gen_ai project.
 
     Args:
         project_id (str):

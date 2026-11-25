@@ -7,7 +7,7 @@ from uuid import UUID
 from galileo_core.schemas.logging.span import Span, StepWithChildSpans
 from galileo_core.schemas.logging.trace import Trace
 from galileo_core.schemas.shared.metric import MetricValueType
-from splunk_ao.resources.models.scorer_config import ScorerConfig
+from splunk_ao.resources.models.runtime_scorer_config import RuntimeScorerConfig
 from splunk_ao.resources.models.scorer_response import ScorerResponse
 from splunk_ao.schema.metrics import LocalMetricConfig, Metric, SplunkAOEvaluators
 from splunk_ao.scorers import Scorers, ScorerSettings
@@ -96,7 +96,7 @@ def create_metric_configs(
     project_id: str,
     run_id: str | None,  # Can be experiment_id, agent_stream_id, or None (for trigger=True flow)
     metrics: builtins.list[SplunkAOEvaluators | Metric | LocalMetricConfig | str],
-) -> tuple[builtins.list[ScorerConfig], builtins.list[LocalMetricConfig]]:
+) -> tuple[builtins.list[RuntimeScorerConfig], builtins.list[LocalMetricConfig]]:
     """
     Process evaluators and create scorer configurations for experiments or agent streams.
 
@@ -122,9 +122,9 @@ def create_metric_configs(
 
     Returns
     -------
-    tuple[list[ScorerConfig], list[LocalMetricConfig]]
+    tuple[list[RuntimeScorerConfig], list[LocalMetricConfig]]
         A tuple containing:
-        - List of ScorerConfig objects for server-side evaluators configured in Splunk AO
+        - List of RuntimeScorerConfig objects for server-side evaluators configured in Splunk AO
         - List of LocalMetricConfig objects for client-side evaluators to process locally
 
     Raises
@@ -172,14 +172,14 @@ def create_metric_configs(
         if label:
             by_label[label] = s
 
-    scorers: list[ScorerConfig] = []
+    scorers: list[RuntimeScorerConfig] = []
     unknown_metrics: list[str] = []
 
     # Match scorer_ids
     for sid in scorer_ids:
         matched = by_id.get(sid)
         if matched:
-            scorers.append(ScorerConfig.from_dict(matched.to_dict()))
+            scorers.append(RuntimeScorerConfig.from_dict(matched.to_dict()))
         else:
             unknown_metrics.append(sid)
 
@@ -192,7 +192,7 @@ def create_metric_configs(
             if version is not None:
                 raw_version = scorers_client.get_scorer_version(scorer_id=raw_metric_dict["id"], version=version)
                 raw_metric_dict["scorer_version"] = raw_version.to_dict()
-            scorers.append(ScorerConfig.from_dict(raw_metric_dict))
+            scorers.append(RuntimeScorerConfig.from_dict(raw_metric_dict))
         else:
             unknown_metrics.append(search_val)
 

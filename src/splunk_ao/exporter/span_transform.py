@@ -1,15 +1,13 @@
-"""Immutable OTLP span normalization before serialization."""
+"""Immutable OTLP span preparation before serialization."""
 
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
-from splunk_ao.converter.attribute_mapping import normalize_attributes_for_export
 from splunk_ao.exporter.diagnostics import ExportHealth, get_export_health
 
 ROUTING_ATTRIBUTE_KEYS = frozenset(
@@ -22,23 +20,10 @@ ROUTING_ATTRIBUTE_KEYS = frozenset(
     }
 )
 
-_NORMALIZATION_ENV = "SPLUNK_AO_DEV_ENABLE_ATTRIBUTE_NORMALIZATION"
-_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 
-
-def _normalization_enabled() -> bool:
-    value = os.environ.get(_NORMALIZATION_ENV)
-    return value is not None and value.strip().lower() in _TRUE_VALUES
-
-
-def copy_span_for_export(
-    span: ReadableSpan, routing_resource: Resource | None = None, *, normalize_attributes: bool = False
-) -> ReadableSpan:
+def copy_span_for_export(span: ReadableSpan, routing_resource: Resource | None = None) -> ReadableSpan:
     """Return an immutable span copy with final attributes and routing."""
-    source_attributes = {
-        key: value for key, value in (span.attributes or {}).items() if key not in ROUTING_ATTRIBUTE_KEYS
-    }
-    attributes = normalize_attributes_for_export(source_attributes, enabled=normalize_attributes)
+    attributes = {key: value for key, value in (span.attributes or {}).items() if key not in ROUTING_ATTRIBUTE_KEYS}
 
     source_resource = span.resource or Resource({})
     base_resource = Resource(
@@ -64,18 +49,11 @@ def copy_span_for_export(
 
 
 class NormalizingSpanExporter(SpanExporter):
-    """Apply canonical attributes and routing once before delegating export."""
+    """Apply SDK routing once before delegating export."""
 
-    def __init__(
-        self,
-        delegate: SpanExporter,
-        routing_resource: Resource | None = None,
-        *,
-        normalize_attributes: bool | None = None,
-    ) -> None:
+    def __init__(self, delegate: SpanExporter, routing_resource: Resource | None = None) -> None:
         self._delegate = delegate
         self._routing_resource = routing_resource
-        self._normalize_attributes = _normalization_enabled() if normalize_attributes is None else normalize_attributes
 
     @property
     def delegate(self) -> SpanExporter:
@@ -88,13 +66,8 @@ class NormalizingSpanExporter(SpanExporter):
         return get_export_health(self._delegate)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
-        """Export normalized immutable copies of the supplied spans."""
-        return self._delegate.export(
-            tuple(
-                copy_span_for_export(span, self._routing_resource, normalize_attributes=self._normalize_attributes)
-                for span in spans
-            )
-        )
+        """Export immutable copies of the supplied spans."""
+        return self._delegate.export(tuple(copy_span_for_export(span, self._routing_resource) for span in spans))
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Delegate flushing exactly once."""

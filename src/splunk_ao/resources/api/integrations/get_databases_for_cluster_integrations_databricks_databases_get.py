@@ -91,6 +91,15 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | list[str]]:
     """Get Databases For Cluster
 
+     List the databases in a catalog of the caller's Databricks integration.
+
+    Args:
+        catalog: Catalog to list, defaulting to the integration's configured catalog.
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The database names.
+
     Args:
         catalog (None | str | Unset):
 
@@ -112,6 +121,15 @@ def sync_detailed(
 def sync(*, client: ApiClient, catalog: None | str | Unset = UNSET) -> Optional[HTTPValidationError | list[str]]:
     """Get Databases For Cluster
 
+     List the databases in a catalog of the caller's Databricks integration.
+
+    Args:
+        catalog: Catalog to list, defaulting to the integration's configured catalog.
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The database names.
+
     Args:
         catalog (None | str | Unset):
 
@@ -130,6 +148,15 @@ async def asyncio_detailed(
     *, client: ApiClient, catalog: None | str | Unset = UNSET
 ) -> Response[HTTPValidationError | list[str]]:
     """Get Databases For Cluster
+
+     List the databases in a catalog of the caller's Databricks integration.
+
+    Args:
+        catalog: Catalog to list, defaulting to the integration's configured catalog.
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The database names.
 
     Args:
         catalog (None | str | Unset):
@@ -153,6 +180,15 @@ async def asyncio(
     *, client: ApiClient, catalog: None | str | Unset = UNSET
 ) -> Optional[HTTPValidationError | list[str]]:
     """Get Databases For Cluster
+
+     List the databases in a catalog of the caller's Databricks integration.
+
+    Args:
+        catalog: Catalog to list, defaulting to the integration's configured catalog.
+        databricks: Databricks service resolved from the URL, credentials already validated.
+
+    Returns:
+        The database names.
 
     Args:
         catalog (None | str | Unset):

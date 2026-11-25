@@ -8,9 +8,11 @@ from attrs import field as _attrs_field
 
 from ..models.chain_aggregation_strategy import ChainAggregationStrategy
 from ..models.node_type import NodeType
+from ..models.valid_result_score_type import ValidResultScoreType
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.scorer_environment import ScorerEnvironment
     from ..models.test_score import TestScore
 
 
@@ -21,24 +23,28 @@ T = TypeVar("T", bound="ValidResult")
 class ValidResult:
     """
     Attributes:
-        score_type (str):
+        score_type (ValidResultScoreType):
         scoreable_node_types (list[NodeType]):
         test_scores (list[TestScore]):
         result_type (Literal['valid'] | Unset):  Default: 'valid'.
         include_llm_credentials (bool | Unset):  Default: False.
         chain_aggregation (ChainAggregationStrategy | None | Unset):
+        environment (None | ScorerEnvironment | Unset):
     """
 
-    score_type: str
+    score_type: ValidResultScoreType
     scoreable_node_types: list[NodeType]
     test_scores: list[TestScore]
     result_type: Literal["valid"] | Unset = "valid"
     include_llm_credentials: bool | Unset = False
     chain_aggregation: ChainAggregationStrategy | None | Unset = UNSET
+    environment: None | ScorerEnvironment | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        score_type = self.score_type
+        from ..models.scorer_environment import ScorerEnvironment
+
+        score_type = self.score_type.value
 
         scoreable_node_types = []
         for scoreable_node_types_item_data in self.scoreable_node_types:
@@ -62,6 +68,14 @@ class ValidResult:
         else:
             chain_aggregation = self.chain_aggregation
 
+        environment: dict[str, Any] | None | Unset
+        if isinstance(self.environment, Unset):
+            environment = UNSET
+        elif isinstance(self.environment, ScorerEnvironment):
+            environment = self.environment.to_dict()
+        else:
+            environment = self.environment
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -73,15 +87,18 @@ class ValidResult:
             field_dict["include_llm_credentials"] = include_llm_credentials
         if chain_aggregation is not UNSET:
             field_dict["chain_aggregation"] = chain_aggregation
+        if environment is not UNSET:
+            field_dict["environment"] = environment
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.scorer_environment import ScorerEnvironment
         from ..models.test_score import TestScore
 
         d = dict(src_dict)
-        score_type = d.pop("score_type")
+        score_type = ValidResultScoreType(d.pop("score_type"))
 
         scoreable_node_types = []
         _scoreable_node_types = d.pop("scoreable_node_types")
@@ -120,6 +137,23 @@ class ValidResult:
 
         chain_aggregation = _parse_chain_aggregation(d.pop("chain_aggregation", UNSET))
 
+        def _parse_environment(data: object) -> None | ScorerEnvironment | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                environment_type_0 = ScorerEnvironment.from_dict(data)
+
+                return environment_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerEnvironment | Unset, data)
+
+        environment = _parse_environment(d.pop("environment", UNSET))
+
         valid_result = cls(
             score_type=score_type,
             scoreable_node_types=scoreable_node_types,
@@ -127,6 +161,7 @@ class ValidResult:
             result_type=result_type,
             include_llm_credentials=include_llm_credentials,
             chain_aggregation=chain_aggregation,
+            environment=environment,
         )
 
         valid_result.additional_properties = d

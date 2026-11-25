@@ -3,12 +3,13 @@
 import os
 from dataclasses import dataclass
 from enum import StrEnum
+from urllib.parse import urlsplit
 
 from pydantic import SecretStr
 
-from splunk_ao.shared.exceptions import AmbiguousConfigurationError, MissingConfigurationError
+from splunk_ao.shared.exceptions import AmbiguousConfigurationError, ConfigurationError, MissingConfigurationError
 
-_O11Y_ENV_VARS = ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN")
+_O11Y_ENV_VARS = ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN", "SPLUNK_AO_O11Y_API_URL")
 _STANDALONE_ENV_VARS = ("SPLUNK_AO_API_KEY", "SPLUNK_AO_CONSOLE_URL", "SPLUNK_AO_API_URL")
 
 
@@ -46,6 +47,26 @@ def resolve_deployment() -> DeploymentMode:
     )
 
 
+def _normalize_api_origin(value: str) -> str:
+    """Validate an API origin override and return it as ``https://host[:port]``."""
+    try:
+        parts = urlsplit(value.strip())
+        port = parts.port
+    except ValueError:
+        raise ConfigurationError("SPLUNK_AO_O11Y_API_URL is not a valid URL.") from None
+    if parts.scheme != "https" or not parts.hostname:
+        raise ConfigurationError("SPLUNK_AO_O11Y_API_URL must be an https:// URL.")
+    if "@" in parts.netloc or parts.query or parts.fragment or parts.path.strip("/"):
+        raise ConfigurationError(
+            "SPLUNK_AO_O11Y_API_URL must be an origin only (scheme://host[:port]) without credentials, path, "
+            "query, or fragment."
+        )
+    if any(ch.isspace() for ch in parts.netloc):
+        raise ConfigurationError("SPLUNK_AO_O11Y_API_URL has an invalid host.")
+    host = f"[{parts.hostname}]" if ":" in parts.hostname else parts.hostname
+    return f"https://{host}:{port}" if port is not None else f"https://{host}"
+
+
 @dataclass
 class O11yConfig:
     """Configuration for a Splunk Observability Cloud deployment."""
@@ -53,6 +74,7 @@ class O11yConfig:
     realm: str
     o11y_token: SecretStr | None = None
     o11y_api_token: SecretStr | None = None
+    api_url: str | None = None
 
     def __post_init__(self) -> None:
         missing = []
@@ -62,6 +84,11 @@ class O11yConfig:
             missing.append("one of SPLUNK_AO_O11Y_TOKEN or SPLUNK_AO_O11Y_API_TOKEN")
         if missing:
             raise MissingConfigurationError(f"O11y deployment requires {' and '.join(missing)} to be set.")
+
+        if self.api_url:
+            self.api_url = _normalize_api_origin(self.api_url)
+        else:
+            self.api_url = None
 
         if self.o11y_token is not None and not isinstance(self.o11y_token, SecretStr):
             self.o11y_token = SecretStr(self.o11y_token)
@@ -78,6 +105,7 @@ class O11yConfig:
             realm=realm or "",
             o11y_token=SecretStr(o11y_token) if o11y_token else None,
             o11y_api_token=SecretStr(o11y_api_token) if o11y_api_token else None,
+            api_url=_env("SPLUNK_AO_O11Y_API_URL"),
         )
 
     @property
@@ -107,11 +135,13 @@ class O11yConfig:
 
     @property
     def api_root(self) -> str:
-        """Return the realm-derived application origin used by the AO API."""
-        return f"https://app.{self.realm}.observability.splunkcloud.com"
+        """Return the explicit API origin override, or the realm-derived origin used by the AO API."""
+        if self.api_url:
+            return self.api_url
+        return f"https://api.{self.realm}.observability.splunkcloud.com"
 
     def require_api_url(self) -> str:
-        """Return the realm-derived AO CRUD API URL."""
+        """Return the AO CRUD API URL from the override origin or the realm-derived origin."""
         return f"{self.api_root}/ao/api/"
 
     def require_console_url(self) -> str:

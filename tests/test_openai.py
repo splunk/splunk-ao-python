@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
@@ -9,7 +11,15 @@ from openai.types.responses import ResponseCompletedEvent
 
 from galileo_core.schemas.logging.span import LlmSpan, WorkflowSpan
 from splunk_ao import Message, MessageRole, log, splunk_ao_context
+from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.openai import OpenAISplunkAO, openai
+from splunk_ao.openai.extractors import (
+    extract_input_data_from_kwargs,
+    process_function_call_outputs,
+    process_output_items,
+)
+from splunk_ao.openai.models import OpenAiModuleDefinition
+from splunk_ao.openai.response_generator import ResponseGeneratorSync
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
 from tests.testutils.streaming import EventStream, ResponsesEventStream
 
@@ -83,6 +93,7 @@ def test_basic_openai_call(
     )
     assert payload.traces[0].spans[0].input == [Message(content="Say this is a test", role=MessageRole.user)]
     assert payload.traces[0].spans[0].output == Message(content="The mock is working! ;)", role=MessageRole.assistant)
+    assert payload.traces[0].spans[0].finish_reason == create_chat_completion.choices[0].finish_reason
     assert payload.traces[0].spans[0].tools == [
         {
             "type": "function",
@@ -141,6 +152,7 @@ def test_streamed_openai_call(
     assert payload.traces[0].spans[0].status_code == 200
     assert payload.traces[0].spans[0].input == [Message(content="Say this is a test", role=MessageRole.user)]
     assert payload.traces[0].spans[0].output == Message(content="Hello", role=MessageRole.assistant)
+    assert payload.traces[0].spans[0].finish_reason == "stop"
 
 
 @patch("openai.resources.chat.Completions.create")
@@ -446,6 +458,90 @@ def test_chat_completions_multiple_messages(
     ]
     assert payload.traces[0].spans[0].input == expected_span_input
     assert payload.traces[0].spans[0].output == Message(content="The mock is working! ;)", role=MessageRole.assistant)
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("name", [None, "Answer customer"])
+def test_responses_api_exports_only_explicit_display_name(
+    create_responses_response, streaming: bool, name: str | None
+) -> None:
+    response = create_responses_response
+    if streaming:
+        response = Stream(
+            cast_to=ResponseCompletedEvent,
+            client=openai.OpenAI(),
+            response=Response(status_code=200, content=ResponsesEventStream()),
+        )
+    sink = Mock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    try:
+        with (
+            patch("openai.resources.responses.Responses.create", return_value=response) as create,
+            patch.object(splunk_ao_context, "get_logger_instance", return_value=logger),
+        ):
+            OpenAISplunkAO().register_tracing()
+            name_options = {} if name is None else {"name": name}
+            result = openai.responses.create(input="Say hello", model="gpt-4o", stream=streaming, **name_options)
+            if streaming:
+                list(result)
+
+        create.assert_called_once_with(input="Say hello", model="gpt-4o", stream=streaming)
+        sink.emit.assert_called_once()
+        span = sink.emit.call_args.args[0]
+        assert span.name == "chat gpt-4o"
+        assert span.attributes.get("splunk_ao.span.name") == name
+    finally:
+        logger.terminate()
+
+
+def test_responses_api_distinguishes_function_names_from_generated_tool_labels() -> None:
+    logger = Mock(spec=SplunkAOLogger)
+    process_function_call_outputs(
+        [
+            {"type": "function_call", "call_id": "named", "name": "get_weather"},
+            {"type": "function_call_output", "call_id": "named", "output": "Sunny"},
+            {"type": "function_call_output", "call_id": "unmatched", "output": "Cloudy"},
+        ],
+        logger,
+    )
+    process_output_items(
+        [SimpleNamespace(type="image_generation_call", id="image", status="completed", result="image data")], logger
+    )
+
+    tool_names = [
+        (call.kwargs["name"], call.kwargs["_name_is_explicit"]) for call in logger.add_tool_span.call_args_list
+    ]
+    assert tool_names == [("get_weather", True), ("function_call", False), ("image_generation_call", False)]
+
+
+@pytest.mark.parametrize("resource_type", ["response", "chat", "completion"])
+@pytest.mark.parametrize("supply_name", [False, True])
+def test_streamed_openai_span_preserves_name_provenance(resource_type: str, supply_name: bool) -> None:
+    resource = OpenAiModuleDefinition(
+        module="openai", object="TestResource", method="create", type=resource_type, sync=True
+    )
+    fallback_name = "openai-client-generation"
+    name_options = {"name": fallback_name} if supply_name else {}
+    input_data = extract_input_data_from_kwargs(resource, datetime.now(UTC), name_options)
+    logger = Mock(spec=SplunkAOLogger)
+    stream = ResponseGeneratorSync(
+        resource=resource,
+        response=(item for item in ()),
+        input_data=input_data,
+        logger=logger,
+        should_complete_trace=False,
+    )
+
+    # A Responses stream without an output field takes the basic span path.
+    with patch(
+        "splunk_ao.openai.response_generator.extract_streamed_openai_response", return_value=("gpt-4o", "Hi", {})
+    ):
+        list(stream)
+
+    logger.add_llm_span.assert_called_once()
+    assert logger.add_llm_span.call_args.kwargs["name"] == fallback_name
+    assert logger.add_llm_span.call_args.kwargs["_name_is_explicit"] is supply_name
 
 
 @patch("openai.resources.responses.Responses.create")

@@ -85,7 +85,14 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update AWS Bedrock integration
 
-     Create or update an AWS integration for this user from Galileo.
+     Create or update an AWS Bedrock integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (BaseAwsIntegrationCreate):
@@ -108,7 +115,14 @@ def sync_detailed(
 def sync(*, client: ApiClient, body: BaseAwsIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update AWS Bedrock integration
 
-     Create or update an AWS integration for this user from Galileo.
+     Create or update an AWS Bedrock integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (BaseAwsIntegrationCreate):
@@ -129,7 +143,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update AWS Bedrock integration
 
-     Create or update an AWS integration for this user from Galileo.
+     Create or update an AWS Bedrock integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (BaseAwsIntegrationCreate):
@@ -154,7 +175,14 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update AWS Bedrock integration
 
-     Create or update an AWS integration for this user from Galileo.
+     Create or update an AWS Bedrock integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (BaseAwsIntegrationCreate):

@@ -10,59 +10,16 @@ from typing import Any, cast
 from opentelemetry.util.types import AttributeValue
 from pydantic import BaseModel
 
-from galileo_core.schemas.logging.span import AgentSpan, LlmSpan, RetrieverSpan, ToolSpan, WorkflowSpan
+from galileo_core.schemas.logging.span import (
+    AgentSpan,
+    LlmSpan,
+    RetrieverSpan,
+    StepWithChildSpans,
+    ToolSpan,
+    WorkflowSpan,
+)
 from galileo_core.schemas.logging.step import BaseStep, StepType
 from splunk_ao.logger.control import ControlSpan
-
-SPLUNK_AO_SYSTEM = "splunk_ao.system"
-SPLUNK_AO_SYSTEM_VALUE = "splunk_ao_python"
-
-CONTENT_ALIAS_BY_GEN_AI: Mapping[str, str] = {
-    "gen_ai.input.messages": "splunk_ao.input.messages",
-    "gen_ai.system_instructions": "splunk_ao.system_instructions",
-    "gen_ai.output.messages": "splunk_ao.output.messages",
-    "gen_ai.tool.call.arguments": "splunk_ao.tool.call.arguments",
-    "gen_ai.tool.call.result": "splunk_ao.tool.call.result",
-    "gen_ai.retrieval.documents": "splunk_ao.retrieval.documents",
-    "gen_ai.tool.definitions": "splunk_ao.tool.definitions",
-}
-
-SPLUNK_ALIAS_BY_GEN_AI: Mapping[str, str] = {
-    "gen_ai.operation.name": "splunk_ao.operation.name",
-    "gen_ai.conversation.id": "splunk_ao.session.id",
-    "gen_ai.workflow.name": "splunk_ao.workflow.name",
-    "gen_ai.agent.name": "splunk_ao.agent.name",
-    "gen_ai.agent.id": "splunk_ao.agent.id",
-    "gen_ai.agent.description": "splunk_ao.agent.description",
-    "gen_ai.agent.version": "splunk_ao.agent.version",
-    "gen_ai.provider.name": "splunk_ao.provider.name",
-    "gen_ai.request.model": "splunk_ao.request.model",
-    "gen_ai.request.temperature": "splunk_ao.request.temperature",
-    "gen_ai.request.top_p": "splunk_ao.request.top_p",
-    "gen_ai.request.top_k": "splunk_ao.request.top_k",
-    "gen_ai.request.max_tokens": "splunk_ao.request.max_tokens",
-    "gen_ai.request.stop_sequences": "splunk_ao.request.stop_sequences",
-    "gen_ai.request.frequency_penalty": "splunk_ao.request.frequency_penalty",
-    "gen_ai.request.presence_penalty": "splunk_ao.request.presence_penalty",
-    "gen_ai.request.seed": "splunk_ao.request.seed",
-    "gen_ai.response.finish_reasons": "splunk_ao.response.finish_reasons",
-    "gen_ai.response.model": "splunk_ao.response.model",
-    "gen_ai.response.id": "splunk_ao.response.id",
-    "gen_ai.output.type": "splunk_ao.output.type",
-    "gen_ai.tool.call.id": "splunk_ao.tool.call.id",
-    "gen_ai.tool.name": "splunk_ao.tool.name",
-    "gen_ai.tool.description": "splunk_ao.tool.description",
-    "gen_ai.tool.type": "splunk_ao.tool.type",
-    "gen_ai.retrieval.top_k": "splunk_ao.retrieval.top_k",
-    "gen_ai.retrieval.query.text": "splunk_ao.retrieval.query.text",
-    "gen_ai.usage.input_tokens": "splunk_ao.llm.usage.input_tokens",
-    "gen_ai.usage.output_tokens": "splunk_ao.llm.usage.output_tokens",
-    "gen_ai.usage.cache_creation.input_tokens": "splunk_ao.llm.usage.cache_creation.input_tokens",
-    "gen_ai.usage.cache_read.input_tokens": "splunk_ao.llm.usage.cache_read.input_tokens",
-    "gen_ai.usage.reasoning.output_tokens": "splunk_ao.llm.usage.reasoning.output_tokens",
-    "gen_ai.response.time_to_first_chunk": "splunk_ao.llm.time_to_first_token_ns",
-    **CONTENT_ALIAS_BY_GEN_AI,
-}
 
 _OPERATION_BY_STEP_TYPE = {
     StepType.llm: "chat",
@@ -268,7 +225,13 @@ def _orchestration_messages(value: Any, default_role: str) -> tuple[list[dict[st
 def _with_finish_reasons(messages: list[dict[str, Any]], finish_reason: str | None = None) -> list[dict[str, Any]]:
     for message in messages:
         source_finish_reason = message.get("finish_reason")
-        message["finish_reason"] = finish_reason or source_finish_reason or "unknown"
+        # Infer "tool_call" when the message has tool_call parts but no explicit finish reason.
+        inferred_finish_reason = (
+            "tool_call"
+            if any(part.get("type") == "tool_call" for part in message.get("parts", []) if isinstance(part, Mapping))
+            else "unknown"
+        )
+        message["finish_reason"] = finish_reason or source_finish_reason or inferred_finish_reason
     return messages
 
 
@@ -389,8 +352,8 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
     _set_if_present(attrs, "gen_ai.usage.output_tokens", metrics.num_output_tokens)
     _set_if_present(attrs, "splunk_ao.llm.usage.total_tokens", metrics.num_total_tokens)
     if metrics.time_to_first_token_ns is not None:
-        attrs["gen_ai.response.time_to_first_chunk"] = metrics.time_to_first_token_ns / 1_000_000_000
         attrs["splunk_ao.llm.time_to_first_token_ns"] = metrics.time_to_first_token_ns
+        attrs["gen_ai.response.time_to_first_chunk"] = metrics.time_to_first_token_ns / 1_000_000_000
 
     for field_name, attribute_name in (
         ("input_cost", "splunk_ao.llm.cost.input_usd"),
@@ -399,6 +362,11 @@ def set_llm_attributes(attrs: MutableMapping[str, AttributeValue], span: LlmSpan
         ("cache_creation_input_tokens", "gen_ai.usage.cache_creation.input_tokens"),
         ("cache_read_input_tokens", "gen_ai.usage.cache_read.input_tokens"),
         ("reasoning_output_tokens", "gen_ai.usage.reasoning.output_tokens"),
+        # Per-modality subsets of the input/output token counts; the backend prices them per modality.
+        ("num_image_input_tokens", "gen_ai.usage.image.input_tokens"),
+        ("num_audio_input_tokens", "gen_ai.usage.audio.input_tokens"),
+        ("num_image_output_tokens", "gen_ai.usage.image.output_tokens"),
+        ("num_audio_output_tokens", "gen_ai.usage.audio.output_tokens"),
     ):
         _set_if_present(attrs, attribute_name, _field(metrics, field_name))
 
@@ -434,6 +402,19 @@ def set_retriever_attributes(attrs: MutableMapping[str, AttributeValue], span: R
     _set_if_present(attrs, "gen_ai.retrieval.top_k", requested_top_k)
 
 
+def _matching_child_finish_reason(span: WorkflowSpan | AgentSpan, output_messages: list[dict[str, Any]]) -> str | None:
+    """Use a terminal LLM's reason only for an enclosing operation with the same output."""
+    child: BaseStep = span
+    while isinstance(child, StepWithChildSpans) and child.spans:
+        child = child.spans[-1]
+        child_messages, _ = _orchestration_messages(child.output, "assistant")
+        if child_messages != output_messages:
+            return None
+        if isinstance(child, LlmSpan):
+            return child.finish_reason
+    return None
+
+
 def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan | AgentSpan) -> None:
     input_messages, _ = _orchestration_messages(span.input, "user")
     if input_messages is not None:
@@ -445,9 +426,26 @@ def _set_orchestration_content(attrs: MutableMapping[str, AttributeValue], span:
     output_messages, full_history = _orchestration_messages(span.output, "assistant")
     if output_messages is None:
         return
-    if full_history and input_messages is not None and output_messages[: len(input_messages)] == input_messages:
+    # The trim is gated on a confirmed prefix match so that it only fires when the output
+    # is genuinely accumulated input history. Without this gate, any span whose output is a
+    # top-level {"messages": [...]} container would be reduced to a single message — a
+    # LangGraph ToolNode emitting one ToolMessage per parallel tool call would lose all but
+    # the last. Consequence: with a checkpointer the input is only the new turn while the
+    # output carries the whole persisted thread, so the prefix never matches and no
+    # reduction fires. That case remains unhandled.
+    if full_history and input_messages and output_messages[: len(input_messages)] == input_messages:
         output_messages = output_messages[len(input_messages) :]
-    attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages))
+        # Prefer the last non-user message: the terminal message may legitimately be a tool
+        # response (return_direct) or a tool-call AIMessage, but a trailing user turn is an
+        # input, not this span's output.
+        terminal = next(
+            (index for index in reversed(range(len(output_messages))) if output_messages[index].get("role") != "user"),
+            None,
+        )
+        if terminal is not None:
+            output_messages = output_messages[terminal : terminal + 1]
+    finish_reason = _matching_child_finish_reason(span, output_messages)
+    attrs["gen_ai.output.messages"] = _json_string(_with_finish_reasons(output_messages, finish_reason))
 
 
 def set_workflow_attributes(attrs: MutableMapping[str, AttributeValue], span: WorkflowSpan) -> None:
@@ -521,33 +519,3 @@ def build_span_attributes(span: BaseStep, session_id: str | None = None) -> dict
         raise TypeError(f"Unsupported span type: {type(span).__name__}")
 
     return attrs
-
-
-def _alias_value(source_key: str, value: AttributeValue) -> AttributeValue:
-    if source_key == "gen_ai.response.time_to_first_chunk":
-        try:
-            return int(float(value) * 1_000_000_000)
-        except (TypeError, ValueError):
-            return value
-    return value
-
-
-def normalize_attributes_for_export(
-    attrs: Mapping[str, AttributeValue], *, enabled: bool = True
-) -> dict[str, AttributeValue]:
-    """Return final wire attributes without mutating the source mapping."""
-    result = dict(attrs)
-    result[SPLUNK_AO_SYSTEM] = SPLUNK_AO_SYSTEM_VALUE
-    if not enabled:
-        return result
-
-    for source_key, destination_key in SPLUNK_ALIAS_BY_GEN_AI.items():
-        if source_key in attrs:
-            if destination_key == "splunk_ao.llm.time_to_first_token_ns" and destination_key in attrs:
-                continue
-            result[destination_key] = _alias_value(source_key, attrs[source_key])
-
-    for source_key in CONTENT_ALIAS_BY_GEN_AI:
-        result.pop(source_key, None)
-
-    return result

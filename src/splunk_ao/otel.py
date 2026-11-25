@@ -18,13 +18,12 @@ from galileo_core.schemas.logging.span import Span as SplunkAOSpan
 from splunk_ao.config import SplunkAOConfig
 from splunk_ao.converter import build_span_attributes
 from splunk_ao.decorator import (
+    _agent_stream_context,
     _dataset_input_context,
     _dataset_metadata_context,
     _dataset_output_context,
     _experiment_id_context,
-    _agent_stream_context,
     _project_context,
-    _session_id_context,
 )
 from splunk_ao.deployment import DeploymentMode, O11yConfig, StandaloneConfig
 from splunk_ao.exporter import (
@@ -35,6 +34,7 @@ from splunk_ao.exporter import (
     resolve_routing,
 )
 from splunk_ao.exporter.diagnostics import get_export_health
+from splunk_ao.session_context import get_effective_session_id
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +243,7 @@ class SplunkAOSpanProcessor(SpanProcessor):
 
     def on_start(self, span: Span, parent_context: context.Context | None = None) -> None:
         """Handle span start events by delegating to the underlying processor."""
-        session_id = _session_id_context.get(None)
+        session_id = get_effective_session_id(context=parent_context)
 
         if session_id:
             span.set_attribute("gen_ai.conversation.id", session_id)
@@ -324,12 +324,13 @@ def start_splunk_ao_span(splunk_ao_span: SplunkAOSpan) -> Generator[trace.Span, 
     is_conversation_root = not trace.get_current_span().get_span_context().is_valid and isinstance(
         splunk_ao_span, WorkflowSpan | AgentSpan
     )
+    session_id = get_effective_session_id()
     with tracer.start_as_current_span(splunk_ao_span.name) as span:
         try:
             yield span
         finally:
             try:
-                attributes = build_span_attributes(splunk_ao_span, _session_id_context.get(None))
+                attributes = build_span_attributes(splunk_ao_span, session_id)
                 if is_conversation_root:
                     attributes[GEN_AI_CONVERSATION_ROOT] = True
                 for key, value in attributes.items():

@@ -14,7 +14,7 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_scorer_capabilities_header, get_sdk_header
 
 from ... import errors
 from ...models.body_validate_code_scorer_log_record_scorers_code_validate_log_record_post import (
@@ -37,6 +37,7 @@ def _get_kwargs(*, body: BodyValidateCodeScorerLogRecordScorersCodeValidateLogRe
     _kwargs["files"] = body.to_multipart()
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs

@@ -95,10 +95,10 @@ not the main API documentation contract.
 | `tests/` | pytest 9, xdist, respx, socket blocking, timeout and coverage plugins |
 | `splunk-ao-a2a/` | Independently released native-OTel A2A instrumentation; uv/Hatch |
 | `splunk-ao-adk/` | Independently released Google ADK handler integration; uv/Hatch |
-| `splunk-ao-migration-tool/` | Migration documentation and examples, not a buildable package |
+| `splunk-ao-migration-tool/` | uv workspace; `splunk-ao-migrate` CLI built from `splunk_ao_migrate/pyproject.toml` |
 | `src/splunk_ao/resources/` | OpenAPI-generated transport client; never hand-edit |
 
-The three buildable packages have independent versions, CI, and release workflows. Only the root `poetry.lock` is
+The four buildable packages have independent versions, CI, and release workflows. Only the root `poetry.lock` is
 tracked; A2A/ADK `uv.lock` files are ignored and may be created locally by uv. Validate every package a change touches.
 CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
@@ -118,7 +118,7 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 
 | Deployment | Required authentication |
 |---|---|
-| O11y Cloud | `SPLUNK_AO_REALM` plus at least one token: `SPLUNK_AO_O11Y_TOKEN` for telemetry and, when permitted, CRUD; and/or `SPLUNK_AO_O11Y_API_TOKEN` for CRUD-only or dedicated CRUD authentication |
+| O11y Cloud | `SPLUNK_AO_REALM` plus at least one token: `SPLUNK_AO_O11Y_TOKEN` for telemetry and, when permitted, CRUD; and/or `SPLUNK_AO_O11Y_API_TOKEN` for CRUD-only or dedicated CRUD authentication. CRUD uses `api.<realm>`; optional `SPLUNK_AO_O11Y_API_URL` overrides the CRUD API origin only (never OTLP ingest) |
 | Standalone | `SPLUNK_AO_API_KEY` plus `SPLUNK_AO_CONSOLE_URL`; `SPLUNK_AO_API_URL` is optional |
 
 - Detection lives in `deployment.py::resolve_deployment()`. Never mix O11y and standalone variable sets.
@@ -134,7 +134,16 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
 - Handler/decorator/OpenAI/ADK telemetry uses the internal logged-step path and converts completed steps to immutable
   OTel spans. The internal trace envelope is never exported as a span.
 - `start_splunk_ao_span()` is SDK-native OTel. `add_splunk_ao_span_processor()` and A2A instrument caller-owned OTel.
+  `configure_distributed_tracing()` is the combined automatic HTTP setup: it creates or accepts an application-owned
+  provider, registers Splunk AO export once per provider, configures supported upstream instrumentors, and returns the
+  provider for application shutdown. `instrument_distributed_tracing()` remains transport-only.
+- Track automatic server-app ownership through weak application references and process-wide client ownership through
+  actual provider identity. Never use raw `id()` values as persistent ownership keys or transfer installed client
+  instrumentation merely because its owner is garbage-collected.
 - Never replace the process-global tracer provider. Register processors on the provided provider; respect ownership.
+- Keep SDK-owned authentication, validation, CRUD, routing-resolution, and other control-plane HTTP calls out of
+  application traces with scoped OTel HTTP suppression. Never use broad backend URL exclusions that can suppress user
+  traffic, and always restore instrumentation immediately after the SDK request.
 - Treat ended `ReadableSpan` objects as immutable. Normalize by copying at export, never by mutating private fields.
 - Completed spans enqueue immediately. `flush()` drains completed work without ending active work; `terminate()` drains,
   shuts down SDK-owned resources, and discards unfinished state. Caller-owned providers use `shutdown()`.
@@ -142,6 +151,16 @@ CI supports Python 3.11–3.14; root CI also spans Linux, macOS, and Windows.
   code; sanitize and rate-limit diagnostics.
 - Preserve standard `gen_ai.*` attributes. New SDK-owned attributes use `splunk_ao.*`; do not introduce new proprietary
   `galileo.*` wire attributes.
+- Successful agent/workflow decorators returning `None` inherit the last child's output through the logger. Preserve
+  explicit empty outputs and do not substitute successful child output for an exception. Capture provider finish reasons
+  before enqueue; enclosing output may inherit a terminal LLM reason only when their normalized outputs match.
+- Explicit session selection is ambient within the current thread or async execution context and is shared by logger
+  instances in that context. An explicit clear masks inbound baggage in that context. Independent simultaneous sessions
+  require separate execution contexts.
+- Automatic HTTP setup wraps the current process-global propagator after application propagator configuration; replacing
+  it later removes the session wrapper. Remote W3C sampling flags are authoritative for SDK telemetry export.
+- Process-wide integration processors must key mutable lifecycle state by framework trace identity and release
+  unfinished callback activations in reverse nesting order.
 - Changes to propagation, IDs, parents, content schemas, or routing need coverage across every affected telemetry path.
 
 ## Code Style

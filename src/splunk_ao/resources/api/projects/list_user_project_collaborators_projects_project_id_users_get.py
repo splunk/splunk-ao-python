@@ -18,7 +18,7 @@ from splunk_ao.utils.headers_data import get_sdk_header
 
 from ... import errors
 from ...models.http_validation_error import HTTPValidationError
-from ...models.list_user_collaborators_response import ListUserCollaboratorsResponse
+from ...models.list_project_user_collaborators_response import ListProjectUserCollaboratorsResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -48,9 +48,9 @@ def _get_kwargs(project_id: str, *, starting_token: int | Unset = 0, limit: int 
 
 def _parse_response(
     *, client: ApiClient, response: httpx.Response
-) -> HTTPValidationError | ListUserCollaboratorsResponse:
+) -> HTTPValidationError | ListProjectUserCollaboratorsResponse:
     if response.status_code == 200:
-        response_200 = ListUserCollaboratorsResponse.from_dict(response.json())
+        response_200 = ListProjectUserCollaboratorsResponse.from_dict(response.json())
 
         return response_200
 
@@ -79,7 +79,7 @@ def _parse_response(
 
 def _build_response(
     *, client: ApiClient, response: httpx.Response
-) -> Response[HTTPValidationError | ListUserCollaboratorsResponse]:
+) -> Response[HTTPValidationError | ListProjectUserCollaboratorsResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -90,7 +90,7 @@ def _build_response(
 
 def sync_detailed(
     project_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
-) -> Response[HTTPValidationError | ListUserCollaboratorsResponse]:
+) -> Response[HTTPValidationError | ListProjectUserCollaboratorsResponse]:
     """List User Project Collaborators
 
      List the users with which the project has been shared.
@@ -105,7 +105,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListUserCollaboratorsResponse]
+        Response[HTTPValidationError | ListProjectUserCollaboratorsResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, starting_token=starting_token, limit=limit)
@@ -117,7 +117,7 @@ def sync_detailed(
 
 def sync(
     project_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
-) -> Optional[HTTPValidationError | ListUserCollaboratorsResponse]:
+) -> Optional[HTTPValidationError | ListProjectUserCollaboratorsResponse]:
     """List User Project Collaborators
 
      List the users with which the project has been shared.
@@ -132,7 +132,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListUserCollaboratorsResponse
+        HTTPValidationError | ListProjectUserCollaboratorsResponse
     """
 
     return sync_detailed(project_id=project_id, client=client, starting_token=starting_token, limit=limit).parsed
@@ -140,7 +140,7 @@ def sync(
 
 async def asyncio_detailed(
     project_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
-) -> Response[HTTPValidationError | ListUserCollaboratorsResponse]:
+) -> Response[HTTPValidationError | ListProjectUserCollaboratorsResponse]:
     """List User Project Collaborators
 
      List the users with which the project has been shared.
@@ -155,7 +155,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListUserCollaboratorsResponse]
+        Response[HTTPValidationError | ListProjectUserCollaboratorsResponse]
     """
 
     kwargs = _get_kwargs(project_id=project_id, starting_token=starting_token, limit=limit)
@@ -167,7 +167,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     project_id: str, *, client: ApiClient, starting_token: int | Unset = 0, limit: int | Unset = 100
-) -> Optional[HTTPValidationError | ListUserCollaboratorsResponse]:
+) -> Optional[HTTPValidationError | ListProjectUserCollaboratorsResponse]:
     """List User Project Collaborators
 
      List the users with which the project has been shared.
@@ -182,7 +182,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListUserCollaboratorsResponse
+        HTTPValidationError | ListProjectUserCollaboratorsResponse
     """
 
     return (

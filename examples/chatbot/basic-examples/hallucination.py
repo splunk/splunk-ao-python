@@ -101,6 +101,3 @@ if __name__ == "__main__":
 
     # Run the main demonstration
     results = run_hallucination_demo()
-
-    # Flush the traces to Splunk AO
-    logger.flush()

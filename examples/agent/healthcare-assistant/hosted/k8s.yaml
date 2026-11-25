@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcare-assistant-instrumented-config
+  namespace: healthcare-assistant
+data:
+  SPLUNK_AO_PROJECT: "your-project-name"
+  SPLUNK_AO_AGENT_STREAM: "your-agent-stream"
+  OTEL_SERVICE_NAME: "healthcare-assistant"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment.name=your-environment"
+  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
+  AZURE_CHAT_DEPLOYMENT: "gpt-4.1-mini"
+  AZURE_EMBEDDING_DEPLOYMENT: "text-embedding-3-large"
+  QUERY_DELAY_SECONDS: "3"
+  ENVIRONMENT: "hosted"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: healthcare-assistant-instrumented
+  namespace: healthcare-assistant
+spec:
+  schedule: "0 * * * *"
+  suspend: false
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: demo-session
+              image: <your-registry>/healthcare-assistant-agent-loadgen:latest
+              imagePullPolicy: Always
+              command: ["python", "hosted/run_demo_session.py"]
+              envFrom:
+                - configMapRef:
+                    name: healthcare-assistant-instrumented-config
+                - configMapRef:
+                    name: postgres-config
+              env:
+                - name: SPLUNK_AO_REALM
+                  valueFrom:
+                    secretKeyRef:
+                      name: splunk-ao-secrets
+                      key: realm
+                - name: SPLUNK_AO_O11Y_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: splunk-ao-secrets
+                      key: o11y-token
+                - name: SPLUNK_AO_O11Y_API_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: splunk-ao-secrets
+                      key: o11y-api-token
+                - name: AZURE_OPENAI_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: healthcare-assistant-lab0-openai
+                      key: azure-openai-endpoint
+                - name: AZURE_OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: openai-secrets
+                      key: api-key
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: openai-secrets
+                      key: api-key
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-credentials
+                      key: POSTGRES_PASSWORD
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"

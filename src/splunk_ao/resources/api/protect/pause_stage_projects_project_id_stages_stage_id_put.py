@@ -87,6 +87,20 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | StageDB]:
     """Pause Stage
 
+     Pause or unpause a stage.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        pause: New paused state.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+
     Args:
         project_id (str):
         stage_id (str):
@@ -112,6 +126,20 @@ def sync(
 ) -> Optional[HTTPValidationError | StageDB]:
     """Pause Stage
 
+     Pause or unpause a stage.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        pause: New paused state.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+
     Args:
         project_id (str):
         stage_id (str):
@@ -132,6 +160,20 @@ async def asyncio_detailed(
     project_id: str, stage_id: str, *, client: ApiClient, pause: bool | Unset = False
 ) -> Response[HTTPValidationError | StageDB]:
     """Pause Stage
+
+     Pause or unpause a stage.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        pause: New paused state.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
 
     Args:
         project_id (str):
@@ -157,6 +199,20 @@ async def asyncio(
     project_id: str, stage_id: str, *, client: ApiClient, pause: bool | Unset = False
 ) -> Optional[HTTPValidationError | StageDB]:
     """Pause Stage
+
+     Pause or unpause a stage.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        pause: New paused state.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
 
     Args:
         project_id (str):

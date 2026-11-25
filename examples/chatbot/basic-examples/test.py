@@ -54,8 +54,5 @@ logger.add_llm_span(
 # Conclude the trace
 logger.conclude(output=response_content)
 
-# Flush the traces to Splunk AO
-logger.flush()
-
 # Print the response
 print(response_content)

@@ -22,11 +22,12 @@ class MetricsTestingAvailableColumnsRequest:
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
         output_type (None | OutputTypeEnum | Unset): Output type of the scorer. Required when metric_key is
-            REGISTERED_SCORER_VALIDATION; used to determine the data_type for validation columns.
+            REGISTERED_SCORER_VALIDATION or DECISION_SCORER_VALIDATION; used to determine the data_type for validation
+            columns.
         cot_enabled (bool | Unset): Whether the metrics testing table is using chain of thought (CoT) enabled scorers.
             If True, the columns will be generated for CoT enabled scorers. Default: False.
-        metric_key (str | Unset): The metric key to use for column generation (e.g., 'generated_scorer_validation' or
-            'registered_scorer_validation'). Default: 'generated_scorer_validation'.
+        metric_key (str | Unset): The metric key to use for column generation (e.g., 'generated_scorer_validation',
+            'registered_scorer_validation' or 'decision_scorer_validation'). Default: 'generated_scorer_validation'.
         required_scorers (list[str] | None | Unset): List of required scorer names for composite scorers. Columns will
             be generated for these scorers.
         score_type (None | str | Unset): The score type for registered scorers (e.g., 'bool', 'int', 'float', 'str').

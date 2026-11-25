@@ -31,6 +31,7 @@ class LogRecordsCustomMetricsQueryRequest:
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
+        access_view_id (None | str | Unset): Assigned log view for restricted access.
         filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
             OrNodeLogRecordsFilter | Unset): Filter expression tree for complex filtering
         interval_minutes (int | Unset): Time interval in minutes for bucketing Default: 5.
@@ -43,6 +44,7 @@ class LogRecordsCustomMetricsQueryRequest:
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
+    access_view_id: None | str | Unset = UNSET
     filter_tree: (
         AndNodeLogRecordsFilter
         | FilterLeafLogRecordsFilter
@@ -88,6 +90,12 @@ class LogRecordsCustomMetricsQueryRequest:
         else:
             metrics_testing_id = self.metrics_testing_id
 
+        access_view_id: None | str | Unset
+        if isinstance(self.access_view_id, Unset):
+            access_view_id = UNSET
+        else:
+            access_view_id = self.access_view_id
+
         filter_tree: dict[str, Any] | None | Unset
         if isinstance(self.filter_tree, Unset):
             filter_tree = UNSET
@@ -119,6 +127,8 @@ class LogRecordsCustomMetricsQueryRequest:
             field_dict["experiment_id"] = experiment_id
         if metrics_testing_id is not UNSET:
             field_dict["metrics_testing_id"] = metrics_testing_id
+        if access_view_id is not UNSET:
+            field_dict["access_view_id"] = access_view_id
         if filter_tree is not UNSET:
             field_dict["filter_tree"] = filter_tree
         if interval_minutes is not UNSET:
@@ -174,6 +184,15 @@ class LogRecordsCustomMetricsQueryRequest:
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
+
+        def _parse_access_view_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        access_view_id = _parse_access_view_id(d.pop("access_view_id", UNSET))
 
         def _parse_filter_tree(
             data: object,
@@ -259,6 +278,7 @@ class LogRecordsCustomMetricsQueryRequest:
             log_stream_id=log_stream_id,
             experiment_id=experiment_id,
             metrics_testing_id=metrics_testing_id,
+            access_view_id=access_view_id,
             filter_tree=filter_tree,
             interval_minutes=interval_minutes,
             group_by=group_by,

@@ -1,6 +1,6 @@
 """Tests for MDX helper functions in scripts/create_docs.py.
 
-Covers _escape_curly_braces, _convert_rst_code_blocks, and _sanitize_description —
+Covers _escape_curly_braces, _convert_rst_code_blocks, _sanitize_description, and _render_examples —
 the helpers that fix MDX brace escaping and RST code block conversion in generated docs.
 """
 
@@ -11,7 +11,14 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from create_docs import _escape_curly_braces, _convert_rst_code_blocks, _sanitize_description
+from create_docs import (
+    _convert_rst_code_blocks,
+    _escape_curly_braces,
+    _render_examples,
+    _sanitize_description,
+    _strip_doctest_prompts,
+    write_module,
+)
 
 
 class TestEscapeCurlyBraces:
@@ -160,3 +167,186 @@ class TestSanitizeDescription:
     def test_empty_string(self):
         """Empty input returns empty string."""
         assert _sanitize_description("") == ""
+
+
+class TestStripDoctestPrompts:
+    """Tests for _strip_doctest_prompts — removes >>> / ... prompts from every line."""
+
+    def test_all_lines_stripped(self):
+        """Prompts are removed from the first and subsequent lines."""
+        assert _strip_doctest_prompts(">>> a = 1\n... b = 2") == "a = 1\nb = 2"
+
+    def test_bare_prompt_becomes_blank_line(self):
+        """A prompt with no code becomes an empty line."""
+        assert _strip_doctest_prompts(">>> a\n...\n>>> b") == "a\n\nb"
+
+    def test_indented_ellipsis_placeholder_preserved(self):
+        """An indented bare ``...`` (a Python placeholder body) is code, not a prompt."""
+        code = "def f():\n    ...\n\nclass A: ..."
+        assert _strip_doctest_prompts(code) == code
+
+    def test_indented_prompts_keep_indentation(self):
+        """Prompts inside an indented RST block are stripped without losing the indent."""
+        assert _strip_doctest_prompts("    >>> a = 1\n    ... b = 2") == "    a = 1\n    b = 2"
+
+    def test_bare_code_unchanged(self):
+        """Code without prompts is returned as-is."""
+        assert _strip_doctest_prompts("x = 1\ny = 2") == "x = 1\ny = 2"
+
+
+class TestRenderExamples:
+    """Tests for _render_examples — every example must come out as a fenced python block."""
+
+    @staticmethod
+    def _render(examples):
+        parts: list[str] = []
+        _render_examples(parts, examples)
+        return "\n".join(parts)
+
+    def test_bare_example_is_fenced(self):
+        """A bare example (no >>> and no parsed snippet) is fenced, not emitted as prose."""
+        out = self._render([{"code": "ds = get_dataset()\nds.add(1)", "had_snippet": False}])
+        assert "```python\nds = get_dataset()\nds.add(1)\n```" in out
+
+    def test_doctest_example_is_fenced_and_stripped(self):
+        """A doctest example is fenced and loses its prompts on every line."""
+        out = self._render([{"code": ">>> a = 1\n... b = 2", "had_snippet": False}])
+        assert "```python\na = 1\nb = 2\n```" in out
+        assert ">>>" not in out
+
+    def test_mixed_example_is_fenced_once(self):
+        """Prose-free mixed bare + doctest lines land in one block with prompts stripped."""
+        out = self._render([{"code": "x = 1\n>>> y = 2", "had_snippet": True}])
+        assert out.count("```python") == 1
+        assert "x = 1\ny = 2" in out
+
+    def test_already_fenced_example_passes_through(self):
+        """An example that already has a fence is not wrapped a second time."""
+        code = "```python\nx = 1\n```"
+        out = self._render([{"code": code}])
+        assert out.count("```") == 2
+
+    def test_braces_inside_fence_not_escaped(self):
+        """Braces in an example stay literal because the fence protects them from MDX."""
+        out = self._render([{"code": 'cfg = {"a": 1}'}])
+        assert 'cfg = {"a": 1}' in out
+        assert "\\{" not in out
+
+    def test_multiple_examples_each_fenced(self):
+        """Each example gets its own block."""
+        out = self._render([{"code": "a = 1"}, {"code": "b = 2"}])
+        assert out.count("```python") == 2
+
+    def test_empty_examples_skipped(self):
+        """Examples without code produce no block."""
+        out = self._render([{"code": ""}, {"code": None}])
+        assert "```" not in out
+        assert out.startswith("**Examples**")
+
+
+class TestEscapeCurlyBracesMultiBacktick:
+    """Braces inside double-backtick (RST-style) inline code must stay literal."""
+
+    def test_double_backtick_span_not_escaped(self):
+        """Braces inside a ``double-backtick`` span are left alone."""
+        assert _escape_curly_braces('use ``"a/{id}"`` here') == 'use ``"a/{id}"`` here'
+
+    def test_prose_next_to_double_backtick_span_escaped(self):
+        """Prose braces are still escaped when a double-backtick span is on the same line."""
+        assert _escape_curly_braces("``{a}`` and {b}") == r"``{a}`` and \{b\}"
+
+    def test_mixed_single_and_double_spans(self):
+        """Single and double spans can appear together."""
+        assert _escape_curly_braces("`{x}` ``{y}`` {z}") == r"`{x}` ``{y}`` \{z\}"
+
+
+class TestWriteModuleExamples:
+    """Module-level docstring examples must be rendered, not silently dropped."""
+
+    def test_module_examples_are_rendered_fenced(self):
+        """A module docstring example appears in the output as a fenced python block."""
+        from types import SimpleNamespace
+
+        doc = {"description": "Module docs.", "examples": [{"code": "import x\nx.run({'a': 1})"}]}
+        fd = SimpleNamespace(module=SimpleNamespace(doc=doc))
+        parts: list[str] = []
+        write_module(fd, parts)
+        out = "\n".join(parts)
+        assert "**Examples**" in out
+        assert "```python\nimport x\nx.run({'a': 1})\n```" in out
+
+
+class TestRstLiteralBlockExamples:
+    """RST ``::`` lead-in examples fence only the code, not the prose."""
+
+    RST = (
+        "Poll until a specific metric is computed, then assert::\n\n"
+        "    while agg(x) is None:\n"
+        "        cfg = {'a': 1}\n"
+    )
+
+    def test_prose_stays_outside_fence_and_marker_removed(self):
+        """The lead-in sentence is prose, the ``::`` marker is dropped, and only the code is fenced."""
+        parts: list[str] = []
+        _render_examples(parts, [{"code": self.RST}])
+        out = "\n".join(parts)
+        assert "Poll until a specific metric is computed, then assert\n```python" in out
+        assert "::" not in out
+        assert "while agg(x) is None:\n    cfg = {'a': 1}\n```" in out
+        assert out.count("```python") == 1
+
+    def test_doctest_prompts_inside_rst_block_are_stripped(self):
+        """``>>>`` / ``...`` prompts inside a ``::`` block do not leak into the fenced code."""
+        parts: list[str] = []
+        _render_examples(parts, [{"code": "Call it::\n\n    >>> a = 1\n    ... b = 2\n"}])
+        out = "\n".join(parts)
+        assert ">>>" not in out
+        assert "a = 1" in out
+        assert "b = 2" in out
+
+    def test_note_with_rst_block_is_fenced_and_braces_kept(self):
+        """A ``::`` block inside a note is converted to a fence so its braces stay literal."""
+        from types import SimpleNamespace
+
+        doc = {"description": "d", "notes": [{"note": "Use it like so::\n\n    x = {'k': 1}\n and {prose}"}]}
+        fd = SimpleNamespace(module=SimpleNamespace(doc=doc))
+        parts: list[str] = []
+        write_module(fd, parts)
+        out = "\n".join(parts)
+        assert "```python\n" in out
+        assert "x = {'k': 1}\n```" in out
+        assert r"\{prose\}" in out
+
+
+class TestProseBulletListExamples:
+    """Bullet-list examples are prose and must not be fenced as Python."""
+
+    BULLETS = (
+        '- If "my-template" doesn\'t exist \u2192 returns "my-template"\n'
+        '- If "my-template" exists \u2192 returns "my-template (1)"'
+    )
+
+    @staticmethod
+    def _render(code):
+        parts: list[str] = []
+        _render_examples(parts, [{"code": code}])
+        return "\n".join(parts)
+
+    def test_bullet_list_stays_a_list(self):
+        """A bullet-only example is emitted as a Markdown list, not a python block."""
+        out = self._render(self.BULLETS)
+        assert "```" not in out
+        assert '- If "my-template" exists' in out
+
+    def test_braces_in_bullet_list_are_escaped(self):
+        """Prose bullets still get MDX brace escaping."""
+        assert r"\{x\}" in self._render("- use {x}\n- or {y}")
+
+    def test_yaml_list_example_stays_fenced(self):
+        """A YAML-style list is code, so it keeps its python fence."""
+        out = self._render("- name: a\n- name: b")
+        assert out.count("```python") == 1
+
+    def test_mixed_bullets_and_code_stay_fenced(self):
+        """A bullet line next to code is not a pure list, so the example is fenced."""
+        assert "```python" in self._render("- note\nx = 1")

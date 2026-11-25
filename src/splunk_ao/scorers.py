@@ -13,7 +13,7 @@ from splunk_ao.resources.models import (
     HTTPValidationError,
     ListScorersRequest,
     ListScorersResponse,
-    ScorerConfig,
+    RuntimeScorerConfig,
     ScorerIDFilter,
     ScorerIDFilterOperator,
     ScorerLabelFilter,
@@ -162,7 +162,7 @@ class ScorerSettings:
         self.config = SplunkAOConfig.get()
 
     def create(
-        self, project_id: str, run_id: str, scorers: list[ScorerConfig]
+        self, project_id: str, run_id: str, scorers: list[RuntimeScorerConfig]
     ) -> HTTPValidationError | RunScorerSettingsResponse | None:
         """
         Parameters

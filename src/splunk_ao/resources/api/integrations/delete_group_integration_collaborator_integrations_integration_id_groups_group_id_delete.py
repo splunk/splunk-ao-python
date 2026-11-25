@@ -81,6 +81,14 @@ def sync_detailed(integration_id: str, group_id: str, *, client: ApiClient) -> R
      Remove a group's access to an integration.
 
     Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        group_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the group and integration.
+
+    Args:
         integration_id (str):
         group_id (str):
 
@@ -105,6 +113,14 @@ def sync(integration_id: str, group_id: str, *, client: ApiClient) -> Optional[A
      Remove a group's access to an integration.
 
     Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        group_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the group and integration.
+
+    Args:
         integration_id (str):
         group_id (str):
 
@@ -125,6 +141,14 @@ async def asyncio_detailed(
     """Delete Group Integration Collaborator
 
      Remove a group's access to an integration.
+
+    Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        group_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the group and integration.
 
     Args:
         integration_id (str):
@@ -149,6 +173,14 @@ async def asyncio(integration_id: str, group_id: str, *, client: ApiClient) -> O
     """Delete Group Integration Collaborator
 
      Remove a group's access to an integration.
+
+    Args:
+        integration: Integration resolved from the URL, which names it for the audit log.
+        group_integration: Existing share resolved from the URL.
+        ctx: Async request context supplying the current user.
+
+    Returns:
+        A confirmation message naming the group and integration.
 
     Args:
         integration_id (str):

@@ -73,7 +73,14 @@ def _build_response(*, client: ApiClient, response: httpx.Response) -> Response[
 def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[HTTPValidationError]:
     """Get Integration
 
-     Gets the integration data formatted for the specified integration.
+     Get the caller's integration for a provider, in that provider's own shape.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        The provider-specific view of the integration.
 
     Args:
         name (IntegrationProvider):
@@ -96,7 +103,14 @@ def sync_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[H
 def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[HTTPValidationError]:
     """Get Integration
 
-     Gets the integration data formatted for the specified integration.
+     Get the caller's integration for a provider, in that provider's own shape.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        The provider-specific view of the integration.
 
     Args:
         name (IntegrationProvider):
@@ -115,7 +129,14 @@ def sync(name: IntegrationProvider, *, client: ApiClient) -> Optional[HTTPValida
 async def asyncio_detailed(name: IntegrationProvider, *, client: ApiClient) -> Response[HTTPValidationError]:
     """Get Integration
 
-     Gets the integration data formatted for the specified integration.
+     Get the caller's integration for a provider, in that provider's own shape.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        The provider-specific view of the integration.
 
     Args:
         name (IntegrationProvider):
@@ -138,7 +159,14 @@ async def asyncio_detailed(name: IntegrationProvider, *, client: ApiClient) -> R
 async def asyncio(name: IntegrationProvider, *, client: ApiClient) -> Optional[HTTPValidationError]:
     """Get Integration
 
-     Gets the integration data formatted for the specified integration.
+     Get the caller's integration for a provider, in that provider's own shape.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        The provider-specific view of the integration.
 
     Args:
         name (IntegrationProvider):

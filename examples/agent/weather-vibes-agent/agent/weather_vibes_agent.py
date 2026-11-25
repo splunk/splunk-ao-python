@@ -8,7 +8,7 @@ import logging
 import sys
 from pathlib import Path
 from typing import Dict, Any
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from agent_framework.agent import Agent
 from agent_framework.state import AgentState
@@ -90,7 +90,12 @@ class WeatherVibesAgent(Agent):
 
         # Set up template environment
         template_dir = Path(__file__).parent.parent / "templates"
-        self.template_env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True)
+        self.template_env = Environment(
+            loader=FileSystemLoader(template_dir),
+            autoescape=select_autoescape(["html", "xml"]),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
 
         # Set up OpenAI client instead of OpenAIChat
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

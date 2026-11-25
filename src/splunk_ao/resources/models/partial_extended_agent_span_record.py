@@ -9,6 +9,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.agent_type import AgentType
+from ..models.annotation_status import AnnotationStatus
 from ..models.content_modality import ContentModality
 from ..types import UNSET, Unset
 
@@ -91,6 +92,8 @@ class PartialExtendedAgentSpanRecord:
             queue
         annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
         fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+        annotation_status (AnnotationStatus | None | Unset): Annotation review status of the record
+        annotated_members (list[str] | None | Unset): Emails of tracked queue members who rated the record
         progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
         error_message (str | Unset): Runner error text written directly to CH span Default: ''.
         metric_info (None | PartialExtendedAgentSpanRecordMetricInfoType0 | Unset): Detailed information about the
@@ -101,6 +104,7 @@ class PartialExtendedAgentSpanRecord:
         is_complete (bool | Unset): Whether the parent trace is complete or not Default: True.
         step_number (int | None | Unset): Topological step number of the span.
         agent_type (AgentType | Unset):
+        agent_name (None | str | Unset): Name of the agent.
     """
 
     type_: Literal["agent"] | Unset = "agent"
@@ -140,6 +144,8 @@ class PartialExtendedAgentSpanRecord:
     overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
     fully_annotated: bool | None | Unset = UNSET
+    annotation_status: AnnotationStatus | None | Unset = UNSET
+    annotated_members: list[str] | None | Unset = UNSET
     progress_message: str | Unset = ""
     error_message: str | Unset = ""
     metric_info: None | PartialExtendedAgentSpanRecordMetricInfoType0 | Unset = UNSET
@@ -148,6 +154,7 @@ class PartialExtendedAgentSpanRecord:
     is_complete: bool | Unset = True
     step_number: int | None | Unset = UNSET
     agent_type: AgentType | Unset = UNSET
+    agent_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -414,6 +421,23 @@ class PartialExtendedAgentSpanRecord:
         else:
             fully_annotated = self.fully_annotated
 
+        annotation_status: None | str | Unset
+        if isinstance(self.annotation_status, Unset):
+            annotation_status = UNSET
+        elif isinstance(self.annotation_status, AnnotationStatus):
+            annotation_status = self.annotation_status.value
+        else:
+            annotation_status = self.annotation_status
+
+        annotated_members: list[str] | None | Unset
+        if isinstance(self.annotated_members, Unset):
+            annotated_members = UNSET
+        elif isinstance(self.annotated_members, list):
+            annotated_members = self.annotated_members
+
+        else:
+            annotated_members = self.annotated_members
+
         progress_message = self.progress_message
 
         error_message = self.error_message
@@ -453,6 +477,12 @@ class PartialExtendedAgentSpanRecord:
         agent_type: str | Unset = UNSET
         if not isinstance(self.agent_type, Unset):
             agent_type = self.agent_type.value
+
+        agent_name: None | str | Unset
+        if isinstance(self.agent_name, Unset):
+            agent_name = UNSET
+        else:
+            agent_name = self.agent_name
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -523,6 +553,10 @@ class PartialExtendedAgentSpanRecord:
             field_dict["annotation_queue_ids"] = annotation_queue_ids
         if fully_annotated is not UNSET:
             field_dict["fully_annotated"] = fully_annotated
+        if annotation_status is not UNSET:
+            field_dict["annotation_status"] = annotation_status
+        if annotated_members is not UNSET:
+            field_dict["annotated_members"] = annotated_members
         if progress_message is not UNSET:
             field_dict["progress_message"] = progress_message
         if error_message is not UNSET:
@@ -539,6 +573,8 @@ class PartialExtendedAgentSpanRecord:
             field_dict["step_number"] = step_number
         if agent_type is not UNSET:
             field_dict["agent_type"] = agent_type
+        if agent_name is not UNSET:
+            field_dict["agent_name"] = agent_name
 
         return field_dict
 
@@ -1068,6 +1104,40 @@ class PartialExtendedAgentSpanRecord:
 
         fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
 
+        def _parse_annotation_status(data: object) -> AnnotationStatus | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                annotation_status_type_0 = AnnotationStatus(data)
+
+                return annotation_status_type_0
+            except:  # noqa: E722
+                pass
+            return cast(AnnotationStatus | None | Unset, data)
+
+        annotation_status = _parse_annotation_status(d.pop("annotation_status", UNSET))
+
+        def _parse_annotated_members(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                annotated_members_type_0 = cast(list[str], data)
+
+                return annotated_members_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        annotated_members = _parse_annotated_members(d.pop("annotated_members", UNSET))
+
         progress_message = d.pop("progress_message", UNSET)
 
         error_message = d.pop("error_message", UNSET)
@@ -1253,6 +1323,15 @@ class PartialExtendedAgentSpanRecord:
         else:
             agent_type = AgentType(_agent_type)
 
+        def _parse_agent_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        agent_name = _parse_agent_name(d.pop("agent_name", UNSET))
+
         partial_extended_agent_span_record = cls(
             type_=type_,
             input_=input_,
@@ -1287,6 +1366,8 @@ class PartialExtendedAgentSpanRecord:
             overall_annotation_agreement=overall_annotation_agreement,
             annotation_queue_ids=annotation_queue_ids,
             fully_annotated=fully_annotated,
+            annotation_status=annotation_status,
+            annotated_members=annotated_members,
             progress_message=progress_message,
             error_message=error_message,
             metric_info=metric_info,
@@ -1295,6 +1376,7 @@ class PartialExtendedAgentSpanRecord:
             is_complete=is_complete,
             step_number=step_number,
             agent_type=agent_type,
+            agent_name=agent_name,
         )
 
         partial_extended_agent_span_record.additional_properties = d

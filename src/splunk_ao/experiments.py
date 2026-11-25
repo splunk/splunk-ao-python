@@ -23,7 +23,7 @@ from splunk_ao.resources.models import (
     ExperimentResponse,
     HTTPValidationError,
     PromptRunSettings,
-    ScorerConfig,
+    RuntimeScorerConfig,
     TaskType,
 )
 from splunk_ao.schema.datasets import DatasetRecord
@@ -106,7 +106,7 @@ class Experiments:
         dataset_obj: Dataset | None = None,
         trigger: bool = False,
         prompt_template: PromptTemplate | None = None,
-        scorers: builtins.list[ScorerConfig] | None = None,
+        scorers: builtins.list[RuntimeScorerConfig] | None = None,
         prompt_settings: PromptRunSettings | dict[str, Any] | None = None,
         experiment_group_id: str | None = None,
         experiment_group_name: str | None = None,
@@ -191,7 +191,7 @@ class Experiments:
         dataset_obj: Dataset,
         experiment_name: str,
         prompt_template: PromptTemplate | None,
-        scorers: builtins.list[ScorerConfig] | None,
+        scorers: builtins.list[RuntimeScorerConfig] | None,
         prompt_settings: PromptRunSettings | dict[str, Any] | None = None,
         experiment_group_id: str | None = None,
         experiment_group_name: str | None = None,
@@ -465,7 +465,7 @@ def run_experiment(
         raise ValueError("A dataset object must be provided")
 
     # Set up metrics WITHOUT run_id — trigger=True flow, API handles scorer registration
-    scorer_settings: list[ScorerConfig] | None = None
+    scorer_settings: list[RuntimeScorerConfig] | None = None
     local_metrics_check: list[LocalMetricConfig] = []
     if metrics is not None:
         scorer_settings, local_metrics_check = create_metric_configs(project_obj.id, None, metrics)

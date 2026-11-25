@@ -13,13 +13,13 @@ This example demonstrates distributed tracing across two services using Splunk A
 
 ```bash
 # Navigate to the distributed-tracing example directory
-cd python/logging-samples/distributed-tracing
+cd examples/logging-samples/distributed-tracing
 
 # Create virtual environment
 python -m venv venv
 
 # Activate virtual environment
-source venv/bin/activate 
+source venv/bin/activate
 ```
 
 ### 2. Install Dependencies
@@ -41,9 +41,6 @@ SPLUNK_AO_API_KEY="your-splunk-ao-api-key"
 # Required: OpenAI API key
 OPENAI_API_KEY="your-openai-api-key"
 
-# Required: Enable distributed mode for distributed tracing
-SPLUNK_AO_MODE=distributed
-
 # Optional: Splunk AO project and log stream names
 SPLUNK_AO_PROJECT="your-splunk-ao-project"
 SPLUNK_AO_AGENT_STREAM=distributed-tracing-example
@@ -60,7 +57,7 @@ You need to run both services in **separate terminal processes**.
 
 ```bash
 # Make sure you're in the distributed-tracing example directory
-# cd python/logging-samples/distributed-tracing
+# cd examples/logging-samples/distributed-tracing
 
 # Activate venv (if not already activated)
 # source venv/bin/activate
@@ -82,7 +79,7 @@ INFO:     Application startup complete.
 
 ```bash
 # In a NEW terminal, navigate to the distributed-tracing example directory
-cd python/logging-samples/distributed-tracing
+cd examples/logging-samples/distributed-tracing
 
 # Activate venv
 source venv/bin/activate

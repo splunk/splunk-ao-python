@@ -504,19 +504,25 @@ def build_docs(files_docs: list[FileDoc], source_root: str, output_root: str) ->
     print(f"Documentation generation complete. Output written to {out_root}")
 
 
+_INLINE_CODE_RE = re.compile(r"(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)", re.DOTALL)
+
+
+def _escape_braces_in_prose(text: str) -> str:
+    """Escape braces in text that contains no fenced code, skipping inline code spans of any backtick width."""
+    out: list[str] = []
+    pos = 0
+    for m in _INLINE_CODE_RE.finditer(text):
+        out.append(text[pos : m.start()].replace("{", r"\{").replace("}", r"\}"))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(text[pos:].replace("{", r"\{").replace("}", r"\}"))
+    return "".join(out)
+
+
 def _escape_curly_braces(text: str) -> str:
-    """Escape { and } outside fenced and inline code blocks so MDX doesn't treat them as JSX."""
-    triple_segments = re.split(r"(```.*?```)", text, flags=re.DOTALL)
-    for i, triple_seg in enumerate(triple_segments):
-        if triple_seg.startswith("```"):
-            continue
-        single_segments = re.split(r"(`[^`]*`)", triple_seg)
-        for j, single_seg in enumerate(single_segments):
-            if not single_seg.startswith("`"):
-                single_seg = single_seg.replace("{", r"\{").replace("}", r"\}")
-            single_segments[j] = single_seg
-        triple_segments[i] = "".join(single_segments)
-    return "".join(triple_segments)
+    """Escape { and } outside fenced and inline code (single or double backticks) so MDX doesn't treat them as JSX."""
+    segments = re.split(r"(```.*?```)", text, flags=re.DOTALL)
+    return "".join(seg if seg.startswith("```") else _escape_braces_in_prose(seg) for seg in segments)
 
 
 def _convert_rst_code_blocks(text: str) -> str:
@@ -555,6 +561,65 @@ def _sanitize_description(text: str) -> str:
     text = _convert_rst_code_blocks(text)
     text = _escape_curly_braces(text)
     return text
+
+
+# ``>>>`` may be bare or indented; ``... code`` needs content. A bare or indented ``...`` is a Python placeholder body.
+_PROMPT_RE = re.compile(r"^(\s*)(?:>>>(?: (.*))?|\.\.\. (.*)|(\.\.\.))$")
+
+
+def _strip_doctest_prompts(code: str) -> str:
+    """Remove doctest ``>>> `` / ``... `` prompts from every line of an example, keeping indentation."""
+    lines = []
+    for line in code.split("\n"):
+        m = _PROMPT_RE.match(line.rstrip())
+        if not m or (m.group(4) and m.group(1)):
+            lines.append(line)  # not a prompt, or an indented bare ``...`` placeholder
+        else:
+            lines.append(f"{m.group(1)}{m.group(2) or m.group(3) or ''}".rstrip())
+    return "\n".join(lines)
+
+
+_BULLET_RE = re.compile(r"^\s*[-*]\s+\S")
+_YAML_KEY_BULLET_RE = re.compile(r"^\s*[-*]\s+[\w.-]+:(\s|$)")
+
+
+def _is_prose_bullet_list(code: str) -> bool:
+    """Return True when every non-empty line is a Markdown bullet and none looks like a YAML ``- key: value``."""
+    lines = [line for line in code.split("\n") if line.strip()]
+    return bool(lines) and all(_BULLET_RE.match(line) and not _YAML_KEY_BULLET_RE.match(line) for line in lines)
+
+
+def _render_examples(parts: list[str], examples: list[dict[str, Any]]) -> None:
+    """Append an **Examples** section where every example is a fenced ```python block.
+
+    Examples that already contain a code fence are emitted unchanged. Examples that are plain Markdown bullet
+    lists stay prose. Examples with an RST
+    ``::`` lead-in go through ``_sanitize_description`` so only the indented code is fenced.
+    Everything else (bare code, doctest ``>>>`` code, or a mix) is fenced, with doctest prompts stripped.
+    Fenced content is left unescaped, so braces inside examples are safe for MDX.
+    """
+    parts.append("**Examples**\n")
+    for ex in examples:
+        code = ex.get("code")
+        if not code:
+            continue
+        if "```" in code:
+            parts.append(code)
+            continue
+        if any(line.rstrip().endswith("::") for line in code.split("\n")):
+            # RST literal block with a prose lead-in: fence only the indented code, keep the prose as prose.
+            parts.append(_sanitize_description(_strip_doctest_prompts(code)))
+            parts.append("")
+            continue
+        if _is_prose_bullet_list(code):
+            # Markdown bullet list used as an example (prose, not code): keep it as a list.
+            parts.append(_sanitize_description(code))
+            parts.append("")
+            continue
+        parts.append("```python")
+        parts.append(_strip_doctest_prompts(code).rstrip())
+        parts.append("```\n")
+    parts.append("")
 
 
 def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
@@ -625,28 +690,11 @@ def write_function(parts: list[str], fn: Any, heading_level: int = 3) -> None:
                 else:
                     parts.append(f"- {rdesc}\n")
         if fdoc.get("examples"):
-            parts.append("**Examples**\n")
-            for ex in fdoc.get("examples", []):
-                code = ex.get("code")
-                if not code:
-                    continue
-                if "```" in code:
-                    parts.append(code)
-                elif code.startswith(">>>") or code.startswith("..."):
-                    parts.append("```python")
-                    parts.append(code[4:])
-                    parts.append("```")
-                elif ex.get("had_snippet"):
-                    parts.append("```python")
-                    parts.append(code)
-                    parts.append("```")
-                else:
-                    parts.append(_escape_curly_braces(code))
-            parts.append("")
+            _render_examples(parts, fdoc.get("examples", []))
         if fdoc.get("notes"):
             parts.append("**Notes**\n")
             for note in fdoc.get("notes", []):
-                ntext = note.get("note")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")
@@ -703,24 +751,7 @@ def write_class(parts: list[str], cls: Any) -> None:
                     parts.append(f"- `{name}`: {desc}\n")
 
         if cdoc.get("examples"):
-            parts.append("**Examples**\n")
-            for ex in cdoc.get("examples", []):
-                code = ex.get("code")
-                if not code:
-                    continue
-                if "```" in code:
-                    parts.append(code)
-                elif code.startswith(">>>") or code.startswith("..."):
-                    parts.append("```python")
-                    parts.append(code[4:])
-                    parts.append("```")
-                elif ex.get("had_snippet"):
-                    parts.append("```python")
-                    parts.append(code)
-                    parts.append("```")
-                else:
-                    parts.append(_escape_curly_braces(code))
-            parts.append("")
+            _render_examples(parts, cdoc.get("examples", []))
         if cdoc.get("returns"):
             parts.append("**Returns**\n")
             ret = cdoc.get("returns")
@@ -734,7 +765,7 @@ def write_class(parts: list[str], cls: Any) -> None:
         if cdoc.get("notes"):
             parts.append("**Notes**\n")
             for note in cdoc.get("notes", []):
-                ntext = note.get("note")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")
@@ -803,10 +834,12 @@ def write_module(fd: FileDoc, parts: list[str]) -> None:
                     parts.append(f"- `{rtyp}`: {rdesc}\n")
                 else:
                     parts.append(f"- {rdesc}\n")
+        if md.get("examples"):
+            _render_examples(parts, md.get("examples", []))
         if md.get("notes"):
             parts.append("**Notes**\n")
             for note in md.get("notes", []):
-                ntext = note.get("note")
+                ntext = _sanitize_description(note.get("note") or "")
                 if ntext:
                     parts.append(f"{ntext}")
             parts.append("")

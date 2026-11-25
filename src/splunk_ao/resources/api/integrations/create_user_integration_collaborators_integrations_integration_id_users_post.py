@@ -95,6 +95,20 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | list[UserCollaborator]]:
     """Create User Integration Collaborators
 
+     Share an integration with users.
+
+    Args:
+        body: Users to share with, each of which must request the viewer role.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 422 when a user already has access or asks for a non-viewer role.
+
     Args:
         integration_id (str):
         body (list[UserCollaboratorCreate]):
@@ -119,6 +133,20 @@ def sync(
 ) -> Optional[HTTPValidationError | list[UserCollaborator]]:
     """Create User Integration Collaborators
 
+     Share an integration with users.
+
+    Args:
+        body: Users to share with, each of which must request the viewer role.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 422 when a user already has access or asks for a non-viewer role.
+
     Args:
         integration_id (str):
         body (list[UserCollaboratorCreate]):
@@ -138,6 +166,20 @@ async def asyncio_detailed(
     integration_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
 ) -> Response[HTTPValidationError | list[UserCollaborator]]:
     """Create User Integration Collaborators
+
+     Share an integration with users.
+
+    Args:
+        body: Users to share with, each of which must request the viewer role.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 422 when a user already has access or asks for a non-viewer role.
 
     Args:
         integration_id (str):
@@ -162,6 +204,20 @@ async def asyncio(
     integration_id: str, *, client: ApiClient, body: list[UserCollaboratorCreate]
 ) -> Optional[HTTPValidationError | list[UserCollaborator]]:
     """Create User Integration Collaborators
+
+     Share an integration with users.
+
+    Args:
+        body: Users to share with, each of which must request the viewer role.
+        integration: Integration resolved from the URL.
+        ctx: Async request context supplying the read session and current user.
+        principal: Caller the collaborator permissions are evaluated for.
+
+    Returns:
+        The created collaborators.
+
+    Raises:
+        HTTPException: 422 when a user already has access or asks for a non-viewer role.
 
     Args:
         integration_id (str):

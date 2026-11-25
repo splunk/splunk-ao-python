@@ -9,7 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
     from ..models.segment_filter import SegmentFilter
 
 
@@ -20,11 +20,11 @@ T = TypeVar("T", bound="MetricSettingsResponse")
 class MetricSettingsResponse:
     """
     Attributes:
-        scorers (list[ScorerConfig]):
+        scorers (list[RuntimeScorerConfig]):
         segment_filters (list[SegmentFilter] | None | Unset): List of segment filters to apply to the run.
     """
 
-    scorers: list[ScorerConfig]
+    scorers: list[RuntimeScorerConfig]
     segment_filters: list[SegmentFilter] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -56,14 +56,14 @@ class MetricSettingsResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
         from ..models.segment_filter import SegmentFilter
 
         d = dict(src_dict)
         scorers = []
         _scorers = d.pop("scorers")
         for scorers_item_data in _scorers:
-            scorers_item = ScorerConfig.from_dict(scorers_item_data)
+            scorers_item = RuntimeScorerConfig.from_dict(scorers_item_data)
 
             scorers.append(scorers_item)
 

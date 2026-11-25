@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from splunk_ao.utils.uuid_utils import convert_uuid_if_uuid7, uuid7_to_uuid4
+from splunk_ao.utils.uuid_utils import convert_uuid_if_uuid7, deterministic_uuid4, uuid7_to_uuid4
 
 
 @pytest.fixture
@@ -47,3 +47,26 @@ def test_deterministic_conversion(uuid7: UUID) -> None:
     # All results should be identical
     assert result1 == result2 == result3
     assert result1.version == 4
+
+
+def test_deterministic_uuid4_matches_pinned_sha256_value() -> None:
+    # Given: a fixed input string
+    value = "agent_task"
+
+    # When: it is converted to a UUID
+    result = deterministic_uuid4(value)
+
+    # Then: the ID is the pinned SHA-256-derived UUIDv4, independent of the implementation
+    assert result == UUID("6b088e07-2934-42ca-8982-7184d89520ca")
+    assert result.version == 4
+    assert result == deterministic_uuid4(value)
+
+
+def test_uuid7_to_uuid4_matches_pinned_sha256_value(uuid7: UUID) -> None:
+    # Given: a fixed UUIDv7
+    # When: it is converted to a UUIDv4
+    result = uuid7_to_uuid4(uuid7)
+
+    # Then: the ID is the pinned SHA-256-derived UUIDv4, so a change to the shared helper is caught
+    assert result == UUID("a88ebe92-6503-45b7-bd2f-8ea97b486f95")
+    assert result.version == 4

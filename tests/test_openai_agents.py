@@ -1,7 +1,11 @@
+import asyncio
+import json
 import os
 import uuid
+from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
+import agents.tracing as agents_tracing
 import httpx
 import pytest
 import respx
@@ -15,16 +19,535 @@ from agents import (
     Runner,
     set_trace_processors,
 )
-from agents.tracing import ResponseSpanData
+from agents.tracing import ResponseSpanData, agent_span, function_span, generation_span, response_span
+from opentelemetry import trace as otel_trace
+from opentelemetry.sdk.trace import ReadableSpan
 from pydantic import BaseModel
 from pytest import MonkeyPatch, mark
 
 from galileo_core.schemas.logging.span import LlmSpan, ToolSpan
+from splunk_ao import get_tracing_headers
 from splunk_ao.handlers.openai_agents import SplunkAOTracingProcessor
 from splunk_ao.logger.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import Node
 from splunk_ao.utils.openai_agents import _extract_llm_data, _parse_usage
 from tests.testutils.setup import setup_mock_logstreams_client, setup_mock_projects_client, setup_mock_traces_client
+
+
+class RecordingSink:
+    def __init__(self) -> None:
+        self.spans: list[ReadableSpan] = []
+        self.force_flush_calls = 0
+
+    def emit(self, span: ReadableSpan) -> None:
+        self.spans.append(span)
+
+    def force_flush(self) -> bool:
+        self.force_flush_calls += 1
+        return True
+
+    def shutdown(self) -> None:
+        return None
+
+
+def _trace_state(processor: SplunkAOTracingProcessor, trace_id: str) -> Any:
+    return processor._trace_states[trace_id]
+
+
+def test_openai_agents_children_enqueue_before_trace_end() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    root = Node(
+        node_type="workflow",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "name": "agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "status_code": 200,
+        },
+    )
+    child = Node(
+        node_type="llm",
+        run_id="child-span-id",
+        parent_run_id="root-span-id",
+        span_params={
+            "input": "prompt",
+            "name": "model call",
+            "start_time_iso": "2025-01-01T00:00:01+00:00",
+            "model": "model",
+            "status_code": 200,
+        },
+    )
+    try:
+        processor.on_trace_start(trace)
+        state = _trace_state(processor, trace.trace_id)
+        state.nodes[str(root.run_id)] = root
+        state.nodes[trace.trace_id].children.append(str(root.run_id))
+        processor._start_owned_root(root, state)
+        processor._start_incremental_span(root, state)
+        state.nodes[str(child.run_id)] = child
+        root.children.append(str(child.run_id))
+        processor._start_incremental_span(child, state)
+
+        child.span_params.update(output="answer", duration_ns=10)
+        processor._finish_incremental_span(child, state)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == ["chat"]
+        assert str(root.run_id) in state.active_steps
+        assert sink.force_flush_calls == 0
+
+        root.span_params.update(output="answer", duration_ns=20)
+        processor._finish_incremental_span(root, state)
+        processor.on_trace_end(trace)
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "chat",
+            "invoke_workflow",
+        ]
+        assert sink.spans[0].parent == sink.spans[1].context
+        assert sink.force_flush_calls == 0
+    finally:
+        logger.terminate()
+
+
+def test_workflow_span_input_falls_back_to_user_message() -> None:
+    # Given: a trace with an agent (workflow) span wrapping an LLM span
+    # When: the LLM span carries system + user messages and the workflow span has no input
+    # Then: the workflow span's gen_ai.input.messages reflects the user message, not the system prompt
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_wf_input") as openai_trace:
+            with agent_span("SupportAgent", span_id="span_wf", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are a support agent."},
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                    ],
+                    output=[{"role": "assistant", "content": "Found it."}],
+                    model="gpt-4",
+                    span_id="span_llm",
+                    parent=root_span,
+                ):
+                    pass
+
+        workflow_span = next(
+            s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+        )
+        input_messages = (workflow_span.attributes or {}).get("gen_ai.input.messages", "")
+        assert "Look up customer CUST-123" in input_messages
+        assert "You are a support agent." not in input_messages
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_llm_span_input_output_not_double_encoded() -> None:
+    # Given: a generation span with structured message list input/output
+    # When: the span is processed
+    # Then: chat span input contains multiple messages (not a single JSON-encoded string)
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_llm_io") as openai_trace:
+            with agent_span("Agent", span_id="span_agent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are helpful."},
+                        {"role": "user", "content": "What is the capital of France?"},
+                    ],
+                    output=[{"role": "assistant", "content": "Paris."}],
+                    model="gpt-4",
+                    span_id="span_gen",
+                    parent=root_span,
+                ):
+                    pass
+
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        input_messages = json.loads((llm_span.attributes or {}).get("gen_ai.input.messages", "[]"))
+        assert len(input_messages) == 2
+        assert input_messages[0]["role"] == "system"
+        assert input_messages[1]["role"] == "user"
+        output_messages = json.loads((llm_span.attributes or {}).get("gen_ai.output.messages", "[]"))
+        assert output_messages[0]["role"] == "assistant"
+        assert "Paris." in str(output_messages[0])
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_root_input_falls_back_to_user_message(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path, where the root workflow span starts with a placeholder input
+    # When: an LLM span carrying the user message runs and the trace is committed
+    # Then: the committed root span's input is the user message, not "<Type> Step"
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_input") as openai_trace:
+            with agent_span("SupportAgent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {"role": "system", "content": "You are a support agent."},
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                    ],
+                    output=[{"role": "assistant", "content": "Found it."}],
+                    model="gpt-4",
+                    parent=root_span,
+                ):
+                    pass
+
+        root_workflow = logger.traces[0].spans[0]
+        assert root_workflow.input == "Look up customer CUST-123"
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_responses_api_tool_turn_exports_messages_and_workflow_io() -> None:
+    # Given: a second-turn response span (the SDK's default Responses API path) after one tool call,
+    # with input and response set after the span starts, as OpenAIResponsesModel does
+    # When: the trace completes
+    # Then: the chat span exports user/assistant/tool messages and an assistant reply, and the
+    # workflow span shows the user prompt as input and the reply as text output
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    response = MagicMock()
+    response.output = [
+        {"type": "reasoning", "id": "rs_1", "summary": []},
+        {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Acme Corp."}]},
+    ]
+    response.model = "gpt-5.1"
+    response.temperature = None
+    response.usage = None
+    response.error = None
+    response.instructions = None
+    response.model_dump.return_value = {}
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_responses_tool_turn") as openai_trace:
+            with agent_span("SupportAgent", parent=openai_trace) as root_span:
+                with response_span(parent=root_span) as span:
+                    span.span_data.input = [
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                        {"type": "function_call", "call_id": "c1", "name": "get_customer", "arguments": "{}"},
+                        {"type": "function_call_output", "call_id": "c1", "output": '{"name": "Acme"}'},
+                    ]
+                    span.span_data.response = response
+
+        chat = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        input_messages = json.loads(chat.attributes["gen_ai.input.messages"])
+        assert [m["role"] for m in input_messages] == ["user", "assistant", "tool"]
+        assert input_messages[1]["parts"][0]["type"] == "tool_call"
+        assert input_messages[2]["parts"][0]["type"] == "tool_call_response"
+        output_messages = json.loads(chat.attributes["gen_ai.output.messages"])
+        assert output_messages[0]["parts"] == [{"type": "text", "content": "Acme Corp."}]
+
+        workflow = next(s for s in sink.spans if s.name == "invoke_workflow SupportAgent")
+        assert "Look up customer CUST-123" in workflow.attributes["gen_ai.input.messages"]
+        workflow_output = json.loads(workflow.attributes["gen_ai.output.messages"])
+        assert workflow_output[0]["parts"] == [{"type": "text", "content": "Acme Corp."}]
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_responses_api_tool_output_with_image_exports_content_blocks() -> None:
+    # Given: a tool result (function_call_output) whose output is a list of parts - text and a
+    #   base64 image, as the Agents SDK produces for multimodal tool results
+    # When: the trace completes
+    # Then: the exported chat span's tool message holds content blocks, not a JSON dump of the
+    #   whole list (including the base64 payload as text) - end-to-end, not just at the normalizer
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    response = MagicMock()
+    response.output = [{"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "ok"}]}]
+    response.model = "gpt-5.1"
+    response.temperature = None
+    response.usage = None
+    response.error = None
+    response.instructions = None
+    response.model_dump.return_value = {}
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_tool_output_image") as openai_trace:
+            with agent_span("SupportAgent", parent=openai_trace) as root_span:
+                with response_span(parent=root_span) as span:
+                    span.span_data.input = [
+                        {"role": "user", "content": "Show me the chart"},
+                        {"type": "function_call", "call_id": "c1", "name": "get_chart", "arguments": "{}"},
+                        {
+                            "type": "function_call_output",
+                            "call_id": "c1",
+                            "output": [
+                                {"type": "input_text", "text": "Here is the chart."},
+                                {"type": "input_image", "image_url": "data:image/png;base64,AAAA"},
+                            ],
+                        },
+                    ]
+                    span.span_data.response = response
+
+        chat = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        input_messages = json.loads(chat.attributes["gen_ai.input.messages"])
+        tool_message = next(m for m in input_messages if m["role"] == "tool")
+        tool_response_parts = tool_message["parts"][0]["response"]
+        # Structured text + data parts, not the whole list dumped as one JSON text blob.
+        assert [p["type"] for p in tool_response_parts] == ["text", "data"]
+        assert tool_response_parts[1]["modality"] == "image"
+        assert "input_image" not in str(tool_response_parts[0])
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_keeps_multimodal_llm_input(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path and a user message with text and an image
+    # When: the trace is committed
+    # Then: the LLM span keeps text and image content blocks instead of a JSON dump of the message
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_multimodal") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": "What is this?"},
+                                {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAAA"}},
+                            ],
+                        }
+                    ],
+                    output=[{"role": "assistant", "content": "A cat."}],
+                    model="gpt-4",
+                    parent=root_span,
+                ):
+                    pass
+
+        llm_span = logger.traces[0].spans[0].spans[0]
+        assert [block.type for block in llm_span.input[0].content] == ["text", "data"]
+        assert llm_span.input[0].content[1].modality == "image"
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_llm_span_with_no_output_does_not_crash_trace(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path and a generation span that ends with no output set
+    #   (e.g. the model call errored before GenerationSpanData.output was populated)
+    # When: the trace is committed
+    # Then: the trace completes instead of failing - LoggedLlmSpan(output=...) requires a LoggedMessage
+    #   and raises on a bare None reaching it
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_no_output") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(input=[{"role": "user", "content": "Hi"}], model="gpt-4", parent=root_span):
+                    pass
+
+        llm_span = logger.traces[0].spans[0].spans[0]
+        assert llm_span.output.content == ""
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_ingestion_hook_builds_responses_llm_span_with_tool_messages(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    # Given: the ingestion-hook path and a Responses API span with a tool call and tool result
+    #   (only the Chat Completions path was covered on this path before)
+    # When: the trace is committed
+    # Then: the LLM span (LoggedLlmSpan) holds the tool-call/tool-result messages with their own
+    #   roles and the assistant reply text, built without crashing
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    response = MagicMock()
+    response.output = [
+        {"type": "reasoning", "id": "rs_1", "summary": []},
+        {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "Acme Corp."}]},
+    ]
+    response.model = "gpt-5.1"
+    response.temperature = None
+    response.usage = None
+    response.error = None
+    response.instructions = None
+    response.model_dump.return_value = {}
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_hook_responses_tool_turn") as openai_trace:
+            with agent_span("SupportAgent", parent=openai_trace) as root_span:
+                with response_span(parent=root_span) as span:
+                    span.span_data.input = [
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                        {"type": "function_call", "call_id": "c1", "name": "get_customer", "arguments": "{}"},
+                        {"type": "function_call_output", "call_id": "c1", "output": '{"name": "Acme"}'},
+                    ]
+                    span.span_data.response = response
+
+        llm_span = logger.traces[0].spans[0].spans[0]
+        assert [m.role.value for m in llm_span.input] == ["user", "assistant", "tool"]
+        assert llm_span.output.content == "Acme Corp."
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_openai_agents_public_tracing_lifecycle_exports_and_cleans_state() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Agent trace", trace_id="trace_public") as openai_trace:
+            with agent_span("Research agent", span_id="span_root", parent=openai_trace) as root_span:
+                with function_span("Search", input="question", output="result", parent=root_span):
+                    pass
+                with generation_span(
+                    input=[{"role": "user", "content": "question"}],
+                    output=[{"role": "assistant", "content": "answer"}],
+                    model="test-model",
+                    span_id="span_child",
+                    parent=root_span,
+                ):
+                    pass
+
+        assert [(span.attributes or {}).get("gen_ai.operation.name") for span in sink.spans] == [
+            "execute_tool",
+            "chat",
+            "invoke_workflow",
+        ]
+        tool, model, root = sink.spans
+        assert tool.parent == model.parent == root.context
+        assert tool.attributes["splunk_ao.span.name"] == "Search"
+        assert root.attributes["splunk_ao.span.name"] == "Research agent"
+        assert "splunk_ao.span.name" not in model.attributes
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+async def test_openai_agents_completion_in_copied_task_releases_original_context() -> None:
+    # Given: the independent OpenAI Agents processor shares logger context helpers.
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    baseline = otel_trace.get_current_span().get_span_context()
+    set_trace_processors([processor])
+    try:
+        for turn in range(2):
+            framework_trace = agents_tracing.trace("Agent trace", trace_id=f"trace_copied_{turn}")
+            framework_trace.start()
+            root = agent_span("agent", span_id=f"span_copied_{turn}", parent=framework_trace)
+            root.start()
+
+            async def finish(agent: Any = root, owner: Any = framework_trace) -> None:
+                agent.finish()
+                owner.finish()
+
+            # When: framework completion happens in a copied execution context.
+            await asyncio.create_task(finish())
+
+            # Then: the original task restores its caller and the processor is reusable.
+            assert otel_trace.get_current_span().get_span_context() == baseline
+            assert logger.current_parent() is None
+            assert processor._trace_states == {}
+        assert len(sink.spans) == 2
+        assert sink.spans[0].context.trace_id != sink.spans[1].context.trace_id
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+@pytest.mark.asyncio
+async def test_openai_agents_concurrent_public_traces_keep_state_isolated() -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    first_started = asyncio.Event()
+    second_started = asyncio.Event()
+
+    async def run_trace(label: str, own_started: asyncio.Event, other_started: asyncio.Event) -> None:
+        with agents_tracing.trace(f"{label} trace", trace_id=f"trace_{label}") as openai_trace:
+            with agent_span(f"{label} agent", span_id=f"span_{label}_root", parent=openai_trace) as root_span:
+                own_started.set()
+                await other_started.wait()
+                with generation_span(
+                    input=[{"role": "user", "content": label}],
+                    output=[{"role": "assistant", "content": f"{label} answer"}],
+                    model="test-model",
+                    span_id=f"span_{label}_child",
+                    parent=root_span,
+                ):
+                    pass
+
+    set_trace_processors([processor])
+    try:
+        await asyncio.gather(
+            run_trace("first", first_started, second_started), run_trace("second", second_started, first_started)
+        )
+
+        roots = [
+            span for span in sink.spans if (span.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"
+        ]
+        children = [span for span in sink.spans if (span.attributes or {}).get("gen_ai.operation.name") == "chat"]
+        assert len(roots) == len(children) == 2
+        child_parents = {
+            (child.parent.trace_id, child.parent.span_id) for child in children if child.parent is not None
+        }
+        root_contexts = {(root.context.trace_id, root.context.span_id) for root in roots}
+        assert child_parents == root_contexts
+        assert len({root.context.trace_id for root in roots}) == 2
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
 
 
 class HomeworkOutput(BaseModel):
@@ -151,6 +674,9 @@ def test_processor_marks_direct_trace_child_agent(
     logger = SplunkAOLogger(project="test", agent_stream="test")
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
     logger.start_trace(input="input")
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    state = _trace_state(processor, trace.trace_id)
 
     processor._log_node_tree(
         Node(
@@ -162,7 +688,8 @@ def test_processor_marks_direct_trace_child_agent(
                 "name": "Agent step",
                 "start_time_iso": "2025-01-01T00:00:00+00:00",
             },
-        )
+        ),
+        state,
     )
     assert logger.traces[0].spans[0].conversation_root is True
 
@@ -182,20 +709,15 @@ def test_commit_failure_concludes_handler_owned_trace(
     processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
     trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
     processor.on_trace_start(trace)
-    owned_traces = []
+    state = _trace_state(processor, trace.trace_id)
+    owned_trace = state.owned_trace
 
-    def fail_after_starting_trace(*args, **kwargs):
-        processor._owned_trace = logger.add_trace(input="input", name="Trace")
-        owned_traces.append(processor._owned_trace)
-        raise RuntimeError("conversion failed")
-
-    with patch.object(processor, "_log_node_tree", side_effect=fail_after_starting_trace):
+    with patch.object(processor, "_commit_trace", side_effect=RuntimeError("conversion failed")):
         processor.on_trace_end(trace)
 
     assert logger.current_parent() is None
-    assert owned_traces[0].status_code == 500
-    assert processor._nodes == {}
-    assert processor._owned_trace is None
+    assert owned_trace.status_code == 500
+    assert processor._trace_states == {}
 
 
 @patch("splunk_ao.logger.logger.AgentStreams")
@@ -217,9 +739,50 @@ def test_commit_failure_preserves_caller_owned_trace(
         processor.on_trace_end(trace)
 
     assert logger.current_parent() is caller_trace
-    assert processor._nodes == {}
-    assert processor._owned_trace is None
+    assert processor._trace_states == {}
     logger.conclude(output="done")
+
+
+@patch("splunk_ao.logger.logger.AgentStreams")
+@patch("splunk_ao.logger.logger.Projects")
+@patch("splunk_ao.logger.logger.Traces")
+def test_openai_agents_live_root_is_used_for_outbound_context_and_commit(
+    mock_traces_client: Mock, mock_projects_client: Mock, mock_logstreams_client: Mock
+) -> None:
+    setup_mock_traces_client(mock_traces_client)
+    setup_mock_projects_client(mock_projects_client)
+    setup_mock_logstreams_client(mock_logstreams_client)
+    logger = SplunkAOLogger(project="test", agent_stream="test", ingestion_hook=lambda _: None)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger)
+    trace = MagicMock(trace_id="trace-id", name="Agent trace", metadata={})
+    processor.on_trace_start(trace)
+    state = _trace_state(processor, trace.trace_id)
+    node = Node(
+        node_type="agent",
+        run_id="root-span-id",
+        parent_run_id="trace-id",
+        span_params={
+            "input": "question",
+            "output": "answer",
+            "name": "Agent root",
+            "start_time_iso": "2025-01-01T00:00:00+00:00",
+            "duration_ns": 10,
+            "status_code": 200,
+        },
+    )
+    state.nodes[str(node.run_id)] = node
+    state.nodes[trace.trace_id].children.append(str(node.run_id))
+    processor._start_owned_root(node, state)
+    live_root = state.owned_root
+    live_context = logger._otel_ids[live_root.id].span_context
+
+    headers = get_tracing_headers()
+    processor.on_trace_end(trace)
+
+    assert headers["traceparent"].split("-")[2] == format(live_context.span_id, "016x")
+    assert logger.traces[0].spans == [live_root]
+    assert logger.current_parent() is None
+    logger.terminate()
 
 
 def _create_mock_response_with_tools(tool_calls: list[dict]) -> dict:
@@ -497,3 +1060,95 @@ async def test_token_details_extraction() -> None:
     assert extracted_data_no_usage.get("num_total_tokens") is None
     assert "input_tokens_details" not in extracted_data_no_usage["metadata"]
     assert "output_tokens_details" not in extracted_data_no_usage["metadata"]
+
+
+def test_generation_span_exports_when_input_is_populated_after_start() -> None:
+    # Given: a generation span starts without input, as OpenAIChatCompletionsModel does
+    # When: OpenAI populates input, output, and usage after the start callback
+    # Then: the completed LLM span is exported with its messages and token counts
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Delayed generation input") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(model="gpt-4", parent=root_span) as span:
+                    span.span_data.input = [{"role": "user", "content": "Hi"}]
+                    span.span_data.output = [{"role": "assistant", "content": "Hello"}]
+                    span.span_data.usage = {"input_tokens": 1, "output_tokens": 2, "total_tokens": 3}
+
+        operations = [(s.attributes or {}).get("gen_ai.operation.name") for s in sink.spans]
+        assert "chat" in operations, f"Missing LLM span; exported operations: {operations}"
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        attributes = llm_span.attributes or {}
+        input_messages = json.loads(attributes.get("gen_ai.input.messages", "[]"))
+        output_messages = json.loads(attributes.get("gen_ai.output.messages", "[]"))
+        assert input_messages[0]["role"] == "user"
+        assert "Hi" in str(input_messages[0])
+        assert output_messages[0]["role"] == "assistant"
+        assert "Hello" in str(output_messages[0])
+        assert attributes["gen_ai.usage.input_tokens"] == 1
+        assert attributes["gen_ai.usage.output_tokens"] == 2
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_generation_span_exports_tuple_output() -> None:
+    # Given: GenerationSpanData permits a Sequence of output mappings, including a tuple
+    # When: a generation span finishes with a tuple containing an assistant message
+    # Then: the completed LLM span is exported instead of being discarded during validation
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Tuple generation output") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(
+                    input=[{"role": "user", "content": "Hi"}], model="gpt-4", parent=root_span
+                ) as span:
+                    span.span_data.output = ({"role": "assistant", "content": "Hello"},)
+
+        operations = [(s.attributes or {}).get("gen_ai.operation.name") for s in sink.spans]
+        assert "chat" in operations, f"Missing LLM span; exported operations: {operations}"
+        llm_span = next(s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "chat")
+        output_messages = json.loads((llm_span.attributes or {}).get("gen_ai.output.messages", "[]"))
+        assert output_messages[0]["role"] == "assistant"
+        assert "Hello" in str(output_messages[0])
+        assert processor._trace_states == {}
+    finally:
+        set_trace_processors([])
+        logger.terminate()
+
+
+def test_workflow_input_falls_back_when_generation_input_is_set_after_start() -> None:
+    # Given: a generation span opened without input, then given it inside the span, as OpenAIChatCompletionsModel does
+    # When: the trace completes
+    # Then: the agent workflow span, which has no input of its own, shows the user message from that LLM call
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    processor = SplunkAOTracingProcessor(splunk_ao_logger=logger, flush_on_trace_end=False)
+    set_trace_processors([processor])
+    try:
+        with agents_tracing.trace("Delayed generation input") as openai_trace:
+            with agent_span("Agent", parent=openai_trace) as root_span:
+                with generation_span(model="gpt-4", parent=root_span) as gen:
+                    # Mirror OpenAIChatCompletionsModel: input is assigned after the span starts.
+                    gen.span_data.input = [
+                        {"role": "system", "content": "You are a support agent."},
+                        {"role": "user", "content": "Look up customer CUST-123"},
+                    ]
+                    gen.span_data.output = [{"role": "assistant", "content": "Found it."}]
+
+        workflows = [s for s in sink.spans if (s.attributes or {}).get("gen_ai.operation.name") == "invoke_workflow"]
+        assert workflows, "Missing workflow span"
+        for workflow in workflows:
+            input_messages = json.loads((workflow.attributes or {}).get("gen_ai.input.messages", "[]"))
+            assert input_messages[0]["role"] == "user"
+            assert input_messages[0]["parts"][0]["content"] == "Look up customer CUST-123"
+    finally:
+        set_trace_processors([])
+        logger.terminate()

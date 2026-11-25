@@ -11,6 +11,7 @@ class ErrorType(str, Enum):
     PERMISSION_ERROR = "permission_error"
     RATE_LIMIT_ERROR = "rate_limit_error"
     SYSTEM_ERROR = "system_error"
+    TIMEOUT_ERROR = "timeout_error"
     UNCATALOGED_ERROR = "uncataloged_error"
     WORKFLOW_ERROR = "workflow_error"
 

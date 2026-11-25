@@ -7,7 +7,13 @@ from uuid import UUID
 
 from splunk_ao.handlers.base_async_handler import SplunkAOAsyncBaseHandler
 from splunk_ao.handlers.langchain.handler import SplunkAOCallback
-from splunk_ao.handlers.langchain.utils import get_agent_name, is_agent_node, parse_llm_result, update_root_to_agent
+from splunk_ao.handlers.langchain.utils import (
+    get_agent_name,
+    is_agent_node,
+    normalize_langgraph_output,
+    parse_llm_result,
+    update_root_to_agent,
+)
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.schema.handlers import NODE_TYPE
 from splunk_ao.schema.trace import TracesIngestRequest
@@ -41,6 +47,8 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
     _handler : SplunkAOAsyncBaseHandler
         The async handler for managing the trace.
     """
+
+    run_inline = True
 
     def __init__(
         self,
@@ -79,6 +87,10 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
         node_type: NODE_TYPE = "chain"
         node_name = SplunkAOCallback._get_node_name(node_type, serialized, kwargs)
 
+        kwargs["_langgraph_root"] = parent_run_id is None and (
+            node_name.lower() == "langgraph" or (kwargs.get("metadata") or {}).get("ls_integration") == "langgraph"
+        )
+
         # If the `name` is `LangGraph` or `Agent`, set the node type to `agent`.
         if is_agent_node(node_name):
             node_type = "agent"
@@ -88,6 +100,9 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id, kwargs.get("metadata", {}), self._handler.get_node(parent_run_id) if parent_run_id else None
         )
 
+        kwargs["_otel_display_name"] = SplunkAOCallback._get_display_name(
+            serialized, kwargs.get("metadata"), parent_run_id, kwargs
+        )
         kwargs["name"] = node_name
         await self._handler.async_start_node(
             node_type, parent_run_id, run_id, input=serialize_to_str(inputs), tags=tags, **kwargs
@@ -103,6 +118,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
         # The input is sent via kwargs in on_chain_end in async streaming mode
         if "inputs" in kwargs:
             kwargs["input"] = serialize_to_str(kwargs["inputs"])
+        outputs = normalize_langgraph_output(outputs, self._handler.get_node(run_id))
         await self._handler.async_end_node(run_id, output=serialize_to_str(outputs), status_code=200, **kwargs)
 
     async def on_agent_finish(self, finish: AgentFinish, *, run_id: UUID, **kwargs: Any) -> Any:
@@ -142,6 +158,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=[{"content": p, "role": "user"} for p in prompts],
             tags=tags,
             model=model,
@@ -201,6 +218,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialized_messages,
             tools=json.loads(json.dumps(tools, cls=EventSerializer)) if tools else None,
             tags=tags,
@@ -224,6 +242,10 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             num_input_tokens=result.num_input_tokens,
             num_output_tokens=result.num_output_tokens,
             total_tokens=result.total_tokens,
+            image_input_tokens=result.image_input_tokens,
+            audio_input_tokens=result.audio_input_tokens,
+            audio_output_tokens=result.audio_output_tokens,
+            image_output_tokens=result.image_output_tokens,
             status_code=200,
         )
 
@@ -252,6 +274,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=input_str,
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,
@@ -304,6 +327,7 @@ class SplunkAOAsyncCallback(AsyncCallbackHandler):
             parent_run_id,
             run_id,
             name=node_name,
+            _otel_display_name=SplunkAOCallback._get_display_name(serialized, metadata, parent_run_id, kwargs),
             input=serialize_to_str(query),
             tags=tags,
             metadata={k: str(v) for k, v in metadata.items()} if metadata else None,

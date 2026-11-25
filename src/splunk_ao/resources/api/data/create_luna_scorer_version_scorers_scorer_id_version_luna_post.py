@@ -14,7 +14,7 @@ from splunk_ao.exceptions import (
     RateLimitError,
     ServerError,
 )
-from splunk_ao.utils.headers_data import get_sdk_header
+from splunk_ao.utils.headers_data import get_scorer_capabilities_header, get_sdk_header
 
 from ... import errors
 from ...models.base_scorer_version_response import BaseScorerVersionResponse
@@ -37,6 +37,7 @@ def _get_kwargs(scorer_id: str, *, body: CreateCustomLunaScorerVersionRequest) -
     headers["Content-Type"] = "application/json"
 
     headers["Splunk-AO-SDK"] = get_sdk_header()
+    headers["X-Galileo-Scorer-Capabilities"] = get_scorer_capabilities_header()
 
     _kwargs["content_headers"] = headers
     return _kwargs
@@ -87,6 +88,16 @@ def sync_detailed(
 ) -> Response[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Luna Scorer Version
 
+     Create a new custom Luna scorer version for the given scorer.
+
+    Args:
+        create_luna_scorer_version_request: LoRA/fine-tuning parameters for the new version.
+        scorer: The Luna scorer to create a new version for.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        The newly created scorer version.
+
     Args:
         scorer_id (str):
         body (CreateCustomLunaScorerVersionRequest):
@@ -111,6 +122,16 @@ def sync(
 ) -> Optional[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Luna Scorer Version
 
+     Create a new custom Luna scorer version for the given scorer.
+
+    Args:
+        create_luna_scorer_version_request: LoRA/fine-tuning parameters for the new version.
+        scorer: The Luna scorer to create a new version for.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        The newly created scorer version.
+
     Args:
         scorer_id (str):
         body (CreateCustomLunaScorerVersionRequest):
@@ -130,6 +151,16 @@ async def asyncio_detailed(
     scorer_id: str, *, client: ApiClient, body: CreateCustomLunaScorerVersionRequest
 ) -> Response[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Luna Scorer Version
+
+     Create a new custom Luna scorer version for the given scorer.
+
+    Args:
+        create_luna_scorer_version_request: LoRA/fine-tuning parameters for the new version.
+        scorer: The Luna scorer to create a new version for.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        The newly created scorer version.
 
     Args:
         scorer_id (str):
@@ -154,6 +185,16 @@ async def asyncio(
     scorer_id: str, *, client: ApiClient, body: CreateCustomLunaScorerVersionRequest
 ) -> Optional[BaseScorerVersionResponse | HTTPValidationError]:
     """Create Luna Scorer Version
+
+     Create a new custom Luna scorer version for the given scorer.
+
+    Args:
+        create_luna_scorer_version_request: LoRA/fine-tuning parameters for the new version.
+        scorer: The Luna scorer to create a new version for.
+        ctx: Async request context with the authenticated user and read session.
+
+    Returns:
+        The newly created scorer version.
 
     Args:
         scorer_id (str):

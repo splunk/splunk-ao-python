@@ -34,6 +34,26 @@ def is_uuid7(uuid_obj: UUID | str) -> bool:
         return False
 
 
+def deterministic_uuid4(value: str) -> UUID:
+    """
+    Derive a deterministic UUID4 from a string.
+
+    The first 16 bytes of the SHA-256 digest of the UTF-8 encoded string are used,
+    with the RFC 4122 version and variant bits set.
+
+    Parameters
+    ----------
+    value : str
+        The string to derive the UUID from.
+
+    Returns
+    -------
+    UUID
+        A version 4 UUID that is stable for a given input.
+    """
+    return UUID(bytes=hashlib.sha256(value.encode()).digest()[:16], version=4)
+
+
 def uuid7_to_uuid4(uuid_obj: UUID | str) -> UUID:
     """
     Convert a UUID7 to a UUID4 by hashing its string representation.
@@ -67,11 +87,7 @@ def uuid7_to_uuid4(uuid_obj: UUID | str) -> UUID:
         if uuid_obj.version != 7:
             raise ValueError(f"Input UUID is version {uuid_obj.version}, not version 7")
 
-        # Hash the UUID string using SHA-256
-        hash_digest = hashlib.sha256(uuid_str.encode()).digest()
-
-        # Use the first 16 bytes of the hash to create a version 4 UUID
-        new_uuid = UUID(bytes=hash_digest[:16], version=4)
+        new_uuid = deterministic_uuid4(uuid_str)
 
         _logger.debug(f"Converted UUID7 {uuid_str} to UUID4 {new_uuid}")
         return new_uuid

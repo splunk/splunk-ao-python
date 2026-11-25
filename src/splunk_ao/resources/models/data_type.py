@@ -12,6 +12,7 @@ class DataType(str, Enum):
     PLAYGROUND = "playground"
     PROMPT = "prompt"
     RANK = "rank"
+    RETRIEVED_CHUNK_LIST_BOOLEAN = "retrieved_chunk_list_boolean"
     SCORE_RATING_AGGREGATE = "score_rating_aggregate"
     STAR_RATING_AGGREGATE = "star_rating_aggregate"
     STRING_LIST = "string_list"

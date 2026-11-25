@@ -17,7 +17,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.metric_threshold import MetricThreshold
-    from ..models.scorer_config import ScorerConfig
+    from ..models.runtime_scorer_config import RuntimeScorerConfig
 
 
 T = TypeVar("T", bound="LogRecordsColumnInfo")
@@ -46,12 +46,13 @@ class LogRecordsColumnInfo:
             'average').
         metric_key_alias (None | str | Unset): Alternate metric key for this column. When scorer UUIDs are used as
             column IDs, this holds the legacy metric_name string for dual-key ClickHouse query fallback.
-        scorer_config (None | ScorerConfig | Unset): For metric columns only: Scorer config that produced the metric.
+        threshold (MetricThreshold | None | Unset): Thresholds for the column, if this is a metrics column.
+        scorer_config (None | RuntimeScorerConfig | Unset): For metric columns only: Scorer config that produced the
+            metric.
         scorer_id (None | str | Unset): For metric columns only: Scorer id that produced the metric. This is deprecated
             and will be removed in future versions.
         insight_type (InsightType | None | Unset): Insight type.
         filter_type (LogRecordsFilterType | None | Unset): Filter type.
-        threshold (MetricThreshold | None | Unset): Thresholds for the column, if this is a metrics column.
         label_color (LogRecordsColumnInfoLabelColorType0 | None | Unset): Type of label color for the column, if this is
             a multilabel metric column.
     """
@@ -72,17 +73,17 @@ class LogRecordsColumnInfo:
     is_optional: bool | Unset = False
     roll_up_method: None | str | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
-    scorer_config: None | ScorerConfig | Unset = UNSET
+    threshold: MetricThreshold | None | Unset = UNSET
+    scorer_config: None | RuntimeScorerConfig | Unset = UNSET
     scorer_id: None | str | Unset = UNSET
     insight_type: InsightType | None | Unset = UNSET
     filter_type: LogRecordsFilterType | None | Unset = UNSET
-    threshold: MetricThreshold | None | Unset = UNSET
     label_color: LogRecordsColumnInfoLabelColorType0 | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.metric_threshold import MetricThreshold
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
 
         id = self.id
 
@@ -158,10 +159,18 @@ class LogRecordsColumnInfo:
         else:
             metric_key_alias = self.metric_key_alias
 
+        threshold: dict[str, Any] | None | Unset
+        if isinstance(self.threshold, Unset):
+            threshold = UNSET
+        elif isinstance(self.threshold, MetricThreshold):
+            threshold = self.threshold.to_dict()
+        else:
+            threshold = self.threshold
+
         scorer_config: dict[str, Any] | None | Unset
         if isinstance(self.scorer_config, Unset):
             scorer_config = UNSET
-        elif isinstance(self.scorer_config, ScorerConfig):
+        elif isinstance(self.scorer_config, RuntimeScorerConfig):
             scorer_config = self.scorer_config.to_dict()
         else:
             scorer_config = self.scorer_config
@@ -187,14 +196,6 @@ class LogRecordsColumnInfo:
             filter_type = self.filter_type.value
         else:
             filter_type = self.filter_type
-
-        threshold: dict[str, Any] | None | Unset
-        if isinstance(self.threshold, Unset):
-            threshold = UNSET
-        elif isinstance(self.threshold, MetricThreshold):
-            threshold = self.threshold.to_dict()
-        else:
-            threshold = self.threshold
 
         label_color: None | str | Unset
         if isinstance(self.label_color, Unset):
@@ -233,6 +234,8 @@ class LogRecordsColumnInfo:
             field_dict["roll_up_method"] = roll_up_method
         if metric_key_alias is not UNSET:
             field_dict["metric_key_alias"] = metric_key_alias
+        if threshold is not UNSET:
+            field_dict["threshold"] = threshold
         if scorer_config is not UNSET:
             field_dict["scorer_config"] = scorer_config
         if scorer_id is not UNSET:
@@ -241,8 +244,6 @@ class LogRecordsColumnInfo:
             field_dict["insight_type"] = insight_type
         if filter_type is not UNSET:
             field_dict["filter_type"] = filter_type
-        if threshold is not UNSET:
-            field_dict["threshold"] = threshold
         if label_color is not UNSET:
             field_dict["label_color"] = label_color
 
@@ -251,7 +252,7 @@ class LogRecordsColumnInfo:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.metric_threshold import MetricThreshold
-        from ..models.scorer_config import ScorerConfig
+        from ..models.runtime_scorer_config import RuntimeScorerConfig
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -371,7 +372,7 @@ class LogRecordsColumnInfo:
 
         metric_key_alias = _parse_metric_key_alias(d.pop("metric_key_alias", UNSET))
 
-        def _parse_scorer_config(data: object) -> None | ScorerConfig | Unset:
+        def _parse_threshold(data: object) -> MetricThreshold | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -379,12 +380,29 @@ class LogRecordsColumnInfo:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                scorer_config_type_0 = ScorerConfig.from_dict(data)
+                threshold_type_0 = MetricThreshold.from_dict(data)
+
+                return threshold_type_0
+            except:  # noqa: E722
+                pass
+            return cast(MetricThreshold | None | Unset, data)
+
+        threshold = _parse_threshold(d.pop("threshold", UNSET))
+
+        def _parse_scorer_config(data: object) -> None | RuntimeScorerConfig | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                scorer_config_type_0 = RuntimeScorerConfig.from_dict(data)
 
                 return scorer_config_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerConfig | Unset, data)
+            return cast(None | RuntimeScorerConfig | Unset, data)
 
         scorer_config = _parse_scorer_config(d.pop("scorer_config", UNSET))
 
@@ -431,23 +449,6 @@ class LogRecordsColumnInfo:
 
         filter_type = _parse_filter_type(d.pop("filter_type", UNSET))
 
-        def _parse_threshold(data: object) -> MetricThreshold | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, dict):
-                    raise TypeError()
-                threshold_type_0 = MetricThreshold.from_dict(data)
-
-                return threshold_type_0
-            except:  # noqa: E722
-                pass
-            return cast(MetricThreshold | None | Unset, data)
-
-        threshold = _parse_threshold(d.pop("threshold", UNSET))
-
         def _parse_label_color(data: object) -> LogRecordsColumnInfoLabelColorType0 | None | Unset:
             if data is None:
                 return data
@@ -482,11 +483,11 @@ class LogRecordsColumnInfo:
             is_optional=is_optional,
             roll_up_method=roll_up_method,
             metric_key_alias=metric_key_alias,
+            threshold=threshold,
             scorer_config=scorer_config,
             scorer_id=scorer_id,
             insight_type=insight_type,
             filter_type=filter_type,
-            threshold=threshold,
             label_color=label_color,
         )
 

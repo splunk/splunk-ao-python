@@ -114,6 +114,10 @@ class SpanManager:
         num_output_tokens: int | None = None,
         total_tokens: int | None = None,
         status_code: int = 200,
+        image_input_tokens: int | None = None,
+        audio_input_tokens: int | None = None,
+        audio_output_tokens: int | None = None,
+        image_output_tokens: int | None = None,
     ) -> None:
         """End an LLM span.
 
@@ -128,6 +132,10 @@ class SpanManager:
             num_output_tokens: Number of output tokens generated
             total_tokens: Total tokens used
             status_code: HTTP status code (200 for success)
+            image_input_tokens: Image tokens included in num_input_tokens
+            audio_input_tokens: Audio tokens included in num_input_tokens
+            audio_output_tokens: Audio tokens included in num_output_tokens
+            image_output_tokens: Image tokens included in num_output_tokens
         """
         if isinstance(output, list):
             if not output:
@@ -150,6 +158,10 @@ class SpanManager:
             num_output_tokens=num_output_tokens,
             total_tokens=total_tokens,
             status_code=status_code,
+            image_input_tokens=image_input_tokens,
+            audio_input_tokens=audio_input_tokens,
+            audio_output_tokens=audio_output_tokens,
+            image_output_tokens=image_output_tokens,
         )
 
     def start_tool(

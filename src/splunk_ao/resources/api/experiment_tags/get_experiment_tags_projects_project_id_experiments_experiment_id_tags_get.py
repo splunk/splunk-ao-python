@@ -87,7 +87,14 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | list[RunTagDB]]:
     """Get Experiment Tags
 
-     Gets tags for a given project_id/experiment_id.
+     Get all tags for an experiment.
+
+    Args:
+        run: The experiment to list tags for, resolved from the URL.
+        ctx: Async request context.
+
+    Returns:
+        The experiment's tags, ordered by key.
 
     Args:
         project_id (str):
@@ -111,7 +118,14 @@ def sync_detailed(
 def sync(project_id: str, experiment_id: str, *, client: ApiClient) -> Optional[HTTPValidationError | list[RunTagDB]]:
     """Get Experiment Tags
 
-     Gets tags for a given project_id/experiment_id.
+     Get all tags for an experiment.
+
+    Args:
+        run: The experiment to list tags for, resolved from the URL.
+        ctx: Async request context.
+
+    Returns:
+        The experiment's tags, ordered by key.
 
     Args:
         project_id (str):
@@ -133,7 +147,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | list[RunTagDB]]:
     """Get Experiment Tags
 
-     Gets tags for a given project_id/experiment_id.
+     Get all tags for an experiment.
+
+    Args:
+        run: The experiment to list tags for, resolved from the URL.
+        ctx: Async request context.
+
+    Returns:
+        The experiment's tags, ordered by key.
 
     Args:
         project_id (str):
@@ -159,7 +180,14 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | list[RunTagDB]]:
     """Get Experiment Tags
 
-     Gets tags for a given project_id/experiment_id.
+     Get all tags for an experiment.
+
+    Args:
+        run: The experiment to list tags for, resolved from the URL.
+        ctx: Async request context.
+
+    Returns:
+        The experiment's tags, ordered by key.
 
     Args:
         project_id (str):

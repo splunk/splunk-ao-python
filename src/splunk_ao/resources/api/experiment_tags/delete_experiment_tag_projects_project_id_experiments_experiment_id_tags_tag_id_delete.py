@@ -84,6 +84,15 @@ def sync_detailed(
 ) -> Response[DeleteRunResponse | HTTPValidationError]:
     """Delete Experiment Tag
 
+     Delete a tag from an experiment.
+
+    Args:
+        tag: The tag to delete, resolved from the URL.
+        run: The experiment the tag belongs to, resolved from the URL.
+
+    Returns:
+        A confirmation message.
+
     Args:
         project_id (str):
         experiment_id (str):
@@ -109,6 +118,15 @@ def sync(
 ) -> Optional[DeleteRunResponse | HTTPValidationError]:
     """Delete Experiment Tag
 
+     Delete a tag from an experiment.
+
+    Args:
+        tag: The tag to delete, resolved from the URL.
+        run: The experiment the tag belongs to, resolved from the URL.
+
+    Returns:
+        A confirmation message.
+
     Args:
         project_id (str):
         experiment_id (str):
@@ -129,6 +147,15 @@ async def asyncio_detailed(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
 ) -> Response[DeleteRunResponse | HTTPValidationError]:
     """Delete Experiment Tag
+
+     Delete a tag from an experiment.
+
+    Args:
+        tag: The tag to delete, resolved from the URL.
+        run: The experiment the tag belongs to, resolved from the URL.
+
+    Returns:
+        A confirmation message.
 
     Args:
         project_id (str):
@@ -154,6 +181,15 @@ async def asyncio(
     project_id: str, experiment_id: str, tag_id: str, *, client: ApiClient
 ) -> Optional[DeleteRunResponse | HTTPValidationError]:
     """Delete Experiment Tag
+
+     Delete a tag from an experiment.
+
+    Args:
+        tag: The tag to delete, resolved from the URL.
+        run: The experiment the tag belongs to, resolved from the URL.
+
+    Returns:
+        A confirmation message.
 
     Args:
         project_id (str):

@@ -24,7 +24,11 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *, start_time: datetime.datetime, end_time: datetime.datetime, project_id: None | Unset | UUID = UNSET
+    *,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    project_id: None | Unset | UUID = UNSET,
+    timezone: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -44,6 +48,13 @@ def _get_kwargs(
     else:
         json_project_id = project_id
     params["project_id"] = json_project_id
+
+    json_timezone: None | str | Unset
+    if isinstance(timezone, Unset):
+        json_timezone = UNSET
+    else:
+        json_timezone = timezone
+    params["timezone"] = json_timezone
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -103,6 +114,7 @@ def sync_detailed(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     project_id: None | Unset | UUID = UNSET,
+    timezone: None | str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Export Billing Usage
 
@@ -112,6 +124,7 @@ def sync_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         project_id (None | Unset | UUID): Optional project filter; omit to export all projects
+        timezone (None | str | Unset): IANA timezone used for display-only export metadata
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -121,7 +134,7 @@ def sync_detailed(
         Response[Any | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, project_id=project_id)
+    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, project_id=project_id, timezone=timezone)
 
     response = client.request(**kwargs)
 
@@ -134,6 +147,7 @@ def sync(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     project_id: None | Unset | UUID = UNSET,
+    timezone: None | str | Unset = UNSET,
 ) -> Optional[Any | HTTPValidationError]:
     """Export Billing Usage
 
@@ -143,6 +157,7 @@ def sync(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         project_id (None | Unset | UUID): Optional project filter; omit to export all projects
+        timezone (None | str | Unset): IANA timezone used for display-only export metadata
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +167,9 @@ def sync(
         Any | HTTPValidationError
     """
 
-    return sync_detailed(client=client, start_time=start_time, end_time=end_time, project_id=project_id).parsed
+    return sync_detailed(
+        client=client, start_time=start_time, end_time=end_time, project_id=project_id, timezone=timezone
+    ).parsed
 
 
 async def asyncio_detailed(
@@ -161,6 +178,7 @@ async def asyncio_detailed(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     project_id: None | Unset | UUID = UNSET,
+    timezone: None | str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Export Billing Usage
 
@@ -170,6 +188,7 @@ async def asyncio_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         project_id (None | Unset | UUID): Optional project filter; omit to export all projects
+        timezone (None | str | Unset): IANA timezone used for display-only export metadata
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -179,7 +198,7 @@ async def asyncio_detailed(
         Response[Any | HTTPValidationError]
     """
 
-    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, project_id=project_id)
+    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, project_id=project_id, timezone=timezone)
 
     response = await client.arequest(**kwargs)
 
@@ -192,6 +211,7 @@ async def asyncio(
     start_time: datetime.datetime,
     end_time: datetime.datetime,
     project_id: None | Unset | UUID = UNSET,
+    timezone: None | str | Unset = UNSET,
 ) -> Optional[Any | HTTPValidationError]:
     """Export Billing Usage
 
@@ -201,6 +221,7 @@ async def asyncio(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         project_id (None | Unset | UUID): Optional project filter; omit to export all projects
+        timezone (None | str | Unset): IANA timezone used for display-only export metadata
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -211,5 +232,7 @@ async def asyncio(
     """
 
     return (
-        await asyncio_detailed(client=client, start_time=start_time, end_time=end_time, project_id=project_id)
+        await asyncio_detailed(
+            client=client, start_time=start_time, end_time=end_time, project_id=project_id, timezone=timezone
+        )
     ).parsed

@@ -6,9 +6,9 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.core_scorer_name import CoreScorerName
 from ..models.luna_input_type_enum import LunaInputTypeEnum
 from ..models.luna_output_type_enum import LunaOutputTypeEnum
+from ..models.scorer_name import ScorerName
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="CreateCustomLunaScorerVersionRequest")
@@ -21,7 +21,7 @@ class CreateCustomLunaScorerVersionRequest:
         lora_task_id (int):
         prompt (str):
         lora_weights_path (None | str | Unset):
-        executor (CoreScorerName | None | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
+        executor (None | ScorerName | Unset): Executor pipeline. Defaults to finetuned scorer pipeline but can run
             custom galileo score pipelines.
         luna_input_type (LunaInputTypeEnum | None | Unset):
         luna_output_type (LunaOutputTypeEnum | None | Unset):
@@ -30,7 +30,7 @@ class CreateCustomLunaScorerVersionRequest:
     lora_task_id: int
     prompt: str
     lora_weights_path: None | str | Unset = UNSET
-    executor: CoreScorerName | None | Unset = UNSET
+    executor: None | ScorerName | Unset = UNSET
     luna_input_type: LunaInputTypeEnum | None | Unset = UNSET
     luna_output_type: LunaOutputTypeEnum | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -49,7 +49,7 @@ class CreateCustomLunaScorerVersionRequest:
         executor: None | str | Unset
         if isinstance(self.executor, Unset):
             executor = UNSET
-        elif isinstance(self.executor, CoreScorerName):
+        elif isinstance(self.executor, ScorerName):
             executor = self.executor.value
         else:
             executor = self.executor
@@ -100,7 +100,7 @@ class CreateCustomLunaScorerVersionRequest:
 
         lora_weights_path = _parse_lora_weights_path(d.pop("lora_weights_path", UNSET))
 
-        def _parse_executor(data: object) -> CoreScorerName | None | Unset:
+        def _parse_executor(data: object) -> None | ScorerName | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -108,12 +108,12 @@ class CreateCustomLunaScorerVersionRequest:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                executor_type_0 = CoreScorerName(data)
+                executor_type_0 = ScorerName(data)
 
                 return executor_type_0
             except:  # noqa: E722
                 pass
-            return cast(CoreScorerName | None | Unset, data)
+            return cast(None | ScorerName | Unset, data)
 
         executor = _parse_executor(d.pop("executor", UNSET))
 

@@ -21,11 +21,16 @@ from ... import errors
 from ...models.cost_interval import CostInterval
 from ...models.http_validation_error import HTTPValidationError
 from ...models.integration_costs_response import IntegrationCostsResponse
-from ...types import UNSET, Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    *, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    interval: CostInterval,
+    project_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -39,6 +44,20 @@ def _get_kwargs(
 
     json_interval = interval.value
     params["interval"] = json_interval
+
+    json_project_id: None | str | Unset
+    if isinstance(project_id, Unset):
+        json_project_id = UNSET
+    else:
+        json_project_id = project_id
+    params["project_id"] = json_project_id
+
+    json_run_id: None | str | Unset
+    if isinstance(run_id, Unset):
+        json_run_id = UNSET
+    else:
+        json_run_id = run_id
+    params["run_id"] = json_run_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -96,7 +115,13 @@ def _build_response(
 
 
 def sync_detailed(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *,
+    client: ApiClient,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    interval: CostInterval,
+    project_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
@@ -104,6 +129,8 @@ def sync_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
+        project_id (None | str | Unset): Optional project filter
+        run_id (None | str | Unset): Optional run / agent stream filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -113,7 +140,9 @@ def sync_detailed(
         Response[HTTPValidationError | IntegrationCostsResponse]
     """
 
-    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, interval=interval)
+    kwargs = _get_kwargs(
+        start_time=start_time, end_time=end_time, interval=interval, project_id=project_id, run_id=run_id
+    )
 
     response = client.request(**kwargs)
 
@@ -121,7 +150,13 @@ def sync_detailed(
 
 
 def sync(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *,
+    client: ApiClient,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    interval: CostInterval,
+    project_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
@@ -129,6 +164,8 @@ def sync(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
+        project_id (None | str | Unset): Optional project filter
+        run_id (None | str | Unset): Optional run / agent stream filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -138,11 +175,19 @@ def sync(
         HTTPValidationError | IntegrationCostsResponse
     """
 
-    return sync_detailed(client=client, start_time=start_time, end_time=end_time, interval=interval).parsed
+    return sync_detailed(
+        client=client, start_time=start_time, end_time=end_time, interval=interval, project_id=project_id, run_id=run_id
+    ).parsed
 
 
 async def asyncio_detailed(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *,
+    client: ApiClient,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    interval: CostInterval,
+    project_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
@@ -150,6 +195,8 @@ async def asyncio_detailed(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
+        project_id (None | str | Unset): Optional project filter
+        run_id (None | str | Unset): Optional run / agent stream filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,7 +206,9 @@ async def asyncio_detailed(
         Response[HTTPValidationError | IntegrationCostsResponse]
     """
 
-    kwargs = _get_kwargs(start_time=start_time, end_time=end_time, interval=interval)
+    kwargs = _get_kwargs(
+        start_time=start_time, end_time=end_time, interval=interval, project_id=project_id, run_id=run_id
+    )
 
     response = await client.arequest(**kwargs)
 
@@ -167,7 +216,13 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    *, client: ApiClient, start_time: datetime.datetime, end_time: datetime.datetime, interval: CostInterval
+    *,
+    client: ApiClient,
+    start_time: datetime.datetime,
+    end_time: datetime.datetime,
+    interval: CostInterval,
+    project_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Optional[HTTPValidationError | IntegrationCostsResponse]:
     """Get Integration Costs
 
@@ -175,6 +230,8 @@ async def asyncio(
         start_time (datetime.datetime): Start of time range (UTC)
         end_time (datetime.datetime): End of time range (UTC)
         interval (CostInterval):
+        project_id (None | str | Unset): Optional project filter
+        run_id (None | str | Unset): Optional run / agent stream filter
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -184,4 +241,13 @@ async def asyncio(
         HTTPValidationError | IntegrationCostsResponse
     """
 
-    return (await asyncio_detailed(client=client, start_time=start_time, end_time=end_time, interval=interval)).parsed
+    return (
+        await asyncio_detailed(
+            client=client,
+            start_time=start_time,
+            end_time=end_time,
+            interval=interval,
+            project_id=project_id,
+            run_id=run_id,
+        )
+    ).parsed

@@ -8,7 +8,6 @@ from uuid import UUID
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.scorer_type import ScorerType
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
     from ..models.feedback_aggregate import FeedbackAggregate
     from ..models.feedback_rating_db import FeedbackRatingDB
     from ..models.hallucination_segment import HallucinationSegment
-    from ..models.metric_critique_columnar import MetricCritiqueColumnar
     from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
     from ..models.segment import Segment
 
@@ -35,22 +33,30 @@ class MetricSuccess:
             list[list[list[bool | datetime.datetime | Document | FeedbackAggregate | FeedbackRatingDB | float |
             HallucinationSegment | int | None | Segment | str | UUID]]] | None | Segment | str | UUID):
         status_type (Literal['success'] | Unset):  Default: 'success'.
-        scorer_type (None | ScorerType | Unset):
         metric_key_alias (None | str | Unset):
         explanation (None | str | Unset):
         cost (float | None | Unset):
         model_alias (None | str | Unset):
         num_judges (int | None | Unset):
         multijudge_average (float | None | Unset):
+        boolean_from_prob (bool | None | Unset): The Boolean verdict a probability-scored Evaluator's confidence
+            implies. Additional to `value`, which keeps carrying the confidence itself. Absent on a rolled-up parent, which
+            carries counts of its children's verdicts instead.
         input_tokens (int | None | Unset):
         output_tokens (int | None | Unset):
         total_tokens (int | None | Unset):
-        critique (MetricCritiqueColumnar | None | Unset):
+        batch_size (int | None | Unset): Number of questions the provider call that produced this value answered, 1 or
+            more. Above 1, `cost` and the token counts are this metric's share of that call. Absent on rolled-up parents, on
+            non-decision metrics, and on decision results written before batching.
         metadata (MetricSuccessMetadataType0 | None | Unset): Optional per-row context returned alongside the score by
             code-based scorers that return a (score, metadata) tuple. Sourced from the {metric_name}_metadata auxiliary key,
             which is stored as a JSON string in ClickHouse.
         display_value (None | str | Unset):
         rationale (None | str | Unset):
+        value_description (None | str | Unset): The description of the answer that `value` names, written when the
+            record is scored. Decision evaluators write it: the true or false criteria of a Boolean evaluator, the
+            description of the category, or the description of the level. Sourced from the {metric_name}_value_description
+            auxiliary key. Absent when that answer has none.
     """
 
     value: (
@@ -116,20 +122,21 @@ class MetricSuccess:
         | UUID
     )
     status_type: Literal["success"] | Unset = "success"
-    scorer_type: None | ScorerType | Unset = UNSET
     metric_key_alias: None | str | Unset = UNSET
     explanation: None | str | Unset = UNSET
     cost: float | None | Unset = UNSET
     model_alias: None | str | Unset = UNSET
     num_judges: int | None | Unset = UNSET
     multijudge_average: float | None | Unset = UNSET
+    boolean_from_prob: bool | None | Unset = UNSET
     input_tokens: int | None | Unset = UNSET
     output_tokens: int | None | Unset = UNSET
     total_tokens: int | None | Unset = UNSET
-    critique: MetricCritiqueColumnar | None | Unset = UNSET
+    batch_size: int | None | Unset = UNSET
     metadata: MetricSuccessMetadataType0 | None | Unset = UNSET
     display_value: None | str | Unset = UNSET
     rationale: None | str | Unset = UNSET
+    value_description: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -137,7 +144,6 @@ class MetricSuccess:
         from ..models.feedback_aggregate import FeedbackAggregate
         from ..models.feedback_rating_db import FeedbackRatingDB
         from ..models.hallucination_segment import HallucinationSegment
-        from ..models.metric_critique_columnar import MetricCritiqueColumnar
         from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
         from ..models.segment import Segment
 
@@ -249,14 +255,6 @@ class MetricSuccess:
 
         status_type = self.status_type
 
-        scorer_type: None | str | Unset
-        if isinstance(self.scorer_type, Unset):
-            scorer_type = UNSET
-        elif isinstance(self.scorer_type, ScorerType):
-            scorer_type = self.scorer_type.value
-        else:
-            scorer_type = self.scorer_type
-
         metric_key_alias: None | str | Unset
         if isinstance(self.metric_key_alias, Unset):
             metric_key_alias = UNSET
@@ -293,6 +291,12 @@ class MetricSuccess:
         else:
             multijudge_average = self.multijudge_average
 
+        boolean_from_prob: bool | None | Unset
+        if isinstance(self.boolean_from_prob, Unset):
+            boolean_from_prob = UNSET
+        else:
+            boolean_from_prob = self.boolean_from_prob
+
         input_tokens: int | None | Unset
         if isinstance(self.input_tokens, Unset):
             input_tokens = UNSET
@@ -311,13 +315,11 @@ class MetricSuccess:
         else:
             total_tokens = self.total_tokens
 
-        critique: dict[str, Any] | None | Unset
-        if isinstance(self.critique, Unset):
-            critique = UNSET
-        elif isinstance(self.critique, MetricCritiqueColumnar):
-            critique = self.critique.to_dict()
+        batch_size: int | None | Unset
+        if isinstance(self.batch_size, Unset):
+            batch_size = UNSET
         else:
-            critique = self.critique
+            batch_size = self.batch_size
 
         metadata: dict[str, Any] | None | Unset
         if isinstance(self.metadata, Unset):
@@ -339,13 +341,17 @@ class MetricSuccess:
         else:
             rationale = self.rationale
 
+        value_description: None | str | Unset
+        if isinstance(self.value_description, Unset):
+            value_description = UNSET
+        else:
+            value_description = self.value_description
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"value": value})
         if status_type is not UNSET:
             field_dict["status_type"] = status_type
-        if scorer_type is not UNSET:
-            field_dict["scorer_type"] = scorer_type
         if metric_key_alias is not UNSET:
             field_dict["metric_key_alias"] = metric_key_alias
         if explanation is not UNSET:
@@ -358,20 +364,24 @@ class MetricSuccess:
             field_dict["num_judges"] = num_judges
         if multijudge_average is not UNSET:
             field_dict["multijudge_average"] = multijudge_average
+        if boolean_from_prob is not UNSET:
+            field_dict["boolean_from_prob"] = boolean_from_prob
         if input_tokens is not UNSET:
             field_dict["input_tokens"] = input_tokens
         if output_tokens is not UNSET:
             field_dict["output_tokens"] = output_tokens
         if total_tokens is not UNSET:
             field_dict["total_tokens"] = total_tokens
-        if critique is not UNSET:
-            field_dict["critique"] = critique
+        if batch_size is not UNSET:
+            field_dict["batch_size"] = batch_size
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
         if display_value is not UNSET:
             field_dict["display_value"] = display_value
         if rationale is not UNSET:
             field_dict["rationale"] = rationale
+        if value_description is not UNSET:
+            field_dict["value_description"] = value_description
 
         return field_dict
 
@@ -381,7 +391,6 @@ class MetricSuccess:
         from ..models.feedback_aggregate import FeedbackAggregate
         from ..models.feedback_rating_db import FeedbackRatingDB
         from ..models.hallucination_segment import HallucinationSegment
-        from ..models.metric_critique_columnar import MetricCritiqueColumnar
         from ..models.metric_success_metadata_type_0 import MetricSuccessMetadataType0
         from ..models.segment import Segment
 
@@ -908,23 +917,6 @@ class MetricSuccess:
         if status_type != "success" and not isinstance(status_type, Unset):
             raise ValueError(f"status_type must match const 'success', got '{status_type}'")
 
-        def _parse_scorer_type(data: object) -> None | ScorerType | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                scorer_type_type_0 = ScorerType(data)
-
-                return scorer_type_type_0
-            except:  # noqa: E722
-                pass
-            return cast(None | ScorerType | Unset, data)
-
-        scorer_type = _parse_scorer_type(d.pop("scorer_type", UNSET))
-
         def _parse_metric_key_alias(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -979,6 +971,15 @@ class MetricSuccess:
 
         multijudge_average = _parse_multijudge_average(d.pop("multijudge_average", UNSET))
 
+        def _parse_boolean_from_prob(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        boolean_from_prob = _parse_boolean_from_prob(d.pop("boolean_from_prob", UNSET))
+
         def _parse_input_tokens(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -1006,22 +1007,14 @@ class MetricSuccess:
 
         total_tokens = _parse_total_tokens(d.pop("total_tokens", UNSET))
 
-        def _parse_critique(data: object) -> MetricCritiqueColumnar | None | Unset:
+        def _parse_batch_size(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            try:
-                if not isinstance(data, dict):
-                    raise TypeError()
-                critique_type_0 = MetricCritiqueColumnar.from_dict(data)
+            return cast(int | None | Unset, data)
 
-                return critique_type_0
-            except:  # noqa: E722
-                pass
-            return cast(MetricCritiqueColumnar | None | Unset, data)
-
-        critique = _parse_critique(d.pop("critique", UNSET))
+        batch_size = _parse_batch_size(d.pop("batch_size", UNSET))
 
         def _parse_metadata(data: object) -> MetricSuccessMetadataType0 | None | Unset:
             if data is None:
@@ -1058,23 +1051,33 @@ class MetricSuccess:
 
         rationale = _parse_rationale(d.pop("rationale", UNSET))
 
+        def _parse_value_description(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        value_description = _parse_value_description(d.pop("value_description", UNSET))
+
         metric_success = cls(
             value=value,
             status_type=status_type,
-            scorer_type=scorer_type,
             metric_key_alias=metric_key_alias,
             explanation=explanation,
             cost=cost,
             model_alias=model_alias,
             num_judges=num_judges,
             multijudge_average=multijudge_average,
+            boolean_from_prob=boolean_from_prob,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             total_tokens=total_tokens,
-            critique=critique,
+            batch_size=batch_size,
             metadata=metadata,
             display_value=display_value,
             rationale=rationale,
+            value_description=value_description,
         )
 
         metric_success.additional_properties = d

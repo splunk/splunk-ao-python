@@ -1,6 +1,6 @@
 import json
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -18,12 +18,7 @@ from galileo_core.schemas.logging.span import (
 from galileo_core.schemas.logging.step import BaseStep
 from galileo_core.schemas.shared.content_parts import FileContentPart, TextContentPart
 from galileo_core.schemas.shared.document import Document
-from splunk_ao.converter.attribute_mapping import (
-    CONTENT_ALIAS_BY_GEN_AI,
-    SPLUNK_ALIAS_BY_GEN_AI,
-    build_span_attributes,
-    normalize_attributes_for_export,
-)
+from splunk_ao.converter.attribute_mapping import build_span_attributes
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
 from splunk_ao.schema import DataContentBlock, LoggedControlSpan, LoggedLlmSpan, LoggedMessage, TextContentBlock
 
@@ -71,6 +66,42 @@ def test_llm_mapping_covers_content_request_response_usage_and_units() -> None:
     assert attrs["splunk_ao.llm.cost.total_usd"] == 0.03
     assert attrs["gen_ai.usage.cache_read.input_tokens"] == 4
     assert json.loads(attrs["gen_ai.tool.definitions"])[0]["name"] == "search"
+
+
+def test_llm_mapping_emits_per_modality_token_details() -> None:
+    # Given: an LLM span whose metrics carry an image/audio breakdown of its token counts
+    span = LlmSpan(
+        input="prompt",
+        output="answer",
+        metrics=LlmMetrics(
+            num_input_tokens=120,
+            num_output_tokens=40,
+            num_image_input_tokens=5,
+            num_audio_input_tokens=100,
+            num_image_output_tokens=0,
+            num_audio_output_tokens=20,
+        ),
+    )
+
+    # When: the span is mapped for export
+    attrs = build_span_attributes(span)
+
+    # Then: each modality has its own token-details attribute, including an explicit zero
+    assert attrs["gen_ai.usage.image.input_tokens"] == 5
+    assert attrs["gen_ai.usage.audio.input_tokens"] == 100
+    assert attrs["gen_ai.usage.image.output_tokens"] == 0
+    assert attrs["gen_ai.usage.audio.output_tokens"] == 20
+
+
+def test_llm_mapping_omits_token_details_without_a_breakdown() -> None:
+    # Given: a text-only LLM span with no per-modality counts
+    span = LlmSpan(input="prompt", output="answer", metrics=LlmMetrics(num_input_tokens=12, num_output_tokens=8))
+
+    # When: the span is mapped
+    attrs = build_span_attributes(span)
+
+    # Then: no token-details attributes are emitted
+    assert not any("tokens_details" in key for key in attrs)
 
 
 def test_llm_output_uses_unknown_when_finish_reason_is_absent() -> None:
@@ -418,6 +449,273 @@ def test_orchestration_output_omits_repeated_input_history() -> None:
     ]
 
 
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_full_history_keeps_last_terminal_message(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    user = {"role": "user", "content": "Give me two alternatives"}
+    first = {"role": "assistant", "content": "First alternative"}
+    second = {"role": "assistant", "content": "Second alternative"}
+    span_kwargs: dict[str, Any] = {
+        "name": "planner",
+        "input": json.dumps({"messages": [user]}),
+        "output": json.dumps({"messages": [user, first, second]}),
+    }
+    if span_type is AgentSpan:
+        span_kwargs["agent_type"] = AgentType.planner
+
+    attrs = build_span_attributes(span_type(**span_kwargs))
+
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "Second alternative", finish_reason="unknown")
+    ]
+
+
+@pytest.mark.parametrize("span_type", [WorkflowSpan, AgentSpan])
+def test_orchestration_full_history_removes_confirmed_input_prefix(
+    span_type: type[WorkflowSpan] | type[AgentSpan],
+) -> None:
+    # Given: the input is the complete history immediately before the final assistant response.
+    user = {"role": "user", "content": "What is the dosage?"}
+    tool_call = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+    }
+    tool_response = {"role": "tool", "content": "10 mg daily", "tool_call_id": "call-1"}
+    final = {"role": "assistant", "content": "The common dosage is 10 mg daily."}
+    input_history = [user, tool_call, tool_response]
+    span_kwargs: dict[str, Any] = {
+        "name": "healthcare",
+        "input": json.dumps({"messages": input_history}),
+        "output": json.dumps({"messages": [*input_history, final]}),
+    }
+    if span_type is AgentSpan:
+        span_kwargs["agent_type"] = AgentType.default
+
+    # When: the orchestration content is converted.
+    attrs = build_span_attributes(span_type(**span_kwargs))
+
+    # Then: only the newly produced terminal response is exported as output.
+    assert json.loads(attrs["gen_ai.output.messages"]) == [
+        _text_message("assistant", "The common dosage is 10 mg daily.", finish_reason="unknown")
+    ]
+
+
+def test_orchestration_tool_call_assistant_message_infers_tool_call_finish_reason() -> None:
+    # Given: a workflow emits an assistant tool call without a source finish reason.
+    output = {
+        "update": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+                }
+            ]
+        }
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: finish_reason is inferred as "tool_call" from the parts.
+    output_message = json.loads(attrs["gen_ai.output.messages"])[0]
+    assert output_message["finish_reason"] == "tool_call"
+    assert output_message["parts"][0]["type"] == "tool_call"
+
+
+def test_orchestration_tool_response_uses_unknown_finish_reason() -> None:
+    # Given: a workflow emits a tool response, which has no model-generation finish reason.
+    output = {
+        "update": {"messages": [{"role": "tool", "content": {"dosage": "10 mg daily"}, "tool_call_id": "call-1"}]}
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: its valid tool response structure is preserved without inventing a model finish reason.
+    output_message = json.loads(attrs["gen_ai.output.messages"])[0]
+    assert output_message["finish_reason"] == "unknown"
+    assert output_message["parts"] == [
+        {"type": "tool_call_response", "id": "call-1", "response": {"dosage": "10 mg daily"}}
+    ]
+
+
+def test_orchestration_preserves_explicit_finish_reason_for_tool_call() -> None:
+    # Given: the source supplies its own finish reason for a message containing a tool call.
+    output = {
+        "update": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "finish_reason": "provider_tool_calls",
+                    "tool_calls": [{"id": "call-1", "function": {"name": "search", "arguments": '{"query":"dosage"}'}}],
+                }
+            ]
+        }
+    }
+
+    # When: the workflow output is converted.
+    attrs = build_span_attributes(WorkflowSpan(name="tools", output=json.dumps(output)))
+
+    # Then: inference does not overwrite source telemetry.
+    assert json.loads(attrs["gen_ai.output.messages"])[0]["finish_reason"] == "provider_tool_calls"
+
+
+def test_orchestration_full_history_with_tool_call_keeps_last_message() -> None:
+    # LangGraph accumulated state: user → tool-call AI (empty content) → tool response → final AI
+    # The first post-dedup message has empty content; the UI would show "—" without the fix.
+    user = {"role": "user", "content": "What is the dosage of Lisinopril?"}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "rag_search", "arguments": '{"query":"Lisinopril dosage"}'}}],
+    }
+    tool_resp = {"role": "tool", "content": "Lisinopril: 10mg daily", "tool_call_id": "tc1"}
+    ai_final = {"role": "assistant", "content": "Common dosage is 10mg once daily."}
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, ai_toolcall, tool_resp, ai_final]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["role"] == "assistant"
+    assert output_messages[0]["parts"][0]["content"] == "Common dosage is 10mg once daily."
+
+
+def test_orchestration_full_history_multi_turn_keeps_last_message() -> None:
+    # Multi-turn: output contains the full conversation history after multiple exchanges.
+    # Only the last message should be kept regardless of role.
+    user1 = {"role": "user", "content": "Hello"}
+    ai1 = {"role": "assistant", "content": "Hi, how can I help?"}
+    user2 = {"role": "user", "content": "What is Lisinopril?"}
+    ai2 = {"role": "assistant", "content": "Lisinopril is a blood pressure medication."}
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user1]}),
+        output=json.dumps({"messages": [user1, ai1, user2, ai2]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["parts"][0]["content"] == "Lisinopril is a blood pressure medication."
+
+
+def test_orchestration_full_history_multiple_tool_rounds_keeps_last_message() -> None:
+    # Two tool call rounds before the final answer — last message is still the only output.
+    user = {"role": "user", "content": "Compare Lisinopril and Amlodipine"}
+    tc1_ai = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}],
+    }
+    tc1_resp = {"role": "tool", "content": "Lisinopril: ACE inhibitor", "tool_call_id": "tc1"}
+    tc2_ai = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc2", "function": {"name": "search", "arguments": '{"query":"Amlodipine"}'}}],
+    }
+    tc2_resp = {"role": "tool", "content": "Amlodipine: calcium channel blocker", "tool_call_id": "tc2"}
+    ai_final = {
+        "role": "assistant",
+        "content": "Lisinopril is an ACE inhibitor; Amlodipine is a calcium channel blocker.",
+    }
+
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, tc1_ai, tc1_resp, tc2_ai, tc2_resp, ai_final]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert "Amlodipine" in output_messages[0]["parts"][0]["content"]
+
+
+def test_orchestration_message_container_without_input_prefix_match_not_reduced() -> None:
+    # A WorkflowSpan (e.g. ToolNode) returning multiple messages whose output does NOT
+    # prefix-match the input state — dedup gate never fires, so all messages must survive.
+    # This is the parallel-tool-call shape: two ToolMessages from a single ToolNode invocation.
+    tool_msg_1 = {"role": "tool", "content": "Lisinopril: 10 mg daily", "tool_call_id": "tc1"}
+    tool_msg_2 = {"role": "tool", "content": "Amlodipine: 5 mg daily", "tool_call_id": "tc2"}
+    span = WorkflowSpan(
+        name="tools",
+        input=json.dumps({"messages": [{"role": "user", "content": "Compare dosages"}]}),
+        output=json.dumps({"messages": [tool_msg_1, tool_msg_2]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 2
+    assert output_messages[0]["parts"][0]["response"] == "Lisinopril: 10 mg daily"
+    assert output_messages[1]["parts"][0]["response"] == "Amlodipine: 5 mg daily"
+
+
+def test_orchestration_full_history_ends_on_tool_message_keeps_last() -> None:
+    # return_direct=True tool: run ends on a tool response, no final assistant message.
+    # The dedup gate fires (prefix matches) but the last message is a tool, not assistant.
+    # Must return the tool message rather than an empty list.
+    user = {"role": "user", "content": "Get patient P001"}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "get_patient", "arguments": '{"id":"P001"}'}}],
+    }
+    tool_resp = {"role": "tool", "content": "George Rivera, Lisinopril 10mg", "tool_call_id": "tc1"}
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user, ai_toolcall]}),
+        output=json.dumps({"messages": [user, ai_toolcall, tool_resp]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["parts"][0]["response"] == "George Rivera, Lisinopril 10mg"
+
+
+def test_orchestration_full_history_ends_on_tool_call_ai_message_keeps_last() -> None:
+    # interrupt_before=["tools"]: run ends on a tool-call AIMessage with empty content.
+    # The last message is assistant role but content="" — must not return empty list.
+    user = {"role": "user", "content": "Search for Lisinopril"}
+    ai_toolcall = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [{"id": "tc1", "function": {"name": "search", "arguments": '{"query":"Lisinopril"}'}}],
+    }
+    span = AgentSpan(
+        name="Agent",
+        agent_type=AgentType.default,
+        input=json.dumps({"messages": [user]}),
+        output=json.dumps({"messages": [user, ai_toolcall]}),
+    )
+
+    attrs = build_span_attributes(span)
+
+    output_messages = json.loads(attrs["gen_ai.output.messages"])
+    assert len(output_messages) == 1
+    assert output_messages[0]["role"] == "assistant"
+    assert output_messages[0]["finish_reason"] == "tool_call"
+
+
 def test_orchestration_preserves_schema_valid_parts_and_tool_calls() -> None:
     span = WorkflowSpan(
         name="tool-workflow",
@@ -546,7 +844,8 @@ def test_orchestration_keeps_non_json_strings_as_text_messages() -> None:
     ]
 
 
-def test_control_mapping_exports_fully_populated_backend_contract() -> None:
+@pytest.mark.parametrize("applies_to", [value.value for value in ControlAppliesTo])
+def test_control_mapping_exports_fully_populated_backend_contract(applies_to: str) -> None:
     span = LoggedControlSpan(
         name="PII Guard",
         input="question",
@@ -554,7 +853,7 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
         control_id=42,
         agent_name="planner",
         check_stage=ControlCheckStage.pre,
-        applies_to=ControlAppliesTo.llm_call,
+        applies_to=ControlAppliesTo(applies_to),
         evaluator_name="pii-check",
         selector_path="$.input",
         tags=["agent_control", "control"],
@@ -571,7 +870,7 @@ def test_control_mapping_exports_fully_populated_backend_contract() -> None:
         "agent_control.control_name": "PII Guard",
         "agent_control.agent_name": "planner",
         "agent_control.check_stage": "pre",
-        "agent_control.applies_to": "llm_call",
+        "agent_control.applies_to": applies_to,
         "agent_control.evaluator_name": "pii-check",
         "agent_control.selector_path": "$.input",
         "agent_control.action": "deny",
@@ -659,96 +958,8 @@ def test_control_mapping_exports_error_result_without_dropping_false() -> None:
     assert "agent_control.confidence" not in attrs
 
 
-def test_control_operation_name_uses_standard_export_normalization() -> None:
+def test_control_operation_name_uses_genai_key() -> None:
     attrs = build_span_attributes(ControlSpan())
 
     assert attrs["gen_ai.operation.name"] == "control"
     assert "splunk_ao.operation.name" not in attrs
-
-    normalized = normalize_attributes_for_export(attrs)
-
-    assert normalized["gen_ai.operation.name"] == "control"
-    assert normalized["splunk_ao.operation.name"] == "control"
-
-
-def test_normalizer_duplicates_ordinary_attributes_and_relocates_all_content() -> None:
-    source = {
-        "gen_ai.request.model": "gpt-4o",
-        "gen_ai.usage.input_tokens": 42,
-        **{key: f"value-{index}" for index, key in enumerate(CONTENT_ALIAS_BY_GEN_AI)},
-    }
-
-    result = normalize_attributes_for_export(source)
-
-    assert result["gen_ai.request.model"] == result["splunk_ao.request.model"] == "gpt-4o"
-    assert result["gen_ai.usage.input_tokens"] == result["splunk_ao.llm.usage.input_tokens"] == 42
-    for source_key, destination_key in CONTENT_ALIAS_BY_GEN_AI.items():
-        assert source_key not in result
-        assert result[destination_key] == source[source_key]
-
-
-def test_normalizer_gen_ai_wins_collisions_and_sdk_marker_is_authoritative() -> None:
-    result = normalize_attributes_for_export(
-        {
-            "gen_ai.request.model": "canonical",
-            "splunk_ao.request.model": "stale",
-            "gen_ai.system": "legacy-provider",
-            "gen_ai.provider.name": "current-provider",
-            "splunk_ao.provider.name": "stale-provider",
-            "splunk_ao.system": "other-sdk",
-        }
-    )
-
-    assert result["splunk_ao.request.model"] == "canonical"
-    assert result["splunk_ao.provider.name"] == "current-provider"
-    assert result["splunk_ao.system"] == "splunk_ao_python"
-
-
-def test_normalizer_does_not_use_deprecated_gen_ai_system_as_provider() -> None:
-    result = normalize_attributes_for_export({"gen_ai.system": "legacy-provider"})
-
-    assert result["gen_ai.system"] == "legacy-provider"
-    assert "splunk_ao.provider.name" not in result
-
-
-def test_normalizer_converts_first_chunk_seconds_to_splunk_nanoseconds() -> None:
-    result = normalize_attributes_for_export({"gen_ai.response.time_to_first_chunk": 0.125})
-
-    assert result["gen_ai.response.time_to_first_chunk"] == 0.125
-    assert result["splunk_ao.llm.time_to_first_token_ns"] == 125_000_000
-
-
-def test_normalizer_preserves_exact_source_nanoseconds() -> None:
-    result = normalize_attributes_for_export(
-        {"gen_ai.response.time_to_first_chunk": 0.123456789, "splunk_ao.llm.time_to_first_token_ns": 123_456_789}
-    )
-
-    assert result["splunk_ao.llm.time_to_first_token_ns"] == 123_456_789
-
-
-def test_normalizer_is_idempotent() -> None:
-    source = {
-        "gen_ai.operation.name": "chat",
-        "gen_ai.input.messages": json.dumps([_text_message("user", "question")]),
-        "custom.attribute": "unchanged",
-    }
-
-    once = normalize_attributes_for_export(source)
-
-    assert normalize_attributes_for_export(once) == once
-
-
-def test_normalizer_can_be_disabled_for_developer_comparison() -> None:
-    source = {
-        "gen_ai.request.model": "gpt-4o",
-        "gen_ai.input.messages": json.dumps([_text_message("user", "question")]),
-        "splunk_ao.system": "source-value",
-    }
-
-    assert normalize_attributes_for_export(source, enabled=False) == {**source, "splunk_ao.system": "splunk_ao_python"}
-
-
-def test_every_alias_uses_an_explicit_destination_namespace() -> None:
-    assert SPLUNK_ALIAS_BY_GEN_AI
-    assert all(source.startswith("gen_ai.") for source in SPLUNK_ALIAS_BY_GEN_AI)
-    assert all(destination.startswith("splunk_ao.") for destination in SPLUNK_ALIAS_BY_GEN_AI.values())

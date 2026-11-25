@@ -85,7 +85,20 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | UserCollaborator]:
     """Update User Integration Collaborator
 
-     Update the sharing permissions of a user on an integration.
+     Change a user's role on a shared integration.
+
+    Args:
+        collaborator_update: New role, which must be viewer.
+        integration: Integration resolved from the URL.
+        user_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
+
+    Raises:
+        HTTPException: 422 when the requested role is not viewer.
 
     Args:
         integration_id (str):
@@ -112,7 +125,20 @@ def sync(
 ) -> Optional[HTTPValidationError | UserCollaborator]:
     """Update User Integration Collaborator
 
-     Update the sharing permissions of a user on an integration.
+     Change a user's role on a shared integration.
+
+    Args:
+        collaborator_update: New role, which must be viewer.
+        integration: Integration resolved from the URL.
+        user_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
+
+    Raises:
+        HTTPException: 422 when the requested role is not viewer.
 
     Args:
         integration_id (str):
@@ -135,7 +161,20 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | UserCollaborator]:
     """Update User Integration Collaborator
 
-     Update the sharing permissions of a user on an integration.
+     Change a user's role on a shared integration.
+
+    Args:
+        collaborator_update: New role, which must be viewer.
+        integration: Integration resolved from the URL.
+        user_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
+
+    Raises:
+        HTTPException: 422 when the requested role is not viewer.
 
     Args:
         integration_id (str):
@@ -162,7 +201,20 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | UserCollaborator]:
     """Update User Integration Collaborator
 
-     Update the sharing permissions of a user on an integration.
+     Change a user's role on a shared integration.
+
+    Args:
+        collaborator_update: New role, which must be viewer.
+        integration: Integration resolved from the URL.
+        user_integration: Existing share resolved from the URL.
+        principal: Caller the collaborator permissions are evaluated for.
+        ctx: Async request context supplying the read session and current user.
+
+    Returns:
+        The updated collaborator.
+
+    Raises:
+        HTTPException: 422 when the requested role is not viewer.
 
     Args:
         integration_id (str):

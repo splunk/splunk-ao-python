@@ -8,6 +8,7 @@ from uuid import UUID
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.annotation_status import AnnotationStatus
 from ..models.content_modality import ContentModality
 from ..types import UNSET, Unset
 
@@ -86,6 +87,8 @@ class PartialExtendedLlmSpanRecord:
             queue
         annotation_queue_ids (list[str] | Unset): IDs of annotation queues this record is in
         fully_annotated (bool | None | Unset): Whether every field is annotated by every annotator in the queue
+        annotation_status (AnnotationStatus | None | Unset): Annotation review status of the record
+        annotated_members (list[str] | None | Unset): Emails of tracked queue members who rated the record
         progress_message (str | Unset): Runner progress text written directly to CH span Default: ''.
         error_message (str | Unset): Runner error text written directly to CH span Default: ''.
         metric_info (None | PartialExtendedLlmSpanRecordMetricInfoType0 | Unset): Detailed information about the metrics
@@ -101,6 +104,7 @@ class PartialExtendedLlmSpanRecord:
             MCPListToolsEvent | MessageEvent | ReasoningEvent | WebSearchCallEvent] | None | Unset): List of reasoning,
             internal tool call, or MCP events that occurred during the LLM span.
         model (None | str | Unset): Model used for this span.
+        provider (None | str | Unset): Provider used for this span.
         temperature (float | None | Unset): Temperature used for generation.
         finish_reason (None | str | Unset): Reason for finishing.
     """
@@ -138,6 +142,8 @@ class PartialExtendedLlmSpanRecord:
     overall_annotation_agreement: float | None | Unset = UNSET
     annotation_queue_ids: list[str] | Unset = UNSET
     fully_annotated: bool | None | Unset = UNSET
+    annotation_status: AnnotationStatus | None | Unset = UNSET
+    annotated_members: list[str] | None | Unset = UNSET
     progress_message: str | Unset = ""
     error_message: str | Unset = ""
     metric_info: None | PartialExtendedLlmSpanRecordMetricInfoType0 | Unset = UNSET
@@ -161,6 +167,7 @@ class PartialExtendedLlmSpanRecord:
         | Unset
     ) = UNSET
     model: None | str | Unset = UNSET
+    provider: None | str | Unset = UNSET
     temperature: float | None | Unset = UNSET
     finish_reason: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -365,6 +372,23 @@ class PartialExtendedLlmSpanRecord:
         else:
             fully_annotated = self.fully_annotated
 
+        annotation_status: None | str | Unset
+        if isinstance(self.annotation_status, Unset):
+            annotation_status = UNSET
+        elif isinstance(self.annotation_status, AnnotationStatus):
+            annotation_status = self.annotation_status.value
+        else:
+            annotation_status = self.annotation_status
+
+        annotated_members: list[str] | None | Unset
+        if isinstance(self.annotated_members, Unset):
+            annotated_members = UNSET
+        elif isinstance(self.annotated_members, list):
+            annotated_members = self.annotated_members
+
+        else:
+            annotated_members = self.annotated_members
+
         progress_message = self.progress_message
 
         error_message = self.error_message
@@ -448,6 +472,12 @@ class PartialExtendedLlmSpanRecord:
         else:
             model = self.model
 
+        provider: None | str | Unset
+        if isinstance(self.provider, Unset):
+            provider = UNSET
+        else:
+            provider = self.provider
+
         temperature: float | None | Unset
         if isinstance(self.temperature, Unset):
             temperature = UNSET
@@ -529,6 +559,10 @@ class PartialExtendedLlmSpanRecord:
             field_dict["annotation_queue_ids"] = annotation_queue_ids
         if fully_annotated is not UNSET:
             field_dict["fully_annotated"] = fully_annotated
+        if annotation_status is not UNSET:
+            field_dict["annotation_status"] = annotation_status
+        if annotated_members is not UNSET:
+            field_dict["annotated_members"] = annotated_members
         if progress_message is not UNSET:
             field_dict["progress_message"] = progress_message
         if error_message is not UNSET:
@@ -549,6 +583,8 @@ class PartialExtendedLlmSpanRecord:
             field_dict["events"] = events
         if model is not UNSET:
             field_dict["model"] = model
+        if provider is not UNSET:
+            field_dict["provider"] = provider
         if temperature is not UNSET:
             field_dict["temperature"] = temperature
         if finish_reason is not UNSET:
@@ -898,6 +934,40 @@ class PartialExtendedLlmSpanRecord:
 
         fully_annotated = _parse_fully_annotated(d.pop("fully_annotated", UNSET))
 
+        def _parse_annotation_status(data: object) -> AnnotationStatus | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                annotation_status_type_0 = AnnotationStatus(data)
+
+                return annotation_status_type_0
+            except:  # noqa: E722
+                pass
+            return cast(AnnotationStatus | None | Unset, data)
+
+        annotation_status = _parse_annotation_status(d.pop("annotation_status", UNSET))
+
+        def _parse_annotated_members(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                annotated_members_type_0 = cast(list[str], data)
+
+                return annotated_members_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        annotated_members = _parse_annotated_members(d.pop("annotated_members", UNSET))
+
         progress_message = d.pop("progress_message", UNSET)
 
         error_message = d.pop("error_message", UNSET)
@@ -1121,6 +1191,15 @@ class PartialExtendedLlmSpanRecord:
 
         model = _parse_model(d.pop("model", UNSET))
 
+        def _parse_provider(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        provider = _parse_provider(d.pop("provider", UNSET))
+
         def _parse_temperature(data: object) -> float | None | Unset:
             if data is None:
                 return data
@@ -1173,6 +1252,8 @@ class PartialExtendedLlmSpanRecord:
             overall_annotation_agreement=overall_annotation_agreement,
             annotation_queue_ids=annotation_queue_ids,
             fully_annotated=fully_annotated,
+            annotation_status=annotation_status,
+            annotated_members=annotated_members,
             progress_message=progress_message,
             error_message=error_message,
             metric_info=metric_info,
@@ -1183,6 +1264,7 @@ class PartialExtendedLlmSpanRecord:
             tools=tools,
             events=events,
             model=model,
+            provider=provider,
             temperature=temperature,
             finish_reason=finish_reason,
         )

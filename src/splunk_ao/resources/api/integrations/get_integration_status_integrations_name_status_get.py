@@ -96,9 +96,19 @@ def sync_detailed(
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
 ]:
-    """Get Integration Status
+    r"""Get Integration Status
 
-     Checks if the integration status is active or not.
+     Check that the caller's integration for a provider still authenticates.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        ``{200: \"OK\"}`` when the provider accepts the stored credentials.
+
+    Raises:
+        GalileoServerException: When the provider rejects them.
 
     Args:
         name (IntegrationProvider):
@@ -124,9 +134,19 @@ def sync(
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
 ]:
-    """Get Integration Status
+    r"""Get Integration Status
 
-     Checks if the integration status is active or not.
+     Check that the caller's integration for a provider still authenticates.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        ``{200: \"OK\"}`` when the provider accepts the stored credentials.
+
+    Raises:
+        GalileoServerException: When the provider rejects them.
 
     Args:
         name (IntegrationProvider):
@@ -148,9 +168,19 @@ async def asyncio_detailed(
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
 ]:
-    """Get Integration Status
+    r"""Get Integration Status
 
-     Checks if the integration status is active or not.
+     Check that the caller's integration for a provider still authenticates.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        ``{200: \"OK\"}`` when the provider accepts the stored credentials.
+
+    Raises:
+        GalileoServerException: When the provider rejects them.
 
     Args:
         name (IntegrationProvider):
@@ -176,9 +206,19 @@ async def asyncio(
     GetIntegrationStatusIntegrationsNameStatusGetResponseGetIntegrationStatusIntegrationsNameStatusGet
     | HTTPValidationError
 ]:
-    """Get Integration Status
+    r"""Get Integration Status
 
-     Checks if the integration status is active or not.
+     Check that the caller's integration for a provider still authenticates.
+
+    Args:
+        name: Provider name from the URL.
+        integration: Integration resolved from the URL, read access already checked.
+
+    Returns:
+        ``{200: \"OK\"}`` when the provider accepts the stored credentials.
+
+    Raises:
+        GalileoServerException: When the provider rejects them.
 
     Args:
         name (IntegrationProvider):

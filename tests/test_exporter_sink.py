@@ -2,6 +2,7 @@
 
 from collections.abc import Generator, Sequence
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from opentelemetry import trace
@@ -56,6 +57,15 @@ def test_batch_processor_wraps_exporter(shutdown_workers: list[Any]) -> None:
     shutdown_workers.append(processor)
 
     assert isinstance(processor, BatchSpanProcessor)
+
+
+def test_default_batch_processor_delegates_configuration_to_otel() -> None:
+    exporter = RecordingExporter()
+
+    with patch("splunk_ao.exporter.sink.BatchSpanProcessor") as processor_class:
+        build_batch_processor(exporter)
+
+    processor_class.assert_called_once_with(exporter)
 
 
 def test_batch_processor_accepts_custom_config(shutdown_workers: list[Any]) -> None:

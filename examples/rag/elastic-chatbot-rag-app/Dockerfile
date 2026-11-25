@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build-step
+FROM node:22.23.5-alpine AS build-step
 WORKDIR /app
 ENV PATH=/node_modules/.bin:$PATH
 COPY frontend ./frontend

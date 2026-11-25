@@ -12,6 +12,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.agent_span import AgentSpan
     from ..models.control_span import ControlSpan
+    from ..models.http_span import HttpSpan
     from ..models.llm_span import LlmSpan
     from ..models.retriever_span import RetrieverSpan
     from ..models.tool_span import ToolSpan
@@ -26,7 +27,8 @@ class LogSpansIngestRequest:
     """Request model for ingesting spans.
 
     Attributes:
-        spans (list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan]): List of spans to log.
+        spans (list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan]): List of
+            spans to log.
         trace_id (str): Trace id associated with the spans.
         parent_id (str): Parent trace or span id.
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
@@ -36,11 +38,14 @@ class LogSpansIngestRequest:
         client_version (None | str | Unset):
         reliable (bool | Unset): Whether or not to use reliable logging.  If set to False, the method will respond
             immediately before verifying that the traces have been successfully ingested, and no error message will be
-            returned if ingestion fails.  If set to True, the method will wait for the traces to be successfully ingested or
-            return an error message if there is an ingestion failure. Default: True.
+            returned if ingestion fails.  If set to True, the method will wait for the traces to be durably accepted or
+            return an error message if there is an ingestion failure. On the streaming write path (kafka_metrics_pipeline)
+            accepted means acknowledged by Kafka; the records become readable after the data-writer flush, about
+            GALILEO_STREAMING_EXPECTED_LAG_SECONDS (default 2.5 s) later, so a read issued immediately after the response
+            can miss them. Default: True.
     """
 
-    spans: list[AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan]
+    spans: list[AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan]
     trace_id: str
     parent_id: str
     log_stream_id: None | str | Unset = UNSET
@@ -53,6 +58,7 @@ class LogSpansIngestRequest:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.agent_span import AgentSpan
+        from ..models.control_span import ControlSpan
         from ..models.llm_span import LlmSpan
         from ..models.retriever_span import RetrieverSpan
         from ..models.tool_span import ToolSpan
@@ -70,6 +76,8 @@ class LogSpansIngestRequest:
             elif isinstance(spans_item_data, RetrieverSpan):
                 spans_item = spans_item_data.to_dict()
             elif isinstance(spans_item_data, ToolSpan):
+                spans_item = spans_item_data.to_dict()
+            elif isinstance(spans_item_data, ControlSpan):
                 spans_item = spans_item_data.to_dict()
             else:
                 spans_item = spans_item_data.to_dict()
@@ -132,6 +140,7 @@ class LogSpansIngestRequest:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_span import AgentSpan
         from ..models.control_span import ControlSpan
+        from ..models.http_span import HttpSpan
         from ..models.llm_span import LlmSpan
         from ..models.retriever_span import RetrieverSpan
         from ..models.tool_span import ToolSpan
@@ -144,7 +153,7 @@ class LogSpansIngestRequest:
 
             def _parse_spans_item(
                 data: object,
-            ) -> AgentSpan | ControlSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
+            ) -> AgentSpan | ControlSpan | HttpSpan | LlmSpan | RetrieverSpan | ToolSpan | WorkflowSpan:
                 try:
                     if not isinstance(data, dict):
                         raise TypeError()
@@ -185,11 +194,19 @@ class LogSpansIngestRequest:
                     return spans_item_type_4
                 except:  # noqa: E722
                     pass
+                try:
+                    if not isinstance(data, dict):
+                        raise TypeError()
+                    spans_item_type_5 = ControlSpan.from_dict(data)
+
+                    return spans_item_type_5
+                except:  # noqa: E722
+                    pass
                 if not isinstance(data, dict):
                     raise TypeError()
-                spans_item_type_5 = ControlSpan.from_dict(data)
+                spans_item_type_6 = HttpSpan.from_dict(data)
 
-                return spans_item_type_5
+                return spans_item_type_6
 
             spans_item = _parse_spans_item(spans_item_data)
 

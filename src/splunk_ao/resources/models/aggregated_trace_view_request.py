@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -26,12 +26,14 @@ class AggregatedTraceViewRequest:
     """
     Attributes:
         log_stream_id (str): Log stream id associated with the traces.
+        access_view_id (None | str | Unset): Assigned log view for restricted access.
         filters (list[LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
             LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter] | Unset):
             Filters to apply on the traces. Note: Only trace-level filters are supported.
     """
 
     log_stream_id: str
+    access_view_id: None | str | Unset = UNSET
     filters: (
         list[
             LogRecordsBooleanFilter
@@ -55,6 +57,12 @@ class AggregatedTraceViewRequest:
         from ..models.log_records_text_filter import LogRecordsTextFilter
 
         log_stream_id = self.log_stream_id
+
+        access_view_id: None | str | Unset
+        if isinstance(self.access_view_id, Unset):
+            access_view_id = UNSET
+        else:
+            access_view_id = self.access_view_id
 
         filters: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.filters, Unset):
@@ -81,6 +89,8 @@ class AggregatedTraceViewRequest:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"log_stream_id": log_stream_id})
+        if access_view_id is not UNSET:
+            field_dict["access_view_id"] = access_view_id
         if filters is not UNSET:
             field_dict["filters"] = filters
 
@@ -98,6 +108,15 @@ class AggregatedTraceViewRequest:
 
         d = dict(src_dict)
         log_stream_id = d.pop("log_stream_id")
+
+        def _parse_access_view_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        access_view_id = _parse_access_view_id(d.pop("access_view_id", UNSET))
 
         _filters = d.pop("filters", UNSET)
         filters: (
@@ -185,7 +204,7 @@ class AggregatedTraceViewRequest:
 
                 filters.append(filters_item)
 
-        aggregated_trace_view_request = cls(log_stream_id=log_stream_id, filters=filters)
+        aggregated_trace_view_request = cls(log_stream_id=log_stream_id, access_view_id=access_view_id, filters=filters)
 
         aggregated_trace_view_request.additional_properties = d
         return aggregated_trace_view_request

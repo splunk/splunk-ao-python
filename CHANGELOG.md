@@ -7,6 +7,264 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1]
+
+### Added
+
+- Export explicitly supplied display names as `splunk_ao.span.name` while keeping the GenAI OTLP span name.
+  LangChain callbacks also export framework-resolved names. Configure a child runnable with `with_config(run_name=...)`.
+  For a root display name override, pass `config={"metadata": {"name": "Checkout"}}` to `invoke` or `ainvoke`.
+
+### Changed
+
+- Relaxed the `wrapt` dependency from `>=1.14,<2.0` to `>=1.14,<3.0` so `splunk-ao` can be installed alongside
+  `splunk-opentelemetry`, which requires `wrapt>=2.2.2`.
+
+### Removed
+
+- Stop emitting the SDK-specific `splunk_ao.system` span attribute.
+
+### Security
+
+- Raised minimum `aiohttp` (3.14.4), `mcp` (1.30.0), and `filelock` (4.2.1) and refreshed the lock file for `pillow` 13.0.0, `oauthlib` 4.0.1, `pyasn1` 0.6.5, and `langgraph` 1.2.24 to pick up published vulnerability fixes (SAO-20688).
+
+## [0.8.0]
+
+### Added
+
+- `SPLUNK_AO_O11Y_API_URL` optionally overrides the O11y CRUD API origin (for example a private or custom endpoint).
+  It must be an `https://` origin without a path. OTLP ingest is not affected.
+- The low-level API client (`splunk_ao.resources`) gains `HEAD /datasets/{dataset_id}/content`,
+  `POST /datasets/{dataset_id}/versions/{version_index}/preview` and the Luna dataset preview models.
+
+### Changed
+
+- O11y CRUD requests now target `https://api.{realm}.observability.splunkcloud.com` instead of
+  `https://app.{realm}.observability.splunkcloud.com`. The OTLP ingest endpoint and the console URL are unchanged.
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API spec:
+  - The dataset preview endpoint accepts `LunaDatasetPreviewRequest | PreviewDatasetRequest`, returns
+    `DatasetContent | LunaDatasetPreview | LunaDatasetPreviewErrorResponse` (no `HTTPValidationError`), and
+    `limit` now defaults to unset instead of `100`.
+  - `CreateJobRequest` and `CreateJobResponse` no longer have `log_metric_computing_records`.
+  - `ListScorerVersionsResponse.versions` holds `ScorerVersionListItem` instead of `BaseScorerVersionResponse`.
+  - `ValidResult.score_type` is a `ValidResultScoreType` enum instead of `str`.
+
+## [0.7.0]
+
+### Added
+
+- The low-level API client (`splunk_ao.resources`) gains the stage rulesets
+  (`GET /projects/{project_id}/stages/{stage_id}/rulesets`) and paginated stages
+  (`GET /projects/{project_id}/stages/paginated`) endpoints, the decision-scorer validation endpoints (dataset,
+  log record and plain), and the optional `code_sha256`, `request_id` and `validation_task_id` fields on scorer
+  version responses.
+
+### Changed
+
+- **Breaking:** the low-level API client (`splunk_ao.resources`) is regenerated from the current Client API
+  spec. Code that imports generated symbols directly may need updating:
+  - `ScorerConfig` is now `RuntimeScorerConfig`. It keeps the old fields, adds new ones and makes `scorer_type`
+    optional. The field order changed, so a positional `ScorerConfig(id, scorer_type)` call must become
+    `RuntimeScorerConfig(id=..., scorer_type=...)`. Keyword construction now also sends the defaults
+    `ground_truth=False`, `threshold=0.5` and `requires_tools_in_llm_span=False`; building one from a scorer
+    with `from_dict` takes `ground_truth` from the scorer and leaves the other two unset. The server keeps an
+    explicit `ground_truth`, so a keyword-built config for a ground-truth scorer turns ground truth off; build it
+    from the scorer with `from_dict` or pass `ground_truth=True`.
+    `Experiments.create(scorers=...)`, `update_scorer_settings()` and `create_metric_configs()` take or return
+    `RuntimeScorerConfig`.
+  - `CoreScorerName` is renamed to `ScorerName`. The old `ScorerName`, whose members were internal
+    underscore-prefixed values (for example `ScorerName.VALUE_1 = "_context_adherence_luna"`), is gone; use the
+    public names such as `ScorerName.CONTEXT_ADHERENCE`.
+  - Removed endpoints: experiment metrics (`/projects/{project_id}/experiments/metrics`), experiment metric settings
+    (`/projects/{project_id}/experiments/{experiment_id}/metric_settings`) and the Vegas gateway integration
+    (`/integrations/vegas_gateway`).
+  - Removed models: the `Customized*GPTScorer` and `*Template` scorer families, `ChunkAttributionUtilizationScorer`,
+    `FineTunedScorer`, `RegisteredScorer`, `ScorerType`, `ScorersConfiguration`, `MetricCritiqueColumnar`,
+    `MetricCritiqueContent`, `ExtendedSessionRecordWithChildren` (replaced by
+    `ExtendedReadSessionRecordWithChildren`), `VegasGatewayIntegration` and `VegasGatewayIntegrationCreate`.
+  - Removed fields:
+    - `BaseScorerVersionResponse.input_type` (returned by `create_custom_llm_evaluator()` and the other evaluator
+      create functions), and `input_type`, `output_type` and `scoreable_node_types` on `BaseScorerVersionDB`.
+    - `BaseScorer.sub_scorers` and `ProjectCreate.create_example_templates`.
+    - `scorer_type` on `MetricComputing`, `MetricError`, `MetricFailed`, `MetricNotApplicable`, `MetricNotComputed`,
+      `MetricPending`, `MetricRollUp` and `MetricSuccess`, and `critique` on `MetricRollUp` and `MetricSuccess`.
+    - `prompt_scorers_configuration`, `prompt_customized_scorers_configuration`,
+      `prompt_finetuned_scorers_configuration`, `prompt_registered_scorers_configuration`, `sub_scorers`,
+      `store_metric_ids`, `stream_metrics` and `xray` on `CreateJobRequest` and `CreateJobResponse`.
+  - Removed enum members: `ProjectAction.UPDATE`, `ProjectType.LLM_MONITOR` and `ProjectType.PROMPT_EVALUATION`.
+
+### Fixed
+
+- The API client now knows the permission and enum values that current servers return, so reading projects and
+  other resources no longer fails on them. For example, `Projects().get(id=...)` raised
+  `ValueError: 'configure_rate_limit' is not a valid ControlResourceAction` (the project permission enum
+  `ProjectAction` lacked `configure_rate_limit`). Values that older servers still return, `vegas_gateway` for
+  integrations and task types 7, 9 and 12, are kept so reads from those servers keep working.
+- CrewAI run IDs are now derived from SHA-256 (as RFC 4122 version 4 UUIDs) instead of MD5, resolving a
+  SAST finding. IDs for the same inputs differ from earlier releases.
+
+## [0.6.1]
+
+### Fixed
+
+- CrewAI listeners preserve lifecycle callback order and per-crew context so repeated invocations retain
+  all spans and their parent relationships. Standalone calls and overlapping crews retain telemetry and token
+  usage, child callback errors do not end healthy crews, and spans use original event timestamps.
+- CrewAI OTLP completion flushes run outside the shared event loop when explicitly enabled. Legacy ingestion-hook
+  flushes wait for active runs to finish and remain synchronous to preserve their whole-trace batches.
+- Restore completed SDK operations to their caller context when framework callbacks finish in a copied async task,
+  preserving caller span recording and preventing stale parents and missing telemetry on subsequent LangGraph invocations.
+- LangChain callbacks record the terminal response of a LangGraph root instead of accumulated checkpoint history,
+  without modifying graph state or reducing nested tool-node outputs. Turns without a response do not reuse earlier replies.
+- Nested `@log(span_type="tool")` calls now retain the calling tool as their parent and expose their own active
+  tracing context during execution. Tool, workflow, and agent generators restore the consumer context between
+  yields and keep their own outputs when interleaved.
+
+## [0.6.0]
+
+### Added
+
+- `create_decision_evaluator()` (also `Evaluators.create_decision_evaluator`) and `DecisionEvaluator` create and
+  read decision-model evaluators: one typed question per evaluator, answered with probabilities. Supports
+  `boolean_probability`, `categorical` and `discrete` output types; when `output_type` is omitted it is inferred
+  from `answer_options`. If the version request is clearly rejected (400, 403, 404, 422) the new scorer is
+  deleted; on a timeout, network error or 5xx it is kept and the raised error names its id.
+- Scorer requests now send `X-Galileo-Scorer-Capabilities: decision`, and `ScorerTypes` and `ModelType` include
+  `decision`, so decision scorers appear in list and get responses and decode.
+
+### Fixed
+
+- Require `certifi>=2026.10.19` and `uv>=0.13.4` (where used) to remove trust in the compromised
+  eMudhra certificate authorities (CVE-2026-111943). Update CI tooling and example certificate bundle pins.
+- `SplunkAOTracingProcessor` (OpenAI Agents) now records Responses API LLM spans, the Agents SDK
+  default, as chat messages: tool calls and tool results keep their own roles instead of one JSON
+  `user` message, the output is a single assistant message, and workflow/agent spans show the
+  latest user message and the answer text instead of `"Workflow Step"` and raw `output_text` parts.
+  Streamed Chat Completions runs (`Runner.run_streamed`), whose LLM spans hold a Responses-style
+  object, now record the assistant message instead of a JSON dump of the whole response.
+- Image and file parts in OpenAI Agents user messages, on both the Responses and Chat Completions
+  paths, are now recorded as content blocks instead of a JSON dump of the whole message, including
+  through `SplunkAOLogger(ingestion_hook=...)`.
+
+## [0.5.0]
+
+### Added
+
+- Agent Control bridges now preserve all supported `applies_to` values:
+  `llm_call`, `tool_call`, `retriever_call`, `trace_call`, and `session_call`.
+- `SplunkAOLogger.add_llm_span()` and `add_single_llm_span_trace()` accept
+  `image_input_tokens`, `audio_input_tokens`, `audio_output_tokens`, and
+  `image_output_tokens`: the image/audio share of the input and output token
+  counts. They export as the OpenTelemetry GenAI semantic-convention attributes
+  `gen_ai.usage.{image,audio}.input_tokens` and `gen_ai.usage.{image,audio}.output_tokens`
+  (a subset of the input/output totals, as the spec defines them) so models with per-modality
+  pricing, such as Gemini audio input, are costed at the right rate.
+- The LangChain callbacks and the Google ADK integration (`splunk-ao-adk`)
+  capture this breakdown automatically when the model reports it: Gemini via
+  `ChatVertexAI` or the native Google GenAI SDK. `ChatGoogleGenerativeAI`
+  (`langchain-google-genai`) does not pass Gemini's breakdown through, so its
+  spans keep flat-rate cost.
+
+### Fixed
+
+- Successful `@log` agent/workflow calls returning `None` now inherit their last
+  child's output, matching manual logger behavior. Explicit empty answers and
+  exception handling remain distinct from missing output.
+- The OpenAI Chat Completions wrapper preserves provider finish reasons for
+  normal and streaming responses. Manual LLM logger methods accept
+  `finish_reason`; enclosing agent/workflow messages retain the terminal LLM's
+  reason when their outputs match.
+- `SplunkAOTracingProcessor` (OpenAI Agents) no longer double-encodes Chat Completions LLM span
+  input and output. With Chat Completions models, workflow/agent spans without input now show the
+  user message instead of a `"<Type> Step"` placeholder. The Responses API path is unchanged.
+
+## [0.4.0]
+
+### Added
+
+- Added the `distributed-tracing` extra and high-level
+  `configure_distributed_tracing()` setup for Splunk AO export plus supported
+  upstream FastAPI/Starlette, Requests, HTTPX, and aiohttp-client instrumentation.
+  The lower-level `instrument_distributed_tracing()` transport helper remains
+  available for applications that configure their provider separately.
+- Explicit SDK sessions now propagate across supported services as standard
+  W3C `gen_ai.conversation.id` baggage. Session selection is ambient within the
+  current thread or async execution context and is shared by logger instances
+  in that context. SDK routing, authentication, and application identity are
+  not propagated.
+- Added module-level `get_tracing_headers()` and
+  `extract_tracing_context()` helpers for standard W3C `traceparent` and
+  `tracestate` propagation. `TracingMiddleware` now extracts and scopes that
+  OpenTelemetry context for Starlette/FastAPI requests.
+- SDK-owned authentication, validation, and CRUD HTTP requests are suppressed
+  from automatic application HTTP instrumentation, preventing control-plane
+  calls from appearing as unrelated application traces.
+
+### Changed
+
+- The temporarily retained `mode="batch"` and `mode="distributed"` values now
+  use identical scheduled OTLP batch export and W3C propagation. Concluding an
+  operation ends and queues it; a per-operation `flush()` is not required.
+- Callback handlers keep a live real root during framework execution so
+  outbound W3C context uses the same identity and visible hierarchy that is
+  exported at commit.
+- Normal LangChain, CrewAI, Google ADK, and OpenAI Agents callbacks now enqueue
+  each completed operation into the existing `BatchSpanProcessor` at that
+  operation's end callback. The deprecated `ingestion_hook` retains its
+  whole-tree compatibility behavior.
+- Incoming W3C sampling decisions are honored. A remote parent with its sampled
+  flag unset continues to propagate its trace identity, but its Splunk AO
+  descendants are not exported.
+- Default logger-owned batching now honors standard OpenTelemetry
+  `OTEL_BSP_*` configuration, matching caller-owned OTel paths. Explicit
+  internal `BatchConfig` values remain authoritative when supplied.
+
+### Removed
+
+- **Breaking:** Removed `trace_id=` and `span_id=` from `SplunkAOLogger`, the
+  logger-level proprietary `get_tracing_headers()` method, and custom
+  `Splunk-AO-Trace-ID` / `Splunk-AO-Parent-ID` continuation. Use the new
+  module-level W3C helpers instead.
+- Removed the obsolete distributed-only REST streaming worker and task queue;
+  normal telemetry in both retained modes uses the existing
+  `BatchSpanProcessor` path.
+
+### Fixed
+
+- Automatic HTTP setup now imports only the requested optional instrumentors
+  and rolls back components installed by the current call when later setup
+  fails, avoiding partial ownership state.
+- Explicit `clear_session()` now masks an inbound
+  `gen_ai.conversation.id` for subsequent local spans and outbound propagation
+  in the same execution context.
+- Handler cleanup now releases unfinished OTel activations in nesting order,
+  isolates malformed child telemetry from the remaining handler trace, and
+  keeps async LangChain callback activation in the application's execution
+  context.
+- OpenAI Agents processor state is isolated per framework trace, including
+  concurrent traces, and its public lifecycle path now has regression coverage.
+
+## [0.3.0]
+
+### Breaking Changes
+
+- Local configuration directory renamed from `~/.galileo` to `~/.splunk`. The override environment variable is now
+  `SPLUNK_AO_HOME_DIR` (previously `GALILEO_HOME_DIR`).
+
+### Fixed
+
+- Agent and workflow output conversion now removes confirmed repeated input
+  history and keeps only the last message as the terminal output; intermediate
+  tool-call and tool-response messages are no longer included in
+  `gen_ai.output.messages` for full-history spans. The trim is now gated on the
+  prefix-match dedup check so parallel tool-call outputs (e.g. a ToolNode with
+  multiple simultaneous calls) are never collapsed to one message when the output
+  does not echo the input.
+- `gen_ai.output.messages` assistant entries whose parts contain a `tool_call`
+  but carry no explicit `finish_reason` now receive `"tool_call"` instead of
+  `"unknown"`. Explicit source finish reasons and tool-response messages are
+  unaffected.
+
 ## [0.2.1] - 2026-08-07
 
 ### Fixed
@@ -86,6 +344,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unknown before an acknowledgement and after ordinary transport or non-2xx
   failures; it is not a delivery guarantee.
 
+[0.8.1]: https://pypi.org/project/splunk-ao/0.8.1/
+[0.8.0]: https://pypi.org/project/splunk-ao/0.8.0/
+[0.7.0]: https://pypi.org/project/splunk-ao/0.7.0/
+[0.6.1]: https://pypi.org/project/splunk-ao/0.6.1/
+[0.6.0]: https://pypi.org/project/splunk-ao/0.6.0/
+[0.5.0]: https://pypi.org/project/splunk-ao/0.5.0/
+[0.4.0]: https://pypi.org/project/splunk-ao/0.4.0/
+[0.3.0]: https://pypi.org/project/splunk-ao/0.3.0/
 [0.2.1]: https://pypi.org/project/splunk-ao/0.2.1/
 [0.2.0]: https://pypi.org/project/splunk-ao/0.2.0/
 [0.1.1]: https://pypi.org/project/splunk-ao/0.1.1/

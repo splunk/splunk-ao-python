@@ -1,10 +1,11 @@
 from collections.abc import Generator
-from unittest.mock import Mock
-from uuid import uuid4
+from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry import context
 from opentelemetry.sdk.trace import ReadableSpan
 
+from splunk_ao import extract_tracing_context
 from splunk_ao.logger import SplunkAOLogger
 
 
@@ -35,6 +36,23 @@ def distributed_logger() -> Generator[tuple[SplunkAOLogger, RecordingSink], None
 
 def operation_names(spans: list[ReadableSpan]) -> list[str | None]:
     return [(span.attributes or {}).get("gen_ai.operation.name") for span in spans]
+
+
+@pytest.mark.parametrize("mode", ["batch", "distributed"])
+def test_both_mode_values_construct_the_shared_batch_span_sink(mode: str) -> None:
+    sink = RecordingSink()
+    exporter = Mock()
+    with (
+        patch("splunk_ao.logger.logger.build_standalone_exporter", return_value=exporter),
+        patch("splunk_ao.logger.logger.build_span_sink", return_value=sink) as build_sink,
+    ):
+        logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", mode=mode)
+
+    try:
+        build_sink.assert_called_once_with(exporter)
+        assert not hasattr(logger, "_task_handler")
+    finally:
+        logger.terminate()
 
 
 def test_distributed_mode_uses_otlp_completion_queue(distributed_logger: tuple[SplunkAOLogger, RecordingSink]) -> None:
@@ -125,46 +143,82 @@ def test_distributed_conclude_all_emits_inner_to_outer(
     assert len({span.context.trace_id for span in sink.spans if span.context is not None}) == 1
 
 
-def test_distributed_continuation_keeps_stub_parent_local() -> None:
+@pytest.mark.parametrize("mode", ["batch", "distributed"])
+def test_retained_mode_values_use_identical_w3c_otlp_behavior(mode: str) -> None:
     sink = RecordingSink()
-    trace_id = str(uuid4())
-    parent_id = str(uuid4())
-    logger = SplunkAOLogger(
-        project_id="project-id",
-        agent_stream_id="log-stream-id",
-        mode="distributed",
-        trace_id=trace_id,
-        span_id=parent_id,
-        _sink=sink,
-    )
+    trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+    parent_id = "00f067aa0ba902b7"
+    token = context.attach(extract_tracing_context({"traceparent": f"00-{trace_id}-{parent_id}-01"}))
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", mode=mode, _sink=sink)
     try:
-        assert str(logger.traces[0].id) == trace_id
-        assert str(logger.current_parent().id) == parent_id
+        logger.start_trace(input="request")
+        operation = logger.add_workflow_span(input="work", name="operation")
+        operation_context = logger._otel_ids[operation.id]
+        logger.conclude(output="done")
+        logger.conclude(output="complete")
 
+        assert operation_context.span_context.trace_id == int(trace_id, 16)
+        assert operation_context.parent_span_context is not None
+        assert operation_names(sink.spans) == ["invoke_workflow"]
+        assert sink.spans[0].parent is not None
+        assert sink.spans[0].parent.span_id == int(parent_id, 16)
+        assert sink.force_flush_calls == 0
+        assert logger.current_parent() is None
+    finally:
+        logger.terminate()
+        context.detach(token)
+
+
+@pytest.mark.parametrize("mode", ["batch", "distributed"])
+def test_mode_does_not_change_parent_child_topology_or_require_flush(mode: str) -> None:
+    sink = RecordingSink()
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", mode=mode, _sink=sink)
+    try:
+        logger.start_trace(input="request")
+        logger.add_workflow_span(input="workflow")
+        logger.add_agent_span(input="agent")
         logger.add_llm_span(input="prompt", output="answer", model="model")
+        logger.conclude(output="complete", conclude_all=True)
 
-        assert operation_names(sink.spans) == ["chat"]
-        assert sink.spans[0].parent == logger._otel_ids[logger.current_parent().id].span_context
+        llm, agent, workflow = sink.spans
+        assert operation_names(sink.spans) == ["chat", "invoke_agent", "invoke_workflow"]
+        assert llm.parent == agent.context
+        assert agent.parent == workflow.context
+        assert workflow.parent is None
+        assert sink.force_flush_calls == 0
+        assert logger.current_parent() is None
     finally:
         logger.terminate()
 
 
-def test_distributed_terminate_discards_unfinished_stubs() -> None:
+def test_unsampled_remote_parent_is_preserved_and_not_exported() -> None:
     sink = RecordingSink()
-    logger = SplunkAOLogger(
-        project_id="project-id",
-        agent_stream_id="log-stream-id",
-        mode="distributed",
-        trace_id=str(uuid4()),
-        span_id=str(uuid4()),
-        _sink=sink,
+    token = context.attach(
+        extract_tracing_context({"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"})
     )
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="log-stream-id", _sink=sink)
+    try:
+        logger.start_trace(input="request")
+        operation = logger.add_workflow_span(input="work")
+        operation_context = logger._otel_ids[operation.id].span_context
+        logger.add_llm_span(input="prompt", output="answer", model="model")
+        logger.conclude(output="done")
+        logger.conclude(output="complete")
 
-    logger.terminate()
-    logger.terminate()
+        assert operation_context.is_valid
+        assert not bool(operation_context.trace_flags)
+        assert sink.spans == []
+    finally:
+        logger.terminate()
+        context.detach(token)
 
-    assert sink.spans == []
-    assert sink.force_flush_calls == 1
-    assert sink.shutdown_calls == 1
-    assert logger.current_parent() is None
-    assert logger._otel_ids == {}
+
+def test_custom_trace_and_span_id_constructor_arguments_are_removed() -> None:
+    with pytest.raises(TypeError, match="trace_id"):
+        SplunkAOLogger(trace_id="4bf92f35-77b3-4da6-a3ce-929d0e0e4736")
+    with pytest.raises(TypeError, match="span_id"):
+        SplunkAOLogger(span_id="00f067aa-0ba9-42b7-8000-000000000000")
+
+
+def test_old_logger_header_method_is_removed() -> None:
+    assert not hasattr(SplunkAOLogger, "get_tracing_headers")

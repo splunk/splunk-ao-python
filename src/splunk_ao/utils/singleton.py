@@ -53,8 +53,6 @@ class SplunkAOLoggerSingleton:
         agent_stream_id: str | None,
         mode: str,
         experiment_id: str | None = None,
-        trace_id: str | None = None,
-        span_id: str | None = None,
         ingestion_hook_id: int | None = None,
     ) -> tuple[str, ...]:
         """
@@ -74,18 +72,13 @@ class SplunkAOLoggerSingleton:
             The experiment ID.
         mode:
             The logger mode.
-        trace_id: (Optional[str])
-            The distributed trace ID.
-        span_id: (Optional[str])
-            The distributed parent span ID.
         ingestion_hook_id: (Optional[int])
             Identity of the temporary ingestion hook compatibility path.
 
         Returns
         -------
         Tuple[str, ...]
-            A tuple key used for caching. Includes trace_id and span_id for proper
-            isolation of concurrent requests in async web servers.
+            A tuple key used for caching.
         """
         _logger.debug("current thread is %s", threading.current_thread().name)
 
@@ -121,11 +114,6 @@ class SplunkAOLoggerSingleton:
                 destination_key = f"id:{routing.agent_stream_id or ''}"
             base_key = (*key, deployment.value, project_key, destination_key)
 
-        # Add trace_id and span_id to key if present (for distributed tracing)
-        if trace_id is not None:
-            base_key = (*base_key, trace_id)
-        if span_id is not None:
-            base_key = (*base_key, span_id)
         if ingestion_hook_id is not None:
             base_key = (*base_key, str(ingestion_hook_id))
 
@@ -158,8 +146,6 @@ class SplunkAOLoggerSingleton:
         experiment_id: str | None = None,
         mode: str | None = None,
         local_metrics: list[LocalMetricConfig] | None = None,
-        trace_id: str | None = None,
-        span_id: str | None = None,
         ingestion_hook: Callable | None = None,
     ) -> SplunkAOLogger:
         """
@@ -197,8 +183,6 @@ class SplunkAOLoggerSingleton:
             agent_stream_id,
             mode,
             experiment_id,
-            trace_id,
-            span_id,
             ingestion_hook_id=id(ingestion_hook) if ingestion_hook else None,
         )
 
@@ -221,8 +205,6 @@ class SplunkAOLoggerSingleton:
                 "experiment_id": experiment_id,
                 "local_metrics": local_metrics,
                 "mode": mode,
-                "trace_id": trace_id,
-                "span_id": span_id,
                 "ingestion_hook": ingestion_hook,
             }
             # Create the logger with filtered kwargs.
@@ -232,6 +214,22 @@ class SplunkAOLoggerSingleton:
             if logger:
                 self._splunk_ao_loggers[key] = logger
             return logger
+
+    def get_existing(
+        self,
+        *,
+        project: str | None = None,
+        project_id: str | None = None,
+        agent_stream: str | None = None,
+        agent_stream_id: str | None = None,
+        experiment_id: str | None = None,
+        mode: str | None = None,
+    ) -> SplunkAOLogger | None:
+        """Return a cached standard logger without constructing one."""
+        key = SplunkAOLoggerSingleton._get_key(
+            project, project_id, agent_stream, agent_stream_id, _get_mode_or_default(mode), experiment_id
+        )
+        return self._splunk_ao_loggers.get(key)
 
     def reset(
         self,

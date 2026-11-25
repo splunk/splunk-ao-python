@@ -67,3 +67,8 @@ def get_sdk_header() -> str:
         sdk_header = f"{sdk_header} {method_name}"
 
     return sdk_header
+
+
+def get_scorer_capabilities_header() -> str:
+    """Identify the scorer types supported by scorer response decoding."""
+    return "decision"

@@ -85,7 +85,14 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Anthropic integration
 
-     Create or update an Anthropic integration for this user from Galileo.
+     Create or update an Anthropic integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AnthropicIntegrationCreate):
@@ -108,7 +115,14 @@ def sync_detailed(
 def sync(*, client: ApiClient, body: AnthropicIntegrationCreate) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Anthropic integration
 
-     Create or update an Anthropic integration for this user from Galileo.
+     Create or update an Anthropic integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AnthropicIntegrationCreate):
@@ -129,7 +143,14 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | IntegrationDB]:
     """Create or update Anthropic integration
 
-     Create or update an Anthropic integration for this user from Galileo.
+     Create or update an Anthropic integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AnthropicIntegrationCreate):
@@ -154,7 +175,14 @@ async def asyncio(
 ) -> Optional[HTTPValidationError | IntegrationDB]:
     """Create or update Anthropic integration
 
-     Create or update an Anthropic integration for this user from Galileo.
+     Create or update an Anthropic integration for the caller.
+
+    Args:
+        ctx: Async request context supplying the read session and current user.
+        integration: Provider credentials and provider-specific configuration.
+
+    Returns:
+        The stored integration, without its secret columns.
 
     Args:
         body (AnthropicIntegrationCreate):

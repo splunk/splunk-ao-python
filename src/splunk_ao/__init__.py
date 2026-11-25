@@ -44,7 +44,15 @@ from splunk_ao.collaborator import Collaborator, CollaboratorRole
 from splunk_ao.configuration import Configuration
 from splunk_ao.dataset import Dataset
 from splunk_ao.decorator import SplunkAODecorator, log, splunk_ao_context, start_session
-from splunk_ao.evaluator import CodeEvaluator, Evaluator, LlmEvaluator, LocalEvaluator, SplunkAOEvaluator
+from splunk_ao.evaluator import (
+    CodeEvaluator,
+    DecisionEvaluator,
+    Evaluator,
+    LlmEvaluator,
+    LocalEvaluator,
+    SplunkAOEvaluator,
+)
+from splunk_ao.evaluators import DecisionVersionOutcomeUnknownError
 from splunk_ao.exceptions import (
     AuthenticationError,
     BadRequestError,
@@ -58,6 +66,7 @@ from splunk_ao.exceptions import (
 )
 from splunk_ao.experiment import Experiment
 from splunk_ao.handlers.agent_control import SplunkAOAgentControlBridge, setup_agent_control_bridge
+from splunk_ao.http_instrumentation import configure_distributed_tracing, instrument_distributed_tracing
 from splunk_ao.integration import Integration
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao.logger.control import ControlAppliesTo, ControlCheckStage, ControlResult, ControlSpan
@@ -80,11 +89,11 @@ from splunk_ao.shared.exceptions import (
     SplunkAOFutureError,
     ValidationError,
 )
-from splunk_ao.tracing import get_tracing_headers
+from splunk_ao.tracing import extract_tracing_context, get_tracing_headers
 from splunk_ao.types import MetricSpec
 from splunk_ao.utils.log_config import enable_console_logging
 
-__version__ = "0.2.1"
+__version__ = "0.8.1"
 
 __all__ = [
     # Stable / unchanged
@@ -116,6 +125,8 @@ __all__ = [
     "ControlResult",
     "ControlSpan",
     "Dataset",
+    "DecisionEvaluator",
+    "DecisionVersionOutcomeUnknownError",
     "Document",
     "Evaluator",
     "Experiment",
@@ -160,6 +171,7 @@ __all__ = [
     "ValidationError",
     "WorkflowSpan",
     "add_records_to_annotation_queue",
+    "configure_distributed_tracing",
     "create_annotation_queue",
     "create_annotation_queue_field",
     "create_api_key",
@@ -167,10 +179,12 @@ __all__ = [
     "delete_annotation_queue_field",
     "delete_api_key",
     "enable_console_logging",
+    "extract_tracing_context",
     "get_agent_control_target",
     "get_annotation_queue",
     "get_annotation_queue_records",
     "get_tracing_headers",
+    "instrument_distributed_tracing",
     "is_dependency_available",
     "list_annotation_queue_fields",
     "list_annotation_queue_users",

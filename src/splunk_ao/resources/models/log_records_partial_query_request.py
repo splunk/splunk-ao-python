@@ -34,11 +34,13 @@ class LogRecordsPartialQueryRequest:
     Attributes:
         select_columns (SelectColumns):
         starting_token (int | Unset):  Default: 0.
-        limit (int | Unset):  Default: 100.
+        limit (int | Unset): Records per page, at most 1000. Page through larger result sets with starting_token or
+            previous_last_row_id. Default: 100.
         previous_last_row_id (None | str | Unset):
         log_stream_id (None | str | Unset): Log stream id associated with the traces.
         experiment_id (None | str | Unset): Experiment id associated with the traces.
         metrics_testing_id (None | str | Unset): Metrics testing id associated with the traces.
+        access_view_id (None | str | Unset): Assigned log view for restricted access.
         filters (list[LogRecordsBooleanFilter | LogRecordsCollectionFilter | LogRecordsDateFilter |
             LogRecordsFullyAnnotatedFilter | LogRecordsIDFilter | LogRecordsNumberFilter | LogRecordsTextFilter] | Unset):
         filter_tree (AndNodeLogRecordsFilter | FilterLeafLogRecordsFilter | None | NotNodeLogRecordsFilter |
@@ -60,6 +62,7 @@ class LogRecordsPartialQueryRequest:
     log_stream_id: None | str | Unset = UNSET
     experiment_id: None | str | Unset = UNSET
     metrics_testing_id: None | str | Unset = UNSET
+    access_view_id: None | str | Unset = UNSET
     filters: (
         list[
             LogRecordsBooleanFilter
@@ -129,6 +132,12 @@ class LogRecordsPartialQueryRequest:
         else:
             metrics_testing_id = self.metrics_testing_id
 
+        access_view_id: None | str | Unset
+        if isinstance(self.access_view_id, Unset):
+            access_view_id = UNSET
+        else:
+            access_view_id = self.access_view_id
+
         filters: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.filters, Unset):
             filters = []
@@ -194,6 +203,8 @@ class LogRecordsPartialQueryRequest:
             field_dict["experiment_id"] = experiment_id
         if metrics_testing_id is not UNSET:
             field_dict["metrics_testing_id"] = metrics_testing_id
+        if access_view_id is not UNSET:
+            field_dict["access_view_id"] = access_view_id
         if filters is not UNSET:
             field_dict["filters"] = filters
         if filter_tree is not UNSET:
@@ -267,6 +278,15 @@ class LogRecordsPartialQueryRequest:
             return cast(None | str | Unset, data)
 
         metrics_testing_id = _parse_metrics_testing_id(d.pop("metrics_testing_id", UNSET))
+
+        def _parse_access_view_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        access_view_id = _parse_access_view_id(d.pop("access_view_id", UNSET))
 
         _filters = d.pop("filters", UNSET)
         filters: (
@@ -451,6 +471,7 @@ class LogRecordsPartialQueryRequest:
             log_stream_id=log_stream_id,
             experiment_id=experiment_id,
             metrics_testing_id=metrics_testing_id,
+            access_view_id=access_view_id,
             filters=filters,
             filter_tree=filter_tree,
             sort=sort,

@@ -85,6 +85,21 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | StageDB]:
     """Update Stage
 
+     Create a new centralized-ruleset version for a central stage and set it as current.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        stage_version_rulesets: The new rulesets for the version.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage, defaulted to the new version.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+        HTTPException: 422 if the stage isn't a central stage.
+
     Args:
         project_id (str):
         stage_id (str):
@@ -110,6 +125,21 @@ def sync(
 ) -> Optional[HTTPValidationError | StageDB]:
     """Update Stage
 
+     Create a new centralized-ruleset version for a central stage and set it as current.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        stage_version_rulesets: The new rulesets for the version.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage, defaulted to the new version.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+        HTTPException: 422 if the stage isn't a central stage.
+
     Args:
         project_id (str):
         stage_id (str):
@@ -130,6 +160,21 @@ async def asyncio_detailed(
     project_id: str, stage_id: str, *, client: ApiClient, body: RulesetsMixin
 ) -> Response[HTTPValidationError | StageDB]:
     """Update Stage
+
+     Create a new centralized-ruleset version for a central stage and set it as current.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        stage_version_rulesets: The new rulesets for the version.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage, defaulted to the new version.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+        HTTPException: 422 if the stage isn't a central stage.
 
     Args:
         project_id (str):
@@ -155,6 +200,21 @@ async def asyncio(
     project_id: str, stage_id: str, *, client: ApiClient, body: RulesetsMixin
 ) -> Optional[HTTPValidationError | StageDB]:
     """Update Stage
+
+     Create a new centralized-ruleset version for a central stage and set it as current.
+
+    Args:
+        project_id: Project the stage belongs to, resolved from the URL.
+        stage_id: Stage to update.
+        stage_version_rulesets: The new rulesets for the version.
+        ctx: Async request context.
+
+    Returns:
+        The updated stage, defaulted to the new version.
+
+    Raises:
+        GalileoServerException: 404 if the stage belongs to a different project.
+        HTTPException: 422 if the stage isn't a central stage.
 
     Args:
         project_id (str):

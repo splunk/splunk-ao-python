@@ -20,8 +20,9 @@ def _get_mode_or_default(mode: str | None) -> LoggerModeType:
     -------
     LoggerModeType
         The mode value to use:
-        - "batch": Uses scheduled OTLP batch export (default)
-        - "distributed": Also enables legacy trace_id/span_id continuation
+        Both "batch" and the temporarily retained "distributed" value use
+        scheduled OTLP batch export. The distinction remains only for the
+        deprecated ingestion-hook compatibility guard.
     """
     if mode is None:
         mode = getenv("SPLUNK_AO_MODE", DEFAULT_MODE)

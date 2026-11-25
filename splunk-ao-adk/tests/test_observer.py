@@ -1,8 +1,11 @@
 """Unit tests for SplunkAOObserver extraction methods."""
 
+import asyncio
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
+from opentelemetry import trace
 
 from splunk_ao.logger import SplunkAOLogger
 from splunk_ao_adk.observer import SplunkAOObserver
@@ -14,6 +17,41 @@ from .mocks import MockContent, MockEvent, MockInvocationContext, MockPart
 def observer() -> SplunkAOObserver:
     """Create observer with ingestion hook for testing (no credentials needed)."""
     return SplunkAOObserver(ingestion_hook=lambda r: None)
+
+
+@pytest.mark.asyncio
+async def test_observer_completion_in_copied_task_restores_caller_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Given: ADK's normal exporter path uses the shared base handler and logger.
+    for name in ("SPLUNK_AO_REALM", "SPLUNK_AO_O11Y_TOKEN", "SPLUNK_AO_O11Y_API_TOKEN", "SPLUNK_AO_O11Y_API_URL"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SPLUNK_AO_CONSOLE_URL", "http://fake.test:8088")
+    monkeypatch.setenv("SPLUNK_AO_API_KEY", "api-1234567890")
+    sink = MagicMock()
+    sink.force_flush.return_value = True
+    logger = SplunkAOLogger(project_id="project-id", agent_stream_id="stream-id", _sink=sink)
+    baseline = trace.get_current_span().get_span_context()
+    try:
+        with patch("splunk_ao_adk.observer.splunk_ao_context.get_logger_instance", return_value=logger):
+            adapter = SplunkAOObserver()
+        for _ in range(2):
+            run_id = adapter.on_run_start(MockInvocationContext(), MockContent(text="question"))
+
+            async def finish(run: UUID = run_id) -> None:
+                adapter.on_run_end(run, "answer")
+
+            # When: completion runs in a copied context, as an async framework may do.
+            await asyncio.create_task(finish())
+
+            # Then: the original context is clear and the next invocation can emit.
+            assert trace.get_current_span().get_span_context() == baseline
+            assert logger.current_parent() is None
+        assert sink.emit.call_count == 2
+        first, second = [call.args[0] for call in sink.emit.call_args_list]
+        assert first.parent is None
+        assert second.parent is None
+        assert first.context.trace_id != second.context.trace_id
+    finally:
+        logger.terminate()
 
 
 class TestExtractInvocationMetadata:
@@ -312,3 +350,203 @@ class TestUpdateSessionIfChanged:
             assert emitted.parent is None
         finally:
             logger.terminate()
+
+
+class TestExtractUsageMetadata:
+    """Tests for _extract_usage_metadata Gemini modality breakdown extraction."""
+
+    def _make_modality_entry(self, modality_value: str, token_count: int) -> MagicMock:
+        entry = MagicMock()
+        entry.modality = MagicMock()
+        entry.modality.value = modality_value
+        entry.token_count = token_count
+        return entry
+
+    def test_returns_empty_for_no_response(self, observer: SplunkAOObserver) -> None:
+        # Given: no response object
+        # When: extracting usage metadata from None
+        # Then: an empty dict is returned
+        assert observer._extract_usage_metadata(None) == {}
+
+    def test_returns_empty_for_no_usage_metadata(self, observer: SplunkAOObserver) -> None:
+        # Given: a response object with usage_metadata set to None
+        response = MagicMock()
+        response.usage_metadata = None
+
+        # When: extracting usage metadata
+        # Then: an empty dict is returned
+        assert observer._extract_usage_metadata(response) == {}
+
+    def test_flat_tokens_no_modality(self, observer: SplunkAOObserver) -> None:
+        # Given: a response with flat token counts and no modality detail lists
+        usage = MagicMock()
+        usage.prompt_token_count = 10
+        usage.candidates_token_count = 5
+        usage.total_token_count = 15
+        usage.prompt_tokens_details = None
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: flat token counts are present and no per-modality keys are added
+        assert result["prompt_tokens"] == 10
+        assert result["completion_tokens"] == 5
+        assert result["total_tokens"] == 15
+        assert "image_input_tokens" not in result
+        assert "audio_input_tokens" not in result
+        assert "audio_output_tokens" not in result
+
+    def test_audio_and_image_modality_breakdown(self, observer: SplunkAOObserver) -> None:
+        # Given: a response with prompt and candidates token detail lists containing audio and image entries
+        usage = MagicMock()
+        usage.prompt_token_count = 200
+        usage.candidates_token_count = 30
+        usage.total_token_count = 230
+        usage.prompt_tokens_details = [
+            self._make_modality_entry("TEXT", 95),
+            self._make_modality_entry("AUDIO", 100),
+            self._make_modality_entry("IMAGE", 5),
+        ]
+        usage.candidates_tokens_details = [
+            self._make_modality_entry("TEXT", 10),
+            self._make_modality_entry("AUDIO", 20),
+        ]
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: per-modality token counts are extracted correctly
+        assert result["image_input_tokens"] == 5
+        assert result["audio_input_tokens"] == 100
+        assert result["audio_output_tokens"] == 20
+
+    def test_no_audio_in_candidates_returns_zero_audio_out(self, observer: SplunkAOObserver) -> None:
+        # Given: a response with modality detail lists that contain only TEXT entries
+        usage = MagicMock()
+        usage.prompt_token_count = 10
+        usage.candidates_token_count = 5
+        usage.total_token_count = 15
+        usage.prompt_tokens_details = [self._make_modality_entry("TEXT", 10)]
+        usage.candidates_tokens_details = [self._make_modality_entry("TEXT", 5)]
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: modality keys are present and set to 0, not omitted, because the detail lists were present
+        assert result["image_input_tokens"] == 0
+        assert result["audio_input_tokens"] == 0
+        assert result["audio_output_tokens"] == 0
+
+    def test_modality_as_string_instead_of_enum(self, observer: SplunkAOObserver) -> None:
+        """Older SDK may return modality as a plain string rather than an enum."""
+        # Given: a response where modality is a plain string instead of an enum object
+        entry = MagicMock()
+        entry.modality = "AUDIO"  # string, not enum
+        entry.token_count = 50
+        usage = MagicMock()
+        usage.prompt_token_count = 50
+        usage.candidates_token_count = 0
+        usage.total_token_count = 50
+        usage.prompt_tokens_details = [entry]
+        usage.candidates_tokens_details = []
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: the string modality is handled correctly and the count is extracted
+        assert result["audio_input_tokens"] == 50
+
+    def test_image_output_tokens_from_candidates(self, observer: SplunkAOObserver) -> None:
+        # Given: a response with an IMAGE entry in candidates_tokens_details
+        usage = MagicMock()
+        usage.prompt_token_count = 10
+        usage.candidates_token_count = 45
+        usage.total_token_count = 55
+        usage.prompt_tokens_details = [self._make_modality_entry("TEXT", 10)]
+        usage.candidates_tokens_details = [
+            self._make_modality_entry("TEXT", 5),
+            self._make_modality_entry("IMAGE", 30),
+            self._make_modality_entry("AUDIO", 10),
+        ]
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: image_output_tokens and audio_output_tokens are both extracted from candidates
+        assert result["image_output_tokens"] == 30
+        assert result["audio_output_tokens"] == 10
+
+    def test_unreadable_modality_encoding_is_unknown(self, observer: SplunkAOObserver) -> None:
+        # Given: a detail list whose modality is an integer enum value, which carries no readable label
+        entry = MagicMock()
+        entry.modality = MagicMock()
+        entry.modality.value = 4
+        entry.token_count = 100
+        usage = MagicMock()
+        usage.prompt_token_count = 100
+        usage.candidates_token_count = 0
+        usage.total_token_count = 100
+        usage.prompt_tokens_details = [entry]
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: no per-modality keys are reported, rather than confident zeros
+        assert result["prompt_tokens"] == 100
+        assert "audio_input_tokens" not in result
+        assert "image_input_tokens" not in result
+
+    def test_malformed_detail_list_keeps_the_flat_token_counts(self, observer: SplunkAOObserver) -> None:
+        # Given: a truthy, non-iterable prompt detail value
+        usage = MagicMock()
+        usage.prompt_token_count = 10
+        usage.candidates_token_count = 5
+        usage.total_token_count = 15
+        usage.prompt_tokens_details = 42
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: extraction does not raise and the flat counts survive without a breakdown
+        assert result["prompt_tokens"] == 10
+        assert result["completion_tokens"] == 5
+        assert "audio_input_tokens" not in result
+
+    def test_one_unreadable_entry_makes_the_breakdown_unknown(self, observer: SplunkAOObserver) -> None:
+        # Given: a readable AUDIO entry next to an entry whose modality is an integer enum value
+        audio = self._make_modality_entry("AUDIO", 100)
+        unreadable = MagicMock()
+        unreadable.modality = MagicMock()
+        unreadable.modality.value = 2
+        unreadable.token_count = 5
+        usage = MagicMock()
+        usage.prompt_token_count = 105
+        usage.candidates_token_count = 0
+        usage.total_token_count = 105
+        usage.prompt_tokens_details = [audio, unreadable]
+        usage.candidates_tokens_details = None
+        response = MagicMock()
+        response.usage_metadata = usage
+
+        # When: extracting usage metadata
+        result = observer._extract_usage_metadata(response)
+
+        # Then: no partial breakdown is reported, matching the LangChain extractor
+        assert "audio_input_tokens" not in result
