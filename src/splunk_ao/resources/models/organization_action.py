@@ -10,6 +10,7 @@ class OrganizationAction(str, Enum):
     READ_SETTINGS = "read_settings"
     READ_UNREDACTED_DATA = "read_unredacted_data"
     RENAME = "rename"
+    UPDATE_EVALUATOR_COST_CAP = "update_evaluator_cost_cap"
     UPDATE_SETTINGS = "update_settings"
 
     def __str__(self) -> str:

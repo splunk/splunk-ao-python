@@ -30,6 +30,8 @@ if TYPE_CHECKING:
     from ..models.runtime_scorer_config_class_name_to_vocab_ix_type_0 import RuntimeScorerConfigClassNameToVocabIxType0
     from ..models.runtime_scorer_config_class_name_to_vocab_ix_type_1 import RuntimeScorerConfigClassNameToVocabIxType1
     from ..models.scorer_invocation_config import ScorerInvocationConfig
+    from ..models.scorer_metadata_selection import ScorerMetadataSelection
+    from ..models.span_input_selection import SpanInputSelection
 
 
 T = TypeVar("T", bound="RuntimeScorerConfig")
@@ -61,6 +63,10 @@ class RuntimeScorerConfig:
                 categorical, etc.).
             input_type (InputTypeEnum | None | Unset): What type of input to use for model-based scorers
                 (sessions_normalized, trace_io_only, etc..).
+            metadata_selection (None | ScorerMetadataSelection | Unset):
+            span_input_selections (list[SpanInputSelection] | None | Unset):
+            require_matching_span (bool | Unset):  Default: False.
+            child_span_filters (list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset):
             multimodal_capabilities (list[MultimodalCapability] | None | Unset): Multimodal capabilities which this scorer
                 can utilize in its evaluation.
             roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
@@ -108,6 +114,10 @@ class RuntimeScorerConfig:
     cot_enabled: bool | None | Unset = UNSET
     output_type: None | OutputTypeEnum | Unset = UNSET
     input_type: InputTypeEnum | None | Unset = UNSET
+    metadata_selection: None | ScorerMetadataSelection | Unset = UNSET
+    span_input_selections: list[SpanInputSelection] | None | Unset = UNSET
+    require_matching_span: bool | Unset = False
+    child_span_filters: list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset = UNSET
     multimodal_capabilities: list[MultimodalCapability] | None | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
     score_type: None | str | Unset = UNSET
@@ -156,6 +166,7 @@ class RuntimeScorerConfig:
             RuntimeScorerConfigClassNameToVocabIxType1,
         )
         from ..models.scorer_invocation_config import ScorerInvocationConfig
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
 
         id = self.id
 
@@ -256,6 +267,47 @@ class RuntimeScorerConfig:
             input_type = self.input_type.value
         else:
             input_type = self.input_type
+
+        metadata_selection: dict[str, Any] | None | Unset
+        if isinstance(self.metadata_selection, Unset):
+            metadata_selection = UNSET
+        elif isinstance(self.metadata_selection, ScorerMetadataSelection):
+            metadata_selection = self.metadata_selection.to_dict()
+        else:
+            metadata_selection = self.metadata_selection
+
+        span_input_selections: list[dict[str, Any]] | None | Unset
+        if isinstance(self.span_input_selections, Unset):
+            span_input_selections = UNSET
+        elif isinstance(self.span_input_selections, list):
+            span_input_selections = []
+            for span_input_selections_type_0_item_data in self.span_input_selections:
+                span_input_selections_type_0_item = span_input_selections_type_0_item_data.to_dict()
+                span_input_selections.append(span_input_selections_type_0_item)
+
+        else:
+            span_input_selections = self.span_input_selections
+
+        require_matching_span = self.require_matching_span
+
+        child_span_filters: list[dict[str, Any]] | None | Unset
+        if isinstance(self.child_span_filters, Unset):
+            child_span_filters = UNSET
+        elif isinstance(self.child_span_filters, list):
+            child_span_filters = []
+            for child_span_filters_type_0_item_data in self.child_span_filters:
+                child_span_filters_type_0_item: dict[str, Any]
+                if isinstance(child_span_filters_type_0_item_data, NodeNameFilter):
+                    child_span_filters_type_0_item = child_span_filters_type_0_item_data.to_dict()
+                elif isinstance(child_span_filters_type_0_item_data, MetadataFilter):
+                    child_span_filters_type_0_item = child_span_filters_type_0_item_data.to_dict()
+                else:
+                    child_span_filters_type_0_item = child_span_filters_type_0_item_data.to_dict()
+
+                child_span_filters.append(child_span_filters_type_0_item)
+
+        else:
+            child_span_filters = self.child_span_filters
 
         multimodal_capabilities: list[str] | None | Unset
         if isinstance(self.multimodal_capabilities, Unset):
@@ -487,6 +539,14 @@ class RuntimeScorerConfig:
             field_dict["output_type"] = output_type
         if input_type is not UNSET:
             field_dict["input_type"] = input_type
+        if metadata_selection is not UNSET:
+            field_dict["metadata_selection"] = metadata_selection
+        if span_input_selections is not UNSET:
+            field_dict["span_input_selections"] = span_input_selections
+        if require_matching_span is not UNSET:
+            field_dict["require_matching_span"] = require_matching_span
+        if child_span_filters is not UNSET:
+            field_dict["child_span_filters"] = child_span_filters
         if multimodal_capabilities is not UNSET:
             field_dict["multimodal_capabilities"] = multimodal_capabilities
         if roll_up_config is not UNSET:
@@ -564,6 +624,8 @@ class RuntimeScorerConfig:
             RuntimeScorerConfigClassNameToVocabIxType1,
         )
         from ..models.scorer_invocation_config import ScorerInvocationConfig
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
+        from ..models.span_input_selection import SpanInputSelection
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -760,6 +822,101 @@ class RuntimeScorerConfig:
             return cast(InputTypeEnum | None | Unset, data)
 
         input_type = _parse_input_type(d.pop("input_type", UNSET))
+
+        def _parse_metadata_selection(data: object) -> None | ScorerMetadataSelection | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                metadata_selection_type_0 = ScorerMetadataSelection.from_dict(data)
+
+                return metadata_selection_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerMetadataSelection | Unset, data)
+
+        metadata_selection = _parse_metadata_selection(d.pop("metadata_selection", UNSET))
+
+        def _parse_span_input_selections(data: object) -> list[SpanInputSelection] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                span_input_selections_type_0 = []
+                _span_input_selections_type_0 = data
+                for span_input_selections_type_0_item_data in _span_input_selections_type_0:
+                    span_input_selections_type_0_item = SpanInputSelection.from_dict(
+                        span_input_selections_type_0_item_data
+                    )
+
+                    span_input_selections_type_0.append(span_input_selections_type_0_item)
+
+                return span_input_selections_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[SpanInputSelection] | None | Unset, data)
+
+        span_input_selections = _parse_span_input_selections(d.pop("span_input_selections", UNSET))
+
+        require_matching_span = d.pop("require_matching_span", UNSET)
+
+        def _parse_child_span_filters(
+            data: object,
+        ) -> list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                child_span_filters_type_0 = []
+                _child_span_filters_type_0 = data
+                for child_span_filters_type_0_item_data in _child_span_filters_type_0:
+
+                    def _parse_child_span_filters_type_0_item(
+                        data: object,
+                    ) -> MetadataFilter | ModalityFilter | NodeNameFilter:
+                        try:
+                            if not isinstance(data, dict):
+                                raise TypeError()
+                            child_span_filters_type_0_item_type_0 = NodeNameFilter.from_dict(data)
+
+                            return child_span_filters_type_0_item_type_0
+                        except:  # noqa: E722
+                            pass
+                        try:
+                            if not isinstance(data, dict):
+                                raise TypeError()
+                            child_span_filters_type_0_item_type_1 = MetadataFilter.from_dict(data)
+
+                            return child_span_filters_type_0_item_type_1
+                        except:  # noqa: E722
+                            pass
+                        if not isinstance(data, dict):
+                            raise TypeError()
+                        child_span_filters_type_0_item_type_2 = ModalityFilter.from_dict(data)
+
+                        return child_span_filters_type_0_item_type_2
+
+                    child_span_filters_type_0_item = _parse_child_span_filters_type_0_item(
+                        child_span_filters_type_0_item_data
+                    )
+
+                    child_span_filters_type_0.append(child_span_filters_type_0_item)
+
+                return child_span_filters_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[MetadataFilter | ModalityFilter | NodeNameFilter] | None | Unset, data)
+
+        child_span_filters = _parse_child_span_filters(d.pop("child_span_filters", UNSET))
 
         def _parse_multimodal_capabilities(data: object) -> list[MultimodalCapability] | None | Unset:
             if data is None:
@@ -1162,6 +1319,10 @@ class RuntimeScorerConfig:
             cot_enabled=cot_enabled,
             output_type=output_type,
             input_type=input_type,
+            metadata_selection=metadata_selection,
+            span_input_selections=span_input_selections,
+            require_matching_span=require_matching_span,
+            child_span_filters=child_span_filters,
             multimodal_capabilities=multimodal_capabilities,
             roll_up_config=roll_up_config,
             score_type=score_type,

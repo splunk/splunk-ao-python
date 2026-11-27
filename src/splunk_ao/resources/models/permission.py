@@ -9,6 +9,7 @@ from attrs import field as _attrs_field
 from ..models.annotation_queue_action import AnnotationQueueAction
 from ..models.api_key_action import ApiKeyAction
 from ..models.control_resource_action import ControlResourceAction
+from ..models.custom_dashboard_action import CustomDashboardAction
 from ..models.dataset_action import DatasetAction
 from ..models.fine_tuned_scorer_action import FineTunedScorerAction
 from ..models.generated_scorer_action import GeneratedScorerAction
@@ -29,9 +30,9 @@ T = TypeVar("T", bound="Permission")
 class Permission:
     """
     Attributes:
-        action (AnnotationQueueAction | ApiKeyAction | ControlResourceAction | DatasetAction | FineTunedScorerAction |
-            GeneratedScorerAction | GroupAction | GroupMemberAction | IntegrationAction | OrganizationAction | ProjectAction
-            | RegisteredScorerAction | ScorerAction | UserAction):
+        action (AnnotationQueueAction | ApiKeyAction | ControlResourceAction | CustomDashboardAction | DatasetAction |
+            FineTunedScorerAction | GeneratedScorerAction | GroupAction | GroupMemberAction | IntegrationAction |
+            OrganizationAction | ProjectAction | RegisteredScorerAction | ScorerAction | UserAction):
         allowed (bool):
         message (None | str | Unset):
     """
@@ -40,6 +41,7 @@ class Permission:
         AnnotationQueueAction
         | ApiKeyAction
         | ControlResourceAction
+        | CustomDashboardAction
         | DatasetAction
         | FineTunedScorerAction
         | GeneratedScorerAction
@@ -84,6 +86,8 @@ class Permission:
             action = self.action.value
         elif isinstance(self.action, AnnotationQueueAction):
             action = self.action.value
+        elif isinstance(self.action, ControlResourceAction):
+            action = self.action.value
         else:
             action = self.action.value
 
@@ -113,6 +117,7 @@ class Permission:
             AnnotationQueueAction
             | ApiKeyAction
             | ControlResourceAction
+            | CustomDashboardAction
             | DatasetAction
             | FineTunedScorerAction
             | GeneratedScorerAction
@@ -229,11 +234,19 @@ class Permission:
                 return action_type_12
             except:  # noqa: E722
                 pass
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                action_type_13 = ControlResourceAction(data)
+
+                return action_type_13
+            except:  # noqa: E722
+                pass
             if not isinstance(data, str):
                 raise TypeError()
-            action_type_13 = ControlResourceAction(data)
+            action_type_14 = CustomDashboardAction(data)
 
-            return action_type_13
+            return action_type_14
 
         action = _parse_action(d.pop("action"))
 

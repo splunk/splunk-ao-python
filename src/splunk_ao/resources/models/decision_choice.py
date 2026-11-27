@@ -12,13 +12,11 @@ T = TypeVar("T", bound="DecisionChoice")
 
 @_attrs_define
 class DecisionChoice:
-    """One option of a choice question, with an optional description of when it applies.
+    """Extra fields are forbidden so a score level never validates as a choice.
 
-    Extra fields are forbidden, so a level, which has a ``level`` field, never validates as a choice.
-
-        Attributes:
-            label (str):
-            description (None | str | Unset):
+    Attributes:
+        label (str):
+        description (None | str | Unset):
     """
 
     label: str

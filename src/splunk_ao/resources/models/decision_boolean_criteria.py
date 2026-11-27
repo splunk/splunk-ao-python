@@ -10,8 +10,7 @@ T = TypeVar("T", bound="DecisionBooleanCriteria")
 
 @_attrs_define
 class DecisionBooleanCriteria:
-    """What a true answer and a false answer mean, for a yes/no question. The two are set together.
-
+    """
     Attributes:
         true_ (str):
         false_ (str):

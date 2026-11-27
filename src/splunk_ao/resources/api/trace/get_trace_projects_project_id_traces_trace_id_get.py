@@ -29,6 +29,7 @@ def _get_kwargs(
     *,
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -42,6 +43,13 @@ def _get_kwargs(
     else:
         json_access_view_id = access_view_id
     params["access_view_id"] = json_access_view_id
+
+    json_run_id: None | str | Unset
+    if isinstance(run_id, Unset):
+        json_run_id = UNSET
+    else:
+        json_run_id = run_id
+    params["run_id"] = json_run_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -185,6 +193,7 @@ def sync_detailed(
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -193,6 +202,7 @@ def sync_detailed(
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
         access_view_id (None | str | Unset):
+        run_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -207,6 +217,7 @@ def sync_detailed(
         trace_id=trace_id,
         include_presigned_urls=include_presigned_urls,
         access_view_id=access_view_id,
+        run_id=run_id,
     )
 
     response = client.request(**kwargs)
@@ -221,6 +232,7 @@ def sync(
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -229,6 +241,7 @@ def sync(
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
         access_view_id (None | str | Unset):
+        run_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -244,6 +257,7 @@ def sync(
         client=client,
         include_presigned_urls=include_presigned_urls,
         access_view_id=access_view_id,
+        run_id=run_id,
     ).parsed
 
 
@@ -254,6 +268,7 @@ async def asyncio_detailed(
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Response[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -262,6 +277,7 @@ async def asyncio_detailed(
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
         access_view_id (None | str | Unset):
+        run_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -276,6 +292,7 @@ async def asyncio_detailed(
         trace_id=trace_id,
         include_presigned_urls=include_presigned_urls,
         access_view_id=access_view_id,
+        run_id=run_id,
     )
 
     response = await client.arequest(**kwargs)
@@ -290,6 +307,7 @@ async def asyncio(
     client: ApiClient,
     include_presigned_urls: bool | Unset = False,
     access_view_id: None | str | Unset = UNSET,
+    run_id: None | str | Unset = UNSET,
 ) -> Optional[ExtendedTraceRecordWithChildren | StubTraceRecord | HTTPValidationError]:
     """Get Trace
 
@@ -298,6 +316,7 @@ async def asyncio(
         trace_id (str):
         include_presigned_urls (bool | Unset):  Default: False.
         access_view_id (None | str | Unset):
+        run_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -314,5 +333,6 @@ async def asyncio(
             client=client,
             include_presigned_urls=include_presigned_urls,
             access_view_id=access_view_id,
+            run_id=run_id,
         )
     ).parsed

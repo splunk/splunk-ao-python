@@ -21,12 +21,14 @@ class MetadataFilter:
         key (str):
         value (list[str] | str):
         name (Literal['metadata'] | Unset):  Default: 'metadata'.
+        case_sensitive (bool | Unset):  Default: True.
     """
 
     operator: MetadataFilterOperator
     key: str
     value: list[str] | str
     name: Literal["metadata"] | Unset = "metadata"
+    case_sensitive: bool | Unset = True
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -43,11 +45,15 @@ class MetadataFilter:
 
         name = self.name
 
+        case_sensitive = self.case_sensitive
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"operator": operator, "key": key, "value": value})
         if name is not UNSET:
             field_dict["name"] = name
+        if case_sensitive is not UNSET:
+            field_dict["case_sensitive"] = case_sensitive
 
         return field_dict
 
@@ -75,7 +81,9 @@ class MetadataFilter:
         if name != "metadata" and not isinstance(name, Unset):
             raise ValueError(f"name must match const 'metadata', got '{name}'")
 
-        metadata_filter = cls(operator=operator, key=key, value=value, name=name)
+        case_sensitive = d.pop("case_sensitive", UNSET)
+
+        metadata_filter = cls(operator=operator, key=key, value=value, name=name, case_sensitive=case_sensitive)
 
         metadata_filter.additional_properties = d
         return metadata_filter
