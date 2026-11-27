@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..models.chain_poll_template import ChainPollTemplate
     from ..models.file_content_part import FileContentPart
     from ..models.filter_leaf_log_records_filter import FilterLeafLogRecordsFilter
-    from ..models.generated_scorer_configuration import GeneratedScorerConfiguration
+    from ..models.llm_scorer_log_record_configuration import LLMScorerLogRecordConfiguration
     from ..models.log_records_boolean_filter import LogRecordsBooleanFilter
     from ..models.log_records_collection_filter import LogRecordsCollectionFilter
     from ..models.log_records_date_filter import LogRecordsDateFilter
@@ -40,7 +40,7 @@ class ValidateLLMScorerLogRecordRequest:
             response (str):
             chain_poll_template (ChainPollTemplate): Template for a chainpoll metric prompt,
                 containing all the info necessary to send a chainpoll prompt.
-            scorer_configuration (GeneratedScorerConfiguration):
+            scorer_configuration (LLMScorerLogRecordConfiguration):
             user_prompt (str):
             starting_token (int | Unset):  Default: 0.
             limit (int | Unset): Records per page, at most 1000. Page through larger result sets with starting_token or
@@ -70,7 +70,7 @@ class ValidateLLMScorerLogRecordRequest:
     query: str
     response: str
     chain_poll_template: ChainPollTemplate
-    scorer_configuration: GeneratedScorerConfiguration
+    scorer_configuration: LLMScorerLogRecordConfiguration
     user_prompt: str
     starting_token: int | Unset = 0
     limit: int | Unset = 100
@@ -279,7 +279,7 @@ class ValidateLLMScorerLogRecordRequest:
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.file_content_part import FileContentPart
         from ..models.filter_leaf_log_records_filter import FilterLeafLogRecordsFilter
-        from ..models.generated_scorer_configuration import GeneratedScorerConfiguration
+        from ..models.llm_scorer_log_record_configuration import LLMScorerLogRecordConfiguration
         from ..models.log_records_boolean_filter import LogRecordsBooleanFilter
         from ..models.log_records_collection_filter import LogRecordsCollectionFilter
         from ..models.log_records_date_filter import LogRecordsDateFilter
@@ -299,7 +299,7 @@ class ValidateLLMScorerLogRecordRequest:
 
         chain_poll_template = ChainPollTemplate.from_dict(d.pop("chain_poll_template"))
 
-        scorer_configuration = GeneratedScorerConfiguration.from_dict(d.pop("scorer_configuration"))
+        scorer_configuration = LLMScorerLogRecordConfiguration.from_dict(d.pop("scorer_configuration"))
 
         user_prompt = d.pop("user_prompt")
 

@@ -6,6 +6,7 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.user_lifecycle_state import UserLifecycleState
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="UserInfo")
@@ -18,12 +19,18 @@ class UserInfo:
     Attributes:
         id (str):
         email (str):
+        lifecycle_state (UserLifecycleState | Unset): Retention state, separate from invitation, verification, and sign-
+            in status.
+
+            Active identities are neither deactivated nor removed. Deactivated identities retain
+            their profile with access revoked. Removed identities have an anonymized live profile.
         first_name (None | str | Unset):
         last_name (None | str | Unset):
     """
 
     id: str
     email: str
+    lifecycle_state: UserLifecycleState | Unset = UNSET
     first_name: None | str | Unset = UNSET
     last_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -32,6 +39,10 @@ class UserInfo:
         id = self.id
 
         email = self.email
+
+        lifecycle_state: str | Unset = UNSET
+        if not isinstance(self.lifecycle_state, Unset):
+            lifecycle_state = self.lifecycle_state.value
 
         first_name: None | str | Unset
         if isinstance(self.first_name, Unset):
@@ -48,6 +59,8 @@ class UserInfo:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "email": email})
+        if lifecycle_state is not UNSET:
+            field_dict["lifecycle_state"] = lifecycle_state
         if first_name is not UNSET:
             field_dict["first_name"] = first_name
         if last_name is not UNSET:
@@ -61,6 +74,13 @@ class UserInfo:
         id = d.pop("id")
 
         email = d.pop("email")
+
+        _lifecycle_state = d.pop("lifecycle_state", UNSET)
+        lifecycle_state: UserLifecycleState | Unset
+        if isinstance(_lifecycle_state, Unset):
+            lifecycle_state = UNSET
+        else:
+            lifecycle_state = UserLifecycleState(_lifecycle_state)
 
         def _parse_first_name(data: object) -> None | str | Unset:
             if data is None:
@@ -80,7 +100,7 @@ class UserInfo:
 
         last_name = _parse_last_name(d.pop("last_name", UNSET))
 
-        user_info = cls(id=id, email=email, first_name=first_name, last_name=last_name)
+        user_info = cls(id=id, email=email, lifecycle_state=lifecycle_state, first_name=first_name, last_name=last_name)
 
         user_info.additional_properties = d
         return user_info

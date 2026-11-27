@@ -93,9 +93,9 @@ def sync_detailed(
      Test a decision evaluator on log records. The results go to a new metrics_testing run.
 
     The body has the LLM request's shape (ERD S6). model_name, question and answer_options are at the
-    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type and
-    ground_truth are in scorer_configuration. scoreable_node_types holds exactly one node type. The
-    fields that select the records (log_stream_id or experiment_id, and filters) are at the top level.
+    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type,
+    ground_truth and metadata_selection are in scorer_configuration. scoreable_node_types holds
+    exactly one node type. The record source and filters are at the top level.
 
     Args:
         body (ValidateDecisionScorerLogRecordRequest): Test a decision evaluator on log records.
@@ -124,9 +124,9 @@ def sync(
      Test a decision evaluator on log records. The results go to a new metrics_testing run.
 
     The body has the LLM request's shape (ERD S6). model_name, question and answer_options are at the
-    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type and
-    ground_truth are in scorer_configuration. scoreable_node_types holds exactly one node type. The
-    fields that select the records (log_stream_id or experiment_id, and filters) are at the top level.
+    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type,
+    ground_truth and metadata_selection are in scorer_configuration. scoreable_node_types holds
+    exactly one node type. The record source and filters are at the top level.
 
     Args:
         body (ValidateDecisionScorerLogRecordRequest): Test a decision evaluator on log records.
@@ -151,9 +151,9 @@ async def asyncio_detailed(
      Test a decision evaluator on log records. The results go to a new metrics_testing run.
 
     The body has the LLM request's shape (ERD S6). model_name, question and answer_options are at the
-    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type and
-    ground_truth are in scorer_configuration. scoreable_node_types holds exactly one node type. The
-    fields that select the records (log_stream_id or experiment_id, and filters) are at the top level.
+    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type,
+    ground_truth and metadata_selection are in scorer_configuration. scoreable_node_types holds
+    exactly one node type. The record source and filters are at the top level.
 
     Args:
         body (ValidateDecisionScorerLogRecordRequest): Test a decision evaluator on log records.
@@ -182,9 +182,9 @@ async def asyncio(
      Test a decision evaluator on log records. The results go to a new metrics_testing run.
 
     The body has the LLM request's shape (ERD S6). model_name, question and answer_options are at the
-    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type and
-    ground_truth are in scorer_configuration. scoreable_node_types holds exactly one node type. The
-    fields that select the records (log_stream_id or experiment_id, and filters) are at the top level.
+    top level, in place of the prompt fields. output_type, scoreable_node_types, input_type,
+    ground_truth and metadata_selection are in scorer_configuration. scoreable_node_types holds
+    exactly one node type. The record source and filters are at the top level.
 
     Args:
         body (ValidateDecisionScorerLogRecordRequest): Test a decision evaluator on log records.

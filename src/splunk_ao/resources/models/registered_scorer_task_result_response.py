@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.registered_scorer_validation_stage import RegisteredScorerValidationStage
 from ..models.task_result_status import TaskResultStatus
 from ..types import UNSET, Unset
 
@@ -26,6 +27,8 @@ class RegisteredScorerTaskResultResponse:
         updated_at (datetime.datetime):
         status (TaskResultStatus):
         result (None | str | Unset | ValidateRegisteredScorerResult):
+        stage (None | RegisteredScorerValidationStage | Unset):
+        stage_started_at (datetime.datetime | None | Unset):
     """
 
     id: str
@@ -33,6 +36,8 @@ class RegisteredScorerTaskResultResponse:
     updated_at: datetime.datetime
     status: TaskResultStatus
     result: None | str | Unset | ValidateRegisteredScorerResult = UNSET
+    stage: None | RegisteredScorerValidationStage | Unset = UNSET
+    stage_started_at: datetime.datetime | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -54,11 +59,31 @@ class RegisteredScorerTaskResultResponse:
         else:
             result = self.result
 
+        stage: None | str | Unset
+        if isinstance(self.stage, Unset):
+            stage = UNSET
+        elif isinstance(self.stage, RegisteredScorerValidationStage):
+            stage = self.stage.value
+        else:
+            stage = self.stage
+
+        stage_started_at: None | str | Unset
+        if isinstance(self.stage_started_at, Unset):
+            stage_started_at = UNSET
+        elif isinstance(self.stage_started_at, datetime.datetime):
+            stage_started_at = self.stage_started_at.isoformat()
+        else:
+            stage_started_at = self.stage_started_at
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"id": id, "created_at": created_at, "updated_at": updated_at, "status": status})
         if result is not UNSET:
             field_dict["result"] = result
+        if stage is not UNSET:
+            field_dict["stage"] = stage
+        if stage_started_at is not UNSET:
+            field_dict["stage_started_at"] = stage_started_at
 
         return field_dict
 
@@ -92,8 +117,48 @@ class RegisteredScorerTaskResultResponse:
 
         result = _parse_result(d.pop("result", UNSET))
 
+        def _parse_stage(data: object) -> None | RegisteredScorerValidationStage | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                stage_type_0 = RegisteredScorerValidationStage(data)
+
+                return stage_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | RegisteredScorerValidationStage | Unset, data)
+
+        stage = _parse_stage(d.pop("stage", UNSET))
+
+        def _parse_stage_started_at(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                stage_started_at_type_0 = datetime.datetime.fromisoformat(data)
+
+                return stage_started_at_type_0
+            except:  # noqa: E722
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        stage_started_at = _parse_stage_started_at(d.pop("stage_started_at", UNSET))
+
         registered_scorer_task_result_response = cls(
-            id=id, created_at=created_at, updated_at=updated_at, status=status, result=result
+            id=id,
+            created_at=created_at,
+            updated_at=updated_at,
+            status=status,
+            result=result,
+            stage=stage,
+            stage_started_at=stage_started_at,
         )
 
         registered_scorer_task_result_response.additional_properties = d

@@ -8,6 +8,7 @@ class IntegrationProvider(str, Enum):
     AZURE = "azure"
     CUSTOM = "custom"
     DATABRICKS = "databricks"
+    LUNA = "luna"
     MISTRAL = "mistral"
     NVIDIA = "nvidia"
     OPENAI = "openai"

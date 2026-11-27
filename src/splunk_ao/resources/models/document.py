@@ -18,15 +18,15 @@ T = TypeVar("T", bound="Document")
 class Document:
     """
     Attributes:
-        content (str): Content of the document.
+        page_content (str): Content of the document.
         metadata (DocumentMetadata | Unset):
     """
 
-    content: str
+    page_content: str
     metadata: DocumentMetadata | Unset = UNSET
 
     def to_dict(self) -> dict[str, Any]:
-        content = self.content
+        page_content = self.page_content
 
         metadata: dict[str, Any] | Unset = UNSET
         if not isinstance(self.metadata, Unset):
@@ -34,7 +34,7 @@ class Document:
 
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({"content": content})
+        field_dict.update({"page_content": page_content})
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
 
@@ -45,7 +45,7 @@ class Document:
         from ..models.document_metadata import DocumentMetadata
 
         d = dict(src_dict)
-        content = d.pop("content")
+        page_content = d.pop("page_content")
 
         _metadata = d.pop("metadata", UNSET)
         metadata: DocumentMetadata | Unset
@@ -54,6 +54,6 @@ class Document:
         else:
             metadata = DocumentMetadata.from_dict(_metadata)
 
-        document = cls(content=content, metadata=metadata)
+        document = cls(page_content=page_content, metadata=metadata)
 
         return document

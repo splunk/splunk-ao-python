@@ -5,6 +5,7 @@ class ProjectAction(str, Enum):
     CONFIGURE_CROWN_LOGIC = "configure_crown_logic"
     CONFIGURE_HUMAN_FEEDBACK = "configure_human_feedback"
     CONFIGURE_RATE_LIMIT = "configure_rate_limit"
+    CREATE_EVALUATOR = "create_evaluator"
     CREATE_RUN = "create_run"
     CREATE_STAGE = "create_stage"
     DELETE = "delete"
@@ -18,6 +19,7 @@ class ProjectAction(str, Enum):
     EDIT_STAGE = "edit_stage"
     EXPORT_DATA = "export_data"
     LOG_DATA = "log_data"
+    MANAGE_LOG_VIEWS = "manage_log_views"
     MOVE_RUN = "move_run"
     READ_ALL_LOGS = "read_all_logs"
     READ_FILTERED_LOGS = "read_filtered_logs"
@@ -28,6 +30,7 @@ class ProjectAction(str, Enum):
     SHARE = "share"
     TOGGLE_METRIC = "toggle_metric"
     UPDATE_CONTROL_BINDINGS = "update_control_bindings"
+    UPDATE_EVALUATOR_COST_CAP = "update_evaluator_cost_cap"
     USE_CONTROL_RUNTIME = "use_control_runtime"
 
     def __str__(self) -> str:

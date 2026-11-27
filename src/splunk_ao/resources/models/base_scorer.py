@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from ..models.metadata_filter import MetadataFilter
     from ..models.modality_filter import ModalityFilter
     from ..models.node_name_filter import NodeNameFilter
+    from ..models.scorer_metadata_selection import ScorerMetadataSelection
+    from ..models.span_input_selection import SpanInputSelection
 
 
 T = TypeVar("T", bound="BaseScorer")
@@ -50,6 +52,9 @@ class BaseScorer:
         num_judges (int | None | Unset):
         default_model_alias (None | str | Unset):
         ground_truth (bool | None | Unset):
+        metadata_selection (None | ScorerMetadataSelection | Unset):
+        span_input_selections (list[SpanInputSelection] | None | Unset):
+        require_matching_span (bool | Unset):  Default: False.
         regex_field (str | Unset):  Default: ''.
         registered_scorer_id (None | str | Unset):
         generated_scorer_id (None | str | Unset):
@@ -90,6 +95,9 @@ class BaseScorer:
     num_judges: int | None | Unset = UNSET
     default_model_alias: None | str | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
+    metadata_selection: None | ScorerMetadataSelection | Unset = UNSET
+    span_input_selections: list[SpanInputSelection] | None | Unset = UNSET
+    require_matching_span: bool | Unset = False
     regex_field: str | Unset = ""
     registered_scorer_id: None | str | Unset = UNSET
     generated_scorer_id: None | str | Unset = UNSET
@@ -123,6 +131,7 @@ class BaseScorer:
         from ..models.chain_poll_template import ChainPollTemplate
         from ..models.metadata_filter import MetadataFilter
         from ..models.node_name_filter import NodeNameFilter
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
 
         scorer_name = self.scorer_name
 
@@ -233,6 +242,28 @@ class BaseScorer:
             ground_truth = UNSET
         else:
             ground_truth = self.ground_truth
+
+        metadata_selection: dict[str, Any] | None | Unset
+        if isinstance(self.metadata_selection, Unset):
+            metadata_selection = UNSET
+        elif isinstance(self.metadata_selection, ScorerMetadataSelection):
+            metadata_selection = self.metadata_selection.to_dict()
+        else:
+            metadata_selection = self.metadata_selection
+
+        span_input_selections: list[dict[str, Any]] | None | Unset
+        if isinstance(self.span_input_selections, Unset):
+            span_input_selections = UNSET
+        elif isinstance(self.span_input_selections, list):
+            span_input_selections = []
+            for span_input_selections_type_0_item_data in self.span_input_selections:
+                span_input_selections_type_0_item = span_input_selections_type_0_item_data.to_dict()
+                span_input_selections.append(span_input_selections_type_0_item)
+
+        else:
+            span_input_selections = self.span_input_selections
+
+        require_matching_span = self.require_matching_span
 
         regex_field = self.regex_field
 
@@ -441,6 +472,12 @@ class BaseScorer:
             field_dict["default_model_alias"] = default_model_alias
         if ground_truth is not UNSET:
             field_dict["ground_truth"] = ground_truth
+        if metadata_selection is not UNSET:
+            field_dict["metadata_selection"] = metadata_selection
+        if span_input_selections is not UNSET:
+            field_dict["span_input_selections"] = span_input_selections
+        if require_matching_span is not UNSET:
+            field_dict["require_matching_span"] = require_matching_span
         if regex_field is not UNSET:
             field_dict["regex_field"] = regex_field
         if registered_scorer_id is not UNSET:
@@ -500,6 +537,8 @@ class BaseScorer:
         from ..models.metadata_filter import MetadataFilter
         from ..models.modality_filter import ModalityFilter
         from ..models.node_name_filter import NodeNameFilter
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
+        from ..models.span_input_selection import SpanInputSelection
 
         d = dict(src_dict)
         scorer_name = d.pop("scorer_name", UNSET)
@@ -707,6 +746,49 @@ class BaseScorer:
             return cast(bool | None | Unset, data)
 
         ground_truth = _parse_ground_truth(d.pop("ground_truth", UNSET))
+
+        def _parse_metadata_selection(data: object) -> None | ScorerMetadataSelection | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                metadata_selection_type_0 = ScorerMetadataSelection.from_dict(data)
+
+                return metadata_selection_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerMetadataSelection | Unset, data)
+
+        metadata_selection = _parse_metadata_selection(d.pop("metadata_selection", UNSET))
+
+        def _parse_span_input_selections(data: object) -> list[SpanInputSelection] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                span_input_selections_type_0 = []
+                _span_input_selections_type_0 = data
+                for span_input_selections_type_0_item_data in _span_input_selections_type_0:
+                    span_input_selections_type_0_item = SpanInputSelection.from_dict(
+                        span_input_selections_type_0_item_data
+                    )
+
+                    span_input_selections_type_0.append(span_input_selections_type_0_item)
+
+                return span_input_selections_type_0
+            except:  # noqa: E722
+                pass
+            return cast(list[SpanInputSelection] | None | Unset, data)
+
+        span_input_selections = _parse_span_input_selections(d.pop("span_input_selections", UNSET))
+
+        require_matching_span = d.pop("require_matching_span", UNSET)
 
         regex_field = d.pop("regex_field", UNSET)
 
@@ -1045,6 +1127,9 @@ class BaseScorer:
             num_judges=num_judges,
             default_model_alias=default_model_alias,
             ground_truth=ground_truth,
+            metadata_selection=metadata_selection,
+            span_input_selections=span_input_selections,
+            require_matching_span=require_matching_span,
             regex_field=regex_field,
             registered_scorer_id=registered_scorer_id,
             generated_scorer_id=generated_scorer_id,

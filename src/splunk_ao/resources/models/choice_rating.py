@@ -16,23 +16,23 @@ class ChoiceRating:
     """
     Attributes:
         value (str):
-        annotation_type (Literal['choice'] | Unset):  Default: 'choice'.
+        feedback_type (Literal['choice'] | Unset):  Default: 'choice'.
     """
 
     value: str
-    annotation_type: Literal["choice"] | Unset = "choice"
+    feedback_type: Literal["choice"] | Unset = "choice"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         value = self.value
 
-        annotation_type = self.annotation_type
+        feedback_type = self.feedback_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"value": value})
-        if annotation_type is not UNSET:
-            field_dict["annotation_type"] = annotation_type
+        if feedback_type is not UNSET:
+            field_dict["feedback_type"] = feedback_type
 
         return field_dict
 
@@ -41,11 +41,11 @@ class ChoiceRating:
         d = dict(src_dict)
         value = d.pop("value")
 
-        annotation_type = cast(Literal["choice"] | Unset, d.pop("annotation_type", UNSET))
-        if annotation_type != "choice" and not isinstance(annotation_type, Unset):
-            raise ValueError(f"annotation_type must match const 'choice', got '{annotation_type}'")
+        feedback_type = cast(Literal["choice"] | Unset, d.pop("feedback_type", UNSET))
+        if feedback_type != "choice" and not isinstance(feedback_type, Unset):
+            raise ValueError(f"feedback_type must match const 'choice', got '{feedback_type}'")
 
-        choice_rating = cls(value=value, annotation_type=annotation_type)
+        choice_rating = cls(value=value, feedback_type=feedback_type)
 
         choice_rating.additional_properties = d
         return choice_rating

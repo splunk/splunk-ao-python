@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -10,6 +10,10 @@ from ..models.input_type_enum import InputTypeEnum
 from ..models.output_type_enum import OutputTypeEnum
 from ..models.step_type import StepType
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.scorer_metadata_selection import ScorerMetadataSelection
+
 
 T = TypeVar("T", bound="DecisionScorerTestConfiguration")
 
@@ -26,15 +30,19 @@ class DecisionScorerTestConfiguration:
             scoreable_node_types (list[StepType]):
             input_type (InputTypeEnum | None | Unset):
             ground_truth (bool | Unset):  Default: False.
+            metadata_selection (None | ScorerMetadataSelection | Unset):
     """
 
     output_type: OutputTypeEnum
     scoreable_node_types: list[StepType]
     input_type: InputTypeEnum | None | Unset = UNSET
     ground_truth: bool | Unset = False
+    metadata_selection: None | ScorerMetadataSelection | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
+
         output_type = self.output_type.value
 
         scoreable_node_types = []
@@ -52,6 +60,14 @@ class DecisionScorerTestConfiguration:
 
         ground_truth = self.ground_truth
 
+        metadata_selection: dict[str, Any] | None | Unset
+        if isinstance(self.metadata_selection, Unset):
+            metadata_selection = UNSET
+        elif isinstance(self.metadata_selection, ScorerMetadataSelection):
+            metadata_selection = self.metadata_selection.to_dict()
+        else:
+            metadata_selection = self.metadata_selection
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"output_type": output_type, "scoreable_node_types": scoreable_node_types})
@@ -59,11 +75,15 @@ class DecisionScorerTestConfiguration:
             field_dict["input_type"] = input_type
         if ground_truth is not UNSET:
             field_dict["ground_truth"] = ground_truth
+        if metadata_selection is not UNSET:
+            field_dict["metadata_selection"] = metadata_selection
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.scorer_metadata_selection import ScorerMetadataSelection
+
         d = dict(src_dict)
         output_type = OutputTypeEnum(d.pop("output_type"))
 
@@ -93,11 +113,29 @@ class DecisionScorerTestConfiguration:
 
         ground_truth = d.pop("ground_truth", UNSET)
 
+        def _parse_metadata_selection(data: object) -> None | ScorerMetadataSelection | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                metadata_selection_type_0 = ScorerMetadataSelection.from_dict(data)
+
+                return metadata_selection_type_0
+            except:  # noqa: E722
+                pass
+            return cast(None | ScorerMetadataSelection | Unset, data)
+
+        metadata_selection = _parse_metadata_selection(d.pop("metadata_selection", UNSET))
+
         decision_scorer_test_configuration = cls(
             output_type=output_type,
             scoreable_node_types=scoreable_node_types,
             input_type=input_type,
             ground_truth=ground_truth,
+            metadata_selection=metadata_selection,
         )
 
         decision_scorer_test_configuration.additional_properties = d

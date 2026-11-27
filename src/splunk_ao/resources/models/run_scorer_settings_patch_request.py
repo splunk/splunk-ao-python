@@ -23,11 +23,13 @@ class RunScorerSettingsPatchRequest:
         run_id (str): ID of the run.
         scorers (list[RuntimeScorerConfig] | None | Unset): List of Galileo scorers to enable.
         segment_filters (list[SegmentFilter] | None | Unset): List of segment filters to apply to the run.
+        signals_novelty_enabled (bool | Unset): Enable online Signals scoring for this run. Default: False.
     """
 
     run_id: str
     scorers: list[RuntimeScorerConfig] | None | Unset = UNSET
     segment_filters: list[SegmentFilter] | None | Unset = UNSET
+    signals_novelty_enabled: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -57,6 +59,8 @@ class RunScorerSettingsPatchRequest:
         else:
             segment_filters = self.segment_filters
 
+        signals_novelty_enabled = self.signals_novelty_enabled
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({"run_id": run_id})
@@ -64,6 +68,8 @@ class RunScorerSettingsPatchRequest:
             field_dict["scorers"] = scorers
         if segment_filters is not UNSET:
             field_dict["segment_filters"] = segment_filters
+        if signals_novelty_enabled is not UNSET:
+            field_dict["signals_novelty_enabled"] = signals_novelty_enabled
 
         return field_dict
 
@@ -119,7 +125,14 @@ class RunScorerSettingsPatchRequest:
 
         segment_filters = _parse_segment_filters(d.pop("segment_filters", UNSET))
 
-        run_scorer_settings_patch_request = cls(run_id=run_id, scorers=scorers, segment_filters=segment_filters)
+        signals_novelty_enabled = d.pop("signals_novelty_enabled", UNSET)
+
+        run_scorer_settings_patch_request = cls(
+            run_id=run_id,
+            scorers=scorers,
+            segment_filters=segment_filters,
+            signals_novelty_enabled=signals_novelty_enabled,
+        )
 
         run_scorer_settings_patch_request.additional_properties = d
         return run_scorer_settings_patch_request

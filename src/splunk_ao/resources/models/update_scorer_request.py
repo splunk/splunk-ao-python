@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
     from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
     from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
-    from ..models.scorer_defaults import ScorerDefaults
+    from ..models.scorer_defaults_request import ScorerDefaultsRequest
 
 
 T = TypeVar("T", bound="UpdateScorerRequest")
@@ -31,7 +31,7 @@ class UpdateScorerRequest:
         name (None | str | Unset):
         description (None | str | Unset):
         tags (list[str] | None | Unset):
-        defaults (None | ScorerDefaults | Unset):
+        defaults (None | ScorerDefaultsRequest | Unset):
         model_type (ModelType | None | Unset):
         ground_truth (bool | None | Unset):
         default_version_id (None | str | Unset):
@@ -48,7 +48,7 @@ class UpdateScorerRequest:
     name: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
     tags: list[str] | None | Unset = UNSET
-    defaults: None | ScorerDefaults | Unset = UNSET
+    defaults: None | ScorerDefaultsRequest | Unset = UNSET
     model_type: ModelType | None | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
     default_version_id: None | str | Unset = UNSET
@@ -73,7 +73,7 @@ class UpdateScorerRequest:
         from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
-        from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_defaults_request import ScorerDefaultsRequest
 
         name: None | str | Unset
         if isinstance(self.name, Unset):
@@ -99,7 +99,7 @@ class UpdateScorerRequest:
         defaults: dict[str, Any] | None | Unset
         if isinstance(self.defaults, Unset):
             defaults = UNSET
-        elif isinstance(self.defaults, ScorerDefaults):
+        elif isinstance(self.defaults, ScorerDefaultsRequest):
             defaults = self.defaults.to_dict()
         else:
             defaults = self.defaults
@@ -229,7 +229,7 @@ class UpdateScorerRequest:
         from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
-        from ..models.scorer_defaults import ScorerDefaults
+        from ..models.scorer_defaults_request import ScorerDefaultsRequest
 
         d = dict(src_dict)
 
@@ -268,7 +268,7 @@ class UpdateScorerRequest:
 
         tags = _parse_tags(d.pop("tags", UNSET))
 
-        def _parse_defaults(data: object) -> None | ScorerDefaults | Unset:
+        def _parse_defaults(data: object) -> None | ScorerDefaultsRequest | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -276,12 +276,12 @@ class UpdateScorerRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                defaults_type_0 = ScorerDefaults.from_dict(data)
+                defaults_type_0 = ScorerDefaultsRequest.from_dict(data)
 
                 return defaults_type_0
             except:  # noqa: E722
                 pass
-            return cast(None | ScorerDefaults | Unset, data)
+            return cast(None | ScorerDefaultsRequest | Unset, data)
 
         defaults = _parse_defaults(d.pop("defaults", UNSET))
 

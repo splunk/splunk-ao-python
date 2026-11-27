@@ -8,6 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.auth_method import AuthMethod
+from ..models.user_lifecycle_state import UserLifecycleState
 from ..models.user_role import UserRole
 from ..types import UNSET, Unset
 
@@ -34,6 +35,11 @@ class UserDB:
         auth_method (AuthMethod | Unset):
         role (UserRole | Unset):
         email_is_verified (bool | None | Unset):
+        lifecycle_state (UserLifecycleState | Unset): Retention state, separate from invitation, verification, and sign-
+            in status.
+
+            Active identities are neither deactivated nor removed. Deactivated identities retain
+            their profile with access revoked. Removed identities have an anonymized live profile.
     """
 
     id: str
@@ -48,6 +54,7 @@ class UserDB:
     auth_method: AuthMethod | Unset = UNSET
     role: UserRole | Unset = UNSET
     email_is_verified: bool | None | Unset = UNSET
+    lifecycle_state: UserLifecycleState | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -96,6 +103,10 @@ class UserDB:
         else:
             email_is_verified = self.email_is_verified
 
+        lifecycle_state: str | Unset = UNSET
+        if not isinstance(self.lifecycle_state, Unset):
+            lifecycle_state = self.lifecycle_state.value
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -120,6 +131,8 @@ class UserDB:
             field_dict["role"] = role
         if email_is_verified is not UNSET:
             field_dict["email_is_verified"] = email_is_verified
+        if lifecycle_state is not UNSET:
+            field_dict["lifecycle_state"] = lifecycle_state
 
         return field_dict
 
@@ -190,6 +203,13 @@ class UserDB:
 
         email_is_verified = _parse_email_is_verified(d.pop("email_is_verified", UNSET))
 
+        _lifecycle_state = d.pop("lifecycle_state", UNSET)
+        lifecycle_state: UserLifecycleState | Unset
+        if isinstance(_lifecycle_state, Unset):
+            lifecycle_state = UNSET
+        else:
+            lifecycle_state = UserLifecycleState(_lifecycle_state)
+
         user_db = cls(
             id=id,
             email=email,
@@ -203,6 +223,7 @@ class UserDB:
             auth_method=auth_method,
             role=role,
             email_is_verified=email_is_verified,
+            lifecycle_state=lifecycle_state,
         )
 
         user_db.additional_properties = d

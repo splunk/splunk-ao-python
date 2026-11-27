@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,12 +17,12 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.base_metric_roll_up_config_db import BaseMetricRollUpConfigDB
-    from ..models.base_scorer_version_db import BaseScorerVersionDB
     from ..models.metric_color_picker_boolean import MetricColorPickerBoolean
     from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
     from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
     from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
     from ..models.permission import Permission
+    from ..models.scorer_catalog_version_response import ScorerCatalogVersionResponse
     from ..models.scorer_defaults import ScorerDefaults
     from ..models.scorer_invocation_config import ScorerInvocationConfig
     from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
@@ -44,11 +44,11 @@ class ScorerResponse:
         defaults (None | ScorerDefaults | Unset):
         invocation (None | ScorerInvocationConfig | Unset): Intrinsic metadata for invoking this scorer directly with
             query and response inputs.
-        latest_version (BaseScorerVersionDB | None | Unset):
+        latest_version (None | ScorerCatalogVersionResponse | Unset):
         model_type (ModelType | None | Unset):
         ground_truth (bool | None | Unset):
         default_version_id (None | str | Unset):
-        default_version (BaseScorerVersionDB | None | Unset):
+        default_version (None | ScorerCatalogVersionResponse | Unset):
         user_prompt (None | str | Unset):
         scoreable_node_types (list[str] | None | Unset):
         output_type (None | OutputTypeEnum | Unset):
@@ -59,6 +59,7 @@ class ScorerResponse:
         deprecated (bool | None | Unset):
         roll_up_method (None | RollUpMethodDisplayOptions | Unset):
         roll_up_config (BaseMetricRollUpConfigDB | None | Unset):
+        registration_origin (Literal['luna_studio'] | None | Unset):
         included_fields (list[str] | Unset): Fields that can be used in the scorer to configure it. i.e. model,
             num_judges, etc. This enables the ui to know which fields a user can configure when they're setting a scorer
         description (None | str | Unset):
@@ -82,11 +83,11 @@ class ScorerResponse:
     label: None | str | Unset = ""
     defaults: None | ScorerDefaults | Unset = UNSET
     invocation: None | ScorerInvocationConfig | Unset = UNSET
-    latest_version: BaseScorerVersionDB | None | Unset = UNSET
+    latest_version: None | ScorerCatalogVersionResponse | Unset = UNSET
     model_type: ModelType | None | Unset = UNSET
     ground_truth: bool | None | Unset = UNSET
     default_version_id: None | str | Unset = UNSET
-    default_version: BaseScorerVersionDB | None | Unset = UNSET
+    default_version: None | ScorerCatalogVersionResponse | Unset = UNSET
     user_prompt: None | str | Unset = UNSET
     scoreable_node_types: list[str] | None | Unset = UNSET
     output_type: None | OutputTypeEnum | Unset = UNSET
@@ -97,6 +98,7 @@ class ScorerResponse:
     deprecated: bool | None | Unset = UNSET
     roll_up_method: None | RollUpMethodDisplayOptions | Unset = UNSET
     roll_up_config: BaseMetricRollUpConfigDB | None | Unset = UNSET
+    registration_origin: Literal["luna_studio"] | None | Unset = UNSET
     included_fields: list[str] | Unset = UNSET
     description: None | str | Unset = UNSET
     created_by: None | str | Unset = UNSET
@@ -119,11 +121,11 @@ class ScorerResponse:
 
     def to_dict(self) -> dict[str, Any]:
         from ..models.base_metric_roll_up_config_db import BaseMetricRollUpConfigDB
-        from ..models.base_scorer_version_db import BaseScorerVersionDB
         from ..models.metric_color_picker_boolean import MetricColorPickerBoolean
         from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
+        from ..models.scorer_catalog_version_response import ScorerCatalogVersionResponse
         from ..models.scorer_defaults import ScorerDefaults
         from ..models.scorer_invocation_config import ScorerInvocationConfig
 
@@ -167,7 +169,7 @@ class ScorerResponse:
         latest_version: dict[str, Any] | None | Unset
         if isinstance(self.latest_version, Unset):
             latest_version = UNSET
-        elif isinstance(self.latest_version, BaseScorerVersionDB):
+        elif isinstance(self.latest_version, ScorerCatalogVersionResponse):
             latest_version = self.latest_version.to_dict()
         else:
             latest_version = self.latest_version
@@ -195,7 +197,7 @@ class ScorerResponse:
         default_version: dict[str, Any] | None | Unset
         if isinstance(self.default_version, Unset):
             default_version = UNSET
-        elif isinstance(self.default_version, BaseScorerVersionDB):
+        elif isinstance(self.default_version, ScorerCatalogVersionResponse):
             default_version = self.default_version.to_dict()
         else:
             default_version = self.default_version
@@ -282,6 +284,12 @@ class ScorerResponse:
             roll_up_config = self.roll_up_config.to_dict()
         else:
             roll_up_config = self.roll_up_config
+
+        registration_origin: Literal["luna_studio"] | None | Unset
+        if isinstance(self.registration_origin, Unset):
+            registration_origin = UNSET
+        else:
+            registration_origin = self.registration_origin
 
         included_fields: list[str] | Unset = UNSET
         if not isinstance(self.included_fields, Unset):
@@ -400,6 +408,8 @@ class ScorerResponse:
             field_dict["roll_up_method"] = roll_up_method
         if roll_up_config is not UNSET:
             field_dict["roll_up_config"] = roll_up_config
+        if registration_origin is not UNSET:
+            field_dict["registration_origin"] = registration_origin
         if included_fields is not UNSET:
             field_dict["included_fields"] = included_fields
         if description is not UNSET:
@@ -428,12 +438,12 @@ class ScorerResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.base_metric_roll_up_config_db import BaseMetricRollUpConfigDB
-        from ..models.base_scorer_version_db import BaseScorerVersionDB
         from ..models.metric_color_picker_boolean import MetricColorPickerBoolean
         from ..models.metric_color_picker_categorical import MetricColorPickerCategorical
         from ..models.metric_color_picker_multi_label import MetricColorPickerMultiLabel
         from ..models.metric_color_picker_numeric import MetricColorPickerNumeric
         from ..models.permission import Permission
+        from ..models.scorer_catalog_version_response import ScorerCatalogVersionResponse
         from ..models.scorer_defaults import ScorerDefaults
         from ..models.scorer_invocation_config import ScorerInvocationConfig
         from ..models.scorer_scope_project_ref import ScorerScopeProjectRef
@@ -499,7 +509,7 @@ class ScorerResponse:
 
         invocation = _parse_invocation(d.pop("invocation", UNSET))
 
-        def _parse_latest_version(data: object) -> BaseScorerVersionDB | None | Unset:
+        def _parse_latest_version(data: object) -> None | ScorerCatalogVersionResponse | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -507,12 +517,12 @@ class ScorerResponse:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                latest_version_type_0 = BaseScorerVersionDB.from_dict(data)
+                latest_version_type_0 = ScorerCatalogVersionResponse.from_dict(data)
 
                 return latest_version_type_0
             except:  # noqa: E722
                 pass
-            return cast(BaseScorerVersionDB | None | Unset, data)
+            return cast(None | ScorerCatalogVersionResponse | Unset, data)
 
         latest_version = _parse_latest_version(d.pop("latest_version", UNSET))
 
@@ -551,7 +561,7 @@ class ScorerResponse:
 
         default_version_id = _parse_default_version_id(d.pop("default_version_id", UNSET))
 
-        def _parse_default_version(data: object) -> BaseScorerVersionDB | None | Unset:
+        def _parse_default_version(data: object) -> None | ScorerCatalogVersionResponse | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -559,12 +569,12 @@ class ScorerResponse:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                default_version_type_0 = BaseScorerVersionDB.from_dict(data)
+                default_version_type_0 = ScorerCatalogVersionResponse.from_dict(data)
 
                 return default_version_type_0
             except:  # noqa: E722
                 pass
-            return cast(BaseScorerVersionDB | None | Unset, data)
+            return cast(None | ScorerCatalogVersionResponse | Unset, data)
 
         default_version = _parse_default_version(d.pop("default_version", UNSET))
 
@@ -726,6 +736,21 @@ class ScorerResponse:
             return cast(BaseMetricRollUpConfigDB | None | Unset, data)
 
         roll_up_config = _parse_roll_up_config(d.pop("roll_up_config", UNSET))
+
+        def _parse_registration_origin(data: object) -> Literal["luna_studio"] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            registration_origin_type_0 = cast(Literal["luna_studio"], data)
+            if registration_origin_type_0 != "luna_studio":
+                raise ValueError(
+                    f"registration_origin_type_0 must match const 'luna_studio', got '{registration_origin_type_0}'"
+                )
+            return registration_origin_type_0
+            return cast(Literal["luna_studio"] | None | Unset, data)
+
+        registration_origin = _parse_registration_origin(d.pop("registration_origin", UNSET))
 
         included_fields = cast(list[str], d.pop("included_fields", UNSET))
 
@@ -909,6 +934,7 @@ class ScorerResponse:
             deprecated=deprecated,
             roll_up_method=roll_up_method,
             roll_up_config=roll_up_config,
+            registration_origin=registration_origin,
             included_fields=included_fields,
             description=description,
             created_by=created_by,
